@@ -471,7 +471,7 @@ function SkillsList() {
     <ul className="itc-skill-list">
       {RECOMMENDED_SKILLS.map((skill) => (
         <li key={skill.slug}>
-          <code className="itc-skill-code">/{skill.slug}</code>
+          <code className="itc-skill-code">{skill.slug}</code>
           <span className="itc-skill-blurb">{skill.blurb}</span>
         </li>
       ))}
@@ -493,7 +493,9 @@ function CopySetupPrompt() {
   async function copy() {
     try {
       await navigator.clipboard.writeText(SETUP_PROMPT);
-      setToast("Copied! Paste it into your agent to get started.");
+      setToast(
+        "Copied! Paste into Codex or your agent. ChatGPT uses the setup guide.",
+      );
     } catch {
       setToast("Couldn't copy. Use the setup guide instead.");
     }
@@ -503,7 +505,7 @@ function CopySetupPrompt() {
     <>
       <button type="button" onClick={copy} className="itc-btn itc-btn-fin">
         <IconCopy size={16} />
-        Copy setup prompt
+        Copy agent setup prompt
       </button>
       <div className="itc-toast-region" role="status" aria-live="polite">
         {toast ? <div className="itc-toast">{toast}</div> : null}
@@ -540,6 +542,14 @@ function McpSection() {
                 </span>
               ))}
             </div>
+            <p className="itc-body">
+              Paste the setup prompt into Codex or an agent that can configure
+              MCP. For ChatGPT on the web or a regular desktop chat,{" "}
+              <a href="/docs/chatgpt" className="itc-textlink">
+                follow the ChatGPT setup steps
+              </a>{" "}
+              for your plan.
+            </p>
             <div className="itc-mcp-ctas">
               <CopySetupPrompt />
               <a href="/docs/agent-setup" className="itc-textlink">

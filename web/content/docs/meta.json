@@ -1,6 +1,7 @@
 {
   "pages": [
     "agent-setup",
+    "chatgpt",
     "mcp",
     "claude-code-plugin",
     "codex-plugin",

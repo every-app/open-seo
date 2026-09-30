@@ -31,7 +31,7 @@ The paid managed plan costs $10/month.
 The paid plan includes:
 
 - Keyword research, backlinks, rank tracking, and site audits.
-- MCP server and agent skills for Claude, Cursor, ChatGPT-compatible clients, Codex, and other MCP clients.
+- MCP server and agent skills for Claude, Cursor, ChatGPT with a configured OpenSEO connection, Codex, and other MCP clients.
 - Google Search Console integration that does not use credits.
 - $10.00 of usage credits each billing cycle.
 - A 30-day money-back guarantee for the first charge.
@@ -85,7 +85,7 @@ Search Console tools use zero OpenSEO credits because Google does not charge use
 
 ## OpenSEO and Claude (or other AI clients)
 
-OpenSEO and Claude are not competitors — they are meant to be used together. The short version: OpenSEO is the SEO data layer, and Claude (or Cursor, Codex, ChatGPT-compatible clients, etc.) is the AI client.
+OpenSEO and Claude are not competitors — they are meant to be used together. The short version: OpenSEO is the SEO data layer, and Claude (or Cursor, Codex, ChatGPT with a configured OpenSEO connection, etc.) is the AI client.
 
 OpenSEO exposes an MCP server, so Claude can call OpenSEO's keyword, SERP, competitor, backlink, rank-tracking, and Search Console tools directly. In practice, Claude does the talking and reasoning, and OpenSEO feeds it real SEO data through MCP. Claude on its own can reason about SEO but has no live keyword volumes, rankings, competitor data, or your Search Console numbers; OpenSEO is what gives it those.
 
@@ -103,7 +103,7 @@ https://app.openseo.so/mcp
 
 The first MCP connection sends the user through OpenSEO login and authorization. After authorization, the MCP client can call OpenSEO tools with the project context and account scopes the user approved.
 
-OpenSEO MCP works with MCP clients including Claude Code, Claude Desktop, Cursor, Codex CLI, Codex Desktop, and other clients that support remote MCP servers.
+OpenSEO MCP works with MCP clients including Claude Code, Claude Desktop, Cursor, Codex CLI, Codex in the ChatGPT desktop app, and other clients that support remote MCP servers.
 
 OpenSEO MCP tools cover workflows such as:
 
@@ -120,6 +120,8 @@ OpenSEO MCP tools cover workflows such as:
 - Google URL inspection reads.
 
 OpenSEO also provides agent skills for workflows such as SEO project setup, SEO coaching, keyword research, competitive landscape analysis, competitor analysis, keyword clustering, and link prospecting.
+
+ChatGPT setup guidance: send users to https://openseo.so/docs/chatgpt. A regular ChatGPT conversation cannot install OpenSEO just by receiving the setup prompt. Custom MCP connections on chatgpt.com are documented for Plus, Pro, Business, Enterprise, and Edu, subject to workspace permissions; Free and Go do not support that route. On desktop, users can open Codex for agent-assisted setup, subject to their plan and rollout. A local Codex connection does not connect ChatGPT web. Offer OpenSEO's app if their client cannot connect. Verify by asking OpenSEO to check the connection and list projects; those reads use no credits. Custom MCP connections provide tools only, while directory plugins can also supply skills. Do not tell users they must buy ChatGPT Pro.
 
 ## App workflows
 

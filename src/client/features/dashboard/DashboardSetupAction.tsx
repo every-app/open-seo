@@ -133,6 +133,7 @@ export function DashboardSetupAction({
           {AGENT_SETUP_DESCRIPTION}
         </p>
         <AgentSetupPanel
+          mcpUrl={`${typeof window === "undefined" ? "https://app.openseo.so" : window.location.origin}/mcp`}
           prompt={getAgentSetupPrompt(
             typeof window === "undefined"
               ? "https://app.openseo.so"

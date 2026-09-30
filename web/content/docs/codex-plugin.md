@@ -5,7 +5,17 @@ description: "Add OpenSEO MCP and Agent Skills to Codex with one marketplace and
 
 The OpenSEO plugin bundles OpenSEO MCP and all ten SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Codex CLI.
 
-## Install
+## Desktop app
+
+In the ChatGPT desktop app, open **Codex** and start a new chat. Paste the [agent setup prompt](/docs/agent-setup#set-up-your-agent) so Codex can configure OpenSEO and guide you through sign-in.
+
+If OpenSEO appears in your **Plugins** directory, install it, approve the OpenSEO sign-in, and start a new Codex chat. If the listing is missing, use the setup prompt or the CLI steps below.
+
+Ask: “Use OpenSEO to check my connection and list my projects.” The check uses no OpenSEO credits. A tool call followed by your projects, or an empty list, confirms that this chat is connected.
+
+Free / Go desktop access depends on OpenAI's rollout. CLI and web access have different plan requirements; see [OpenAI's plan support](https://learn.chatgpt.com/docs/pricing). Installing in Codex does not connect a regular chat on chatgpt.com. For that, use the [ChatGPT guide](/docs/chatgpt).
+
+## Install in the CLI
 
 Run these commands in your terminal:
 
@@ -63,4 +73,4 @@ If a `codex plugin` command reports "unrecognized subcommand," run `codex plugin
 
 ## Other clients
 
-This plugin is for Codex CLI. For Claude Code, use the [OpenSEO plugin for Claude Code](/docs/claude-code-plugin) instead. For Claude Desktop, Cursor, Codex Desktop, or an API key setup, see [Set up OpenSEO MCP](/docs/mcp) and [Set up OpenSEO Agent Skills](/docs/skills/setup).
+For ChatGPT web, use the [ChatGPT setup guide](/docs/chatgpt). For Claude Code, use the [OpenSEO plugin for Claude Code](/docs/claude-code-plugin) instead. For Claude Desktop, Cursor, or an API key setup, see [Set up OpenSEO MCP](/docs/mcp) and [Set up OpenSEO Agent Skills](/docs/skills/setup).

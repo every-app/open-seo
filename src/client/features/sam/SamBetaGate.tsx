@@ -18,9 +18,9 @@ export function SamBetaGate({ onContinue }: { onContinue: () => void }) {
         <>
           <p>
             Sam is the OpenSEO MCP and skills wrapped in a chat window. The
-            agent you already use, like Claude Code, ChatGPT, Grok Bot, or
-            Hermes, runs that same toolset on a much more capable harness. We
-            recommend using OpenSEO there.
+            agent you already use, like Claude Code, Codex, Grok Bot, or Hermes,
+            runs that same toolset on a much more capable harness. We recommend
+            using OpenSEO there.
           </p>
           <p>You can still use Sam, but it is early and has rough edges.</p>
         </>

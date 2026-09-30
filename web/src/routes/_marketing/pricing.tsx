@@ -218,7 +218,7 @@ function Pricing() {
         <ul className="mt-4 space-y-2">
           {[
             "Keyword research, backlinks, rank tracking, and site audits",
-            "Works inside Claude, Cursor, and ChatGPT",
+            "Works with Codex, Claude, and supported ChatGPT plans",
             "Google Search Console data is free and doesn't touch your $10",
             "Includes $10 of usage every month",
             "Buy extra usage anytime; it never expires",

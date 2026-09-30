@@ -12,7 +12,11 @@ export function AgentPrompt({ kind }: { kind: "setup" | "update" }) {
 
   return (
     <CodeBlock
-      title={kind === "setup" ? "Setup prompt" : "Update prompt"}
+      title={
+        kind === "setup"
+          ? "Agent setup prompt (Codex or other agents)"
+          : "Agent update prompt"
+      }
       viewportProps={{ className: "max-h-64" }}
     >
       <Pre className="whitespace-pre-wrap px-4">

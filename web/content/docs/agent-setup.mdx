@@ -7,6 +7,8 @@ OpenSEO connects your agent to live SEO data through MCP. Skills give it reusabl
 
 ## Set up your agent
 
+**Using ChatGPT?** Follow the [ChatGPT setup guide](/docs/chatgpt) for chatgpt.com and the desktop app, including Free / Go alternatives. A regular ChatGPT conversation cannot install a connection just because you paste this prompt. In the desktop app, open **Codex** for agent-assisted setup.
+
 Copy this prompt into Claude Code, Codex, Grok Bot, Hermes, or another agent. It asks your agent to use its supported installation method and guide you through any steps you need to do yourself.
 
 <AgentPrompt kind="setup" />
@@ -27,6 +29,12 @@ Run inside Claude Code to install MCP and the public SEO skills:
 ```
 
 If Claude asks you to activate the plugin, run `/reload-plugins`. Follow the sign-in prompt, then try `/openseo:seo-coach`. See the [Claude Code plugin guide](/docs/claude-code-plugin) for troubleshooting.
+
+### Codex in the ChatGPT desktop app
+
+Open **Codex**, start a new chat, and paste the setup prompt above. Approve the OpenSEO sign-in when prompted, then start a new chat if Codex needs to load the tools. Ask: “Use OpenSEO to check my connection and list my projects.” This check uses no OpenSEO credits.
+
+For manual setup, follow the [Codex plugin guide](/docs/codex-plugin#desktop-app). Free and Go desktop access depends on OpenAI's rollout; check [OpenAI's current plan support](https://learn.chatgpt.com/docs/pricing). A local Codex install does not connect chatgpt.com.
 
 ### Codex CLI
 
@@ -74,6 +82,8 @@ npx skills add https://github.com/every-app/open-seo/tree/main/plugins/openseo/s
 Choose the current agent and your preferred installation scope. Skip this if the OpenSEO plugin already supplies your skills. See [manual skill setup](/docs/skills/setup) for other options.
 
 ## Update your skills
+
+For ChatGPT, use the [plugin or custom connection update steps](/docs/chatgpt#update-openseo). A custom MCP connection has no bundled skill files to update.
 
 When OpenSEO releases improved skills, update the copies installed in your agent. Updating the MCP connection alone does not update those files.
 

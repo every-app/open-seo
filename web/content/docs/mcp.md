@@ -1,6 +1,6 @@
 ---
 title: "Set up OpenSEO MCP"
-description: "Connect OpenSEO MCP to Claude, Codex, and other AI clients."
+description: "Connect OpenSEO MCP to ChatGPT, Claude, Codex, and other AI clients."
 ---
 
 OpenSEO MCP lets compatible AI clients call OpenSEO tools for keyword research, SERP inspection, local business research, competitive search intelligence, domain research, backlink overview, saved keywords, rank tracking, shared project context, and Google Search Console performance and URL inspection.
@@ -18,6 +18,10 @@ For the most current setup UI and a copyable endpoint, open [Agent setup in Open
 For setup prompts, plugin commands, and skill updates, see [Agent setup](/docs/agent-setup).
 
 No account yet? Try the [free SEO tools](/tools).
+
+## ChatGPT web and desktop
+
+Follow the [ChatGPT setup guide](/docs/chatgpt). Custom MCP setup on chatgpt.com requires Plus, Pro, Business, Enterprise, or Edu and workspace permission. Free / Go users can try Codex in the desktop app where available, or use OpenSEO directly. Pasting a setup prompt into a regular ChatGPT chat does not install a connection.
 
 ## Claude Code
 
@@ -70,12 +74,17 @@ codex mcp add openseo --url https://app.openseo.so/mcp
 
 Approve the login when prompted.
 
-## Codex Desktop
+## Codex in the ChatGPT desktop app
 
-1. Open Settings -> Integrations & MCP.
-2. Click Add your own.
-3. Paste `https://app.openseo.so/mcp`.
-4. Approve the OpenSEO login when prompted.
+The [OpenSEO plugin](/docs/codex-plugin#desktop-app) includes MCP and SEO skills. For MCP alone:
+
+1. Open **Codex**, then **Settings → MCP servers → Add server**.
+2. Name it `openseo`, choose **Streamable HTTP**, and enter `https://app.openseo.so/mcp`.
+3. Save and select **Restart** when prompted.
+4. Select **Authenticate** for OpenSEO and approve sign-in when prompted. Skip this step for a local server configured without authentication.
+5. Start a new Codex chat and ask: “Use OpenSEO to check my connection and list my projects.”
+
+This local connection is separate from ChatGPT web. See [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp).
 
 ## Connect with an API key
 
