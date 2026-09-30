@@ -145,7 +145,7 @@ describe("onboarding connection actions", () => {
     expect(html).toContain("Couldn&#x27;t check your Google connection.");
     expect(html).toContain("Try again");
     expect(html).not.toContain("Choose property");
-    expect(html).toMatch(/disabled="">Save and continue<\/button>/);
+    expect(html).toMatch(/disabled=""[^>]*>Save and continue<\/button>/);
   });
 
   it("requires saving a property or explicitly skipping before advancing", () => {
@@ -161,7 +161,7 @@ describe("onboarding connection actions", () => {
     expect(html).toContain("Skip for now");
     expect(html).not.toMatch(/>Continue[ <]/);
     expect(html).toContain("Save and continue");
-    expect(html).toMatch(/disabled="">Save and continue<\/button>/);
+    expect(html).toMatch(/disabled=""[^>]*>Save and continue<\/button>/);
   });
 
   it("allows continuing without another save for an existing connection", () => {

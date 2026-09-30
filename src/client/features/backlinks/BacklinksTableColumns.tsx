@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/client/components/icons";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { BacklinksSourceLink } from "./BacklinksPageLinks";
@@ -12,6 +12,9 @@ import {
 } from "./backlinksPageUtils";
 import type { DomainRatings } from "./useAhrefsDomainRatings";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 /**
  * Row model for the backlinks table. In the one-per-domain view, depth-0 rows
  * are each domain's strongest link and can expand into the domain's remaining
@@ -30,21 +33,15 @@ export type BacklinksDisplayRow =
 function BacklinkFlags({ row }: { row: BacklinksRow }) {
   return (
     <div className="flex flex-wrap gap-1">
-      {row.isLost ? (
-        <span className="badge badge-sm badge-error badge-outline">Lost</span>
-      ) : null}
-      {row.isBroken ? (
-        <span className="badge badge-sm badge-warning badge-outline">
-          Broken
-        </span>
-      ) : null}
+      {row.isLost ? <Badge variant="destructive">Lost</Badge> : null}
+      {row.isBroken ? <Badge variant="warning">Broken</Badge> : null}
       {row.isDofollow === false ? (
-        <span className="badge badge-sm badge-outline">Nofollow</span>
+        <Badge variant="outline">Nofollow</Badge>
       ) : null}
       {row.linksCount != null && row.linksCount > 1 ? (
-        <span className="badge badge-sm badge-outline min-w-fit whitespace-nowrap">
+        <Badge variant="outline" className="min-w-fit whitespace-nowrap">
           {row.linksCount} links
-        </span>
+        </Badge>
       ) : null}
     </div>
   );
@@ -53,14 +50,14 @@ function BacklinkFlags({ row }: { row: BacklinksRow }) {
 function StatusCell({ status }: { status: "loading" | "error" | "empty" }) {
   if (status === "loading") {
     return (
-      <span className="flex items-center gap-2 pl-6 text-sm text-base-content/60">
-        <span className="loading loading-spinner loading-xs" />
+      <span className="flex items-center gap-2 pl-6 text-sm text-muted-foreground">
+        <Spinner size="sm" />
         Loading links…
       </span>
     );
   }
   return (
-    <span className="pl-6 text-sm text-base-content/60">
+    <span className="pl-6 text-sm text-muted-foreground">
       {status === "error"
         ? "Couldn't load this domain's links."
         : "No other links from this domain."}
@@ -86,7 +83,7 @@ function SourceCell({
         {row.urlFrom ? (
           <BacklinksSourceLink url={row.urlFrom} maxLength={48} muted />
         ) : (
-          <span className="text-base-content/55">-</span>
+          <span className="text-muted-foreground">-</span>
         )}
       </div>
     );
@@ -96,9 +93,11 @@ function SourceCell({
   return (
     <div className="flex items-start gap-1.5 break-all">
       {expandable && row.domainFrom && onToggleDomain ? (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
-          className="btn btn-ghost btn-xs btn-square shrink-0 -ml-1"
+          className="size-7 shrink-0 -ml-1"
           aria-label={`${expanded ? "Hide" : "Show"} all links from ${domainLabel}`}
           aria-expanded={expanded}
           onClick={() => onToggleDomain(row.domainFrom ?? "")}
@@ -106,7 +105,7 @@ function SourceCell({
           <ChevronRight
             className={`size-4 transition-transform ${expanded ? "rotate-90" : ""}`}
           />
-        </button>
+        </Button>
       ) : null}
       <div>
         <div className="font-semibold">{domainLabel}</div>
@@ -175,7 +174,7 @@ function buildBaseColumns(
         <div className="space-y-0.5 break-words">
           <span className="text-sm">{row.anchor || "No anchor text"}</span>
           {row.itemType ? (
-            <div className="text-xs text-base-content/55">{row.itemType}</div>
+            <div className="text-xs text-muted-foreground">{row.itemType}</div>
           ) : null}
         </div>
       )),
@@ -277,7 +276,7 @@ function buildBaseColumns(
         <div className="whitespace-nowrap text-sm">
           <div>{formatCompactDate(row.firstSeen)}</div>
           {row.lastSeen ? (
-            <div className="text-xs text-base-content/55">
+            <div className="text-xs text-muted-foreground">
               Last {formatCompactDate(row.lastSeen)}
             </div>
           ) : null}

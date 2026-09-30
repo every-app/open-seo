@@ -1,8 +1,15 @@
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "@/client/components/icons";
 import type { CitationTab } from "@/client/features/ai-search/brandLookupFilterTypes";
 import { formatPlatformLabel } from "@/client/features/ai-search/platformLabels";
 import type { BrandLookupFiltersState } from "@/client/features/ai-search/useBrandLookupFilters";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyForm = { Field: React.ComponentType<any> };
 
@@ -18,8 +25,8 @@ function FilterTextInput({
   placeholder: string;
 }) {
   return (
-    <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <form.Field name={name}>
@@ -27,8 +34,8 @@ function FilterTextInput({
           state: { value: string };
           handleChange: (v: string) => void;
         }) => (
-          <input
-            className="input input-bordered input-sm w-full bg-base-100"
+          <Input
+            className="w-full h-8 text-sm"
             placeholder={placeholder}
             value={field.state.value}
             onChange={(event) => field.handleChange(event.target.value)}
@@ -51,8 +58,8 @@ function FilterRangeInputs({
   maxName: string;
 }) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -78,8 +85,8 @@ function CompactRangeInput({
         state: { value: string };
         handleChange: (v: string) => void;
       }) => (
-        <input
-          className="input input-bordered input-xs bg-base-100"
+        <Input
+          className="h-8 text-sm"
           placeholder={placeholder}
           type="number"
           value={field.state.value}
@@ -93,7 +100,7 @@ function CompactRangeInput({
 function PlatformToggle({ form }: { form: AnyForm }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         Platform
       </p>
       <form.Field name="platform">
@@ -102,16 +109,22 @@ function PlatformToggle({ form }: { form: AnyForm }) {
           handleChange: (v: string) => void;
         }) => (
           <div className="flex flex-wrap items-center gap-1">
-            {(["", "chat_gpt", "google"] as const).map((value) => (
-              <button
-                key={value || "all"}
-                type="button"
-                className={`btn btn-xs ${field.state.value === value ? "btn-soft" : "btn-ghost"}`}
-                onClick={() => field.handleChange(value)}
-              >
-                {value === "" ? "All" : formatPlatformLabel(value)}
-              </button>
-            ))}
+            <ToggleGroup
+              size="sm"
+              value={[field.state.value || "all"]}
+              onValueChange={(next) => {
+                const value = (["", "chat_gpt", "google"] as const).find(
+                  (option) => (option || "all") === next[0],
+                );
+                if (value !== undefined) field.handleChange(value);
+              }}
+            >
+              {(["", "chat_gpt", "google"] as const).map((value) => (
+                <ToggleGroupItem key={value || "all"} value={value || "all"}>
+                  {value === "" ? "All" : formatPlatformLabel(value)}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
         )}
       </form.Field>
@@ -203,25 +216,25 @@ export function BrandLookupFilterPanel({
   const current = filters[activeTab];
 
   return (
-    <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
+    <div className="shrink-0 border-b border-border bg-gradient-to-b from-card to-muted/30 px-4 py-3 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine results</p>
           {current.activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {current.activeFilterCount} active
-            </span>
+            <Badge variant="primary">{current.activeFilterCount} active</Badge>
           ) : null}
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className="btn btn-xs btn-ghost gap-1"
+          className="h-7 px-2.5 gap-1"
           onClick={current.reset}
           disabled={current.activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
           Clear all
-        </button>
+        </Button>
       </div>
 
       {activeTab === "pages" ? (

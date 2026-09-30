@@ -1,7 +1,9 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/client/components/icons";
 import { useEffect, useMemo, useState } from "react";
 import type { KeywordResearchRow } from "@/types/keywords";
 
+import { Button } from "@/client/components/ui/button";
+import { NativeSelect } from "@/client/components/ui/native-select";
 const KEYWORD_RESEARCH_PAGE_SIZES = [50, 100, 300, 500] as const;
 const DEFAULT_KEYWORD_RESEARCH_PAGE_SIZE = 50;
 const KEYWORD_RESEARCH_PAGE_SIZE_STORAGE_KEY =
@@ -29,16 +31,16 @@ export function KeywordResearchPagination({
   const end = Math.min(totalCount, page * pageSize);
 
   return (
-    <div className="flex flex-col gap-3 border-t border-base-300 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-sm tabular-nums text-base-content/70">
+    <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-sm tabular-nums text-muted-foreground">
         {start.toLocaleString()}-{end.toLocaleString()} of{" "}
         {totalCount.toLocaleString()}
       </div>
-      <div className="flex items-center gap-6">
-        <label className="flex items-center gap-2 text-sm text-base-content/70">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="whitespace-nowrap">Rows per page</span>
-          <select
-            className="select select-bordered select-sm w-20"
+          <NativeSelect
+            className="w-20 h-8 text-sm"
             value={pageSize}
             onChange={(event) =>
               onPageSizeChange(parseKeywordResearchPageSize(event.target.value))
@@ -49,31 +51,35 @@ export function KeywordResearchPagination({
                 {size}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap text-sm tabular-nums text-base-content/70">
+          <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
             Page {page.toLocaleString()} of {totalPages.toLocaleString()}
           </span>
           <div className="flex items-center gap-1">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
-              className="btn btn-ghost btn-sm btn-square"
+              className="size-8"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
               aria-label="Previous page"
             >
               <ChevronLeft className="size-4" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
-              className="btn btn-ghost btn-sm btn-square"
+              className="size-8"
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
               aria-label="Next page"
             >
               <ChevronRight className="size-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

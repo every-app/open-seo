@@ -169,17 +169,16 @@ function DomainKeywordsTableComponent({
 
   return (
     <div className="overflow-x-auto">
-      <div className="mb-2 text-xs text-base-content/60">
+      <div className="mb-2 text-xs text-muted-foreground">
         {selectedKeywords.size > 0
           ? `${selectedKeywords.size} selected`
           : "Select keywords to save"}
       </div>
       <AppDataTable
         table={table}
-        className="table table-sm"
         wrapperClassName=""
         empty={
-          <div className="py-6 text-center text-base-content/60">
+          <div className="py-6 text-center text-muted-foreground">
             No keywords match this search.
           </div>
         }

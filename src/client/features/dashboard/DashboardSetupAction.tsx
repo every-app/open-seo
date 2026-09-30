@@ -23,6 +23,9 @@ import { markDashboardCompetitorClicked } from "@/serverFunctions/dashboard";
 import type { DashboardSetupStep } from "@/types/schemas/dashboard";
 import { parseResearchTarget } from "@/shared/researchScope";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { Skeleton } from "@/client/components/ui/skeleton";
 const projectPrompt = `Use OpenSEO to set up a separate project for each website below. List my existing projects first and reuse matches so you don’t create duplicates. Set the country and language for each site, and ask me about anything missing.
 
 Replace this list with my websites:
@@ -62,16 +65,16 @@ export function DashboardSetupAction({
     return project ? (
       <WebsiteForm project={project} onComplete={onComplete} />
     ) : projects.isError ? (
-      <p role="alert" className="text-sm text-error">
+      <p role="alert" className="text-sm text-negative">
         {getStandardErrorMessage(projects.error)}
       </p>
     ) : (
-      <div className="skeleton h-36" aria-busy />
+      <Skeleton className="h-36" aria-busy />
     );
   if (step === "mcp")
     return (
       <div className="max-w-2xl space-y-4">
-        <p className="text-sm leading-relaxed text-base-content/65">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {AGENT_SETUP_DESCRIPTION}
         </p>
         <AgentSetupPanel
@@ -91,18 +94,18 @@ export function DashboardSetupAction({
   if (step === "competitor")
     return (
       <div className="space-y-4">
-        <p className="text-sm leading-relaxed text-base-content/65">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Explore a competitor’s domain to discover the topics they rank for and
           the websites linking to them.
         </p>
-        <button
+        <Button
+          size="sm"
           type="button"
-          className="btn btn-primary btn-sm"
           disabled={competitor.isPending}
           onClick={() => competitor.mutate()}
         >
           Open domain lookup
-        </button>
+        </Button>
       </div>
     );
 
@@ -118,7 +121,7 @@ export function DashboardSetupAction({
     );
   if (!canManage)
     return (
-      <p className="text-sm text-base-content/65">
+      <p className="text-sm text-muted-foreground">
         {org.isPending
           ? "Checking workspace permissions…"
           : org.isError
@@ -140,30 +143,26 @@ export function DashboardSetupAction({
   if (step === "project")
     return (
       <div className="space-y-4">
-        <p className="text-sm leading-relaxed text-base-content/65">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Keep each website’s research, rankings, and connections in its own
           project. Use the project switcher in the sidebar → New project
           anytime.
         </p>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          onClick={() => setShowModal(true)}
-        >
+        <Button size="sm" type="button" onClick={() => setShowModal(true)}>
           Create another project
-        </button>
-        <details className="rounded-lg border border-base-300 p-4">
+        </Button>
+        <details className="rounded-lg border border-border p-4">
           <summary className="cursor-pointer text-sm font-medium">
             Have a list of websites? Let your agent set them up.
           </summary>
           <div className="mt-3 space-y-3">
-            <p className="text-sm text-base-content/65">
-              <Link to="/ai" className="link">
+            <p className="text-sm text-muted-foreground">
+              <Link to="/ai" className="underline underline-offset-4">
                 Connect your agent
               </Link>
               , then paste this prompt with your list of websites.
             </p>
-            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-base-content/65">
+            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-muted-foreground">
               {projectPrompt}
             </pre>
             <CopyButton
@@ -180,17 +179,13 @@ export function DashboardSetupAction({
     );
   return (
     <div className="space-y-4">
-      <p className="text-sm leading-relaxed text-base-content/65">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         Bring a teammate into your workspace to share projects, research, and
         results.
       </p>
-      <button
-        type="button"
-        className="btn btn-primary btn-sm"
-        onClick={() => setShowModal(true)}
-      >
+      <Button size="sm" type="button" onClick={() => setShowModal(true)}>
         Invite a teammate
-      </button>
+      </Button>
       {showModal && (
         <InviteTeammateModal
           onClose={() => setShowModal(false)}
@@ -266,7 +261,7 @@ function WebsiteForm({
         void form.handleSubmit();
       }}
     >
-      <p className="text-sm leading-relaxed text-base-content/65">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         Add the website for this project and choose the country your customers
         search from. You can change these in project settings anytime.
       </p>
@@ -282,19 +277,19 @@ function WebsiteForm({
         {(field) => (
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium">Website</span>
-            <input
+            <Input
               type="text"
               required
               maxLength={255}
               placeholder="example.com"
-              className="input input-bordered w-full"
+              className="w-full"
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(event) => field.handleChange(event.target.value)}
               aria-invalid={field.state.meta.errors.length > 0}
             />
             {field.state.meta.errors.length > 0 && (
-              <span className="text-xs text-error">
+              <span className="text-xs text-negative">
                 {field.state.meta.errors.join(", ")}
               </span>
             )}
@@ -313,13 +308,13 @@ function WebsiteForm({
         selector={(state) => [state.canSubmit, state.isSubmitting]}
       >
         {([canSubmit, isSubmitting]) => (
-          <button
+          <Button
+            size="sm"
             type="submit"
-            className="btn btn-primary btn-sm"
             disabled={!canSubmit || isSubmitting || save.isPending}
           >
             {save.isPending ? "Saving…" : "Save website"}
-          </button>
+          </Button>
         )}
       </form.Subscribe>
     </form>

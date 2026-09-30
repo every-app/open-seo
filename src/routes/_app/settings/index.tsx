@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "@/client/components/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
@@ -8,6 +8,11 @@ import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { version } from "../../../../package.json";
 
+import { Switch } from "@/client/components/ui/switch";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
 export const Route = createFileRoute("/_app/settings/")({
   component: PersonalSettings,
 });
@@ -51,37 +56,35 @@ function PersonalSettings() {
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-base-content/50">Appearance</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          Appearance
+        </h2>
         <div className="flex items-center justify-between gap-6">
           <span className="text-sm">Theme</span>
-          <div
-            role="radiogroup"
+          <ToggleGroup
             aria-label="Theme preference"
-            className="flex gap-0.5 rounded-lg bg-base-200 p-0.5"
+            size="sm"
+            value={[themePreference]}
+            onValueChange={(next) => {
+              const option = THEME_OPTIONS.find(
+                (item) => item.value === next[0],
+              );
+              if (option) setThemePreference(option.value);
+            }}
           >
             {THEME_OPTIONS.map((option) => {
-              const isActive = option.value === themePreference;
               const Icon = option.icon;
-
               return (
-                <button
+                <ToggleGroupItem
                   key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={isActive}
+                  value={option.value}
                   aria-label={option.label}
-                  className={`flex cursor-pointer items-center justify-center rounded-md px-3 py-1.5 transition-colors ${
-                    isActive
-                      ? "bg-base-100 text-base-content shadow-sm"
-                      : "text-base-content/50 hover:text-base-content/80"
-                  }`}
-                  onClick={() => setThemePreference(option.value)}
                 >
                   <Icon className="size-4" />
-                </button>
+                </ToggleGroupItem>
               );
             })}
-          </div>
+          </ToggleGroup>
         </div>
       </section>
 
@@ -90,23 +93,21 @@ function PersonalSettings() {
           <ApiKeySettings />
 
           <section className="space-y-3">
-            <h2 className="text-sm font-medium text-base-content/50">
+            <h2 className="text-sm font-medium text-muted-foreground">
               Analytics
             </h2>
             <div className="flex items-start justify-between gap-6">
               <div>
                 <p className="text-sm">Help improve OpenSEO</p>
-                <p className="mt-1 text-sm text-base-content/60">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Share analytics and usage data.
                 </p>
               </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary"
+              <Switch
                 checked={analyticsEnabled}
                 disabled={isSessionPending || isSaving || !session?.user}
-                onChange={(event) => {
-                  void updateAnalyticsPreference(event.currentTarget.checked);
+                onCheckedChange={(checked) => {
+                  void updateAnalyticsPreference(checked);
                 }}
                 aria-label="Enable product analytics"
               />
@@ -115,10 +116,10 @@ function PersonalSettings() {
         </>
       ) : (
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-base-content/50">About</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">About</h2>
           <div className="flex items-center justify-between gap-6">
             <span className="text-sm">Version</span>
-            <span className="font-mono text-sm text-base-content/60">
+            <span className="font-mono text-sm text-muted-foreground">
               v{version}
             </span>
           </div>

@@ -6,7 +6,7 @@ import {
   Save,
   Sheet,
   SlidersHorizontal,
-} from "lucide-react";
+} from "@/client/components/icons";
 import {
   downloadKeywordResearchCsv,
   KEYWORD_RESEARCH_HEADERS,
@@ -28,6 +28,17 @@ import {
   TableBulkExportMenu,
 } from "@/client/components/table/TableBulkActionBar";
 
+import { Alert } from "@/client/components/ui/alert";
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 type Props = {
   controller: KeywordResearchControllerState;
 };
@@ -37,28 +48,22 @@ export function KeywordResearchMobileResults({ controller }: Props) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden md:hidden">
-      <div className="shrink-0 flex border-b border-base-300 bg-base-100">
-        <button
-          className={`flex-1 py-2 text-sm font-medium text-center border-b-2 transition-colors ${
-            mobileTab === "keywords"
-              ? "border-primary text-primary"
-              : "border-transparent text-base-content/60"
-          }`}
-          onClick={() => controller.setMobileTab("keywords")}
-        >
-          Keywords ({filteredRows.length})
-        </button>
-        <button
-          className={`flex-1 py-2 text-sm font-medium text-center border-b-2 transition-colors ${
-            mobileTab === "serp"
-              ? "border-primary text-primary"
-              : "border-transparent text-base-content/60"
-          }`}
-          onClick={() => controller.setMobileTab("serp")}
-        >
-          SERP Analysis
-        </button>
-      </div>
+      <Tabs
+        value={mobileTab}
+        onValueChange={(value) =>
+          controller.setMobileTab(value === "serp" ? "serp" : "keywords")
+        }
+        className="shrink-0 border-b border-border bg-card px-3 py-2"
+      >
+        <TabsList className="flex w-full">
+          <TabsTrigger value="keywords" className="flex-1">
+            Keywords ({filteredRows.length})
+          </TabsTrigger>
+          <TabsTrigger value="serp" className="flex-1">
+            SERP Analysis
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {mobileTab === "keywords" ? (
         <MobileKeywordResults controller={controller} />
@@ -132,61 +137,66 @@ function MobileKeywordResults({ controller }: Props) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {controller.showApproximateMatchNotice ? (
-        <div
-          className="mx-4 mt-2 rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-xs text-base-content"
+        <Alert
+          variant="warning"
+          className="mx-4 mt-2 w-auto px-3 py-2 text-xs [&>svg]:top-2.5"
           role="status"
         >
           No exact match for{" "}
           <span className="font-medium">"{controller.searchedKeyword}"</span>.
           Showing closest related keywords.
-        </div>
+        </Alert>
       ) : null}
 
-      <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-base-300 bg-base-100">
-        <button
-          className={`btn btn-ghost btn-xs gap-1 ${showFilters ? "btn-active" : ""}`}
+      <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border bg-card">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`h-7 px-2.5 gap-1 ${showFilters ? "bg-secondary text-foreground" : ""}`}
           onClick={() => controller.setShowFilters((current) => !current)}
         >
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
-            </span>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
-        </button>
-        <span className="text-xs text-base-content/60">
+        </Button>
+        <span className="text-xs text-muted-foreground">
           {keywordCountLabel}
         </span>
         <div className="flex-1" />
-        <div className="dropdown dropdown-end">
-          <div
-            tabIndex={0}
-            role="button"
-            className={`btn btn-ghost btn-xs gap-1 ${!canExport ? "btn-disabled" : ""}`}
-            aria-label="Export"
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            disabled={!canExport}
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2.5 gap-1"
+                aria-label="Export"
+              />
+            }
           >
             <Download className="size-3.5" />
             <ChevronDown className="size-3 opacity-60" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56"
-          >
-            <li>
-              <button onClick={handleExportToSheets} disabled={!canExport}>
-                <Sheet className="size-4" />
-                Export to Sheets
-              </button>
-            </li>
-            <li>
-              <button onClick={controller.exportCsv} disabled={!canExport}>
-                <FileDown className="size-4" />
-                Export CSV
-              </button>
-            </li>
-          </ul>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem
+              onClick={handleExportToSheets}
+              disabled={!canExport}
+            >
+              <Sheet className="size-4" />
+              Export to Sheets
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={controller.exportCsv}
+              disabled={!canExport}
+            >
+              <FileDown className="size-4" />
+              Export CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <TableBulkActionBar
@@ -249,31 +259,31 @@ function MobileFilters({ controller }: Props) {
   const { activeFilterCount, filtersForm } = controller;
 
   return (
-    <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
+    <div className="shrink-0 border-b border-border bg-gradient-to-b from-card to-muted/30 px-4 py-3 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold">Refine table results</p>
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
-            </span>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
         </div>
-        <button
-          className="btn btn-xs btn-ghost gap-1"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2.5 gap-1"
           onClick={controller.resetFilters}
           disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
           Clear
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-2">
         <filtersForm.Field name="include">
           {(field) => (
-            <input
-              className="input input-bordered input-sm bg-base-100"
+            <Input
+              className="h-8 text-sm"
               placeholder="Include terms (audit, checker)"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
@@ -282,8 +292,8 @@ function MobileFilters({ controller }: Props) {
         </filtersForm.Field>
         <filtersForm.Field name="exclude">
           {(field) => (
-            <input
-              className="input input-bordered input-sm bg-base-100"
+            <Input
+              className="h-8 text-sm"
               placeholder="Exclude terms (jobs, course)"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
@@ -346,8 +356,8 @@ function MobileRangeInput({
   return (
     <form.Field name={name}>
       {(field) => (
-        <input
-          className="input input-bordered input-sm bg-base-100"
+        <Input
+          className="h-8 text-sm"
           placeholder={placeholder}
           type="number"
           step={step}

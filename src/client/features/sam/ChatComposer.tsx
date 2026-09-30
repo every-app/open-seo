@@ -5,7 +5,10 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { ArrowUp, Loader2, Square } from "lucide-react";
+import { ArrowUp, Loader2, Square } from "@/client/components/icons";
+
+import { Button } from "@/client/components/ui/button";
+import { Textarea } from "@/client/components/ui/textarea";
 
 export function ChatComposer({
   busy,
@@ -50,42 +53,47 @@ export function ChatComposer({
     }
   }
 
+  // The composer is the field's surface; the textarea inside drops its own so
+  // the send button sits inside the same frame.
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-end gap-2 rounded-box border border-base-300 bg-base-100 px-3 py-2 focus-within:border-primary"
+      className="flex items-end gap-2 rounded-xl border border-border bg-input px-3 py-2 backdrop-blur-xl transition-colors focus-within:border-primary/60 focus-within:ring-[0.1875rem] focus-within:ring-ring/25"
     >
-      <textarea
+      <Textarea
         ref={textareaRef}
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKey}
         rows={1}
         placeholder={placeholder}
-        className="max-h-40 flex-1 resize-none border-0 bg-transparent px-1 py-1 text-sm leading-relaxed outline-none placeholder:text-base-content/50 focus:outline-none"
+        className="max-h-40 min-h-0 flex-1 resize-none rounded-none border-0 bg-transparent px-1 py-1 leading-relaxed shadow-none hover:bg-transparent focus-visible:shadow-none"
       />
       {busy && onStop ? (
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           type="button"
           aria-label="Stop"
           onClick={onStop}
-          className="btn btn-neutral btn-circle btn-sm"
+          className="size-8"
         >
-          <Square className="size-3.5 fill-current" />
-        </button>
+          <Square className="size-3.5 [&_path]:fill-current" />
+        </Button>
       ) : (
-        <button
+        <Button
+          size="icon"
           type="submit"
           aria-label="Send message"
           disabled={busy || !value.trim()}
-          className="btn btn-primary btn-circle btn-sm"
+          className="size-8"
         >
           {busy ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <ArrowUp className="size-4" />
           )}
-        </button>
+        </Button>
       )}
     </form>
   );

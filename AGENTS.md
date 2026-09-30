@@ -10,6 +10,7 @@
 - Keep schema changes, queries, and mutations compatible with both SQLite and Postgres.
 - Use idiomatic TypeScript. Use Zod to validate untrusted data and narrow runtime values at trust boundaries.
 - Prefer established project helpers and libraries over hand-rolled implementations.
+- Every length is `rem`, never `px`: Tailwind arbitrary values (`text-[0.6875rem]`, `max-w-[20rem]`, `shadow-[0_0.5rem_2rem_…]`, `backdrop-blur-[1.25rem]`, `rounded-[1.25rem]`), stylesheets and inline styles alike. Convert px by dividing by 16. SVG attributes such as `viewBox` and `stroke` stay unitless.
 - Prefer idiomatic TanStack Query, Router, and Form patterns for server state, routing, and submitted forms.
 
 ## Documentation audience

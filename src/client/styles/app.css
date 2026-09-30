@@ -1,98 +1,208 @@
 @import "tailwindcss";
 
+/* The app sets the theme with a class and data-theme on <html>
+   (client/lib/theme.ts): "dark" or "light". */
+@custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
+
 @theme {
   --container-8xl: 88rem;
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, ui-sans-serif, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-:root {
-  --trend-grid-color: oklch(56% 0.01 255 / 0.28);
-  --trend-axis-color: oklch(42% 0.01 255 / 0.85);
-  --trend-fill-start-opacity: 0.32;
-  --trend-fill-end-opacity: 0.05;
-  --trend-tooltip-bg: oklch(99% 0.005 255 / 0.96);
-  --trend-tooltip-border: oklch(84% 0.01 255 / 0.7);
-  --trend-tooltip-shadow: oklch(0% 0 0 / 0.1);
+/* Halo design-system tokens (Better Design registry: halo/globals). */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-signature: var(--signature);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-link: var(--link);
+  --color-negative: var(--negative);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
 }
 
-@plugin "daisyui" {
-  /* @property isn't supported by some browsers and gives a noisy warning https://github.com/saadeghi/daisyui/issues/3882 */
-  exclude: properties;
-}
-
-/* Light theme */
-@plugin "daisyui/theme" {
-  name: "openseo";
-  default: true;
-  prefersdark: false;
-  color-scheme: light;
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: oklch(97% 0 0);
-  --color-base-300: oklch(92% 0 0);
-  --color-base-content: oklch(20% 0 0);
-  --color-primary: oklch(50% 0.12 262);
-  --color-primary-content: oklch(100% 0 0);
-  --color-secondary: oklch(55% 0.15 145);
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(50% 0.12 262);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(25% 0 0);
-  --color-neutral-content: oklch(100% 0 0);
-  --color-info: oklch(70% 0.15 230);
-  --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(65% 0.18 145);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(80% 0.15 80);
-  --color-warning-content: oklch(100% 0 0);
-  --color-error: oklch(65% 0.2 25);
-  --color-error-content: oklch(100% 0 0);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 0;
-  --noise: 0;
-}
-
-/* Dark theme - auto-activates via prefers-color-scheme */
-@plugin "daisyui/theme" {
-  name: "openseo-dark";
-  prefersdark: true;
+/* Halo is dark-first: dark is the default and the .dark theme. */
+:root,
+.dark,
+[data-theme="dark"] {
   color-scheme: dark;
-  --color-base-100: oklch(18% 0 0);
-  --color-base-200: oklch(12% 0 0);
-  --color-base-300: oklch(27% 0 0);
-  --color-base-content: oklch(92% 0 0);
-  --color-primary: oklch(66% 0.12 262);
-  --color-primary-content: oklch(100% 0 0);
-  --color-secondary: oklch(60% 0.15 145);
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(66% 0.12 262);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(85% 0 0);
-  --color-neutral-content: oklch(20% 0 0);
-  --color-info: oklch(70% 0.15 230);
-  --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(65% 0.18 145);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(80% 0.15 80);
-  --color-warning-content: oklch(100% 0 0);
-  --color-error: oklch(65% 0.2 25);
-  --color-error-content: oklch(100% 0 0);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 0;
-  --noise: 0;
+  --background: oklch(0.18 0.004 286);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(1 0 0 / 0.06);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.24 0.004 286 / 0.9);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.62 0.2 256);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(1 0 0 / 0.08);
+  --secondary-foreground: oklch(0.85 0 0);
+  --muted: oklch(1 0 0 / 0.05);
+  --muted-foreground: oklch(0.66 0.005 286);
+  --accent: oklch(1 0 0 / 0.08);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+  --signature: oklch(0.72 0.19 52);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.06);
+  --ring: oklch(0.62 0.2 256);
+  /* Glow and shadow inks; Halo components mix these per theme. */
+  --halo: oklch(1 0 0);
+  --shade: oklch(0 0 0);
+  --radius: 0.875rem;
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.625rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.25rem;
+  --chart-1: var(--primary);
+  --chart-2: oklch(from var(--primary) calc(l - 0.09) calc(c * 0.92) h);
+  --chart-3: oklch(from var(--primary) calc(l - 0.18) calc(c * 0.84) h);
+  --chart-4: oklch(from var(--primary) calc(l - 0.27) calc(c * 0.76) h);
+  --chart-5: oklch(from var(--primary) calc(l - 0.36) calc(c * 0.68) h);
+  /* Status colours the app needs beyond Halo's set. */
+  --success: oklch(0.74 0.16 152);
+  --warning: oklch(0.8 0.15 75);
+  --info: oklch(0.76 0.12 245);
+  /* Text-only tints of primary and destructive: Halo tunes those two for
+     fills, and as small text on dark glass they miss WCAG AA. */
+  --scrollbar-thumb: oklch(1 0 0 / 0.16);
+  --scrollbar-thumb-hover: oklch(1 0 0 / 0.28);
+  --link: oklch(0.76 0.13 256);
+  /* Deeper fills for white-text buttons, so the label clears WCAG AA. */
+  --primary-strong: oklch(0.54 0.2 256);
+  --destructive-strong: oklch(0.52 0.2 25);
+  --negative: oklch(0.74 0.16 25);
+  --trend-grid-color: oklch(78% 0.01 255 / 0.22);
+  --trend-axis-color: oklch(84% 0.01 255 / 0.62);
+  --trend-fill-start-opacity: 0.24;
+  --trend-fill-end-opacity: 0.03;
+  --trend-tooltip-bg: oklch(24% 0.004 286 / 0.95);
+  --trend-tooltip-border: oklch(100% 0 0 / 0.12);
+  --trend-tooltip-shadow: oklch(0% 0 0 / 0.35);
+}
+
+/* Halo light: frosted white panels over a cool pale-grey ground. */
+.light,
+[data-theme="light"] {
+  color-scheme: light;
+  --background: oklch(0.955 0.004 286);
+  --foreground: oklch(0.2 0.004 286);
+  --card: oklch(1 0 0 / 0.72);
+  --card-foreground: oklch(0.18 0.004 286);
+  --popover: oklch(0.995 0.002 286 / 0.9);
+  --popover-foreground: oklch(0.2 0.004 286);
+  --primary: oklch(0.62 0.2 256);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.2 0.004 286 / 0.06);
+  --secondary-foreground: oklch(0.32 0.004 286);
+  --muted: oklch(0.2 0.004 286 / 0.04);
+  /* Halo ships 0.5; on the grey tab track that is 4.3:1, under WCAG AA. */
+  --muted-foreground: oklch(0.47 0.006 286);
+  --accent: oklch(0.2 0.004 286 / 0.06);
+  --accent-foreground: oklch(0.18 0.004 286);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+  --signature: oklch(0.68 0.19 50);
+  --border: oklch(0.2 0.004 286 / 0.1);
+  --input: oklch(0.2 0.004 286 / 0.05);
+  --ring: oklch(0.62 0.2 256);
+  --halo: oklch(0.55 0.08 256);
+  --shade: oklch(0.4 0.025 264 / 0.2);
+  /* App tokens: on a light ground, text tints go darker to keep WCAG AA. */
+  --success: oklch(0.42 0.11 152);
+  --warning: oklch(0.43 0.1 60);
+  --info: oklch(0.43 0.12 245);
+  --scrollbar-thumb: oklch(0.2 0.004 286 / 0.2);
+  --scrollbar-thumb-hover: oklch(0.2 0.004 286 / 0.34);
+  --link: oklch(0.45 0.18 256);
+  --negative: oklch(0.42 0.17 25);
+  /* The gradient's 85% end lightens over a pale page; white labels need a
+     deeper blue there to clear WCAG AA. */
+  --primary-strong: oklch(0.49 0.2 256);
+  --trend-grid-color: oklch(40% 0.01 255 / 0.16);
+  --trend-axis-color: oklch(38% 0.01 255 / 0.72);
+  --trend-fill-start-opacity: 0.18;
+  --trend-fill-end-opacity: 0.02;
+  --trend-tooltip-bg: oklch(99.5% 0.002 286 / 0.96);
+  --trend-tooltip-border: oklch(20% 0.004 286 / 0.1);
+  --trend-tooltip-shadow: oklch(32% 0.03 264 / 0.18);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    letter-spacing: -0.01em;
+    scrollbar-gutter: stable;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+  /* Scrollbars are painted, never the OS default: thin, on a transparent
+     track, in the interface's own colours. Scrolling behaviour is native. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 0.125rem solid transparent;
+    border-radius: 624.9375rem;
+    background: var(--scrollbar-thumb) content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
 }
 
 html,
 body {
-  @apply m-0 bg-base-200;
+  @apply m-0 bg-background;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100%;
@@ -106,16 +216,6 @@ select {
   @apply text-base;
 }
 
-/* Global input focus styling - use primary color instead of default ring */
-.input:focus,
-.input:focus-visible,
-.textarea:focus,
-.textarea:focus-visible {
-  outline: none;
-  border-color: var(--color-primary);
-  background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
-}
-
 /* Safe area utilities for mobile devices */
 @layer utilities {
   .pb-safe {
@@ -126,18 +226,6 @@ select {
   }
 }
 
-/* Override DaisyUI dock's fixed positioning to use flex layout instead */
-/* This allows the TabBar to work correctly with Safari's browser toolbar */
-.dock {
-  position: relative;
-  bottom: auto;
-  left: auto;
-  right: auto;
-  border-top: none;
-  height: 4rem;
-  padding-bottom: 0;
-}
-
 /* Touch device optimizations */
 @media (pointer: coarse) {
   html {
@@ -146,66 +234,6 @@ select {
   body {
     touch-action: pan-x pan-y;
   }
-}
-
-/* Dark mode: neutral interactive surfaces should lift above the panel, not
-   sink below it. DaisyUI derives default buttons and the tabs-box well from
-   base-200, which is darker than the base-100 content panel in dark mode,
-   so they read as sunken/disabled. Colored variants (primary, error, ...)
-   set their own --btn-color and are excluded. */
-html[data-theme="openseo-dark"]
-  .btn:not(
-    .btn-primary,
-    .btn-error,
-    .btn-neutral,
-    .btn-ghost,
-    .btn-outline,
-    .btn-soft
-  ) {
-  --btn-color: oklch(25% 0 0);
-}
-
-/* Light mode: the base-200 default button is nearly invisible on the
-   base-100 content panel; use a white surface with a visible border,
-   matching inputs/selects. */
-html[data-theme="openseo"]
-  .btn:not(
-    .btn-primary,
-    .btn-error,
-    .btn-neutral,
-    .btn-ghost,
-    .btn-outline,
-    .btn-soft
-  ) {
-  --btn-color: var(--color-base-100);
-  --btn-border: var(--color-base-300);
-}
-
-/* Underline tabs: DaisyUI's tabs-border underlines the active tab with
-   currentColor; use the primary accent instead (PostHog-style). */
-.tabs-border > .tab.tab-active::before {
-  --tab-border-color: var(--color-primary);
-}
-
-/* Custom alert styling with darker borders and transparent background */
-.alert {
-  @apply flex gap-3 rounded-lg border p-4 text-base-content/70;
-}
-
-.alert-warning {
-  @apply border-warning/70 bg-warning/40 text-base-content/90;
-}
-
-.alert-info {
-  @apply border-info/70 bg-info/40 text-base-content/90;
-}
-
-.alert-success {
-  @apply border-success/70 bg-success/40 text-base-content/90;
-}
-
-.alert-error {
-  @apply border-error/70 bg-error/40 text-base-content/90;
 }
 
 /* Tag chip colors — muted background + readable text in both themes.
@@ -251,101 +279,33 @@ html[data-theme="openseo"]
   --tw-ring-color: color-mix(in oklab, #d946ef 30%, transparent);
 }
 
-html[data-theme="openseo-dark"] .tag-chip-slate {
+html[data-theme="dark"] .tag-chip-slate {
   color: #cbd5e1;
 }
-html[data-theme="openseo-dark"] .tag-chip-rose {
+html[data-theme="dark"] .tag-chip-rose {
   color: #fda4af;
 }
-html[data-theme="openseo-dark"] .tag-chip-amber {
+html[data-theme="dark"] .tag-chip-amber {
   color: #fcd34d;
 }
-html[data-theme="openseo-dark"] .tag-chip-lime {
+html[data-theme="dark"] .tag-chip-lime {
   color: #d9f99d;
 }
-html[data-theme="openseo-dark"] .tag-chip-emerald {
+html[data-theme="dark"] .tag-chip-emerald {
   color: #6ee7b7;
 }
-html[data-theme="openseo-dark"] .tag-chip-sky {
+html[data-theme="dark"] .tag-chip-sky {
   color: #7dd3fc;
 }
-html[data-theme="openseo-dark"] .tag-chip-violet {
+html[data-theme="dark"] .tag-chip-violet {
   color: #c4b5fd;
 }
-html[data-theme="openseo-dark"] .tag-chip-fuchsia {
+html[data-theme="dark"] .tag-chip-fuchsia {
   color: #f5d0fe;
 }
 
 /* Keyword difficulty score badges — muted/transparent style to match tag chips */
-.score-badge {
-  @apply ring-1 ring-inset;
-}
-
-.score-tier-na {
-  background-color: color-mix(in oklab, #94a3b8 12%, transparent);
-  color: #475569;
-  --tw-ring-color: color-mix(in oklab, #94a3b8 28%, transparent);
-}
-
-.score-tier-1 {
-  background-color: color-mix(in oklab, #10b981 15%, transparent);
-  color: #065f46;
-  --tw-ring-color: color-mix(in oklab, #10b981 30%, transparent);
-}
-
-.score-tier-2 {
-  background-color: color-mix(in oklab, #84cc16 15%, transparent);
-  color: #3f6212;
-  --tw-ring-color: color-mix(in oklab, #84cc16 30%, transparent);
-}
-
-.score-tier-3 {
-  background-color: color-mix(in oklab, #eab308 16%, transparent);
-  color: #854d0e;
-  --tw-ring-color: color-mix(in oklab, #eab308 32%, transparent);
-}
-
-.score-tier-4 {
-  background-color: color-mix(in oklab, #f97316 16%, transparent);
-  color: #9a3412;
-  --tw-ring-color: color-mix(in oklab, #f97316 32%, transparent);
-}
-
-.score-tier-5 {
-  background-color: color-mix(in oklab, #ef4444 15%, transparent);
-  color: #991b1b;
-  --tw-ring-color: color-mix(in oklab, #ef4444 30%, transparent);
-}
-
-.score-tier-6 {
-  background-color: color-mix(in oklab, #b91c1c 18%, transparent);
-  color: #7f1d1d;
-  --tw-ring-color: color-mix(in oklab, #b91c1c 32%, transparent);
-}
-
-html[data-theme="openseo-dark"] .score-tier-na {
-  color: #cbd5e1;
-}
-html[data-theme="openseo-dark"] .score-tier-1 {
-  color: #6ee7b7;
-}
-html[data-theme="openseo-dark"] .score-tier-2 {
-  color: #bef264;
-}
-html[data-theme="openseo-dark"] .score-tier-3 {
-  color: #fde047;
-}
-html[data-theme="openseo-dark"] .score-tier-4 {
-  color: #fdba74;
-}
-html[data-theme="openseo-dark"] .score-tier-5 {
-  color: #fca5a5;
-}
-html[data-theme="openseo-dark"] .score-tier-6 {
-  color: #fda4af;
-}
-
-html[data-theme="openseo-dark"] {
+html[data-theme="dark"] {
   --trend-grid-color: oklch(78% 0.01 255 / 0.22);
   --trend-axis-color: oklch(84% 0.01 255 / 0.62);
   --trend-fill-start-opacity: 0.24;
@@ -353,20 +313,4 @@ html[data-theme="openseo-dark"] {
   --trend-tooltip-bg: oklch(21% 0.01 255 / 0.95);
   --trend-tooltip-border: oklch(40% 0.01 255 / 0.65);
   --trend-tooltip-shadow: oklch(0% 0 0 / 0.35);
-}
-
-html[data-theme="openseo-dark"] .alert-warning {
-  @apply border-warning/60 bg-warning/20;
-}
-
-html[data-theme="openseo-dark"] .alert-info {
-  @apply border-info/60 bg-info/20;
-}
-
-html[data-theme="openseo-dark"] .alert-success {
-  @apply border-success/60 bg-success/20;
-}
-
-html[data-theme="openseo-dark"] .alert-error {
-  @apply border-error/60 bg-error/20;
 }

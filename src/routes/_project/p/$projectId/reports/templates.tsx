@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ChevronLeft, Plus } from "lucide-react";
+import { ChevronLeft, Plus } from "@/client/components/icons";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "@/client/components/ConfirmDeleteModal";
 import { ReportTemplateForm } from "@/client/features/reports/ReportTemplateForm";
@@ -15,6 +15,9 @@ import {
 } from "@/serverFunctions/reportTemplates";
 import type { ReportTemplate } from "@/types/schemas/report-templates";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 export const Route = createFileRoute(
   "/_project/p/$projectId/reports/templates",
 )({
@@ -73,7 +76,7 @@ function ReportTemplatesPage() {
         <Link
           to="/p/$projectId/reports"
           params={{ projectId }}
-          className="inline-flex items-center gap-1 text-sm text-base-content/60 transition-colors hover:text-base-content"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="size-4" />
           Reports
@@ -82,34 +85,35 @@ function ReportTemplatesPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Report templates</h1>
-            <p className="text-sm text-base-content/70">
+            <p className="text-sm text-muted-foreground">
               Reusable briefs your agents follow when they write a report: who
               it is for, which sections it has, and how it should sound.
             </p>
           </div>
-          <button
+          <Button
+            size="sm"
             type="button"
-            className="btn btn-primary btn-sm gap-1.5"
+            className="gap-1.5"
             onClick={() => setForm({})}
           >
             <Plus className="size-4" />
             New template
-          </button>
+          </Button>
         </div>
 
         {templatesQuery.isPending ? (
           <div className="flex justify-center py-10">
-            <span className="loading loading-spinner loading-md" />
+            <Spinner />
           </div>
         ) : templatesQuery.isError ? (
-          <div className="alert alert-error">
-            <span className="text-sm">
+          <Alert variant="destructive">
+            <AlertDescription className="text-sm">
               {getStandardErrorMessage(
                 templatesQuery.error,
                 "Failed to load templates",
               )}
-            </span>
-          </div>
+            </AlertDescription>
+          </Alert>
         ) : (
           <ReportTemplatesList
             templates={templatesQuery.data.templates}

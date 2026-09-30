@@ -7,6 +7,7 @@ import {
   mergeLegacyWorkspaces,
 } from "@/serverFunctions/workspace";
 
+import { Button } from "@/client/components/ui/button";
 // Shown on self-hosted Cloudflare Access deployments that still have per-user
 // workspaces from before the shared workspace existed. The server decides
 // visibility (AUTH_MODE is a runtime var there); hosted builds skip the query
@@ -51,14 +52,15 @@ export function WorkspaceMergeBanner() {
         workspace. Clicking the button below will migrate everyone&apos;s
         previous work into this shared workspace.
       </p>
-      <button
+      <Button
+        size="sm"
         type="button"
-        className="btn btn-primary btn-sm mt-4"
+        className="mt-4"
         disabled={mergeMutation.isPending}
         onClick={() => mergeMutation.mutate()}
       >
         {mergeMutation.isPending ? "Migrating…" : "Migrate organizations"}
-      </button>
+      </Button>
     </div>
   );
 }

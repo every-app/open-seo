@@ -39,7 +39,7 @@ const baseColumns = [
         <SafeExternalLink
           url={getDomainWebsiteHref(domain)}
           label={domain}
-          className="link link-primary link-hover break-all inline-flex items-center gap-1"
+          className="text-link underline-offset-4 hover:underline break-all inline-flex items-center gap-1"
         />
       );
     },
@@ -116,7 +116,7 @@ const baseColumns = [
     cell: ({ row }) => (
       <div className="text-sm">
         <div>Broken links: {formatNumber(row.original.brokenBacklinks)}</div>
-        <div className="text-base-content/55">
+        <div className="text-muted-foreground">
           Broken pages: {formatNumber(row.original.brokenPages)}
         </div>
       </div>

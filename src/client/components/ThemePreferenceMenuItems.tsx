@@ -1,4 +1,15 @@
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "@/client/components/icons";
+import {
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/client/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
 
 const THEME_OPTIONS: {
@@ -15,46 +26,40 @@ export function ThemePreferenceMenuItems() {
   const { themePreference, setThemePreference } = useThemePreference();
 
   return (
-    <>
-      <li className="menu-title pt-2">
-        <span>Theme</span>
-      </li>
-
-      <li>
-        <div
-          role="radiogroup"
-          aria-label="Theme preference"
-          className="flex gap-0.5 rounded-lg bg-base-200 p-0.5"
-        >
-          {THEME_OPTIONS.map((option) => {
-            const isActive = option.value === themePreference;
-            const Icon = option.icon;
-
-            return (
-              <div
-                key={option.value}
-                className="tooltip tooltip-bottom flex flex-1 before:whitespace-nowrap"
-                data-tip={option.label}
-              >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={isActive}
+    <DropdownMenuGroup>
+      <DropdownMenuLabel className="pt-2">Theme</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        aria-label="Theme preference"
+        className="mx-1 mb-1 flex gap-0.5 rounded-full bg-muted p-0.5"
+        value={themePreference}
+        onValueChange={(value) => {
+          const option = THEME_OPTIONS.find((item) => item.value === value);
+          if (option) setThemePreference(option.value);
+        }}
+      >
+        {THEME_OPTIONS.map((option) => {
+          const Icon = option.icon;
+          return (
+            <Tooltip key={option.value}>
+              <TooltipTrigger render={<span className="flex flex-1" />}>
+                {/* Icon-only segment: the radio dot (the item's only <span>
+                    child) is hidden, the pressed segment is lifted instead. */}
+                <DropdownMenuRadioItem
+                  value={option.value}
+                  closeOnClick={false}
                   aria-label={option.label}
-                  className={`flex flex-1 cursor-pointer items-center justify-center rounded-md px-2.5 py-1.5 transition-colors ${
-                    isActive
-                      ? "bg-base-100 text-base-content shadow-sm"
-                      : "text-base-content/50 hover:text-base-content/80"
-                  }`}
-                  onClick={() => setThemePreference(option.value)}
+                  className="flex-1 justify-center rounded-full px-2.5 py-1.5 text-muted-foreground hover:text-foreground data-checked:bg-card data-checked:text-foreground data-checked:shadow-sm [&>span]:hidden"
                 >
                   <Icon className="size-4" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </li>
-    </>
+                </DropdownMenuRadioItem>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="whitespace-nowrap">
+                {option.label}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </DropdownMenuRadioGroup>
+    </DropdownMenuGroup>
   );
 }

@@ -6,7 +6,11 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Check, ChevronDown, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, Plus } from "@/client/components/icons";
+
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+import { PropertySearchField } from "./PropertySearchField";
 
 type Selection = { accountId: string; propertyId: string };
 type Property = {
@@ -104,15 +108,15 @@ export function GooglePropertyPicker({
     trigger.current?.focus();
   };
   const saveButton = (
-    <button
+    <Button
+      size="sm"
       hidden={readOnly}
       type="button"
-      className="btn btn-primary btn-sm"
       onClick={onSave}
       disabled={!canSave || saving}
     >
       {saving ? "Saving…" : saveLabel}
-    </button>
+    </Button>
   );
   return (
     <div className="space-y-4">
@@ -132,13 +136,14 @@ export function GooglePropertyPicker({
         <p className="mb-2 text-sm font-medium">
           {readOnly ? "Manage Google accounts" : "Choose property"}
         </p>
-        <button
-          ref={trigger}
+        <Button
+          variant="outline"
           type="button"
+          ref={trigger}
           aria-expanded={open}
           aria-controls={panelId}
           disabled={saving}
-          className="flex w-full items-center justify-between gap-3 rounded-lg border border-base-300 px-3.5 py-3 text-left text-sm hover:bg-base-200/40 disabled:opacity-50"
+          className="h-auto w-full justify-between gap-3 whitespace-normal px-3.5 py-3 text-left font-normal"
           onClick={() => {
             setOpen(!open);
             setSearch("");
@@ -149,52 +154,43 @@ export function GooglePropertyPicker({
               {selected?.name ?? "Select a property…"}
             </span>
             {selectedAccount ? (
-              <span className="mt-0.5 block truncate text-xs text-base-content/50">
+              <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                 {accountLabel(selectedAccount)}
               </span>
             ) : null}
           </span>
-          <ChevronDown className="size-4 shrink-0 text-base-content/50" />
-        </button>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+        </Button>
         {open ? (
           <div
             id={panelId}
             role="region"
             aria-label="Google properties"
-            className="mt-2 overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-sm"
+            className="mt-2 overflow-hidden rounded-xl border border-border"
             onKeyDown={(event) => handlePropertyKeyDown(event, close)}
           >
-            <label className="flex items-center gap-2 border-b border-base-300 px-3.5 py-3">
-              <Search className="size-4 shrink-0 text-base-content/40" />
-              <input
-                autoFocus
-                type="search"
-                aria-label="Search properties or accounts"
-                placeholder="Search properties or accounts…"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="min-w-0 w-full bg-transparent text-sm outline-none"
-              />
-            </label>
+            <PropertySearchField value={search} onChange={setSearch} />
             <div className="max-h-72 overflow-y-auto overscroll-contain p-1.5">
               {loading ? (
-                <p
+                <div
                   role="status"
-                  className="flex items-center gap-2 p-3 text-sm text-base-content/60"
+                  className="flex items-center gap-2 p-3 text-sm text-muted-foreground"
                 >
-                  <span className="loading loading-spinner loading-xs" />
+                  <Spinner size="sm" />
                   Loading properties…
-                </p>
+                </div>
               ) : error ? (
                 <div role="alert" className="p-3 text-sm">
-                  <p className="text-error">Couldn't load properties.</p>
-                  <button
+                  <p className="text-negative">Couldn't load properties.</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     type="button"
-                    className="btn btn-ghost btn-sm mt-1"
+                    className="mt-1"
                     onClick={onRetry}
                   >
                     Try again
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <>
@@ -205,51 +201,57 @@ export function GooglePropertyPicker({
                       role="group"
                       aria-label={accountLabel(account)}
                     >
-                      <div className="flex items-center justify-between gap-2 px-2 py-2 text-xs font-medium text-base-content/55">
+                      <div className="flex items-center justify-between gap-2 px-2 py-2 text-xs font-medium text-muted-foreground">
                         <span className="min-w-0 break-all">
                           {accountLabel(account)}
                         </span>
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           type="button"
-                          className="btn btn-ghost btn-xs shrink-0 text-error"
+                          className="h-7 px-2.5 shrink-0 text-negative"
                           disabled={saving}
                           onClick={() => setRemoving(account)}
                           aria-label={`Remove ${accountLabel(account)}`}
                         >
                           Remove account
-                        </button>
+                        </Button>
                       </div>
                       {account.requiresReconnect ? (
                         <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 text-sm">
-                          <span className="text-base-content/60">
+                          <span className="text-muted-foreground">
                             Connection expired
                           </span>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             type="button"
-                            className="btn btn-ghost btn-xs"
+                            className="h-7 px-2.5"
                             onClick={onReconnect}
                             aria-label={`Reconnect ${accountLabel(account)}`}
                             disabled={linking}
                             aria-busy={linking}
                           >
                             {linking ? "Opening Google…" : "Reconnect"}
-                          </button>
+                          </Button>
                         </div>
                       ) : account.unavailable ? (
                         <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 text-sm">
-                          <span className="text-base-content/60">
+                          <span className="text-muted-foreground">
                             Couldn't load properties
                           </span>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             type="button"
-                            className="btn btn-ghost btn-xs"
+                            className="h-7 px-2.5"
                             onClick={onRetry}
                           >
                             Try again
-                          </button>
+                          </Button>
                         </div>
                       ) : account.properties.length === 0 ? (
-                        <p className="px-2 pb-3 text-sm text-base-content/50">
+                        <p className="px-2 pb-3 text-sm text-muted-foreground">
                           No properties available
                         </p>
                       ) : (
@@ -258,7 +260,8 @@ export function GooglePropertyPicker({
                             selection?.accountId === account.accountId &&
                             selection?.propertyId === property.id;
                           return (
-                            <button
+                            <Button
+                              variant="ghost"
                               key={property.id}
                               data-property
                               type="button"
@@ -266,7 +269,7 @@ export function GooglePropertyPicker({
                               disabled={
                                 readOnly || !property.selectable || saving
                               }
-                              className={`flex w-full items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left text-sm hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-40 ${chosen ? "bg-base-200" : ""}`}
+                              className={`h-auto w-full justify-between gap-3 whitespace-normal rounded-md px-2 py-2.5 text-left font-normal text-foreground ${chosen ? "bg-muted" : ""}`}
                               onClick={() => {
                                 onSelect({
                                   accountId: account.accountId,
@@ -280,7 +283,7 @@ export function GooglePropertyPicker({
                                   {property.name}
                                 </span>
                                 {property.detail ? (
-                                  <span className="mt-0.5 block text-xs text-base-content/50">
+                                  <span className="mt-0.5 block text-xs text-muted-foreground">
                                     {property.detail}
                                   </span>
                                 ) : null}
@@ -293,14 +296,14 @@ export function GooglePropertyPicker({
                               {chosen ? (
                                 <Check className="size-4 shrink-0" />
                               ) : null}
-                            </button>
+                            </Button>
                           );
                         })
                       )}
                     </div>
                   ))}
                   {filtered.length === 0 ? (
-                    <p className="p-3 text-sm text-base-content/50">
+                    <p className="p-3 text-sm text-muted-foreground">
                       {query
                         ? "No matching properties or accounts"
                         : "Add a Google account to find properties."}
@@ -309,21 +312,18 @@ export function GooglePropertyPicker({
                 </>
               )}
             </div>
-            <div className="border-t border-base-300 p-1.5">
-              <button
+            <div className="border-t border-border p-1.5">
+              <Button
+                variant="ghost"
                 type="button"
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm font-medium hover:bg-base-200"
+                className="h-auto w-full justify-start gap-2 whitespace-normal rounded-md px-2 py-2.5 text-left font-medium text-foreground"
                 onClick={onReconnect}
                 disabled={saving || linking}
                 aria-busy={linking}
               >
-                {linking ? (
-                  <span className="loading loading-spinner loading-xs" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
+                {linking ? <Spinner size="sm" /> : <Plus className="size-4" />}
                 {linking ? "Opening Google…" : "Add Google account"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -334,14 +334,15 @@ export function GooglePropertyPicker({
         <div className="flex flex-wrap items-center gap-1">
           {saveButton}
           {secondaryAction ? (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className="btn btn-ghost btn-sm"
               disabled={saving || secondaryAction.disabled}
               onClick={secondaryAction.onClick}
             >
               {secondaryAction.label}
-            </button>
+            </Button>
           ) : null}
         </div>
       )}

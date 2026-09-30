@@ -98,7 +98,7 @@ export function KeywordResearchDesktopTable({
         meta: {
           headerClassName: "text-right",
           cellClassName:
-            "whitespace-nowrap text-right tabular-nums text-base-content/70",
+            "whitespace-nowrap text-right tabular-nums text-muted-foreground",
         },
       }),
       keywordColumnHelper.accessor("cpc", {
@@ -120,7 +120,7 @@ export function KeywordResearchDesktopTable({
         meta: {
           headerClassName: "text-right",
           cellClassName:
-            "whitespace-nowrap text-right tabular-nums text-base-content/70",
+            "whitespace-nowrap text-right tabular-nums text-muted-foreground",
         },
       }),
       keywordColumnHelper.accessor("competition", {
@@ -142,7 +142,7 @@ export function KeywordResearchDesktopTable({
         meta: {
           headerClassName: "text-right",
           cellClassName:
-            "whitespace-nowrap text-right tabular-nums text-base-content/70",
+            "whitespace-nowrap text-right tabular-nums text-muted-foreground",
         },
       }),
       keywordColumnHelper.accessor("keywordDifficulty", {
@@ -200,10 +200,11 @@ export function KeywordResearchDesktopTable({
       ) : (
         <AppDataTable
           table={table}
-          className="table table-xs min-w-max md:w-full"
+          density="xs"
+          className="min-w-max md:w-full"
           wrapperClassName="h-full overflow-auto"
           getRowProps={(row) => ({
-            className: `cursor-pointer border-b border-base-200 hover:bg-base-200/50 ${
+            className: `cursor-pointer border-b border-border hover:bg-muted/50 ${
               overviewKeyword?.keyword === row.original.keyword
                 ? "bg-primary/5 border-l-2 border-l-primary"
                 : ""

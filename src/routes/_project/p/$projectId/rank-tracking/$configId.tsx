@@ -5,6 +5,8 @@ import { getRankTrackingConfigs } from "@/serverFunctions/rank-tracking";
 import { RankTrackingDomainDetail } from "@/client/features/rank-tracking/RankTrackingDomainDetail";
 import { RankTrackingConfigModal } from "@/client/features/rank-tracking/RankTrackingConfigModal";
 
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 export const Route = createFileRoute(
   "/_project/p/$projectId/rank-tracking/$configId",
 )({
@@ -43,7 +45,7 @@ function RankTrackingConfigRoute() {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -51,12 +53,12 @@ function RankTrackingConfigRoute() {
   if (!config) {
     return (
       <>
-        <p className="text-sm text-base-content/70">
+        <p className="text-sm text-muted-foreground">
           Domain configuration not found.
         </p>
-        <button className="btn btn-ghost btn-sm" onClick={handleBack}>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
           Back to domains
-        </button>
+        </Button>
       </>
     );
   }

@@ -13,6 +13,11 @@ import { authClient } from "@/lib/auth-client";
 import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
 
+import { Button } from "@/client/components/ui/button";
+import { Field, FieldError } from "@/client/components/ui/field";
+import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+
 const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
   password: z.string().min(1, "Enter your password."),
@@ -127,15 +132,15 @@ function SignInPage() {
           <div
             className={
               showEmailForm
-                ? "flex justify-between text-sm text-base-content/50"
-                : "text-sm text-base-content/50"
+                ? "flex justify-between text-sm text-muted-foreground"
+                : "text-sm text-muted-foreground"
             }
           >
             {showEmailForm ? (
               <Link
                 to="/forgot-password"
                 search={getSignInSearch(redirectTo)}
-                className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
               >
                 Forgot password?
               </Link>
@@ -143,7 +148,7 @@ function SignInPage() {
             <Link
               to="/sign-up"
               search={getSignInSearch(redirectTo)}
-              className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+              className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Create account
             </Link>
@@ -166,7 +171,7 @@ function SignInPage() {
             }}
           />
           {socialError ? (
-            <p className="text-sm text-error">{socialError}</p>
+            <p className="text-sm text-negative">{socialError}</p>
           ) : null}
         </>
       ) : (
@@ -182,10 +187,11 @@ function SignInPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
-                  <input
+                <Field>
+                  <Label htmlFor="sign-in-email">Email</Label>
+                  <Input
+                    id="sign-in-email"
                     type="email"
-                    className="input input-bordered w-full"
                     placeholder="Email address..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -193,10 +199,8 @@ function SignInPage() {
                     disabled={!isHostedMode}
                     required
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -206,10 +210,11 @@ function SignInPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
-                  <input
+                <Field>
+                  <Label htmlFor="sign-in-password">Password</Label>
+                  <Input
+                    id="sign-in-password"
                     type="password"
-                    className="input input-bordered w-full"
                     placeholder="Password..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -217,10 +222,8 @@ function SignInPage() {
                     disabled={!isHostedMode}
                     required
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -236,14 +239,15 @@ function SignInPage() {
               return (
                 <>
                   {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
+                    <FieldError>{errorMessage}</FieldError>
                   ) : null}
-                  <button
-                    className="btn btn-soft w-full"
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >
                     {isSubmitting ? "Signing in..." : "Sign in"}
-                  </button>
+                  </Button>
                 </>
               );
             }}

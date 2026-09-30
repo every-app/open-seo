@@ -2,12 +2,20 @@ import { createPortal } from "react-dom";
 import type { KeywordIntent } from "@/types/keywords";
 import { FloatingTooltip, useFloatingTooltip } from "./FloatingTooltip";
 
-const COLORS: Record<KeywordIntent, string> = {
-  informational: "border-info/30 bg-info/15 text-info",
-  commercial: "border-warning/35 bg-warning/20 text-warning",
-  transactional: "border-success/30 bg-success/15 text-success",
-  navigational: "border-primary/30 bg-primary/15 text-primary",
-  unknown: "border-base-300 bg-base-200 text-base-content/60",
+import { badgeVariants } from "@/client/components/ui/badge";
+import { cn } from "@/client/lib/utils";
+
+// Badge variant per intent. Informational has no Badge variant of its own, so
+// it tints the default badge with the info token.
+const INTENT_BADGE_CLASSES: Record<KeywordIntent, string> = {
+  informational: badgeVariants({
+    size: "lg",
+    className: "bg-info/15 text-info",
+  }),
+  commercial: badgeVariants({ variant: "warning", size: "lg" }),
+  transactional: badgeVariants({ variant: "success", size: "lg" }),
+  navigational: badgeVariants({ variant: "primary", size: "lg" }),
+  unknown: badgeVariants({ variant: "secondary", size: "lg" }),
 };
 
 const SHORT_LABELS: Record<KeywordIntent, string> = {
@@ -65,7 +73,10 @@ export function IntentBadge({ intent }: { intent: KeywordIntent }) {
   return (
     <span
       ref={tooltip.triggerRef}
-      className={`inline-flex h-6 min-w-11 cursor-help items-center justify-center rounded-full border px-2 text-xs font-semibold leading-none ${COLORS[intent]}`}
+      className={cn(
+        INTENT_BADGE_CLASSES[intent],
+        "min-w-11 cursor-help font-semibold leading-none",
+      )}
       tabIndex={0}
       aria-label={`${details.label} search intent`}
       aria-describedby={tooltip.isOpen ? tooltip.tooltipId : undefined}

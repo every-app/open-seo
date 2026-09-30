@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Trash2 } from "@/client/components/icons";
+import { useState, useId } from "react";
 import { toast } from "sonner";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { CopyButton } from "@/client/features/ai-mcp/SetupControls";
@@ -8,10 +8,33 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
+import { Field } from "@/client/components/ui/field";
+import { Label } from "@/client/components/ui/label";
+
 // Better Auth rejects longer names with INVALID_NAME_LENGTH.
 const MAX_KEY_NAME_LENGTH = 32;
 
 export function ApiKeySettings() {
+  const apiKeyNameId = useId();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -85,19 +108,19 @@ export function ApiKeySettings() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-base-content/50">API keys</h2>
+      <h2 className="text-sm font-medium text-muted-foreground">API keys</h2>
       <div className="flex items-start justify-between gap-6">
         <div>
           <p className="text-sm">
             Authenticate MCP clients when OAuth doesn't work
           </p>
-          <p className="mt-1 text-sm text-base-content/60">
+          <p className="mt-1 text-sm text-muted-foreground">
             Use this for remote agents like Hermes where the normal login flow
             doesn't work.
           </p>
           <p className="mt-1 text-sm">
             <a
-              className="link link-primary"
+              className="underline underline-offset-4 text-link"
               href="https://openseo.so/docs/mcp"
               target="_blank"
               rel="noreferrer"
@@ -106,102 +129,103 @@ export function ApiKeySettings() {
             </a>
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          onClick={() => setIsCreateOpen(true)}
-        >
+        <Button size="sm" type="button" onClick={() => setIsCreateOpen(true)}>
           Create API key
-        </button>
+        </Button>
       </div>
 
       {apiKeysQuery.isError ? (
-        <p className="text-sm text-error">We couldn't load your API keys.</p>
+        <p className="text-sm text-negative">We couldn't load your API keys.</p>
       ) : apiKeys.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-base-300">
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Key</th>
-                <th>Created</th>
-                <th>Last used</th>
-                <th className="w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {apiKeys.map((key) => (
-                <tr key={key.id} className="hover">
-                  <td className="max-w-[220px] truncate font-medium">
-                    {key.name || "Unnamed key"}
-                  </td>
-                  <td
-                    className="font-mono text-xs text-base-content/70"
-                    data-ph-mask
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Key</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Last used</TableHead>
+              <TableHead className="w-10"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {apiKeys.map((key) => (
+              <TableRow key={key.id}>
+                <TableCell className="max-w-[13.75rem] truncate font-medium">
+                  {key.name || "Unnamed key"}
+                </TableCell>
+                <TableCell
+                  className="font-mono text-xs text-muted-foreground"
+                  data-ph-mask
+                >
+                  {key.start || "oseo_"}…
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {key.createdAt.toLocaleDateString()}
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {key.lastRequest
+                    ? key.lastRequest.toLocaleDateString()
+                    : "Never"}
+                </TableCell>
+                <TableCell>
+                  <PortalMenu
+                    ariaLabel={`Actions for ${key.name || "API key"}`}
                   >
-                    {key.start || "oseo_"}…
-                  </td>
-                  <td className="text-xs text-base-content/70">
-                    {key.createdAt.toLocaleDateString()}
-                  </td>
-                  <td className="text-xs text-base-content/70">
-                    {key.lastRequest
-                      ? key.lastRequest.toLocaleDateString()
-                      : "Never"}
-                  </td>
-                  <td>
-                    <PortalMenu
-                      ariaLabel={`Actions for ${key.name || "API key"}`}
-                    >
-                      {(close) => (
-                        <li>
-                          <button
-                            className="text-error"
-                            disabled={
-                              revokeMutation.isPending &&
-                              revokeMutation.variables === key.id
-                            }
-                            onClick={() => {
-                              close();
-                              if (
-                                window.confirm(
-                                  `Revoke "${key.name || "Unnamed key"}"? Clients using it will stop working.`,
-                                )
-                              ) {
-                                revokeMutation.mutate(key.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="size-3.5" />
-                            Revoke key
-                          </button>
-                        </li>
-                      )}
-                    </PortalMenu>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {(close) => (
+                      <DropdownMenuItem
+                        className="text-negative"
+                        disabled={
+                          revokeMutation.isPending &&
+                          revokeMutation.variables === key.id
+                        }
+                        onClick={() => {
+                          close();
+                          if (
+                            window.confirm(
+                              `Revoke "${key.name || "Unnamed key"}"? Clients using it will stop working.`,
+                            )
+                          ) {
+                            revokeMutation.mutate(key.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Revoke key
+                      </DropdownMenuItem>
+                    )}
+                  </PortalMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       ) : null}
 
       {isCreateOpen ? (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
+        <Dialog
+          open
+          // No backdrop close on the reveal step: the key is shown once.
+          disablePointerDismissal={createdKey !== null}
+          onOpenChange={(open) => {
+            if (!open) closeCreateModal();
+          }}
+        >
+          <DialogContent className="max-w-md" showClose={createdKey === null}>
             {createdKey ? (
               <>
-                <h3 className="text-lg font-bold">Copy your new API key</h3>
-                <p className="mt-2 text-sm text-base-content/60">
-                  It won't be shown again. Send it as{" "}
-                  <span className="font-mono text-xs">
-                    Authorization: Bearer
-                  </span>{" "}
-                  to <span className="font-mono text-xs">{mcpUrl}</span>.
-                </p>
-                <div className="mt-4 flex items-center gap-2">
+                <DialogHeader>
+                  <DialogTitle>Copy your new API key</DialogTitle>
+                  <DialogDescription>
+                    It won't be shown again. Send it as{" "}
+                    <span className="font-mono text-xs">
+                      Authorization: Bearer
+                    </span>{" "}
+                    to <span className="font-mono text-xs">{mcpUrl}</span>.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex items-center gap-2">
                   <code
-                    className="min-w-0 flex-1 overflow-x-auto rounded bg-base-200 px-2.5 py-2 font-mono text-xs"
+                    className="min-w-0 flex-1 overflow-x-auto rounded bg-muted px-2.5 py-2 font-mono text-xs"
                     data-ph-mask
                   >
                     {createdKey}
@@ -212,30 +236,25 @@ export function ApiKeySettings() {
                     iconOnly
                   />
                 </div>
-                <div className="modal-action">
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    onClick={closeCreateModal}
-                  >
+                <DialogFooter>
+                  <Button size="sm" type="button" onClick={closeCreateModal}>
                     Done
-                  </button>
-                </div>
+                  </Button>
+                </DialogFooter>
               </>
             ) : (
               <form
+                className="space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (name.trim()) createMutation.mutate(name.trim());
                 }}
               >
-                <h3 className="text-lg font-bold">Create API key</h3>
-                <label className="form-control mt-4 w-full">
-                  <span className="label-text pb-1 text-xs text-base-content/60">
-                    Name
-                  </span>
-                  <input
-                    className="input input-sm input-bordered w-full"
+                <DialogTitle>Create API key</DialogTitle>
+                <Field>
+                  <Label htmlFor={apiKeyNameId}>Name</Label>
+                  <Input
+                    id={apiKeyNameId}
                     placeholder="Claude Code on laptop"
                     value={name}
                     maxLength={MAX_KEY_NAME_LENGTH}
@@ -243,33 +262,28 @@ export function ApiKeySettings() {
                     required
                     autoFocus
                   />
-                </label>
-                <div className="modal-action">
-                  <button
+                </Field>
+                <DialogFooter>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     type="button"
-                    className="btn btn-ghost btn-sm"
                     onClick={closeCreateModal}
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    size="sm"
                     type="submit"
-                    className="btn btn-primary btn-sm"
                     disabled={createMutation.isPending || !name.trim()}
                   >
                     {createMutation.isPending ? "Creating…" : "Create"}
-                  </button>
-                </div>
+                  </Button>
+                </DialogFooter>
               </form>
             )}
-          </div>
-          {/* No backdrop close on the reveal step: the key is shown once. */}
-          {createdKey ? (
-            <div className="modal-backdrop" />
-          ) : (
-            <div className="modal-backdrop" onClick={closeCreateModal} />
-          )}
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </section>
   );

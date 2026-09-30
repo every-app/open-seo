@@ -21,6 +21,7 @@ import {
 } from "@/client/features/search-performance/SearchPerformanceColumns";
 import { getGa4DashboardReport } from "@/serverFunctions/ga4";
 
+import { Skeleton } from "@/client/components/ui/skeleton";
 function formatTrendDay(date: string): string {
   // Construct in local time: Date.parse("2026-08-01") is UTC midnight, which
   // toLocaleDateString would render as the previous day west of Greenwich.
@@ -55,8 +56,8 @@ function SessionsTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-md border border-base-300 bg-base-100 px-3 py-2 shadow-sm">
-      <p className="text-xs text-base-content/60">
+    <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm">
+      <p className="text-xs text-muted-foreground">
         {label ? formatTrendDay(label) : ""}
       </p>
       <p className="text-sm font-medium tabular-nums">
@@ -106,20 +107,20 @@ export function Ga4Card({
         <div className="space-y-3" aria-busy>
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="skeleton h-16" />
+              <Skeleton key={i} className="h-16" />
             ))}
           </div>
-          <div className="skeleton h-24" />
+          <Skeleton className="h-24" />
         </div>
       ) : reportQuery.isError ? (
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           Couldn&rsquo;t load Google Analytics data. Try again shortly.
         </p>
       ) : report?.connected ? (
         // Covers null (no report row) and 0: a zero-session period would
         // otherwise render an all-zero flatline chart in an empty box.
         !report.totals.sessions ? (
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-muted-foreground">
             No organic search traffic recorded in the last 28 days yet.
           </p>
         ) : (

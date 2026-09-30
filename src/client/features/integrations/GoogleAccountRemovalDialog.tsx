@@ -1,10 +1,18 @@
-import { useEffect, useId, useRef } from "react";
+import { useId } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   getGoogleAccountRemovalImpact,
   removeGoogleAccount,
 } from "@/serverFunctions/googleAccounts";
+
+import { Button } from "@/client/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
 
 export function GoogleAccountRemovalDialog({
   provider,
@@ -19,7 +27,6 @@ export function GoogleAccountRemovalDialog({
   onClose: () => void;
   onRemoved: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const queryClient = useQueryClient();
   const impact = useQuery({
@@ -56,45 +63,38 @@ export function GoogleAccountRemovalDialog({
       onRemoved();
     },
   });
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
   const name = provider === "gsc" ? "Search Console" : "Google Analytics";
   return (
-    <dialog
-      ref={dialog}
-      aria-labelledby={titleId}
-      className="modal"
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!removal.isPending) onClose();
+    <Dialog
+      open
+      // The native dialog closed on Escape only, never on a backdrop click.
+      disablePointerDismissal
+      onOpenChange={(open) => {
+        if (!open && !removal.isPending) onClose();
       }}
     >
-      <div className="modal-box max-w-md space-y-4">
-        <h3 id={titleId} className="text-lg font-semibold">
-          Remove Google account?
-        </h3>
+      <DialogContent aria-labelledby={titleId} className="max-w-md">
+        <DialogTitle id={titleId}>Remove Google account?</DialogTitle>
         <p className="break-all text-sm font-medium">{label}</p>
-        <p className="text-sm text-base-content/70">
+        <DialogDescription>
           This removes the account’s {name} connection from OpenSEO. You can
           reconnect it anytime.
-        </p>
+        </DialogDescription>
         {impact.isPending ? (
-          <p role="status" className="text-sm text-base-content/60">
+          <p role="status" className="text-sm text-muted-foreground">
             Checking connected projects…
           </p>
         ) : impact.isError ? (
           <div role="alert" className="text-sm">
-            <p className="text-error">Couldn't check connected projects.</p>
-            <button
+            <p className="text-negative">Couldn't check connected projects.</p>
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className="btn btn-ghost btn-sm"
               onClick={() => void impact.refetch()}
             >
               Try again
-            </button>
+            </Button>
           </div>
         ) : impact.data.projectCount > 0 ? (
           <p className="text-sm font-medium">
@@ -102,36 +102,38 @@ export function GoogleAccountRemovalDialog({
             project{impact.data.projectCount === 1 ? "" : "s"}.
           </p>
         ) : (
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-muted-foreground">
             No projects will be affected.
           </p>
         )}
         {removal.isError ? (
-          <p role="alert" className="text-sm text-error">
+          <p role="alert" className="text-sm text-negative">
             {getStandardErrorMessage(removal.error)}
           </p>
         ) : null}
         <div className="flex flex-wrap justify-end gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-ghost btn-sm"
             disabled={removal.isPending}
             onClick={onClose}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
             type="button"
-            className="btn btn-error btn-sm"
             disabled={
               !impact.isSuccess || impact.isFetching || removal.isPending
             }
             onClick={() => removal.mutate()}
           >
             {removal.isPending ? "Removing…" : "Remove account"}
-          </button>
+          </Button>
         </div>
-      </div>
-    </dialog>
+      </DialogContent>
+    </Dialog>
   );
 }

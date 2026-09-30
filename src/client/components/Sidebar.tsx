@@ -13,7 +13,7 @@ import {
   Settings,
   User,
   X,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { organizationContextQueryOptions } from "@/client/features/team/organizationQueries";
 import { switchOrganization } from "@/serverFunctions/organization";
 import {
@@ -23,31 +23,37 @@ import {
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
-import { closeDropdown } from "@/client/lib/dropdown";
+import { ThemeToggle } from "@/client/components/ThemeToggle";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
+import {
+  Sidebar as SidebarPanel,
+  SidebarContent,
+  SidebarFooter as SidebarPanelFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarItem,
+  sidebarItemClassName,
+} from "@/client/components/ui/sidebar";
 
+import { Button } from "@/client/components/ui/button";
 interface SidebarProps {
   projectId: string | null;
   onNavigate?: () => void;
   onClose?: () => void;
 }
-
-const navItemBaseClass =
-  "relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-base-content/70";
-
-// Hover uses a lighter tint than the active background (bg-base-300/50) so a
-// hovered item next to the active one stays visually distinct instead of
-// merging into a single block.
-const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/30 hover:text-base-content`;
-
-const navItemActiveProps = {
-  // Keep the active tint on hover so the active item does not fall back to the
-  // lighter hover background of navItemClass.
-  className:
-    "bg-base-300/50 hover:bg-base-300/50 font-medium text-base-content",
-};
 
 function SidebarNavLink({
   icon: Icon,
@@ -65,17 +71,17 @@ function SidebarNavLink({
       onClick={onNavigate}
       activeOptions={{ exact: false, includeSearch: false }}
       {...linkProps}
-      className={navItemClass}
-      activeProps={navItemActiveProps}
     >
       {({ isActive }: { isActive: boolean }) => (
-        <>
-          {isActive ? (
-            <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-primary" />
-          ) : null}
-          <Icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{label}</span>
-        </>
+        <span
+          className={sidebarItemClassName(
+            isActive,
+            isActive ? "font-medium" : undefined,
+          )}
+        >
+          <Icon className="size-4 shrink-0" />
+          <span className="flex-1 truncate">{label}</span>
+        </span>
       )}
     </Link>
   );
@@ -123,28 +129,33 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-full w-60 flex-col bg-base-200">
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
+    <SidebarPanel aria-label="Main navigation">
+      <SidebarHeader className="justify-between">
         <Link
           to="/"
           onClick={onNavigate}
-          className="text-base font-semibold text-base-content"
+          className="text-base font-semibold tracking-tight text-foreground"
         >
           OpenSEO
         </Link>
-        {onClose ? (
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-sm btn-circle"
-            aria-label="Close sidebar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        ) : null}
-      </div>
+        <div className="flex items-center gap-1">
+          <ThemeToggle className="size-8" />
+          {onClose ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              onClick={onClose}
+              className="size-8"
+              aria-label="Close sidebar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          ) : null}
+        </div>
+      </SidebarHeader>
 
-      <div className="px-3 pb-1">
+      <div className="px-3 pb-1 pt-3">
         <ProjectSwitcher
           activeProjectId={projectId}
           onCloseDrawer={onNavigate}
@@ -152,79 +163,60 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
       </div>
 
       {projectId ? (
-        // Same underline tab idiom as the in-page tab strips (e.g. Domain
-        // Overview's Top Keywords / Top Pages).
-        <div className="px-3 pb-1">
-          <div role="tablist" className="tabs tabs-border w-full">
-            <SidebarViewTab
-              icon={LayoutGrid}
-              label="Browse"
-              active={view === "browse"}
-              onClick={openBrowse}
-            />
-            <SidebarViewTab
-              icon={MessageCircle}
-              label="Chat"
-              active={view === "chat"}
-              onClick={openChat}
-            />
-          </div>
+        // Atelier Tabs, the same control as the in-page tab strips.
+        <div className="px-3 pb-2 pt-3">
+          <Tabs
+            value={view}
+            onValueChange={(value) =>
+              value === "chat" ? openChat() : openBrowse()
+            }
+          >
+            <TabsList className="flex w-full">
+              <TabsTrigger value="browse" className="flex-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <LayoutGrid className="size-4" />
+                  Browse
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <MessageCircle className="size-4" />
+                  Chat
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       ) : null}
 
       {view === "chat" && projectId ? (
         <SamSidebarPanel projectId={projectId} onNavigate={onNavigate} />
       ) : (
-        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-          {navGroups.map((group) => (
-            <div key={group.label} className="mb-1">
-              <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
-                {group.label}
-              </div>
-              {group.items.map((item) => {
-                const { icon, label, ...linkProps } = item;
-                return (
-                  <SidebarNavLink
-                    key={linkProps.to}
-                    icon={icon}
-                    label={label}
-                    onNavigate={onNavigate}
-                    linkProps={linkProps}
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </nav>
+        <SidebarContent className="min-h-0">
+          <nav aria-label="Project tools">
+            {navGroups.map((group) => (
+              <SidebarGroup key={group.label} className="pt-3">
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                {group.items.map((item) => {
+                  const { icon, label, ...linkProps } = item;
+                  return (
+                    <SidebarNavLink
+                      key={linkProps.to}
+                      icon={icon}
+                      label={label}
+                      onNavigate={onNavigate}
+                      linkProps={linkProps}
+                    />
+                  );
+                })}
+              </SidebarGroup>
+            ))}
+          </nav>
+        </SidebarContent>
       )}
 
       <SidebarFooter onNavigate={onNavigate} />
-    </div>
-  );
-}
-
-function SidebarViewTab({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={`tab flex-1 gap-1.5 ${active ? "tab-active" : ""}`}
-    >
-      <Icon className="size-4" />
-      {label}
-    </button>
+    </SidebarPanel>
   );
 }
 
@@ -241,11 +233,6 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   const organizations = orgContextQuery.data?.organizations ?? [];
   const activeOrganizationId = orgContextQuery.data?.organizationId;
 
-  const closeMenu = () => {
-    closeDropdown();
-    onNavigate?.();
-  };
-
   async function handleSwitchOrganization(organizationId: string) {
     if (isSwitching || organizationId === activeOrganizationId) return;
     setIsSwitching(true);
@@ -260,7 +247,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <div className="shrink-0 border-t border-base-300 px-2 py-2 pb-safe">
+    <SidebarPanelFooter className="shrink-0 px-2 py-2 pb-safe">
       <SidebarNavLink
         icon={CircleHelp}
         label="Help & Community"
@@ -269,32 +256,28 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
       />
 
       {email ? (
-        <div className="dropdown dropdown-top w-full">
-          <button
-            type="button"
-            tabIndex={0}
-            className={`${navItemClass} w-full`}
-            aria-label="Open account menu"
-          >
-            <User className="h-4 w-4 shrink-0" />
-            <span className="truncate" data-ph-mask>
-              {email}
-            </span>
-          </button>
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-30 menu mb-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-          >
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <SidebarItem
+                data-ph-mask
+                aria-label="Open account menu"
+                icon={<User className="size-4" />}
+                label={email}
+              />
+            }
+          />
+          <DropdownMenuContent side="top" align="start" className="w-56">
             {organizations.length > 1 ? (
               <>
-                <li className="menu-title flex flex-row items-center gap-1.5 max-w-full">
-                  <ArrowLeftRight className="h-3 w-3" />
-                  Organization
-                </li>
-                {organizations.map((organization) => (
-                  <li key={organization.organizationId}>
-                    <button
-                      type="button"
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="flex items-center gap-1.5">
+                    <ArrowLeftRight className="size-3" />
+                    Organization
+                  </DropdownMenuLabel>
+                  {organizations.map((organization) => (
+                    <DropdownMenuItem
+                      key={organization.organizationId}
                       disabled={isSwitching}
                       onClick={() =>
                         void handleSwitchOrganization(
@@ -306,52 +289,43 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
                         {organization.organizationName}
                       </span>
                       {organization.organizationId === activeOrganizationId ? (
-                        <Check className="h-4 w-4 shrink-0" />
+                        <Check className="ml-auto size-4 shrink-0" />
                       ) : null}
-                    </button>
-                  </li>
-                ))}
-                <li
-                  aria-hidden
-                  className="pointer-events-none my-1 h-px bg-base-300 p-0"
-                />
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
               </>
             ) : null}
-            <li>
-              <Link to="/settings" onClick={closeMenu}>
-                <Settings className="h-4 w-4" />
-                Settings
-              </Link>
-            </li>
+            <DropdownMenuItem
+              render={<Link to="/settings" onClick={onNavigate} />}
+            >
+              <Settings className="size-4" />
+              Settings
+            </DropdownMenuItem>
             {isHostedMode ? (
-              <li>
-                <Link to={BILLING_ROUTE} onClick={closeMenu}>
-                  <CreditCard className="h-4 w-4" />
-                  Billing
-                </Link>
-              </li>
+              <DropdownMenuItem
+                render={<Link to={BILLING_ROUTE} onClick={onNavigate} />}
+              >
+                <CreditCard className="size-4" />
+                Billing
+              </DropdownMenuItem>
             ) : null}
             <ThemePreferenceMenuItems />
             {isHostedMode ? (
               <>
-                <li
-                  aria-hidden
-                  className="pointer-events-none my-1 h-px bg-base-300 p-0"
-                />
-                <li>
-                  <button
-                    type="button"
-                    className="text-error"
-                    onClick={() => signOutAndRedirect()}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </li>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-negative"
+                  onClick={() => signOutAndRedirect()}
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </DropdownMenuItem>
               </>
             ) : null}
-          </ul>
-        </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : (
         <SidebarNavLink
           icon={Settings}
@@ -360,6 +334,6 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
           linkProps={{ to: "/settings" }}
         />
       )}
-    </div>
+    </SidebarPanelFooter>
   );
 }

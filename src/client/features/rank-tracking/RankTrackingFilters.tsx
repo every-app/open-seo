@@ -1,6 +1,11 @@
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "@/client/components/icons";
 import type { DomainListFilters, Filters } from "./RankTrackingFilters.logic";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+import { Input } from "@/client/components/ui/input";
+import { NativeSelect } from "@/client/components/ui/native-select";
 export * from "./RankTrackingFilters.logic";
 
 type DomainListFilterOption = {
@@ -23,43 +28,43 @@ export function FilterPanel({
     setFilters({ ...filters, [key]: value });
 
   return (
-    <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
+    <div className="shrink-0 border-b border-border bg-gradient-to-b from-card to-muted/30 px-4 py-3 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine results</p>
           {activeFilterCount > 0 && (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount} active
-            </span>
+            <Badge variant="primary">{activeFilterCount} active</Badge>
           )}
         </div>
-        <button
-          className="btn btn-xs btn-ghost gap-1"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2.5 gap-1"
           onClick={onReset}
           disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
           Clear all
-        </button>
+        </Button>
       </div>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Include
           </p>
-          <input
-            className="input input-bordered input-sm w-full bg-base-100"
+          <Input
+            className="w-full h-8 text-sm"
             placeholder="e.g. seo, tool"
             value={filters.include}
             onChange={(e) => update("include", e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Exclude
           </p>
-          <input
-            className="input input-bordered input-sm w-full bg-base-100"
+          <Input
+            className="w-full h-8 text-sm"
             placeholder="e.g. free, cheap"
             value={filters.exclude}
             onChange={(e) => update("exclude", e.target.value)}
@@ -126,14 +131,14 @@ export function DomainListFilterBar({
   onReset: () => void;
 }) {
   return (
-    <div className="border-t border-base-300 px-5 py-3">
+    <div className="border-t border-border px-5 py-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-        <label className="form-control flex-1 gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+        <label className="flex flex-1 flex-col gap-1.5">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Search
           </span>
-          <input
-            className="input input-bordered input-sm w-full bg-base-100"
+          <Input
+            className="w-full h-8 text-sm"
             placeholder="Domain or website"
             value={filters.query}
             onChange={(event) =>
@@ -141,12 +146,12 @@ export function DomainListFilterBar({
             }
           />
         </label>
-        <label className="form-control gap-1.5 lg:w-44">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+        <label className="flex flex-col gap-1.5 lg:w-44">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Device
           </span>
-          <select
-            className="select select-bordered select-sm w-full bg-base-100"
+          <NativeSelect
+            className="w-full h-8 text-sm"
             value={filters.device}
             onChange={(event) => {
               const value = event.target.value;
@@ -166,14 +171,14 @@ export function DomainListFilterBar({
                 {option.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
-        <label className="form-control gap-1.5 lg:w-52">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+        <label className="flex flex-col gap-1.5 lg:w-52">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Country
           </span>
-          <select
-            className="select select-bordered select-sm w-full bg-base-100"
+          <NativeSelect
+            className="w-full h-8 text-sm"
             value={filters.locationCode}
             onChange={(event) =>
               onChange({ ...filters, locationCode: event.target.value })
@@ -185,19 +190,19 @@ export function DomainListFilterBar({
                 {option.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         {activeFilterCount > 0 && (
-          <button
-            className="btn btn-ghost btn-sm gap-1.5 self-start lg:self-auto"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 self-start lg:self-auto"
             onClick={onReset}
           >
             <RotateCcw className="size-3" />
             Clear
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
-            </span>
-          </button>
+            <Badge variant="primary">{activeFilterCount}</Badge>
+          </Button>
         )}
       </div>
     </div>
@@ -218,26 +223,26 @@ function RangeFilter({
   onMaxChange: (v: string) => void;
 }) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+    <Card className="space-y-2 p-2.5">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       <div className="grid grid-cols-2 gap-2">
-        <input
-          className="input input-bordered input-xs bg-base-100"
+        <Input
+          className="h-7 text-xs"
           placeholder="Min"
           type="number"
           value={minValue}
           onChange={(e) => onMinChange(e.target.value)}
         />
-        <input
-          className="input input-bordered input-xs bg-base-100"
+        <Input
+          className="h-7 text-xs"
           placeholder="Max"
           type="number"
           value={maxValue}
           onChange={(e) => onMaxChange(e.target.value)}
         />
       </div>
-    </div>
+    </Card>
   );
 }

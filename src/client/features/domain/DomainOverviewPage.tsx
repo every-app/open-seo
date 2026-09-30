@@ -1,7 +1,7 @@
 /* eslint-disable max-lines, max-lines-per-function -- Domain Overview keeps page-only orchestration colocated to avoid fake indirection. */
 import { useCallback, useEffect, useMemo, useRef, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/client/components/icons";
 import { toast } from "sonner";
 import {
   DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
@@ -23,7 +23,6 @@ import { DomainHistorySection } from "@/client/features/domain/components/Domain
 import { DomainSearchCard } from "@/client/features/domain/components/DomainSearchCard";
 import { KeywordsTab } from "@/client/features/domain/components/KeywordsTab";
 import { PagesTab } from "@/client/features/domain/components/PagesTab";
-import { StatCard } from "@/client/features/domain/components/StatCard";
 import { SearchTabStrip } from "@/client/features/search-tabs/SearchTabStrip";
 import type { SearchTabInput } from "@/client/features/search-tabs/types";
 import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
@@ -55,6 +54,17 @@ import type {
   SortOrder,
 } from "@/client/features/domain/types";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+import {
+  StatCard,
+  StatCardDescription,
+  StatCardLabel,
+  StatCardValue,
+} from "@/client/components/ui/stat-card";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 type Props = {
   projectId: string;
   routeState: DomainOverviewRouteState;
@@ -529,9 +539,11 @@ export function DomainOverviewPage({
   const tabControls = routeState.domain ? (
     <div className="flex flex-col gap-2">
       <div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
+          className="gap-2 px-0 text-muted-foreground hover:bg-transparent"
           onClick={() => {
             searchTabs.setActiveTab(null);
             onShowRecentSearches();
@@ -539,7 +551,7 @@ export function DomainOverviewPage({
         >
           <ArrowLeft className="size-4" />
           Recent searches
-        </button>
+        </Button>
       </div>
       <SearchTabStrip
         projectId={projectId}
@@ -557,7 +569,7 @@ export function DomainOverviewPage({
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
           <h1 className="text-2xl font-semibold">Domain Overview</h1>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Analyze any domain&apos;s SEO profile: traffic, keywords, and
             backlinks.
           </p>
@@ -595,63 +607,71 @@ export function DomainOverviewPage({
           <>
             {tabControls}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="badge badge-ghost font-medium">
+              <Badge variant="secondary" className="font-medium">
                 {state.overview.displayTarget}
-              </span>
-              <span className="badge badge-outline">
+              </Badge>
+              <Badge variant="outline">
                 {RESEARCH_SCOPE_LABELS[state.overview.scope]}
-              </span>
+              </Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <StatCard
-                label="Estimated Organic Traffic"
-                value={formatMetric(
-                  state.overview.organicTraffic,
-                  state.overview.hasData,
-                )}
-                hint={overviewMetricsHint}
-              />
-              <StatCard
-                label="Organic Keywords"
-                value={formatMetric(
-                  state.overview.organicKeywords,
-                  state.overview.hasData,
-                )}
-                hint={overviewMetricsHint}
-              />
+              <StatCard>
+                <StatCardLabel>Estimated Organic Traffic</StatCardLabel>
+                <StatCardValue className="tabular-nums">
+                  {formatMetric(
+                    state.overview.organicTraffic,
+                    state.overview.hasData,
+                  )}
+                </StatCardValue>
+                {overviewMetricsHint ? (
+                  <StatCardDescription>
+                    {overviewMetricsHint}
+                  </StatCardDescription>
+                ) : null}
+              </StatCard>
+              <StatCard>
+                <StatCardLabel>Organic Keywords</StatCardLabel>
+                <StatCardValue className="tabular-nums">
+                  {formatMetric(
+                    state.overview.organicKeywords,
+                    state.overview.hasData,
+                  )}
+                </StatCardValue>
+                {overviewMetricsHint ? (
+                  <StatCardDescription>
+                    {overviewMetricsHint}
+                  </StatCardDescription>
+                ) : null}
+              </StatCard>
             </div>
 
             {!state.overview.hasData ? (
-              <div className="alert alert-info">
-                <span>
+              <Alert variant="info">
+                <AlertDescription>
                   Not enough data for this scope yet. Try another domain or a
                   broader scope.
-                </span>
-              </div>
+                </AlertDescription>
+              </Alert>
             ) : null}
 
-            <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
-                <div role="tablist" className="tabs tabs-border w-fit">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={routeState.tab === "keywords"}
-                    className={`tab ${routeState.tab === "keywords" ? "tab-active" : ""}`}
-                    onClick={() => state.handleTabChange("keywords")}
-                  >
-                    Top Keywords
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={routeState.tab === "pages"}
-                    className={`tab ${routeState.tab === "pages" ? "tab-active" : ""}`}
-                    onClick={() => state.handleTabChange("pages")}
-                  >
-                    Top Pages
-                  </button>
-                </div>
+            <Card className="overflow-hidden">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-border">
+                <Tabs value={routeState.tab}>
+                  <TabsList className="w-fit">
+                    <TabsTrigger
+                      value={"keywords"}
+                      onClick={() => state.handleTabChange("keywords")}
+                    >
+                      Top Keywords
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value={"pages"}
+                      onClick={() => state.handleTabChange("pages")}
+                    >
+                      Top Pages
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
 
               {routeState.tab === "keywords" ? (
@@ -682,7 +702,7 @@ export function DomainOverviewPage({
                   onPageSizeChange={state.setPageSize}
                 />
               )}
-            </div>
+            </Card>
           </>
         )}
       </div>

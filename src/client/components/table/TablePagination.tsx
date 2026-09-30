@@ -1,4 +1,8 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/client/components/icons";
+
+import { Button } from "@/client/components/ui/button";
+import { NativeSelect } from "@/client/components/ui/native-select";
+import { Spinner } from "@/client/components/ui/spinner";
 
 type Props = {
   page: number;
@@ -41,54 +45,59 @@ export function TablePagination({
   const canGoNext = totalPages != null ? page < totalPages : hasNextPage;
 
   return (
-    <div className="flex flex-col gap-3 border-t border-base-300 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2 text-sm text-base-content/70 tabular-nums">
+    <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
         <span>{formatRange(page, pageSize, totalCount)}</span>
-        {isLoading ? (
-          <span className="loading loading-spinner loading-xs" />
-        ) : null}
+        {isLoading ? <Spinner size="sm" /> : null}
       </div>
 
-      <div className="flex items-center gap-6">
-        <label className="flex items-center gap-2 text-sm text-base-content/70">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="whitespace-nowrap">Rows per page</span>
-          <select
-            className="select select-bordered select-sm w-20"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-          >
-            {pageSizes.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
+          {/* NativeSelect's wrapper is full-width; this box sets its size. */}
+          <div className="w-20">
+            <NativeSelect
+              className="h-8"
+              value={pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            >
+              {pageSizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
         </label>
 
         <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap text-sm tabular-nums text-base-content/70">
+          <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
             Page {page.toLocaleString()}
             {totalPages != null ? ` of ${totalPages.toLocaleString()}` : ""}
           </span>
           <div className="flex items-center gap-1">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               aria-label="Previous page"
-              className="btn btn-ghost btn-sm btn-square"
+              className="size-8"
               disabled={!canGoPrev || isLoading}
               onClick={() => onPageChange(page - 1)}
             >
               <ChevronLeft className="size-4" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               aria-label="Next page"
-              className="btn btn-ghost btn-sm btn-square"
+              className="size-8"
               disabled={!canGoNext || isLoading}
               onClick={() => onPageChange(page + 1)}
             >
               <ChevronRight className="size-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

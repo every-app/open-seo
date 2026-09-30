@@ -1,9 +1,12 @@
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@/client/components/icons";
 import { SavedKeywordsFilterPanel } from "./SavedKeywordsFilterPanel";
 import { SavedKeywordsTagFilter } from "./SavedKeywordsTagFilter";
 import type { TagColorKey } from "@/shared/tag-colors";
 import type { SavedKeywordTagSummary } from "@/types/keywords";
 import type { SavedKeywordsFilterForm } from "./useSavedKeywordsFilters";
+
+import { Badge } from "@/client/components/ui/badge";
+import { Toggle } from "@/client/components/ui/toggle";
 
 export function SavedKeywordsFilters({
   filtersForm,
@@ -38,21 +41,20 @@ export function SavedKeywordsFilters({
 }) {
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 px-4 py-2.5">
-        <button
-          type="button"
-          className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
-          onClick={onToggleFilters}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+        <Toggle
+          size="sm"
+          className="gap-1.5"
+          pressed={showFilters}
+          onPressedChange={() => onToggleFilters()}
           title="Toggle table filters"
         >
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
-            </span>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
-        </button>
+        </Toggle>
         <SavedKeywordsTagFilter
           availableTags={availableTags}
           selectedTagIds={selectedTagIds}

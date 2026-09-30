@@ -10,7 +10,7 @@ function RankTrackingLayout() {
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
           <h1 className="text-2xl font-semibold">Rank Tracking</h1>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Track keyword positions across domains
           </p>
         </div>

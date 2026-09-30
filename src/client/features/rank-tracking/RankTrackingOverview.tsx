@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -17,6 +16,10 @@ import {
   useChartWidth,
 } from "./RankTrackingTrendChart";
 
+import { Spinner } from "@/client/components/ui/spinner";
+
+// Upstream's mid-tone fills: they read on both themes, where the status
+// text tokens go dark in light mode and turn the stacked areas muddy.
 const BUCKETS = [
   { key: "top3", label: "Top 3", color: "#16a34a" },
   { key: "top4to10", label: "4–10", color: "#2563eb" },
@@ -65,7 +68,7 @@ export function RankTrackingOverview({
 
   return (
     <div className="px-4 pt-4 pb-4">
-      <div className="rounded-lg border border-base-300 p-3 space-y-2">
+      <div className="rounded-lg border border-border p-3 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium">Position distribution</span>
           <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
@@ -75,7 +78,7 @@ export function RankTrackingOverview({
           {BUCKETS.map((b) => (
             <span
               key={b.key}
-              className="inline-flex items-center gap-1 text-[11px] text-base-content/60"
+              className="inline-flex items-center gap-1 text-[0.6875rem] text-muted-foreground"
             >
               <span
                 className="size-2 rounded-sm"
@@ -88,10 +91,10 @@ export function RankTrackingOverview({
 
         {trendLoading ? (
           <div className="flex items-center justify-center p-8">
-            <Loader2 className="size-4 animate-spin text-base-content/50" />
+            <Spinner size="sm" />
           </div>
         ) : chartData.length <= 1 ? (
-          <div className="rounded-lg border border-dashed border-base-300 p-8 text-center text-xs text-base-content/60">
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
             {chartData.length === 0
               ? "No history yet — run a check to start tracking positions over time."
               : "Only 1 check so far — the trend fills in after the next check."}
@@ -111,8 +114,7 @@ export function RankTrackingOverview({
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="currentColor"
-                  opacity={0.1}
+                  stroke="var(--trend-grid-color)"
                   vertical={false}
                 />
                 <XAxis
@@ -121,14 +123,14 @@ export function RankTrackingOverview({
                   scale="time"
                   domain={["dataMin", "dataMax"]}
                   tickFormatter={formatDateTick}
-                  tick={{ fontSize: 10, fill: "#888" }}
+                  tick={{ fontSize: 10, fill: "var(--trend-axis-color)" }}
                   tickLine={false}
                   axisLine={false}
                   minTickGap={32}
                 />
                 <YAxis
                   allowDecimals={false}
-                  tick={{ fontSize: 10, fill: "#888" }}
+                  tick={{ fontSize: 10, fill: "var(--trend-axis-color)" }}
                   tickLine={false}
                   axisLine={false}
                   width={28}
@@ -151,7 +153,7 @@ export function RankTrackingOverview({
                     );
                     return <DistributionTooltip label={label} byKey={byKey} />;
                   }}
-                  cursor={{ stroke: "rgba(150,150,150,0.3)" }}
+                  cursor={{ stroke: "var(--trend-grid-color)" }}
                 />
                 {BUCKETS.map((b) => (
                   <Area
@@ -183,8 +185,8 @@ function DistributionTooltip({
   byKey: Map<string, number>;
 }) {
   return (
-    <div className="rounded-md border border-base-300 bg-base-100 px-3 py-2 shadow-sm space-y-0.5">
-      <p className="text-xs text-base-content/60">
+    <div className="space-y-0.5 rounded-md border border-[var(--trend-tooltip-border)] bg-[var(--trend-tooltip-bg)] px-3 py-2 shadow-[0_0.5rem_1.5rem_var(--trend-tooltip-shadow)] backdrop-blur-xl">
+      <p className="text-xs text-muted-foreground">
         {new Date(label).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -197,7 +199,7 @@ function DistributionTooltip({
             className="size-2 rounded-sm"
             style={{ backgroundColor: b.color }}
           />
-          <span className="text-base-content/60">{b.label}:</span>
+          <span className="text-muted-foreground">{b.label}:</span>
           <span className="font-medium tabular-nums">
             {byKey.get(b.key) ?? 0}
           </span>

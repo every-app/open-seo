@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/client/components/icons";
 import { toast } from "sonner";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
@@ -8,6 +8,8 @@ import type {
   RankTrackingDeviceResult,
   RankTrackingRow,
 } from "@/types/schemas/rank-tracking";
+
+import { Badge, type BadgeProps } from "@/client/components/ui/badge";
 
 const FEATURE_SHORT_LABELS: Record<string, string> = {
   featured_snippet: "FS",
@@ -40,14 +42,15 @@ export function SerpFeatureTags({ features }: { features: string[] }) {
   return (
     <div className="flex gap-1 flex-wrap">
       {notable.map((f) => (
-        <span
+        <Badge
+          variant="secondary"
           key={f}
-          className="badge badge-xs gap-0.5 cursor-help bg-base-300 border-0 text-base-content/70"
+          className="cursor-help gap-0.5 px-2 text-[0.6875rem]"
           title={FEATURE_TOOLTIPS[f] ?? f}
         >
           {f === "ai_overview" && <Sparkles className="size-2.5" />}
           {FEATURE_SHORT_LABELS[f]}
-        </span>
+        </Badge>
       ))}
     </div>
   );
@@ -62,20 +65,20 @@ export function DeviceRankCell({
 
   // Nothing at all
   if (position === null && previousPosition === null) {
-    return <span className="text-base-content/40">-</span>;
+    return <span className="text-muted-foreground">-</span>;
   }
 
   // Was ranking, now lost
   if (position === null && previousPosition !== null) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="font-mono text-xs text-base-content/40 w-6 text-right">
+        <span className="font-mono text-xs text-muted-foreground w-6 text-right">
           {previousPosition}
         </span>
-        <span className="text-base-content/30">→</span>
-        <span className="font-mono rounded px-1.5 py-0.5 text-xs font-semibold bg-error/20 text-error">
+        <span className="text-muted-foreground">→</span>
+        <Badge variant="destructive" className="font-mono font-semibold">
           lost
-        </span>
+        </Badge>
       </span>
     );
   }
@@ -87,21 +90,19 @@ export function DeviceRankCell({
 
   // Both exist — show old → new with colored badge
   const change = previousPosition - position!;
-  let badgeClass = "bg-base-200 text-base-content";
-  if (change > 0) badgeClass = "bg-success/20 text-success";
-  if (change < 0) badgeClass = "bg-warning/20 text-warning";
+  let badgeVariant: BadgeProps["variant"] = "default";
+  if (change > 0) badgeVariant = "success";
+  if (change < 0) badgeVariant = "warning";
 
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className="font-mono text-xs text-base-content/40 w-6 text-right">
+      <span className="font-mono text-xs text-muted-foreground w-6 text-right">
         {previousPosition}
       </span>
-      <span className="text-base-content/30">→</span>
-      <span
-        className={`font-mono rounded px-1.5 py-0.5 text-xs font-semibold ${badgeClass}`}
-      >
+      <span className="text-muted-foreground">→</span>
+      <Badge variant={badgeVariant} className="font-mono font-semibold">
         {position}
-      </span>
+      </Badge>
     </span>
   );
 }
@@ -114,14 +115,14 @@ export function DeviceUrlCell({
   domain: string;
 }) {
   if (!result.rankingUrl) {
-    return <span className="text-base-content/40 text-xs">-</span>;
+    return <span className="text-muted-foreground text-xs">-</span>;
   }
   return (
     <a
       href={toFullUrl(result.rankingUrl, domain)}
       target="_blank"
       rel="noopener noreferrer"
-      className="link link-hover block truncate text-xs"
+      className="underline-offset-4 no-underline hover:underline block truncate text-xs"
       title={result.rankingUrl}
     >
       {toPath(result.rankingUrl)}
@@ -135,28 +136,26 @@ const compactFormatter = new Intl.NumberFormat("en-US", {
 });
 
 export function VolumeCell({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-base-content/40">-</span>;
+  if (value == null) return <span className="text-muted-foreground">-</span>;
   return (
     <span className="font-mono text-sm">{compactFormatter.format(value)}</span>
   );
 }
 
 export function DifficultyCell({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-base-content/40">-</span>;
-  let badgeClass = "bg-success/20 text-success";
-  if (value > 60) badgeClass = "bg-error/20 text-error";
-  else if (value > 30) badgeClass = "bg-warning/20 text-warning";
+  if (value == null) return <span className="text-muted-foreground">-</span>;
+  let badgeVariant: BadgeProps["variant"] = "success";
+  if (value > 60) badgeVariant = "destructive";
+  else if (value > 30) badgeVariant = "warning";
   return (
-    <span
-      className={`font-mono rounded px-1.5 py-0.5 text-xs font-semibold ${badgeClass}`}
-    >
+    <Badge variant={badgeVariant} className="font-mono font-semibold">
       {value}
-    </span>
+    </Badge>
   );
 }
 
 export function CpcCell({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-base-content/40">-</span>;
+  if (value == null) return <span className="text-muted-foreground">-</span>;
   return <span className="font-mono text-sm">${value.toFixed(2)}</span>;
 }
 

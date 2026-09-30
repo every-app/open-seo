@@ -44,6 +44,8 @@ import {
 } from "@/serverFunctions/keywords";
 import type { SavedKeywordTag } from "@/types/keywords";
 
+import { Card } from "@/client/components/ui/card";
+
 export const Route = createFileRoute("/_project/p/$projectId/saved")({
   component: SavedKeywordsPage,
 });
@@ -252,7 +254,7 @@ function SavedKeywordsPage() {
           onRefreshMetrics={() => refreshMetricsMutation.mutate()}
         />
 
-        <div className="overflow-hidden rounded-lg border border-base-300 bg-base-100">
+        <Card className="overflow-hidden">
           <SavedKeywordsFilters
             filtersForm={filters.filtersForm}
             activeFilterCount={filters.activeFilterCount}
@@ -308,7 +310,7 @@ function SavedKeywordsPage() {
               setPage(1);
             }}
           />
-        </div>
+        </Card>
 
         <SavedKeywordsBulkActionBar
           selectedCount={selectedCount}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Card } from "@/client/components/ui/card";
 
 export function OnboardingCard({
   step,
@@ -15,7 +16,7 @@ export function OnboardingCard({
         <img src="/transparent-logo.png" alt="" className="size-7" />
         OpenSEO
       </div>
-      <main className="mt-8 rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm md:mt-12 md:p-10">
+      <Card className="mt-8 p-6 md:mt-12 md:p-10" role="main">
         <div
           className="mb-8 flex gap-2"
           role="progressbar"
@@ -28,12 +29,12 @@ export function OnboardingCard({
           {Array.from({ length: total }, (_, index) => (
             <span
               key={index}
-              className={`h-1 flex-1 rounded-full ${index < step ? "bg-primary" : "bg-base-300"}`}
+              className={`h-1 flex-1 rounded-full ${index < step ? "bg-primary" : "bg-border"}`}
             />
           ))}
         </div>
         {children}
-      </main>
+      </Card>
     </div>
   );
 }

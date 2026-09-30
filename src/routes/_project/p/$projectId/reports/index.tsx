@@ -11,6 +11,9 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { listReports, type ReportListItem } from "@/serverFunctions/reports";
 import { REPORT_APP_LIST_LIMIT } from "@/types/schemas/reports";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { buttonVariants } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 export const Route = createFileRoute("/_project/p/$projectId/reports/")({
   component: ReportsPage,
 });
@@ -40,14 +43,14 @@ function ReportsPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Reports</h1>
-            <p className="text-sm text-base-content/70">
+            <p className="text-sm text-muted-foreground">
               HTML reports your agents saved to this project.
             </p>
           </div>
           <Link
             to="/p/$projectId/reports/templates"
             params={{ projectId }}
-            className="btn btn-ghost btn-sm"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
             Templates
           </Link>
@@ -55,17 +58,17 @@ function ReportsPage() {
 
         {reportsQuery.isPending ? (
           <div className="flex justify-center py-10">
-            <span className="loading loading-spinner loading-md" />
+            <Spinner />
           </div>
         ) : reportsQuery.isError ? (
-          <div className="alert alert-error">
-            <span className="text-sm">
+          <Alert variant="destructive">
+            <AlertDescription className="text-sm">
               {getStandardErrorMessage(
                 reportsQuery.error,
                 "Failed to load reports",
               )}
-            </span>
-          </div>
+            </AlertDescription>
+          </Alert>
         ) : (
           <ReportsList
             projectId={projectId}

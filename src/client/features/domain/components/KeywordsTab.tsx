@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Copy, Download, FileSpreadsheet, Save, Sheet } from "lucide-react";
+import {
+  Copy,
+  Download,
+  FileSpreadsheet,
+  Save,
+  Sheet,
+} from "@/client/components/icons";
 import { toast } from "sonner";
 import {
   TableBulkActionBar,
@@ -44,6 +50,7 @@ import {
   type ResearchScope,
 } from "@/shared/researchScope";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 type SearchUpdate = Partial<DomainSearchParams>;
 
 const EMPTY_KEYWORDS: KeywordRow[] = [];
@@ -297,12 +304,12 @@ export function KeywordsTab({
       />
 
       {filtersOverBudget ? (
-        <div className="alert alert-warning mb-3">
-          <span>
+        <Alert variant="warning" className="mx-4 my-3 w-auto">
+          <AlertDescription>
             Saved filters exceed this scope&apos;s {maxConditions}-condition
             limit and were not applied. Open Filters to trim them.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       <DomainTableTabSurface

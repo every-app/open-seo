@@ -5,11 +5,20 @@ import {
   Gauge,
   MoreHorizontal,
   Sheet,
-} from "lucide-react";
+} from "@/client/components/icons";
 import type { CsvValue } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
 import { exportBacklinksTabCsv } from "./export";
+
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 
 export function BacklinksExportMenu({
   activeTab,
@@ -40,55 +49,50 @@ export function BacklinksExportMenu({
   };
 
   return (
-    <div className="dropdown dropdown-end">
-      <div
-        tabIndex={0}
-        role="button"
-        className={`btn btn-sm btn-ghost gap-1 ${rows.length === 0 ? "btn-disabled" : ""}`}
-        aria-label="Export backlinks table"
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        disabled={rows.length === 0}
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1"
+            aria-label="Export backlinks table"
+          />
+        }
       >
         <Download className="size-4" />
         Export
         <ChevronDown className="size-3 opacity-60" />
-      </div>
-      <ul
-        tabIndex={0}
-        role="menu"
-        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56"
-      >
-        <li>
-          <button
-            type="button"
-            onClick={() => void handleExportToSheets()}
-            disabled={!canExport}
-          >
-            {isExportingSheets ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : (
-              <Sheet className="size-4" />
-            )}
-            Export to Sheets
-          </button>
-        </li>
-        <li>
-          <button
-            type="button"
-            onClick={() =>
-              exportBacklinksTabCsv({
-                tab: activeTab,
-                target: exportTarget,
-                headers,
-                rows,
-              })
-            }
-            disabled={rows.length === 0}
-          >
-            <Download className="size-4" />
-            Export CSV
-          </button>
-        </li>
-      </ul>
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem
+          onClick={() => void handleExportToSheets()}
+          disabled={!canExport}
+        >
+          {isExportingSheets ? (
+            <Spinner size="sm" />
+          ) : (
+            <Sheet className="size-4" />
+          )}
+          Export to Sheets
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            exportBacklinksTabCsv({
+              tab: activeTab,
+              target: exportTarget,
+              headers,
+              rows,
+            })
+          }
+          disabled={rows.length === 0}
+        >
+          <Download className="size-4" />
+          Export CSV
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -102,37 +106,34 @@ export function BacklinksActionsMenu({
   ratableDomains: string[];
 }) {
   return (
-    <div className="dropdown dropdown-end">
-      <div
-        tabIndex={0}
-        role="button"
-        className="btn btn-sm btn-ghost btn-square"
-        aria-label="Backlinks table actions"
-        title="Backlinks table actions"
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label="Backlinks table actions"
+            title="Backlinks table actions"
+          />
+        }
       >
         <MoreHorizontal className="size-4" />
-      </div>
-      <ul
-        tabIndex={0}
-        role="menu"
-        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
-      >
-        <li>
-          <button
-            type="button"
-            onClick={() => void loadRatings(ratableDomains)}
-            disabled={isLoadingRatings}
-            title="Look up Ahrefs Domain Rating for each domain in the table"
-          >
-            {isLoadingRatings ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : (
-              <Gauge className="size-4" />
-            )}
-            Ahrefs DR
-          </button>
-        </li>
-      </ul>
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem
+          onClick={() => void loadRatings(ratableDomains)}
+          disabled={isLoadingRatings}
+          title="Look up Ahrefs Domain Rating for each domain in the table"
+        >
+          {isLoadingRatings ? (
+            <Spinner size="sm" />
+          ) : (
+            <Gauge className="size-4" />
+          )}
+          Ahrefs DR
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

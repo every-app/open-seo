@@ -1,4 +1,11 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { Button } from "@/client/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 import {
   ChevronDown,
   Copy,
@@ -8,7 +15,7 @@ import {
   Play,
   RefreshCw,
   Sheet,
-} from "lucide-react";
+} from "@/client/components/icons";
 
 function ToolbarMenu({
   label,
@@ -21,35 +28,27 @@ function ToolbarMenu({
   title?: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   return (
-    <div className="relative">
-      <button
-        type="button"
-        className={`btn btn-ghost btn-sm ${label ? "gap-1" : "btn-square"}`}
-        onClick={() => setOpen((c) => !c)}
-        title={title}
-        aria-label={title ?? label}
-        aria-haspopup="menu"
-        aria-expanded={open}
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size={label ? "sm" : "icon"}
+            className={label ? "gap-1" : "size-8"}
+            title={title}
+            aria-label={title ?? label}
+          />
+        }
       >
         {icon}
         {label}
         {label && <ChevronDown className="size-3.5 opacity-60" />}
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            role="menu"
-            className="absolute right-0 top-full mt-1 z-50 rounded-lg border border-base-300 bg-base-100 shadow-lg py-1 min-w-[230px]"
-            onClick={() => setOpen(false)}
-          >
-            {children}
-          </div>
-        </>
-      )}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[14.375rem]">
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -67,10 +66,8 @@ function MenuItem({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      role="menuitem"
-      className="flex w-full items-start gap-2 px-3 py-2 text-sm hover:bg-base-200 disabled:opacity-50"
+    <DropdownMenuItem
+      className="items-start"
       onClick={onClick}
       disabled={disabled}
     >
@@ -78,10 +75,10 @@ function MenuItem({
       <span className="flex flex-col items-start text-left">
         <span>{label}</span>
         {description && (
-          <span className="text-xs text-base-content/50">{description}</span>
+          <span className="text-xs text-muted-foreground">{description}</span>
         )}
       </span>
-    </button>
+    </DropdownMenuItem>
   );
 }
 

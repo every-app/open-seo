@@ -20,13 +20,13 @@ export function AgentList() {
       {AGENTS.map(({ name, Icon }) => (
         <li
           key={name}
-          className="flex items-center gap-1.5 text-xs text-base-content/60"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
         >
           <Icon className="size-4" />
           {name}
         </li>
       ))}
-      <li className="text-xs text-base-content/45">or any MCP client</li>
+      <li className="text-xs text-muted-foreground">or any MCP client</li>
     </ul>
   );
 }

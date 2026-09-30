@@ -11,7 +11,7 @@ import {
   Search,
   Sparkles,
   TrendingUp,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { linkOptions } from "@tanstack/react-router";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
 

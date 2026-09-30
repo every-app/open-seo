@@ -32,7 +32,7 @@ const columns = [
         <SafeExternalLink
           url={page}
           label={page}
-          className="link link-hover break-all inline-flex items-center gap-1"
+          className="underline-offset-4 hover:underline break-all inline-flex items-center gap-1"
         />
       ) : (
         "-"

@@ -9,6 +9,11 @@ import {
 } from "./backlinksFilterTypes";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
+import { Checkbox } from "@/client/components/ui/checkbox";
 /**
  * Filters are applied explicitly (not per keystroke) because every change
  * triggers a billed DataForSEO request. Each include/exclude term and each
@@ -185,50 +190,52 @@ function BacklinksToggleControls({
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
           Link Type
         </p>
         <div className="flex items-center gap-1">
-          {(["", "dofollow", "nofollow"] as const).map((value) => (
-            <button
-              key={value || "all"}
-              type="button"
-              className={`btn btn-xs ${draft.linkType === value ? "btn-soft" : "btn-ghost"}`}
-              onClick={() => setValue("linkType", value)}
-            >
-              {value === ""
-                ? "All"
-                : value === "dofollow"
-                  ? "Dofollow"
-                  : "Nofollow"}
-            </button>
-          ))}
+          <ToggleGroup
+            size="sm"
+            value={[draft.linkType || "all"]}
+            onValueChange={(next) => {
+              const value = (["", "dofollow", "nofollow"] as const).find(
+                (option) => (option || "all") === next[0],
+              );
+              if (value !== undefined) setValue("linkType", value);
+            }}
+          >
+            {(["", "dofollow", "nofollow"] as const).map((value) => (
+              <ToggleGroupItem key={value || "all"} value={value || "all"}>
+                {value === ""
+                  ? "All"
+                  : value === "dofollow"
+                    ? "Dofollow"
+                    : "Nofollow"}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
           Visibility
         </p>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              className="checkbox checkbox-xs"
+            <Checkbox
               checked={draft.hideLost === "true"}
-              onChange={(event) =>
-                setValue("hideLost", event.target.checked ? "true" : "")
+              onCheckedChange={(checked) =>
+                setValue("hideLost", checked ? "true" : "")
               }
             />
             <span className="text-xs">Hide lost</span>
           </label>
           <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              className="checkbox checkbox-xs"
+            <Checkbox
               checked={draft.hideBroken === "true"}
-              onChange={(event) =>
-                setValue("hideBroken", event.target.checked ? "true" : "")
+              onCheckedChange={(checked) =>
+                setValue("hideBroken", checked ? "true" : "")
               }
             />
             <span className="text-xs">Hide broken</span>

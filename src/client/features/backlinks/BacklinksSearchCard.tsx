@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { Search } from "lucide-react";
+import { Search } from "@/client/components/icons";
 import {
   createFormValidationErrors,
   getFieldError,
@@ -14,6 +14,11 @@ import {
 } from "@/shared/researchScope";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import { InputGroup } from "@/client/components/ui/input-group";
+import { Input } from "@/client/components/ui/input";
 type SearchDraft = Pick<BacklinksSearchState, "target" | "scope">;
 
 function getBacklinksValidationErrors(
@@ -76,8 +81,8 @@ export function BacklinksSearchCard({
   }, [form, initialValues]);
 
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-4">
+    <Card>
+      <CardContent className="flex flex-col pt-6 gap-4">
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -92,11 +97,14 @@ export function BacklinksSearchCard({
                   const targetError = getFieldError(field.state.meta.errors);
 
                   return (
-                    <label
-                      className={`input input-bordered flex flex-1 items-center gap-2 ${targetError ? "input-error" : ""}`}
+                    <InputGroup
+                      className="flex-1"
+                      error={Boolean(targetError)}
+                      prefix={
+                        <Search className="size-4 text-muted-foreground" />
+                      }
                     >
-                      <Search className="size-4 text-base-content/60" />
-                      <input
+                      <Input
                         placeholder="Enter a domain or URL"
                         value={field.state.value}
                         onChange={(event) => {
@@ -110,7 +118,7 @@ export function BacklinksSearchCard({
                           }
                         }}
                       />
-                    </label>
+                    </InputGroup>
                   );
                 }}
               </form.Field>
@@ -129,13 +137,13 @@ export function BacklinksSearchCard({
 
               <form.Subscribe selector={(state) => state.isSubmitting}>
                 {(isSubmitting) => (
-                  <button
+                  <Button
                     type="submit"
-                    className="btn btn-primary shrink-0 px-6"
+                    className="shrink-0 px-6"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Loading..." : "Search"}
-                  </button>
+                  </Button>
                 )}
               </form.Subscribe>
             </div>
@@ -145,7 +153,7 @@ export function BacklinksSearchCard({
                 const targetError = getFieldError(field.state.meta.errors);
 
                 return targetError ? (
-                  <p className="text-sm text-error">{targetError}</p>
+                  <p className="text-sm text-negative">{targetError}</p>
                 ) : null;
               }}
             </form.Field>
@@ -155,7 +163,7 @@ export function BacklinksSearchCard({
                 const formError = getFormError(submitError);
 
                 return formError ? (
-                  <p className="text-sm text-error">{formError}</p>
+                  <p className="text-sm text-negative">{formError}</p>
                 ) : null;
               }}
             </form.Subscribe>
@@ -163,11 +171,11 @@ export function BacklinksSearchCard({
         </form>
 
         {errorMessage ? (
-          <div className="rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error">
-            {errorMessage}
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
         ) : null}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

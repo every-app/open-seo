@@ -1,5 +1,14 @@
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "@/client/components/icons";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
 
 const CLOUDFLARE_SETUP_GUIDE_URL =
   "https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE.md#2-configure-authentication-and-secrets";
@@ -16,26 +25,27 @@ export function AuthConfigErrorCard({
   const isHostedMode = isHostedClientAuthMode();
 
   return (
-    <div className="card w-full max-w-2xl bg-base-100 border border-base-300 shadow-xl">
-      <div className="card-body gap-4">
-        <h2 className="card-title gap-2">
-          <ShieldAlert className="size-5 text-error" />
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ShieldAlert className="size-5 text-negative" />
           Authentication setup required
-        </h2>
-
-        <div className="alert alert-error">
-          <span>{message}</span>
-        </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Alert variant="destructive">
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
 
         {isHostedMode ? (
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Hosted mode requires{" "}
             <code className="mx-1">BETTER_AUTH_SECRET</code>
             (32+ characters), <code className="mx-1">BETTER_AUTH_URL</code>, and
             Google OAuth credentials on the deployment.
           </p>
         ) : (
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Cloudflare Access mode requires
             <code className="mx-1">TEAM_DOMAIN</code> (a full https URL) and
             <code className="mx-1">POLICY_AUD</code> set on the deployment, with
@@ -43,14 +53,14 @@ export function AuthConfigErrorCard({
           </p>
         )}
 
-        <div className="card-actions justify-end">
+        <div className="flex flex-wrap items-center gap-2 justify-end">
           {onRetry ? (
-            <button className="btn btn-ghost btn-sm" onClick={onRetry}>
+            <Button variant="ghost" size="sm" type="button" onClick={onRetry}>
               Try Again
-            </button>
+            </Button>
           ) : null}
           <a
-            className="btn btn-primary btn-sm"
+            className={buttonVariants({ size: "sm" })}
             href={CLOUDFLARE_SETUP_GUIDE_URL}
             target="_blank"
             rel="noreferrer"
@@ -58,7 +68,7 @@ export function AuthConfigErrorCard({
             Open Setup Guide
           </a>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

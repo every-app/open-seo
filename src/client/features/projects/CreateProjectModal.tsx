@@ -12,8 +12,16 @@ import {
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import { createProject } from "@/serverFunctions/projects";
 
+import { Button } from "@/client/components/ui/button";
+import { DialogTitle } from "@/client/components/ui/dialog";
+import { Field, FieldDescription } from "@/client/components/ui/field";
+import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+
 export function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
+  const nameId = React.useId();
+  const domainId = React.useId();
   const queryClient = useQueryClient();
   const [name, setName] = React.useState("");
   const [domain, setDomain] = React.useState("");
@@ -68,66 +76,61 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
       labelledBy="create-project-title"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <h2 id="create-project-title" className="text-lg font-semibold">
-          New project
-        </h2>
+        <DialogTitle id="create-project-title">New project</DialogTitle>
 
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Name</span>
-          <input
+        <Field>
+          <Label htmlFor={nameId}>Name</Label>
+          <Input
+            id={nameId}
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="Acme Inc."
             maxLength={120}
             autoFocus
-            className="input input-bordered w-full"
           />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">
-            Domain <span className="text-base-content/50">(optional)</span>
-          </span>
-          <input
+        <Field>
+          <Label htmlFor={domainId}>
+            Domain <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <Input
+            id={domainId}
             type="text"
             value={domain}
             onChange={(event) => setDomain(event.target.value)}
             placeholder="example.com"
             maxLength={255}
-            className="input input-bordered w-full"
           />
-          <span className="text-xs text-base-content/50">
+          <FieldDescription className="text-xs">
             You can connect Search Console and set up rank tracking after
             creating the project.
-          </span>
-        </label>
+          </FieldDescription>
+        </Field>
 
-        <div className="flex flex-col gap-1.5">
+        <Field>
           <ProjectMarketFields value={market} onChange={setMarket} />
-          <span className="text-xs text-base-content/50">
+          <FieldDescription className="text-xs">
             Keyword, SERP, and domain data uses this country and language unless
             a call asks for a different one. Change it later in project
             settings.
-          </span>
-        </div>
+          </FieldDescription>
+        </Field>
 
         <div className="flex justify-end gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-ghost btn-sm"
             onClick={onClose}
             disabled={isPending}
           >
             Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm"
-            disabled={isPending}
-          >
+          </Button>
+          <Button size="sm" type="submit" disabled={isPending}>
             Create project
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

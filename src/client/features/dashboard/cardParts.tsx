@@ -1,3 +1,6 @@
+import { buttonVariants } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+
 // Shared building blocks for the dashboard cards. Same visual language as
 // the GSC IntegrationCard (rounded-xl, shadow-sm, header row + divider) so
 // the embedded SearchConsoleConnectionCard doesn't read as a different
@@ -14,18 +17,18 @@ export function CardShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
+    <Card className="overflow-hidden">
       <div className="flex items-center justify-between gap-4 px-5 py-4">
         <h2 className="text-base font-semibold leading-tight">{title}</h2>
         {action}
       </div>
-      <div className="border-t border-base-300 p-5">
+      <div className="border-t border-border p-5">
         {children}
         {stamp ? (
-          <p className="mt-4 text-[11px] text-base-content/45">{stamp}</p>
+          <p className="mt-4 text-[0.6875rem] text-muted-foreground">{stamp}</p>
         ) : null}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -38,7 +41,7 @@ export function EmptyCardBody({
 }) {
   return (
     <div className="flex flex-col items-start gap-3">
-      <p className="text-sm text-base-content/70">{message}</p>
+      <p className="text-sm text-muted-foreground">{message}</p>
       {cta}
     </div>
   );
@@ -56,10 +59,14 @@ export function Stat({
   sub?: React.ReactNode;
 }) {
   const toneClass =
-    tone === "success" ? "text-success" : tone === "error" ? "text-error" : "";
+    tone === "success"
+      ? "text-success"
+      : tone === "error"
+        ? "text-negative"
+        : "";
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-base-content/60">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p className={`text-2xl font-semibold tabular-nums ${toneClass}`}>
@@ -81,7 +88,8 @@ export function PercentDelta({
   const pct = ((current - previous) / previous) * 100;
   if (!Number.isFinite(pct)) return null;
   const rounded = Math.round(pct);
-  const tone = rounded > 0 ? "text-success" : rounded < 0 ? "text-error" : "";
+  const tone =
+    rounded > 0 ? "text-success" : rounded < 0 ? "text-negative" : "";
   return (
     <p className={`text-xs tabular-nums ${tone}`}>
       {rounded > 0 ? "▲" : rounded < 0 ? "▼" : ""} {Math.abs(rounded)}%
@@ -89,7 +97,10 @@ export function PercentDelta({
   );
 }
 
-export const moreDetailsClass = "btn btn-ghost btn-xs";
+export const moreDetailsClass = buttonVariants({
+  variant: "ghost",
+  size: "sm",
+});
 
 export function newLost(value: number | null): string {
   return value === null ? "—" : String(value);

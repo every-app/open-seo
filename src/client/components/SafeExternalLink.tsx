@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/client/components/icons";
 
 import { getSafeExternalUrl } from "./table/url";
 

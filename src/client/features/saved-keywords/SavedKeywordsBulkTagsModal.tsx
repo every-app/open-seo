@@ -1,9 +1,19 @@
-import { Check, Loader2, Plus, Search, X } from "lucide-react";
+import { Check, Loader2, Plus, Search, X } from "@/client/components/icons";
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "@/client/components/Modal";
 import { resolveTagColor, tagDotClass } from "@/shared/tag-colors";
 import type { SavedKeywordTag, SavedKeywordTagSummary } from "@/types/keywords";
 import { TagChip } from "./TagChip";
+
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Checkbox } from "@/client/components/ui/checkbox";
+import { Input } from "@/client/components/ui/input";
+import { InputGroup } from "@/client/components/ui/input-group";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
 
 type Mode = "add" | "remove";
 
@@ -99,32 +109,42 @@ export function SavedKeywordsBulkTagsModal({
           <h3 id="bulk-tags-title" className="text-lg font-semibold">
             Update tags
           </h3>
-          <p className="text-sm text-base-content/65">
+          <p className="text-sm text-muted-foreground">
             Apply or remove tags across {selectedCount} selected keyword
             {selectedCount !== 1 ? "s" : ""}.
           </p>
         </div>
 
-        <div className="inline-flex rounded-md border border-base-300 bg-base-200/40 p-0.5 text-sm">
-          <SegmentButton
-            active={mode === "add"}
-            onClick={() => setMode("add")}
-            label="Add tags"
-            count={addNames.length}
-          />
-          <SegmentButton
-            active={mode === "remove"}
-            onClick={() => setMode("remove")}
-            label="Remove tags"
-            count={removeIds.length}
+        <ToggleGroup
+          size="sm"
+          value={[mode]}
+          onValueChange={(value) => {
+            const next = value[0];
+            if (next === "add" || next === "remove") setMode(next);
+          }}
+        >
+          <ToggleGroupItem value="add" className="gap-1.5">
+            Add tags
+            {addNames.length > 0 ? (
+              <Badge variant="primary">{addNames.length}</Badge>
+            ) : null}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="remove"
+            className="gap-1.5"
             disabled={selectedRowTags.length === 0}
-          />
-        </div>
+          >
+            Remove tags
+            {removeIds.length > 0 ? (
+              <Badge variant="primary">{removeIds.length}</Badge>
+            ) : null}
+          </ToggleGroupItem>
+        </ToggleGroup>
 
         {mode === "add" ? (
           <div className="space-y-2">
             {addNames.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-base-300 bg-base-200/40 px-2 py-2">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-2">
                 {addNames.map((name) => {
                   const existing = availableByNormalized.get(
                     name.toLocaleLowerCase(),
@@ -155,9 +175,8 @@ export function SavedKeywordsBulkTagsModal({
               </div>
             ) : null}
 
-            <label className="flex items-center gap-2 rounded-md border border-base-300 bg-base-100 px-2 py-2">
-              <Search className="size-3.5 opacity-50" />
-              <input
+            <InputGroup prefix={<Search className="size-3.5" />}>
+              <Input
                 ref={inputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -168,27 +187,26 @@ export function SavedKeywordsBulkTagsModal({
                   }
                 }}
                 placeholder="Search or create…"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
               />
-            </label>
+            </InputGroup>
 
-            <div className="max-h-56 overflow-y-auto rounded-md border border-base-300">
+            <div className="max-h-56 overflow-y-auto rounded-md border border-border">
               {showCreate ? (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={handleCreate}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-base-200"
+                  className="h-auto w-full justify-start gap-2 whitespace-normal rounded-none px-3 py-2 text-left text-sm font-normal text-inherit"
                 >
-                  <Plus className="size-3.5 text-primary" />
-                  <span className="text-base-content/70">Create</span>
+                  <Plus className="size-3.5 text-link" />
+                  <span className="text-muted-foreground">Create</span>
                   <span className="font-medium">
                     &ldquo;{trimmedQuery}&rdquo;
                   </span>
-                </button>
+                </Button>
               ) : null}
 
               {filteredAvailable.length === 0 && !showCreate ? (
-                <div className="px-3 py-6 text-center text-xs text-base-content/55">
+                <div className="px-3 py-6 text-center text-xs text-muted-foreground">
                   {availableTags.length === 0
                     ? "No tags yet. Type a name above to create one."
                     : "No tags match that search."}
@@ -199,29 +217,22 @@ export function SavedKeywordsBulkTagsModal({
                 const checked = normalizedAddSet.has(tag.normalizedName);
                 const color = resolveTagColor(tag);
                 return (
-                  <button
+                  <label
                     key={tag.id}
-                    type="button"
-                    onClick={() => handleToggleAdd(tag)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200"
+                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 transition-colors hover:bg-accent"
                   >
-                    <span
-                      className={`flex size-4 shrink-0 items-center justify-center rounded border ${
-                        checked
-                          ? "border-primary bg-primary text-primary-content"
-                          : "border-base-300"
-                      }`}
-                    >
-                      {checked ? <Check className="size-3" /> : null}
-                    </span>
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={() => handleToggleAdd(tag)}
+                    />
                     <span
                       className={`size-2 shrink-0 rounded-full ${tagDotClass(color)}`}
                     />
                     <span className="flex-1 truncate text-sm">{tag.name}</span>
-                    <span className="text-[11px] tabular-nums text-base-content/45">
+                    <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
                       {tag.keywordCount}
                     </span>
-                  </button>
+                  </label>
                 );
               })}
             </div>
@@ -229,11 +240,11 @@ export function SavedKeywordsBulkTagsModal({
         ) : (
           <div className="space-y-2">
             {selectedRowTags.length === 0 ? (
-              <div className="rounded-md border border-base-300 bg-base-200/40 px-3 py-6 text-center text-xs text-base-content/55">
+              <div className="rounded-md border border-border bg-muted/40 px-3 py-6 text-center text-xs text-muted-foreground">
                 The selected keywords don&apos;t have any tags to remove.
               </div>
             ) : (
-              <div className="flex flex-wrap gap-1.5 rounded-md border border-base-300 p-3">
+              <div className="flex flex-wrap gap-1.5 rounded-md border border-border p-3">
                 {selectedRowTags.map((tag) => {
                   const checked = removeIds.includes(tag.id);
                   return (
@@ -251,7 +262,7 @@ export function SavedKeywordsBulkTagsModal({
               </div>
             )}
             {removeIds.length > 0 ? (
-              <p className="text-xs text-base-content/55">
+              <p className="text-xs text-muted-foreground">
                 {removeIds.length} tag{removeIds.length !== 1 ? "s" : ""} will
                 be detached from the selected keywords.
               </p>
@@ -260,16 +271,12 @@ export function SavedKeywordsBulkTagsModal({
         )}
 
         <div className="flex items-center justify-end gap-2 pt-2">
-          <button
-            type="button"
-            className="rounded-md px-3 py-1.5 text-sm text-base-content/70 hover:bg-base-200"
-            onClick={onClose}
-          >
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-content disabled:opacity-50"
+          </Button>
+          <Button
+            size="sm"
+            className="gap-1.5"
             disabled={!canApply}
             onClick={() =>
               onApply({
@@ -280,43 +287,9 @@ export function SavedKeywordsBulkTagsModal({
           >
             {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
             Apply
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
-  );
-}
-
-function SegmentButton({
-  active,
-  onClick,
-  label,
-  count,
-  disabled,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count: number;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded px-3 py-1 text-sm transition ${
-        active
-          ? "bg-base-100 font-medium shadow-sm"
-          : "text-base-content/65 hover:text-base-content"
-      } disabled:opacity-40`}
-    >
-      {label}
-      {count > 0 ? (
-        <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-content">
-          {count}
-        </span>
-      ) : null}
-    </button>
   );
 }

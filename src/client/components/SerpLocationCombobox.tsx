@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search } from "@/client/components/icons";
 import { searchSerpLocations } from "@/serverFunctions/serp-locations";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 import type { SerpLocationResult } from "@/server/lib/dataforseo/serp-locations";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { InputGroup } from "@/client/components/ui/input-group";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/client/components/ui/popover";
+import { Input } from "@/client/components/ui/input";
 type Props = {
   value: string | undefined;
   onChange: (locationName: string | undefined) => void;
@@ -35,7 +44,6 @@ export function SerpLocationCombobox({
   const [isError, setIsError] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   // Selecting a result sets the input to its display label; that change must
   // not itself trigger a search for the label text.
@@ -91,21 +99,6 @@ export function SerpLocationCombobox({
     };
   }, [debouncedQuery, countryCode]);
 
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handlePointerDown = (e: PointerEvent) => {
-      if (
-        e.target instanceof Node &&
-        !containerRef.current?.contains(e.target)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [open]);
-
   // Scroll active item into view
   useEffect(() => {
     if (!open) return;
@@ -155,68 +148,81 @@ export function SerpLocationCombobox({
   };
 
   return (
-    <div ref={containerRef} className="relative w-full">
-      <label className="flex items-center gap-2 input input-bordered w-full pr-3">
-        {isLoading ? (
-          <Loader2 className="size-4 shrink-0 text-base-content/50 animate-spin" />
-        ) : (
-          <Search className="size-4 shrink-0 text-base-content/50" />
-        )}
-        <input
-          type="text"
-          className="grow min-w-0 bg-transparent outline-none placeholder:text-base-content/40"
-          placeholder={placeholder}
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
-            if (results.length > 0) setOpen(true);
-          }}
-          autoComplete="off"
-        />
-      </label>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverAnchor className="w-full">
+        <InputGroup
+          className="w-full"
+          prefix={
+            <>
+              {isLoading ? (
+                <Loader2 className="size-4 shrink-0 animate-spin" />
+              ) : (
+                <Search className="size-4 shrink-0" />
+              )}
+            </>
+          }
+        >
+          <Input
+            type="text"
+            placeholder={placeholder}
+            aria-label={placeholder}
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (results.length > 0) setOpen(true);
+            }}
+            autoComplete="off"
+          />
+        </InputGroup>
+      </PopoverAnchor>
 
-      {open && (
-        <div className="absolute z-30 mt-1 w-full rounded-box border border-base-300 bg-base-100 shadow-lg p-1">
-          {isError ? (
-            <p className="px-3 py-2 text-sm text-error">
-              Unable to load locations
-            </p>
-          ) : results.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-base-content/50">
-              No locations found for "{debouncedQuery.trim()}"
-            </p>
-          ) : (
-            <ul
-              ref={listRef}
-              role="listbox"
-              className="menu max-h-56 w-full flex-nowrap overflow-y-auto p-0"
-            >
-              {results.map((loc, index) => (
-                <li
-                  key={loc.locationCode}
-                  role="option"
-                  aria-selected={loc.locationName === value}
+      {/* Focus stays in the input so typing keeps refining the results. */}
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        initialFocus={false}
+        className="w-(--anchor-width) p-1"
+      >
+        {isError ? (
+          <p className="px-3 py-2 text-sm text-negative">
+            Unable to load locations
+          </p>
+        ) : results.length === 0 ? (
+          <p className="px-3 py-2 text-sm text-muted-foreground">
+            No locations found for "{debouncedQuery.trim()}"
+          </p>
+        ) : (
+          <ul
+            ref={listRef}
+            role="listbox"
+            className="flex max-h-56 w-full flex-col gap-0.5 overflow-y-auto"
+          >
+            {results.map((loc, index) => (
+              <li
+                key={loc.locationCode}
+                role="option"
+                aria-selected={loc.locationName === value}
+              >
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className={`h-auto w-full justify-between gap-2 rounded-lg px-3 py-1.5 font-normal text-foreground ${
+                    index === activeIndex ? "bg-muted" : ""
+                  }`}
+                  onClick={() => select(loc)}
+                  onMouseEnter={() => setActiveIndex(index)}
                 >
-                  <button
-                    type="button"
-                    className={`w-full flex items-center justify-between gap-2 ${index === activeIndex ? "menu-focus" : ""}`}
-                    onClick={() => select(loc)}
-                    onMouseEnter={() => setActiveIndex(index)}
-                  >
-                    <span className="truncate text-left">
-                      {loc.displayLabel}
-                    </span>
-                    <span className="badge badge-xs bg-base-300 border-0 text-base-content/60 shrink-0">
-                      {loc.locationType}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
+                  <span className="truncate text-left">{loc.displayLabel}</span>
+                  <Badge variant="secondary" className="shrink-0">
+                    {loc.locationType}
+                  </Badge>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }

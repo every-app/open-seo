@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Menu } from "lucide-react";
+import { Menu } from "@/client/components/icons";
 import {
   MissingSeoSetupModal,
   MobileSidebarDrawer,
@@ -9,11 +9,13 @@ import {
 } from "@/client/layout/AppShellParts";
 import { GscReEngagementModal } from "@/client/features/gsc/GscReEngagementModal";
 import { Sidebar } from "@/client/components/Sidebar";
+import { ThemeToggle } from "@/client/components/ThemeToggle";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 import { getProjects } from "@/serverFunctions/projects";
 import { getLastProjectId } from "@/client/lib/active-project";
 
+import { Button } from "@/client/components/ui/button";
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 
 export function AuthenticatedAppLayout({
@@ -27,7 +29,6 @@ export function AuthenticatedAppLayout({
 }) {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const setupModalRef = React.useRef<HTMLDivElement | null>(null);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
   // On non-project pages (e.g. /settings) there's no projectId in the URL, so
@@ -97,25 +98,8 @@ export function AuthenticatedAppLayout({
     isSeoApiKeyConfigured === false &&
     !shouldShowMissingSeoApiKeyModal;
 
-  React.useEffect(() => {
-    if (!shouldShowMissingSeoApiKeyModal) return;
-
-    setupModalRef.current?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowMissingSeoApiKeyModal(false);
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [shouldShowMissingSeoApiKeyModal]);
-
   return (
-    <div className="flex h-[100dvh] bg-base-200">
+    <div className="flex h-[100dvh] bg-background">
       <div className="hidden shrink-0 md:block">
         <Sidebar projectId={sidebarProjectId} />
       </div>
@@ -126,10 +110,9 @@ export function AuthenticatedAppLayout({
           onOpenDrawer={() => setDrawerOpen(true)}
         />
 
-        {/* PostHog-style cutout: the main content sits on a raised panel with a
-            thin strip of the sidebar background above it and a hairline border. */}
-        <div className="flex min-h-0 flex-1 flex-col md:pt-2">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-base-100 md:rounded-tl-lg md:border-l md:border-t md:border-base-300">
+        {/* Atelier layout: white sidebar, content straight on the cream canvas. */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <SeoApiStatusBanners
               shouldShowSeoApiWarning={shouldShowSeoApiWarning}
               seoApiKeyStatusError={seoApiKeyStatusError}
@@ -149,7 +132,6 @@ export function AuthenticatedAppLayout({
       />
 
       <MissingSeoSetupModal
-        ref={setupModalRef}
         isOpen={shouldShowMissingSeoApiKeyModal}
         onClose={() => setShowMissingSeoApiKeyModal(false)}
       />
@@ -170,19 +152,25 @@ function MobileTopBar({
   onOpenDrawer: () => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-base-300 bg-base-100 px-2 py-1.5 md:hidden">
-      <button
-        type="button"
-        className="btn btn-square btn-ghost btn-sm"
-        aria-label="Toggle sidebar"
-        aria-expanded={drawerOpen}
-        onClick={onOpenDrawer}
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-      <Link to="/" className="ml-1 font-semibold text-base-content">
-        OpenSEO
-      </Link>
+    <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-2 py-1 md:hidden">
+      <div className="flex items-center gap-1">
+        {/* 2.75rem hit areas: this bar is the touch layout. */}
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          className="size-11"
+          aria-label="Toggle sidebar"
+          aria-expanded={drawerOpen}
+          onClick={onOpenDrawer}
+        >
+          <Menu className="size-5" />
+        </Button>
+        <Link to="/" className="font-semibold tracking-tight text-foreground">
+          OpenSEO
+        </Link>
+      </div>
+      <ThemeToggle className="size-11" />
     </div>
   );
 }

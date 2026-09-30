@@ -1,11 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/client/components/icons";
 import { MIN_PAGES } from "@/client/features/audit/launch/types";
 import type { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import { PAID_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import { Input } from "@/client/components/ui/input";
+import { InputGroup } from "@/client/components/ui/input-group";
+import { Switch } from "@/client/components/ui/switch";
 type Props = {
   launchForm: ReturnType<typeof useLaunchController>["launchForm"];
   commitMaxPagesInput: () => number;
@@ -18,9 +24,9 @@ export function LaunchFormCard({
   maxPagesLimit,
 }: Props) {
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-4">
-        <h2 className="card-title text-base">Start New Audit</h2>
+    <Card>
+      <CardContent className="space-y-4 pt-6">
+        <h2 className="text-base font-semibold">Start New Audit</h2>
 
         <form
           className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center"
@@ -34,10 +40,11 @@ export function LaunchFormCard({
               const urlError = getFieldError(field.state.meta.errors);
 
               return (
-                <label
-                  className={`input input-bordered w-full lg:col-span-9 ${urlError ? "input-error" : ""}`}
+                <InputGroup
+                  className="w-full lg:col-span-9"
+                  error={Boolean(urlError)}
                 >
-                  <input
+                  <Input
                     placeholder="https://example.com"
                     value={field.state.value}
                     onChange={(event) => {
@@ -47,16 +54,17 @@ export function LaunchFormCard({
                       }
                     }}
                   />
-                </label>
+                </InputGroup>
               );
             }}
           </launchForm.Field>
 
           <launchForm.Subscribe selector={(state) => state.isSubmitting}>
             {(isSubmitting) => (
-              <button
+              <Button
+                size="sm"
                 type="submit"
-                className="btn btn-primary btn-sm w-full lg:col-span-3"
+                className="w-full lg:col-span-3"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -66,7 +74,7 @@ export function LaunchFormCard({
                 ) : (
                   "Start Audit"
                 )}
-              </button>
+              </Button>
             )}
           </launchForm.Subscribe>
 
@@ -81,8 +89,8 @@ export function LaunchFormCard({
         </form>
 
         <LaunchErrors launchForm={launchForm} />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -94,19 +102,19 @@ function LaunchOptions({
   const isFreeLimited = maxPagesLimit < PAID_MAX_AUDIT_PAGES;
 
   return (
-    <div className="rounded-lg border border-base-300 bg-base-200/20 p-3 space-y-2">
-      <label className="text-xs font-medium uppercase tracking-wide text-base-content/60">
+    <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+      <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
         Crawl limit
       </label>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-base-content/70">Max pages</span>
+        <span className="text-sm text-muted-foreground">Max pages</span>
         <launchForm.Field name="maxPagesInput">
           {(field) => (
-            <input
+            <Input
               type="number"
               min={MIN_PAGES}
               max={maxPagesLimit}
-              className="input input-bordered input-sm w-28"
+              className="w-28 h-8 text-sm"
               value={field.state.value}
               onChange={(event) => {
                 const next = event.target.value;
@@ -121,7 +129,7 @@ function LaunchOptions({
           )}
         </launchForm.Field>
       </div>
-      <p className="text-xs text-base-content/50">
+      <p className="text-xs text-muted-foreground">
         Enter any value from {MIN_PAGES} to {maxPagesLimit.toLocaleString()}.
         {isFreeLimited ? (
           <>
@@ -129,7 +137,7 @@ function LaunchOptions({
             <Link
               to={SUBSCRIBE_ROUTE}
               search={{ upgrade: true }}
-              className="link link-primary"
+              className="underline underline-offset-4 text-link"
             >
               Upgrade
             </Link>{" "}
@@ -143,20 +151,18 @@ function LaunchOptions({
 
 function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-200/20 p-3 space-y-2">
-      <label className="label cursor-pointer justify-start gap-2 p-0">
+    <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+      <label className="flex cursor-pointer items-center justify-start gap-2 p-0">
         <launchForm.Field name="runLighthouse">
           {(field) => (
-            <input
-              type="checkbox"
-              className="toggle toggle-sm toggle-primary"
+            <Switch
               checked={Boolean(field.state.value)}
-              onChange={(event) => field.handleChange(event.target.checked)}
+              onCheckedChange={(checked) => field.handleChange(checked)}
             />
           )}
         </launchForm.Field>
         <span
-          className="text-sm font-medium text-base-content/80"
+          className="text-sm font-medium text-foreground"
           title="Lighthouse measures the performance of your pages and identifies issues."
         >
           Include Lighthouse
@@ -169,7 +175,7 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
         {(runLighthouse) =>
           runLighthouse ? (
             <div className="space-y-1">
-              <p className="text-xs text-base-content/60">
+              <p className="text-xs text-muted-foreground">
                 We choose a sample of 20 pages to audit, removing pages from
                 duplicate templates.
               </p>
@@ -189,7 +195,7 @@ function LaunchErrors({ launchForm }: Pick<Props, "launchForm">) {
           const urlError = getFieldError(field.state.meta.errors);
 
           return urlError ? (
-            <p className="text-sm text-error">{urlError}</p>
+            <p className="text-sm text-negative">{urlError}</p>
           ) : null;
         }}
       </launchForm.Field>
@@ -199,9 +205,11 @@ function LaunchErrors({ launchForm }: Pick<Props, "launchForm">) {
           const errorMessage = getFormError(submitError);
 
           return errorMessage ? (
-            <div className="alert alert-error py-2">
-              <span className="text-sm">{errorMessage}</span>
-            </div>
+            <Alert variant="destructive" className="py-2 [&>svg]:top-2.5">
+              <AlertDescription className="text-sm">
+                {errorMessage}
+              </AlertDescription>
+            </Alert>
           ) : null;
         }}
       </launchForm.Subscribe>

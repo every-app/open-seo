@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check } from "lucide-react";
+import { Check } from "@/client/components/icons";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { AUDIT_ISSUE_TYPES } from "@/shared/audit-issues";
+import { buttonVariants } from "@/client/components/ui/button";
+import { Skeleton } from "@/client/components/ui/skeleton";
 
 import {
   formatCount,
@@ -75,11 +77,11 @@ export function GscCard({
       {reportQuery.isPending ? (
         <div className="grid grid-cols-2 gap-3" aria-busy>
           {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="skeleton h-20" />
+            <Skeleton key={i} className="h-20" />
           ))}
         </div>
       ) : reportQuery.isError ? (
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           Couldn&rsquo;t load Search Console data. Try again shortly.
         </p>
       ) : report?.connected ? (
@@ -131,7 +133,7 @@ export function AuditHealthCard({
             <Link
               to="/p/$projectId/audit"
               params={{ projectId }}
-              className="btn btn-primary btn-sm"
+              className={buttonVariants({ size: "sm" })}
             >
               Run an audit
             </Link>
@@ -162,7 +164,7 @@ export function AuditHealthCard({
       }
     >
       {audit.topIssues.length === 0 ? (
-        <div className="flex items-center gap-2 text-sm text-base-content/70">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Check className="size-4 text-success" />
           No issues found — your site looks healthy.
         </div>
@@ -177,23 +179,23 @@ export function AuditHealthCard({
                 <span
                   className={`size-2 shrink-0 rounded-full ${
                     issue.severity === "critical"
-                      ? "bg-error"
+                      ? "bg-destructive"
                       : issue.severity === "warning"
                         ? "bg-warning"
-                        : "bg-base-content/30"
+                        : "bg-foreground/30"
                   }`}
                 />
                 <span className="truncate">
                   {issueTitles[issue.issueType] ?? issue.issueType}
                 </span>
               </span>
-              <span className="shrink-0 tabular-nums text-base-content/60">
+              <span className="shrink-0 tabular-nums text-muted-foreground">
                 {issue.count} {issue.count === 1 ? "page" : "pages"}
               </span>
             </li>
           ))}
           {audit.totalIssueTypes > audit.topIssues.length ? (
-            <li className="text-xs text-base-content/50">
+            <li className="text-xs text-muted-foreground">
               + {audit.totalIssueTypes - audit.topIssues.length} more issue
               {audit.totalIssueTypes - audit.topIssues.length === 1 ? "" : "s"}
             </li>
@@ -218,7 +220,7 @@ export function BacklinkPulseCard({
       <CardShell title="Backlink pulse" stamp="Taking your first snapshot…">
         <div className="grid grid-cols-2 gap-3" aria-busy>
           {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="skeleton h-20" />
+            <Skeleton key={i} className="h-20" />
           ))}
         </div>
       </CardShell>
@@ -228,7 +230,7 @@ export function BacklinkPulseCard({
   if (!backlinks) {
     return (
       <CardShell title="Backlink pulse">
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           We&rsquo;ll snapshot who links to your domain — nothing to set up.
         </p>
       </CardShell>
