@@ -14,7 +14,7 @@ type PreflightLevel = "ok" | "info" | "warn" | "fail";
 
 type PreflightItem = {
   // Stable identifier shared with /api/health's check map.
-  key: "auth" | "dataforseo" | "gsc" | "ai" | "runtime";
+  key: "auth" | "dataforseo" | "gsc" | "google_ads" | "ai" | "runtime";
   name: string;
   level: PreflightLevel;
   message: string;
@@ -194,6 +194,23 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
         "Not configured (optional). See docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md.",
     });
   }
+
+  items.push(
+    get(env, "GOOGLE_ADS_DEVELOPER_TOKEN")
+      ? {
+          key: "google_ads",
+          name: "Google Ads (LSA)",
+          level: "ok",
+          message: "GOOGLE_ADS_DEVELOPER_TOKEN set",
+        }
+      : {
+          key: "google_ads",
+          name: "Google Ads (LSA)",
+          level: "info",
+          message:
+            "GOOGLE_ADS_DEVELOPER_TOKEN not set (optional) — Local Services Ads reporting is disabled. See docs/SELF_HOSTING_GOOGLE_ADS.md.",
+        },
+  );
 
   items.push(
     get(env, "OPENROUTER_API_KEY")

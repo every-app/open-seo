@@ -36,6 +36,7 @@ import {
   signGdprErasureRequest,
   type GdprStorageErasurePayload,
 } from "../src/shared/gdpr-erasure";
+import { GOOGLE_ADS_OAUTH_PROVIDER_ID } from "../src/shared/google-ads";
 import { GSC_OAUTH_PROVIDER_ID } from "../src/shared/gsc";
 import { loadLocalEnv, parseArgs } from "./cli-utils";
 // The Node-safe raw barrel (not ../src/db/schema, the provider-aware one,
@@ -208,17 +209,23 @@ async function buildInventory(db: Db, user: UserRow) {
         inArray(schema.account.providerId, [
           GSC_OAUTH_PROVIDER_ID,
           GA4_OAUTH_PROVIDER_ID,
+          GOOGLE_ADS_OAUTH_PROVIDER_ID,
         ]),
       ),
     )
     .orderBy(schema.account.providerId, schema.account.accountId);
-  // The where clause already restricts providerId to the two Google
-  // providers; the predicate narrows the column's string type to match the
-  // erasure payload's enum.
+  // The where clause already restricts providerId to the Google providers;
+  // the predicate narrows the column's string type to match the erasure
+  // payload's enum.
   const isGoogleProviderId = (
     value: string,
-  ): value is typeof GSC_OAUTH_PROVIDER_ID | typeof GA4_OAUTH_PROVIDER_ID =>
-    value === GSC_OAUTH_PROVIDER_ID || value === GA4_OAUTH_PROVIDER_ID;
+  ): value is
+    | typeof GSC_OAUTH_PROVIDER_ID
+    | typeof GA4_OAUTH_PROVIDER_ID
+    | typeof GOOGLE_ADS_OAUTH_PROVIDER_ID =>
+    value === GSC_OAUTH_PROVIDER_ID ||
+    value === GA4_OAUTH_PROVIDER_ID ||
+    value === GOOGLE_ADS_OAUTH_PROVIDER_ID;
   const googleAccounts = googleAccountRows.flatMap((row) =>
     isGoogleProviderId(row.providerId)
       ? [{ providerId: row.providerId, accountId: row.accountId }]
@@ -316,6 +323,10 @@ async function buildInventory(db: Db, user: UserRow) {
     ga4_connections: await db.$count(
       schema.ga4Connections,
       eq(schema.ga4Connections.connectedByUserId, user.id),
+    ),
+    google_ads_connections: await db.$count(
+      schema.googleAdsConnections,
+      eq(schema.googleAdsConnections.connectedByUserId, user.id),
     ),
     api_keys: await db.$count(
       schema.apikey,
@@ -501,6 +512,9 @@ async function erasePostgres(db: Db, user: UserRow, organizationIds: string[]) {
     await tx
       .delete(schema.ga4Connections)
       .where(eq(schema.ga4Connections.connectedByUserId, user.id));
+    await tx
+      .delete(schema.googleAdsConnections)
+      .where(eq(schema.googleAdsConnections.connectedByUserId, user.id));
     // apikey.reference_id mirrors the plugin's polymorphic schema and has no
     // user FK, so keys don't cascade with the user row.
     await tx

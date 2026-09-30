@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 type IntegrationConnectionStatus =
   | "connected"
   | "disconnected"
+  | "reconnect_required"
   | "setup_required";
 
 /** Shared shell for first-party connection cards such as GSC and GA4. */
@@ -41,6 +42,7 @@ function ConnectionStatusPill({
   status: IntegrationConnectionStatus;
 }) {
   const connected = status === "connected";
+  const reconnectRequired = status === "reconnect_required";
   const setupRequired = status === "setup_required";
   return (
     <span
@@ -48,9 +50,11 @@ function ConnectionStatusPill({
         "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
         connected
           ? "border-success/30 bg-success/10 text-success"
-          : setupRequired
+          : reconnectRequired
             ? "border-warning/30 bg-warning/10 text-warning"
-            : "border-base-300 bg-base-200 text-base-content/60",
+            : setupRequired
+              ? "border-warning/30 bg-warning/10 text-warning"
+              : "border-base-300 bg-base-200 text-base-content/60",
       ].join(" ")}
     >
       <span
@@ -58,16 +62,20 @@ function ConnectionStatusPill({
           "size-1.5 rounded-full",
           connected
             ? "bg-success"
-            : setupRequired
+            : reconnectRequired
               ? "bg-warning"
-              : "bg-base-content/40",
+              : setupRequired
+                ? "bg-warning"
+                : "bg-base-content/40",
         ].join(" ")}
       />
       {connected
         ? "Connected"
-        : setupRequired
-          ? "Setup required"
-          : "Not connected"}
+        : reconnectRequired
+          ? "Reconnect required"
+          : setupRequired
+            ? "Setup required"
+            : "Not connected"}
     </span>
   );
 }
