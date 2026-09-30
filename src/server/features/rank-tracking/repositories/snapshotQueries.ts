@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm";
 import { db } from "@/db";
 import { rankCheckRuns, rankSnapshots } from "@/db/schema";
-import { toSqliteTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
+import { toRankTrackingCutoffTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
 
 function completedRunIdsForConfig(configId: string) {
   return db
@@ -28,7 +28,7 @@ function completedRunIdsForConfig(configId: string) {
 }
 
 function cutoffTimestamp(sinceDays: number): string {
-  return toSqliteTimestamp(
+  return toRankTrackingCutoffTimestamp(
     new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000),
   );
 }
