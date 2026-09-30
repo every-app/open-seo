@@ -255,11 +255,11 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
     });
   });
 
-  it("marks a grant for reconnect on a GSC 403 without deleting it", async () => {
+  it("marks a grant for reconnect on a GSC 401 without deleting it", async () => {
     mocks.state.selectRows = [{ id: "grant-a", accountId: "sub-a" }];
     mocks.getUserInfoEmail.mockResolvedValue("a@example.com");
     mocks.listSites.mockRejectedValue(
-      new GscApiError(403, "Search Console denied access"),
+      new GscApiError(401, "Search Console rejected the credentials"),
     );
 
     await expect(
@@ -277,6 +277,43 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
     });
     expect(mocks.getUserInfoEmail).not.toHaveBeenCalled();
     expect(mocks.dbDelete).not.toHaveBeenCalled();
+  });
+
+  // A 403 is usually the Search Console API being disabled in the Cloud
+  // project, which reconnecting cannot fix. Reported as a reconnect it left
+  // self-hosters deleting and re-linking a perfectly healthy grant forever.
+  it("reports a GSC 403 as a load failure rather than a dead grant", async () => {
+    mocks.state.selectRows = [{ id: "grant-a", accountId: "sub-a" }];
+    const apiDisabled = new GscApiError(
+      403,
+      "The Google Search Console API is not enabled",
+      '{"error":{"errors":[{"reason":"accessNotConfigured"}]}}',
+    );
+    mocks.listSites.mockRejectedValue(apiDisabled);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    await expect(
+      GscService.listSitesForUserWithGrantStatus("u1"),
+    ).resolves.toEqual({
+      accounts: [
+        {
+          accountId: "sub-a",
+          email: null,
+          requiresReconnect: false,
+          propertiesUnavailable: true,
+          sites: [],
+        },
+      ],
+    });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to list Search Console sites for account",
+      "sub-a",
+      apiDisabled,
+    );
+    expect(mocks.dbDelete).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it("keeps non-auth GSC API errors reportable", async () => {

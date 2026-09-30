@@ -5,6 +5,10 @@ import { GscApiError, GscTokenError } from "./gscErrors";
 export { GscApiError, GscTokenError } from "./gscErrors";
 
 const GSC_API_BASE = "https://www.googleapis.com/webmasters/v3";
+// Google answers a call to an API that is not enabled in the caller's Cloud
+// project with 403 and one of these reasons. The grant is healthy in that case,
+// so the message has to point at the Cloud console rather than at reconnecting.
+const API_DISABLED_REASON = /accessNotConfigured|SERVICE_DISABLED/;
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
 /** A GSC REST call returned a non-2xx status. `status` drives user-facing messaging. */
@@ -64,8 +68,13 @@ export type UrlInspectionResult = {
 };
 
 function messageForStatus(status: number, body: string): string {
-  if (status === 401 || status === 403) {
-    return "Search Console denied access to this property (no verified permission, or the connection was revoked).";
+  if (status === 401) {
+    return "Search Console rejected the credentials (the connection was revoked or expired).";
+  }
+  if (status === 403) {
+    return API_DISABLED_REASON.test(body)
+      ? "The Google Search Console API is not enabled in the Google Cloud project behind GOOGLE_CLIENT_ID. Enable it in the Cloud console, then retry — the stored connection itself is fine."
+      : "Search Console denied access to this property (the connected account has no verified permission for it).";
   }
   if (status === 429) {
     return "Search Console rate limit reached. Retry shortly.";

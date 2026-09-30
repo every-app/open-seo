@@ -80,14 +80,18 @@ async function listGrantsForUser(userId: string) {
 }
 
 /** Expected ways a stored grant fails to reach Search Console: no token could be
- *  minted (refresh token revoked or expired), or Google rejected the call
- *  (401/403). These surface a reconnect prompt without fault logging. */
+ *  minted (refresh token revoked or expired), or Google rejected the token
+ *  itself (401). These surface a reconnect prompt without fault logging.
+ *
+ *  403 is excluded on purpose. Google returns it for conditions a reconnect
+ *  cannot fix — most often the Search Console API not being enabled in the
+ *  Cloud project behind the OAuth client — and labelling those "Connection
+ *  expired" sends self-hosters into an endless disconnect/reconnect loop. They
+ *  surface as a load failure instead and stay reportable, so the reason reaches
+ *  the logs. Mirrors GA4 (`Ga4Service.requiresReconnect`). */
 export function isExpectedGrantFailure(error: unknown): boolean {
   if (error instanceof GscTokenError) return true;
-  return (
-    error instanceof GscApiError &&
-    (error.status === 401 || error.status === 403)
-  );
+  return error instanceof GscApiError && error.status === 401;
 }
 
 async function listSitesForUserWithGrantStatus(
