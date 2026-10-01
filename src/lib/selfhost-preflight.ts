@@ -195,22 +195,42 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
     });
   }
 
-  items.push(
-    get(env, "OPENROUTER_API_KEY")
-      ? {
-          key: "ai",
-          name: "AI features",
-          level: "ok",
-          message: "OPENROUTER_API_KEY set",
-        }
-      : {
-          key: "ai",
-          name: "AI features",
-          level: "info",
-          message:
-            "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
-        },
-  );
+  if (get(env, "CHAT_BASE_URL")) {
+    items.push(
+      get(env, "CHAT_MODEL")
+        ? {
+            key: "ai",
+            name: "AI features",
+            level: "ok",
+            message:
+              "CHAT_BASE_URL set — SAM uses your OpenAI-compatible endpoint",
+          }
+        : {
+            key: "ai",
+            name: "AI features",
+            level: "warn",
+            message:
+              "CHAT_BASE_URL is set but CHAT_MODEL is not — SAM cannot answer until CHAT_MODEL names a model the endpoint serves.",
+          },
+    );
+  } else {
+    items.push(
+      get(env, "OPENROUTER_API_KEY")
+        ? {
+            key: "ai",
+            name: "AI features",
+            level: "ok",
+            message: "OPENROUTER_API_KEY set",
+          }
+        : {
+            key: "ai",
+            name: "AI features",
+            level: "info",
+            message:
+              "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
+          },
+    );
+  }
 }
 
 // Shared per-feature checks: the Docker preflight prints these at boot and

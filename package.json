@@ -76,6 +76,7 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.76",
     "@ai-sdk/react": "^3.0.211",
     "@base-ui/react": "^1.8.0",
     "@better-auth/api-key": "1.6.22",
