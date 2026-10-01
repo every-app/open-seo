@@ -20,6 +20,7 @@ import {
 } from "@/server/lib/runtime-env";
 import { getSetupIssueSummary } from "@/server/lib/setup-status";
 import { isTelemetryOptOutValue } from "@/shared/selfhost-checks";
+import { appPath } from "@/shared/app-path";
 
 const SELF_HOST_POSTHOG_KEY =
   "phc_xaXj4vE4LikxfvR7q6EHemAYNBSZW4hQkqor7fpf8aGT";
@@ -285,7 +286,11 @@ export async function maybeSendSelfHostHeartbeat(
 ) {
   // Docker probes this endpoint every 30 seconds. Probes must not create an
   // install, consume its heartbeat interval, or keep an idle install active.
-  if (pathname === "/api/health" || pathname === "/api/health/") return;
+  if (
+    pathname === appPath("/api/health") ||
+    pathname === appPath("/api/health/")
+  )
+    return;
 
   try {
     if (await telemetryIsDisabled()) return;

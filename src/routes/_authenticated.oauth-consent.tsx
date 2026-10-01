@@ -5,6 +5,7 @@ import { useSession } from "@/lib/auth-client";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import { appPath } from "@/shared/app-path";
 import {
   Card,
   CardContent,
@@ -48,7 +49,7 @@ function OAuthConsentPage() {
     }
 
     try {
-      const response = await fetch("/api/oauth/consent", {
+      const response = await fetch(appPath("/api/oauth/consent"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +82,7 @@ function OAuthConsentPage() {
     <Card className="w-full max-w-md">
       <CardHeader className="flex flex-col items-center text-center">
         <img
-          src="/transparent-logo.png"
+          src={appPath("/transparent-logo.png")}
           alt="OpenSEO"
           className="size-10 rounded-lg"
         />

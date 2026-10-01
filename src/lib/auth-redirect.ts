@@ -1,4 +1,6 @@
-const OAUTH_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
+import { appPath } from "@/shared/app-path";
+
+const OAUTH_AUTHORIZE_PATH = appPath("/api/auth/oauth2/authorize");
 const OAUTH_SIGNED_QUERY_END = "sig";
 const OAUTH_AUTHORIZE_MARKERS = ["response_type", "client_id", "redirect_uri"];
 
@@ -12,7 +14,7 @@ export function normalizeAuthRedirect(value: string | null | undefined) {
     value.startsWith("//") ||
     value.includes("\\")
   ) {
-    return "/";
+    return appPath("/");
   }
 
   return value;
@@ -96,7 +98,7 @@ export function toAuthCallbackURL(redirectTo: string) {
 }
 
 export function getSignInSearch(redirectTo: string) {
-  return redirectTo === "/" ? {} : { redirect: redirectTo };
+  return redirectTo === appPath("/") ? {} : { redirect: redirectTo };
 }
 
 export function getVerifyEmailSearch(
@@ -105,17 +107,17 @@ export function getVerifyEmailSearch(
 ) {
   const search: { email?: string; redirect?: string } = {};
   if (email) search.email = email;
-  if (redirectTo !== "/") search.redirect = redirectTo;
+  if (redirectTo !== appPath("/")) search.redirect = redirectTo;
   return search;
 }
 
 export function getSignInHref(redirectTo: string) {
   const search = getSignInSearch(redirectTo);
   if (!("redirect" in search)) {
-    return "/sign-in";
+    return appPath("/sign-in");
   }
 
-  return `/sign-in?redirect=${encodeURIComponent(search.redirect ?? "/")}`;
+  return `${appPath("/sign-in")}?redirect=${encodeURIComponent(search.redirect ?? appPath("/"))}`;
 }
 
 export function getSignInHrefForLocation(location: {

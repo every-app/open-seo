@@ -16,6 +16,7 @@ import {
 } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
+import { appPath } from "@/shared/app-path";
 
 const verificationIssueSchema = z
   .enum(["invalid_token", "token_expired", "user_not_found", "unknown"])
@@ -166,8 +167,11 @@ function VerifyEmailPage() {
     if (!email) return;
     setIsResending(true);
     try {
-      const callbackURL = new URL("/verify-email", window.location.origin);
-      if (redirectTo !== "/")
+      const callbackURL = new URL(
+        appPath("/verify-email"),
+        window.location.origin,
+      );
+      if (redirectTo !== appPath("/"))
         callbackURL.searchParams.set("redirect", redirectTo);
       const result = await authClient.sendVerificationEmail({
         email,

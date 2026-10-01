@@ -2,6 +2,8 @@
 // routes and the app all build. The server-only halves (the kill switch, the
 // token shape check) live in @/server/features/reports/shareAccess.
 
+import { appPath } from "@/shared/app-path";
+
 /**
  * 24 random bytes rendered base64url: 192 bits of entropy in exactly 32
  * characters, with no padding and nothing to percent-encode in a path segment.
@@ -17,4 +19,4 @@ export function mintShareToken(): string {
 }
 
 /** The public path for a token. One definition, used by both routes and the app. */
-export const sharePath = (token: string) => `/s/${token}`;
+export const sharePath = (token: string) => appPath(`/s/${token}`);

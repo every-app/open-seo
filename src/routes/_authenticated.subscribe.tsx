@@ -20,6 +20,7 @@ import { useCanManageBilling } from "@/client/features/team/organizationQueries"
 import { AUTUMN_MANAGED_ACCESS_FEATURE_ID } from "@/shared/billing";
 import { SUPPORT_EMAIL } from "@/client/lib/support";
 import { Button } from "@/client/components/ui/button";
+import { appPath } from "@/shared/app-path";
 
 const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
@@ -202,7 +203,7 @@ function SubscribePage() {
 
       <div className="space-y-3 text-center">
         <img
-          src="/transparent-logo.png"
+          src={appPath("/transparent-logo.png")}
           alt="OpenSEO"
           className="mx-auto size-10 rounded-lg"
         />

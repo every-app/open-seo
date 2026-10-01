@@ -27,6 +27,7 @@ import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleGdprStorageErasure } from "@/server/gdpr/storage-erasure";
 import { GDPR_STORAGE_ERASURE_PATH } from "@/shared/gdpr-erasure";
+import { APP_BASE_PATH, appPath } from "@/shared/app-path";
 
 const startHandler = createStartHandler(defaultStreamHandler);
 
@@ -145,16 +146,19 @@ function handleFetch(
   const pathname = new URL(publicRequest.url).pathname;
   ctx.waitUntil(maybeSendSelfHostHeartbeat(pathname));
 
-  if (pathname === GDPR_STORAGE_ERASURE_PATH) {
+  if (pathname === appPath(GDPR_STORAGE_ERASURE_PATH)) {
     return handleGdprStorageErasure(publicRequest, env);
   }
 
-  if (pathname.startsWith("/agents/")) {
-    return routeChatAgents(publicRequest, env);
+  if (pathname.startsWith(appPath("/agents/"))) {
+    if (!APP_BASE_PATH) return routeChatAgents(publicRequest, env);
+    const internalUrl = new URL(publicRequest.url);
+    internalUrl.pathname = pathname.slice(APP_BASE_PATH.length) || "/";
+    return routeChatAgents(new Request(internalUrl, publicRequest), env);
   }
 
   if (isHostedAuthMode(authMode)) {
-    if (pathname === AUTUMN_WEBHOOK_PATH) {
+    if (pathname === appPath(AUTUMN_WEBHOOK_PATH)) {
       return handleAutumnWebhookRequest(publicRequest);
     }
 

@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { resolveClientLabel } from "@/server/mcp/client-label";
 import { buildDashboardUrl } from "@/server/mcp/urls";
+import { appPath } from "@/shared/app-path";
 
 export type ToolAuthContext = {
   userId: string;
@@ -43,7 +44,7 @@ export type ToolContext = {
 };
 
 export const MCP_AUTH_CONTEXT_PROP = "openSeoAuth";
-export const MCP_ROUTE = "/mcp";
+export const MCP_ROUTE = appPath("/mcp");
 
 const applicationAuthContextSchema = z.object({
   userId: z.string().min(1),

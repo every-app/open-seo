@@ -14,6 +14,7 @@ import {
   type GoogleLinkProvider,
 } from "@/shared/google-link";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
+import { appPath } from "@/shared/app-path";
 import {
   getGoogleOAuthClientConfig,
   hasGoogleOAuthConfig,
@@ -49,7 +50,7 @@ export type GoogleOAuthIntegration = {
   provider: GoogleLinkProvider;
   providerId: string;
   displayName: string;
-  callbackPath: `/${string}`;
+  callbackPath: string;
   scopes: readonly string[];
 };
 
@@ -57,7 +58,7 @@ export const GSC_INTEGRATION: GoogleOAuthIntegration = {
   provider: "gsc",
   providerId: GSC_OAUTH_PROVIDER_ID,
   displayName: "Search Console",
-  callbackPath: "/api/gsc/oauth/callback",
+  callbackPath: appPath("/api/gsc/oauth/callback"),
   scopes: GSC_OAUTH_SCOPES,
 };
 
@@ -65,7 +66,7 @@ export const GA4_INTEGRATION: GoogleOAuthIntegration = {
   provider: "ga4",
   providerId: GA4_OAUTH_PROVIDER_ID,
   displayName: "Google Analytics",
-  callbackPath: "/api/ga4/oauth/callback",
+  callbackPath: appPath("/api/ga4/oauth/callback"),
   scopes: GA4_OAUTH_SCOPES,
 };
 

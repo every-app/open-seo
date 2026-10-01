@@ -15,6 +15,7 @@ import {
   messageHasVisibleContent,
 } from "@/client/components/chat/ChatMessage";
 import { useStickToBottom } from "@/client/components/chat/useStickToBottom";
+import { appPath } from "@/shared/app-path";
 
 const SUGGESTIONS = [
   "What keywords should I focus on next?",
@@ -101,17 +102,20 @@ export function SamConversation({
   // an aborted turn may have persisted (or removed) more than we can see, and
   // on Think setMessages is local-only, so this is a pure view update.
   const rewindTo = async (messageId: string) => {
-    const response = await fetch(`/agents/sam-chat/${sessionId}/rewind`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ messageId }),
-    }).catch(() => null);
+    const response = await fetch(
+      appPath(`/agents/sam-chat/${sessionId}/rewind`),
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ messageId }),
+      },
+    ).catch(() => null);
     if (!response?.ok) {
       toast.error("Couldn't change the conversation. Try again.");
       return false;
     }
     const fresh = await fetch(
-      `/agents/sam-chat/${sessionId}/get-messages`,
+      appPath(`/agents/sam-chat/${sessionId}/get-messages`),
     ).then((res) => (res.ok ? res.json() : null));
     if (Array.isArray(fresh)) setMessages(fresh);
     return true;

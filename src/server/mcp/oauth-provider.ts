@@ -28,12 +28,13 @@ import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { handleAuthenticatedOpenSeoMcpRequest } from "@/server/mcp/transport";
 import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
 import { handleMcpApiKeyRequest } from "@/server/mcp/api-key-auth";
+import { appPath } from "@/shared/app-path";
 
-const OAUTH_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
-const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
-const OAUTH_REGISTER_PATH = "/api/auth/oauth2/register";
+const OAUTH_AUTHORIZE_PATH = appPath("/api/auth/oauth2/authorize");
+const OAUTH_TOKEN_PATH = appPath("/api/auth/oauth2/token");
+const OAUTH_REGISTER_PATH = appPath("/api/auth/oauth2/register");
 
-const OAUTH_CONSENT_RESPONSE_PATH = "/api/oauth/consent";
+const OAUTH_CONSENT_RESPONSE_PATH = appPath("/api/oauth/consent");
 const OAUTH_AUTHORIZATION_PARAM_NAMES = [
   "response_type",
   "client_id",
@@ -84,7 +85,7 @@ function getRelativeRequestTarget(request: Request) {
 }
 
 function redirectToSignIn(request: Request) {
-  const signInUrl = new URL("/sign-in", request.url);
+  const signInUrl = new URL(appPath("/sign-in"), request.url);
   signInUrl.searchParams.set("redirect", getRelativeRequestTarget(request));
   return Response.redirect(signInUrl.toString(), 302);
 }
@@ -194,7 +195,7 @@ async function resolveContextForConsent(request: Request) {
 
 function buildConsentUrl(request: Request) {
   const sourceUrl = new URL(request.url);
-  const consentUrl = new URL("/oauth-consent", request.url);
+  const consentUrl = new URL(appPath("/oauth-consent"), request.url);
 
   for (const key of OAUTH_AUTHORIZATION_PARAM_NAMES) {
     for (const value of sourceUrl.searchParams.getAll(key)) {

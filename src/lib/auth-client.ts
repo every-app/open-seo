@@ -8,9 +8,13 @@ import { captureClientEvent, resetAnalyticsUser } from "@/client/lib/posthog";
 import { userAdditionalFields } from "@/lib/auth-options";
 import { orgAccessControl, orgRoles } from "@/lib/org-permissions";
 import { getSignInHrefForLocation } from "@/lib/auth-redirect";
+import { appPath } from "@/shared/app-path";
 
 export const authClient = createAuthClient({
-  baseURL: typeof window !== "undefined" ? window.location.origin : "",
+  baseURL:
+    typeof window !== "undefined"
+      ? `${window.location.origin}${appPath()}`.replace(/\/$/, "")
+      : "",
   plugins: [
     apiKeyClient(),
     // ac/roles must match the server plugin exactly, otherwise the client's
