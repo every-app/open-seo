@@ -59,6 +59,16 @@ declare namespace Cloudflare {
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
+
+    // Optional self-hosted OpenAI-compatible endpoint for SAM (vLLM,
+    // llama.cpp, Ollama, LM Studio, a gateway). Takes precedence over
+    // OpenRouter when set; CHAT_MODEL is then required.
+    CHAT_BASE_URL?: string;
+    CHAT_API_KEY?: string;
+    CHAT_MODEL?: string;
+    // "true" when the server's chat template opens <think> itself, so replies
+    // arrive as `reasoning</think>answer` (vLLM without --reasoning-parser).
+    CHAT_PREFILLED_THINK?: string;
   }
 }
 

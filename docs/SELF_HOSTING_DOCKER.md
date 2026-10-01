@@ -34,6 +34,21 @@ Optional env values:
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
 - `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
+- `CHAT_BASE_URL`, `CHAT_MODEL`, `CHAT_API_KEY` (run SAM on your own OpenAI-compatible server instead of OpenRouter; see below)
+
+### Run SAM on your own model
+
+Point SAM at any server that speaks the OpenAI chat completions API (vLLM, llama.cpp, Ollama, LM Studio, a gateway). These values take precedence over `OPENROUTER_API_KEY`:
+
+```env
+CHAT_BASE_URL=http://host.docker.internal:11434/v1
+CHAT_MODEL=the-model-name-your-server-lists
+# CHAT_API_KEY=only-if-your-endpoint-checks-one
+```
+
+Inside the container, `localhost` is the container itself. Use `host.docker.internal` (Docker Desktop) or your host's LAN address to reach a server running on the host. SAM relies on tool calling for its SEO data, so pick a model and server with tool calling enabled.
+
+Reasoning models served without a reasoning parser return their thinking inline. SAM shows a `<think>...</think>` block in its collapsible thinking section instead of in the reply. If replies arrive as `reasoning</think>answer` with no opening tag, which vLLM does for models whose chat template opens `<think>` itself, also set `CHAT_PREFILLED_THINK=true`. Leave it off otherwise: with it on, a reply that never closes `</think>` is treated as all thinking.
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
