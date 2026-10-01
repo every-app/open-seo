@@ -115,8 +115,6 @@ export function BrandLookupPage({
           query: trimmedInitialQuery,
           competitors: initialCompetitors,
           scope: initialScope,
-          locationCode: 2840,
-          languageCode: "en",
         },
       }),
     // Client-side gate is a UX optimization only; the paywall is enforced
