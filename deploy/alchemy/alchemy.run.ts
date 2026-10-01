@@ -251,6 +251,8 @@ const resolveSelfHostAccess = (
         applicationName: `open-seo ${stage}`,
         domain: `${workerName(stage)}.${subdomain}`,
         emails: allowedEmails,
+        // Cloudflare's maximum. Re-login once a month instead of daily.
+        sessionDuration: "720h",
       });
       policyAud = application.aud;
     }
