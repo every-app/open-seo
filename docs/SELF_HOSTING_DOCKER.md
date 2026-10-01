@@ -34,6 +34,8 @@ Optional env values:
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
 - `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
+- `OPENROUTER_BASE_URL` (optional — point SAM at any OpenAI-compatible endpoint instead of openrouter.ai, e.g. a gateway, proxy, or self-hosted alternative. Usage-accounting and reasoning-effort request params are skipped automatically for custom endpoints)
+- `SAM_REPLY_LANGUAGE` (optional — e.g. `Spanish` — makes SAM always reply in that language; unset defaults to English)
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 

@@ -33,7 +33,7 @@ import {
   SamTelemetry,
   type SamTurnStats,
 } from "@/server/features/sam/samTurnTelemetry";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
+import { buildChatAgentModelFromEnv } from "@/server/lib/openrouter";
 import {
   getEnvValueSync,
   isHostedServerAuthMode,
@@ -195,15 +195,7 @@ export class SamChatAgent extends Think {
   }
 
   private buildModel(reasoningEffort: "max" | "low") {
-    const apiKey = getEnvValueSync(this.env, "OPENROUTER_API_KEY");
-    if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
-    }
-    return buildChatAgentModel(
-      apiKey,
-      getEnvValueSync(this.env, "OPENROUTER_MODEL"),
-      reasoningEffort,
-    );
+    return buildChatAgentModelFromEnv(this.env, reasoningEffort);
   }
 
   override getSkills() {
@@ -281,7 +273,10 @@ export class SamChatAgent extends Think {
           languageCode: ctx.project.languageCode,
         },
         // Nothing recorded about the business yet: SAM runs its intake flow.
-        { intakeMode: context.missingSections.includes("business_overview") },
+        {
+          intakeMode: context.missingSections.includes("business_overview"),
+          replyLanguage: getEnvValueSync(this.env, "SAM_REPLY_LANGUAGE"),
+        },
       );
     });
   }
