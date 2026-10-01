@@ -63,6 +63,7 @@ declare namespace Cloudflare {
 }
 
 interface ImportMetaEnv {
+  readonly OPEN_SEO_BASE_PATH?: string;
   readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
   readonly DATABASE_PROVIDER?: "d1" | "postgres";
   readonly BYPASS_EMAIL_VERIFICATION?: string;

@@ -33,6 +33,11 @@ export default defineConfig(({ mode }) => {
   }
 
   const env = loadEnv(mode, process.cwd(), "");
+  const configuredBasePath = (env.OPEN_SEO_BASE_PATH ?? "").trim();
+  const basePath =
+    configuredBasePath && configuredBasePath !== "/"
+      ? `/${configuredBasePath.replace(/^\/+|\/+$/g, "")}`
+      : "";
   const port = process.env.PORT
     ? Number(process.env.PORT)
     : env.PORT
@@ -49,7 +54,9 @@ export default defineConfig(({ mode }) => {
     // Static files (favicons, manifest) live beside the app code instead of at
     // the repo root.
     publicDir: "src/public",
+    base: basePath ? `${basePath}/` : "/",
     envPrefix: [
+      "OPEN_SEO_BASE_PATH",
       "VITE_",
       "AUTH_MODE",
       "BYPASS_EMAIL_VERIFICATION",

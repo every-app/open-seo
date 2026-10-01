@@ -17,6 +17,7 @@ import {
 } from "@/client/features/auth/TurnstileWidget";
 import { passwordSchema } from "@/client/features/auth/passwordSchema";
 import { useGoogleAuth } from "@/client/features/auth/useGoogleAuth";
+import { appPath } from "@/shared/app-path";
 import { getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
@@ -44,7 +45,8 @@ function SignUpPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { redirectTo, isHostedMode } = useAuthPageState(search.redirect);
-  const postSignupRedirect = redirectTo === "/" ? "/onboarding" : redirectTo;
+  const postSignupRedirect =
+    redirectTo === appPath("/") ? appPath("/onboarding") : redirectTo;
   const [showEmailForm, setShowEmailForm] = useState(false);
   const google = useGoogleAuth({ redirectTo, postSignupRedirect });
 

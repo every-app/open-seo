@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { appPath } from "@/shared/app-path";
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import { ReportRepository } from "@/server/features/reports/repositories/ReportRepository";
 import {
@@ -113,7 +114,7 @@ function Document({
         <meta name="robots" content="noindex, nofollow" />
         <title>{`${title} · OpenSEO`}</title>
         {head}
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href={appPath("/favicon.ico")} />
         <style dangerouslySetInnerHTML={{ __html: STYLES }} />
       </head>
       <body>{children}</body>

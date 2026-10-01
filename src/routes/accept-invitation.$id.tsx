@@ -8,6 +8,7 @@ import { AuthPageCard, AuthPageShell } from "@/client/features/auth/AuthPage";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient, signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { appPath } from "@/shared/app-path";
 
 export const Route = createFileRoute("/accept-invitation/$id")({
   beforeLoad: () => {
@@ -39,7 +40,7 @@ function AcceptInvitationPage() {
 // logged-out visitor gets a generic shell — no invitation details are
 // exposed pre-auth by design.
 function SignedOutInvitationCard({ invitationId }: { invitationId: string }) {
-  const redirect = `/accept-invitation/${invitationId}`;
+  const redirect = appPath(`/accept-invitation/${invitationId}`);
 
   return (
     <AuthPageCard title="You&rsquo;re invited">
@@ -120,7 +121,7 @@ function InvitationCard({
       captureClientEvent("team:invitation_accept");
       // Full navigation: every cached query in this tab belongs to the old
       // workspace.
-      window.location.assign("/");
+      window.location.assign(appPath());
     } catch {
       setActionError("We couldn't accept the invitation. Please try again.");
       setPendingAction(null);

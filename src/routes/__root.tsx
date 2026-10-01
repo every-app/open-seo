@@ -29,6 +29,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { Toaster } from "sonner";
 import { queryClient } from "@/client/tanstack-db";
 import { getActiveOrganizationId } from "@/lib/auth-session";
+import { appPath } from "@/shared/app-path";
 
 // Capture Google link error params before the router starts — a route loader
 // redirect would otherwise replace the URL and lose them. See googleLinkError.ts.
@@ -70,22 +71,22 @@ export const Route = createRootRoute({
       {
         rel: "apple-touch-icon",
         sizes: "180x180",
-        href: "/apple-touch-icon.png",
+        href: appPath("/apple-touch-icon.png"),
       },
       {
         rel: "icon",
         type: "image/png",
         sizes: "32x32",
-        href: "/favicon-32x32.png",
+        href: appPath("/favicon-32x32.png"),
       },
       {
         rel: "icon",
         type: "image/png",
         sizes: "16x16",
-        href: "/favicon-16x16.png",
+        href: appPath("/favicon-16x16.png"),
       },
-      { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-      { rel: "manifest", href: "/site.webmanifest" },
+      { rel: "icon", type: "image/x-icon", href: appPath("/favicon.ico") },
+      { rel: "manifest", href: appPath("/site.webmanifest") },
     ],
     scripts: [],
   }),

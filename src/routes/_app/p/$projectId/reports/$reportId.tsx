@@ -36,6 +36,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getReport } from "@/serverFunctions/reports";
+import { appPath } from "@/shared/app-path";
 
 // Expand lives in the URL, not in state, so a refresh (or a link someone
 // pasted) comes back expanded.
@@ -144,7 +145,7 @@ function ReportDetailPage() {
       project_id: projectId,
       report_id: report.id,
     });
-    window.open(`/r/${report.id}?print=1`, "_blank", "noopener");
+    window.open(`${appPath(`/r/${report.id}`)}?print=1`, "_blank", "noopener");
   };
 
   if (full) {
@@ -272,13 +273,17 @@ function ReportDetailPage() {
             aria-label="Open in new tab"
             title="Open in new tab"
             render={
-              <a href={`/r/${report.id}`} target="_blank" rel="noreferrer" />
+              <a
+                href={appPath(`/r/${report.id}`)}
+                target="_blank"
+                rel="noreferrer"
+              />
             }
           >
             <ExternalLink />
           </Button>
         </div>
-        <ReportViewer src={`/r/${report.id}`} title={report.title} />
+        <ReportViewer src={appPath(`/r/${report.id}`)} title={report.title} />
       </div>
 
       {showShare ? (
@@ -336,7 +341,7 @@ function FullScreenReport({
       </div>
       <div className="min-h-0 flex-1 p-2">
         <ReportViewer
-          src={`/r/${reportId}`}
+          src={appPath(`/r/${reportId}`)}
           title={title}
           className="h-full w-full bg-background"
         />

@@ -1,4 +1,6 @@
-const OAUTH_CONSENT_PATH = "/oauth-consent";
+import { appPath } from "@/shared/app-path";
+
+const OAUTH_CONSENT_PATH = appPath("/oauth-consent");
 
 export const POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS = [
   "email",
