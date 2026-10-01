@@ -48,11 +48,12 @@ export async function refreshSavedKeywordMetrics(
 
     for (let i = 0; i < groupRows.length; i += REFRESH_UPSERT_BATCH_SIZE) {
       const chunk = groupRows.slice(i, i + REFRESH_UPSERT_BATCH_SIZE);
-      await Promise.all(
-        chunk.map((r) => {
-          const metric = byKeyword.get(r.row.keyword.toLowerCase());
-          if (!metric) return Promise.resolve();
-          return KeywordResearchRepository.upsertKeywordMetric({
+      const writes: Promise<unknown>[] = [];
+      for (const r of chunk) {
+        const metric = byKeyword.get(r.row.keyword.toLowerCase());
+        if (!metric) continue;
+        writes.push(
+          KeywordResearchRepository.upsertKeywordMetric({
             projectId: input.projectId,
             keyword: r.row.keyword,
             locationCode,
@@ -63,12 +64,12 @@ export async function refreshSavedKeywordMetrics(
             keywordDifficulty: metric.keywordDifficulty,
             intent: normalizeIntent(metric.intent),
             monthlySearchesJson: JSON.stringify(metric.monthlySearches),
-          });
-        }),
-      );
+          }),
+        );
+      }
+      await Promise.all(writes);
+      updated += writes.length;
     }
-
-    updated += byKeyword.size;
   }
 
   return { updated };
