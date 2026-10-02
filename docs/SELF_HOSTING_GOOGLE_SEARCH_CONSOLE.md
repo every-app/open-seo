@@ -43,8 +43,15 @@ Under **APIs & Services → Credentials → Create credentials → OAuth client 
    | ------------ | -------------------------------------------------------- |
    | Deployed     | `https://your-openseo-domain.com/api/gsc/oauth/callback` |
    | Local Docker | `http://localhost:3001/api/gsc/oauth/callback`           |
+   | Local dev    | `http://localhost:<port>/api/gsc/oauth/callback`         |
 
    The scheme, host, and port must match exactly, with no trailing slash.
+
+   For local development, register the direct `localhost` origin — Google
+   rejects `*.localhost` callback hostnames with `invalid_request`. Keep the
+   server running through portless as usual (the port is in
+   `.logs/dev-server.log`), but start the Search Console connection from that
+   direct origin so the browser is redirected from the URI registered above.
 
 3. Save, then copy the **Client ID** and **Client secret**.
 

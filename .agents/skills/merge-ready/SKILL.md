@@ -58,7 +58,7 @@ After verification, route durable learnings without forcing every review to chan
 
 - Apply verified `blocker`/`should-fix` fixes. Apply nitpicks only when trivial and clearly right; otherwise list them in the PR for the maintainer to judge.
 - **Checkpoint:** commit fixes in logical groups (e.g. one commit per axis or per concern) so the fix history is reviewable on its own.
-- Run `pnpm ci:check` (prettier, knip, tsc, oxlint). Fix failures and re-run until clean. If a fix was substantial (not formatting/lint), run a quick re-review of just that change.
+- Run `pnpm ci:check` (prettier, knip, tsc, oxlint, plugin-skill sync) and `pnpm vite build` — the build is **not** part of `ci:check`, and a client bundle that pulls server-only code (for example `cloudflare:workers`) passes every other check and fails only the build. Fix failures and re-run until clean. If a fix was substantial (not formatting/lint), run a quick re-review of just that change.
 - Loop until ci:check passes and no verified findings remain unaddressed.
 
 ## 5. Push and open/update the PR

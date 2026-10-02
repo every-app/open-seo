@@ -47,7 +47,13 @@ pnpm dev:agents
 
 `pnpm dev:agents` runs through [portless](https://github.com/vercel-labs/portless) at `http://open-seo.localhost:1355` by default.
 
-When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
+When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`. Long branch names are truncated by the script so the hostname stays within the 63-character DNS label limit.
+
+Before opening a PR, run `pnpm ci:check` (prettier, knip, tsc, oxlint,
+plugin-skill sync) **and** `pnpm vite build`: the build is not part of
+`ci:check`, and a route that pulls server-only code (for example
+`cloudflare:workers`) into the client bundle passes every other check and
+fails only the build. CI runs both as separate steps.
 
 ## Report share images
 
