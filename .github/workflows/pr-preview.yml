@@ -82,6 +82,16 @@ jobs:
             *.workers.dev) ;;
             *) echo "::error::ENV_PREVIEW secret is missing a valid WORKERS_SUBDOMAIN (needed to derive and verify the preview URL)"; exit 1 ;;
           esac
+          # Previews must never fall back to cloudflare_access: that mode
+          # provisions a Cloudflare Access application, and the CI token has
+          # no Zero Trust permissions. Without this check the job dies at
+          # deploy time suggesting `pnpm alchemy login --configure`, which
+          # cannot fix CI.
+          auth_mode=$(grep '^AUTH_MODE=' .env.preview | cut -d= -f2-)
+          case "$auth_mode" in
+            local_noauth|hosted) ;;
+            *) echo "::error::ENV_PREVIEW secret must set AUTH_MODE=local_noauth (or AUTH_MODE=hosted to exercise the sign-up flow). Missing or cloudflare_access makes the deploy provision an Access application the CI token cannot manage"; exit 1 ;;
+          esac
           echo "PREVIEW_URL=https://open-seo-${STAGE}.${subdomain}" >> "$GITHUB_ENV"
 
       # Same command as a local preview deploy: vite build, alchemy deploy.

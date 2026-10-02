@@ -144,8 +144,8 @@ Rules that hold throughout a campaign:
   change behavior in the same change, even when a test looks like the only
   reason the code exists; report those as follow-ups.
 - Route modules under `src/routes/` and barrel files keep their exports.
-- Use `pnpm exec prettier --write <files>`; `pnpm format:write` ignores
-  arguments and formats the whole repository.
+- Use `pnpm format:write <files>` to format only the named files; with no
+  arguments it formats the whole repository.
 - After all slices land, run the full suite in normal order and with two or
   three `--sequence.shuffle.tests --sequence.seed=<n>` runs. Removing reset
   ceremony can surface latent order dependence; fix it by setting the mock's

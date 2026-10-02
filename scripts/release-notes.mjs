@@ -11,6 +11,10 @@ import { parseArgs } from "node:util";
 const argv = process.argv.slice(2);
 const normalizedArgv = argv[0] === "--" ? argv.slice(1) : argv;
 
+// Release tags and GitHub releases live only on the public repo; clones and
+// forks have stale or missing local tags.
+const PUBLIC_REPO = "every-app/open-seo";
+
 const { values } = parseArgs({
   args: normalizedArgv,
   options: {
@@ -25,7 +29,7 @@ const { values } = parseArgs({
 
 if (values.help) {
   process.stdout.write(
-    `Usage: pnpm release:notes -- [options]\n\nOptions:\n  --from <tag>     Starting git tag. Defaults to latest semver tag.\n  --to <ref>       Ending git ref. Defaults to main for the public repo, otherwise HEAD.\n  --draft <tag>    Create a draft GitHub release for the provided tag.\n  --repo <owner/repo>  Override GitHub repo slug for compare links and draft release.\n  -h, --help       Show this help message.\n`,
+    `Usage: pnpm release:notes -- [options]\n\nOptions:\n  --from <tag>     Starting git tag. Defaults to the latest release on every-app/open-seo (falling back to local tags).\n  --to <ref>       Ending git ref. Defaults to main for the public repo, otherwise HEAD.\n  --draft <tag>    Create a draft GitHub release for the provided tag.\n  --repo <owner/repo>  Override GitHub repo slug for compare links and draft release.\n  -h, --help       Show this help message.\n`,
   );
   process.exit(0);
 }
@@ -63,6 +67,63 @@ function getLatestSemverTag() {
   return tags.find((tag) =>
     /^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(tag),
   );
+}
+
+/**
+ * Release tags are published only on the public repo, so a fresh clone's
+ * local tags can be far behind. Read them from GitHub instead.
+ * @returns {string[]} e.g. ["v0.1.10", "v0.1.9"]
+ */
+function getRemoteReleaseTags() {
+  try {
+    const output = gh([
+      "release",
+      "list",
+      "--repo",
+      PUBLIC_REPO,
+      "--limit",
+      "100",
+      "--json",
+      "tagName,isDraft,isPrerelease",
+    ]);
+    /** @type {unknown} */
+    const releases = JSON.parse(output);
+    if (!Array.isArray(releases)) return [];
+    return releases.flatMap((release) => {
+      if (!isRecord(release)) return [];
+      const { tagName, isDraft, isPrerelease } = release;
+      if (
+        typeof tagName !== "string" ||
+        isDraft === true ||
+        isPrerelease === true
+      ) {
+        return [];
+      }
+      return [tagName];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Make sure `tag` exists locally so `git log <tag>..` resolves, fetching it
+ * from the public repo when this clone doesn't carry it.
+ * @param {string} tag
+ * @returns {boolean}
+ */
+function fetchTag(tag) {
+  try {
+    git([
+      "fetch",
+      "--no-tags",
+      `https://github.com/${PUBLIC_REPO}.git`,
+      `refs/tags/${tag}:refs/tags/${tag}`,
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** @typedef {{ major: number, minor: number, patch: number }} Semver */
@@ -143,7 +204,16 @@ function getDefaultFromTag() {
     "release-notes",
   );
 
-  const candidates = [...tagCandidates, ...releaseNoteCandidates]
+  const remoteReleaseCandidates = collectVersionCandidates(
+    getRemoteReleaseTags().map((tag) => tag.replace(/^v/i, "")),
+    "release",
+  );
+
+  const candidates = [
+    ...tagCandidates,
+    ...remoteReleaseCandidates,
+    ...releaseNoteCandidates,
+  ]
     .filter((entry) => compareSemver(entry.version, parsedCurrentVersion) < 0)
     .reduce((sorted, entry) => {
       const insertAt = sorted.findIndex(
@@ -163,6 +233,11 @@ function getDefaultFromTag() {
   const matchingTag = tagCandidates.find((entry) => entry.tag === bestVersion);
   if (matchingTag) return matchingTag.tag;
 
+  // The newest release is known (from GitHub or docs/release-notes) but this
+  // clone doesn't carry the tag. Fetch it so `git log <from>..` resolves;
+  // otherwise fall back to whatever local tags exist.
+  if (fetchTag(bestVersion)) return bestVersion;
+
   return getLatestSemverTag();
 }
 
@@ -172,7 +247,7 @@ function getPreferredRepo() {
 
 /** @param {string | undefined} repo */
 function getDefaultToRef(repo) {
-  return repo === "every-app/open-seo" ? "main" : "HEAD";
+  return repo === PUBLIC_REPO ? "main" : "HEAD";
 }
 
 /** @param {readonly string[]} rangeArgs */
