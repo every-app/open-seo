@@ -47,13 +47,16 @@ pnpm dev:agents
 
 `pnpm dev:agents` runs through [portless](https://github.com/vercel-labs/portless) at `http://open-seo.localhost:1355` by default.
 
-When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`. Long branch names are truncated by the script so the hostname stays within the 63-character DNS label limit.
+When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`. Long branch names are truncated by the script so the hostname stays within the 63-character DNS label limit. The SAM chat does not work through the `.localhost` URL — its history stream fails with `ERR_SSL_PROTOCOL_ERROR` — so QA SAM from the direct `http://127.0.0.1:<port>` origin printed in `.logs/dev-server.log`.
 
 Before opening a PR, run `pnpm ci:check` (prettier, knip, tsc, oxlint,
 plugin-skill sync) **and** `pnpm vite build`: the build is not part of
 `ci:check`, and a route that pulls server-only code (for example
 `cloudflare:workers`) into the client bundle passes every other check and
-fails only the build. CI runs both as separate steps.
+fails only the build. CI runs both as separate steps. Stop the Vite dev
+server before the build and start it again afterwards — a build alongside a
+running dev server corrupts the dev runtime (server functions return
+undefined) until the restart.
 
 ## Report share images
 
