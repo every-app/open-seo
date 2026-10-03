@@ -25,7 +25,7 @@ const { values } = parseArgs({
 
 if (values.help) {
   process.stdout.write(
-    `Usage: pnpm release:notes -- [options]\n\nOptions:\n  --from <tag>     Starting git tag. Defaults to latest semver tag.\n  --to <ref>       Ending git ref. Defaults to main for the public repo, otherwise HEAD.\n  --draft <tag>    Create a draft GitHub release for the provided tag.\n  --repo <owner/repo>  Override GitHub repo slug for compare links and draft release.\n  -h, --help       Show this help message.\n`,
+    `Usage: pnpm release:notes -- [options]\n\nOptions:\n  --from <tag>     Starting git tag. Defaults to the latest release on every-app/open-seo.\n  --to <ref>       Ending git ref. Defaults to main for the public repo, otherwise HEAD.\n  --draft <tag>    Create a draft GitHub release for the provided tag.\n  --repo <owner/repo>  Override GitHub repo slug for compare links and draft release.\n  -h, --help       Show this help message.\n`,
   );
   process.exit(0);
 }
@@ -122,7 +122,55 @@ function collectVersionCandidates(versionValues, source) {
   });
 }
 
+// Release tags are published only on the public repo, so the local tags on a
+// clone can stop far behind the actual releases.
+const PUBLIC_REPO = "every-app/open-seo";
+
+function getLatestPublicReleaseTag() {
+  try {
+    const tag = gh([
+      "api",
+      `repos/${PUBLIC_REPO}/releases/latest`,
+      "--jq",
+      ".tag_name",
+    ]);
+    return tag ? tag : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Make sure the tag resolves locally so `<tag>..` ranges work. */
+function fetchTagIfMissing(tag) {
+  try {
+    git(["rev-parse", "--verify", "--quiet", `${tag}^{commit}`]);
+    return tag;
+  } catch {
+    try {
+      git([
+        "fetch",
+        "--quiet",
+        `https://github.com/${PUBLIC_REPO}.git`,
+        "tag",
+        tag,
+        "--no-tags",
+      ]);
+      return tag;
+    } catch {
+      return undefined;
+    }
+  }
+}
+
 function getDefaultFromTag() {
+  // The latest published release on the public repo is the real base for the
+  // next release's notes.
+  const publicTag = getLatestPublicReleaseTag();
+  const localPublicTag = publicTag ? fetchTagIfMissing(publicTag) : undefined;
+  if (localPublicTag) return localPublicTag;
+
+  // Offline fallback: best version below package.json across local tags and
+  // committed release notes.
   /** @type {string | null} */
   const currentVersion = getPackageVersion();
   const parsedCurrentVersion = currentVersion
@@ -172,7 +220,7 @@ function getPreferredRepo() {
 
 /** @param {string | undefined} repo */
 function getDefaultToRef(repo) {
-  return repo === "every-app/open-seo" ? "main" : "HEAD";
+  return repo === PUBLIC_REPO ? "main" : "HEAD";
 }
 
 /** @param {readonly string[]} rangeArgs */

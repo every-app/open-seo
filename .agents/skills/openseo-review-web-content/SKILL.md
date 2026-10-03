@@ -11,7 +11,7 @@ Everything we publish must be traceable to what the product actually does and co
 
 ## Principles
 
-1. **Traceable truth.** Every capability claim, price, and screenshot is verifiable against the code, the fact sheet (`src/server/features/onboarding/openseo-fact-sheet.md`), or the live product. If you can't point to where it's true, it doesn't ship.
+1. **Traceable truth.** Every capability claim, price, and screenshot is verifiable against the code, the fact sheet (`src/server/features/sam/openseo-fact-sheet.md`), or the live product. If you can't point to where it's true, it doesn't ship.
 2. **Lead with the real answer.** "No," "not unlimited," and "it costs money" are complete answers. Hedging that lets a reader infer something more flattering than the truth is a way of misleading them.
 3. **Honest pricing, with its reasoning.** Quality SEO data is expensive everywhere — that's why the big suites run $100/month and up. OpenSEO is the affordable option: $10/month, free to start. Never simply "free."
 4. **Sound like a person.** Fix AI tells by restating the underlying claim plainly, not by polishing the flourish. The [deslop skill](../deslop/SKILL.md) is the reference for what to hunt and how to fix it.
