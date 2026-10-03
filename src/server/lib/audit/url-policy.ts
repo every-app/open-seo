@@ -188,9 +188,20 @@ async function hostnameResolvesToBlockedAddress(
 }
 
 /**
+ * Paths Cloudflare reserves for its own edge helpers: Email Address
+ * Obfuscation rewrites mailto links into `/cdn-cgi/l/email-protection#…`,
+ * plus challenge and trace endpoints. Nothing under this prefix can ever be
+ * site content (Cloudflare owns the namespace, so the site cannot even
+ * redirect it), and over plain HTTP every fetch there 404s — crawling it
+ * produced bogus broken pages and broken-internal-link false positives.
+ */
+const CLOUDFLARE_RESERVED_PATH_PREFIX = "/cdn-cgi/";
+
+/**
  * Synchronous SSRF check for URLs discovered mid-crawl (links, redirect
  * targets, sitemap entries). Blocks non-http(s) schemes, private/loopback IP
- * literals, and internal hostnames. DNS resolution is only performed for the
+ * literals, internal hostnames, and provider-reserved paths (see
+ * CLOUDFLARE_RESERVED_PATH_PREFIX). DNS resolution is only performed for the
  * start URL (see normalizeAndValidateStartUrl); per-link DoH lookups would be
  * prohibitively slow.
  */
@@ -202,6 +213,9 @@ export function isCrawlableUrl(url: string): boolean {
     return false;
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return false;
+  }
+  if (parsed.pathname.startsWith(CLOUDFLARE_RESERVED_PATH_PREFIX)) {
     return false;
   }
   return !isBlockedHost(parsed.hostname);
