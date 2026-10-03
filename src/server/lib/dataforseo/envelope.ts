@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
+import { classifyDataforseoAccountError } from "@/server/lib/dataforseoBillingClassification";
 import type { DataforseoErrorClassifier } from "@/server/lib/dataforseo/core";
 import type { ErrorCode } from "@/shared/error-codes";
 
@@ -229,6 +230,7 @@ export function assertOk<T extends DataforseoTaskLike>(
     const message = response.status_message || "DataForSEO request failed";
     throw (
       classify?.(response.status_code, message, classifyPath ?? "") ??
+      classifyDataforseoAccountError(response.status_code, message) ??
       new AppError("INTERNAL_ERROR", message)
     );
   }

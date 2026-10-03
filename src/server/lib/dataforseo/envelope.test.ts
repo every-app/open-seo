@@ -140,4 +140,60 @@ describe("assertOk", () => {
       }
     }
   });
+
+  it.each([
+    // Unverified account — the state the DataForSEO signup flow leaves you
+    // in (user_data works, every data endpoint returns this), previously a
+    // generic INTERNAL_ERROR on every research call.
+    [
+      40104,
+      "Please verify your account before using the API.",
+      "DATAFORSEO_ACCOUNT_ISSUE",
+    ],
+    // Balance failures on sections without a domain classifier
+    // (dataforseo_labs, keywords_data, …).
+    [40200, "Account balance is too low", "DATAFORSEO_ACCOUNT_ISSUE"],
+    [40210, "Account is suspended for billing", "DATAFORSEO_ACCOUNT_ISSUE"],
+    // Invalid credentials share the transport-level 401 copy.
+    [40101, "Invalid Username or Password", "DATAFORSEO_AUTH_FAILED"],
+  ] as const)(
+    "classifies header status %s as %s",
+    (status, message, expectedCode) => {
+      try {
+        assertOk({ status_code: status, status_message: message, tasks: [] });
+        throw new Error("expected assertOk to throw");
+      } catch (error) {
+        expect(error).toBeInstanceOf(AppError);
+        if (error instanceof AppError) {
+          expect(error.code).toBe(expectedCode);
+          // The provider text stays server-side (message/details go to the
+          // middleware log and error capture); the client gets only the code.
+          expect(error.message).toBe(message);
+          expect(error.details).toEqual({
+            dataforseoStatusCode: String(status),
+          });
+        }
+      }
+    },
+  );
+
+  it("keeps unknown header statuses as INTERNAL_ERROR", () => {
+    expect(() =>
+      assertOk({ status_code: 40404, status_message: "Not Found", tasks: [] }),
+    ).toThrow(expect.objectContaining({ code: "INTERNAL_ERROR" }));
+  });
+
+  it("lets a domain classifier win over the account fallback", () => {
+    const classified = new AppError("BACKLINKS_BILLING_ISSUE");
+    expect(() =>
+      assertOk(
+        {
+          status_code: 40200,
+          status_message: "Account balance is too low",
+          tasks: [],
+        },
+        { classify: () => classified },
+      ),
+    ).toThrow(classified);
+  });
 });
