@@ -15,6 +15,7 @@ import {
   requireGoogleSocialProviderConfig,
   requireHostedSecret,
 } from "@/lib/auth-hosted-config";
+import { isHostedAuthMode } from "@/lib/auth-mode";
 import { createApiKeyPlugin } from "@/lib/auth-api-key";
 import { createBaseAuthConfig } from "@/lib/auth-config";
 import { getHostedTurnstileSecretKey } from "@/lib/auth-turnstile";

@@ -18,6 +18,7 @@ data, or sensitive paths.
 - `2026-07-19T02:55:56Z` — `claude` — Docs folders with an explicit Overview link need their index removed by the allowlist in `web/src/lib/source.ts`. Both current folders using that convention are covered as of 2026-09-05; revisit when adding another such section, rather than generalizing navigation now.
 
 ## Resolved
+
 - [x] `2026-09-27T22:06:28Z` — `claude` — Hosted auth mode can't run behind `pnpm dev:agents` (schema rejected `*.localhost` over http; missing-config 500 was bare). Resolved 2026-10-03: `src/lib/auth-hosted-config.ts` accepts http on localhost subdomains, and the 500 names the missing variable (e.g. TURNSTILE_SECRET_KEY); covered by `auth-hosted-config.test.ts`.
 - [x] `2026-09-18T10:06:56Z` — `codex` — Website browser tests flood Vite output with "Assets in public directory cannot be imported from JavaScript" for MDX library images. Resolved 2026-10-03: `web/source.config.ts` sets `remarkImageOptions: { useImport: false }`; public URLs retained, web build verified warning-free.
 - [x] `2026-09-23T04:52:00Z` — `claude` — `pnpm dev:agents` names the portless host after the git branch, and long Linear branch names exceed the 63-char DNS label limit. Resolved 2026-10-03: the script truncates and sanitizes the portless `--name` to ≤40 chars (verified with a 74-char branch name).
@@ -26,7 +27,6 @@ data, or sensitive paths.
 - [x] `2026-09-30T22:10:17Z` — `claude` — Since #784, `pnpm vite build` rewrites the committed `src/routeTree.gen.ts` with a new import order, leaving every local build dirty. Resolved 2026-10-03: the regenerated file is committed with the new import order; builds leave the tree clean.
 - [x] `2026-09-03T00:00:00Z` — `claude` — `pnpm ci:check` did not run `pnpm build`, so client-bundle `cloudflare:workers` imports passed checks and broke the build. Resolved 2026-10-03: `vite build` runs inside `ci:check` after the fast static checks (~63s).
 - [x] `2026-09-30T19:03:30Z` — `codex` — The `no-array-sort` diagnostic recommends `toSorted()`, which the configured TypeScript library rejects. Resolved in #701 (confirmed 2026-10-03): `.oxlintrc.json` and `tsconfig.json` already steer to Remeda `sortBy`; the diagnostic text itself is hardcoded in oxlint and cannot be overridden, so no further repo-side fix exists.
-
 
 - [x] `2026-09-30T07:08:59Z` — `claude` — On a clone of the origin repo, `git tag --sort=-creatordate | head -1` (openseo-release-notes step 2) and `pnpm release:notes` (which defaults `--from` to the latest local semver tag) both resolved to `v0.0.6`, because release tags are published only on `every-app/open-seo`. Resolved 2026-10-03: the skill finds the base via `gh release list --repo every-app/open-seo` (fetching the tag locally when missing), and the script's `--from` default reads the public repo's latest release, keeping local tags only as the offline fallback.
 
