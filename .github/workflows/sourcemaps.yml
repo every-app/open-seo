@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   upload:
-    if: github.repository != 'every-app/open-seo'
+    if: github.repository != 'every-app/open-seo' && vars.POSTHOG_CLI_ENV_ID != ''
     runs-on: ubuntu-latest
     env:
       POSTHOG_SOURCEMAPS: "true"
