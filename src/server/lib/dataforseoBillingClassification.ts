@@ -46,3 +46,38 @@ export function createDataforseoBillingClassifier(config: {
     return null;
   };
 }
+
+/**
+ * Account-level failures come back in the response header of every API
+ * section (/dataforseo_labs, /keywords_data, serp, …), so they classify
+ * centrally instead of through a pathPrefix-bound domain classifier: an
+ * unverified account or an empty balance hits related_keywords exactly like
+ * it hits backlinks. The provider's status_message stays server-side in the
+ * error message/details; the client only ever receives the code, whose copy
+ * tells the operator to fix the account in the DataForSEO panel.
+ */
+export function classifyDataforseoAccountError(
+  status: number | undefined,
+  providerMessage?: string,
+): AppError | null {
+  if (status == null) return null;
+  if (status === 40101) {
+    // "Invalid Username or Password" — same copy the transport-level 401 uses.
+    return new AppError(
+      "DATAFORSEO_AUTH_FAILED",
+      providerMessage || undefined,
+      {
+        dataforseoStatusCode: "40101",
+      },
+    );
+  }
+  if (status === 40104 || BILLING_STATUS_CODES.has(status)) {
+    // 40104 "verify your account before using the API", 402xx balance.
+    return new AppError(
+      "DATAFORSEO_ACCOUNT_ISSUE",
+      providerMessage || undefined,
+      { dataforseoStatusCode: String(status) },
+    );
+  }
+  return null;
+}
