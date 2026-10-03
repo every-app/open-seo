@@ -1,0 +1,1 @@
+ALTER TABLE `audits` ADD `issues_checked` integer DEFAULT false NOT NULL;

@@ -85,6 +85,9 @@ async function completeAudit(
       status: "completed",
       completedAt: new Date().toISOString(),
       currentPhase: "completed",
+      // Issue reporters run on every crawled batch; a completed audit always
+      // carries real (possibly empty) issue data.
+      issuesChecked: true,
       ...data,
     })
     .where(

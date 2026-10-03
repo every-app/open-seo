@@ -1,0 +1,1 @@
+ALTER TABLE "audits" ADD COLUMN "issues_checked" boolean DEFAULT false NOT NULL;

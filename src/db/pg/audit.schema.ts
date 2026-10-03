@@ -54,6 +54,9 @@ export const audits = pgTable(
     failedPhase: text("failed_phase"),
     startedAt: timestampColumn("started_at").notNull().default(isoNow),
     completedAt: timestampColumn("completed_at"),
+    // Flipped when the crawl's issue reporters ran during finalize (see the
+    // sqlite audits schema for the full comment).
+    issuesChecked: boolean("issues_checked").notNull().default(false),
   },
   (table) => [
     index("audits_project_id_idx").on(table.projectId),
