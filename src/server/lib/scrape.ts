@@ -103,7 +103,10 @@ function parseSitemapUrls(xml: string, origin: string): string[] {
     } catch {
       continue;
     }
-    if (resolved.startsWith(origin) && !resolved.endsWith(".xml")) {
+    // Compare origins, not prefixes: `startsWith` lets "https://example.com" match
+    // "https://example.com.attacker.test/", "https://example.combo.test/" and the same
+    // host on any other port, all of which are separate origins.
+    if (new URL(resolved).origin === origin && !resolved.endsWith(".xml")) {
       urls.push(resolved);
     }
   }
