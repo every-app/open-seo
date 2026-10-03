@@ -10,14 +10,14 @@ import { d1Db } from "@/db/d1/client";
 import { pgDb } from "@/db/pg/client";
 import * as pgSchema from "@/db/pg/schema";
 import { getDatabaseProvider } from "@/db/provider";
-import { z } from "zod";
-import { isHostedAuthMode } from "@/lib/auth-mode";
+import {
+  parseHostedBaseUrl,
+  requireGoogleSocialProviderConfig,
+  requireHostedSecret,
+} from "@/lib/auth-hosted-config";
 import { createApiKeyPlugin } from "@/lib/auth-api-key";
 import { createBaseAuthConfig } from "@/lib/auth-config";
-import {
-  getHostedTurnstileSecretKey,
-  hasHostedTurnstileConfig,
-} from "@/lib/auth-turnstile";
+import { getHostedTurnstileSecretKey } from "@/lib/auth-turnstile";
 import { resolveSignInHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
@@ -27,17 +27,6 @@ import {
   sendHostedVerificationEmail,
   upsertHostedSignupContact,
 } from "@/server/email/loops";
-
-const hostedBaseUrlSchema = z
-  .string()
-  .url()
-  .refine((value) => {
-    const url = new URL(value);
-    return (
-      url.protocol === "https:" ||
-      (url.protocol === "http:" && url.hostname === "localhost")
-    );
-  }, "BETTER_AUTH_URL must use https or localhost");
 
 function createAuth() {
   // Hosted needs the real configured URL (cookies, callbacks, /api/auth routes
@@ -135,7 +124,7 @@ function createAuth() {
 
   const auth = betterAuth({
     baseURL: baseUrl,
-    secret: getHostedSecret(),
+    secret: requireHostedSecret(env.BETTER_AUTH_SECRET),
     logger: {
       log: (level, message, ...args: unknown[]) => {
         // The api-key plugin logs every verification failure at error level — a
@@ -301,30 +290,7 @@ function getTrustedOrigins(baseUrl: string) {
 }
 
 export function getHostedBaseUrl() {
-  const baseUrl = env.BETTER_AUTH_URL?.trim();
-
-  if (!baseUrl) {
-    throw new Error("BETTER_AUTH_URL is required in hosted mode");
-  }
-
-  return hostedBaseUrlSchema.parse(baseUrl);
-}
-
-// Required in hosted mode, and in self-hosted mode when Search Console is
-// enabled (it keys the OAuth-token encryption and is needed to build the auth
-// instance that mints/refreshes Search Console tokens).
-function getHostedSecret() {
-  const secret = env.BETTER_AUTH_SECRET?.trim();
-
-  if (!secret) {
-    throw new Error("BETTER_AUTH_SECRET is required");
-  }
-
-  if (secret.length < 32) {
-    throw new Error("BETTER_AUTH_SECRET must be at least 32 characters");
-  }
-
-  return secret;
+  return parseHostedBaseUrl(env.BETTER_AUTH_URL);
 }
 
 function getSocialProviders() {
@@ -343,52 +309,15 @@ function getSocialProviders() {
 }
 
 function getGoogleSocialProviderConfig() {
-  const googleClientId = env.GOOGLE_CLIENT_ID?.trim();
-  const googleClientSecret = env.GOOGLE_CLIENT_SECRET?.trim();
-
-  if (!googleClientId) {
-    throw new Error("GOOGLE_CLIENT_ID is required in hosted mode");
-  }
-
-  if (!googleClientSecret) {
-    throw new Error("GOOGLE_CLIENT_SECRET is required in hosted mode");
-  }
+  const { clientId, clientSecret } = requireGoogleSocialProviderConfig(env);
 
   return {
-    clientId: googleClientId,
-    clientSecret: googleClientSecret,
+    clientId,
+    clientSecret,
     mapProfileToUser: (profile: { name?: string }) => ({
       name: profile.name,
     }),
   };
-}
-
-function hasHostedAuthEmailConfig() {
-  const loopsVars = [
-    "LOOPS_API_KEY",
-    "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID",
-    "LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID",
-  ];
-
-  return loopsVars.every((name) => {
-    const value: unknown = Reflect.get(env, name);
-    return typeof value === "string" && value.trim() !== "";
-  });
-}
-
-export function hasHostedAuthConfig() {
-  try {
-    getHostedBaseUrl();
-    getHostedSecret();
-    getGoogleSocialProviderConfig();
-    return (
-      hasHostedTurnstileConfig(env) &&
-      (Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
-        hasHostedAuthEmailConfig())
-    );
-  } catch {
-    return false;
-  }
 }
 
 export function getAuth() {

@@ -34,5 +34,15 @@ export const legal = defineCollections({
   dir: "content/legal",
   schema: pageSchema,
 });
-
-export default defineConfig();
+export default defineConfig({
+  mdxOptions: {
+    remarkImageOptions: {
+      // Keep MDX images as public-directory URLs. The default converts them
+      // into JS imports, which Vite rejects with "Assets in public directory
+      // cannot be imported from JavaScript" — one warning per image, flooding
+      // dev and browser-test output. Width/height are still probed from
+      // web/public, so a missing image fails the build instead of 404ing.
+      useImport: false,
+    },
+  },
+});

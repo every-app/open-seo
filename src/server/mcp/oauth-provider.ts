@@ -171,7 +171,7 @@ async function getAuthorizeSessionBlocker(request: Request) {
     }
 
     if (appError?.code === "AUTH_CONFIG_MISSING") {
-      return new Response("Missing Better Auth hosted configuration", {
+      return new Response(appError.message, {
         status: 500,
       });
     }
