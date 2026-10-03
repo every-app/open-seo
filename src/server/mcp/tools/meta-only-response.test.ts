@@ -21,6 +21,7 @@ import * as getBacklinksProfile from "./get-backlinks-profile";
 import * as getDomainKeywordSuggestions from "./get-domain-keyword-suggestions";
 import * as getDomainOverview from "./get-domain-overview";
 import * as getRankTracker from "./get-rank-tracker";
+import * as getRankHistory from "./get-rank-history";
 import * as getSerpResults from "./get-serp-results";
 import * as googleAnalyticsTools from "./google-analytics-tools";
 import * as listProjects from "./list-projects";
@@ -48,6 +49,7 @@ const toolExports: Record<string, unknown> = {
   ...getDomainKeywordSuggestions,
   ...getDomainOverview,
   ...getRankTracker,
+  ...getRankHistory,
   ...getSerpResults,
   ...googleAnalyticsTools,
   ...listProjects,

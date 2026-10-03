@@ -19,6 +19,7 @@ import { addRankTrackingKeywordsTool } from "@/server/mcp/tools/add-rank-trackin
 import { createRankTrackerTool } from "@/server/mcp/tools/create-rank-tracker";
 import { estimateRankTrackerCostTool } from "@/server/mcp/tools/estimate-rank-tracker-cost";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
+import { getRankHistoryTool } from "@/server/mcp/tools/get-rank-history";
 import { removeRankTrackingKeywordsTool } from "@/server/mcp/tools/remove-rank-tracking-keywords";
 import { runRankTrackerTool } from "@/server/mcp/tools/run-rank-tracker";
 import { searchSerpLocationsTool } from "@/server/mcp/tools/search-serp-locations";
@@ -195,6 +196,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(searchSerpLocationsTool);
   register(createRankTrackerTool);
   register(getRankTrackerTool);
+  register(getRankHistoryTool);
   register(addRankTrackingKeywordsTool);
   register(removeRankTrackingKeywordsTool);
   register(estimateRankTrackerCostTool);
