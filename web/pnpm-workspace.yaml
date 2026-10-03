@@ -34,3 +34,9 @@ overrides:
   "ws@8": "^8.21.0"
   "esbuild@0.27": "^0.28.1"
   seroval: "^1.5.3"
+
+# pnpm otherwise appends "set this to true or false" placeholder entries here
+# on install. Both packages ship native binaries that need their build scripts.
+allowBuilds:
+  esbuild: true
+  workerd: true
