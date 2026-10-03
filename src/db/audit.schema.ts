@@ -49,6 +49,13 @@ export const audits = sqliteTable(
       .notNull()
       .default(sql`(current_timestamp)`),
     completedAt: text("completed_at"),
+    // Flipped when the crawl's issue reporters ran during finalize. Audits
+    // completed before issue checks shipped keep false — their empty
+    // audit_issues table says nothing about the site — so get_audit_issues
+    // can tell "checks ran, nothing found" from "no issue data".
+    issuesChecked: integer("issues_checked", { mode: "boolean" })
+      .notNull()
+      .default(false),
   },
   (table) => [
     index("audits_project_id_idx").on(table.projectId),
