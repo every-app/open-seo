@@ -141,8 +141,9 @@ export async function sendHostedInvitationEmail({
   inviterName: string;
   inviterEmail: string;
 }) {
-  // Not part of getHostedAuthEmailConfig(): that trio gates hasHostedAuthConfig
-  // and adding a new required var there would brick existing deployments.
+  // Not part of the hosted auth config gating (see auth-hosted-config.ts):
+  // that trio gates /api/auth and adding a new required var there would brick
+  // existing deployments.
   const apiKey = getRequiredEnv("LOOPS_API_KEY");
   const templateId = getRequiredEnv("LOOPS_TRANSACTIONAL_INVITATION_ID");
   await sendLoopsTransactionalEmail({
