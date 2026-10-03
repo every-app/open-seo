@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppError } from "@/server/lib/errors";
 import {
+  isCrawlableUrl,
   normalizeAndValidateStartUrl,
   resolveStartUrlRedirects,
 } from "@/server/lib/audit/url-policy";
@@ -100,5 +101,24 @@ describe("resolveStartUrlRedirects", () => {
     ).rejects.toMatchObject({
       code: "CRAWL_TARGET_BLOCKED",
     } satisfies Partial<AppError>);
+  });
+});
+
+describe("isCrawlableUrl", () => {
+  it.each([
+    "https://example.com/cdn-cgi/l/email-protection#9f3d2b1a4c",
+    "https://example.com/cdn-cgi/l/email-protection",
+    "https://example.com/cdn-cgi/trace",
+    "https://example.com/cdn-cgi/",
+  ])("blocks the Cloudflare-reserved path %s", (url) => {
+    expect(isCrawlableUrl(url)).toBe(false);
+  });
+
+  it.each([
+    "https://example.com/cdn-cgi-blog",
+    "https://example.com/guides/seo",
+    "https://example.com/deep/cdn-cgi/inside-is-fine",
+  ])("allows %s", (url) => {
+    expect(isCrawlableUrl(url)).toBe(true);
   });
 });
