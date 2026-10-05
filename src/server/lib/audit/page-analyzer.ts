@@ -17,6 +17,52 @@ import type { PageAnalysis, PageLink } from "./types";
 const SKIPPED_LINK_PROTOCOLS = /^(javascript:|mailto:|tel:|#)/;
 /** Subtrees whose text is not visible content. */
 const NON_CONTENT_TAGS = new Set(["script", "style", "noscript", "svg"]);
+// Preserve word boundaries in minified HTML without splitting inline words.
+// This follows ordinary HTML layout; the tokenizer does not evaluate CSS.
+const TEXT_BOUNDARY_TAGS = new Set([
+  "address",
+  "article",
+  "aside",
+  "blockquote",
+  "br",
+  "caption",
+  "dd",
+  "details",
+  "dialog",
+  "div",
+  "dl",
+  "dt",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "header",
+  "hgroup",
+  "hr",
+  "li",
+  "main",
+  "nav",
+  "ol",
+  "p",
+  "pre",
+  "section",
+  "summary",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
+  "ul",
+]);
 const HEADING_LEVELS: Record<string, number> = {
   h1: 1,
   h2: 2,
@@ -89,6 +135,24 @@ export function analyzeHtml(
   const bodyParts: string[] = [];
   const fallbackParts: string[] = [];
 
+  const appendBodyText = (text: string) => {
+    if (bodyDepth > 0) {
+      bodyParts.push(text);
+    } else if (headDepth === 0) {
+      fallbackParts.push(text);
+    }
+  };
+
+  const separateBlockText = (name: string) => {
+    if (
+      suppressDepth === 0 &&
+      titleDepth === 0 &&
+      TEXT_BOUNDARY_TAGS.has(name)
+    ) {
+      appendBodyText(" ");
+    }
+  };
+
   const handleMetaTag = (attribs: Record<string, string>) => {
     const content = attribs["content"];
     if (attribs["name"] === "description") {
@@ -140,6 +204,7 @@ export function analyzeHtml(
         }
         if (name === "noscript") noscriptDepth += 1;
         if (noscriptDepth > 0) return;
+        separateBlockText(name);
         if (headDepth === 0 && suppressDepth === 0) {
           hasAppRoot ||= APP_ROOT_IDS.has(attribs["id"]) || name === "app-root";
         }
@@ -212,13 +277,10 @@ export function analyzeHtml(
         }
         if (openH1) openH1.push(text);
         if (openAnchor) openAnchor.text.push(text);
-        if (bodyDepth > 0) {
-          bodyParts.push(text);
-        } else if (headDepth === 0) {
-          fallbackParts.push(text);
-        }
+        appendBodyText(text);
       },
       onclosetag(name) {
+        separateBlockText(name);
         if (NON_CONTENT_TAGS.has(name) && suppressDepth > 0) {
           suppressDepth -= 1;
         }

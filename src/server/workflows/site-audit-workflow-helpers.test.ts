@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createCrawlThrottle } from "@/server/lib/audit/crawl-throttle";
 import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
+import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
 
 const PAGE_URL = "https://example.com/page";
 const PAGE_HTML =
@@ -40,6 +41,34 @@ afterEach(() => {
 });
 
 describe("crawlPage", () => {
+  it("does not flag content as thin just because paragraph markup is minified", async () => {
+    const paragraph = Array.from({ length: 15 }, (_, i) => `word${i}`).join(
+      " ",
+    );
+    const paragraphs = Array.from({ length: 10 }, () => `<p>${paragraph}</p>`);
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (url) =>
+        new Response(
+          `<html><body>${paragraphs.join(url === `${PAGE_URL}/formatted` ? "\n" : "")}</body></html>`,
+          { headers: { "content-type": "text/html" } },
+        ),
+    );
+    const minified = await crawl();
+    const formatted = await crawlPage(
+      `${PAGE_URL}/formatted`,
+      0,
+      false,
+      createCrawlThrottle(Date.now() + 90_000),
+    );
+    expect(minified?.fetchClass).toBe("ok");
+    expect(formatted?.wordCount).toBe(150);
+    expect(minified?.wordCount).toBe(150);
+    if (!minified) throw new Error("Expected the minified page to be crawled");
+    expect(
+      runPageReporters(minified).map((issue) => issue.issueType),
+    ).not.toContain("thin-content");
+  });
+
   it("waits out the server's Retry-After and keeps the retried page", async () => {
     vi.useFakeTimers();
     const fetchMock = stubFetch(
