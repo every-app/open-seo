@@ -48,6 +48,14 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "Re-run the audit after the site's rate limit resets, or ask the site owner to allow the OpenSEO-Audit crawler. On Shopify, use Crawler access instead (Online Store → Preferences → Crawler access) and paste the signature into OpenSEO under Settings → Crawler access.",
   },
+  "crawl-stopped-platform-limit": {
+    severity: "warning",
+    title: "Crawl stopped early: platform limit",
+    explanation:
+      "The hosting platform stopped serving this audit's fetches. On Cloudflare Workers' free plan an audit run shares a budget of 50 outbound requests, so only the first few dozen pages can be read; URLs after that were never fetched and are not recorded as broken.",
+    howToFix:
+      "Re-run the audit with a smaller page budget, self-host with Docker instead of Cloudflare's free plan, or upgrade the deployment to Workers' paid plan (1,000+ outbound requests per run) to crawl the whole site.",
+  },
   "server-error": {
     severity: "critical",
     title: "Server error (5xx)",

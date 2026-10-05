@@ -297,6 +297,42 @@ describe("crawl pacing and cooldowns", () => {
     expect(mocks.sleepUntil).not.toHaveBeenCalled();
     expect(mocks.releaseUrls.mock.calls[0][0]).toHaveLength(99);
   });
+
+  it("stops at the platform subrequest limit and releases the frontier", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("Too many subrequests."));
+    const result = crawl(100);
+    await vi.runAllTimersAsync();
+
+    expect(await result).toEqual({
+      pagesCrawled: 0,
+      completed: false,
+      subrequestLimited: true,
+    });
+    // The budget is shared by the whole invocation, so a second chunk would
+    // fail the same way: stop after the first chunk's initial window.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(mocks.claimChunk).toHaveBeenCalledTimes(1);
+    // Unfetched URLs are not recorded as site errors.
+    expect(saved).toHaveLength(0);
+    expect(mocks.releaseUrls.mock.calls[0][0]).toHaveLength(100);
+  });
+
+  it("keeps ordinary fetch failures as recorded site errors", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(
+      new TypeError("fetch failed"),
+    );
+    const result = crawl(10);
+    await vi.runAllTimersAsync();
+
+    expect(await result).toEqual({ pagesCrawled: 10, completed: true });
+    expect(saved).toHaveLength(10);
+    expect(saved.every((page) => page.fetchClass === "error")).toBe(true);
+    expect(mocks.releaseUrls).not.toHaveBeenCalled();
+  });
 });
 
 describe("rendering usage", () => {

@@ -50,6 +50,9 @@ export function ResultsView({
   const crawlStopped = issues.some(
     (issue) => issue.issueType === "crawl-rate-limited",
   );
+  const platformLimited = issues.some(
+    (issue) => issue.issueType === "crawl-stopped-platform-limit",
+  );
   const hasPerformanceTab = lighthouse.length > 0;
   const activeTab =
     tab === "performance" && !hasPerformanceTab ? "issues" : tab;
@@ -127,6 +130,21 @@ export function ResultsView({
               : "Pages that returned 429 Too Many Requests could not be audited. "}
             Re-run the audit after the rate limit resets, or ask the site owner
             to allow the "OpenSEO-Audit" crawler.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {platformLimited && (
+        <Alert variant="warning">
+          <ShieldAlert />
+          <AlertTitle>
+            The crawl stopped early because the hosting platform limited it.
+          </AlertTitle>
+          <AlertDescription>
+            Cloudflare's free plan allows only about 50 outbound requests per
+            audit run, so this report covers only the pages fetched before the
+            limit was hit. This report is incomplete. Self-host with Docker or
+            upgrade to Workers' paid plan to crawl the whole site.
           </AlertDescription>
         </Alert>
       )}

@@ -76,6 +76,18 @@ async function fetchPage(
   }
 }
 
+/**
+ * Cloudflare rejects a fetch once the invocation's subrequest budget is
+ * exhausted — on the free plan only 50 external subrequests are allowed per
+ * Workflow invocation, and one audit run (discovery + every crawl chunk)
+ * shares one invocation. Detecting it lets the crawl stop honestly instead of
+ * recording every remaining URL as a site error.
+ */
+function isSubrequestLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /too many subrequests/i.test(message);
+}
+
 /** Null leaves this URL deferred when the shared cooldown stops its fetch. */
 export async function crawlPage(
   url: string,
@@ -244,7 +256,11 @@ export async function crawlPage(
     // error that lets the scheduler continue making requests.
     if (throttle.checkpointFailed) throw error;
     const responseTimeMs = Date.now() - startTime;
-    console.warn(`Failed to crawl ${url}:`, error);
+    // Observability renders only an Error's stack frames, so repeat the
+    // message in the string: "Too many subrequests." would otherwise be
+    // invisible exactly where platform-limit failures are diagnosed.
+    const detail = error instanceof Error ? error.message : String(error);
+    console.warn(`Failed to crawl ${url}: ${detail}`, error);
     return emptyPageResult({
       url,
       statusCode: 0,
@@ -255,6 +271,7 @@ export async function crawlPage(
       headerCanonicalUrl: null,
       crawlDepth,
       inSitemap,
+      subrequestLimited: isSubrequestLimitError(error) || undefined,
     });
   }
 }
@@ -271,6 +288,7 @@ function emptyPageResult(input: {
   inSitemap: boolean;
   htmlBytes?: number;
   rateLimited?: boolean;
+  subrequestLimited?: boolean;
 }): CrawledPageResult {
   return {
     id: crypto.randomUUID(),
@@ -299,6 +317,7 @@ function emptyPageResult(input: {
     isHtml: false,
     htmlBytes: input.htmlBytes ?? 0,
     rateLimited: input.rateLimited ?? false,
+    subrequestLimited: input.subrequestLimited,
     imagesTotal: 0,
     imagesMissingAlt: 0,
     images: [],

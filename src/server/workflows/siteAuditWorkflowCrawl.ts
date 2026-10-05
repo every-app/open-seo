@@ -108,6 +108,11 @@ export type CrawlPhaseResult = {
   /** True when the frontier was exhausted before hitting maxPages. */
   completed: boolean;
   rateLimited?: boolean;
+  /**
+   * True when the platform stopped serving fetches ("Too many subrequests",
+   * free-plan Workers). The crawl stopped so unvisited URLs stay unrecorded.
+   */
+  subrequestLimited?: boolean;
 };
 
 export async function runCrawlPhase(
@@ -149,11 +154,16 @@ export async function runCrawlPhase(
       result.renderUsage?.cloudflareAttempts ?? 0;
     params.renderUsage.contextCredits +=
       result.renderUsage?.contextCredits ?? 0;
-    if (result.rateLimited) {
+    // Both stops end the phase with what was already read. A platform stop
+    // (exhausted subrequests) fails every later fetch too — the budget
+    // belongs to the invocation the instance is running in, so the next
+    // chunk would fail the same way instead of making progress.
+    if (result.rateLimited || result.subrequestLimited) {
       return {
         pagesCrawled: attemptedTotal,
         completed: false,
-        rateLimited: true,
+        ...(result.rateLimited && { rateLimited: true }),
+        ...(result.subrequestLimited && { subrequestLimited: true }),
       };
     }
     // `?? initial`: an instance in flight across a deploy replays cached
@@ -191,6 +201,7 @@ async function runCrawlChunk(
   pending: number;
   endWindow: number;
   rateLimited?: boolean;
+  subrequestLimited?: boolean;
   throttleState?: CrawlThrottleState;
   resumeAt?: number;
   renderUsage?: RenderUsage;
@@ -261,6 +272,7 @@ async function runCrawlChunk(
     : clampCrawlWindow(input.startWindow, limits);
   let nextIndex = 0;
   let attemptedInChunk = 0;
+  let subrequestLimited = false;
   const inFlight = new Set<Promise<void>>();
   const deferred: string[] = [];
   let persistThreshold = FIRST_PERSIST_BATCH_SIZE;
@@ -324,6 +336,13 @@ async function runCrawlChunk(
           deferred.push(entry.url);
           return;
         }
+        if (page.subrequestLimited) {
+          // The site was never reached — release the URL rather than record
+          // a fake error row for it, and stop launching new fetches.
+          subrequestLimited = true;
+          deferred.push(entry.url);
+          return;
+        }
         attemptedInChunk += 1;
         batch.push(page);
         if (batch.length >= persistThreshold) flush();
@@ -338,6 +357,10 @@ async function runCrawlChunk(
     while (
       inFlight.size < windowSize &&
       nextIndex < claimed.length &&
+      // Set inside a fetch's .then callback; like queuedPersists below, the
+      // linter cannot see that async mutation through the loop condition.
+      // oxlint-disable-next-line eslint/no-unmodified-loop-condition -- stop flag is mutated by in-flight fetches
+      !subrequestLimited &&
       Date.now() < deadlineAt
     ) {
       // queuedPersists changes when persistChain settles. Keep it out of the
@@ -357,6 +380,7 @@ async function runCrawlChunk(
     // chunk is done (leases exhausted or soft deadline hit).
     if (
       !throttle.stopped &&
+      !subrequestLimited &&
       queuedPersists > MAX_QUEUED_PERSIST_BATCHES &&
       nextIndex < claimed.length &&
       Date.now() < deadlineAt
@@ -390,6 +414,7 @@ async function runCrawlChunk(
     pending: stats.pending,
     endWindow: windowSize,
     rateLimited: throttle.stopped,
+    subrequestLimited,
     throttleState,
     resumeAt:
       throttleState.pausedUntil > Date.now()

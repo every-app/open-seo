@@ -254,3 +254,55 @@ describe("app-shell crawl coverage", () => {
     },
   );
 });
+
+describe("crawl truncation reporting", () => {
+  it("records a platform-limit issue when the crawl stopped early", async () => {
+    vi.mocked(AuditRepository.hasPagesForAudit).mockResolvedValue(true);
+    vi.mocked(AuditRepository.insertIssues).mockResolvedValue(undefined);
+    vi.mocked(runCrawlPhase).mockResolvedValue({
+      pagesCrawled: 2,
+      completed: false,
+      subrequestLimited: true,
+    });
+    vi.mocked(runMultipageChecks).mockResolvedValue({
+      issues: [],
+      hasUnreadShells: false,
+    });
+    // Only these two scratchpad methods are reached after mocked
+    // discovery/crawl.
+    // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
+    vi.mocked(getAuditScratchpad).mockReturnValue({
+      runFinalizeChecks: vi
+        .fn()
+        .mockResolvedValue({ brokenLinks: [], orphanPages: [] }),
+      destroy: vi.fn(),
+    } as unknown as ReturnType<typeof getAuditScratchpad>);
+    pgStepMock.mockImplementation(
+      async (
+        _step: unknown,
+        name: string,
+        _config: unknown,
+        callback: () => Promise<unknown>,
+      ) => {
+        if (name === "discover-urls-v2")
+          return { robotsText: "", seededCount: 2 };
+        return callback();
+      },
+    );
+
+    // pgStep is mocked, so no WorkflowStep implementation is needed.
+    // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
+    await runAuditPhases({} as never, {
+      ...PHASE_PARAMS,
+      config: { maxPages: 50, lighthouseStrategy: "none" },
+      renderUsage: { cloudflareAttempts: 0, contextCredits: 0 },
+    });
+
+    expect(vi.mocked(AuditRepository.insertIssues)).toHaveBeenCalledWith(
+      "audit-1",
+      expect.arrayContaining([
+        expect.objectContaining({ issueType: "crawl-stopped-platform-limit" }),
+      ]),
+    );
+  });
+});
