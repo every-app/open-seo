@@ -379,13 +379,10 @@ async function finalizeAudit(args: {
       issueCount: linkIssues.length,
     });
     issues.push(...linkIssues);
-    if (crawl.rateLimited) {
-      issues.push({
-        issueType: "crawl-rate-limited",
-        pageId: null,
-        pageUrl: startUrl,
-      });
-    }
+    const pushCrawlStop = (issueType: DetectedIssue["issueType"]) =>
+      issues.push({ issueType, pageId: null, pageUrl: startUrl });
+    if (crawl.rateLimited) pushCrawlStop("crawl-rate-limited");
+    if (crawl.subrequestLimited) pushCrawlStop("crawl-stopped-platform-limit");
     const persistStartedAt = Date.now();
     await AuditRepository.insertIssues(auditId, issues);
     console.info("Audit finalization issues persisted", {

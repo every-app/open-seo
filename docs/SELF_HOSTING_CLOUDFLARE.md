@@ -68,6 +68,17 @@ To manage the Access application yourself instead, set `TEAM_DOMAIN` (`https://y
 
 If it doesn't, see Troubleshooting below.
 
+## Free-plan limits for site audits
+
+Cloudflare's free Workers plan constrains how much of a site one audit can read. The audit runs as a Workflow, and on the free plan each Workflow invocation is limited to **50 outbound requests** — a budget the whole audit run (robots.txt, sitemaps, and every page fetch) shares. A large audit therefore reads only the first few dozen pages per run; the rest are left unvisited, and the report carries a "Crawl stopped early: platform limit" warning explaining the truncation. This is a platform limit, not a site problem.
+
+Two related effects on the free plan:
+
+- **CPU per step is 10 ms.** Audits of large or heavy sites can fail outright with a `cpu_limit` error, sometimes after only a handful of pages.
+- **Lighthouse checks run through DataForSEO.** Without a DataForSEO API key every Lighthouse check fails, and the audit report shows them all as failed.
+
+For complete audits, self-host with [Docker](./SELF_HOSTING_DOCKER.md) or upgrade the deployment to Cloudflare Workers' paid plan, where the subrequest budget per Workflow instance rises to 10,000 and the CPU limit becomes 30 seconds (configurable up to 5 minutes).
+
 ## Updating to the latest OpenSEO version
 
 ```bash
@@ -84,6 +95,7 @@ Everyone allowed through Cloudflare Access works in one shared workspace and see
 
 ## Troubleshooting
 
+- Site audits finish with far fewer pages than requested, or fail with `cpu_limit`: see [Free-plan limits for site audits](#free-plan-limits-for-site-audits) above — this is expected on Cloudflare's free plan.
 - Login fails: re-check `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy.
 - `https://<your-worker-hostname>/api/health` reports runtime configuration checks and database status.
 - For server errors, open the Worker `Logs` or run `pnpm exec wrangler tail`. Site audits run in a separate worker: `pnpm exec wrangler tail open-seo-selfhost-audit`.

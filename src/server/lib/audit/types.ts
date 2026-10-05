@@ -164,6 +164,13 @@ export interface CrawledPageResult {
    * fetched more slowly.
    */
   rateLimited: boolean;
+  /**
+   * True when the fetch failed with the platform's "Too many subrequests"
+   * error (free-plan Workers allow 50 external subrequests per Workflow
+   * invocation). Transient — the crawl stops and the URL is released instead
+   * of being persisted as a site error, since the site was never reached.
+   */
+  subrequestLimited?: boolean;
   imagesTotal: number;
   imagesMissingAlt: number;
   images: Array<{ src: string | null; alt: string | null }>;

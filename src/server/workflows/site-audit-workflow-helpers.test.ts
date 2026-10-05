@@ -103,6 +103,38 @@ describe("crawlPage", () => {
     expect(page?.fetchClass).toBe("blocked");
   });
 
+  it("flags the platform subrequest limit so the crawl can stop", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("Too many subrequests.")),
+    );
+
+    const page = await crawl();
+
+    expect(page?.statusCode).toBe(0);
+    expect(page?.fetchClass).toBe("error");
+    expect(page?.subrequestLimited).toBe(true);
+    // Observability shows only the string: the message must survive in it.
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("Too many subrequests."),
+      expect.any(Error),
+    );
+  });
+
+  it("records ordinary network failures without the platform flag", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    );
+
+    const page = await crawl();
+
+    expect(page?.fetchClass).toBe("error");
+    expect(page?.subrequestLimited).toBeUndefined();
+  });
+
   it("preserves extracted metadata and nested values when releasing the HTML", async () => {
     vi.stubGlobal(
       "fetch",
