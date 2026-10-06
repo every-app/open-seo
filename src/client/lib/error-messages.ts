@@ -26,6 +26,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "The connected DataForSEO account has a billing or balance issue.",
   DATAFORSEO_AUTH_FAILED:
     "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
+  DATAFORSEO_ACCOUNT_ISSUE:
+    "The connected DataForSEO account needs attention before it can serve data — it may not be verified yet, or its balance may be empty. Check it in the DataForSEO user panel (https://app.dataforseo.com) and try again.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:
     "The data provider is temporarily unavailable. Please retry in a moment.",
