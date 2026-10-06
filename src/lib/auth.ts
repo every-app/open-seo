@@ -35,9 +35,10 @@ const hostedBaseUrlSchema = z
     const url = new URL(value);
     return (
       url.protocol === "https:" ||
-      (url.protocol === "http:" && url.hostname === "localhost")
+      (url.protocol === "http:" &&
+        (url.hostname === "localhost" || url.hostname.endsWith(".localhost")))
     );
-  }, "BETTER_AUTH_URL must use https or localhost");
+  }, "BETTER_AUTH_URL must use https, localhost, or a *.localhost host over http");
 
 function createAuth() {
   // Hosted needs the real configured URL (cookies, callbacks, /api/auth routes
@@ -376,19 +377,41 @@ function hasHostedAuthEmailConfig() {
   });
 }
 
-export function hasHostedAuthConfig() {
+function hostedConfigErrorMessage(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    return error.issues[0]?.message ?? error.message;
+  }
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+/** The hosted-auth variable that is missing or invalid, or null if complete. */
+export function hostedAuthConfigProblem(): string | null {
   try {
     getHostedBaseUrl();
-    getHostedSecret();
-    getGoogleSocialProviderConfig();
-    return (
-      hasHostedTurnstileConfig(env) &&
-      (Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
-        hasHostedAuthEmailConfig())
-    );
-  } catch {
-    return false;
+  } catch (error) {
+    return hostedConfigErrorMessage(error);
   }
+  try {
+    getHostedSecret();
+  } catch (error) {
+    return hostedConfigErrorMessage(error);
+  }
+  try {
+    getGoogleSocialProviderConfig();
+  } catch (error) {
+    return hostedConfigErrorMessage(error);
+  }
+  if (!hasHostedTurnstileConfig(env)) {
+    return "TURNSTILE_SITE_KEY is set but TURNSTILE_SECRET_KEY is missing";
+  }
+  if (
+    Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") !== "true" &&
+    !hasHostedAuthEmailConfig()
+  ) {
+    return "Loops email configuration is incomplete (LOOPS_API_KEY, LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID, LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID) — or set BYPASS_EMAIL_VERIFICATION=true";
+  }
+  return null;
 }
 
 export function getAuth() {
