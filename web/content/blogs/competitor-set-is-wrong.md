@@ -1,15 +1,15 @@
 ---
 title: "Your Competitor Set Is Wrong, and So Are Their Numbers"
-description: "Four corrections that turn a competitor list into something you can plan against: measure the set instead of naming it, strip the brand terms, read pages instead of the traffic headline, and open the link profile before you copy it."
+description: "Four corrections for your competitor list: measure who ranks, strip brand terms, read pages before the traffic headline, and check links before copying."
 author: "Jeremy Rivera"
-date: "2026-09-11"
+date: "2026-10-05"
 ---
 
 Ask a founder who they compete with and three company names arrive in under a second. Ask where the names came from and the answer is sales calls and a pitch deck. Neither source has ever watched a search result.
 
 Somebody then exports a traffic estimate for one of those companies, the number lands in a slide, and a quarter gets planned around it.
 
-Both halves of that fail in ways you can measure. Search ranks pages while your sales team ranks companies, so the list is built on the wrong unit. And a competitor traffic number is a model of what a domain probably gets, which makes it correctable once you know how it goes wrong.
+Both halves of that fail in ways you can measure. Search ranks pages while your sales team ranks companies, so the list is built on the wrong unit. And a competitor traffic number is a model's guess at a domain's traffic, so you can correct for it once you know how it goes wrong.
 
 Each correction below has a strategy behind it in the [competitive analysis library](/library/competitive-analysis). To run them with an agent, connect [OpenSEO MCP](/docs/mcp) first so it can pull live SERP, ranking, domain, and backlink data.
 
@@ -24,15 +24,15 @@ Each correction below has a strategy behind it in the [competitive analysis libr
 
 ## The competitors you name are not the ones you rank against
 
-Jason Wade of Ninja AI has a fast way to settle the question, and it does not involve a battlecard. On the [Unscripted SEO podcast](https://unscriptedseo.com/what-ai-visibility-really-means-and-why-its-not-a-buzzword/) he described how he finds out who is in the way:
+Jason Wade of Ninja AI has a fast check, and it does not involve a battlecard. On the [Unscripted SEO podcast](https://unscriptedseo.com/what-ai-visibility-really-means-and-why-its-not-a-buzzword/), talking about how to find the tactics worth copying, he put it this way:
 
-> you know how you can tell who works? Google your competitor and yourself and see what pops up. Just copy what works.
+> you know how you can tell who works? Google your competitor and yourself. See what pops up. Just copy what works.
 
-Do that at scale across a keyword set and the list that comes back stops looking like a market map. Comparing five terms in the property restoration category returned Yelp at position 5 by visibility, Home Depot at 10, and YouTube at 12. None of those three sell restoration work. On the city-modified version of the same term, a single local operator held the top spot while the national brand sat at 3.
+Do that at scale across a keyword set and the list that comes back stops looking like a market map. Comparing five terms in the property restoration category put Yelp fifth by visibility, Home Depot tenth, and YouTube twelfth. None of those three sell restoration work. On a city-modified version of one of those terms, a single local operator held the top spot while the national brand sat at 3.
 
 Sort what comes back into three groups, because you handle each one differently. Aggregators like Yelp are a listing problem, since you will not outrank them and you can appear inside them. Publishers who own the informational half are a distribution problem. Only the third group, the operators whose service pages sit next to yours, is a ranking problem. Put all three on one list and you will plan content against fights you cannot win.
 
-The [find your real competitors](/library/competitive-analysis/find-your-real-competitors) strategy walks the comparison and the sorting. It runs through the MCP rather than a screen in the app, because the question needs a keyword set and a judgment call on every result that comes back.
+The [find your real competitors](/library/competitive-analysis/find-your-real-competitors) strategy walks the comparison and the sorting.
 
 ## Subtract the brand terms or you are measuring fame
 
@@ -46,7 +46,7 @@ Ann Smarty has spent twenty years watching what happens once a brand starts to w
 
 > Being a brand is great, but no one talks about how ... you lose control over it, because stuff starts ranking for your name.
 
-Her point runs in both directions. Losing control of your own branded results is a reputation problem you have to manage. Counting somebody else's branded results as competitive strength is an analysis problem you can fix in one filter. The ranked-keyword tool in OpenSEO's MCP accepts an `excludeBrandTerms` list of up to ten terms, so you hand it the brand names to drop on each side before anything gets counted. There is no equivalent filter on the domain screen in the app. The [keyword gap strategy](/library/competitive-analysis/keyword-gap-analysis) covers what to do with the remainder.
+Her point runs in both directions. Losing control of your own branded results is a reputation problem you have to manage. Counting somebody else's branded results as competitive strength is an analysis problem you can fix in one filter. Through OpenSEO's MCP, your agent can drop up to eight brand terms from each domain's keywords before anything gets counted. In the app, the Exclude Terms filter on a domain's Top Keywords tab does the same job. The [keyword gap strategy](/library/competitive-analysis/keyword-gap-analysis) covers what to do with the remainder.
 
 ## The traffic number is a headline, not a finding
 
@@ -58,21 +58,21 @@ Kristiyan Yankov of Above Apex opened his interview by refusing to be taken at h
 
 Apply that to the estimate itself. A [domain overview](/features/domain-overview) on the national restoration brand returned 3,023,467 estimated organic traffic across 49,475 keywords on 19 August. Running the identical query on 21 August returned 3,018,438 across 49,729. Two days moved the traffic estimate by five thousand visits and added two hundred and fifty keywords. Neither figure is a measurement, and quoting either one to the last digit is where the trouble starts.
 
-![OpenSEO domain overview for a national restoration brand, Top Pages tab, showing 7,587 pages against 49,729 keywords, with three general and carpet cleaning pages sitting inside the top five by traffic](/blog/competitor-set-is-wrong/restoration-competitor-top-pages-openseo.png)
+![OpenSEO domain overview for a national restoration brand, Top Pages tab, showing 7,587 pages against 49,729 keywords, with general, air duct, and carpet cleaning pages sitting inside the top five by traffic](/blog/competitor-set-is-wrong/restoration-competitor-top-pages-openseo.png)
 
-The pages tab is where the estimate stops flattering anyone. The single highest-traffic page is the water damage service page at 372,528, carrying 488 keywords. Beside it sit general cleaning at 338,557, air duct cleaning at 286,978, and carpet and upholstery cleaning at 269,678. Those three pages account for 895,213 of the estimate, close to thirty percent of the whole footprint, and they belong to a cleaning business rather than the restoration business a reader would be benchmarking against. Anyone who benchmarked against three million and planned a restoration content calendar around it just picked a fight with a carpet cleaner.
+The Top Pages tab is where the estimate stops flattering anyone. The single highest-traffic page is the water damage service page at 372,528, carrying 488 keywords. Beside it sit general cleaning at 338,557, air duct cleaning at 286,978, and carpet and upholstery cleaning at 269,678. Those three pages account for 895,213 of the estimate, close to thirty percent of the whole footprint, and all three serve the company's cleaning line. A restoration company that plans its content calendar against the full three million is partly planning against a carpet cleaner.
 
 Keyword counts inflate for a related reason. The same pull returned five mold-related keywords each reporting an identical 74,000 search volume and an identical 22,496 traffic estimate, four of the five resolving to the same URL.
 
 ![Five mold-related keywords in an OpenSEO ranked-keyword table, each showing the same 74,000 search volume and the same 22,496 traffic estimate, four of them pointing at one mold remediation page](/library/competitive-analysis/close-variant-keyword-inflation-openseo.png)
 
-Google reports one combined volume for close variants, so plurals and near-identical phrasings each inherit the group figure. Count them as five keywords and you have counted the same demand five times. OpenSEO can split those groups apart with clickstream data, which doubles the credit cost of the seed. With 49,729 keywords spread across 7,587 pages, the page count is the unit that cannot double-count. The [competitor traffic estimates strategy](/library/competitive-analysis/competitor-traffic-estimates) covers the rest of the corrections.
+Google reports one combined volume for close variants, so plurals and near-identical phrasings each inherit the group figure. Count them as five keywords and you have counted the same demand five times. Pages don't have this problem: the brand's 49,729 keywords sit on 7,587 pages, and each page counts once. The [competitor traffic estimates strategy](/library/competitive-analysis/competitor-traffic-estimates) covers the rest of the corrections.
 
 ## Read a link profile before you copy it
 
-The restoration brand's [backlink profile](/features/backlinks) opens at 596,564 backlinks from 13,980 referring domains. That works out to roughly 43 links per domain, which means the headline number is measuring repetition rather than reach. Referring domains is the figure worth writing down.
+The restoration brand's [backlink profile](/features/backlink-checker) opens at 596,564 backlinks from 13,980 referring domains. That works out to roughly 43 links per domain, so the headline number mostly counts repeat links from the same sites. Referring domains is the figure worth writing down.
 
-Two smaller numbers sit in the same panel: 2,217 broken backlinks across 529 broken pages. Those are links already pointed at the domain and landing on nothing. Every one is a site that already decided this topic was worth a link, which makes the ask shorter than a cold pitch, though it is still an ask.
+Two smaller numbers sit in the same panel: 2,217 broken backlinks across 529 broken pages. Those are links already pointed at the domain and landing on nothing. Each comes from a site that already decided the topic was worth a link, so asking it to point at your page instead is a shorter ask than a cold pitch, though it is still an ask.
 
 Kristiyan Yankov judges opportunities with a test that survives contact with any tool:
 
@@ -86,7 +86,7 @@ Read together, those two comments narrow what a link gap is for. Treat it as a r
 
 ## Do it with OpenSEO
 
-OpenSEO has no two-domain diff report. It has both halves, ranked keywords and backlink profiles per domain, and the join happens in the agent. You can filter the join on the way through, which a fixed report will not let you do, and you have to describe the join yourself every time.
+OpenSEO has no report that compares two domains for you. Connect [OpenSEO MCP](/docs/mcp) to your AI agent and it pulls each domain's ranked keywords and backlink profile, then does the comparison itself. You can filter along the way, which a fixed report won't let you do, but you have to describe the comparison each time. The prompt below does that.
 
 ### 1. Measure the set
 
@@ -98,7 +98,7 @@ Exclude brand terms on your domain and on theirs before anything gets counted as
 
 ### 3. Read pages, then keywords
 
-Take the top pages by traffic and name the business each one serves. Close variants stack; pages do not.
+Take the top pages by traffic and name the business each one serves. Close variants inflate keyword counts, but each page counts once.
 
 ### 4. Read the link profiles
 
@@ -137,7 +137,7 @@ the broken backlinks and broken pages counts for each competitor.
 Output the whole thing as one document.
 ```
 
-The agent has to do that grouping itself, because the MCP returns keyword rows rather than a pages report. The Pages tab on a domain in the app does the same grouping for you.
+On a big site, treat the agent's page list as a sample: the MCP only returns part of a competitor's keywords, so keyword counts and traffic per page come out low. The Top Pages tab on the competitor's domain in the app has the full numbers.
 
 The [competitor analysis skill](/docs/skills/competitor-analysis) runs the per-domain work, and [competitive landscape](/docs/skills/competitive-landscape) handles the stage before you know which domains matter.
 
@@ -153,6 +153,6 @@ Three things to do before the next planning cycle:
 
 1. Replace the named competitor list with a measured one, sorted into the three groups
 2. Rerun the keyword gap with brand excluded on both sides, and see what survives the filter
-3. Open the pages tab on every competitor whose traffic number you have quoted to anyone, and check that the traffic belongs to the business you thought you were benchmarking against
+3. Open the Top Pages tab on every competitor whose traffic number you have quoted to anyone, and check that the traffic belongs to the business you thought you were benchmarking against
 
-The [competitive analysis library](/library/competitive-analysis) has the full workflow for each of those. Running them costs money, because SEO data costs money everywhere: [OpenSEO](https://openseo.so/) is $10 a month with $10 of usage credits included. The free trial carries $0.50 of credits, which covers a handful of lookups. The four-step workflow above costs more than that.
+The [competitive analysis library](/library/competitive-analysis) has the full workflow for each of those. Running them costs money, because SEO data costs money everywhere: [OpenSEO](https://openseo.so/) is $10 a month with $10 of usage credits included, and signing up is free with $0.50 of trial credits, which covers a handful of lookups. The four-step workflow above can cost more than that.
