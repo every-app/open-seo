@@ -88,6 +88,39 @@ docker compose pull && docker compose up -d
 docker compose down
 ```
 
+## Memory limits and the recycle watchdog
+
+Under sustained HTTP traffic (Kubernetes health probes are enough on their own), the
+server's memory grows slowly and is never returned — roughly 80 MiB per 1000 requests,
+regardless of the route. This is a garbage-collection accounting bug in workerd, the
+runtime the image serves the app through (tracked upstream at
+[cloudflare/workerd#6894](https://github.com/cloudflare/workerd/issues/6894)); it is
+not caused by the app's own request handling, and it affects every OpenSEO version.
+
+To keep a memory-limited container from being OOM-killed, the container runs a watchdog
+that recycles the server process gracefully once the container's cgroup memory reaches
+90% of its limit (checked every 60 seconds). A recycle costs a few seconds of downtime,
+and the standard `restart: unless-stopped` / Kubernetes restart policy brings the server
+right back — a few seconds of downtime instead of a hard OOM kill. There is no data loss:
+all state lives in the database, and in-flight requests are few because the recycle
+starts only when memory is nearly exhausted.
+
+To tune this behavior, set any of the following (via `.env` for Compose, or the container
+environment elsewhere):
+
+- `SELF_HOST_MEMORY_RECYCLE_BYTES` — recycle threshold in bytes. By default it is 90% of
+  the container's cgroup memory limit; set it explicitly when the limit is imposed
+  outside the container (Kubernetes does exactly that) and the cgroup limit is not
+  visible inside. Set to `off` to disable the watchdog entirely.
+- `SELF_HOST_MEMORY_CHECK_INTERVAL` — seconds between memory checks (default `60`).
+- `SELF_HOST_CGROUP_PATH` — cgroup mount to read, for hosts that do not mount it at
+  `/sys/fs/cgroup` (default).
+
+If the memory limit sits below the app's baseline footprint, a recycle cannot help; the
+watchdog notices two recycles inside 10 minutes and exits so the restart policy's normal
+backoff applies. Size the container for at least the app's baseline (roughly 600 MiB
+plus your workload's needs).
+
 ## Health and troubleshooting
 
 Startup checks appear in `docker compose logs` before the build. Once running, `/api/health` reports configuration and database status, and `docker compose ps` reports container health.
