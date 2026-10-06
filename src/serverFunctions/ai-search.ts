@@ -29,7 +29,17 @@ export const lookupBrand = createServerFn({ method: "POST" })
   .validator(brandLookupInputSchema)
   .handler(async ({ data, context }) => {
     await assertPaidPlan(context.organizationId);
-    return getBrandLookup({ ...data, projectId: context.projectId }, context);
+    // Location/language default to the project's market; an explicit request
+    // value (if the client ever sends one) still wins.
+    return getBrandLookup(
+      {
+        ...data,
+        projectId: context.projectId,
+        locationCode: data.locationCode ?? context.project.locationCode,
+        languageCode: data.languageCode ?? context.project.languageCode,
+      },
+      context,
+    );
   });
 
 export const explorePrompt = createServerFn({ method: "POST" })

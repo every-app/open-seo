@@ -23,8 +23,8 @@ import {
 } from "@/server/features/ai-search/services/brandLookupShaping";
 import {
   brandLookupResultSchema,
-  type BrandLookupInput,
   type BrandLookupResult,
+  type BrandLookupServiceInput,
 } from "@/types/schemas/ai-search";
 import { detectTarget } from "@/shared/targetDetection";
 import {
@@ -50,7 +50,7 @@ const MENTIONS_PER_PLATFORM = 100;
 const TOP_SOURCES_PER_PLATFORM = 10;
 
 export async function getBrandLookup(
-  input: BrandLookupInput,
+  input: BrandLookupServiceInput,
   billingCustomer: BillingCustomerContext,
 ): Promise<BrandLookupResult> {
   const detected = detectTarget(input.query);
@@ -190,7 +190,7 @@ export async function getBrandLookup(
  * behavior and fails downstream with the provider's own validation error.
  */
 function resolveResearchTarget(
-  input: BrandLookupInput,
+  input: BrandLookupServiceInput,
   detected: ReturnType<typeof detectTarget>,
 ): ResearchTarget | null {
   if (detected.type !== "domain") return null;
@@ -215,7 +215,7 @@ async function settle<T>(
 }
 
 type PlatformFetchInput = Pick<
-  BrandLookupInput,
+  BrandLookupServiceInput,
   "locationCode" | "languageCode"
 >;
 
