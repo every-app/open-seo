@@ -21,8 +21,8 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/api/health').then(function(r){process.exit(r.ok?0:1)}).catch(function(){process.exit(1)})"
 
-# Startup (preflight, migrations, conditional build, serve) lives in
-# deploy/docker/docker-entrypoint.sh. The repo .npmrc raises the V8 heap ceiling
-# (node-options) so the ~7400-module SSR build doesn't OOM under Node's ~2GB
-# default.
+# Startup (preflight, migrations, conditional build, serve + memory-recycle
+# watchdog) lives in deploy/docker/docker-entrypoint.sh. The repo .npmrc raises
+# the V8 heap ceiling (node-options) so the ~7400-module SSR build doesn't OOM
+# under Node's ~2GB default.
 CMD ["sh", "deploy/docker/docker-entrypoint.sh"]
