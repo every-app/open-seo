@@ -19,7 +19,7 @@ EXPOSE 3001
 # start period covers migrations plus the boot-time vite build (skipped when
 # the previous start's build is still valid; see deploy/docker/docker-entrypoint.sh).
 HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/api/health').then(function(r){process.exit(r.ok?0:1)}).catch(function(){process.exit(1)})"
+  CMD node -e "var b=(process.env.OPEN_SEO_BASE_PATH||'').replace(/\\/$/,''); fetch('http://127.0.0.1:'+(process.env.PORT||3001)+b+'/api/health').then(function(r){process.exit(r.ok?0:1)}).catch(function(){process.exit(1)})"
 
 # Startup (preflight, migrations, conditional build, serve) lives in
 # deploy/docker/docker-entrypoint.sh. The repo .npmrc raises the V8 heap ceiling

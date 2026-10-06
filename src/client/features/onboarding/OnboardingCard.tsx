@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { appPath } from "@/shared/app-path";
 
 export function OnboardingCard({
   step,
@@ -12,7 +13,7 @@ export function OnboardingCard({
   return (
     <div className="w-full max-w-xl py-8">
       <div className="flex items-center justify-center gap-2 text-sm font-semibold">
-        <img src="/transparent-logo.png" alt="" className="size-7" />
+        <img src={appPath("/transparent-logo.png")} alt="" className="size-7" />
         OpenSEO
       </div>
       <main className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm md:mt-12 md:p-10">

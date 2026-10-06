@@ -3,6 +3,7 @@ import type { LinkOptions } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ComponentType } from "react";
 import { toast } from "sonner";
+import { appPath } from "@/shared/app-path";
 import {
   ArrowLeftRight,
   Check,
@@ -206,7 +207,7 @@ function AccountFooter({ ready }: { ready: boolean }) {
     setIsSwitching(true);
     try {
       await switchOrganization({ data: { organizationId } });
-      window.location.assign("/");
+      window.location.assign(appPath());
     } catch (error) {
       toast.error(getStandardErrorMessage(error));
       setIsSwitching(false);

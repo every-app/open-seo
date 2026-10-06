@@ -6,6 +6,7 @@ import { ProjectRepository } from "@/server/features/projects/repositories/Proje
 import { ReportRepository } from "@/server/features/reports/repositories/ReportRepository";
 import { asAppError } from "@/server/lib/errors";
 import { reportDocumentResponse, textResponse } from "@/shared/report-sandbox";
+import { appPath } from "@/shared/app-path";
 
 // The report viewer: the stored document, served byte for byte from the app's
 // own origin and locked down by REPORT_CSP. A raw-Response route, so no React
@@ -37,11 +38,11 @@ async function handleReportRequest(
     }
     // The most likely real entry: someone opening a report link in a browser
     // whose session expired.
-    const target = `/r/${encodeURIComponent(reportId)}`;
+    const target = appPath(`/r/${encodeURIComponent(reportId)}`);
     return new Response(null, {
       status: 302,
       headers: {
-        Location: `/sign-in?redirect=${encodeURIComponent(target)}`,
+        Location: `${appPath("/sign-in")}?redirect=${encodeURIComponent(target)}`,
         "Cache-Control": "private, no-store",
       },
     });

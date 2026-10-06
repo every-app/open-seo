@@ -12,6 +12,7 @@ import { authClient } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
+import { appPath } from "@/shared/app-path";
 
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
@@ -36,8 +37,11 @@ function ForgotPasswordPage() {
     },
     onSubmit: async ({ formApi, value }) => {
       try {
-        const redirectUrl = new URL("/reset-password", window.location.origin);
-        if (redirectTo !== "/")
+        const redirectUrl = new URL(
+          appPath("/reset-password"),
+          window.location.origin,
+        );
+        if (redirectTo !== appPath("/"))
           redirectUrl.searchParams.set("redirect", redirectTo);
         const result = await authClient.requestPasswordReset({
           email: value.email.trim(),

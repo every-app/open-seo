@@ -31,7 +31,10 @@ Optional env values:
 
 - `PORT` (defaults to `3001`)
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
-- `AUTH_MODE=local_noauth` (already set in compose)
+- `OPEN_SEO_BASE_PATH` (optional public mount path such as `/openseo`; the
+  container rebuilds the app when this value changes)
+- `AUTH_MODE` (defaults to `local_noauth`; use `cloudflare_access` for a
+  public reverse-proxy deployment and configure `TEAM_DOMAIN` plus `POLICY_AUD`)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
@@ -41,6 +44,12 @@ ALLOWED_HOST=yourdomain.com docker compose up -d
 ```
 
 You can also persist it in `.env`.
+
+For a subpath deployment, set `OPEN_SEO_BASE_PATH=/openseo` and proxy that
+path to the container without changing the path in the upstream request. The
+app generates its router, server-function, OAuth, MCP, and static-asset URLs
+with the same prefix. Set `BETTER_AUTH_URL` to the full public URL including
+the prefix when using `AUTH_MODE=hosted`.
 
 ## Telemetry
 

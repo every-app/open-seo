@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
 import { Spinner } from "@/client/components/Spinner";
+import { appPath } from "@/shared/app-path";
 
 const WIDTHS = {
   sm: "max-w-xs",
@@ -46,7 +47,7 @@ export function StatusScreen({
       >
         {logo ? (
           <img
-            src="/transparent-logo.png"
+            src={appPath("/transparent-logo.png")}
             alt="OpenSEO"
             className="size-10 rounded-lg"
           />

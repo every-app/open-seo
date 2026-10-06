@@ -5,6 +5,7 @@ import { ArrowRight, Tag } from "lucide-react";
 import { QueryError } from "@/client/components/QueryState";
 import { StatusScreen } from "@/client/components/StatusScreen";
 import { Button } from "@/client/components/ui/button";
+import { appPath } from "@/shared/app-path";
 import { PlanPageAccountMenu } from "@/client/features/billing/PlanPageAccountMenu";
 import { PlanOfferCard } from "@/client/features/billing/PlanOfferCard";
 import {
@@ -119,7 +120,7 @@ function YcPlanPage() {
 
       <div className="text-center space-y-3">
         <img
-          src="/transparent-logo.png"
+          src={appPath("/transparent-logo.png")}
           alt="OpenSEO"
           className="mx-auto size-10 rounded-lg"
         />
