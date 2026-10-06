@@ -1,7 +1,7 @@
 /**
  * Parity tests for the streaming (htmlparser2) page analyzer against a
- * cheerio/DOM reference implementation — the exact logic the analyzer
- * replaced. Cheerio stays as a devDependency for this test only.
+ * cheerio/DOM reference implementation. Cheerio stays as a devDependency
+ * for this test only.
  */
 import * as cheerio from "cheerio";
 import { describe, expect, it } from "vitest";
@@ -9,7 +9,7 @@ import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
 import { normalizeUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
 import type { PageAnalysis, PageLink } from "@/server/lib/audit/types";
 
-/** The previous cheerio implementation, verbatim (minus passthrough fields). */
+/** DOM reference, including separators around ordinary block elements. */
 function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   const $ = cheerio.load(html);
 
@@ -44,6 +44,12 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
 
   const bodyClone = $("body").clone();
   bodyClone.find("script, style, noscript, svg").remove();
+  bodyClone
+    .find(
+      "address,article,aside,blockquote,br,caption,dd,details,dialog,div,dl,dt,fieldset,figcaption,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hgroup,hr,li,main,nav,ol,p,pre,section,summary,table,tbody,td,tfoot,th,thead,tr,ul",
+    )
+    .before(" ")
+    .after(" ");
   const bodyText = bodyClone.text().replace(/\s+/g, " ").trim();
   const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
 
@@ -226,6 +232,40 @@ describe("analyzeHtml extraction caps", () => {
     );
     expect(analysis.links).toHaveLength(1_000);
     expect(analysis.images).toHaveLength(1_000);
+  });
+});
+
+describe("visible text boundaries", () => {
+  it.each([
+    ["paragraphs", "<p>one</p><p>two</p>"],
+    ["list items", "<ul><li>one</li><li>two</li></ul>"],
+    ["table cells", "<table><tr><td>one</td><td>two</td></tr></table>"],
+    ["line breaks", "one<br>two"],
+  ])("separates words across %s in minified HTML", (_label, html) => {
+    const analysis = analyzeHtml(html, PAGE_URL, 200, 0);
+    expect(analysis.bodyText).toBe("one two");
+    expect(analysis.wordCount).toBe(2);
+  });
+
+  it("preserves words split across inline markup and decoded entities", () => {
+    const analysis = analyzeHtml(
+      "<p>Open<strong>SEO</strong> helps <span>caf&eacute;</span> owners.</p>",
+      PAGE_URL,
+      200,
+      0,
+    );
+    expect(analysis.bodyText).toBe("OpenSEO helps café owners.");
+    expect(analysis.wordCount).toBe(4);
+  });
+
+  it("ignores block markup inside non-content subtrees", () => {
+    const analysis = analyzeHtml(
+      "<body><p>Open<svg><text>hidden</text></svg><noscript><div>hidden</div></noscript>SEO</p></body>",
+      PAGE_URL,
+      200,
+      0,
+    );
+    expect(analysis.bodyText).toBe("OpenSEO");
   });
 });
 
