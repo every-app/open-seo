@@ -49,6 +49,30 @@ pnpm dev:agents
 
 When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
 
+### Flows that need the direct origin
+
+The portless `.localhost` URL proxies most of the app, but a few flows must be
+opened at the direct origin instead — `http://localhost:<port>` or
+`http://127.0.0.1:<port>`, where `<port>` is printed on startup in
+`.logs/dev-server.log`:
+
+- **In-app agent (SAM) chat.** Chat history fails to load over the portless
+  URL (`ERR_SSL_PROTOCOL_ERROR`). Test SAM chat at the direct origin.
+- **Google Search Console OAuth.** Google rejects the portless `.localhost`
+  callback hostname with `invalid_request`. Register
+  `http://localhost:<port>/api/gsc/oauth/callback` as an authorized redirect
+  URI in your Google OAuth consent screen, and start the connection from that
+  direct origin. The dev server itself stays managed by portless.
+
+### Stop the dev server around production builds
+
+Running `pnpm build` while a Vite dev server is still running can corrupt the
+dev server's runtime state: browser navigation fails and server functions
+return `undefined`, with `Cannot read properties of undefined (reading 'map')`
+in the logs. Stop the dev server (`Ctrl+C`) before a production build and
+start it again afterwards. An already-affected dev server recovers on restart
+— no code changes are needed.
+
 ## Report share images
 
 To test a real report end to end, run the app with `AUTH_MODE=hosted`, share a

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getAuth, hasHostedAuthConfig } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
+import { getMissingHostedAuthConfigVariable } from "@/lib/auth-hosted-config";
 import { isHostedAuthMode } from "@/lib/auth-mode";
 
 async function handleAuthRequest(request: Request) {
@@ -10,10 +11,14 @@ async function handleAuthRequest(request: Request) {
     });
   }
 
-  if (!hasHostedAuthConfig()) {
-    return new Response("Missing Better Auth hosted configuration", {
-      status: 500,
-    });
+  const missingConfig = getMissingHostedAuthConfigVariable(env);
+  if (missingConfig) {
+    return new Response(
+      `Missing Better Auth hosted configuration: ${missingConfig}`,
+      {
+        status: 500,
+      },
+    );
   }
 
   const auth = getAuth();

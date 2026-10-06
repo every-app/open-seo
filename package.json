@@ -7,8 +7,8 @@
   "packageManager": "pnpm@10.30.1",
   "scripts": {
     "dev": "vite dev",
-    "dev:agents": "mkdir -p .logs && portless run vite dev 2>&1 | tee .logs/dev-server.log",
-    "dev:agents:force": "mkdir -p .logs && portless --force run vite dev 2>&1 | tee .logs/dev-server.log",
+    "dev:agents": "mkdir -p .logs && n=$(git branch --show-current | sed -e 's/[^a-zA-Z0-9-]/-/g' | cut -c1-40 | sed -e 's/-*$//'); portless --name \"${n:-dev}\" vite dev 2>&1 | tee .logs/dev-server.log",
+    "dev:agents:force": "mkdir -p .logs && n=$(git branch --show-current | sed -e 's/[^a-zA-Z0-9-]/-/g' | cut -c1-40 | sed -e 's/-*$//'); portless --force --name \"${n:-dev}\" vite dev 2>&1 | tee .logs/dev-server.log",
     "build": "vite build && tsc --noEmit",
     "lint": "oxlint . --type-aware",
     "lint:fix": "oxlint . --type-aware --fix",
@@ -24,7 +24,7 @@
     "cf-typegen": "wrangler types src/worker-configuration.d.ts --config wrangler.jsonc --config wrangler.audit.jsonc",
     "types:check": "tsc --noEmit",
     "format:check": "prettier --check .",
-    "format:write": "prettier . --write",
+    "format:write": "sh -c '[ $# -gt 0 ] || set -- .; exec prettier --write \"$@\"' format:write",
     "auth:generate": "npm run auth:generate:d1 && npm run auth:generate:pg",
     "auth:generate:d1": "pnpm dlx auth@latest generate --config ./scripts/cli-auth.ts --adapter drizzle --dialect sqlite --output ./src/db/better-auth-schema.ts && prettier --write ./src/db/better-auth-schema.ts",
     "auth:generate:pg": "pnpm dlx auth@latest generate --config ./scripts/cli-auth.ts --adapter drizzle --dialect pg --output ./src/db/pg/better-auth-schema.ts && prettier --write ./src/db/pg/better-auth-schema.ts",
@@ -54,7 +54,7 @@
     "repair:rank-locations": "tsx scripts/repair-rank-tracking-locations.ts",
     "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
     "seed:projects": "tsx scripts/seed-projects.ts",
-    "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p tests/badseo/tsconfig.json && oxlint . --type-aware && pnpm sync-plugin-skills && test -z \"$(git status --porcelain -- plugins/openseo/skills)\""
+    "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p tests/badseo/tsconfig.json && oxlint . --type-aware && vite build && pnpm sync-plugin-skills && test -z \"$(git status --porcelain -- plugins/openseo/skills)\""
   },
   "cloudflare": {
     "bindings": {
