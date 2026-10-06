@@ -1,169 +1,175 @@
 ---
 title: "SaaS SEO for Solo Founders: Where Your Hours Pay Off"
-description: "Solo SaaS founders run out of hours before money. How to pick the few pages worth building, read what already ranks, and use what a funded team can't copy."
+description: "An SEO plan for solo SaaS founders, worked through a real market: the four pages worth building, the lists to get onto, and how to tell it's working."
 author: "Jeremy Rivera"
 date: "2026-10-05"
 ---
 
-Staffing is the hard part of SEO for a solo founder. The funded competitor has eight people who can each give it a full day, and you have whatever survives support tickets and shipping. Money matters less than that, but it is not nothing: the big suites run $100 a month and up, which is real for one person.
+If you run a SaaS on your own, SEO gets whatever hours are left after support tickets and shipping. A funded competitor can put a content team on it and publish forty pages a quarter. You can build about four, so most of the work is picking the right four.
 
-So the question is which hours convert, and which advantages a solo founder holds that a funded team cannot use. Five practitioners on the Unscripted shows have answered pieces of both.
+This guide is a plan for those hours. You'll come away knowing:
 
-[SEO for startups](/blogs/seo-for-startups) covers the fundamentals if you need them first.
+- which searches to target first, and which to ignore however big they look
+- how to read a results page to decide whether to build a page, a tool or nothing
+- the four pages to build first
+- how to get onto the lists and threads you can't outrank, which is also where AI assistants look
+- a 15-minute monthly check that tells you whether it's working
+
+Each step ends with a prompt you can run on your own product. To keep it concrete, we'll work through one example with numbers from OpenSEO: Snappa, a bootstrapped design tool competing with Canva. Its founder, Christopher Gimmer, discussed what search did for the company on the Unscripted SEO podcast, including what stopped working.
+
+[SEO for startups](/blogs/seo-for-startups) covers the fundamentals if you need them first. To run the prompts, connect [OpenSEO MCP](/docs/mcp) to your AI agent.
 
 ## Table of Contents
 
-- [The scarce input is hours, and the market has already priced them](#the-scarce-input-is-hours-and-the-market-has-already-priced-them)
-- [The distribution asset comes before the product](#the-distribution-asset-comes-before-the-product)
-- [A small footprint is one you can still control](#a-small-footprint-is-one-you-can-still-control)
-- [Ship the tool instead of the wall of text](#ship-the-tool-instead-of-the-wall-of-text)
-- [Go where the competition will not follow](#go-where-the-competition-will-not-follow)
-- [Your AI is as smart as your schema](#your-ai-is-as-smart-as-your-schema)
-- [Do it with OpenSEO](#do-it-with-openseo)
+- [Where your hours pay off](#where-your-hours-pay-off)
+- [Start with the searches buyers make](#start-with-the-searches-buyers-make)
+- [Read the results page before you build](#read-the-results-page-before-you-build)
+- [Build four pages, not forty](#build-four-pages-not-forty)
+- [Get onto the pages you can't outrank](#get-onto-the-pages-you-cant-outrank)
+- [Keep your footprint consistent for AI assistants](#keep-your-footprint-consistent-for-ai-assistants)
+- [Check it once a month](#check-it-once-a-month)
 - [Three or four years alive is most of the strategy](#three-or-four-years-alive-is-most-of-the-strategy)
 
-## The scarce input is hours, and the market has already priced them
+## Where your hours pay off
 
-Greg Digneo grows revenue for SaaS companies and spends a lot of his time talking founders out of the metric they arrived with. On the [Unscripted SEO podcast](https://the-unscripted-seo-interview-podcast.castos.com/episodes/breaking-down-the-business-side-of-seo) he reorders it:
+Three kinds of page work for a small SaaS. For searches you can't win, get onto someone else's list instead. Here's an example search from the design-tool market for each:
+
+| Build this              | Example search               | Searches a month | Difficulty | Who ranks now       |
+| ----------------------- | ---------------------------- | ---------------- | ---------- | ------------------- |
+| An alternatives page    | canva alternatives           | 1,900            | 0          | Tools' own lists    |
+| Comparison pages        | snappa vs canva              | 40               | 0          | Snappa's own page   |
+| A tool page for one job | youtube thumbnail maker      | 4,400            | 44         | Canva, Adobe, tools |
+| A spot on others' lists | best graphic design software | 1,000            | 30         | G2, PCMag, HubSpot  |
+
+Every row is a search from someone already shopping for a tool, which is why a small number of searches can still pay. The sections below show how to find these rows in your own market and pick your four.
+
+## Start with the searches buyers make
+
+Greg Digneo grows revenue for SaaS companies. On the [Unscripted SEO podcast](https://the-unscripted-seo-interview-podcast.castos.com/episodes/breaking-down-the-business-side-of-seo) he put the priority plainly:
 
 > don't think about traffic, don't think about keywords, think about revenue. Because that's all your CEO cares about, that's all your client cares about, is how much revenue are you going to bring in.
 
-A solo founder has no CEO to report to, which cuts the reporting and leaves the decision underneath it. You still have to pick which handful of pages get built this quarter.
+You have no CEO, but the decision is the same: which handful of pages bring in signups. Start with three seeds: your category ("graphic design software"), your biggest competitor's name plus "alternative," and the main job your product does ("youtube thumbnail maker"). Keep only the searches from someone choosing a tool, and drop the rest, however big.
 
-Cost per click is a decent proxy for what a click is worth, because it is what somebody else is already paying to reach the same visitor. OpenSEO's [keyword research](/features/keyword-research) returns it beside volume and difficulty, and sorting a SaaS SEO keyword set by CPC rearranges the whole list.
+The big numbers in the design-tool market are tempting and mostly out of reach. "Background remover" gets 1.2 million searches a month at difficulty 66, and "graphic design software" gets 14,800 at 46. Meanwhile "canva alternatives" gets 1,900 at difficulty 0, and everyone searching it is shopping.
 
-![OpenSEO keyword research for "seo for saas" sorted by cost per click, where the two most expensive terms cost $367.94 and $226.75 a click, draw 70 and 260 searches a month, and both score zero for difficulty](/blog/saas-solopreneur-seo/saas-seo-cpc-inversion-openseo.png)
+Cost per click helps you rank what's left, because it's what advertisers already pay to reach that searcher. "Canva alternatives" costs $5.70 a click, more than most of the "maker" searches around it. A difficulty of 0 can also mean there wasn't enough data to score the search, so check the results page before you commit a page to it.
 
-"Semrush" is the largest term anywhere in that set at 90,500 searches a month, and it carries a $2.53 CPC and a difficulty score of 63. "What is seo" runs 27,100 a month at difficulty 81 and $10.20. Meanwhile "best b2b seo agency" gets 70 searches a month, scores 0 for difficulty, and carries a $367.94 CPC. "Seo agency for saas" gets 260 a month, also scores 0, and prices at $226.75.
+```text
+I run [product], a [category] tool for [buyer]. My biggest competitor
+is [competitor]. Use OpenSEO to research keywords for "[category]
+software", "[competitor] alternative" and "[main job your product
+does]". Keep only searches from someone choosing a tool, such as
+alternatives, comparisons and tools for one job. Show volume,
+difficulty and CPC, sorted by CPC.
+```
 
-Volume and value run in opposite directions across this market, and the terms nobody can rank for are the cheap ones. That inversion is the solo founder's whole opening. You cannot publish forty pages this quarter. You can publish four, and the four that pay sit at the low-volume, high-CPC end of your own list, where a content team measured on traffic has no reason to look. A difficulty of 0 on a 70-search commercial term usually means the tool had too little data to score it, so read the SERP before you commit a page to it.
+## Read the results page before you build
 
-The [positioning to demand](/library/keyword-research/positioning-to-demand) strategy covers how to work backwards from what you sell to the terms that carry that intent.
+Volume and difficulty tell you a search is worth having. The results page tells you what kind of page wins it. Here are three from the design-tool market, all pulled the same day.
 
-## The distribution asset comes before the product
+**"Canva alternatives."** An AI Overview sits on top. The first organic result is a "7 Best Canva Alternatives" list from mockupgenerator.ai, a mockup tool that ranks itself first. ManyPixels does the same lower on the page, and Adobe ranks with its own comparison page. A YouTube video, a Reddit thread, an XDA article and a Quora answer fill in the rest. You can win this search with an honest alternatives page: say who each tool suits, and put yourself where you actually fit.
 
-Christopher Gimmer bootstrapped Snappa, a design tool, and the launch is usually told as a growth story. The mechanism is stranger than that. On the [Unscripted SEO podcast](https://unscriptedseo.com/christopher-gimmer-bootstrapped-saas-ai-overviews/) he laid out the sequence:
+**"Snappa vs canva."** Snappa's own comparison page is the first organic result, and OpenSEO's data also has it ranking first for "websites like canva," at 880 searches a month. Further down the same page, another design tool, DocHipo, ranks with "Snappa vs Canva vs DocHipo." It added itself to a comparison between two bigger names, which is a page any small tool can write.
+
+**"Youtube thumbnail maker."** Canva and Adobe hold the top two spots with working tools. Below them sit tool pages from four smaller companies: vidIQ, Pixlr, WayinVideo and OpusClip. None of the top results is an article. The page that wins is the tool itself, with a short explanation around it.
+
+All three of these results pages had an AI Overview. That costs little on a tool search like the thumbnail maker, where people still need the tool, and the most on searches with a one-line answer, like an image size.
+
+```text
+For the top 5 searches on my list, pull the live Google results. For
+each one, tell me what kind of page wins: a tool, a list of
+alternatives, a comparison page, a guide or a forum thread. Flag any
+search with an AI Overview, and tell me which kind of page I should
+build for each.
+```
+
+## Build four pages, not forty
+
+Build an alternatives page for your biggest competitor, a comparison against them, a three-way page that adds you to the biggest head-to-head in your market, and a free tool for one job your product does. For Snappa, those four are:
+
+- an alternatives page for "canva alternatives" (1,900 searches a month, difficulty 0)
+- a comparison page for "snappa vs canva"
+- a Canva vs Adobe Express vs Snappa page, for the 390 monthly searches of "canva vs adobe express" (difficulty 2)
+- a Twitter header maker (590 a month, difficulty 0), an easier win than the thumbnail maker at 44
+
+The tool page is the one most likely to earn links. Gimmer puts the difficulty of traditional link building down to inbox fatigue, and names what still gets a response:
+
+> people are more willing and likely to link out to a really good tool that actually solves a problem versus yet another blog post with a wall of text.
+
+A solo founder can build a small free tool in a weekend. Producing a hundred blog posts is the thing a funded team does well and you will never match.
+
+Snappa's example also shows what to put next to the tool. Snappa's early growth came from content built before the product existed. Gimmer, on the [Unscripted SEO podcast](https://unscriptedseo.com/christopher-gimmer-bootstrapped-saas-ai-overviews/):
 
 > We did like I think 2,000 MRR in the first month or 4,000 MRR ... I think we got to 10K MRR in like six months and ... 95% of our signups were just coming from that one blog post and our free stock photo site.
 
-That is 95 percent of signups, not revenue, and it came from two assets: a blog post about where to find free stock photos, and StockSnap, the free stock photo site that post spawned. Both existed before Snappa did, attached to an earlier business. The blog post also went viral on StumbleUpon before it ranked, so the traffic came first and the ranking followed.
+The blog post was about where to find free stock photos, and the site was StockSnap, which that post spawned. That exact play is closed now: "free stock photos" gets 22,200 searches a month at a difficulty of 100, the top of the scale.
 
-The order is what makes it useful. He already held the attention of everybody who needed a graphic and had no designer, and Snappa was what he eventually sold them. The distribution came first and the product was fitted to it.
-
-Two things have changed since. The term is harder: "free stock photos" now runs 22,200 searches a month at difficulty 75, which is not a term one person takes today. And the top of the page has moved. Gimmer:
+Snappa's search traffic today comes from a newer version of the same idea. By OpenSEO's estimate, its biggest non-brand pages are size guides: Twitter header size at about 46,000 visits a month, YouTube thumbnail size at 16,000, Instagram story dimensions at 11,000 and Facebook cover photo size at 10,000. Each one answers the question a buyer asks just before they start designing. The answers are short, though. "Youtube thumbnail size" gets 27,100 searches a month at difficulty 10, and an AI Overview now sits above every result. The answer, 1280 by 720 pixels, fits in one line, so plenty of searchers never click. Gimmer described the same effect:
 
 > Even though we're ranking number one for some of these keywords, the AI Overviews are answering some of those things, and so we're losing out on some of those clicks.
 
-The lesson survives the change: find the audience before you need it, and prefer the surface where an answer engine cannot finish the job for the reader.
+If you write a guide like that, make the tool the next step on the page, because an AI Overview can answer the question but can't make the thumbnail.
 
-## A small footprint is one you can still control
+## Get onto the pages you can't outrank
+
+"Best graphic design software" is a page of publishers and big brands: G2, PCMag, HubSpot and Adobe, plus a Reddit thread and a YouTube video. A small tool won't outrank them, and doesn't need to. Snappa doesn't rank on its own for "canva alternatives," but it appears in two of the results that do: the Quora answer and the ManyPixels list both include it. To get onto a list article, email whoever maintains it with one line on who your tool suits, and offer a free account so they can try it.
+
+The same goes for the places where people ask for recommendations: Reddit, Quora and Facebook groups. Answer as the founder, say what your tool is good and bad at, and link when it helps.
+
+Jason Wade of Ninja AI makes the same case for the work most people skip. On the [Unscripted SEO podcast](https://unscriptedseo.com/what-ai-visibility-really-means-and-why-its-not-a-buzzword/):
+
+> we know what works on the margin that people will not do. Joining the Better Business Bureau. Go join. You know, speaking at an event.
+
+He says of one appearance that "I did a podcast and it ranked instantly." As a solo founder, you can say yes to a podcast or an event without asking anyone.
+
+```text
+Pull the Google results for "best [category] software" and
+"[competitor] alternatives". List every page that recommends tools,
+including review sites, list articles, Reddit threads and Quora
+answers. For each one, tell me whether [product] is mentioned, and
+which ones I should ask to be added to.
+```
+
+## Keep your footprint consistent for AI assistants
+
+More buyers now ask ChatGPT or Claude which tool to use. Those assistants often search the web before they answer, so the lists and threads above feed what they say about you. Everything they find should describe your product the same way.
 
 Ann Smarty has been an SEO for over twenty years, and she uses herself as the cautionary example. On the [Unscripted SEO podcast](https://unscriptedseo.com/ann-smarty-llm-consensus-reddit-brand-control/), talking about getting language models to say a consistent thing about you:
 
 > Don't be like me. ... My footprint is a mess.
 
-She means bylines still describing projects that have been gone for ten years, and a backlog of corrections she keeps starting and never finishes. Twenty years of accumulated mentions cannot be reconciled by one person.
+As a new solo founder, your footprint is small enough to audit in an afternoon: your profiles, directory listings, bios and app store pages. You can make them all describe the product the same way this week. A company with fifteen years of history and four departments can't. Ann's own list of where to start includes directory submissions, which she says language models now lean on after twenty years of the industry writing them off.
 
-Invert that and it is the advantage a new solo founder has. Your footprint is small enough to audit in an afternoon: the profiles, the directory listings, the bios, anywhere a description of what you do already exists. One person can make all of them say the same thing this week. A company with fifteen years of history and four departments cannot. Ann's own list of where to start is unglamorous and includes directory submissions, which she says language models now lean on after twenty years of the industry writing them off.
+The same speed applies to technical fixes. Schema markup states your prices, reviews and product names outright, so a model doesn't have to infer them from the page. One person with commit access decides and deploys it in the same afternoon, with no ticket and no handoff.
 
-The [intent beyond Google](/library/keyword-research/intent-beyond-google) strategy covers reading demand on the surfaces that feed those answers.
+## Check it once a month
 
-## Ship the tool instead of the wall of text
+Fifteen minutes a month is enough. Look at three things for your four pages:
 
-Gimmer puts the difficulty of traditional link building down to inbox fatigue, and names what still gets a response:
+1. **Impressions in Google Search Console.** A new page usually gets seen before it gets clicked, so rising impressions are the first sign it's working.
+2. **Position for each page's target search.** Track the four searches you built the pages for.
+3. **Signups from search.** That's the number Digneo would ask about.
 
-> people are more willing and likely to link out to a really good tool that actually solves a problem versus yet another blog post with a wall of text.
-
-The results for "micro saas" agree. It runs 1,000 searches a month at difficulty 8, which is soft for that volume. The subreddit r/microsaas holds the top organic result, a directory of micro SaaS examples holds the second, and a YouTube video and a second Reddit thread both land inside the first ten.
-
-![OpenSEO SERP analysis for "seo for saas" listing 97 organic results, with a Reddit thread started by a solo founder holding position two ahead of eight agency and vendor guides](/blog/saas-solopreneur-seo/saas-seo-serp-solo-operators-openseo.png)
-
-Even on "seo for saas", where guides hold nine of the top ten under an AI Overview, position two is a Reddit thread opened by a solo founder asking how to start, and its title still reads like the question it was.
-
-A solo founder can build a small free tool in a weekend. Producing a hundred blog posts is the thing a funded team does well and you will never match. The weekend tool is the better option on its own merits, which is a rare case of the affordable choice also being the right one.
-
-## Go where the competition will not follow
-
-Jason Wade of Ninja AI puts the same idea in blunter language. On the [Unscripted SEO podcast](https://unscriptedseo.com/what-ai-visibility-really-means-and-why-its-not-a-buzzword/):
-
-> we know what works on the margin that people will not do. Joining the Better Business Bureau. Go join. You know, speaking at an event.
-
-He says of one appearance that "I did a podcast and it ranked instantly," and that most people who talk about starting a podcast never get past a handful of episodes. The keyword data backs the neglect: "how to be a podcast guest" gets 70 searches a month at difficulty 6, and "podcast guest" gets 480 at difficulty 15.
-
-Treat those as a measurement of how few people compete for the surface, rather than as terms to target. A funded marketing team cannot send its CEO on forty podcasts, and cannot let a junior speak for the brand. A solo founder can say yes without asking anyone.
-
-## Your AI is as smart as your schema
-
-Malith Gamage builds reporting software and spends his time on the boundary between a product's data and what a model can do with it. On the [Unscripted SaaS podcast](https://unscriptedsaas.com/malith-gamage-privacy-first-client-reporting-saas/):
-
-> your AI is smart as your schema. As long as you give the correct data and correct description, then you will get good answers back.
-
-He is describing his own product's internals, and the same constraint applies to how an answer engine reads your site. Schema markup states your prices, reviews and product names outright instead of leaving a model to infer them from the page, which is the difference between a fact it can quote and a sentence it has to interpret.
-
-Shipping it is where working alone pays. One person with commit access decides and deploys in the same afternoon, with no ticket and no handoff, and the same shortcut applies to the next technical change, and the one after that.
-
-## Do it with OpenSEO
-
-The work below takes an afternoon and costs credits, because live SEO data costs money everywhere. Connect [OpenSEO MCP](/docs/mcp) and the agent runs it against live data.
-
-### 1. Price the market before you plan it
-
-Sort candidate terms by CPC and difficulty together. The rows worth building sit high on one and low on the other.
-
-### 2. Read what already ranks
-
-Check what shape of result already wins. A page of Reddit threads and tools is telling you what to build.
-
-### 3. Check the neglected surfaces
-
-Name the subreddits, channels and podcasts this audience uses, and see which of them already rank for your terms.
-
-### 4. Pick the four pages
-
-Rank the shortlist and say, for each, whether it is a page, a free tool, or an appearance on somebody else's surface.
-
-### Full Prompt: A Solo Founder's Quarter
+Give each page a few months before you judge it, and change one page at a time so you know what moved.
 
 ```text
-I run [product] alone. It costs [price] and solves [problem] for [buyer].
-My site is [mydomain.com]. I can build 4 pages this quarter, not 40.
-
-1. Price the market
-
-Research keywords around [2-3 seeds]. Return volume, difficulty, CPC and
-intent. Sort by CPC descending, then show me only rows with difficulty
-under 20. Tell me which of those a buyer would search rather than a
-competitor or a job seeker.
-
-2. Read the SERPs
-
-For the top 5 of those, pull live SERP results. For each one tell me
-what is winning: tools, forums, video, listicles, or long guides. Flag
-any query where an AI Overview sits above the organic results.
-
-3. Check the neglected surfaces
-
-Where does this audience talk that is not Google? Name the subreddits,
-YouTube channels and podcasts, and tell me which of them already rank
-for my terms.
-
-4. Give me the four pages
-
-Recommend exactly 4 things to build, ranked. For each, say whether it
-should be a page, a free tool, or an appearance somewhere I do not own.
-Output as one document.
+Check my four SEO pages: [URLs]. From Search Console, show clicks and
+impressions for each over the last 28 days compared with the 28 days
+before. From Google Analytics, show signup key events from organic
+search on each page for the same two periods. Then check where each
+page ranks for its target search: [searches]. Tell me which pages are
+gaining and which need work.
 ```
-
-Start with [SEO project setup](/docs/skills/seo-project-setup) if the project is new, and [keyword research](/docs/skills/keyword-research) for the mining itself. The [keyword research library](/library/keyword-research) has the full workflow behind each step.
 
 ## Three or four years alive is most of the strategy
 
-Every advantage above compounds, and none of them pays this month. Gimmer's blog post was ranking well before there was a product to sell it to.
+Every page above compounds, and none of them pays this month. Gimmer's blog post was ranking well before Snappa existed.
 
-Near the end of his interview, weighing investors against staying bootstrapped, Malith Gamage put it plainly:
+Near the end of his interview on the [Unscripted SaaS podcast](https://unscriptedsaas.com/malith-gamage-privacy-first-client-reporting-saas/), weighing investors against staying bootstrapped, Malith Gamage put it plainly:
 
 > main advice is don't die. Like as long as if you can stay for like three, four years alive, then you're good.
 
-That reframes what four pages a quarter are for. Treat them as the largest amount of compounding work one person can sustain without stopping. Sustaining it is the part that beats the funded team, because funded content programs change owners often, and the strategy usually changes with them.
+Four pages a quarter is a pace one person can keep for years. Next quarter, run the same research on your next-biggest competitor and the next job your product does. Sustaining it is the part that beats the funded team, because funded content programs change owners often, and the strategy usually changes with them.
 
 To run this on your own market, [OpenSEO](https://openseo.so/) is $10 a month with $10 of usage credits included, and signing up is free with $0.50 of trial credits.
