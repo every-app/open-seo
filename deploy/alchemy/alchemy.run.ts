@@ -90,9 +90,10 @@ const makeResources = (stage: string) => {
     DB: Cloudflare.D1.Database("DB", {
       name: prod ? PROD_NAMES.d1 : `open-seo-db-${stage}`,
       // drizzle-generated SQL migrations; tracked in the same
-      // wrangler-compatible table prod already uses.
-      migrationsDir: "drizzle/sqlite",
-      migrationsTable: "d1_migrations",
+      // wrangler-compatible table prod already uses. Alchemy 2 rejects the v0
+      // layout in drizzle/sqlite, so it reads a flat copy prepared by
+      // scripts/prepare-d1-migrations.mjs (wrangler/drizzle-kit keep the v0 dir).
+      migrations: { dir: ".alchemy-migrations/sqlite", table: "d1_migrations" },
     }).pipe(keep),
     R2: Cloudflare.R2.Bucket("R2", {
       name: prod ? PROD_NAMES.r2 : `open-seo-r2-${stage}`,
@@ -130,11 +131,11 @@ const makeHyperdrive = () =>
   Cloudflare.Hyperdrive.Connection("HYPERDRIVE", {
     name: PROD_NAMES.hyperdrive,
     origin: Config.all([
-      Config.string("HYPERDRIVE_ORIGIN_HOST"),
-      Config.string("HYPERDRIVE_ORIGIN_PORT").pipe(Config.withDefault("5432")),
-      Config.string("HYPERDRIVE_ORIGIN_DATABASE"),
-      Config.string("HYPERDRIVE_ORIGIN_USER"),
-      Config.redacted("HYPERDRIVE_ORIGIN_PASSWORD"),
+      Config.String("HYPERDRIVE_ORIGIN_HOST"),
+      Config.String("HYPERDRIVE_ORIGIN_PORT").pipe(Config.withDefault("5432")),
+      Config.String("HYPERDRIVE_ORIGIN_DATABASE"),
+      Config.String("HYPERDRIVE_ORIGIN_USER"),
+      Config.Redacted("HYPERDRIVE_ORIGIN_PASSWORD"),
     ]).pipe(
       Config.map(([host, port, database, user, password]) => ({
         scheme: "postgres" as const,
@@ -151,13 +152,13 @@ const makeHyperdrive = () =>
   }).pipe(Alchemy.RemovalPolicy.retain());
 
 const optionalVar = (name: string) =>
-  Config.string(name).pipe(
+  Config.String(name).pipe(
     Config.withDefault(""),
     Config.map((value) => value.trim()),
   );
 
 const optionalSecret = (name: string) =>
-  Config.redacted(name).pipe(Config.withDefault(Redacted.make("")));
+  Config.Redacted(name).pipe(Config.withDefault(Redacted.make("")));
 
 const accessScopeHint =
   " (if this is a permissions error, re-run `pnpm alchemy login --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
@@ -176,6 +177,7 @@ const resolveSelfHostAccess = (
   stage: string,
   provision: boolean,
   workersSubdomain: string,
+  customDomain: string | undefined,
 ) =>
   Effect.gen(function* () {
     let teamDomain = yield* optionalVar("TEAM_DOMAIN");
@@ -251,6 +253,7 @@ const resolveSelfHostAccess = (
         policyName: `open-seo ${stage} self-host users`,
         applicationName: `open-seo ${stage}`,
         domain: `${workerName(stage)}.${subdomain}`,
+        extraDomains: customDomain ? [customDomain] : undefined,
         emails: allowedEmails,
       });
       policyAud = application.aud;
@@ -266,7 +269,7 @@ const resolveSelfHostAccess = (
 const dataEnv = {
   // AUTH_MODE, DATABASE_PROVIDER, BETTER_AUTH_URL, TEAM_DOMAIN, and
   // POLICY_AUD are stage-dependent and set in the stack body below.
-  DATAFORSEO_API_KEY: Config.redacted("DATAFORSEO_API_KEY"),
+  DATAFORSEO_API_KEY: Config.Redacted("DATAFORSEO_API_KEY"),
   BYPASS_EMAIL_VERIFICATION: optionalVar("BYPASS_EMAIL_VERIFICATION"),
   BETTER_AUTH_SECRET: optionalSecret("BETTER_AUTH_SECRET"),
   GOOGLE_CLIENT_ID: optionalVar("GOOGLE_CLIENT_ID"),
@@ -312,11 +315,15 @@ export default Alchemy.Stack(
     // Fail closed: an unset AUTH_MODE gets the Access-gated mode (matching the
     // app's own default in src/lib/auth-mode.ts), never public hosted signup.
     // hosted/local_noauth must be set explicitly.
-    const authMode = yield* Config.string("AUTH_MODE").pipe(
+    const authMode = yield* Config.String("AUTH_MODE").pipe(
       Config.withDefault("cloudflare_access"),
     );
     const databaseProvider = yield* optionalVar("DATABASE_PROVIDER");
     const workersSubdomain = yield* readWorkersSubdomain({ required: false });
+    // Optional public hostname for a self-host (e.g. openseo.example.com). Its
+    // zone must already be in this Cloudflare account; alchemy infers the zone
+    // from the hostname. Ignored for the hosted prod stage.
+    const customDomain = yield* optionalVar("CUSTOM_DOMAIN");
 
     // Auth needs an absolute BETTER_AUTH_URL. Prod sets it explicitly;
     // previews always derive it from the deterministic worker name — a wrong
@@ -358,6 +365,7 @@ export default Alchemy.Stack(
       stage,
       authMode === "cloudflare_access" && !prod,
       workersSubdomain,
+      customDomain,
     );
 
     // Created once and bound into BOTH workers — they share the same
@@ -375,7 +383,7 @@ export default Alchemy.Stack(
       name: `${workerName(stage)}-audit`,
       main: "./dist/open_seo_audit/index.js",
       bundle: false,
-      url: false,
+      workersDev: false,
       compatibility: {
         date: wrangler.compatibility_date,
         flags: wrangler.compatibility_flags,
@@ -426,8 +434,11 @@ export default Alchemy.Stack(
 
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
-      // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      // Prod serves the real domains; a self-host may add one custom domain
+      // via CUSTOM_DOMAIN. The zone is inferred from the hostname.
+      domain: prod
+        ? { name: "app.openseo.so", aliases: ["www.app.openseo.so"] }
+        : customDomain,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under

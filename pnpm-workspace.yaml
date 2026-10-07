@@ -35,11 +35,14 @@ minimumReleaseAgeExclude:
   - "brace-expansion"
   - "fast-uri"
   - "js-yaml"
-  # TEMPORARY (remove after 2026-07-16): alchemy 2.0.0-beta.61 and its
-  # matching @distilled.cloud/*@0.28.2 published 2026-07-08 — 2 days shy of
-  # the window. Exact-pinned in package.json.
+  # TEMPORARY (remove after 2026-10-13): the alchemy 2.0.0-beta.80 deploy
+  # toolchain (effect 4.0.0, @effect/platform-node 4.0.0, @distilled.cloud/*
+  # 1.0.0-rc.13) is newer than the 8-day window. Exact-pinned in package.json.
   - "alchemy"
+  - "@alchemy.run/*"
   - "@distilled.cloud/*"
+  - "effect"
+  - "@effect/*"
 
 # Security floors for transitive dependencies with published advisories.
 # Overrides outside a parent's declared range are scoped and noted below. Ranges are
@@ -94,9 +97,3 @@ overrides:
   mysql2: "^3.23.1"
   "nanoid@3": "^3.3.18"
   "toml@4": "^4.2.0"
-
-# Cloudflare echoes targeted placement back as `{ mode: "targeted" }` without
-# `region`; 0.28.2's response schema requires it, so alchemy fails a deploy
-# that actually succeeded. Fixed upstream in 1.0.0-rc; drop on upgrade.
-patchedDependencies:
-  "@distilled.cloud/cloudflare@0.28.2": patches/@distilled.cloud__cloudflare@0.28.2.patch
