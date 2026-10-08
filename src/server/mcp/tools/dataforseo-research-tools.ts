@@ -618,6 +618,8 @@ type RankedKeywordRow = {
   rank: unknown;
   volume: unknown;
   cpc: unknown;
+  intent: unknown;
+  traffic: unknown;
   url: unknown;
 };
 
@@ -631,6 +633,10 @@ function toRankedKeywordRow(item: unknown): RankedKeywordRow {
       readPath(item, "rank_absolute"),
     volume: readPath(item, "keyword_data", "keyword_info", "search_volume"),
     cpc: readPath(item, "keyword_data", "keyword_info", "cpc"),
+    intent: readPath(item, "keyword_data", "search_intent_info", "main_intent"),
+    traffic:
+      readPath(item, "ranked_serp_element", "serp_item", "etv") ??
+      readPath(item, "ranked_serp_element", "etv"),
     url:
       readPath(item, "ranked_serp_element", "serp_item", "url") ??
       readPath(item, "ranked_serp_element", "url"),
@@ -642,6 +648,8 @@ const RANKED_KEYWORD_COLUMNS: McpTableColumn<RankedKeywordRow>[] = [
   { header: "rank", value: (row) => row.rank },
   { header: "volume", value: (row) => row.volume },
   { header: "CPC", value: (row) => row.cpc },
+  { header: "intent", value: (row) => row.intent },
+  { header: "traffic", value: (row) => row.traffic },
   { header: "url", value: (row) => row.url },
 ];
 

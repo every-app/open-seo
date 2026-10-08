@@ -215,9 +215,14 @@ describe("MCP tool text output (service-backed tools)", () => {
           keyword_data: {
             keyword: "seo tools",
             keyword_info: { search_volume: 1000, cpc: 3.2 },
+            search_intent_info: { main_intent: "commercial" },
           },
           ranked_serp_element: {
-            serp_item: { rank_absolute: 4, url: "https://example.com/tools" },
+            serp_item: {
+              rank_absolute: 4,
+              etv: 42,
+              url: "https://example.com/tools",
+            },
           },
         },
       ],
@@ -234,9 +239,11 @@ describe("MCP tool text output (service-backed tools)", () => {
     );
 
     const out = textContent(result);
-    expect(out).toContain("keyword | rank | volume | CPC | url");
     expect(out).toContain(
-      "seo tools | 4 | 1000 | 3.20 | https://example.com/tools",
+      "keyword | rank | volume | CPC | intent | traffic | url",
+    );
+    expect(out).toContain(
+      "seo tools | 4 | 1000 | 3.20 | commercial | 42 | https://example.com/tools",
     );
   });
 
