@@ -3,6 +3,7 @@ import { sharesEnabled } from "@/server/features/reports/shareAccess";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { formatCount } from "@/shared/format";
+import { applyReportBrand, type ReportBrand } from "@/shared/report-brand";
 import { mintShareToken } from "@/shared/report-share";
 import {
   REPORT_MAX_BYTES_PER_ORG,
@@ -41,6 +42,12 @@ type SaveReportParams = {
   skill?: string;
   /** Validated against the project by the caller, not here. */
   templateId?: string;
+  /**
+   * The followed template's brand kit, written into the HTML before any size
+   * check so the logo counts against the caps. Undefined leaves the HTML as
+   * sent, which is how a revision without a templateId keeps its block.
+   */
+  brand?: ReportBrand;
   /** Client label, stamped by the server. Never taken from the model. */
   createdBy: string;
   /** From the authenticated context, and nowhere else. */
@@ -58,7 +65,7 @@ async function saveReport(params: SaveReportParams): Promise<{
   created: boolean;
   htmlBytes: number;
 }> {
-  const { projectId, title, summary, html } = params;
+  const { projectId, title, summary } = params;
 
   if (title.length > REPORT_MAX_TITLE_CHARS) {
     throw new AppError(
@@ -72,6 +79,10 @@ async function saveReport(params: SaveReportParams): Promise<{
       `Summary is ${formatCount(summary.length)} characters; the limit is ${formatCount(REPORT_MAX_SUMMARY_CHARS)}. Shorten it and save again.`,
     );
   }
+  const html = params.brand
+    ? applyReportBrand(params.html, params.brand)
+    : params.html;
+
   // UTF-8 bytes, not code units: a `.length` check understates multi-byte
   // content and is what actually reaches the column and the worker's heap.
   const sizeBytes = htmlBytes(html);

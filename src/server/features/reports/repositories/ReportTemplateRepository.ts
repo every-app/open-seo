@@ -1,7 +1,11 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { reportTemplates } from "@/db/schema";
-import type { ReportTemplate } from "@/types/schemas/report-templates";
+import type { ReportBrand } from "@/shared/report-brand";
+import type {
+  ReportTemplate,
+  ReportTemplateWithLogo,
+} from "@/types/schemas/report-templates";
 
 // Backing store for report templates. Every query filters on `project_id` as
 // well as `id` — never a bare `WHERE id = ?` — because callers authorize the
@@ -14,6 +18,13 @@ const columns = {
   name: reportTemplates.name,
   description: reportTemplates.description,
   instructions: reportTemplates.instructions,
+  brandColor: reportTemplates.brandColor,
+  brandColor2: reportTemplates.brandColor2,
+  accentColor: reportTemplates.accentColor,
+  canvasColor: reportTemplates.canvasColor,
+  // The logo's size, not its bytes: lists feed the project-context digest
+  // every agent reads, and ten logos would be most of it.
+  logoChars: sql<number | null>`length(${reportTemplates.logoDataUri})`,
   createdBy: reportTemplates.createdBy,
   createdByUserId: reportTemplates.createdByUserId,
   createdAt: reportTemplates.createdAt,
@@ -31,9 +42,9 @@ async function listTemplates(projectId: string): Promise<ReportTemplate[]> {
 async function getTemplate(
   projectId: string,
   templateId: string,
-): Promise<ReportTemplate | null> {
+): Promise<ReportTemplateWithLogo | null> {
   const [row] = await db
-    .select(columns)
+    .select({ ...columns, logoDataUri: reportTemplates.logoDataUri })
     .from(reportTemplates)
     .where(
       and(
@@ -53,13 +64,15 @@ async function insertTemplate(params: {
   name: string;
   description: string;
   instructions: string;
+  brand: ReportBrand;
   createdBy: string;
   createdByUserId: string;
 }): Promise<void> {
+  const { brand, ...rest } = params;
   const now = new Date().toISOString();
   await db
     .insert(reportTemplates)
-    .values({ ...params, createdAt: now, updatedAt: now });
+    .values({ ...rest, ...brand, createdAt: now, updatedAt: now });
 }
 
 // Content only: the attribution columns are stamped at create and never
@@ -70,6 +83,8 @@ async function updateTemplate(params: {
   name: string;
   description: string;
   instructions: string;
+  /** Undefined fields keep their stored value; Drizzle leaves them out of the SET. */
+  brand: Partial<ReportBrand>;
 }): Promise<void> {
   await db
     .update(reportTemplates)
@@ -77,6 +92,7 @@ async function updateTemplate(params: {
       name: params.name,
       description: params.description,
       instructions: params.instructions,
+      ...params.brand,
       updatedAt: new Date().toISOString(),
     })
     .where(
