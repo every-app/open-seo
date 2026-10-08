@@ -30,7 +30,6 @@ export function AgentSetup({
       </div>
       <AgentSetupPanel
         prompt={prompt}
-        mcpUrl={`${window.location.origin}/mcp`}
         onCopy={() => captureClientEvent("onboarding:setup_prompt_copy")}
       />
       <div className="mt-7 border-t border-border pt-5">

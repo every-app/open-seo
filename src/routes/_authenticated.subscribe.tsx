@@ -29,7 +29,7 @@ import { Button } from "@/client/components/ui/button";
 
 const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
-  "MCP tools for Codex, Claude, and ChatGPT",
+  "MCP server and agent skills for Claude, Cursor, and ChatGPT",
   "Google Search Console Integration",
   monthlyCreditsFeature(BASE_PLAN_OFFER),
 ];

@@ -251,22 +251,16 @@ function McpPage() {
           Setup lives in Docs
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-          Follow the setup guide for your client. ChatGPT needs manual
-          connection steps on the web, or the setup prompt in Codex in the
-          desktop app.
+          The MCP server URL, Claude setup, Codex setup, and troubleshooting
+          steps are maintained in the docs so this feature page can stay focused
+          on what OpenSEO MCP makes possible.
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-4">
+        <div className="mt-4">
           <a
             href="/docs/mcp"
             className="inline-flex h-9 items-center justify-center rounded-md bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
             Open MCP docs
-          </a>
-          <a
-            href="/docs/chatgpt"
-            className="text-sm underline underline-offset-4"
-          >
-            ChatGPT setup guide
           </a>
         </div>
       </section>

@@ -12,19 +12,16 @@ Set up OpenSEO in this agent. Do what you can; guide me through anything that ne
 - Identify this agent and its version. Ask only if you cannot tell.
 - Check for an existing OpenSEO connection. Preserve other integrations and avoid duplicates.
 
-## 2. Route ChatGPT users before installing
+## 2. If this is ChatGPT
 
-For ChatGPT on the web or a regular Chat / Work conversation in the desktop app, use the [ChatGPT setup guide](https://openseo.so/docs/chatgpt). Pasting this prompt does not itself install a connection. First establish my setup surface using the checks below. Then use this session’s native plugin installer if available; otherwise give the applicable manual steps. Do not run Codex CLI commands in a hosted ChatGPT sandbox or claim that editing local Codex files connects ChatGPT web.
+If I pasted this into a regular ChatGPT conversation (web or desktop app, not Codex), you cannot install OpenSEO from here. Don't run commands or edit files. Instead, give me these steps and stop:
 
-- Establish whether I want ChatGPT web, a regular desktop conversation, or Codex. Use reliable session information if available; otherwise ask before attempting installation.
-- The custom OpenSEO connection works on ChatGPT Free and paid plans; no upgrade is needed. Business, Enterprise, and Edu workspace permissions can limit access. If the custom connection option is missing, point me to the [ChatGPT setup guide](https://openseo.so/docs/chatgpt) troubleshooting instead of telling me to upgrade.
-- If OpenSEO is available in the user's Plugins directory, have them install it, approve OpenSEO sign-in, and start a new chat.
-- Manual web setup for hosted OpenSEO: if available, enable Developer mode in Settings → Security and login. Open Plugins → + → Create MCP App, name it OpenSEO, set the server URL to `https://app.openseo.so/mcp` in full (without `https://`, ChatGPT reports "Unsafe URL"), and choose OAuth. Complete creation and sign-in; install the personal plugin if prompted. Start a new chat and select OpenSEO from the + / tools menu. For self-hosted OpenSEO, verify that its endpoint is publicly reachable over HTTPS and uses authentication supported by ChatGPT before offering web setup. Follow the [self-hosting guide](https://openseo.so/docs/self-hosting) for authentication; offer a local Codex connection for localhost or private endpoints.
-- If I already use Codex and want OpenSEO there, continue with the Codex path below. A local Codex connection does not connect ChatGPT web.
-- If no supported path is available, offer the OpenSEO app directly. Do not recommend a ChatGPT upgrade to complete setup or ask for an API key in chat.
-- After manual setup, ask the user to send: “Use OpenSEO to check my connection and list my projects.” Only claim verification when the actual free tool reads succeed. An empty project list is a valid connection result. A custom MCP connection supplies tools, not the bundled skill files; offer plain-language workflows.
+1. On chatgpt.com, open **Settings → Security and login** and turn on **Developer mode**. This works on Free and paid plans; no upgrade is needed.
+2. Open **Settings → Plugins → Developer mode** (or **Plugins → + → Create MCP App**). Name it OpenSEO, enter the server URL `https://app.openseo.so/mcp` in full, including `https://` (otherwise ChatGPT reports "Unsafe URL"), and keep **OAuth** selected.
+3. Create it, sign in to OpenSEO, and approve the connection.
+4. Start a new chat, select OpenSEO from the **+** menu, and send: "Use OpenSEO to check my connection and list my projects."
 
-When manual action is still required, finish with the next exact UI steps and the connection-check request. Do not add the generic reload/skill handoff below until those steps are done.
+Link the [ChatGPT setup guide](https://openseo.so/docs/chatgpt) for screenshots and troubleshooting. If OpenSEO is self-hosted, ChatGPT needs a publicly reachable HTTPS URL; point me to the [self-hosting guide](https://openseo.so/docs/self-hosting) instead. If I'm in Codex, continue below.
 
 ## 3. Install the plugin first
 

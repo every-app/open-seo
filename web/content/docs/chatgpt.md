@@ -5,7 +5,7 @@ description: "Connect OpenSEO on chatgpt.com or in the ChatGPT desktop app, and 
 
 **The custom OpenSEO connection in this guide works on ChatGPT Free and paid plans. You do not need to upgrade.** On Business, Enterprise, and Edu, workspace permissions can limit access.
 
-Connect OpenSEO before asking ChatGPT to do SEO research. Pasting the agent setup prompt into a regular conversation does not install a connection.
+Connect OpenSEO before asking ChatGPT to do SEO research. If you paste the setup prompt into a regular ChatGPT chat, it will walk you through the steps below; ChatGPT cannot add the connection by itself.
 
 ## Choose your setup path
 

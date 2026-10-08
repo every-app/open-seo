@@ -21,7 +21,7 @@ No account yet? Try the [free SEO tools](/tools).
 
 ## ChatGPT web and desktop
 
-Follow the [ChatGPT setup guide](/docs/chatgpt). The custom ChatGPT connection works on Free and paid plans. Workspace permissions can limit access. Pasting a setup prompt into a regular ChatGPT chat does not install a connection.
+Follow the [ChatGPT setup guide](/docs/chatgpt). The custom ChatGPT connection works on Free and paid plans. Workspace permissions can limit access. Pasting the setup prompt into ChatGPT gives you the same manual steps.
 
 ## Claude Code
 

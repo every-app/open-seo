@@ -8,7 +8,7 @@ import {
 
 const AGENTS = [
   { name: "Claude Code", Icon: ClaudeIcon },
-  { name: "Codex", Icon: OpenAIIcon },
+  { name: "ChatGPT", Icon: OpenAIIcon },
   { name: "Grok Bot", Icon: GrokIcon },
   { name: "Hermes", Icon: HermesIcon },
   { name: "OpenClaw", Icon: OpenClawIcon },

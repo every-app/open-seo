@@ -24,10 +24,7 @@ import {
   getAgentSetupPrompt,
 } from "@/client/features/ai-mcp/agentSetupPrompt";
 import { CopyButton } from "@/client/components/CopyButton";
-import {
-  AgentSetupPanel,
-  AGENT_SETUP_DESCRIPTION,
-} from "@/client/features/ai-mcp/AgentSetupPanel";
+import { AgentList } from "@/client/features/ai-mcp/AgentList";
 
 const DOCS_URL = "https://openseo.so/docs/agent-setup";
 const COACH_DOCS_URL = "https://openseo.so/docs/skills/seo-coach";
@@ -111,20 +108,37 @@ function AiPage() {
                   <CardTitle>
                     <h2>Set up your agent</h2>
                   </CardTitle>
-                  <CardDescription>{AGENT_SETUP_DESCRIPTION}</CardDescription>
+                  <CardDescription>
+                    Paste the setup prompt into your agent to connect OpenSEO
+                    and install its SEO skills. It will guide you through any
+                    manual steps.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <AgentSetupPanel
-                    prompt={prompt}
-                    mcpUrl={mcpUrl}
-                    onCopy={() => captureClientEvent("mcp:setup_prompt_copy")}
-                  />
+                  <AgentList />
+                  <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+                    <CopyButton
+                      variant="default"
+                      size="lg"
+                      value={prompt}
+                      label="Copy setup prompt"
+                      successMessage="Setup prompt copied"
+                      onCopy={() => captureClientEvent("mcp:setup_prompt_copy")}
+                    />
+                    <a
+                      href={`${DOCS_URL}#set-up-your-agent`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={MUTED_LINK_CLASS}
+                    >
+                      Setup instructions
+                      <ArrowUpRight className="size-3.5" />
+                    </a>
+                  </div>
                 </CardContent>
                 <CardFooter className="text-muted-foreground">
                   <p>
-                    Once the connection check succeeds, ask: “Use OpenSEO to
-                    help me choose one SEO task for my website.” If skills are
-                    installed, you can also use{" "}
+                    Once connected, ask your agent to use{" "}
                     <a
                       href={COACH_DOCS_URL}
                       target="_blank"
@@ -144,7 +158,9 @@ function AiPage() {
                     <h2>Update your skills</h2>
                   </CardTitle>
                   <CardDescription>
-                    Paste the update prompt to get the latest OpenSEO skills.
+                    Already connected? Paste the update prompt into your agent
+                    to get the latest OpenSEO skills while preserving your
+                    connection settings and personal edits.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -203,10 +219,8 @@ function AiPage() {
           <TabsContent value="skills">
             <section className="mt-6">
               <p className="text-sm text-muted-foreground">
-                The OpenSEO plugin includes these workflows. A custom ChatGPT
-                MCP connection supplies tools only; you can still ask for SEO
-                research in plain language. Use the skill picker in clients that
-                have the skills installed.
+                The setup prompt installs these. Run one by name when you want a
+                full report instead of a quick answer.
               </p>
               <ul className="mt-5 space-y-3 text-sm sm:space-y-2">
                 {SKILLS.map(([name, blurb]) => (
@@ -220,7 +234,7 @@ function AiPage() {
                       rel="noreferrer"
                       className={`shrink-0 font-mono text-[13px] sm:w-48 ${LINK_CLASS}`}
                     >
-                      {name}
+                      /{name}
                     </a>
                     <span className="text-muted-foreground">{blurb}</span>
                   </li>

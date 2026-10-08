@@ -220,7 +220,7 @@ function Pricing() {
           {[
             "Keyword research, backlinks, rank tracking, and site audits",
             "AI visibility, prompt research, and tracking",
-            "Works inside Claude, Cursor, Codex, and ChatGPT",
+            "Works inside Claude, Cursor, and ChatGPT",
             "Google Search Console data is free and doesn't touch your $10",
             "Includes $10 of usage every month",
             "Buy extra usage anytime; it never expires",

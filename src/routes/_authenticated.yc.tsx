@@ -26,7 +26,7 @@ import { SUPPORT_EMAIL } from "@/client/lib/support";
 
 const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
-  "MCP tools for Codex, Claude, and ChatGPT",
+  "MCP server and agent skills for Claude, Cursor, and ChatGPT",
   "Google Search Console Integration",
   monthlyCreditsFeature(YC_PLAN_OFFER),
 ];

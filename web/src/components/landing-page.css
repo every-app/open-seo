@@ -742,12 +742,6 @@
   height: 28px;
   width: 28px;
 }
-.itc-mcp-chatgpt-note {
-  margin-top: 20px;
-}
-.itc-mcp-chatgpt-note .itc-inline-link {
-  font-weight: inherit;
-}
 
 /* ── Beyond data ── */
 .itc-inline-link {
