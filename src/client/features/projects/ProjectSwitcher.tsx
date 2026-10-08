@@ -100,6 +100,7 @@ export function ProjectSwitcher({
         itemToStringLabel={(project) => project.name}
         isItemEqualToValue={(project, value) => project.id === value.id}
         filter={matchesProject}
+        defaultInputValue=""
         autoHighlight
         open={open}
         onOpenChange={setOpen}
