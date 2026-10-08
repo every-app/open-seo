@@ -280,3 +280,56 @@ export async function getEarliestSnapshotsForKeywords(
 
   return allResults;
 }
+
+/**
+ * Every saved check for one config inside an optional time range, joined with
+ * its run so run-level failures stay visible — a keyword whose check failed
+ * leaves NO snapshot row, so the carrying signal for failures is the run's
+ * status/errorMessage, never the row. `position: null` means "not found
+ * within the tracked SERP depth", not a failed check.
+ *
+ * Newest first with `id` as a total order tiebreaker so limit/offset paging
+ * is stable across same-second checks.
+ */
+export async function getSnapshotsInRange(input: {
+  configId: string;
+  startCheckedAt?: string;
+  endCheckedAt?: string;
+  limit: number;
+  offset: number;
+}) {
+  const conditions = [eq(rankCheckRuns.configId, input.configId)];
+  if (input.startCheckedAt) {
+    conditions.push(gte(rankSnapshots.checkedAt, input.startCheckedAt));
+  }
+  if (input.endCheckedAt) {
+    conditions.push(lte(rankSnapshots.checkedAt, input.endCheckedAt));
+  }
+  const where = and(...conditions);
+
+  const [rows, total] = await Promise.all([
+    db
+      .select({
+        keyword: rankSnapshots.keyword,
+        device: rankSnapshots.device,
+        position: rankSnapshots.position,
+        url: rankSnapshots.url,
+        checkedAt: rankSnapshots.checkedAt,
+        runId: rankCheckRuns.id,
+        runStatus: rankCheckRuns.status,
+        runErrorMessage: rankCheckRuns.errorMessage,
+      })
+      .from(rankSnapshots)
+      .innerJoin(rankCheckRuns, eq(rankSnapshots.runId, rankCheckRuns.id))
+      .where(where)
+      .orderBy(desc(rankSnapshots.checkedAt), desc(rankSnapshots.id))
+      .limit(input.limit)
+      .offset(input.offset),
+    db
+      .select({ count: count() })
+      .from(rankSnapshots)
+      .innerJoin(rankCheckRuns, eq(rankSnapshots.runId, rankCheckRuns.id))
+      .where(where),
+  ]);
+  return { rows, totalCount: total[0]?.count ?? 0 };
+}

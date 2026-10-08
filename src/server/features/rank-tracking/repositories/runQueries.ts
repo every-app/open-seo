@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/db";
 import { rankCheckRuns, rankSnapshots } from "@/db/schema";
@@ -120,4 +120,38 @@ export async function insertSnapshots(
 
 export async function getSnapshotsForRun(runId: string) {
   return db.select().from(rankSnapshots).where(eq(rankSnapshots.runId, runId));
+}
+
+/**
+ * Runs for one config inside an optional time range, newest first. Snapshot
+ * queries alone can't surface a fully-failed run — it writes no rows — so the
+ * history read queries runs directly for status, failure message, and the
+ * keywordsChecked/keywordsTotal mismatch that marks a partial run.
+ */
+export async function getRunsInRange(input: {
+  configId: string;
+  startStartedAt?: string;
+  endStartedAt?: string;
+}) {
+  const conditions = [eq(rankCheckRuns.configId, input.configId)];
+  if (input.startStartedAt) {
+    conditions.push(gte(rankCheckRuns.startedAt, input.startStartedAt));
+  }
+  if (input.endStartedAt) {
+    conditions.push(lte(rankCheckRuns.startedAt, input.endStartedAt));
+  }
+
+  return db
+    .select({
+      id: rankCheckRuns.id,
+      status: rankCheckRuns.status,
+      errorMessage: rankCheckRuns.errorMessage,
+      keywordsChecked: rankCheckRuns.keywordsChecked,
+      keywordsTotal: rankCheckRuns.keywordsTotal,
+      startedAt: rankCheckRuns.startedAt,
+      completedAt: rankCheckRuns.completedAt,
+    })
+    .from(rankCheckRuns)
+    .where(and(...conditions))
+    .orderBy(desc(rankCheckRuns.startedAt), desc(rankCheckRuns.id));
 }

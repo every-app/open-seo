@@ -186,3 +186,49 @@ function toDeviceResult(
     serpFeatures: parseSerpFeatures(snapshot.serpFeatures),
   };
 }
+
+/**
+ * Every saved check for one tracker inside an optional UTC day range, plus
+ * the run entries that carry failures (a keyword whose check failed leaves no
+ * snapshot row). Dates are inclusive YYYY-MM-DD strings; positions are null
+ * when the keyword wasn't found within the tracked SERP depth.
+ */
+export async function getRankHistory(
+  configId: string,
+  projectId: string,
+  opts: {
+    startDate?: string;
+    endDate?: string;
+    limit: number;
+    offset: number;
+  },
+) {
+  const config = await RankTrackingRepository.getConfigById({
+    configId,
+    projectId,
+  });
+  if (!config) {
+    throw new AppError("NOT_FOUND", "Rank tracking config not found");
+  }
+  const startAt = opts.startDate
+    ? toSqliteTimestamp(new Date(`${opts.startDate}T00:00:00.000Z`))
+    : undefined;
+  const endAt = opts.endDate
+    ? toSqliteTimestamp(new Date(`${opts.endDate}T23:59:59.999Z`))
+    : undefined;
+  const [checks, runs] = await Promise.all([
+    RankTrackingRepository.getSnapshotsInRange({
+      configId,
+      startCheckedAt: startAt,
+      endCheckedAt: endAt,
+      limit: opts.limit,
+      offset: opts.offset,
+    }),
+    RankTrackingRepository.getRunsInRange({
+      configId,
+      startStartedAt: startAt,
+      endStartedAt: endAt,
+    }),
+  ]);
+  return { config, checks, runs };
+}
