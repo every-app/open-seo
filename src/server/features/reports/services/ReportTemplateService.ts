@@ -2,11 +2,22 @@ import { ReportTemplateRepository } from "@/server/features/reports/repositories
 import { AppError } from "@/server/lib/errors";
 import { formatCount } from "@/shared/format";
 import {
+  contrastRatio,
+  hexColorSchema,
+  logoDataUriSchema,
+  REPORT_INK_MUTED,
+  REPORT_MIN_TEXT_CONTRAST,
+  REPORT_SURFACE,
+  type ReportBrand,
+} from "@/shared/report-brand";
+import {
   REPORT_TEMPLATE_MAX_DESCRIPTION_CHARS,
   REPORT_TEMPLATE_MAX_INSTRUCTIONS_CHARS,
+  REPORT_TEMPLATE_MAX_LOGO_CHARS,
   REPORT_TEMPLATE_MAX_NAME_CHARS,
   REPORT_TEMPLATE_MAX_PER_PROJECT,
   type ReportTemplate,
+  type ReportTemplateWithLogo,
 } from "@/types/schemas/report-templates";
 
 // Report templates: the named briefs agents follow when writing a report.
@@ -29,7 +40,7 @@ async function listReportTemplates(projectId: string): Promise<{
 async function getReportTemplate(
   projectId: string,
   templateId: string,
-): Promise<ReportTemplate> {
+): Promise<ReportTemplateWithLogo> {
   const template = await ReportTemplateRepository.getTemplate(
     projectId,
     templateId,
@@ -51,6 +62,12 @@ type SaveParams = {
   name: string;
   description: string;
   instructions: string;
+  /**
+   * Brand kit changes. An undefined field keeps the stored value (none on
+   * create) and null clears it, so an edit that leaves the logo alone never
+   * has to send it back.
+   */
+  brand?: Partial<ReportBrand>;
   /** Client label, stamped by the server. Never taken from the model. */
   createdBy: string;
   /** From the authenticated context, and nowhere else. */
@@ -104,6 +121,9 @@ async function saveReportTemplate(params: SaveParams): Promise<{
     );
   }
 
+  const brand = params.brand ?? {};
+  validateLogo(brand.logoDataUri);
+
   // One read serves the existence check, the duplicate-name check and the cap.
   const templates = await ReportTemplateRepository.listTemplates(
     params.projectId,
@@ -132,6 +152,15 @@ async function saveReportTemplate(params: SaveParams): Promise<{
     );
   }
 
+  // Colors are checked as they will render together, so an edit that changes
+  // only the canvas is still held to the stored accent.
+  validateColors({
+    brandColor: pick(brand.brandColor, existing?.brandColor),
+    brandColor2: pick(brand.brandColor2, existing?.brandColor2),
+    accentColor: pick(brand.accentColor, existing?.accentColor),
+    canvasColor: pick(brand.canvasColor, existing?.canvasColor),
+  });
+
   if (existing) {
     await ReportTemplateRepository.updateTemplate({
       templateId: existing.id,
@@ -139,6 +168,7 @@ async function saveReportTemplate(params: SaveParams): Promise<{
       name,
       description,
       instructions,
+      brand,
     });
     return { templateId: existing.id, name, created: false };
   }
@@ -159,10 +189,88 @@ async function saveReportTemplate(params: SaveParams): Promise<{
     name,
     description,
     instructions,
+    brand: {
+      brandColor: brand.brandColor ?? null,
+      brandColor2: brand.brandColor2 ?? null,
+      accentColor: brand.accentColor ?? null,
+      canvasColor: brand.canvasColor ?? null,
+      logoDataUri: brand.logoDataUri ?? null,
+    },
     createdBy: params.createdBy,
     createdByUserId: params.createdByUserId,
   });
   return { templateId: id, name, created: true };
+}
+
+/** The value a save will leave stored: the change if one was sent, else what is there. */
+const pick = (
+  change: string | null | undefined,
+  stored: string | null | undefined,
+): string | null => (change === undefined ? (stored ?? null) : change);
+
+const ratio = (a: string, b: string) => contrastRatio(a, b).toFixed(1);
+
+function validateColors(colors: Omit<ReportBrand, "logoDataUri">): void {
+  for (const [label, value] of [
+    ["Brand color", colors.brandColor],
+    ["Gradient end color", colors.brandColor2],
+    ["Accent color", colors.accentColor],
+    ["Canvas color", colors.canvasColor],
+  ] as const) {
+    if (value !== null && !hexColorSchema.safeParse(value).success) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        `${label} "${value}" is not a six-digit hex color. Use a value such as #1c4ed8.`,
+      );
+    }
+  }
+  if (colors.brandColor2 && !colors.brandColor) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "A gradient end color needs a brand color to start from. Set the brand color too, or clear the gradient end.",
+    );
+  }
+
+  const canvas = colors.canvasColor ?? REPORT_SURFACE;
+  // The muted text token is the lightest text a report prints straight on the
+  // canvas, so it sets the bar for how dark a canvas may get.
+  if (contrastRatio(REPORT_INK_MUTED, canvas) < REPORT_MIN_TEXT_CONTRAST) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `Canvas ${canvas} leaves secondary text at ${ratio(REPORT_INK_MUTED, canvas)}:1; text needs ${REPORT_MIN_TEXT_CONTRAST}:1. Reports are light documents, so pick a lighter canvas.`,
+    );
+  }
+  // Accent text sits on both the canvas and the white cards, so it has to
+  // read on the weaker of the two.
+  const accent = colors.accentColor;
+  if (accent) {
+    const weakest = Math.min(
+      contrastRatio(accent, canvas),
+      contrastRatio(accent, REPORT_SURFACE),
+    );
+    if (weakest < REPORT_MIN_TEXT_CONTRAST) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        `Accent ${accent} is ${weakest.toFixed(1)}:1 against the report background; text needs ${REPORT_MIN_TEXT_CONTRAST}:1. Use a darker shade of it for the accent and keep the bright one as the brand color.`,
+      );
+    }
+  }
+}
+
+function validateLogo(logo: string | null | undefined): void {
+  if (logo == null) return;
+  if (logo.length > REPORT_TEMPLATE_MAX_LOGO_CHARS) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `The logo is ${formatCount(logo.length)} characters as a data URI; the limit is ${formatCount(REPORT_TEMPLATE_MAX_LOGO_CHARS)}. Export a smaller wordmark, about 320 pixels wide, or use SVG.`,
+    );
+  }
+  if (!logoDataUriSchema.safeParse(logo).success) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "The logo must be a PNG, WebP, JPEG or SVG image as a base64 data: URI (data:image/png;base64,...). Reports load no image by URL.",
+    );
+  }
 }
 
 async function deleteReportTemplate(

@@ -15,7 +15,9 @@ import { formatCount } from "@/shared/format";
 import {
   REPORT_TEMPLATE_MAX_DESCRIPTION_CHARS,
   REPORT_TEMPLATE_MAX_INSTRUCTIONS_CHARS,
+  REPORT_TEMPLATE_MAX_LOGO_CHARS,
   REPORT_TEMPLATE_MAX_NAME_CHARS,
+  type ReportTemplate,
 } from "@/types/schemas/report-templates";
 
 // Report-template tools are free (they touch only the app DB), all
@@ -26,6 +28,22 @@ const templatesPath = (projectId: string) =>
   `/p/${projectId}/reports/templates`;
 
 // ------------------------------------------------- list_report_templates
+
+/** One line naming the brand kit, or nothing when the template has none. */
+function brandLine(template: ReportTemplate): string[] {
+  const parts = [
+    template.brandColor && `brand ${template.brandColor}`,
+    template.brandColor2 && `gradient end ${template.brandColor2}`,
+    template.accentColor && `accent ${template.accentColor}`,
+    template.canvasColor && `canvas ${template.canvasColor}`,
+    template.logoChars &&
+      `logo ${formatCount(Math.ceil(template.logoChars / 1000))} KB`,
+  ].filter(Boolean);
+  if (parts.length === 0) return [];
+  return [
+    `  Brand kit: ${parts.join(", ")}. save_report applies it when you pass this templateId; do not copy these values into the HTML.`,
+  ];
+}
 
 const listInputSchema = { projectId: projectIdSchema } as const;
 
@@ -58,6 +76,7 @@ export const listReportTemplatesTool = {
         [
           `${template.id}  ${template.name}`,
           `  ${template.description}`,
+          ...brandLine(template),
           "",
           template.instructions,
         ].join("\n"),
@@ -79,6 +98,13 @@ export const listReportTemplatesTool = {
             name: template.name,
             description: template.description,
             instructionsPreview: truncatePreview(template.instructions),
+            brand: {
+              brandColor: template.brandColor,
+              brandColor2: template.brandColor2,
+              accentColor: template.accentColor,
+              canvasColor: template.canvasColor,
+              logoChars: template.logoChars,
+            },
             updatedAt: template.updatedAt,
           })),
           remaining,
@@ -89,6 +115,15 @@ export const listReportTemplatesTool = {
 };
 
 // ------------------------------------------------- save_report_template
+
+// Shape only: the service checks the format and the contrast, with copy that
+// says how to fix it.
+const brandColorField = (description: string) =>
+  z
+    .string()
+    .nullable()
+    .optional()
+    .describe(`${description} Six-digit hex such as #1c4ed8.`);
 
 const saveInputSchema = {
   projectId: projectIdSchema,
@@ -115,7 +150,33 @@ const saveInputSchema = {
     .string()
     .min(1)
     .describe(
-      `Markdown, max ${formatCount(REPORT_TEMPLATE_MAX_INSTRUCTIONS_CHARS)} characters: the audience, the sections in order, the tone, the sign-off, and optionally an accent color as "accent: #1C4ED8". This replaces the skill's default section list and tone — never the seo-report HTML constraints, which always apply.`,
+      `Markdown, max ${formatCount(REPORT_TEMPLATE_MAX_INSTRUCTIONS_CHARS)} characters: the audience, the sections in order, the tone, and the sign-off. Colors and a logo go in brand, not here. This replaces the skill's default section list and tone — never the seo-report HTML constraints, which always apply.`,
+    ),
+  brand: z
+    .object({
+      brandColor: brandColorField(
+        "Bright brand color for fills: chart bars, the top strip, list markers.",
+      ),
+      brandColor2: brandColorField(
+        "Optional second color; fills become a gradient from brandColor to this.",
+      ),
+      accentColor: brandColorField(
+        "Text color for labels and the headline highlight. Must reach 4.5:1 contrast on the canvas and on white, so it is usually a darker shade of the brand color.",
+      ),
+      canvasColor: brandColorField(
+        "Page background, light only. Omit for white.",
+      ),
+      logoDataUri: z
+        .string()
+        .nullable()
+        .optional()
+        .describe(
+          `The logo as a base64 data URI (data:image/png;base64,... or svg+xml, webp, jpeg), max ${formatCount(REPORT_TEMPLATE_MAX_LOGO_CHARS)} characters. A wide wordmark about 320 px across reads best. Only send it when the user gave you the file.`,
+        ),
+    })
+    .optional()
+    .describe(
+      "Optional brand kit that save_report writes into every report made from this template. On an update, an omitted field keeps its stored value and null clears it.",
     ),
 } as const;
 
@@ -151,6 +212,7 @@ export const saveReportTemplateTool = {
           name: args.name,
           description: args.description,
           instructions: args.instructions,
+          brand: args.brand,
           createdBy: context.auth.clientLabel ?? DEFAULT_CLIENT_LABEL,
           createdByUserId: context.auth.userId,
         });

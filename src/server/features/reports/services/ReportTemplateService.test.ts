@@ -24,6 +24,11 @@ const stored = (overrides: Partial<ReportTemplate> = {}): ReportTemplate => ({
   name: "Client-ready audit summary",
   description: "For the site owner, non-technical.",
   instructions: "Audience: the site owner. Sections: what we found.",
+  brandColor: null,
+  brandColor2: null,
+  accentColor: null,
+  canvasColor: null,
+  logoChars: null,
   createdBy: "Claude Code",
   createdByUserId: "user_1",
   createdAt: "2026-09-01T10:00:00.000Z",
@@ -97,6 +102,34 @@ describe("saveReportTemplate", () => {
 
     await expect(save()).rejects.toThrow(/report templates, the limit/);
     expect(mocks.insertTemplate).not.toHaveBeenCalled();
+  });
+
+  it("refuses an accent that text cannot be read in, naming the ratio", async () => {
+    await expect(
+      save({ brand: { accentColor: "#ff5700", canvasColor: "#f7f0e5" } }),
+    ).rejects.toThrow(/Accent #ff5700 is 2\.8:1/);
+    expect(mocks.insertTemplate).not.toHaveBeenCalled();
+  });
+
+  it("holds an edit that changes only the canvas to the stored accent", async () => {
+    // The accent passes on white; a cream canvas sent alone pulls it below 4.5:1.
+    mocks.listTemplates.mockResolvedValue([stored({ accentColor: "#c84300" })]);
+
+    await expect(
+      save({ templateId: "template_1", brand: { canvasColor: "#f7f0e5" } }),
+    ).rejects.toThrow(/Accent #c84300 is 4\.4:1/);
+    expect(mocks.updateTemplate).not.toHaveBeenCalled();
+  });
+
+  it("refuses a logo that would break out of the CSS url()", async () => {
+    await expect(
+      save({
+        brand: {
+          logoDataUri:
+            'data:image/png;base64,AAAA");background:url("https://x.test/a.png',
+        },
+      }),
+    ).rejects.toThrow(/base64 data: URI/);
   });
 });
 

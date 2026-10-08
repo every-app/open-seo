@@ -20,8 +20,17 @@ export const reportTemplates = sqliteTable(
     // One line saying when to use it: what agents pick a template by in the
     // project-context digest.
     description: text("description").notNull(),
-    // Markdown: audience, sections in order, tone, sign-off, accent color.
+    // Markdown: audience, sections in order, tone, sign-off.
     instructions: text("instructions").notNull(),
+    // Optional brand kit, written into a report's HTML as CSS custom
+    // properties when save_report names this template (shared/report-brand.ts).
+    // Hex colors, validated in ReportTemplateService.
+    brandColor: text("brand_color"),
+    brandColor2: text("brand_color_2"),
+    accentColor: text("accent_color"),
+    canvasColor: text("canvas_color"),
+    // A base64 data: URI: the report sandbox loads no image by URL.
+    logoDataUri: text("logo_data_uri"),
     // Same two-column attribution as reports; see reports.schema.ts.
     createdBy: text("created_by").notNull(),
     createdByUserId: text("created_by_user_id").notNull(),

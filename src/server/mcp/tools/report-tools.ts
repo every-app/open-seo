@@ -129,13 +129,13 @@ export const saveReportTool = {
     async (args: z.infer<z.ZodObject<typeof saveInputSchema>>, context) => {
       // Resolved against the authorized project before the save: an id from
       // another project must not be stored, and a dangling one would render
-      // as no template at all.
-      if (args.templateId) {
-        await ReportTemplateService.getReportTemplate(
-          args.projectId,
-          args.templateId,
-        );
-      }
+      // as no template at all. The row also carries the brand kit.
+      const template = args.templateId
+        ? await ReportTemplateService.getReportTemplate(
+            args.projectId,
+            args.templateId,
+          )
+        : undefined;
       const saved = await ReportService.saveReport({
         projectId: args.projectId,
         organizationId: context.auth.organizationId,
@@ -145,6 +145,13 @@ export const saveReportTool = {
         html: args.html,
         skill: args.skill,
         templateId: args.templateId,
+        brand: template && {
+          brandColor: template.brandColor,
+          brandColor2: template.brandColor2,
+          accentColor: template.accentColor,
+          canvasColor: template.canvasColor,
+          logoDataUri: template.logoDataUri,
+        },
         // Never taken from the model: the label the transport derived from the
         // request.
         createdBy: context.auth.clientLabel ?? DEFAULT_CLIENT_LABEL,

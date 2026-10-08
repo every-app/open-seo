@@ -16,6 +16,15 @@ const saveSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   instructions: z.string().min(1),
+  brand: z
+    .object({
+      brandColor: z.string().nullable().optional(),
+      brandColor2: z.string().nullable().optional(),
+      accentColor: z.string().nullable().optional(),
+      canvasColor: z.string().nullable().optional(),
+      logoDataUri: z.string().nullable().optional(),
+    })
+    .optional(),
 });
 
 const templateRefSchema = z.object({
@@ -42,6 +51,7 @@ export const saveReportTemplate = createServerFn({ method: "POST" })
           name: data.name,
           description: data.description,
           instructions: data.instructions,
+          brand: data.brand,
           // The client label for a template made in the app, not through MCP.
           createdBy: "OpenSEO app",
           createdByUserId: context.userId,

@@ -142,7 +142,7 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
 - Read and update a project's shared context: business, goal, positioning, writing preferences, competitors, key pages, and a research log (free, no credits).
 - Save and read HTML reports on a project (free, no credits). New reports are private. On hosted OpenSEO, explicitly ask the agent to publish with `set_report_sharing` (`public: true`) or revoke the link (`public: false`). `get_report` returns `report.shareUrl` for an existing public link, or `null` when unavailable.
-- List a project's report templates, and save a reusable report brief to the project (free, no credits).
+- List a project's report templates, and save a reusable report brief, with optional brand colors and logo, to the project (free, no credits).
 
 ## What to do after setup
 

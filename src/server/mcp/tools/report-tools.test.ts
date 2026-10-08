@@ -19,7 +19,8 @@ const mocks = vi.hoisted(() => ({
   findReportByTitle: vi.fn(),
   countReports: vi.fn(),
   sumReportBytesForOrganization: vi.fn(),
-  insertReport: vi.fn(),
+  // Typed so the brand test can read the stored HTML off the call.
+  insertReport: vi.fn<(params: { html: string }) => Promise<void>>(),
   updateReportContent: vi.fn(),
   getTemplate: vi.fn(),
   captureServerEvent: vi.fn(),
@@ -146,6 +147,32 @@ describe("save_report", () => {
       ),
     ).rejects.toThrow(/No report template template_other_project/);
     expect(mocks.insertReport).not.toHaveBeenCalled();
+  });
+
+  it("writes the followed template's brand kit into the stored HTML", async () => {
+    mocks.getTemplate.mockResolvedValue({
+      id: "template_1",
+      brandColor: "#ff5700",
+      brandColor2: null,
+      accentColor: "#b83d00",
+      canvasColor: null,
+      logoDataUri: null,
+    });
+
+    await saveReportTool.handler(
+      {
+        projectId,
+        title: "badseo.dev SEO audit, Sep 2026",
+        summary: "Verdict: titles are the problem.",
+        html,
+        templateId: "template_1",
+      },
+      toolContext,
+    );
+
+    expect(mocks.insertReport.mock.calls[0]?.[0].html).toContain(
+      '<style id="openseo-brand">:root{--brand:#ff5700;--accent:#b83d00}</style><body>',
+    );
   });
 });
 
