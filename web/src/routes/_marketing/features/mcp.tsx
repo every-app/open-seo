@@ -255,13 +255,13 @@ function McpPage() {
           connection steps on the web, or the setup prompt in Codex in the
           desktop app.
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-4">
           <a
             href="/docs/mcp"
             className="inline-flex h-9 items-center justify-center rounded-md bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
             Open MCP docs
-          </a>{" "}
+          </a>
           <a
             href="/docs/chatgpt"
             className="text-sm underline underline-offset-4"

@@ -7,8 +7,7 @@ import {
   TabsTrigger,
 } from "@/client/components/ui/tabs";
 
-export const AGENT_SETUP_DESCRIPTION =
-  "Choose where you want to use OpenSEO. ChatGPT needs manual connection steps; Codex and other agents can use the setup prompt.";
+export const AGENT_SETUP_DESCRIPTION = "Choose where you want to use OpenSEO.";
 
 export function AgentSetupPanel({
   prompt,
@@ -49,6 +48,14 @@ export function AgentSetupPanel({
                 Open <strong>Plugins → + → Create MCP App</strong>. Name it
                 OpenSEO, paste the full server URL below, including https://,
                 and choose <strong>OAuth</strong>.
+                <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                  <code className="break-all text-xs">{mcpUrl}</code>
+                  <CopyButton
+                    value={mcpUrl}
+                    label="Copy server URL"
+                    successMessage="MCP URL copied"
+                  />
+                </div>
               </li>
               <li>
                 Create the connection and approve the OpenSEO sign-in. Install
@@ -60,26 +67,13 @@ export function AgentSetupPanel({
                 <q>Use OpenSEO to check my connection and list my projects.</q>
               </li>
             </ol>
-            <div className="flex flex-wrap items-center gap-2">
-              <code className="break-all text-xs">{mcpUrl}</code>
-              <CopyButton
-                value={mcpUrl}
-                label="Copy server URL"
-                successMessage="MCP URL copied"
-              />
-            </div>
             <p className="text-xs text-muted-foreground">
-              The connection check uses no OpenSEO credits. You should see an
-              OpenSEO tool call and your projects, or confirmation that you have
-              none.
+              The connection check uses no OpenSEO credits.
             </p>
           </div>
         ) : (
           <p className="text-muted-foreground">
-            This is a self-hosted OpenSEO instance. Use Codex or another local
-            MCP client for a server on your computer. ChatGPT web needs a
-            publicly reachable HTTPS endpoint and supported authentication.
-            Follow the{" "}
+            This is a self-hosted OpenSEO instance. Follow the{" "}
             <a
               href="https://openseo.so/docs/self-hosting"
               target="_blank"
@@ -94,8 +88,7 @@ export function AgentSetupPanel({
         <p className="text-muted-foreground">
           <strong className="text-foreground">Already using Codex?</strong>{" "}
           Select <strong>Codex / other agents</strong> above and copy the setup
-          prompt. A desktop Codex connection does not connect ChatGPT on the
-          web.
+          prompt.
         </p>
         <a
           href="https://openseo.so/docs/chatgpt"

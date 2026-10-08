@@ -542,10 +542,9 @@ function McpSection() {
                 </span>
               ))}
             </div>
-            <p className="itc-body">
-              Paste the setup prompt into Codex or an agent that can configure
-              MCP. For ChatGPT on the web or a regular desktop chat,{" "}
-              <a href="/docs/chatgpt" className="itc-textlink">
+            <p className="itc-body itc-mcp-chatgpt-note">
+              For ChatGPT on the web,{" "}
+              <a href="/docs/chatgpt" className="itc-inline-link">
                 follow the ChatGPT setup steps
               </a>
               .

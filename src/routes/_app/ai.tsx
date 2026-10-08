@@ -144,9 +144,7 @@ function AiPage() {
                     <h2>Update your skills</h2>
                   </CardTitle>
                   <CardDescription>
-                    In Codex or another agent with installed skills, paste the
-                    update prompt to get the latest OpenSEO skills. For ChatGPT,
-                    follow the plugin update steps in the setup guide.
+                    Paste the update prompt to get the latest OpenSEO skills.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-wrap items-center gap-x-5 gap-y-3">
