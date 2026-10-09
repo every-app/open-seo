@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { aiProjectSchema } from "./ai-visibility";
 
 export const suggestedAiTopicSchema = z.object({
   name: z
@@ -13,8 +14,7 @@ export const suggestedAiTopicSchema = z.object({
     .describe("A succinct topic name, at most five words"),
   prompts: z.array(z.string().trim().min(1).max(500)).length(5),
 });
-export const generateAiPromptsSchema = z.object({
-  projectId: z.string().uuid(),
+export const generateAiPromptsSchema = aiProjectSchema.extend({
   topic: z
     .string()
     .trim()

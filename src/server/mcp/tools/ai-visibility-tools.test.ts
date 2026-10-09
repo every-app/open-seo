@@ -140,6 +140,34 @@ describe("AI visibility assistant tools", () => {
     expect(textContent(result)).toContain("not configured");
     expect(mocks.service.runCheck).not.toHaveBeenCalled();
   });
+  it.each([
+    [
+      definitions.generateAiVisibilityPromptsTool,
+      { locationCode: 2840, languageCode: "en" },
+    ],
+    [definitions.researchAiVisibilityPromptsTool, { keyword: "bible study" }],
+  ])("accepts legacy project IDs in $0.name input", (tool, input) => {
+    expect(
+      z
+        .object(tool.config.inputSchema)
+        .parse({ projectId: "proj-baeble-app", ...input }),
+    ).toMatchObject({ projectId: "proj-baeble-app" });
+  });
+  it("accepts legacy project IDs at the MCP boundary", async () => {
+    const tool = definitions.getAiVisibilityTrackerTool;
+    const args = z.object(tool.config.inputSchema).parse({
+      projectId: "proj-baeble-app",
+    });
+    mocks.authorize.mockResolvedValue({
+      id: args.projectId,
+      domain: "baeble.app",
+    });
+    const result = await tool.handler(args, context);
+    expect(result.structuredContent).toMatchObject({
+      status: "success",
+      data: state,
+    });
+  });
   it("keeps the same public evidence in text-only clients", async () => {
     const brands = [{ name: "Ahrefs", domain: "ahrefs.com", own: false }];
     mocks.service.getTracker.mockResolvedValue({ ...state, brands });
@@ -161,13 +189,21 @@ describe("AI visibility assistant tools", () => {
       data: { ...state, brands },
     });
   });
-  it("authorizes before any service read and never exposes a foreign project", async () => {
-    mocks.authorize.mockResolvedValue(null);
-    await expect(
-      definitions.getAiVisibilityTrackerTool.handler({ projectId }, context),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(mocks.service.getTracker).not.toHaveBeenCalled();
-  });
+  it.each([projectId, "proj-foreign-app"])(
+    "authorizes before reading foreign project %s",
+    async (foreignProjectId) => {
+      mocks.authorize.mockResolvedValue(null);
+      await expect(
+        definitions.getAiVisibilityTrackerTool.handler(
+          z
+            .object(definitions.getAiVisibilityTrackerTool.config.inputSchema)
+            .parse({ projectId: foreignProjectId }),
+          context,
+        ),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(mocks.service.getTracker).not.toHaveBeenCalled();
+    },
+  );
   it("reads existing progress once without starting another check", async () => {
     const result = await definitions.getAiVisibilityRunTool.handler(
       { projectId, runId },
