@@ -2,7 +2,10 @@ import { env } from "cloudflare:workers";
 import { z } from "zod";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
-import type { AiExportInput } from "@/types/schemas/ai-visibility";
+import {
+  aiProjectSchema,
+  type AiExportInput,
+} from "@/types/schemas/ai-visibility";
 import { loadAiFullAnswers } from "./aiVisibilityResults";
 import { AiVisibilityError } from "./aiVisibilityErrors";
 
@@ -95,10 +98,9 @@ export async function handleAiVisibilityDownload(
   const url = new URL(request.url);
   if (request.method !== "GET")
     return new Response("Method not allowed", { status: 405 });
-  const projectId = z
-    .string()
-    .uuid()
-    .safeParse(url.searchParams.get("projectId"));
+  const projectId = aiProjectSchema.shape.projectId.safeParse(
+    url.searchParams.get("projectId"),
+  );
   if (!projectId.success) return new Response("Not found", { status: 404 });
   let auth;
   try {
