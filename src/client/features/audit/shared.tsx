@@ -14,6 +14,8 @@ import { Spinner } from "@/client/components/ui/spinner";
 import { getAuditCapabilities } from "@/serverFunctions/audit";
 import type { IssueSeverity } from "@/shared/audit-issues";
 
+export { formatDate, formatStartedAt } from "./date-format";
+
 export function extractPathname(url: string): string {
   try {
     return new URL(url).pathname;
@@ -28,23 +30,6 @@ export function extractHostname(url: string): string {
   } catch {
     return url;
   }
-}
-
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-export function formatStartedAt(dateStr: string): string {
-  return new Date(dateStr).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
 
 export function StatusBadge({ status }: { status: string }) {
