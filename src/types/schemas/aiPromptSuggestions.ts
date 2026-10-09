@@ -14,7 +14,7 @@ export const suggestedAiTopicSchema = z.object({
   prompts: z.array(z.string().trim().min(1).max(500)).length(5),
 });
 export const generateAiPromptsSchema = z.object({
-  projectId: z.string().uuid(),
+  projectId: z.string().min(1),
   topic: z
     .string()
     .trim()
