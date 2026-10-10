@@ -28,6 +28,7 @@ describe("DataForSEO transport", () => {
     expect(new Headers(init?.headers).get("Authorization")).toBe(
       "Basic encoded-credentials",
     );
+    expect(new Headers(init?.headers).get("Accept-Encoding")).toBe("gzip");
   });
 
   // The request-deadline abort arrives as a bare DOMException. Left unclassified
