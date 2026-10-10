@@ -32,7 +32,12 @@ export function buildChatAgentModel(
   reasoningEffort: "max" | "low" = "max",
 ): LanguageModelV3 {
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
-  const openrouter = createOpenRouter({ apiKey });
+  const openrouter = createOpenRouter({
+    apiKey,
+    // Optional: route AI-feature requests through a custom OpenAI-compatible
+    // gateway (e.g. a self-hosted router) instead of openrouter.ai.
+    baseURL: process.env.OPENROUTER_BASE_URL || undefined,
+  });
 
   // MiniMax M3 (env-override path only): `provider.order` prefers Together,
   // then Atlas Cloud (fp8); `zdr: true` restricts routing to Zero-Data-

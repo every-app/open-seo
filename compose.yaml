@@ -22,6 +22,7 @@ services:
       # Optional: AI features (the SAM agent). Without this the setup
       # gate in the app asks for the key, but nothing here would forward it.
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
@@ -29,6 +30,7 @@ services:
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
       # Optional: AI features (SAM, the in-app SEO agent)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
       - VITE_SHOW_DEVTOOLS=false
     ports:

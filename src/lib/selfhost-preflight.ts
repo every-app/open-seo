@@ -201,7 +201,9 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
           key: "ai",
           name: "AI features",
           level: "ok",
-          message: "OPENROUTER_API_KEY set",
+          message: get(env, "OPENROUTER_BASE_URL")
+            ? "OPENROUTER_API_KEY set — routing via OPENROUTER_BASE_URL"
+            : "OPENROUTER_API_KEY set",
         }
       : {
           key: "ai",
