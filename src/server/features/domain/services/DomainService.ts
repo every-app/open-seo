@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { getFreeDomainRating, isAhrefsConfigured } from "@/server/lib/ahrefs/client";
 import { buildRankedKeywordsScopeFilter } from "@/server/lib/dataforseo/researchScopeFilters";
 import { joinClauses } from "@/server/lib/dataforseo/filters";
 import { parseResearchTargetOrThrow } from "@/server/lib/domainUtils";
@@ -26,6 +27,7 @@ const domainOverviewResultSchema = z.object({
   domain: z.string(),
   organicTraffic: z.number().nullable(),
   organicKeywords: z.number().nullable(),
+  ahrefsDomainRating: z.number().nullable(),
   backlinks: z.number().nullable(),
   referringDomains: z.number().nullable(),
   hasData: z.boolean(),
@@ -76,14 +78,23 @@ async function getOverview(
   const nowIso = new Date().toISOString();
   const dataforseo = createDataforseoClient(billingCustomer);
 
-  const metricsResponse = await dataforseo.domain.rankOverview({
-    target: domain,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    ...metering,
-  });
-
-  const metrics = metricsResponse[0];
+  const [metricsResult, ahrefsResult] = await Promise.allSettled([
+    dataforseo.domain.rankOverview({
+      target: domain,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      ...metering,
+    }),
+    isAhrefsConfigured()
+      ? getFreeDomainRating(domain)
+      : Promise.resolve({ domainRating: null }),
+  ]);
+  if (metricsResult.status === "rejected") throw metricsResult.reason;
+  const metrics = metricsResult.value[0];
+  const ahrefs =
+    ahrefsResult.status === "fulfilled"
+      ? ahrefsResult.value
+      : { domainRating: null };
 
   const organicTraffic =
     metrics?.metrics?.organic?.etv != null
@@ -98,6 +109,7 @@ async function getOverview(
     domain,
     organicTraffic,
     organicKeywords,
+    ahrefsDomainRating: ahrefs.domainRating,
     backlinks: null,
     referringDomains: null,
     hasData: organicKeywords != null && organicKeywords > 0,

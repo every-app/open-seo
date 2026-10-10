@@ -77,6 +77,8 @@ declare namespace Cloudflare {
 
     // OpenRouter API key for the SAM in-app chat agent.
     OPENROUTER_API_KEY?: string;
+    // Optional Ahrefs free Domain Rating enrichment for domain overviews.
+    AHREFS_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
   }

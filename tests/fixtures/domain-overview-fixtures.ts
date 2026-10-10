@@ -9,6 +9,7 @@ export function getFixtureOverview(domain: string) {
     displayTarget: target?.display ?? domain,
     organicTraffic: 373,
     organicKeywords: 307,
+    ahrefsDomainRating: null,
     backlinks: null,
     referringDomains: null,
     hasData: true,
