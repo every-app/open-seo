@@ -28,7 +28,7 @@ Alchemy-managed Cloudflare Access boundary.
 Alchemy manages Cloudflare credentials itself — nothing credential-shaped goes
 in the env files.
 
-- **Locally**, run `pnpm alchemy login` once. Answer yes to
+- **Locally**, run `pnpm alchemy login deploy/alchemy/alchemy.run.ts` once. Answer yes to
   **Customize OAuth scopes?** and enable `access:write` on top of the defaults
   (the preview Access gate needs it; add `query_cache:write` too if you will
   deploy production — Hyperdrive). The credential is stored globally, and
@@ -79,7 +79,7 @@ requested application stage and cannot touch the Access stack.
 ## Local preview
 
 ```sh
-pnpm alchemy login    # once — see Credentials above
+pnpm alchemy login deploy/alchemy/alchemy.run.ts  # once — see Credentials above
 cp deploy/.env.preview.example .env.preview
 pnpm preview:access   # once — the shared Access gate (safe to re-run)
 pnpm deploy:preview --stage manual-preview --yes
@@ -133,7 +133,7 @@ cp .env.preview ../open-seo-pub-<pr>/
 (cd ../open-seo-pub-<pr> && pnpm install --frozen-lockfile && pnpm exec vite build --mode preview)
 rm -rf dist && cp -R ../open-seo-pub-<pr>/dist dist
 git worktree remove --force ../open-seo-pub-<pr>
-pnpm alchemy deploy --env-file .env.preview --stage pub-<pr> --yes
+pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.preview --stage pub-<pr> --yes
 ```
 
 Verify the preview redirects to the Access login before sharing its URL.
