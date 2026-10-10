@@ -88,7 +88,7 @@ describe.each(["gsc", "ga4", "onboarding"] as const)(
     it("opens property selection without a browser resume flag after authorization", () => {
       const html = renderSetup(surface, true);
       expect(html).toContain("Choose property");
-      expect(html).toContain("Select a property");
+      expect(html).toContain("Add Google account");
       expect(html).not.toContain("Connect with Google");
     });
   },
@@ -98,7 +98,7 @@ it.each(["gsc", "ga4"] as const)(
   "does not automatically open property editing for a %s viewer",
   (surface) => {
     const html = renderSetup(surface, true, false, false);
-    expect(html).not.toContain("Select a property");
+    expect(html).not.toContain("Save property");
     expect(html).toContain("Manage Google accounts");
   },
 );
