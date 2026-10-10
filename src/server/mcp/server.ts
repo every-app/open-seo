@@ -28,6 +28,11 @@ import {
 import { objectSchema } from "@/server/mcp/output-schemas";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
+import {
+  getBingCrawlStatsTool,
+  getBingSearchPerformanceTool,
+  inspectBingUrlsTool,
+} from "@/server/mcp/tools/bing-webmaster-tools";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
@@ -251,6 +256,9 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getLocalRankGridTool);
   register(getKeywordMetricsTool);
   register(getSearchConsolePerformanceTool);
+  register(getBingSearchPerformanceTool);
+  register(inspectBingUrlsTool);
+  register(getBingCrawlStatsTool);
   register(inspectUrlsTool);
   register(getGoogleAnalyticsOrganicLandingPagesTool);
   register(getGoogleAnalyticsPagePerformanceTool);

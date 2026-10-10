@@ -2,6 +2,7 @@ import { queryClient } from "@/client/tanstack-db/queryClient";
 import { googleConnectionOptions } from "@/client/features/integrations/googleProviders";
 import { createFileRoute } from "@tanstack/react-router";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
+import { BingConnectionCard } from "@/client/features/integrations/BingConnectionCard";
 import { CrawlerAccessSettings } from "@/client/features/settings/CrawlerAccessSettings";
 
 export const Route = createFileRoute(
@@ -33,6 +34,10 @@ function ProjectIntegrationsRoute() {
 
       <section id="google-analytics" className="scroll-mt-6">
         <GoogleConnectionCard provider="ga4" projectId={projectId} />
+      </section>
+
+      <section id="bing-webmaster" className="scroll-mt-6">
+        <BingConnectionCard projectId={projectId} />
       </section>
 
       <CrawlerAccessSettings projectId={projectId} />

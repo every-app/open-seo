@@ -17,6 +17,7 @@ const fresh: DashboardActivation = {
   domain: null,
   ga4: { connected: false, propertyDisplayName: null, cardDismissedAt: null },
   gsc: { connected: false, siteUrl: null },
+  bing: { connected: false, siteUrl: null },
   mcp: { authorizedAt: null, firstToolCallAt: null, cardDismissedAt: null },
   competitorClickedAt: null,
   keywordsClickedAt: null,

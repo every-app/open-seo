@@ -81,8 +81,9 @@ type GoogleTokenResponse = z.infer<typeof googleTokenResponseSchema>;
 
 /** Same-origin path to return to after consent. A pathname can start with
  *  `//host`, which browsers treat as protocol-relative, so the reduced path is
- *  re-parsed to prove it still resolves to our origin. */
-function getSafeCallbackPath(callbackURL: string, publicOrigin: string) {
+ *  re-parsed to prove it still resolves to our origin. Shared with the Bing
+ *  grant flow, which has the same open-redirect exposure. */
+export function getSafeCallbackPath(callbackURL: string, publicOrigin: string) {
   try {
     const url = new URL(callbackURL, publicOrigin);
     const path = `${url.pathname}${url.search}${url.hash}`;
@@ -102,8 +103,9 @@ function getRedirectUri(
 }
 
 /** Token encryption matches Better Auth's own `account` rows so grants
- *  written before this module (and google social-login rows) stay readable. */
-async function tokenCrypto() {
+ *  written before this module (and google social-login rows) stay readable.
+ *  Shared with the Bing grant flow so both providers' rows encrypt alike. */
+export async function tokenCrypto() {
   const ctx = await getAuth().$context;
   const enabled = Boolean(ctx.options.account?.encryptOAuthTokens);
   return {

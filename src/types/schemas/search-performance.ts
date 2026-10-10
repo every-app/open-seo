@@ -16,6 +16,13 @@ export const SEARCH_PERFORMANCE_RANGES = [
 /** Device values exactly as the GSC `device` dimension returns/accepts them. */
 export const GSC_DEVICES = ["DESKTOP", "MOBILE", "TABLET"] as const;
 
+/** Data sources the Search Performance page can show. Each is rendered
+ *  separately — never merged, since the engines define their metrics
+ *  differently. */
+export const SEARCH_PERFORMANCE_SOURCES = ["gsc", "bing"] as const;
+export type SearchPerformanceSource =
+  (typeof SEARCH_PERFORMANCE_SOURCES)[number];
+
 export type SearchPerformanceDateRange =
   (typeof SEARCH_PERFORMANCE_RANGES)[number];
 export type SearchPerformanceDevice = (typeof GSC_DEVICES)[number];
@@ -92,6 +99,7 @@ const textMatchParam = z
 
 /** /p/$projectId/search-performance query params. */
 export const searchPerformanceSearchSchema = z.object({
+  source: z.enum(SEARCH_PERFORMANCE_SOURCES).optional().catch(undefined),
   tab: z.enum(SEARCH_PERFORMANCE_TABS).optional().catch(undefined),
   range: z.enum(SEARCH_PERFORMANCE_RANGES).optional().catch(undefined),
   device: z.enum(GSC_DEVICES).optional().catch(undefined),

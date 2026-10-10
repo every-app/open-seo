@@ -13,6 +13,7 @@ import * as sqliteAudit from "./audit.schema";
 import * as sqliteSam from "./sam.schema";
 import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
+import * as sqliteBing from "./bing.schema";
 import * as sqliteGa4 from "./ga4.schema";
 import * as sqliteGsc from "./gsc.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
@@ -25,6 +26,7 @@ import * as pgAudit from "./pg/audit.schema";
 import * as pgSam from "./pg/sam.schema";
 import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
+import * as pgBing from "./pg/bing.schema";
 import * as pgGa4 from "./pg/ga4.schema";
 import * as pgGsc from "./pg/gsc.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
@@ -158,6 +160,7 @@ const sqliteAppTables = tablesFrom(
   sqliteAudit,
   sqliteSam,
   sqliteBilling,
+  sqliteBing,
   sqliteGa4,
   sqliteGsc,
   sqliteTelemetry,
@@ -171,6 +174,7 @@ const pgAppTables = tablesFrom(
   pgAudit,
   pgSam,
   pgBilling,
+  pgBing,
   pgGa4,
   pgGsc,
   pgTelemetry,
@@ -271,6 +275,15 @@ const REQUIRED_BETTER_AUTH_INDEXES: {
   { table: "session", columns: ["user_id"], unique: false },
   { table: "account", columns: ["user_id"], unique: false },
   { table: "account", columns: ["account_id", "provider_id"], unique: false },
+  // The partial unique indexes the Google and Bing OAuth grant upserts rely on
+  // (`account_google_grant_owner_idx`, `account_bing_grant_owner_idx`). Both
+  // are unique on the same columns with different predicates, so one entry
+  // backstops the pair against a regen dropping them from either dialect.
+  {
+    table: "account",
+    columns: ["user_id", "provider_id", "account_id"],
+    unique: true,
+  },
   { table: "verification", columns: ["identifier"], unique: false },
   { table: "verification", columns: ["expires_at"], unique: false },
   { table: "organization", columns: ["slug"], unique: true },

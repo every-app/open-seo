@@ -4,6 +4,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { SearchPerformancePage } from "@/client/features/search-performance/SearchPerformancePage";
+import { BingInsightsPage } from "@/client/features/bing-insights/BingInsightsPage";
 import {
   SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   searchPerformanceSearchSchema,
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_app/p/$projectId/search-performance")({
   search: {
     middlewares: [
       stripSearchParams({
+        source: "gsc",
         tab: "striking",
         range: "last_28_days",
         page: 1,
@@ -28,6 +30,23 @@ function SearchPerformanceRoute() {
   const { projectId } = Route.useParams();
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
+  const source = search.source ?? "gsc";
+
+  if (source === "bing") {
+    return (
+      <BingInsightsPage
+        projectId={projectId}
+        source="bing"
+        onSourceChange={(nextSource) => {
+          void navigate({
+            search: (prev) => ({ ...prev, source: nextSource }),
+            replace: true,
+          });
+        }}
+      />
+    );
+  }
+
   return (
     <SearchPerformancePage
       projectId={projectId}

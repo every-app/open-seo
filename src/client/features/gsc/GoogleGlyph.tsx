@@ -35,8 +35,3 @@ export function GoogleGlyph({
     </svg>
   );
 }
-
-/** Monochrome variant with a LucideIcon-compatible signature for nav slots. */
-export function GoogleGlyphMuted({ className }: { className?: string }) {
-  return <GoogleGlyph muted className={className} />;
-}

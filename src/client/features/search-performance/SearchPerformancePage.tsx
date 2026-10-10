@@ -17,6 +17,7 @@ import { TabsTrigger } from "@/client/components/ui/tabs";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { DimensionSection } from "@/client/features/search-performance/SearchPerformanceDimensionSection";
 import { SearchPerformanceSelects } from "@/client/features/search-performance/SearchPerformanceSelects";
+import { SearchPerformanceSourceToggle } from "@/client/features/search-performance/SearchPerformanceSourceToggle";
 import { SearchPerformanceLoadingState } from "@/client/features/search-performance/SearchPerformanceLoadingState";
 import {
   tableQueryOptions,
@@ -225,15 +226,21 @@ export function SearchPerformancePage({
               Google Search Console.
             </p>
           </div>
-          {report?.connected ? (
-            <Link
-              to="/p/$projectId/settings/integrations"
-              params={{ projectId }}
-              className="shrink-0 self-start text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline sm:mt-1"
-            >
-              Change property
-            </Link>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2 sm:mt-1">
+            {report?.connected ? (
+              <Link
+                to="/p/$projectId/settings/integrations"
+                params={{ projectId }}
+                className="shrink-0 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Change property
+              </Link>
+            ) : null}
+            <SearchPerformanceSourceToggle
+              value={search.source ?? "gsc"}
+              onChange={(source) => onSearchChange({ source, page: undefined })}
+            />
+          </div>
         </div>
 
         {reportQuery.isPending ? (

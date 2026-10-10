@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
+import { BingAccountsSettings } from "@/client/features/settings/BingAccountsSettings";
 import { SectionHeader } from "@/client/components/PageHeader";
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
 import { Switch } from "@/client/components/ui/switch";
@@ -47,6 +48,8 @@ function PersonalSettings() {
           <ThemePreferenceRadio />
         </div>
       </section>
+
+      <BingAccountsSettings />
 
       {isHosted ? (
         <>

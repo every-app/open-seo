@@ -232,6 +232,13 @@
       "when": 1791402063378,
       "tag": "0032_stale_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791618009535,
+      "tag": "0033_bing_webmaster",
+      "breakpoints": true
     }
   ]
 }
