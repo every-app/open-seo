@@ -664,6 +664,12 @@ export function DomainOverviewPage({
                           state.overview.hasData,
                         ),
                       },
+                      ...(state.overview.ahrefsDomainRating != null
+                        ? [{
+                            label: "Ahrefs DR",
+                            value: state.overview.ahrefsDomainRating,
+                          }]
+                        : []),
                     ]}
                   />
                 </div>

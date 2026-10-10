@@ -14,7 +14,7 @@ type PreflightLevel = "ok" | "info" | "warn" | "fail";
 
 type PreflightItem = {
   // Stable identifier shared with /api/health's check map.
-  key: "auth" | "dataforseo" | "gsc" | "ai" | "rendering" | "runtime";
+  key: "auth" | "dataforseo" | "gsc" | "ai" | "ahrefs" | "rendering" | "runtime";
   name: string;
   level: PreflightLevel;
   message: string;
@@ -209,6 +209,24 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
           level: "info",
           message:
             "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
+        },
+  );
+
+  items.push(
+    get(env, "AHREFS_API_KEY")
+      ? {
+          key: "ahrefs",
+          name: "Ahrefs free metrics",
+          level: "ok",
+          message:
+            "AHREFS_API_KEY set — free Domain Rating is included in domain overviews",
+        }
+      : {
+          key: "ahrefs",
+          name: "Ahrefs free metrics",
+          level: "info",
+          message:
+            "AHREFS_API_KEY not set (optional) — domain overviews omit the free Ahrefs Domain Rating.",
         },
   );
 
