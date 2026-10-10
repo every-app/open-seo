@@ -46,6 +46,7 @@ import { Route as STokenRawRouteImport } from './routes/s/$token/raw'
 import { Route as AppPProjectIdIndexRouteImport } from './routes/_app/p/$projectId/index'
 import { Route as AppPProjectIdAiVisibilityRouteImport } from './routes/_app/p/$projectId/ai-visibility'
 import { Route as AppPProjectIdBacklinksRouteImport } from './routes/_app/p/$projectId/backlinks'
+import { Route as AppPProjectIdBingPerformanceRouteImport } from './routes/_app/p/$projectId/bing-performance'
 import { Route as AppPProjectIdBrandLookupRouteImport } from './routes/_app/p/$projectId/brand-lookup'
 import { Route as AppPProjectIdContextRouteImport } from './routes/_app/p/$projectId/context'
 import { Route as AppPProjectIdDomainRouteImport } from './routes/_app/p/$projectId/domain'
@@ -56,6 +57,7 @@ import { Route as AppPProjectIdSamRouteImport } from './routes/_app/p/$projectId
 import { Route as AppPProjectIdSavedRouteImport } from './routes/_app/p/$projectId/saved'
 import { Route as AppPProjectIdSearchPerformanceRouteImport } from './routes/_app/p/$projectId/search-performance'
 import { Route as AppPProjectIdSettingsRouteImport } from './routes/_app/p/$projectId/settings'
+import { Route as ApiBingOauthCallbackRouteImport } from './routes/api/bing/oauth/callback'
 import { Route as ApiGa4OauthCallbackRouteImport } from './routes/api/ga4/oauth/callback'
 import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
 import { Route as AppPProjectIdAiVisibilityIndexRouteImport } from './routes/_app/p/$projectId/ai-visibility/index'
@@ -258,6 +260,12 @@ const AppPProjectIdBacklinksRoute = AppPProjectIdBacklinksRouteImport.update({
   path: '/backlinks',
   getParentRoute: () => AppPProjectIdRouteRoute,
 } as any)
+const AppPProjectIdBingPerformanceRoute =
+  AppPProjectIdBingPerformanceRouteImport.update({
+    id: '/bing-performance',
+    path: '/bing-performance',
+    getParentRoute: () => AppPProjectIdRouteRoute,
+  } as any)
 const AppPProjectIdBrandLookupRoute =
   AppPProjectIdBrandLookupRouteImport.update({
     id: '/brand-lookup',
@@ -311,6 +319,11 @@ const AppPProjectIdSettingsRoute = AppPProjectIdSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AppPProjectIdRouteRoute,
+} as any)
+const ApiBingOauthCallbackRoute = ApiBingOauthCallbackRouteImport.update({
+  id: '/api/bing/oauth/callback',
+  path: '/api/bing/oauth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGa4OauthCallbackRoute = ApiGa4OauthCallbackRouteImport.update({
   id: '/api/ga4/oauth/callback',
@@ -434,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/s/$token/': typeof STokenIndexRoute
   '/p/$projectId/ai-visibility': typeof AppPProjectIdAiVisibilityRouteWithChildren
   '/p/$projectId/backlinks': typeof AppPProjectIdBacklinksRoute
+  '/p/$projectId/bing-performance': typeof AppPProjectIdBingPerformanceRoute
   '/p/$projectId/brand-lookup': typeof AppPProjectIdBrandLookupRoute
   '/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/p/$projectId/domain': typeof AppPProjectIdDomainRoute
@@ -444,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/saved': typeof AppPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof AppPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof AppPProjectIdSettingsRouteWithChildren
+  '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof AppPProjectIdIndexRoute
@@ -492,6 +507,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/s/$token': typeof STokenIndexRoute
   '/p/$projectId/backlinks': typeof AppPProjectIdBacklinksRoute
+  '/p/$projectId/bing-performance': typeof AppPProjectIdBingPerformanceRoute
   '/p/$projectId/brand-lookup': typeof AppPProjectIdBrandLookupRoute
   '/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/p/$projectId/domain': typeof AppPProjectIdDomainRoute
@@ -500,6 +516,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/sam': typeof AppPProjectIdSamRoute
   '/p/$projectId/saved': typeof AppPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof AppPProjectIdSearchPerformanceRoute
+  '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId': typeof AppPProjectIdIndexRoute
@@ -555,6 +572,7 @@ export interface FileRoutesById {
   '/s/$token/': typeof STokenIndexRoute
   '/_app/p/$projectId/ai-visibility': typeof AppPProjectIdAiVisibilityRouteWithChildren
   '/_app/p/$projectId/backlinks': typeof AppPProjectIdBacklinksRoute
+  '/_app/p/$projectId/bing-performance': typeof AppPProjectIdBingPerformanceRoute
   '/_app/p/$projectId/brand-lookup': typeof AppPProjectIdBrandLookupRoute
   '/_app/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/_app/p/$projectId/domain': typeof AppPProjectIdDomainRoute
@@ -565,6 +583,7 @@ export interface FileRoutesById {
   '/_app/p/$projectId/saved': typeof AppPProjectIdSavedRoute
   '/_app/p/$projectId/search-performance': typeof AppPProjectIdSearchPerformanceRoute
   '/_app/p/$projectId/settings': typeof AppPProjectIdSettingsRouteWithChildren
+  '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_app/p/$projectId/': typeof AppPProjectIdIndexRoute
@@ -618,6 +637,7 @@ export interface FileRouteTypes {
     | '/s/$token/'
     | '/p/$projectId/ai-visibility'
     | '/p/$projectId/backlinks'
+    | '/p/$projectId/bing-performance'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
@@ -628,6 +648,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
+    | '/api/bing/oauth/callback'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
@@ -676,6 +697,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/s/$token'
     | '/p/$projectId/backlinks'
+    | '/p/$projectId/bing-performance'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
@@ -684,6 +706,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/sam'
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
+    | '/api/bing/oauth/callback'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/p/$projectId'
@@ -738,6 +761,7 @@ export interface FileRouteTypes {
     | '/s/$token/'
     | '/_app/p/$projectId/ai-visibility'
     | '/_app/p/$projectId/backlinks'
+    | '/_app/p/$projectId/bing-performance'
     | '/_app/p/$projectId/brand-lookup'
     | '/_app/p/$projectId/context'
     | '/_app/p/$projectId/domain'
@@ -748,6 +772,7 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/saved'
     | '/_app/p/$projectId/search-performance'
     | '/_app/p/$projectId/settings'
+    | '/api/bing/oauth/callback'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/_app/p/$projectId/'
@@ -783,6 +808,7 @@ export interface RootRouteChildren {
   STokenOgDotpngRoute: typeof STokenOgDotpngRoute
   STokenRawRoute: typeof STokenRawRoute
   STokenIndexRoute: typeof STokenIndexRoute
+  ApiBingOauthCallbackRoute: typeof ApiBingOauthCallbackRoute
   ApiGa4OauthCallbackRoute: typeof ApiGa4OauthCallbackRoute
   ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
 }
@@ -1048,6 +1074,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdBacklinksRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
+    '/_app/p/$projectId/bing-performance': {
+      id: '/_app/p/$projectId/bing-performance'
+      path: '/bing-performance'
+      fullPath: '/p/$projectId/bing-performance'
+      preLoaderRoute: typeof AppPProjectIdBingPerformanceRouteImport
+      parentRoute: typeof AppPProjectIdRouteRoute
+    }
     '/_app/p/$projectId/brand-lookup': {
       id: '/_app/p/$projectId/brand-lookup'
       path: '/brand-lookup'
@@ -1117,6 +1150,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$projectId/settings'
       preLoaderRoute: typeof AppPProjectIdSettingsRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
+    }
+    '/api/bing/oauth/callback': {
+      id: '/api/bing/oauth/callback'
+      path: '/api/bing/oauth/callback'
+      fullPath: '/api/bing/oauth/callback'
+      preLoaderRoute: typeof ApiBingOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/ga4/oauth/callback': {
       id: '/api/ga4/oauth/callback'
@@ -1298,6 +1338,7 @@ const AppPProjectIdSettingsRouteWithChildren =
 interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdAiVisibilityRoute: typeof AppPProjectIdAiVisibilityRouteWithChildren
   AppPProjectIdBacklinksRoute: typeof AppPProjectIdBacklinksRoute
+  AppPProjectIdBingPerformanceRoute: typeof AppPProjectIdBingPerformanceRoute
   AppPProjectIdBrandLookupRoute: typeof AppPProjectIdBrandLookupRoute
   AppPProjectIdContextRoute: typeof AppPProjectIdContextRoute
   AppPProjectIdDomainRoute: typeof AppPProjectIdDomainRoute
@@ -1319,6 +1360,7 @@ interface AppPProjectIdRouteRouteChildren {
 const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdAiVisibilityRoute: AppPProjectIdAiVisibilityRouteWithChildren,
   AppPProjectIdBacklinksRoute: AppPProjectIdBacklinksRoute,
+  AppPProjectIdBingPerformanceRoute: AppPProjectIdBingPerformanceRoute,
   AppPProjectIdBrandLookupRoute: AppPProjectIdBrandLookupRoute,
   AppPProjectIdContextRoute: AppPProjectIdContextRoute,
   AppPProjectIdDomainRoute: AppPProjectIdDomainRoute,
@@ -1418,6 +1460,7 @@ const rootRouteChildren: RootRouteChildren = {
   STokenOgDotpngRoute: STokenOgDotpngRoute,
   STokenRawRoute: STokenRawRoute,
   STokenIndexRoute: STokenIndexRoute,
+  ApiBingOauthCallbackRoute: ApiBingOauthCallbackRoute,
   ApiGa4OauthCallbackRoute: ApiGa4OauthCallbackRoute,
   ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,
 }

@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  startGoogleLink,
-  useGoogleLinkPending,
-} from "@/client/features/integrations/startGoogleLink";
+import { startGoogleLink } from "@/client/features/integrations/startGoogleLink";
+import { useLinkRedirectPending } from "@/client/features/integrations/linkRedirect";
 
 /** Restore the picker after Google's full-page redirect, scoped to this project. */
 export function useGooglePickerResume(
@@ -12,7 +10,7 @@ export function useGooglePickerResume(
   // null lets the card derive unfinished setup from the saved authorization.
   // false means the user explicitly closed the picker during this visit.
   const [picking, setPicking] = useState<boolean | null>(null);
-  const linking = useGoogleLinkPending();
+  const linking = useLinkRedirectPending();
   const key = `google-property-picker:${provider}:${projectId}`;
   useEffect(() => {
     setPicking(null);

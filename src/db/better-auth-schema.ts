@@ -91,6 +91,13 @@ export const account = sqliteTable(
       .where(
         sql`${table.providerId} in ('google-search-console', 'google-analytics')`,
       ),
+    // One delegated Bing Webmaster grant per user (accountId is a constant —
+    // Bing's token response carries no account identity). Hand-added like the
+    // Google grant index above; `auth:generate` drops it, and the schema
+    // parity test fails loudly if the dialects drift.
+    uniqueIndex("account_bing_grant_owner_idx")
+      .on(table.userId, table.providerId, table.accountId)
+      .where(sql`${table.providerId} = 'bing-webmaster'`),
   ],
 );
 

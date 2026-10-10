@@ -24,7 +24,9 @@ vi.mock("@/serverFunctions/googleAccounts", () => ({
 }));
 vi.mock("@/client/features/integrations/startGoogleLink", () => ({
   startGoogleLink: vi.fn(),
-  useGoogleLinkPending: () => false,
+}));
+vi.mock("@/client/features/integrations/linkRedirect", () => ({
+  useLinkRedirectPending: () => false,
 }));
 vi.mock("@/client/features/integrations/googleLinkError", () => ({
   getGoogleLinkError: () => null,

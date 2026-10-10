@@ -22,6 +22,7 @@ import {
   AuditHealthCard,
   GscCard,
 } from "@/client/features/dashboard/DashboardCards";
+import { BingCard } from "@/client/features/dashboard/BingCard";
 import { Ga4Card } from "@/client/features/dashboard/Ga4Card";
 import { WorkspaceMergeBanner } from "@/client/features/dashboard/WorkspaceMergeBanner";
 import { QueryError } from "@/client/components/QueryState";
@@ -88,6 +89,7 @@ export function DashboardPage({
 
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
+  const bingConnected = activation.bing.connected;
   const ga4Connected = activation.ga4.connected;
 
   // Search Console always renders: connected shows the report, otherwise the
@@ -115,6 +117,11 @@ export function DashboardPage({
           siteUrl={activation.gsc.siteUrl}
         />
       ),
+    },
+    {
+      key: "bing",
+      hasData: bingConnected,
+      node: <BingCard projectId={projectId} connected={bingConnected} />,
     },
     ...(ga4Connected || !activation.ga4.cardDismissedAt
       ? [

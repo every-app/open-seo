@@ -14,10 +14,8 @@ import {
   googleConnectionOptions,
   googleProviders,
 } from "@/client/features/integrations/googleProviders";
-import {
-  startGoogleLink,
-  useGoogleLinkPending,
-} from "@/client/features/integrations/startGoogleLink";
+import { startGoogleLink } from "@/client/features/integrations/startGoogleLink";
+import { useLinkRedirectPending } from "@/client/features/integrations/linkRedirect";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { Button } from "@/client/components/ui/button";
 import { Spinner as SpinnerIcon } from "@/client/components/ui/spinner";
@@ -86,7 +84,7 @@ function GscConnect({
   onSkip,
 }: { projectId: string } & NavigationProps) {
   const queryClient = useQueryClient();
-  const linking = useGoogleLinkPending();
+  const linking = useLinkRedirectPending();
   const [selection, setSelection] =
     React.useState<GooglePickerSelection | null>(null);
 
