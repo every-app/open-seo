@@ -45,3 +45,5 @@ dist-sourcemaps/
 
 # Alchemy local state + bundle artifacts (SaaS deploys)
 .alchemy/
+# Flat D1 migrations prepared for alchemy (scripts/prepare-d1-migrations.mjs)
+.alchemy-migrations/

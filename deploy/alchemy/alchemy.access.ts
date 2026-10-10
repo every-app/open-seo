@@ -29,7 +29,7 @@ export const previewWildcard = (subdomain: string) =>
 
 export const readWorkersSubdomain = ({ required }: { required: boolean }) =>
   Effect.gen(function* () {
-    const subdomain = (yield* Config.string("WORKERS_SUBDOMAIN").pipe(
+    const subdomain = (yield* Config.String("WORKERS_SUBDOMAIN").pipe(
       Config.withDefault(""),
     )).trim();
     if (subdomain.endsWith(".workers.dev") || (!subdomain && !required)) {
@@ -45,7 +45,7 @@ export const readWorkersSubdomain = ({ required }: { required: boolean }) =>
 /** Reads ACCESS_ALLOWED_EMAILS; dies with `remedy` when none are set. */
 export const requireAllowedEmails = (remedy: string) =>
   Effect.gen(function* () {
-    const emails = (yield* Config.string("ACCESS_ALLOWED_EMAILS").pipe(
+    const emails = (yield* Config.String("ACCESS_ALLOWED_EMAILS").pipe(
       Config.withDefault(""),
     ))
       .split(",")
@@ -57,13 +57,17 @@ export const requireAllowedEmails = (remedy: string) =>
     return emails;
   });
 
-/** The gate itself: an email allow-policy on a self-hosted Access application. */
+/** The gate itself: an email allow-policy on a self-hosted Access application.
+ *  `domain` is the primary hostname; `extraDomains` (e.g. a self-hoster's
+ *  custom domain alongside the workers.dev hostname) are added as additional
+ *  public destinations so one application protects every hostname. */
 export const emailAccessGate = (options: {
   policyId: string;
   applicationId: string;
   policyName: string;
   applicationName: string;
   domain: string;
+  extraDomains?: string[];
   emails: string[];
 }) =>
   Effect.gen(function* () {
@@ -72,10 +76,21 @@ export const emailAccessGate = (options: {
       decision: "allow",
       include: options.emails.map((email) => ({ email: { email } })),
     });
+    const extraDomains = options.extraDomains ?? [];
     return yield* Cloudflare.Access.Application(options.applicationId, {
       type: "self_hosted",
       name: options.applicationName,
       domain: options.domain,
+      // Cloudflare requires the primary `domain` to also appear in
+      // `destinations` when the multi-destination form is used.
+      ...(extraDomains.length > 0
+        ? {
+            destinations: [options.domain, ...extraDomains].map((uri) => ({
+              type: "public" as const,
+              uri,
+            })),
+          }
+        : {}),
       policies: [allow.policyId],
     });
   });

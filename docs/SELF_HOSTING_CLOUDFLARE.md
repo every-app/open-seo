@@ -36,11 +36,11 @@ pnpm install
 ## 2) Log in to Cloudflare (once)
 
 ```bash
-pnpm alchemy login                # answer yes to "Customize OAuth scopes?" and enable access:write
-pnpm alchemy cloudflare bootstrap # deploys alchemy's state-store Worker to your account
+pnpm alchemy login deploy/alchemy/alchemy.run.ts # answer yes to "Customize OAuth scopes?" and enable access:write
+pnpm alchemy cloudflare bootstrap                # deploys alchemy's state-store Worker to your account
 ```
 
-Already logged in from before without the `access:write` scope? Run `pnpm alchemy login --configure` — a plain repeat login doesn't re-ask about scopes.
+`login` needs the stack entry point (`deploy/alchemy/alchemy.run.ts`); without it alchemy looks for a root `alchemy.run.ts` and fails. Already logged in from before without the `access:write` scope? Run `pnpm alchemy login deploy/alchemy/alchemy.run.ts --configure` — a plain repeat login doesn't re-ask about scopes.
 
 ## 3) Create `.env.selfhost`
 
@@ -67,6 +67,19 @@ To manage the Access application yourself instead, set `TEAM_DOMAIN` (`https://y
 3. OpenSEO should load after login.
 
 If it doesn't, see Troubleshooting below.
+
+## Custom domain (optional)
+
+Set `CUSTOM_DOMAIN=openseo.example.com` in `.env.selfhost` and redeploy. The
+domain's zone must already be in the same Cloudflare account. The Worker is
+served on that hostname, and the Cloudflare Access application is extended to
+protect it, so the same allow-list applies to both the custom domain and the
+`*.workers.dev` hostname. For Google Search Console or Analytics, register the
+custom domain's callback URLs on the Google OAuth client:
+`https://<domain>/api/gsc/oauth/callback` and
+`https://<domain>/api/ga4/oauth/callback`. For Bing Webmaster OAuth, register
+`https://<domain>/api/bing/oauth/callback` on the Bing OAuth client (one URI
+per client) — see `docs/SELF_HOSTING_BING_WEBMASTER.md`.
 
 ## Updating to the latest OpenSEO version
 
