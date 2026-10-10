@@ -14,6 +14,11 @@ import {
   type ConfigurationRows,
 } from "@/server/features/ai-visibility/repositories/aiVisibilityConfigurationRepository";
 
+// workerd's SQLite (D1, including local D1 in the Docker image) caps compound
+// SELECTs at 5 terms (SQLITE_LIMIT_COMPOUND_SELECT), and each competitor row
+// below is one `union all` term.
+const COMPETITOR_INSERT_CHUNK_SIZE = 5;
+
 export async function saveWebsiteSetup(
   organizationId: string,
   input: SaveProjectWebsiteSetup,
@@ -53,7 +58,7 @@ export async function saveWebsiteSetup(
         updatedAt,
       })
       .onConflictDoNothing(),
-    ...chunk(competitors, 10).map((rows) =>
+    ...chunk(competitors, COMPETITOR_INSERT_CHUNK_SIZE).map((rows) =>
       tx
         .insert(projectCompetitors)
         .select(
