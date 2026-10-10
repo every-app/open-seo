@@ -69,6 +69,11 @@ function createAuthenticatedFetch(
     const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Basic ${apiKey}`);
+    // Ask for gzip explicitly: standalone workerd (the Docker image) sends no
+    // Accept-Encoding, so DataForSEO answers uncompressed (~9.9MB vs ~0.6MB for
+    // the US location list) and slow links hit the 60s timeout. The runtime
+    // decodes the gzip body transparently.
+    if (!headers.has("Accept-Encoding")) headers.set("Accept-Encoding", "gzip");
     // Resolve the signal once so retries share the overall request timeout
     // rather than restarting a fresh 60s budget on each attempt.
     const signal =
