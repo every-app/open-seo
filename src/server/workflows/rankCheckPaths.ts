@@ -20,6 +20,20 @@ const SINGLE_ATTEMPT_STEP_CONFIG = {
   timeout: "2 minutes" as const,
 };
 
+// Fork: how long checkBatchLive waits before each further attempt at a live
+// call DataForSEO failed on its own side. Two entries is two retries.
+const LIVE_RETRY_BACKOFFS_MS = [5_000, 10_000];
+
+// Fork: a live batch is still a single attempt at the step level (the calls
+// are metered), but it can now run three rounds of them. Each round is capped
+// by the client's 60s request timeout, so the worst case is 3 x 60s plus 15s
+// of backoff. Past its timeout a step throws and the run skips every batch
+// after it, so these steps get room SINGLE_ATTEMPT_STEP_CONFIG does not give.
+const LIVE_BATCH_STEP_CONFIG = {
+  retries: { limit: 0, delay: "1 second" as const },
+  timeout: "5 minutes" as const,
+};
+
 type KeywordEntry = { id: string; keyword: string };
 type RankCheckResultWithDevice = RankCheckResult & {
   device: "desktop" | "mobile";
@@ -76,68 +90,112 @@ function expandToTaskInputs(
 // ---------------------------------------------------------------------------
 
 /**
+ * DataForSEO's search engine erroring on its own side (40101) often clears
+ * within seconds, so the call is worth another try. A timeout is not: it
+ * already spent the whole request budget, and it may have been billed without
+ * our seeing the cost.
+ */
+function isRetryableProviderFailure(reason: unknown): boolean {
+  return (
+    reason instanceof AppError &&
+    reason.code === "UPSTREAM_UNAVAILABLE" &&
+    reason.name !== "DataForSEOTimeoutError"
+  );
+}
+
+/**
  * Check keyword/device pairs against the live endpoint and persist snapshots.
- * The batch is billed with one credit hold and one settle. Per-call failures
- * are logged and skipped; if the hold itself fails, no call runs and every
- * pair fails with that error. Returns the snapshot count written.
+ * Each round of calls is billed with one credit hold and one settle. A pair
+ * DataForSEO fails on its own side goes into the next round (see
+ * LIVE_RETRY_BACKOFFS_MS); DataForSEO bills those failures, so every attempt
+ * is paid for. Other per-call failures are logged and skipped. If the hold
+ * itself fails, no call runs and every pair in the round fails with that
+ * error. Returns the snapshot count written.
  */
 async function checkBatchLive(
   ctx: CheckContext,
   tasks: RankCheckTaskInput[],
 ): Promise<number> {
-  let settled: PromiseSettledResult<RankCheckResult>[];
-  try {
-    settled = await ctx.client.serp.rankCheckBatch(
-      tasks.map((task) => ({
-        keyword: task.keyword,
-        keywordId: task.keywordId,
-        locationCode: ctx.locationCode,
-        languageCode: ctx.languageCode,
-        locationName: ctx.locationName,
-        device: task.device,
-        targetDomain: ctx.domain,
-        depth: ctx.serpDepth,
-      })),
-    );
-  } catch (error) {
-    settled = tasks.map(() => ({ status: "rejected", reason: error }));
-  }
-  const results: RankCheckResultWithDevice[] = [];
+  let written = 0;
   let firstError: string | null = null;
-  settled.forEach((outcome, index) => {
-    if (outcome.status === "fulfilled") {
-      results.push({ ...outcome.value, device: tasks[index].device });
-      return;
+  let pending = tasks;
+  for (let attempt = 0; pending.length > 0; attempt++) {
+    const round = pending;
+    if (attempt > 0) {
+      const backoffMs = LIVE_RETRY_BACKOFFS_MS[attempt - 1];
+      console.warn(
+        `[rank-check] ${ctx.runId} retrying ${round.length} live call(s) in ${backoffMs / 1000}s (retry ${attempt} of ${LIVE_RETRY_BACKOFFS_MS.length})`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
-    const reason: unknown = outcome.reason;
-    const code = reason instanceof AppError ? reason.code : "UNKNOWN";
-    const message = reason instanceof Error ? reason.message : String(reason);
-    firstError ??= message;
-    // DataForSEO erring on its own side is a provider flake, not our bug: the
-    // keyword just misses this run and finalize reports it to the user. Every
-    // other rejection (no credits, bad API key) is ours and stays at error.
-    const log = code === "UPSTREAM_UNAVAILABLE" ? console.warn : console.error;
-    const task = tasks[index];
-    log(
-      `[rank-check] ${ctx.runId} live call failed (${code}) keyword="${task.keyword}" device=${task.device}: ${message}`,
-    );
-  });
+
+    let settled: PromiseSettledResult<RankCheckResult>[];
+    let callsRan = true;
+    try {
+      settled = await ctx.client.serp.rankCheckBatch(
+        round.map((task) => ({
+          keyword: task.keyword,
+          keywordId: task.keywordId,
+          locationCode: ctx.locationCode,
+          languageCode: ctx.languageCode,
+          locationName: ctx.locationName,
+          device: task.device,
+          targetDomain: ctx.domain,
+          depth: ctx.serpDepth,
+        })),
+      );
+    } catch (error) {
+      callsRan = false;
+      settled = round.map(() => ({ status: "rejected", reason: error }));
+    }
+    const canRetry = callsRan && attempt < LIVE_RETRY_BACKOFFS_MS.length;
+
+    const results: RankCheckResultWithDevice[] = [];
+    const retry: RankCheckTaskInput[] = [];
+    settled.forEach((outcome, index) => {
+      const task = round[index];
+      if (outcome.status === "fulfilled") {
+        results.push({ ...outcome.value, device: task.device });
+        return;
+      }
+      const reason: unknown = outcome.reason;
+      if (canRetry && isRetryableProviderFailure(reason)) {
+        retry.push(task);
+        return;
+      }
+      const code = reason instanceof AppError ? reason.code : "UNKNOWN";
+      const message = reason instanceof Error ? reason.message : String(reason);
+      firstError ??= message;
+      // DataForSEO erring on its own side is a provider flake, not our bug: the
+      // keyword just misses this run and finalize reports it to the user. Every
+      // other rejection (no credits, bad API key) is ours and stays at error.
+      const log =
+        code === "UPSTREAM_UNAVAILABLE" ? console.warn : console.error;
+      log(
+        `[rank-check] ${ctx.runId} live call failed (${code}) keyword="${task.keyword}" device=${task.device}: ${message}`,
+      );
+    });
+    // Written per round, so a later round can only add to what the run has.
+    if (results.length > 0) {
+      await RankTrackingRepository.insertSnapshots(
+        mapResultsToSnapshotRows(ctx.runId, results),
+      );
+      written += results.length;
+    }
+    pending = retry;
+  }
   if (firstError) {
     await RankTrackingRepository.setRunErrorIfEmpty(ctx.runId, firstError);
   }
-  if (results.length > 0) {
-    await RankTrackingRepository.insertSnapshots(
-      mapResultsToSnapshotRows(ctx.runId, results),
-    );
-  }
-  return results.length;
+  return written;
 }
 
 /**
  * Check keywords via Live API, parallel devices per keyword, real-time progress.
  * Snapshots are written incrementally after each batch so partial results
- * survive batch failures. ~6s per keyword batch.
- * Each batch is billed with one credit hold and one settle (checkBatchLive).
+ * survive batch failures. ~6s per keyword batch, longer when calls are retried.
+ * Each round of a batch's calls is billed with one credit hold and one settle
+ * (checkBatchLive).
  */
 export async function runLiveCheck(
   step: WorkflowStep,
@@ -152,7 +210,7 @@ export async function runLiveCheck(
     await pgStep(
       step,
       `live-batch-${batchIndex}`,
-      SINGLE_ATTEMPT_STEP_CONFIG,
+      LIVE_BATCH_STEP_CONFIG,
       async () => {
         const written = await checkBatchLive(ctx, batchTasks);
         // Progress for the UI; finalize recounts from the DB anyway.
@@ -401,7 +459,7 @@ export async function runQueuedCheck(
     stats.fallbackChecked += await pgStep(
       step,
       `fallback-batch-${batchIndex}`,
-      SINGLE_ATTEMPT_STEP_CONFIG,
+      LIVE_BATCH_STEP_CONFIG,
       () => checkBatchLive(ctx, batch),
     );
   }
