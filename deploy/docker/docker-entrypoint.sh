@@ -7,6 +7,14 @@
 # rebuilds.
 set -e
 
+# Fork: Railway sets RAILWAY_GIT_COMMIT_MESSAGE to the deployed commit's whole
+# message. With CLOUDFLARE_INCLUDE_PROCESS_ENV the build below writes every
+# process env var to dist/.dev.vars and aborts on a value it cannot quote: one
+# holding an apostrophe, a backtick and a newline, which an ordinary multi-line
+# commit message does. A failed build here is a container that never starts,
+# so drop the variable. Nothing reads it.
+unset RAILWAY_GIT_COMMIT_MESSAGE
+
 echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER.md#telemetry'
 
 # The preflight validates env BEFORE the slow steps, so misconfiguration fails
