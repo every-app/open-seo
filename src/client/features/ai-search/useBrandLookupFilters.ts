@@ -19,11 +19,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function loadFromStorage<T extends FilterValues>(tab: string, fallback: T): T {
+function storageKey(projectId: string, tab: string) {
+  return `${STORAGE_KEY_PREFIX}${projectId}:${tab}`;
+}
+
+function loadFromStorage<T extends FilterValues>(
+  storageItem: string,
+  fallback: T,
+): T {
   const fallbackClone = { ...fallback };
 
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${tab}`);
+    const raw = localStorage.getItem(storageItem);
     if (!raw) return fallbackClone;
 
     const parsed: unknown = JSON.parse(raw);
@@ -43,24 +50,24 @@ function loadFromStorage<T extends FilterValues>(tab: string, fallback: T): T {
   }
 }
 
-function saveToStorage(tab: string, values: FilterValues) {
+function saveToStorage(key: string, values: FilterValues) {
   try {
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${tab}`, JSON.stringify(values));
+    localStorage.setItem(key, JSON.stringify(values));
   } catch {
     // storage full - silently ignore
   }
 }
 
-function useTabFilters<T extends FilterValues>(tab: string, emptyValues: T) {
+function useTabFilters<T extends FilterValues>(key: string, emptyValues: T) {
   const [defaultValues] = useState<T>(() =>
-    loadFromStorage(tab, { ...emptyValues }),
+    loadFromStorage(key, { ...emptyValues }),
   );
   const form = useForm({ defaultValues });
   const values = useStore(form.store, (state) => state.values);
 
   useEffect(() => {
-    saveToStorage(tab, values);
-  }, [tab, values]);
+    saveToStorage(key, values);
+  }, [key, values]);
 
   const reset = useCallback(() => {
     form.reset({ ...emptyValues }, { keepDefaultValues: true });
@@ -74,15 +81,15 @@ function useTabFilters<T extends FilterValues>(tab: string, emptyValues: T) {
   };
 }
 
-export function useBrandLookupFilters() {
+export function useBrandLookupFilters(projectId: string) {
   const [showFilters, setShowFilters] = useState(false);
 
   const pages = useTabFilters<TopPagesFilterValues>(
-    "pages",
+    storageKey(projectId, "pages"),
     EMPTY_TOP_PAGES_FILTERS,
   );
   const queries = useTabFilters<QueriesFilterValues>(
-    "queries",
+    storageKey(projectId, "queries"),
     EMPTY_QUERIES_FILTERS,
   );
 

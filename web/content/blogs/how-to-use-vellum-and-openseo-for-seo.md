@@ -1,7 +1,7 @@
 ---
 title: "How to Use Vellum and OpenSEO for Your SEO Engine"
 description: "Use Vellum and OpenSEO for keyword research, competitor analysis, live search results, and rank tracking in your content workflow."
-author: "OpenSEO Team"
+author: "Ben Senescu"
 date: "2026-09-10"
 ---
 

@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { safeHttpUrl } from "@/shared/safe-url";
 
 export function formatUrlForDisplay(value: string): string {
   try {
@@ -21,10 +22,10 @@ export function resolveUrlHref(
 ): string | null {
   if (!value) return null;
   if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value)) {
-    return getSafeExternalUrl(value);
+    return safeHttpUrl(value);
   }
   if (!baseDomain) return null;
-  return getSafeExternalUrl(
+  return safeHttpUrl(
     `https://${baseDomain}${value.startsWith("/") ? value : `/${value}`}`,
   );
 }
@@ -33,53 +34,25 @@ export function ExternalUrlCell({
   value,
   label,
   baseDomain,
-  className = "link link-primary inline-flex items-center gap-1",
-  display = "formatted",
-  empty = "-",
 }: {
   value: string | null | undefined;
-  label?: string | null;
+  label: string;
   baseDomain?: string;
-  className?: string;
-  display?: "formatted" | "path" | "raw";
-  empty?: string;
 }) {
   const href = resolveUrlHref(value, baseDomain);
   if (!value || !href) {
-    return <span className="text-base-content/40">{empty}</span>;
+    return <span className="text-muted-foreground">-</span>;
   }
 
-  const visibleLabel = label ?? getUrlDisplayLabel(value, display);
   return (
-    <a className={className} href={href} target="_blank" rel="noreferrer">
-      <span className="truncate">{visibleLabel}</span>
+    <a
+      className="inline-flex max-w-full items-center gap-1 text-primary underline-offset-4 hover:underline"
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+    >
+      <span className="truncate">{label}</span>
       <ExternalLink className="size-3 shrink-0" />
     </a>
   );
-}
-
-function getUrlDisplayLabel(
-  value: string,
-  display: "formatted" | "path" | "raw",
-) {
-  if (display === "raw") return value;
-  if (display === "path") {
-    try {
-      return new URL(value).pathname;
-    } catch {
-      return value;
-    }
-  }
-  return formatUrlForDisplay(value);
-}
-
-export function getSafeExternalUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:"
-      ? parsed.toString()
-      : null;
-  } catch {
-    return null;
-  }
 }

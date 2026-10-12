@@ -8,7 +8,10 @@ import {
   projectActivationState,
 } from "@/db/schema";
 
-import type { DashboardSetupStep } from "@/types/schemas/dashboard";
+import type {
+  DashboardClickStep,
+  DashboardSetupStep,
+} from "@/types/schemas/dashboard";
 
 type OrganizationActivationState =
   typeof organizationActivationState.$inferSelect;
@@ -66,15 +69,24 @@ async function recordFirstMcpToolCall(organizationId: string): Promise<void> {
     });
 }
 
-async function markCompetitorStepClicked(projectId: string): Promise<void> {
+const clickStepColumns = {
+  competitor: "competitorStepClickedAt",
+  keywords: "keywordStepClickedAt",
+} as const satisfies Record<DashboardClickStep, keyof ProjectActivationState>;
+
+async function markStepClicked(
+  projectId: string,
+  step: DashboardClickStep,
+): Promise<void> {
   const now = new Date().toISOString();
+  const key = clickStepColumns[step];
   await db
     .insert(projectActivationState)
-    .values({ projectId, competitorStepClickedAt: now, updatedAt: now })
+    .values({ projectId, [key]: now, updatedAt: now })
     .onConflictDoUpdate({
       target: projectActivationState.projectId,
       set: {
-        competitorStepClickedAt: sql`coalesce(${projectActivationState.competitorStepClickedAt}, ${now})`,
+        [key]: sql`coalesce(${projectActivationState[key]}, ${now})`,
         updatedAt: now,
       },
     });
@@ -167,6 +179,6 @@ export const ActivationRepository = {
   getProjectActivation,
   recordFirstMcpAuthorized,
   recordFirstMcpToolCall,
-  markCompetitorStepClicked,
+  markStepClicked,
   markGa4CardDismissed,
 };

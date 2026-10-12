@@ -9,7 +9,7 @@ import type {
   LlmMentionItem,
   LlmTopPagesItem,
 } from "@/server/lib/dataforseoLlmSchemas";
-import { safeHostname, safeHttpUrl } from "@/server/features/ai-search/safeUrl";
+import { safeHostname, safeHttpUrl } from "@/shared/safe-url";
 import { deriveCitedSources } from "@/server/features/ai-search/services/citedSources";
 import {
   computeShareOfVoice,

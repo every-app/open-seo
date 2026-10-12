@@ -14,7 +14,9 @@ export async function getGoogleOAuthClientConfig(): Promise<GoogleOAuthClientCon
   return clientId && clientSecret ? { clientId, clientSecret } : null;
 }
 
-export async function hasSelfHostedGoogleOAuthConfig(
+/** Search Console and Analytics need a Google OAuth client plus the secret
+ *  that encrypts stored tokens. Hosted deployments always have both. */
+export async function hasGoogleOAuthConfig(
   config?: GoogleOAuthClientConfig | null,
 ): Promise<boolean> {
   const oauthConfig =

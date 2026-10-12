@@ -3,14 +3,16 @@ const OAUTH_SIGNED_QUERY_END = "sig";
 const OAUTH_AUTHORIZE_MARKERS = ["response_type", "client_id", "redirect_uri"];
 
 export function normalizeAuthRedirect(value: string | null | undefined) {
-  // Backslashes are rejected because URL parsers treat them as slashes:
-  // "/\evil.com" resolves cross-origin, an open redirect via
+  // Backslashes are rejected because URL parsers treat them as slashes, and
+  // tabs and newlines because URL parsers strip them: "/\evil.com" and
+  // "/\t/evil.com" both resolve cross-origin, an open redirect via
   // window.location sinks.
   if (
     !value ||
     !value.startsWith("/") ||
     value.startsWith("//") ||
-    value.includes("\\")
+    value.includes("\\") ||
+    /[\t\n\r]/.test(value)
   ) {
     return "/";
   }
@@ -41,7 +43,7 @@ export function getOAuthSignedQuery(search: string | null | undefined) {
   return signedParams.toString();
 }
 
-export function getOAuthAuthorizeRedirectFromSearch(
+function getOAuthAuthorizeRedirectFromSearch(
   search: string | null | undefined,
 ) {
   const signedQuery = getOAuthSignedQuery(search);
@@ -82,6 +84,17 @@ export function getCurrentAuthRedirectFromHref(href: string) {
 export function isDocumentRoute(redirectTo: string) {
   // Both member reports and public shares are served by document handlers.
   return redirectTo.startsWith("/r/") || redirectTo.startsWith("/s/");
+}
+
+/**
+ * Better Auth only accepts a relative callbackURL made of a narrow character
+ * set, so a redirect like an MCP authorize URL (`redirect_uri=http://...`) or
+ * one with a `#hash` fails as "Invalid callbackURL". An absolute same-origin
+ * URL is checked against trustedOrigins by origin alone. Reads `window`, so
+ * call it from event handlers, not during render.
+ */
+export function toAuthCallbackURL(redirectTo: string) {
+  return new URL(redirectTo, window.location.origin).toString();
 }
 
 export function getSignInSearch(redirectTo: string) {

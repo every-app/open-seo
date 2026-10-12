@@ -34,6 +34,16 @@
   --color-fd-ring: hsl(0, 0%, 63.9%);
 }
 
+/* The same toggle sets `color-scheme: dark` inline on <html>, and html/body keep the
+   dark --color-fd-background under the light surface. Browsers pick scrollbar colors
+   from those (macOS overlay scrollbars go by the root background), so the pale
+   dark-mode scrollbar all but disappears on these light pages. `!important` is needed
+   to beat the inline style. */
+html:has(.fd-light) {
+  color-scheme: light !important;
+  background: var(--color-surface);
+}
+
 /* Syntax highlighting is separate from the tokens above: fumadocs-ui/css/shiki.css
    flips code to `var(--shiki-dark)` with `.dark .shiki:not(.not-fumadocs-codeblock *)
    { code span { ... } }`, which leaves dark-theme text on a light block here. Re-pin

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { SocialLinks } from "@/components/social-links";
 import { featureGroups } from "@/lib/feature-pages";
 import { freeToolList } from "@/lib/free-tools/tool-pages";
 
@@ -29,13 +30,26 @@ export function SiteFooter({ className }: { className?: string }) {
           </div>
         </div>
 
-        <div>
-          <p className="font-semibold text-neutral-900">AI agents</p>
-          <div className="mt-2 flex flex-col gap-1.5">
-            <Link to="/features/mcp">OpenSEO MCP</Link>
-            <Link to="/google-search-console-mcp">
-              Google Search Console MCP
-            </Link>
+        <div className="flex flex-col gap-8">
+          <div>
+            <p className="font-semibold text-neutral-900">AI agents</p>
+            <div className="mt-2 flex flex-col gap-1.5">
+              <Link to="/features/mcp">OpenSEO MCP</Link>
+              <Link to="/google-search-console-mcp">
+                Google Search Console MCP
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <p className="font-semibold text-neutral-900">Compare</p>
+            <div className="mt-2 flex flex-col gap-1.5">
+              <Link to="/openseo-vs-dataforseo">OpenSEO vs DataForSEO</Link>
+              <Link to="/semrush-alternative">Semrush alternative</Link>
+              <Link to="/semrush-pricing">Semrush pricing</Link>
+              <Link to="/ahrefs-alternative">Ahrefs alternative</Link>
+              <Link to="/ahrefs-pricing">Ahrefs pricing</Link>
+            </div>
           </div>
         </div>
 
@@ -92,6 +106,19 @@ export function SiteFooter({ className }: { className?: string }) {
             <Link to="/terms-and-conditions">Terms</Link>
           </div>
         </div>
+      </div>
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+        <a
+          href="https://www.ycombinator.com/companies/openseo"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center gap-2.5 rounded-md border border-neutral-300 bg-white/60 px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff6600]"
+        >
+          <img src="/y-combinator.svg" alt="" width={24} height={24} />
+          <span>Backed by Y Combinator</span>
+        </a>
+        <SocialLinks />
       </div>
     </div>
   );

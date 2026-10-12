@@ -1,7 +1,6 @@
 import { createAuthClient } from "better-auth/react";
 import { apiKeyClient } from "@better-auth/api-key/client";
 import {
-  genericOAuthClient,
   inferAdditionalFields,
   organizationClient,
 } from "better-auth/client/plugins";
@@ -18,7 +17,6 @@ export const authClient = createAuthClient({
     // synchronous checkRolePermission evaluates against the defaults and
     // disagrees with the server.
     organizationClient({ ac: orgAccessControl, roles: orgRoles }),
-    genericOAuthClient(),
     inferAdditionalFields({ user: userAdditionalFields }),
   ],
 });

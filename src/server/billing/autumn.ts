@@ -11,6 +11,11 @@ function loadAutumn(): Promise<Autumn> {
     ({ Autumn }) =>
       new Autumn({
         secretKey: () => getRequiredEnvValue("AUTUMN_SECRET_KEY"),
+        // Without this client-wide value the SDK aborts check/track after
+        // 5s; a per-call timeoutMs cannot raise it. A timed-out call fails
+        // open: track then never charges the usage, and check returns no
+        // balance.
+        timeoutMs: 10_000,
         // Retries 429/500/502/503/504 (per-operation retryCodes) plus
         // connection errors. Cloudflare 52x statuses are not in the SDK's
         // retry list, so those still surface immediately.
@@ -49,11 +54,31 @@ export const autumn = {
     get: (...args: Parameters<Autumn["customers"]["get"]>) =>
       loadAutumn().then((client) => client.customers.get(...args)),
   },
+  balances: {
+    // Confirms or releases a hold taken by `check({ lock })`. Not in the
+    // SDK's fail-open set, so a lost deduction surfaces as an error.
+    finalize: (...args: Parameters<Autumn["balances"]["finalize"]>) =>
+      loadAutumn().then((client) => client.balances.finalize(...args)),
+  },
+  billing: {
+    attach: (...args: Parameters<Autumn["billing"]["attach"]>) =>
+      loadAutumn().then((client) => client.billing.attach(...args)),
+    openCustomerPortal: (
+      ...args: Parameters<Autumn["billing"]["openCustomerPortal"]>
+    ) =>
+      loadAutumn().then((client) => client.billing.openCustomerPortal(...args)),
+  },
 };
 
 // track() has no idempotency key, so replaying a deduction Autumn already
 // processed (5xx after a successful write, dropped connection) would
 // double-charge. Retry only 429s, which are rejected before processing.
+// Lock checks and balances.finalize() use the same options: a replayed lock
+// check surfaces 409 lock_already_exists, and a replayed finalize surfaces
+// "Lock not found", on the caller's first attempt, where neither can be told
+// apart from a real failure. None sets a per-call timeoutMs, so all get the
+// client-wide 10s; finalize does not fail open, so a shorter deadline would
+// drop deductions that Autumn completes in 5-10s.
 export const AUTUMN_TRACK_RETRY_OPTIONS: Parameters<Autumn["track"]>[1] = {
   retryCodes: ["429"],
   retries: {

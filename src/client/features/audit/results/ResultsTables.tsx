@@ -1,15 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   createColumnHelper,
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
-import {
-  AppDataTable,
-  useAppTable,
-} from "@/client/components/table/AppDataTable";
-import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { DataTable, useDataTable } from "@/client/components/table/DataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import {
   extractPathname,
@@ -18,9 +16,8 @@ import {
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import {
   countActiveFilters,
-  EmptyTableMessage,
   PerformanceFilterBar,
-  TableFilterToggle,
+  ResultsTableToolbar,
 } from "@/client/features/audit/results/AuditResultsTableFilters";
 import {
   EMPTY_PERFORMANCE_FILTERS,
@@ -39,11 +36,13 @@ export function PerformanceTable({
   projectId,
   lighthouse,
   pages,
+  tabs,
 }: {
   auditId: string;
   projectId: string;
   lighthouse: AuditResultsData["lighthouse"];
   pages: AuditResultsData["pages"];
+  tabs: ReactNode;
 }) {
   const [filters, setFilters] = useState<PerformanceFilters>(
     EMPTY_PERFORMANCE_FILTERS,
@@ -77,7 +76,7 @@ export function PerformanceTable({
     () => buildPerformanceColumns({ auditId, projectId }),
     [auditId, projectId],
   );
-  const table = useAppTable({
+  const table = useDataTable({
     data: filteredRows,
     columns,
     state: { sorting },
@@ -85,31 +84,35 @@ export function PerformanceTable({
     withSorting: true,
   });
 
+  const resetFilters = () => setFilters(EMPTY_PERFORMANCE_FILTERS);
+
   return (
-    <div className="space-y-3">
-      <TableFilterToggle
-        showFilters={showFilters}
-        onToggle={() => setShowFilters((current) => !current)}
-        activeFilterCount={activeFilterCount}
-        resultCount={filteredRows.length}
-        totalCount={rows.length}
-      />
-      {showFilters ? (
-        <PerformanceFilterBar
-          filters={filters}
-          onChange={setFilters}
-          activeFilterCount={activeFilterCount}
-          onReset={() => setFilters(EMPTY_PERFORMANCE_FILTERS)}
-        />
-      ) : null}
-      <AppDataTable
-        table={table}
-        className="table table-sm"
-        empty={
-          <EmptyTableMessage label="No performance results match these filters." />
-        }
-      />
-    </div>
+    <DataTable
+      table={table}
+      empty={{ title: "No Lighthouse results" }}
+      isFiltered={activeFilterCount > 0}
+      onClearFilters={resetFilters}
+      toolbar={
+        <>
+          {tabs}
+          <ResultsTableToolbar
+            showFilters={showFilters}
+            onToggle={() => setShowFilters((current) => !current)}
+            activeFilterCount={activeFilterCount}
+            resultCount={filteredRows.length}
+            totalCount={rows.length}
+          />
+          {showFilters ? (
+            <PerformanceFilterBar
+              filters={filters}
+              onChange={setFilters}
+              activeFilterCount={activeFilterCount}
+              onReset={resetFilters}
+            />
+          ) : null}
+        </>
+      }
+    />
   );
 }
 
@@ -143,14 +146,11 @@ function buildPerformanceColumns({
         const failureMessage =
           row.original.errorMessage ?? "Lighthouse returned no category scores";
         return isFailed ? (
-          <span
-            className="badge badge-error badge-outline text-xs"
-            title={failureMessage}
-          >
+          <Badge variant="destructive" title={failureMessage}>
             failed
-          </span>
+          </Badge>
         ) : (
-          <span className="badge badge-success badge-outline text-xs">ok</span>
+          <Badge variant="success">ok</Badge>
         );
       },
       enableSorting: true,
@@ -180,7 +180,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{(value / 1000).toFixed(1)}s</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -192,7 +192,7 @@ function buildPerformanceColumns({
         return value != null ? (
           <span className="text-xs">{value.toFixed(3)}</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -204,7 +204,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{Math.round(value)}ms</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -216,7 +216,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{Math.round(value)}ms</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -226,35 +226,22 @@ function buildPerformanceColumns({
       header: () => "Issues",
       cell: ({ row }) =>
         row.original.r2Key && !isLighthouseFailure(row.original) ? (
-          <Link
-            className="btn btn-primary btn-xs"
-            to="/p/$projectId/audit/issues/$resultId"
-            params={{ projectId, resultId: row.original.id }}
-            search={{ auditId, category: "performance" }}
+          <Button
+            size="xs"
+            nativeButton={false}
+            render={
+              <Link
+                to="/p/$projectId/audit/issues/$resultId"
+                params={{ projectId, resultId: row.original.id }}
+                search={{ auditId, category: "performance" }}
+              />
+            }
           >
             View issues
-          </Link>
+          </Button>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         ),
     }),
   ];
-}
-
-export function ExportDropdown({
-  onExport,
-}: {
-  onExport: (format: "csv" | "json" | "sheets") => void;
-}) {
-  return (
-    <TableExportMenu
-      buttonClassName="btn btn-sm btn-ghost gap-1"
-      menuClassName="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
-      actions={[
-        { label: "Export to Sheets", onClick: () => onExport("sheets") },
-        { label: "CSV", onClick: () => onExport("csv") },
-        { label: "JSON", onClick: () => onExport("json") },
-      ]}
-    />
-  );
 }

@@ -94,3 +94,9 @@ overrides:
   mysql2: "^3.23.1"
   "nanoid@3": "^3.3.18"
   "toml@4": "^4.2.0"
+
+# Cloudflare echoes targeted placement back as `{ mode: "targeted" }` without
+# `region`; 0.28.2's response schema requires it, so alchemy fails a deploy
+# that actually succeeded. Fixed upstream in 1.0.0-rc; drop on upgrade.
+patchedDependencies:
+  "@distilled.cloud/cloudflare@0.28.2": patches/@distilled.cloud__cloudflare@0.28.2.patch

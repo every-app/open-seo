@@ -11,12 +11,6 @@ const brandLookupSearchBodySchema = z.object({
   scope: researchScopeSchema.optional(),
 });
 
-type BrandLookupSearchBody = z.infer<typeof brandLookupSearchBodySchema>;
-
-export type BrandLookupSearchHistoryItem = BrandLookupSearchBody & {
-  timestamp: number;
-};
-
 export function useBrandLookupSearchHistory(projectId: string) {
   return useTimestampedSearchHistory({
     storageKey: `brand-lookup-search-history:${projectId}`,

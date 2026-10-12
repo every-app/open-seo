@@ -1,9 +1,8 @@
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseo";
-import {
-  normalizeBacklinksSpamFilterOptions,
-  type BacklinksLookupInput,
-  type BacklinksSpamFilterOptions,
+import type {
+  BacklinksLookupInput,
+  BacklinksSpamFilterOptions,
 } from "@/types/schemas/backlinks";
 import {
   profileBacklinksOverview,
@@ -45,7 +44,7 @@ function createBacklinksService(cache: BacklinksCache = defaultCache) {
       // results stay shared across callers.
       creditFeature?: CreditFeature,
     ) {
-      const cacheKey = await buildCacheKey("backlinks:overview", {
+      const cacheKey = await buildCacheKey("backlinks:overview:v2", {
         ...buildTargetCacheInput(input, billingCustomer),
       });
 
@@ -63,7 +62,7 @@ function createBacklinksService(cache: BacklinksCache = defaultCache) {
       options?: BacklinksSpamFilterOptions,
     ) {
       const cacheKey = await buildPageCacheKey(
-        "backlinks:rows-page",
+        "backlinks:rows-page:v2",
         input,
         billingCustomer,
         options,
@@ -139,8 +138,6 @@ async function buildPageCacheKey(
   billingCustomer: BillingCustomerContext,
   options?: BacklinksSpamFilterOptions,
 ): Promise<string> {
-  const spamFilterOptions = normalizeBacklinksSpamFilterOptions(options);
-
   return buildCacheKey(prefix, {
     ...buildTargetCacheInput(input, billingCustomer),
     page: input.page,
@@ -149,10 +146,7 @@ async function buildPageCacheKey(
     sortOrder: input.sortOrder,
     filters: input.filters,
     ...(input.mode ? { mode: input.mode } : {}),
-    hideSpam: String(spamFilterOptions.hideSpam),
-    ...(spamFilterOptions.hideSpam
-      ? { spamThreshold: String(spamFilterOptions.spamThreshold) }
-      : {}),
+    hideSpam: String(options?.hideSpam ?? true),
   });
 }
 

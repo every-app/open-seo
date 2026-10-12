@@ -1,46 +1,21 @@
-import type { ReactNode } from "react";
-import { useCustomer } from "autumn-js/react";
-import { useSession } from "@/lib/auth-client";
+import { useQuery } from "@tanstack/react-query";
+import { billingAccountQueryOptions } from "@/client/features/billing/billingAccountQuery";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
-import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
+import type { PlanStatus } from "@/shared/billing";
 
-export type HostedPlanGateState = {
-  isLoading: boolean;
-  isFreePlan: boolean;
-};
-
-const SELF_HOSTED_PLAN_GATE: HostedPlanGateState = {
-  isLoading: false,
-  isFreePlan: false,
-};
-
-export function HostedPlanGate({
-  children,
-}: {
-  children: (state: HostedPlanGateState) => ReactNode;
-}) {
-  if (!isHostedClientAuthMode()) {
-    return children(SELF_HOSTED_PLAN_GATE);
-  }
-
-  return <HostedPlanGateContent>{children}</HostedPlanGateContent>;
-}
-
-function HostedPlanGateContent({
-  children,
-}: {
-  children: (state: HostedPlanGateState) => ReactNode;
-}) {
-  const { data: session, isPending: isSessionPending } = useSession();
-  const hasSession = Boolean(session?.user?.id);
-  const customerQuery = useCustomer({
-    queryOptions: { enabled: hasSession },
+// The single client-side plan gate. It is a UX layer only: the server enforces
+// every paid-plan limit before it spends anything.
+export function useHostedPlanGate(): "loading" | PlanStatus {
+  // Self-hosted has no Autumn customer and resolves to the paid tier on the
+  // server, so only hosted mode looks up the plan.
+  const isHostedMode = isHostedClientAuthMode();
+  const accountQuery = useQuery({
+    ...billingAccountQueryOptions(),
+    enabled: isHostedMode,
   });
 
-  return children({
-    isLoading: isSessionPending || !hasSession || customerQuery.isLoading,
-    isFreePlan:
-      !!customerQuery.data &&
-      getCustomerPlanStatus(customerQuery.data) === "free",
-  });
+  if (!isHostedMode) return "paid";
+  if (accountQuery.isPending) return "loading";
+  // Fails closed: an account that failed to load resolves to "free".
+  return accountQuery.data?.planStatus ?? "free";
 }

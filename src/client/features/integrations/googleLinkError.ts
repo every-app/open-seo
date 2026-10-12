@@ -1,13 +1,8 @@
 import { captureClientEvent } from "@/client/lib/posthog";
-
-/**
- * Marker appended to the errorCallbackURL so a failed Google link redirect can
- * be told apart from any other `error` query param. Its value is the provider
- * key ("gsc" | "ga4" | "gads").
- */
-export const GOOGLE_LINK_ERROR_PARAM = "google_link_error";
-
-export type GoogleLinkProvider = "gsc" | "ga4" | "gads";
+import {
+  GOOGLE_LINK_ERROR_PARAM,
+  type GoogleLinkProvider,
+} from "@/shared/google-link";
 
 type CapturedLinkError = {
   provider: GoogleLinkProvider;
@@ -30,21 +25,9 @@ function captureLinkErrorFromLocation(): CapturedLinkError | null {
   if (provider !== "gsc" && provider !== "ga4" && provider !== "gads") {
     return null;
   }
-  // OAuth can append &error= after an existing #connect-gsc anchor.
-  // Retain the anchor so the dashboard can reopen the connection step.
-  const [anchor, ...fragmentParts] = url.hash.slice(1).split("&");
-  const fragmentParams = new URLSearchParams(fragmentParts.join("&"));
-  const code =
-    url.searchParams.get("error") ?? fragmentParams.get("error") ?? "unknown";
-  if (fragmentParams.has("error") || fragmentParams.has("error_description")) {
-    fragmentParams.delete("error");
-    fragmentParams.delete("error_description");
-    const remaining = fragmentParams.toString();
-    url.hash = `${anchor}${remaining ? `&${remaining}` : ""}`;
-  }
+  const code = url.searchParams.get("error") ?? "unknown";
   url.searchParams.delete(GOOGLE_LINK_ERROR_PARAM);
   url.searchParams.delete("error");
-  url.searchParams.delete("error_description");
   // history.replaceState rather than a router navigate: the params are
   // one-shot and foreign to every route's search schema, and the router (not
   // yet started) should never see them. Passing the current history.state

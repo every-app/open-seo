@@ -1,44 +1,14 @@
+import { MAX_HTML_BYTES, readTextUpTo } from "@/server/lib/audit/html-response";
+import { classifyFetch } from "@/server/lib/audit/classify-fetch";
 import type { CrawledPageResult } from "@/server/lib/audit/types";
+import type { RenderedPage } from "@/server/lib/audit/rendered-page";
 import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
+import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
 
 const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
-const MAX_HTML_BYTES = 1024 * 1024;
-
-/**
- * Markers of a bot-mitigation challenge page. We classify these honestly as
- * "blocked" instead of recording the challenge HTML as if it were the page.
- */
-const CHALLENGE_BODY_MARKERS = [
-  "just a moment...",
-  "challenge-platform",
-  "cf-browser-verification",
-  "attention required! | cloudflare",
-  "verifying you are human",
-];
-
-function classifyFetch(
-  statusCode: number,
-  headers: Headers,
-  bodySnippet: string,
-): PageFetchClass {
-  if (statusCode === 0) return "error";
-  // A final 429 means rate limiting, whether retries were exhausted or the
-  // requested cooldown exceeded the crawl budget. Checked before
-  // cf-mitigated: a Cloudflare rate-limiting rule sets that header too.
-  if (statusCode === 429) return "rate_limited";
-  if (headers.get("cf-mitigated")) return "blocked";
-  if (statusCode === 401 || statusCode === 403) return "blocked";
-  if (statusCode === 503) {
-    const snippet = bodySnippet.toLowerCase();
-    if (CHALLENGE_BODY_MARKERS.some((marker) => snippet.includes(marker))) {
-      return "blocked";
-    }
-  }
-  return "ok";
-}
 
 /** Parse `Link: <url>; rel="canonical"` response headers. */
 function parseLinkHeaderCanonical(
@@ -61,7 +31,11 @@ function parseLinkHeaderCanonical(
  * (see crawl-throttle.ts). `responseTimeMs` is measured from the last attempt
  * so backoff waiting never looks like a slow server.
  */
-async function fetchPage(url: string, throttle: CrawlThrottle) {
+async function fetchPage(
+  url: string,
+  throttle: CrawlThrottle,
+  access: CrawlerAccess | null | undefined,
+) {
   for (let attempt = 1; ; attempt++) {
     if (!(await throttle.ready())) return null;
     const startedAt = Date.now();
@@ -75,6 +49,7 @@ async function fetchPage(url: string, throttle: CrawlThrottle) {
       headers: {
         "User-Agent": CRAWL_USER_AGENT,
         Accept: "text/html,application/xhtml+xml",
+        ...crawlerHeadersFor(url, access),
       },
       redirect: "manual",
       signal: AbortSignal.timeout(15_000),
@@ -107,14 +82,20 @@ export async function crawlPage(
   crawlDepth: number | null,
   inSitemap: boolean,
   throttle: CrawlThrottle,
+  options: {
+    /** Crawler-access headers for the audited host, when the org has one. */
+    access?: CrawlerAccess | null;
+    render?: (url: string) => Promise<RenderedPage>;
+  } = {},
 ): Promise<CrawledPageResult | null> {
+  const { access, render } = options;
   const startTime = Date.now();
 
   try {
-    const fetched = await fetchPage(url, throttle);
+    const fetched = await fetchPage(url, throttle, access);
     if (!fetched) return null;
     const { response, responseTimeMs, rateLimited } = fetched;
-    const statusCode = response.status;
+    let statusCode = response.status;
     const xRobotsTag = response.headers.get("x-robots-tag");
     const headerCanonicalUrl = parseLinkHeaderCanonical(
       response.headers.get("link"),
@@ -142,12 +123,36 @@ export async function crawlPage(
     const isHtml = contentType.includes("text/html");
     // Cap what we read: the first 1 MiB still contains the SEO metadata and
     // navigation needed by the audit in normal documents.
-    const body = isHtml ? await readTextUpTo(response, MAX_HTML_BYTES) : "";
-    const fetchClass = classifyFetch(
+    let body = isHtml ? await readTextUpTo(response, MAX_HTML_BYTES) : "";
+    let fetchClass = classifyFetch(
       statusCode,
-      response.headers,
+      Boolean(response.headers.get("cf-mitigated")),
       body.slice(0, 4_000),
     );
+
+    // Rendering replaces the body of a readable HTML page, or of a bot
+    // challenge, with what the browser loaded. Redirects, non-HTML files,
+    // origin errors, login walls and rate limits keep their existing paths.
+    // The direct response's timing and headers stay authoritative.
+    const challenged = fetchClass === "blocked" && statusCode !== 401;
+    if (
+      render &&
+      isHtml &&
+      (challenged || (fetchClass === "ok" && statusCode < 400))
+    ) {
+      try {
+        const page = await render(url);
+        body = page.html;
+        // A challenge's status was never the page's. Browser Run reports the
+        // status it loaded; Context returns only pages that loaded.
+        if (challenged) statusCode = page.status ?? 200;
+        // The renderer can be challenged where the direct fetch was not.
+        fetchClass = classifyFetch(statusCode, false, body.slice(0, 4_000));
+      } catch (error) {
+        // A challenge that neither renderer passed stays blocked.
+        if (!challenged) throw error;
+      }
+    }
 
     if (!isHtml || fetchClass !== "ok" || statusCode >= 400) {
       return emptyPageResult({
@@ -173,6 +178,9 @@ export async function crawlPage(
     // not just when an audit actually crawls.
     const { analyzeHtml } = await import("@/server/lib/audit/page-analyzer");
     const analysis = analyzeHtml(body, url, statusCode, responseTimeMs);
+    // Rendered HTML can still be the loading shell (a weak render), so the
+    // same check applies whether or not the page was rendered.
+    const javascriptShell = analysis.javascriptShell === true;
     const robotsDirectives = [analysis.robotsMeta, xRobotsTag]
       .filter(Boolean)
       .join(",")
@@ -209,10 +217,12 @@ export async function crawlPage(
       h6Count: headingCount(6),
       headingOrder: analysis.headingOrder,
       wordCount: analysis.wordCount,
-      contentHash: analysis.bodyText
-        ? await sha256Hex(analysis.bodyText)
-        : null,
+      contentHash:
+        analysis.bodyText && !javascriptShell
+          ? await sha256Hex(analysis.bodyText)
+          : null,
       isHtml: true,
+      javascriptShell,
       htmlBytes: body.length,
       rateLimited,
       imagesTotal: analysis.images.length,
@@ -247,38 +257,6 @@ export async function crawlPage(
       inSitemap,
     });
   }
-}
-
-async function readTextUpTo(response: Response, maxBytes: number) {
-  if (!response.body) return "";
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  const parts: string[] = [];
-  let bytesRead = 0;
-
-  try {
-    while (bytesRead < maxBytes) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const remaining = maxBytes - bytesRead;
-      const chunk =
-        value.byteLength > remaining ? value.subarray(0, remaining) : value;
-      bytesRead += chunk.byteLength;
-      parts.push(decoder.decode(chunk, { stream: true }));
-
-      if (bytesRead >= maxBytes) {
-        await reader.cancel();
-        break;
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
-
-  parts.push(decoder.decode());
-  return parts.join("");
 }
 
 function emptyPageResult(input: {

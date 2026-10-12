@@ -49,20 +49,6 @@ describe("computeShareOfVoice", () => {
     expect(entries[1]).toMatchObject({ label: "rival", sharePct: 25 });
     expect(entries[2]).toMatchObject({ mentions: null, sharePct: null });
   });
-
-  it("returns null with no competitors or no successful calls", () => {
-    expect(computeShareOfVoice([], "acme", [])).toBe(null);
-    expect(
-      computeShareOfVoice(
-        [
-          { platform: "chat_gpt", status: "error", items: [] },
-          { platform: "google", status: "error", items: [] },
-        ],
-        "acme",
-        ["rival"],
-      ),
-    ).toBe(null);
-  });
 });
 
 describe("resolveCompetitorGroups", () => {

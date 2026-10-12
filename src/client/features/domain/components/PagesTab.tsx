@@ -1,20 +1,16 @@
-import { useCallback, useMemo, useState } from "react";
-import { Copy, Download, FileSpreadsheet, Sheet } from "lucide-react";
-import { toast } from "sonner";
-import { DomainKeywordsPagination } from "@/client/features/domain/components/DomainKeywordsPagination";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { QueryError } from "@/client/components/QueryState";
+import { TablePagination } from "@/client/components/table/TablePagination";
+import { DomainPageLink } from "@/client/features/domain/components/DomainPageLink";
 import { DomainFilterPanel } from "@/client/features/domain/components/DomainFilterPanel";
 import { DomainPagesTable } from "@/client/features/domain/components/DomainPagesTable";
-import { DomainTableTabSurface } from "@/client/features/domain/components/DomainTableTabSurface";
+import { DomainTableToolbar } from "@/client/features/domain/components/DomainTableToolbar";
 import {
   PAGE_FILTER_FIELDS,
   buildPagesClearSearchUpdate,
   buildPagesSearchUpdate,
   countPageFilterConditions,
 } from "@/client/features/domain/domainFilterUtils";
-import {
-  debugDomain,
-  useDomainRenderDebug,
-} from "@/client/features/domain/domainDebug";
 import { useDomainPagesQuery } from "@/client/features/domain/hooks/useDomainPagesQuery";
 import { useDomainPageFilterPreferences } from "@/client/features/domain/useDomainFilterPreferences";
 import {
@@ -25,10 +21,9 @@ import {
 } from "@/client/features/domain/types";
 import { pagesToTable } from "@/client/features/domain/utils";
 import type { DomainOverviewRouteState } from "@/client/features/domain/domainRouteState";
-import { buildCsv, downloadCsv } from "@/client/lib/csv";
-import { exportTableToSheets } from "@/client/lib/exportToSheets";
-import { captureClientEvent } from "@/client/lib/posthog";
+import { exportRows, type ExportFormat } from "@/client/lib/exportRows";
 import {
+  DOMAIN_KEYWORDS_PAGE_SIZES,
   MAX_DATAFORSEO_FILTER_CONDITIONS,
   type DomainSearchParams,
 } from "@/types/schemas/domain";
@@ -65,6 +60,8 @@ type Props = {
   hostname: string;
   scope: ResearchScope;
   routeState: DomainOverviewRouteState;
+  /** The Top Keywords / Top Pages tabs, shown at the top of the table card. */
+  tabs: ReactNode;
   setSearchParams: (updates: SearchUpdate) => void;
   onSortClick: (sort: DomainSortMode) => void;
   onPageChange: (nextPage: number) => void;
@@ -77,6 +74,7 @@ export function PagesTab({
   hostname,
   scope,
   routeState,
+  tabs,
   setSearchParams,
   onSortClick,
   onPageChange,
@@ -130,36 +128,20 @@ export function PagesTab({
   const rows = query.data?.pages ?? EMPTY_PAGES_ROWS;
   const totalCount = query.data?.totalCount ?? null;
   const hasNextPage = query.data?.hasMore ?? false;
-  const isLoading = query.isFetching;
-  const showTableLoading = isLoading && (showFilters || rows.length === 0);
-  useDomainRenderDebug("PagesTab", {
-    showFilters,
-    isLoading,
-    isPending: query.isPending,
-    rows: rows.length,
-    totalCount,
-    activeTab: routeState.tab,
-    page: routeState.page,
-    sort: routeState.sort,
-    order: routeState.order,
-  });
+  const isFetching = query.isFetching;
 
   const applyFilters = useCallback(
     (values: PagesFilterValues) => {
       if (countPageFilterConditions(values) > maxConditions) return;
-      const update = buildPagesSearchUpdate(values);
-      debugDomain("PagesTab:apply-filters", { values, update });
       savePreferredFilters(values);
-      setSearchParams(update);
+      setSearchParams(buildPagesSearchUpdate(values));
     },
     [maxConditions, savePreferredFilters, setSearchParams],
   );
 
   const resetFilters = useCallback(() => {
-    const update = buildPagesClearSearchUpdate();
-    debugDomain("PagesTab:reset-filters", { update });
     clearPreferredFilters();
-    setSearchParams(update);
+    setSearchParams(buildPagesClearSearchUpdate());
   }, [clearPreferredFilters, setSearchParams]);
 
   const activeFilterCount = useMemo(
@@ -171,108 +153,76 @@ export function PagesTab({
   const exportTable = useMemo(() => pagesToTable(rows), [rows]);
   const fileNamePrefix = target.replaceAll("/", "-");
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(JSON.stringify(rows, null, 2));
-    toast.success("Copied data");
-  };
-  const handleExportToSheets = () => {
-    void exportTableToSheets({
-      headers: exportTable.headers,
-      rows: exportTable.rows,
+  const exportAll = (format: ExportFormat) =>
+    void exportRows({
+      format,
       feature: "domain_overview",
+      ...exportTable,
+      filename: `${fileNamePrefix}-pages`,
+      records: rows,
     });
-  };
-  const handleDownload = (extension: "csv" | "xls") => {
-    downloadCsv(
-      `${fileNamePrefix}-pages.${extension}`,
-      buildCsv(exportTable.headers, exportTable.rows),
-    );
-    if (extension === "csv") {
-      captureClientEvent("data:export", {
-        source_feature: "domain_overview",
-        result_count: rows.length,
-      });
-    }
-  };
 
   return (
-    <>
-      {filtersOverBudget ? (
-        <div className="alert alert-warning mb-3">
-          <span>
-            Saved filters exceed this scope&apos;s {maxConditions}-condition
-            limit and were not applied. Open Filters to trim them.
-          </span>
-        </div>
-      ) : null}
-
-      <DomainTableTabSurface
-        showFilters={showFilters}
-        onToggleFilters={() => setShowFilters((prev) => !prev)}
-        activeFilterCount={activeFilterCount}
-        countLabel="pages"
-        totalCount={totalCount}
-        fallbackCount={rows.length}
-        isLoading={isLoading}
-        showTableLoading={showTableLoading}
-        exportActions={[
-          {
-            label: "Export to Sheets",
-            icon: <Sheet className="size-4" />,
-            onClick: handleExportToSheets,
-          },
-          {
-            label: "Copy data (JSON)",
-            icon: <Copy className="size-4" />,
-            onClick: handleCopy,
-          },
-          {
-            label: "Download CSV",
-            icon: <Download className="size-4" />,
-            onClick: () => handleDownload("csv"),
-          },
-          {
-            label: "Download Excel",
-            icon: <FileSpreadsheet className="size-4" />,
-            onClick: () => handleDownload("xls"),
-          },
-        ]}
-        filterPanel={
-          showFilters ? (
-            <DomainFilterPanel
-              debugName="PagesFilterPanel"
-              activeFilterCount={activeFilterCount}
-              appliedFilters={restoredFilters}
-              fields={PAGE_FILTER_FIELDS}
-              textFields={PAGE_TEXT_FILTERS}
-              rangeFields={PAGE_RANGE_FILTERS}
-              countConditions={countPageFilterConditions}
-              maxConditions={maxConditions}
-              onApply={applyFilters}
-              onClear={resetFilters}
-            />
-          ) : null
-        }
-        pagination={
-          <DomainKeywordsPagination
-            page={routeState.page}
-            pageSize={routeState.pageSize}
-            totalCount={totalCount}
-            hasNextPage={hasNextPage}
-            isLoading={isLoading}
-            onPageChange={onPageChange}
-            onPageSizeChange={onPageSizeChange}
+    <DomainPagesTable
+      domain={hostname}
+      rows={rows}
+      sortMode={routeState.sort}
+      currentSortOrder={routeState.order}
+      onSortClick={onSortClick}
+      isLoading={isFetching && (showFilters || rows.length === 0)}
+      isFiltered={!filtersOverBudget && activeFilterCount > 0}
+      onClearFilters={resetFilters}
+      error={
+        query.isError ? (
+          <QueryError
+            error={query.error}
+            fallback="Failed to load pages."
+            onRetry={() => void query.refetch()}
+            isRetrying={isFetching}
           />
-        }
-      >
-        <DomainPagesTable
-          domain={hostname}
-          rows={rows}
-          sortMode={routeState.sort}
-          currentSortOrder={routeState.order}
-          onSortClick={onSortClick}
+        ) : null
+      }
+      toolbar={
+        <>
+          {tabs}
+          <DomainTableToolbar
+            overBudgetLimit={filtersOverBudget ? maxConditions : null}
+            showFilters={showFilters}
+            onToggleFilters={() => setShowFilters((prev) => !prev)}
+            activeFilterCount={activeFilterCount}
+            countLabel="pages"
+            totalCount={totalCount}
+            fallbackCount={rows.length}
+            onExport={exportAll}
+            filterPanel={
+              <DomainFilterPanel
+                activeFilterCount={activeFilterCount}
+                appliedFilters={restoredFilters}
+                fields={PAGE_FILTER_FIELDS}
+                textFields={PAGE_TEXT_FILTERS}
+                rangeFields={PAGE_RANGE_FILTERS}
+                countConditions={countPageFilterConditions}
+                maxConditions={maxConditions}
+                onApply={applyFilters}
+                onClear={resetFilters}
+              />
+            }
+          />
+        </>
+      }
+      footer={
+        <TablePagination
+          page={routeState.page}
+          pageSize={routeState.pageSize}
+          pageSizes={DOMAIN_KEYWORDS_PAGE_SIZES}
+          totalCount={totalCount}
+          hasNextPage={hasNextPage}
+          isLoading={isFetching}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          renderPageButton={DomainPageLink}
         />
-      </DomainTableTabSurface>
-    </>
+      }
+    />
   );
 }

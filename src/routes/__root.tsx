@@ -9,7 +9,6 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { AutumnProvider } from "autumn-js/react";
 import * as React from "react";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
 import { captureGoogleLinkError } from "@/client/features/integrations/googleLinkError";
@@ -22,6 +21,7 @@ import {
   stopAnalyticsCapture,
 } from "@/client/lib/posthog";
 import { NotFound } from "@/client/components/NotFound";
+import { TooltipProvider } from "@/client/components/ui/tooltip";
 import appCss from "@/client/styles/app.css?url";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -140,37 +140,27 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ClientOnly>
-          {/* Keep this the ONLY AutumnProvider. Each provider creates its own
-              customer cache (autumn-js bundles a private react-query, so it
-              never shares the app QueryClient), and every extra provider mount
-              pays its own ~1s getOrCreateCustomer round trip. It only provides
-              context — nothing fetches until a useCustomer consumer mounts. */}
-          <AutumnProvider>
-            <QueryClientProvider client={queryClient}>
-              <>
-                <PostHogBootstrap />
-                {children}
-                <ExportToSheetsModal />
-                <Toaster
-                  position="bottom-right"
-                  mobileOffset={{ bottom: 100 }}
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <PostHogBootstrap />
+              {children}
+              <ExportToSheetsModal />
+              <Toaster position="bottom-right" mobileOffset={{ bottom: 100 }} />
+              {showDevtools ? (
+                <TanStackDevtools
+                  config={{ position: "bottom-right" }}
+                  eventBusConfig={{ connectToServerBus: true }}
+                  plugins={[
+                    {
+                      name: "TanStack Router",
+                      render: <TanStackRouterDevtoolsPanel />,
+                      defaultOpen: true,
+                    },
+                  ]}
                 />
-                {showDevtools ? (
-                  <TanStackDevtools
-                    config={{ position: "bottom-right" }}
-                    eventBusConfig={{ connectToServerBus: true }}
-                    plugins={[
-                      {
-                        name: "TanStack Router",
-                        render: <TanStackRouterDevtoolsPanel />,
-                        defaultOpen: true,
-                      },
-                    ]}
-                  />
-                ) : null}
-              </>
-            </QueryClientProvider>
-          </AutumnProvider>
+              ) : null}
+            </TooltipProvider>
+          </QueryClientProvider>
         </ClientOnly>
         <Scripts />
       </body>

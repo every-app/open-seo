@@ -1,7 +1,7 @@
 ---
 title: "SEO for Startups: A Founder’s Handbook"
 description: "A founder-focused handbook to SEO for startups: how to use search for market research, early rankings, and smarter growth without wasting time."
-author: "OpenSEO Team"
+author: "Ben Senescu"
 date: "2026-04-22"
 ---
 

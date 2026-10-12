@@ -1,4 +1,4 @@
-import { getAuth } from "@/lib/auth";
+import { getGoogleAccessToken } from "@/server/features/google/googleOAuth";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 import { GscApiError, GscTokenError } from "./gscErrors";
 
@@ -78,25 +78,18 @@ function messageForStatus(status: number, body: string): string {
 
 /** Free Google Search Console client. Unlike the DataForSEO client it does NOT
  *  meter credits — GSC is first-party data with no per-call cost. Access tokens
- *  are minted (and auto-refreshed) by Better Auth from the connector's stored
+ *  come from (and are auto-refreshed against) the connector's stored
  *  google-search-console grant. */
 export function createGscClient(opts: {
   userId: string;
   gscAccountId?: string;
 }) {
   async function getToken(): Promise<string> {
-    let result: { accessToken?: string } | undefined;
     try {
-      // Headerless call: getAccessToken trusts body.userId when no request
-      // session is present, and auto-refreshes via the genericOAuth provider.
-      // Works in every auth mode — self-hosted builds the same Better Auth
-      // instance once BETTER_AUTH_SECRET is set.
-      result = await getAuth().api.getAccessToken({
-        body: {
-          providerId: GSC_OAUTH_PROVIDER_ID,
-          userId: opts.userId,
-          ...(opts.gscAccountId ? { accountId: opts.gscAccountId } : {}),
-        },
+      return await getGoogleAccessToken({
+        providerId: GSC_OAUTH_PROVIDER_ID,
+        userId: opts.userId,
+        accountId: opts.gscAccountId,
       });
     } catch (error) {
       throw new GscTokenError(
@@ -104,12 +97,6 @@ export function createGscClient(opts: {
         error,
       );
     }
-    if (!result?.accessToken) {
-      throw new GscTokenError(
-        "Search Console returned no access token (grant revoked or expired).",
-      );
-    }
-    return result.accessToken;
   }
 
   async function request<T>(

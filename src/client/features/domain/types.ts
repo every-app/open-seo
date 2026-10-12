@@ -67,13 +67,3 @@ export type DomainControlsValues = {
 export type DomainSortMode = DomainControlsValues["sort"];
 export type SortOrder = "asc" | "desc";
 export type DomainActiveTab = "keywords" | "pages";
-
-export type DomainHistoryItem = {
-  timestamp: number;
-  domain: string;
-  scope: ResearchScope;
-  sort: DomainSortMode;
-  tab: DomainActiveTab;
-  search?: string;
-  locationCode?: number;
-};

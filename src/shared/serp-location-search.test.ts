@@ -51,4 +51,13 @@ describe("rankSerpLocations", () => {
       rankSerpLocations("La Crosse", locations, "us")[0]?.locationName,
     ).toBe("La Crosse,Wisconsin,United States");
   });
+
+  it("returns every same-named town across many states", () => {
+    const arlingtons = Array.from({ length: 20 }, (_, index) => ({
+      locationName: `Arlington,State ${index},United States`,
+      locationType: "City",
+    }));
+
+    expect(rankSerpLocations("Arlington", arlingtons)).toHaveLength(20);
+  });
 });

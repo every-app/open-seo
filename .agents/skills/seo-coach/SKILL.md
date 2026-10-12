@@ -86,6 +86,8 @@ Want to go deeper?
 
 - `seo-project-setup`: verifies MCP, interviews the user about scope, goals, positioning, competitors, and key pages, and saves it all to the project's shared context. Also connects Google Search Console (or imports GSC exports).
 - `seo-audit`: audits a site and explains material SEO problems, worthwhile improvements, and their likely effects on traffic and the business. A useful starting point when you have an existing site and want to understand what is worth improving.
+- `ai-visibility-audit`: turns AI answer evidence and the pages cited instead of the brand into one to three changes most likely to get it mentioned or cited.
+- `ai-prompt-research`: finds questions people ask about a market, with ChatGPT's answers and the domains they cite, and suggests which to track. Research only.
 - `keyword-research`: finds search opportunities from seed topics and evaluates volume, difficulty, CPC, intent, and SERPs.
 - `keyword-clustering`: groups keywords by intent and maps clusters to existing or proposed pages.
 - `competitive-landscape`: identifies who wins across a market and what content/backlink patterns are working.
@@ -146,6 +148,8 @@ Offer 2-4 options based on context, each tied to the skill that delivers it:
 
 - "Set up project context first." → `seo-project-setup`
 - "Audit the site and find the one thing to do first." → `seo-audit`
+- "Find out why AI recommends competitors and what to change." → `ai-visibility-audit`
+- "See what people ask ChatGPT about your market." → `ai-prompt-research`
 - "Research keywords from your seed topics." → `keyword-research`
 - "Cluster your GSC queries into page targets." → `keyword-clustering`
 - "Map the competitive landscape before choosing pages." → `competitive-landscape`

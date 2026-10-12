@@ -14,7 +14,7 @@ import {
   projects,
 } from "@/db/schema";
 import { executeInBatches } from "@/db/runBatch";
-import { AUDIT_ISSUE_TYPES } from "@/shared/audit-issues";
+import { insertIssues } from "./auditIssueWrites";
 import { deterministicAuditRowId } from "@/server/lib/audit/ids";
 import type { DetectedIssue } from "@/server/lib/audit/issues/page-reporters";
 import type {
@@ -176,16 +176,13 @@ async function insertCrawledBatch(
       h4Count: page.h4Count,
       h5Count: page.h5Count,
       h6Count: page.h6Count,
-      headingOrderJson: JSON.stringify(page.headingOrder),
       wordCount: page.wordCount,
       contentHash: page.contentHash,
       imagesTotal: page.imagesTotal,
       imagesMissingAlt: page.imagesMissingAlt,
-      imagesJson: JSON.stringify(page.images),
       internalLinkCount: page.links.filter((l) => l.isInternal).length,
       externalLinkCount: page.links.filter((l) => !l.isInternal).length,
       hasStructuredData: page.hasStructuredData,
-      hreflangTagsJson: JSON.stringify(page.hreflangTags),
       isIndexable: page.isIndexable,
       fetchClass: page.fetchClass,
       crawlDepth: page.crawlDepth,
@@ -199,28 +196,6 @@ async function insertCrawledBatch(
   });
 
   await insertIssues(auditId, issues);
-}
-
-async function insertIssues(auditId: string, issues: DetectedIssue[]) {
-  const issueRows = await Promise.all(
-    issues.map(async (issue) => ({
-      id: await deterministicAuditRowId(
-        auditId,
-        issue.pageUrl,
-        issue.issueType,
-        issue.dedupeKey ?? "",
-      ),
-      auditId,
-      pageId: issue.pageId,
-      pageUrl: issue.pageUrl,
-      issueType: issue.issueType,
-      severity: AUDIT_ISSUE_TYPES[issue.issueType].severity,
-      detailsJson: issue.details ? JSON.stringify(issue.details) : null,
-    })),
-  );
-  await executeInBatches(issueRows, (tx, row) =>
-    tx.insert(auditIssues).values(row).onConflictDoNothing(),
-  );
 }
 
 async function insertLighthouseResults(
@@ -377,6 +352,14 @@ async function getAuditResultsForProject(auditId: string, projectId: string) {
   const [pages, lighthouse, issues] = await Promise.all([
     db.query.auditPages.findMany({
       where: eq(auditPages.auditId, auditId),
+      // The results UI never reads these per-page JSON blobs, and on a
+      // 10k-page audit images alone run to ~12 MB — enough to push this
+      // request past the Worker's 128 MB memory limit.
+      columns: {
+        imagesJson: false,
+        headingOrderJson: false,
+        hreflangTagsJson: false,
+      },
     }),
     db.query.auditLighthouseResults.findMany({
       where: eq(auditLighthouseResults.auditId, auditId),

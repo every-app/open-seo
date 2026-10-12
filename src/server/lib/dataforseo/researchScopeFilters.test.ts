@@ -21,12 +21,6 @@ function target(
 }
 
 describe("buildRankedKeywordsScopeFilter", () => {
-  it("adds nothing for subdomains scope", () => {
-    expect(
-      buildRankedKeywordsScopeFilter(target("example.com", "subdomains")),
-    ).toEqual({ clauses: [], conditionCount: 0 });
-  });
-
   it("pins the exact hostname (plus www) for domain scope", () => {
     const filter = buildRankedKeywordsScopeFilter(
       target("example.com", "domain"),

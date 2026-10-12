@@ -1,5 +1,18 @@
-import { RotateCcw, SlidersHorizontal } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  DataTableFilterGroup,
+  DataTableFilterPanel,
+  DataTableFilterToggle,
+  DataTableRangeFilter,
+  DataTableToolbar,
+} from "@/client/components/table/DataTableToolbar";
+import { Input } from "@/client/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui/select";
 import type {
   PagesFilters,
   PerformanceFilters,
@@ -17,8 +30,8 @@ export function PagesFilterBar({
   onReset: () => void;
 }) {
   return (
-    <FilterPanel activeFilterCount={activeFilterCount} onReset={onReset}>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+    <DataTableFilterPanel activeCount={activeFilterCount} onReset={onReset}>
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
         <TextFilter
           label="Search"
           value={filters.query}
@@ -35,6 +48,18 @@ export function PagesFilterBar({
             ["redirect", "3xx"],
             ["error", "4xx/5xx"],
             ["missing", "Missing"],
+          ]}
+        />
+        <SelectFilter
+          label="Crawl result"
+          value={filters.fetchClass}
+          onChange={(fetchClass) => onChange({ ...filters, fetchClass })}
+          options={[
+            ["all", "All"],
+            ["ok", "Read"],
+            ["error", "Failed"],
+            ["blocked", "Blocked"],
+            ["rate_limited", "Rate limited"],
           ]}
         />
         <SelectFilter
@@ -68,7 +93,7 @@ export function PagesFilterBar({
           }
         />
       </div>
-    </FilterPanel>
+    </DataTableFilterPanel>
   );
 }
 
@@ -84,7 +109,7 @@ export function PerformanceFilterBar({
   onReset: () => void;
 }) {
   return (
-    <FilterPanel activeFilterCount={activeFilterCount} onReset={onReset}>
+    <DataTableFilterPanel activeCount={activeFilterCount} onReset={onReset}>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
         <TextFilter
           label="Search"
@@ -136,15 +161,12 @@ export function PerformanceFilterBar({
           onMaxChange={(maxSeo) => onChange({ ...filters, maxSeo })}
         />
       </div>
-    </FilterPanel>
+    </DataTableFilterPanel>
   );
 }
 
-export function EmptyTableMessage({ label }: { label: string }) {
-  return <div className="py-6 text-center text-base-content/60">{label}</div>;
-}
-
-export function TableFilterToggle({
+/** The toolbar above a results table: the filter toggle and the row count. */
+export function ResultsTableToolbar({
   showFilters,
   onToggle,
   activeFilterCount,
@@ -158,25 +180,19 @@ export function TableFilterToggle({
   totalCount: number;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 px-4 py-2.5">
-      <button
-        className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
-        onClick={onToggle}
-        title="Toggle filters"
-        type="button"
-      >
-        <SlidersHorizontal className="size-3.5" />
-        Filters
-        {activeFilterCount > 0 ? (
-          <span className="badge badge-xs badge-primary border-0 text-primary-content">
-            {activeFilterCount}
-          </span>
-        ) : null}
-      </button>
-      <span className="text-sm tabular-nums text-base-content/60">
-        {resultCount.toLocaleString()} of {totalCount.toLocaleString()}
-      </span>
-    </div>
+    <DataTableToolbar
+      actions={
+        <span className="text-sm tabular-nums text-muted-foreground">
+          {resultCount.toLocaleString()} of {totalCount.toLocaleString()}
+        </span>
+      }
+    >
+      <DataTableFilterToggle
+        open={showFilters}
+        activeCount={activeFilterCount}
+        onToggle={onToggle}
+      />
+    </DataTableToolbar>
   );
 }
 
@@ -188,41 +204,6 @@ export function countActiveFilters<TFilters extends Record<string, string>>(
     const filterKey = key as keyof TFilters;
     return filters[filterKey] !== emptyFilters[filterKey] ? count + 1 : count;
   }, 0);
-}
-
-function FilterPanel({
-  activeFilterCount,
-  onReset,
-  children,
-}: {
-  activeFilterCount: number;
-  onReset: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-3 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">Refine results</p>
-          {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount} active
-            </span>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          className="btn btn-xs btn-ghost gap-1"
-          onClick={onReset}
-          disabled={activeFilterCount === 0}
-        >
-          <RotateCcw className="size-3" />
-          Clear all
-        </button>
-      </div>
-      {children}
-    </div>
-  );
 }
 
 function TextFilter({
@@ -239,18 +220,15 @@ function TextFilter({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {label}
-      </span>
-      <input
-        className="input input-bordered input-sm w-full bg-base-100"
+    <DataTableFilterGroup label={label}>
+      <Input
+        aria-label={label}
         type={type}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
-    </label>
+    </DataTableFilterGroup>
   );
 }
 
@@ -268,27 +246,11 @@ function RangeFilter({
   onMaxChange: (value: string) => void;
 }) {
   return (
-    <div className="space-y-2 rounded-lg border border-base-300 bg-base-100 p-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {label}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          className="input input-bordered input-xs bg-base-100"
-          type="number"
-          value={min}
-          placeholder="Min"
-          onChange={(event) => onMinChange(event.target.value)}
-        />
-        <input
-          className="input input-bordered input-xs bg-base-100"
-          type="number"
-          value={max}
-          placeholder="Max"
-          onChange={(event) => onMaxChange(event.target.value)}
-        />
-      </div>
-    </div>
+    <DataTableRangeFilter
+      label={label}
+      min={{ value: min, onChange: (event) => onMinChange(event.target.value) }}
+      max={{ value: max, onChange: (event) => onMaxChange(event.target.value) }}
+    />
   );
 }
 
@@ -303,27 +265,30 @@ function SelectFilter<T extends string>({
   options: Array<[T, string]>;
   onChange: (value: T) => void;
 }) {
+  const items = options.map(([optionValue, optionLabel]) => ({
+    value: optionValue,
+    label: optionLabel,
+  }));
   return (
-    <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {label}
-      </span>
-      <select
-        className="select select-bordered select-sm w-full bg-base-100"
+    <DataTableFilterGroup label={label}>
+      <Select
+        items={items}
         value={value}
-        onChange={(event) => {
-          const selected = options.find(
-            ([optionValue]) => optionValue === event.target.value,
-          )?.[0];
-          if (selected != null) onChange(selected);
+        onValueChange={(next) => {
+          if (next !== null) onChange(next);
         }}
       >
-        {options.map(([optionValue, optionLabel]) => (
-          <option key={optionValue} value={optionValue}>
-            {optionLabel}
-          </option>
-        ))}
-      </select>
-    </label>
+        <SelectTrigger aria-label={label} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </DataTableFilterGroup>
   );
 }

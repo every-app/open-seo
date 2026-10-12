@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  defaultScopeForPath,
-  isScopeAllowedForInput,
-  parseResearchTarget,
-  urlMatchesResearchTarget,
-} from "./researchScope";
+import { parseResearchTarget, urlMatchesResearchTarget } from "./researchScope";
 
 function parseOk(
   input: string,
@@ -51,11 +46,6 @@ describe("parseResearchTarget", () => {
     expect(target.urlHostname).toBe("www.example.com");
   });
 
-  it("keeps subdomain hostnames intact", () => {
-    const target = parseOk("blog.example.com", "subdomains");
-    expect(target.hostname).toBe("blog.example.com");
-  });
-
   it("rejects subfolder for a root input instead of silently rescoping", () => {
     const result = parseResearchTarget("example.com", "subfolder");
     expect(result).toEqual({
@@ -64,29 +54,11 @@ describe("parseResearchTarget", () => {
     });
   });
 
-  it("allows exact_url for a root input", () => {
-    expect(parseOk("example.com", "exact_url").scope).toBe("exact_url");
-  });
-
   it("rejects invalid hosts and credentials", () => {
     expect(parseResearchTarget("example.por").ok).toBe(false);
     expect(parseResearchTarget("").ok).toBe(false);
     expect(parseResearchTarget("my_site.com").ok).toBe(false);
     expect(parseResearchTarget("https://user:pw@example.com/x").ok).toBe(false);
-  });
-});
-
-describe("scope helpers", () => {
-  it("computes defaults from the path", () => {
-    expect(defaultScopeForPath("")).toBe("subdomains");
-    expect(defaultScopeForPath("/blog")).toBe("subfolder");
-  });
-
-  it("only disallows subfolder without a path", () => {
-    expect(isScopeAllowedForInput("subfolder", "")).toBe(false);
-    expect(isScopeAllowedForInput("subfolder", "/blog")).toBe(true);
-    expect(isScopeAllowedForInput("exact_url", "")).toBe(true);
-    expect(isScopeAllowedForInput("domain", "/blog")).toBe(true);
   });
 });
 

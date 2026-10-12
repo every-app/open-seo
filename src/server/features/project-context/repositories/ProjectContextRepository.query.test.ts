@@ -45,7 +45,7 @@ beforeAll(async () => {
     [
       `CREATE TABLE projects (id text PRIMARY KEY);`,
       `INSERT INTO projects (id) VALUES ('proj_1');`,
-      ...readFileSync("drizzle/0042_project_memory.sql", "utf8")
+      ...readFileSync("drizzle/sqlite/0042_project_memory.sql", "utf8")
         .split("--> statement-breakpoint")
         .filter((statement) => !statement.includes("DROP TABLE")),
     ].join("\n"),

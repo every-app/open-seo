@@ -1,5 +1,8 @@
 import type { createDataforseoClient } from "@/server/lib/dataforseo/client";
-import type { AdsKeywordItem } from "@/server/lib/dataforseo/google-ads";
+import {
+  isAdsKeyword,
+  type AdsKeywordItem,
+} from "@/server/lib/dataforseo/google-ads";
 import type { KeywordOverviewItem } from "@/server/lib/dataforseo/labs";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { getKeywordDataProvider } from "@/shared/keyword-locations";
@@ -12,6 +15,20 @@ type KeywordMetricsClient = {
   labs: Pick<DataforseoClient["labs"], "keywordOverview">;
   keywords: Pick<DataforseoClient["keywords"], "adsSearchVolume">;
 };
+
+/**
+ * Google Ads search volume for the keywords Ads accepts. One rejected keyword
+ * fails the whole task, so rejected ones are skipped and get no Ads metrics.
+ */
+export async function fetchAdsSearchVolumeForKeywords(
+  client: KeywordMetricsClient,
+  params: Parameters<KeywordMetricsClient["keywords"]["adsSearchVolume"]>[0],
+): Promise<AdsKeywordItem[]> {
+  const keywords = params.keywords.filter(isAdsKeyword);
+  return keywords.length > 0
+    ? client.keywords.adsSearchVolume({ ...params, keywords })
+    : [];
+}
 
 // DataForSEO's batch metric endpoints accept up to ~700 keywords per request.
 const KEYWORD_METRICS_BATCH_SIZE = 700;
@@ -121,7 +138,7 @@ export async function fetchKeywordMetricsForList(
     const keywords = params.keywords.slice(i, i + KEYWORD_METRICS_BATCH_SIZE);
 
     if (useGoogleAds) {
-      const items = await client.keywords.adsSearchVolume({
+      const items = await fetchAdsSearchVolumeForKeywords(client, {
         keywords,
         locationCode: params.locationCode,
         locationName: params.locationName,
@@ -134,19 +151,23 @@ export async function fetchKeywordMetricsForList(
         covered.add(item.keyword.toLowerCase());
         rows.push(normalizeAdsKeyword(item, item.keyword));
       }
-      if (params.locationName) {
-        // A local request must overwrite whatever scope the stored metrics
-        // had — keywords Ads collapsed away get explicit nulls so stale
-        // (possibly national) numbers can't survive under a local label.
-        rows.push(
-          ...keywords
-            .filter((keyword) => !covered.has(keyword.toLowerCase()))
-            .map(nullMetricRow),
-        );
-      }
+      // A local request must overwrite whatever scope the stored metrics
+      // had — keywords Ads collapsed away get explicit nulls so stale
+      // (possibly national) numbers can't survive under a local label.
+      // Keywords Ads rejects can never have Ads metrics, so they get nulls
+      // on every request.
+      rows.push(
+        ...keywords
+          .filter(
+            (keyword) =>
+              !covered.has(keyword.toLowerCase()) &&
+              (params.locationName || !isAdsKeyword(keyword)),
+          )
+          .map(nullMetricRow),
+      );
     } else if (params.locationName) {
       const [adsItems, labsItems] = await Promise.all([
-        client.keywords.adsSearchVolume({
+        fetchAdsSearchVolumeForKeywords(client, {
           keywords,
           locationCode: params.locationCode,
           locationName: params.locationName,
@@ -220,14 +241,15 @@ function mergeLocalAndNationalRows(
   // Google Ads occasionally collapses near-duplicate keywords into one item.
   // Keep the national KD / intent for the missing ones but leave volume / CPC
   // null rather than substituting the (misleading) national numbers.
+  // Every keyword gets a row, so a refresh clears stale stored metrics even
+  // when neither source returned it (e.g. text Google Ads rejects).
   for (const keyword of keywords) {
     if (covered.has(keyword.toLowerCase())) continue;
     const labs = labsByKeyword.get(keyword.toLowerCase());
-    if (!labs) continue;
     rows.push({
       ...nullMetricRow(keyword),
-      keywordDifficulty: labs.keyword_properties?.keyword_difficulty ?? null,
-      intent: labs.search_intent_info?.main_intent ?? null,
+      keywordDifficulty: labs?.keyword_properties?.keyword_difficulty ?? null,
+      intent: labs?.search_intent_info?.main_intent ?? null,
     });
   }
 

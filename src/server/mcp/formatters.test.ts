@@ -2,81 +2,41 @@ import { describe, expect, it } from "vitest";
 import { mcpResponse } from "./formatters";
 
 describe("mcpResponse", () => {
-  it("returns content as a text block", () => {
-    const result = mcpResponse({ text: "hi" });
-    expect(result.content).toEqual([{ type: "text", text: "hi" }]);
-  });
-
-  it("includes _meta only when meta is provided", () => {
-    const bare = mcpResponse({ text: "hi" });
-    expect(bare._meta).toBeUndefined();
-
-    const withMeta = mcpResponse({
-      text: "hi",
-      meta: { url: "https://app.openseo.so/p/1", projectId: "1" },
-    });
-    expect(withMeta._meta).toEqual({
-      url: "https://app.openseo.so/p/1",
-      projectId: "1",
-    });
-  });
-
-  it("drops undefined meta keys", () => {
+  it("drops undefined meta keys and omits _meta when nothing is left", () => {
     const result = mcpResponse({
       text: "hi",
       meta: {
         url: "https://app.openseo.so",
         creditsCharged: 0,
+        projectId: undefined,
       },
     });
     expect(result._meta).toEqual({
       url: "https://app.openseo.so",
       creditsCharged: 0,
     });
-  });
 
-  it("attaches structuredContent when provided", () => {
-    const result = mcpResponse({
+    expect(mcpResponse({ text: "hi" })._meta).toBeUndefined();
+    const allUndefined = mcpResponse({
       text: "hi",
-      structuredContent: { foo: "bar" },
+      meta: { projectId: undefined },
     });
-    expect(result.structuredContent).toEqual({ foo: "bar" });
+    expect(allUndefined._meta).toBeUndefined();
+    expect(allUndefined.structuredContent).toBeUndefined();
   });
 
   it("mirrors metadata into structuredContent for clients that hide _meta", () => {
-    const result = mcpResponse({
+    const meta = { url: "https://app.openseo.so/p/1", creditsRemaining: 100 };
+
+    const withPayload = mcpResponse({
       text: "hi",
-      meta: {
-        url: "https://app.openseo.so/p/1",
-        projectId: "1",
-        creditsRemaining: 100,
-      },
+      meta,
       structuredContent: { foo: "bar" },
     });
+    expect(withPayload.structuredContent).toEqual({ foo: "bar", meta });
+    expect(withPayload._meta).toEqual(meta);
 
-    expect(result.structuredContent).toEqual({
-      foo: "bar",
-      meta: {
-        url: "https://app.openseo.so/p/1",
-        projectId: "1",
-        creditsRemaining: 100,
-      },
-    });
-    expect(result._meta).toEqual({
-      url: "https://app.openseo.so/p/1",
-      projectId: "1",
-      creditsRemaining: 100,
-    });
-  });
-
-  it("uses metadata as structuredContent when no data payload is provided", () => {
-    const result = mcpResponse({
-      text: "hi",
-      meta: { url: "https://app.openseo.so" },
-    });
-
-    expect(result.structuredContent).toEqual({
-      meta: { url: "https://app.openseo.so" },
-    });
+    const metaOnly = mcpResponse({ text: "hi", meta });
+    expect(metaOnly.structuredContent).toEqual({ meta });
   });
 });

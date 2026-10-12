@@ -43,7 +43,7 @@ postgres://openseo:openseo@localhost:5433/openseo
 ## 2. Apply the Postgres migrations
 
 The Postgres schema is hand-written (it is the one structural artifact
-`db:generate` does not regenerate) and migrations live in `drizzle-pg/`. Apply
+`db:generate` does not regenerate) and migrations live in `drizzle/pg/`. Apply
 them with `POSTGRES_DATABASE_URL` set — `drizzle-kit` reads it from the shell
 environment:
 
@@ -107,7 +107,7 @@ When you change a table, update **both** dialects:
 tables, columns, nullability, primary keys, unique/partial indexes, or FK
 `onDelete`). It compares the schema definitions, **not** the generated
 migrations — so after editing the Postgres schema, always run `pnpm db:generate:pg`
-and commit the new `drizzle-pg/` migration, or a Postgres deploy will be missing
+and commit the new `drizzle/pg/` migration, or a Postgres deploy will be missing
 the change even though the parity test is green.
 
 ## Teardown

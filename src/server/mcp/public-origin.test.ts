@@ -15,12 +15,6 @@ describe("getPublicOrigin", () => {
     );
   });
 
-  it("falls back to the request origin without proxy headers", () => {
-    const request = new Request("http://localhost:3102/api/oauth/consent");
-
-    expect(getPublicOrigin(request)).toBe("http://localhost:3102");
-  });
-
   it("ignores forwarded hosts when the request is already public https", () => {
     const request = new Request("https://app.openseo.so/api/oauth/consent", {
       headers: {

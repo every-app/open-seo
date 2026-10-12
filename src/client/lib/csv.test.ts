@@ -13,8 +13,14 @@ describe("buildCsv", () => {
   });
 
   it("keeps formula-injection protection for string cells", () => {
-    const csv = buildCsv(["Value"], [['=HYPERLINK("evil")']]);
+    const csv = buildCsv(
+      ["Value"],
+      [['=HYPERLINK("evil")'], ["+1"], ["@SUM(A1)"], ["\tformula"]],
+    );
 
     expect(csv).toContain('"\'=HYPERLINK(""evil"")"');
+    expect(csv).toContain('"\'+1"');
+    expect(csv).toContain('"\'@SUM(A1)"');
+    expect(csv).toContain('"\'\tformula"');
   });
 });

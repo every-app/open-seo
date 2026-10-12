@@ -20,7 +20,7 @@ function shouldUseKeywordE2eFixtures() {
 }
 
 async function getKeywordE2eFixtures() {
-  return import("../../e2e/fixtures/keyword-research-fixtures");
+  return import("../../tests/fixtures/keyword-research-fixtures");
 }
 
 export const researchKeywords = createServerFn({ method: "POST" })

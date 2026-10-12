@@ -1,4 +1,6 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { NavTab, NavTabs } from "@/client/components/NavTabs";
+import { PageHeader } from "@/client/components/PageHeader";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -18,28 +20,21 @@ function SettingsLayout() {
   ];
 
   return (
-    <div className="h-full overflow-auto bg-base-100">
-      <div className="mx-auto w-full max-w-4xl space-y-8 p-4 py-8 pb-24 sm:p-6 md:py-12 md:pb-12">
+    <div className="h-full overflow-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
+      <div className="mx-auto max-w-7xl space-y-8">
         <div className="space-y-4">
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-          <div role="tablist" className="tabs tabs-border">
+          <PageHeader title="Settings" />
+          <NavTabs label="Settings sections">
             {tabs.map((tab) => (
-              <Link
+              <NavTab
                 key={tab.to}
-                role="tab"
                 to={tab.to}
                 activeOptions={{ exact: tab.exact ?? false }}
-                className="tab"
-                activeProps={{
-                  className: "tab-active",
-                  "aria-selected": true,
-                }}
-                inactiveProps={{ "aria-selected": false }}
               >
                 {tab.label}
-              </Link>
+              </NavTab>
             ))}
-          </div>
+          </NavTabs>
         </div>
 
         <Outlet />

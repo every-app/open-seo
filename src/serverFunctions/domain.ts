@@ -14,7 +14,7 @@ function shouldUseDomainE2eFixtures() {
 }
 
 async function getDomainE2eFixtures() {
-  return import("../../e2e/fixtures/domain-overview-fixtures");
+  return import("../../tests/fixtures/domain-overview-fixtures");
 }
 
 export const getDomainOverview = createServerFn({ method: "POST" })

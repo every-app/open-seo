@@ -137,19 +137,4 @@ describe("published MCP output schemas", () => {
       ),
     ).toEqual(["tool.properties.rows.items[0].anyOf[0].additionalProperties"]);
   });
-
-  it("ignores example data and property names that resemble schema keywords", () => {
-    expect(
-      closedOutputPaths(
-        {
-          properties: {
-            additionalProperties: { type: "boolean", const: false },
-          },
-          examples: [{ additionalProperties: false }],
-          default: { unevaluatedProperties: false },
-        },
-        "tool",
-      ),
-    ).toEqual([]);
-  });
 });

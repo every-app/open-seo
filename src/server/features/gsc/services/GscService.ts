@@ -210,6 +210,11 @@ async function getPerformance(
     throw new GscNotConnectedError(input.projectId);
   }
   const request = buildSearchAnalyticsRequest(input);
+  // The MCP input schema caps tool responses at 1,000; app consumers may
+  // request Google's full page to compare low-click keywords accurately.
+  if (input.rowLimit !== undefined)
+    request.rowLimit = Math.max(1, Math.min(25000, input.rowLimit));
+
   const client = createGscClient({
     userId: connection.connectedByUserId,
     gscAccountId: connection.gscAccountId ?? undefined,

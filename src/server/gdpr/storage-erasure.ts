@@ -1,6 +1,7 @@
-import { getAuth } from "@/lib/auth";
+import { getGoogleAccessToken } from "@/server/features/google/googleOAuth";
 import type { SamChatAgent } from "@/server/features/sam/SamChatAgent";
 import { captureServerError } from "@/server/lib/posthog";
+import { deleteProjectAiObjects } from "@/server/features/ai-visibility/services/aiVisibilityStorage";
 import {
   DUB_REFERRED_ORG_KV_PREFIX,
   DUB_REFERRED_USER_KV_PREFIX,
@@ -139,22 +140,18 @@ async function revokeGoogleAccount(
   userId: string,
   account: GdprStorageErasurePayload["googleAccounts"][number],
 ): Promise<GoogleRevocationResult> {
-  let accessToken: string | undefined;
+  let accessToken: string;
   try {
-    const result = await getAuth().api.getAccessToken({
-      body: {
-        userId,
-        providerId: account.providerId,
-        accountId: account.accountId,
-      },
+    accessToken = await getGoogleAccessToken({
+      userId,
+      providerId: account.providerId,
+      accountId: account.accountId,
     });
-    accessToken = result?.accessToken;
   } catch {
-    // If Better Auth cannot mint a token, the locally stored grant is no longer
-    // usable. The Postgres transaction still removes its encrypted token row.
+    // If no token can be minted, the locally stored grant is no longer usable.
+    // The Postgres transaction still removes its encrypted token row.
     return { ...account, status: "token_unavailable" };
   }
-  if (!accessToken) return { ...account, status: "token_unavailable" };
 
   const response = await fetch(GOOGLE_REVOKE_URL, {
     method: "POST",
@@ -181,6 +178,15 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
   const rankWorkflowsTerminated = await terminateWorkflows(
     env.RANK_CHECK_WORKFLOW,
     payload.activeRankWorkflowIds,
+  );
+  const aiWorkflowsTerminated = await terminateWorkflows(
+    env.AI_VISIBILITY_WORKFLOW,
+    [
+      ...payload.activeAiVisibilityWorkflowIds,
+      ...payload.aiVisibilityProjectIds.map(
+        (projectId) => `ai-research-setup-${projectId}`,
+      ),
+    ],
   );
 
   const googleRevocations: GoogleRevocationResult[] = [];
@@ -222,12 +228,17 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
     env.R2,
     payload.organizationIds,
   );
+  let aiVisibilityObjects = 0;
+  for (const projectId of payload.aiVisibilityProjectIds) {
+    aiVisibilityObjects += await deleteProjectAiObjects(env.R2, projectId);
+  }
 
   const oauth = await deleteOauthGrants(env.OAUTH_KV, payload.userId);
   return {
     workflows: {
       auditTerminated: auditWorkflowsTerminated,
       rankTerminated: rankWorkflowsTerminated,
+      aiVisibilityTerminated: aiWorkflowsTerminated,
     },
     durableObjects: {
       sam: payload.samSessionIds.length,
@@ -240,6 +251,7 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
     },
     r2Objects: payload.r2Keys.length,
     promptCacheObjects,
+    aiVisibilityObjects,
     googleRevocations,
   };
 }

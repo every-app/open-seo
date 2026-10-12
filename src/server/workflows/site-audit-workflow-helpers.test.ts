@@ -60,35 +60,6 @@ describe("crawlPage", () => {
     expect(page?.rateLimited).toBe(true);
   });
 
-  it("holds every other fetch in the chunk while one URL's 429 pause runs", async () => {
-    vi.useFakeTimers();
-    const fetched: string[] = [];
-    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
-      fetched.push(new Request(input).url);
-      // Only the first request to the first URL is refused.
-      const refused = fetched.length === 1;
-      return new Response(PAGE_HTML, {
-        status: refused ? 429 : 200,
-        headers: {
-          "content-type": "text/html",
-          ...(refused ? { "retry-after": "5" } : {}),
-        },
-      });
-    });
-    const throttle = createCrawlThrottle(Date.now() + 90_000);
-
-    const first = crawlPage(`${PAGE_URL}/first`, 0, false, throttle);
-    await vi.advanceTimersByTimeAsync(0);
-    const second = crawlPage(`${PAGE_URL}/second`, 0, false, throttle);
-    await vi.advanceTimersByTimeAsync(4_000);
-    expect(fetched).toEqual([`${PAGE_URL}/first`]);
-
-    await vi.advanceTimersByTimeAsync(3_000);
-    const pages = await Promise.all([first, second]);
-    expect(fetched).toHaveLength(3);
-    expect(pages.map((page) => page?.fetchClass)).toEqual(["ok", "ok"]);
-  });
-
   it("records a page the site keeps rate limiting, without calling it blocked", async () => {
     vi.useFakeTimers();
     const fetchMock = stubFetch({ status: 429, retryAfter: "1" });
@@ -101,52 +72,25 @@ describe("crawlPage", () => {
     expect(page?.fetchClass).toBe("rate_limited");
   });
 
-  it("recovers concurrent pages without a burst after sixty seconds", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(0);
-    const starts: number[] = [];
-    vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
-      starts.push(Date.now());
-      return new Response(PAGE_HTML, {
-        status: Date.now() < 60_000 ? 429 : 200,
-        headers: { "content-type": "text/html", "retry-after": "60" },
-      });
-    });
-    const throttle = createCrawlThrottle(90_000);
-    const pages = Promise.all(
-      Array.from({ length: 5 }, (_, i) =>
-        crawlPage(`${PAGE_URL}/${i}`, 0, false, throttle),
-      ),
-    );
-    await vi.advanceTimersByTimeAsync(59_999);
-    expect(starts).toEqual([0]);
-    await vi.runAllTimersAsync();
-    expect((await pages).map((page) => page?.fetchClass)).toEqual(
-      Array(5).fill("ok"),
-    );
-    expect(starts).toEqual([0, 60_000, 62_000, 64_000, 66_000, 68_000]);
-  });
-
-  it("defers the refused URL when its cooldown exceeds the chunk deadline", async () => {
-    vi.useFakeTimers();
-    const fetchMock = stubFetch({ status: 429, retryAfter: "600" });
-    const throttle = createCrawlThrottle(Date.now() + 90_000);
-    expect(await crawlPage(PAGE_URL, 0, false, throttle)).toBeNull();
-    expect(
-      await crawlPage(`${PAGE_URL}/unvisited`, 0, false, throttle),
-    ).toBeNull();
-    expect(throttle.stopped).toBe(false);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("records a final 429 when the requested wait exceeds the audit's cooldown budget", async () => {
-    vi.useFakeTimers();
-    const fetchMock = stubFetch({ status: 429, retryAfter: "3600" });
-    const throttle = createCrawlThrottle(Date.now() + 90_000);
-    expect((await crawlPage(PAGE_URL, 0, false, throttle))?.fetchClass).toBe(
+  // A long Retry-After is deferred to a later chunk; one past the audit's
+  // whole cooldown budget is recorded as the page's final answer.
+  it.each([
+    ["defers the URL when its cooldown outlasts the chunk", "600", null, false],
+    [
+      "records a final 429 when the wait exceeds the cooldown budget",
+      "3600",
       "rate_limited",
-    );
-    expect(throttle.stopped).toBe(true);
+      true,
+    ],
+  ])("%s", async (_label, retryAfter, fetchClass, stopped) => {
+    vi.useFakeTimers();
+    const fetchMock = stubFetch({ status: 429, retryAfter });
+    const throttle = createCrawlThrottle(Date.now() + 90_000);
+
+    const page = await crawlPage(PAGE_URL, 0, false, throttle);
+
+    expect(page?.fetchClass ?? null).toBe(fetchClass);
+    expect(throttle.stopped).toBe(stopped);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

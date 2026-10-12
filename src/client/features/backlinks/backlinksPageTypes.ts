@@ -28,6 +28,7 @@ export type ReferringDomainRow = BacklinksReferringDomainsData["rows"][number];
 export type TopPageRow = BacklinksTopPagesData["rows"][number];
 
 export type BacklinksSearchState = {
+  includeSpam?: boolean;
   target: string;
   scope: BacklinksTargetScope;
   tab: BacklinksTab;

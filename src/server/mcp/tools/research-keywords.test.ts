@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { researchKeywordsTool } from "./research-keywords";
+import { AppError } from "@/server/lib/errors";
 import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
@@ -67,6 +68,29 @@ describe("research_keywords", () => {
             intent: "commercial",
           },
         ],
+      },
+    ]);
+  });
+
+  it("tells an agent how to find a valid local location", async () => {
+    mocks.research.mockRejectedValue(
+      new AppError("UNKNOWN_LOCATION", "Not a known area."),
+    );
+
+    const result = await researchKeywordsTool.handler(
+      {
+        projectId: "project_1",
+        seeds: [{ seed: "plumber", locationName: "Austin, TX" }],
+      },
+      makeToolContext(),
+    );
+
+    expect(result.structuredContent?.results).toEqual([
+      {
+        seed: "plumber",
+        ok: false,
+        error:
+          "Not a known area. Call search_serp_locations and pass the returned locationName exactly.",
       },
     ]);
   });

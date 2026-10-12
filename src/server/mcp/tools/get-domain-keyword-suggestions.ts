@@ -68,7 +68,7 @@ export const getDomainKeywordSuggestionsTool = {
     }),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: false,
     },
   },

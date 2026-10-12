@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { QueryKey } from "@tanstack/react-query";
-import { Loader2, X } from "lucide-react";
+import { X } from "lucide-react";
+import { Spinner } from "@/client/components/ui/spinner";
 import type { SearchTab } from "./types";
 import {
   KEYWORD_RESEARCH_STALE_TIME_MS,
@@ -9,9 +10,13 @@ import {
   buildKeywordResearchRequest,
   keywordResearchQueryFn,
 } from "@/client/features/keywords/hooks/useKeywordResearchData";
+import {
+  PROMPT_EXPLORER_STALE_TIME_MS,
+  buildPromptExplorerQueryKey,
+  promptExplorerQueryFn,
+} from "@/client/features/ai-search/promptExplorerQuery";
 import { getBacklinksOverview } from "@/serverFunctions/backlinks";
 import { getDomainOverview } from "@/serverFunctions/domain";
-export type { SearchTab } from "./types";
 
 type Props = {
   activeTabId: string | null;
@@ -40,7 +45,7 @@ export function SearchTabStrip({
   if (tabs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-base-300 bg-base-100 p-1">
+    <div className="rounded-xl border border-border bg-card p-1">
       <div
         role="tablist"
         aria-label="Search tabs"
@@ -54,8 +59,8 @@ export function SearchTabStrip({
               data-search-tab-id={tab.id}
               className={`group flex shrink-0 items-stretch overflow-hidden rounded-md text-sm transition ${
                 active
-                  ? "bg-base-300 text-base-content shadow-sm"
-                  : "text-base-content/80 hover:bg-base-200"
+                  ? "bg-muted text-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
               }`}
             >
               <button
@@ -82,7 +87,7 @@ export function SearchTabStrip({
               <button
                 type="button"
                 data-search-tab-id={tab.id}
-                className="flex items-center px-1.5 text-base-content/50 opacity-60 transition hover:bg-base-content/10 hover:text-base-content hover:opacity-100 group-hover:opacity-100"
+                className="flex items-center px-1.5 text-muted-foreground opacity-60 transition hover:bg-foreground/10 hover:text-foreground hover:opacity-100 group-hover:opacity-100"
                 onClick={() => onClose(tab.id)}
                 aria-label={`Close ${tab.label} tab`}
               >
@@ -155,9 +160,9 @@ function SearchTabStatusIndicator({
       aria-hidden
     >
       {status === "loading" ? (
-        <Loader2 className="size-3 animate-spin text-base-content/50" />
+        <Spinner className="size-3 text-muted-foreground" />
       ) : status === "error" ? (
-        <span className="size-2 rounded-full bg-error" />
+        <span className="size-2 rounded-full bg-destructive" />
       ) : status === "unviewed" ? (
         <span className="size-2 rounded-full bg-primary" />
       ) : null}
@@ -181,6 +186,16 @@ function getSearchTabQueryConfig(
             scope: input.scope,
           },
         }),
+    };
+  }
+
+  if (tab.input.type === "prompt") {
+    const input = tab.input;
+    return {
+      queryKey: buildPromptExplorerQueryKey(projectId, input),
+      queryFn: () => promptExplorerQueryFn(projectId, input),
+      staleTime: PROMPT_EXPLORER_STALE_TIME_MS,
+      gcTime: PROMPT_EXPLORER_STALE_TIME_MS,
     };
   }
 
@@ -214,9 +229,11 @@ function getSearchTabQueryConfig(
     projectId,
     keywordInput: input.keyword,
     locationCode: input.locationCode,
+    locationName: input.locationName,
     resultLimit: input.resultLimit,
     mode: input.mode,
     clickstream: input.clickstream,
+    groupKeywords: input.groupKeywords,
   });
 
   return {

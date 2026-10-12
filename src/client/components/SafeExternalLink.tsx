@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
-import { getSafeExternalUrl } from "./table/url";
+import { safeHttpUrl } from "@/shared/safe-url";
 
 export function SafeExternalLink({
   url,
@@ -11,7 +11,7 @@ export function SafeExternalLink({
   label: string;
   className: string;
 }) {
-  const safeUrl = getSafeExternalUrl(url);
+  const safeUrl = safeHttpUrl(url);
   if (!safeUrl) {
     return <span className={className}>{label}</span>;
   }

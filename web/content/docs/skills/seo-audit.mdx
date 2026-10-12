@@ -41,6 +41,43 @@ One report on your project's Reports page. It opens with your next SEO move, the
 - Ask to see the verified facts if you want to check the agent's work.
 - Give the agent a research budget if you need a spending limit.
 
+## Auditing a Shopify store
+
+Shopify rate-limits crawlers it hasn't authorized, so an audit of a Shopify
+storefront can come back short: some pages return 429, and the crawl may stop
+before it reaches every URL. The report says so when this happens.
+
+If you own the store, you can authorize OpenSEO in about a minute:
+
+1. In Shopify admin, go to **Online Store → Preferences → Crawler access** and
+   click **Create signature**.
+2. Pick the domain you audit (for example `www.your-store.com`) and an expiry
+   of up to three months.
+3. Copy the `Signature-Input` and `Signature` values. Shopify also shows a
+   `Signature-Agent` value; you don't need it, because OpenSEO sends it for you.
+
+A signature works only for the exact domain you picked, so `www.your-store.com`
+and `your-store.com` each need their own.
+
+Paste both values into OpenSEO, either on the warning shown at the top of the
+audit report or under **Project settings → Integrations → Crawler access**.
+OpenSEO checks the signature against Shopify's published key when you save it.
+If it was made for a different domain, or a value was cut off when you copied
+it, OpenSEO tells you instead of saving it. Every audit request to that domain
+then carries the signature, and you can re-run the audit right away. The
+signature is saved on that website's project, and any other project in your
+organization that audits the same domain uses it too.
+
+Shopify signatures last at most three months and cannot be renewed. OpenSEO
+stops sending a signature once it expires, and the audit report tells you when
+that happened. Create a new signature and paste it in the same place to replace
+the old one.
+
+OpenSEO encrypts the signature before storing it, never shows it again after you
+save it, and sends it only to the domain it was created for. If you self-host,
+set `BETTER_AUTH_SECRET` (at least 32 characters) before saving a signature,
+because that secret is the encryption key.
+
 ## Use it with OpenSEO MCP
 
 Set up [OpenSEO MCP](/docs/mcp) so your agent can run the audit and read backlink data, traffic estimates, and keyword ideas. The site audit is included on every plan (up to 50 pages on the free plan); backlink, domain, ranking, live-search, and keyword lookups spend credits. The skill expands research when it can change the diagnosis or priority, reuses relevant evidence, and respects explicit budgets. Cost varies with the investigation rather than a fixed lookup allowance.

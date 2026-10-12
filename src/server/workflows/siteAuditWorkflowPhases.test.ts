@@ -37,12 +37,18 @@ vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
     getPagesForAudit: getPagesForAuditMock,
     insertLighthouseResults: insertLighthouseResultsMock,
     updateAuditProgress: updateAuditProgressMock,
+    hasPagesForAudit: vi.fn().mockResolvedValue(true),
+    insertIssues: vi.fn(),
+    countPagesByFetchClass: vi.fn().mockResolvedValue(0),
+    completeAudit: vi.fn(),
   },
 }));
 vi.mock("@/server/features/audit/AuditScratchpad", () => ({
   getAuditScratchpad: vi.fn(),
 }));
-vi.mock("@/server/lib/audit/progress-kv", () => ({ AuditProgressKV: {} }));
+vi.mock("@/server/lib/audit/progress-kv", () => ({
+  AuditProgressKV: { clear: vi.fn() },
+}));
 vi.mock("@/server/lib/audit/discovery", () => ({
   discoverUrls: vi.fn(),
   parseRobotsTxt: vi.fn(),
@@ -56,7 +62,14 @@ vi.mock("@/server/workflows/siteAuditWorkflowCrawl", () => ({
 }));
 vi.mock("@/server/workflows/pgStep", () => ({ pgStep: pgStepMock }));
 
-import { runLighthousePhase } from "@/server/workflows/siteAuditWorkflowPhases";
+import {
+  runAuditPhases,
+  runLighthousePhase,
+} from "@/server/workflows/siteAuditWorkflowPhases";
+import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import { getAuditScratchpad } from "@/server/features/audit/AuditScratchpad";
+import { runCrawlPhase } from "@/server/workflows/siteAuditWorkflowCrawl";
+import { runMultipageChecks } from "@/server/lib/audit/issues/multipage";
 
 const PHASE_PARAMS = {
   auditId: "audit-1",
@@ -73,7 +86,6 @@ const PHASE_PARAMS = {
 
 describe("runLighthousePhase", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     getPagesForAuditMock.mockResolvedValue([
       {
         id: "page-1",
@@ -192,4 +204,53 @@ describe("runLighthousePhase", () => {
       { lighthouseCompleted: 2, lighthouseFailed: 2 },
     );
   });
+});
+
+describe("app-shell crawl coverage", () => {
+  it.each([false, true])(
+    "allows orphan checks only without unread app shells (shells=%s)",
+    async (hasShells) => {
+      vi.mocked(AuditRepository.hasPagesForAudit).mockResolvedValue(true);
+      vi.mocked(runCrawlPhase).mockResolvedValue({
+        pagesCrawled: 2,
+        completed: true,
+      });
+      vi.mocked(runMultipageChecks).mockResolvedValue({
+        issues: [],
+        hasUnreadShells: hasShells,
+      });
+      const finalize = vi
+        .fn()
+        .mockResolvedValue({ brokenLinks: [], orphanPages: [] });
+      // Only these two scratchpad methods are reached after mocked discovery/crawl.
+      // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
+      vi.mocked(getAuditScratchpad).mockReturnValue({
+        runFinalizeChecks: finalize,
+        destroy: vi.fn(),
+      } as unknown as ReturnType<typeof getAuditScratchpad>);
+      pgStepMock.mockImplementation(
+        async (
+          _step: unknown,
+          name: string,
+          _config: unknown,
+          callback: () => Promise<unknown>,
+        ) => {
+          if (name === "discover-urls-v2")
+            return { robotsText: "", seededCount: 2 };
+          return callback();
+        },
+      );
+      // pgStep is mocked, so no WorkflowStep implementation is needed.
+      // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
+      await runAuditPhases({} as never, {
+        ...PHASE_PARAMS,
+        config: { maxPages: 50, lighthouseStrategy: "none" },
+        renderUsage: { cloudflareAttempts: 0, contextCredits: 0 },
+      });
+      expect(finalize).toHaveBeenCalledWith({
+        startUrl: "https://example.com/",
+        crawlCompleted: !hasShells,
+      });
+    },
+  );
 });

@@ -7,7 +7,7 @@ import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
-import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
+import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   DISSATISFIED_REASONS,
@@ -52,7 +52,7 @@ async function missingSelfHostedGoogleClientResponse(
 ) {
   const [hosted, configured] = await Promise.all([
     isHostedServerAuthMode(),
-    hasSelfHostedGoogleOAuthConfig(),
+    hasGoogleOAuthConfig(),
   ]);
   if (hosted || configured) return null;
 

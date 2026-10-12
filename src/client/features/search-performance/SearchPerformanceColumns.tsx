@@ -1,7 +1,8 @@
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 import type { MutableRefObject } from "react";
-import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
+import { makeSelectionColumn } from "@/client/components/table/DataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
+import { safeHttpUrl } from "@/shared/safe-url";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 import type {
   getSearchPerformanceReport,
@@ -105,22 +106,17 @@ export function buildStrikingColumns(
       header: () => "Page",
       // GSC page keys are canonical http(s) URLs of the verified property;
       // the scheme check is defense-in-depth before rendering an href.
-      cell: ({ getValue }) =>
-        /^https?:\/\//.test(getValue()) ? (
-          <a
-            href={getValue()}
-            target="_blank"
-            rel="noreferrer"
-            className="link link-hover block max-w-sm truncate"
-            title={getValue()}
-          >
-            {getValue()}
-          </a>
-        ) : (
-          <span className="block max-w-sm truncate" title={getValue()}>
-            {getValue()}
-          </span>
-        ),
+      cell: ({ getValue }) => (
+        <a
+          href={safeHttpUrl(getValue()) ?? undefined}
+          target="_blank"
+          rel="noreferrer"
+          className="block max-w-sm truncate text-primary underline-offset-4 hover:underline"
+          title={getValue()}
+        >
+          {getValue()}
+        </a>
+      ),
     }),
     strikingHelper.accessor("impressions", {
       header: ({ column }) => (

@@ -1,0 +1,1 @@
+ALTER TABLE "project_activation_state" ADD COLUMN "keyword_step_clicked_at" text;

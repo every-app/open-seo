@@ -40,35 +40,12 @@ export const backlinksScopeParamSchema =
 /** Shared wording for the MCP tools that take a backlinks scope. */
 export const BACKLINKS_SCOPE_DESCRIPTION = `${RESEARCH_SCOPE_PARAM_DESCRIPTION} 'page' is a deprecated alias of 'exact_url'. Subfolder counts are computed from filtered backlink totals; rank, trends, and the referring-domains breakdown are unavailable for subfolders.`;
 
-const DEFAULT_BACKLINKS_SPAM_THRESHOLD = 40;
-
-function normalizeBacklinksSpamThreshold(value: number) {
-  if (!Number.isFinite(value)) {
-    return DEFAULT_BACKLINKS_SPAM_THRESHOLD;
-  }
-
-  return Math.min(100, Math.max(0, Math.trunc(value)));
-}
+export const DEFAULT_BACKLINKS_SPAM_THRESHOLD = 40;
 
 export type BacklinksSpamFilterOptions = {
   hideSpam?: boolean;
-  spamThreshold?: number;
 };
 
-export function normalizeBacklinksSpamFilterOptions(
-  options?: BacklinksSpamFilterOptions,
-) {
-  const hideSpam = options?.hideSpam ?? true;
-
-  return {
-    hideSpam,
-    spamThreshold: hideSpam
-      ? normalizeBacklinksSpamThreshold(
-          options?.spamThreshold ?? DEFAULT_BACKLINKS_SPAM_THRESHOLD,
-        )
-      : undefined,
-  };
-}
 export const backlinksLookupSchema = z.object({
   target: z.string().min(1, "Target is required").max(2048),
   scope: backlinksScopeParamSchema.optional(),
@@ -83,7 +60,7 @@ export const backlinksOverviewInputSchema = backlinksLookupSchema.extend({
 /* ------------------------------------------------------------------ */
 
 export const BACKLINKS_PAGE_SIZES = [50, 100, 200] as const;
-export const DEFAULT_BACKLINKS_PAGE_SIZE = 100;
+export const DEFAULT_BACKLINKS_PAGE_SIZE = 50;
 
 const optionalNumber = z
   .union([
@@ -196,6 +173,7 @@ const backlinksPageRequestBase = backlinksLookupSchema.extend({
 });
 
 export const backlinksRowsPageRequestSchema = backlinksPageRequestBase.extend({
+  hideSpam: z.boolean().optional(),
   sortField: backlinksRowsSortFieldSchema.default(
     BACKLINKS_DEFAULT_SORT.backlinks.field,
   ),
@@ -219,9 +197,10 @@ export const topPagesPageRequestSchema = backlinksPageRequestBase.extend({
 });
 
 export const backlinksSearchSchema = z.object({
+  includeSpam: z.boolean().optional().catch(undefined),
   target: z.string().optional(),
   scope: backlinksScopeParamSchema.optional().catch(undefined),
-  tab: backlinksTabSchema.optional(),
+  tab: backlinksTabSchema.optional().catch(undefined),
   page: z.coerce.number().int().positive().optional().catch(undefined),
   size: z.coerce
     .number()

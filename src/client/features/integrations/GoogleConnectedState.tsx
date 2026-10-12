@@ -1,3 +1,5 @@
+import { Button } from "@/client/components/ui/button";
+
 export function GoogleConnectedState({
   property,
   detail,
@@ -26,12 +28,14 @@ export function GoogleConnectedState({
           {property || detail}
         </p>
         {detail ? (
-          <p className="mt-1 text-xs text-base-content/50">
+          <p className="mt-1 text-xs text-muted-foreground">
             ID {detail.replace(/^properties\//, "")}
           </p>
         ) : null}
         {email ? (
-          <p className="mt-1 break-all text-sm text-base-content/60">{email}</p>
+          <p className="mt-1 break-all text-sm text-muted-foreground">
+            {email}
+          </p>
         ) : null}
       </div>
       {canManage || canManageAccounts ? (
@@ -39,23 +43,15 @@ export function GoogleConnectedState({
           disabled={disconnecting || disabled}
           className="flex flex-wrap items-center gap-1"
         >
-          <button
-            type="button"
-            className="btn btn-outline btn-sm border-base-300"
-            onClick={onChange}
-          >
+          <Button variant="outline" size="sm" onClick={onChange}>
             {canManage
               ? "Change property or account"
               : "Manage Google accounts"}
-          </button>
+          </Button>
           {canManage ? (
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm text-error hover:bg-error/10"
-              onClick={onDisconnect}
-            >
+            <Button variant="destructive" size="sm" onClick={onDisconnect}>
               {disconnecting ? "Disconnecting…" : "Disconnect project"}
-            </button>
+            </Button>
           ) : null}
         </fieldset>
       ) : null}

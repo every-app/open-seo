@@ -1,18 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   GSC_INTEGRATION,
-  handleSelfHostedGoogleOAuthCallbackRequest,
-} from "@/server/features/google/selfHostedOAuth";
+  handleGoogleOAuthCallbackRequest,
+} from "@/server/features/google/googleOAuth";
 
 export const Route = createFileRoute("/api/gsc/oauth/callback")({
   server: {
     handlers: {
-      GET: async ({ request }: { request: Request }) => {
-        return handleSelfHostedGoogleOAuthCallbackRequest(
-          request,
-          GSC_INTEGRATION,
-        );
-      },
+      GET: async ({ request }: { request: Request }) =>
+        handleGoogleOAuthCallbackRequest(request, GSC_INTEGRATION),
     },
   },
 });

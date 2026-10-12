@@ -1,13 +1,12 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { toast } from "sonner";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { OnboardingAccountMenu } from "@/client/features/onboarding/OnboardingAccountMenu";
+import { PlanPageAccountMenu } from "@/client/features/billing/PlanPageAccountMenu";
 import { PostSignupOnboarding } from "@/client/features/onboarding/PostSignupOnboarding";
 import {
   buildOnboardingPayload,
   ONBOARDING_LAST_STEP,
+  ONBOARDING_STEPS,
   type OnboardingAnswers,
   onboardingAnswersQueryOptions,
   restoreOnboardingAnswers,
@@ -46,15 +45,12 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
 
 function OnboardingPage() {
   const { data: session } = useSession();
-  const onboardingQuery = useQuery(onboardingAnswersQueryOptions());
-
-  if (!onboardingQuery.data) {
-    return null;
-  }
+  // beforeLoad seeded this query with ensureQueryData, so data is ready.
+  const { data } = useSuspenseQuery(onboardingAnswersQueryOptions());
 
   return (
     <OnboardingFlow
-      initialAnswers={restoreOnboardingAnswers(onboardingQuery.data.answers)}
+      initialAnswers={restoreOnboardingAnswers(data.answers)}
       email={session?.user?.email}
     />
   );
@@ -72,49 +68,48 @@ function OnboardingFlow({
   const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers);
 
   const saveMutation = useMutation({
-    mutationFn: (extra: {
-      completed?: boolean;
-      mcpSetupIntent?: "yes" | "no";
-    }) =>
+    mutationFn: (extra: { completed?: boolean }) =>
       saveOnboardingAnswers({
         data: buildOnboardingPayload(answers, step, extra),
       }),
-    onError: (error) => {
-      toast.error(
-        getStandardErrorMessage(
-          error,
-          "Couldn’t save your answers. Please try again.",
-        ),
-      );
-    },
   });
 
   const goToStep = (next: number) =>
     void navigate({ to: "/onboarding", search: { step: clampStep(next) } });
 
-  const handleNext = () => {
-    if (step === 0) {
+  // Wait for the save before moving on, so a failure toast shows on the step
+  // the user can retry instead of on the next one.
+  const handleNext = async () => {
+    try {
+      await saveMutation.mutateAsync({});
+    } catch {
+      return;
+    }
+    if (ONBOARDING_STEPS[step] === "interests") {
       captureClientEvent("onboarding:interests_selected", {
         interests: answers.selectedInterests,
         interest_other: answers.interestOther.trim() || undefined,
       });
     }
-    saveMutation.mutate({});
     goToStep(step + 1);
   };
 
-  const handleSkip = () => {
-    saveMutation.mutate({});
-    captureClientEvent("onboarding:step_skipped", { step });
-    goToStep(step + 1);
-  };
-
-  const handleFinish = async (mcpSetupIntent?: "yes" | "no") => {
+  const handleSkip = async () => {
     try {
-      await saveMutation.mutateAsync({
-        completed: true,
-        ...(mcpSetupIntent ? { mcpSetupIntent } : {}),
-      });
+      await saveMutation.mutateAsync({});
+    } catch {
+      return;
+    }
+    captureClientEvent("onboarding:step_skipped", {
+      step,
+      step_name: ONBOARDING_STEPS[step],
+    });
+    goToStep(step + 1);
+  };
+
+  const handleFinish = async () => {
+    try {
+      await saveMutation.mutateAsync({ completed: true });
       // Refresh the shared cache so the destination's onboarding-redirect guard
       // sees the completed state and doesn't bounce the user back here.
       await queryClient.invalidateQueries({ queryKey: ["onboardingAnswers"] });
@@ -127,7 +122,6 @@ function OnboardingFlow({
       work_for: answers.workFor,
       source: answers.source,
     });
-    // The dashboard's onboarding checklist owns MCP coaching now.
     void navigate({ to: "/", replace: true });
   };
 
@@ -141,7 +135,7 @@ function OnboardingFlow({
       onSkip={handleSkip}
       onFinish={handleFinish}
       isSaving={saveMutation.isPending}
-      accountMenu={<OnboardingAccountMenu email={email} />}
+      accountMenu={<PlanPageAccountMenu email={email} />}
     />
   );
 }

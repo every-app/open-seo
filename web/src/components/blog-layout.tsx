@@ -8,6 +8,27 @@ const navLinks = [
   { label: "Pricing", to: "/pricing" },
 ] as const;
 
+// Frontmatter dates parse as UTC midnight; format in UTC so readers west of
+// UTC don't see the previous day and SSR matches hydration.
+export function PostDate({
+  date,
+  className,
+}: {
+  date: string;
+  className?: string;
+}) {
+  return (
+    <time dateTime={date} className={className}>
+      {new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC",
+      })}
+    </time>
+  );
+}
+
 export function BlogLayout({ children }: { children: ReactNode }) {
   return (
     <main className="min-h-screen bg-[var(--color-surface)] text-neutral-950">

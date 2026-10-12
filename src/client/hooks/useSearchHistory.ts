@@ -5,7 +5,10 @@ import { jsonCodec } from "@/shared/json";
 interface SearchHistoryItem {
   keyword: string;
   locationCode: number;
+  /** Display label of the searched country, city, county, or region. */
   locationName: string;
+  /** Canonical DataForSEO name when the search had local volume. */
+  localLocationName?: string;
   timestamp: number;
 }
 
@@ -15,6 +18,7 @@ const searchHistoryItemSchema = z.object({
   keyword: z.string(),
   locationCode: z.number(),
   locationName: z.string(),
+  localLocationName: z.string().optional(),
   timestamp: z.number(),
 });
 
@@ -35,7 +39,8 @@ export function useSearchHistory(projectId: string) {
       },
       isSameItem: (existing, next) =>
         existing.keyword === next.keyword &&
-        existing.locationCode === next.locationCode,
+        existing.locationCode === next.locationCode &&
+        existing.localLocationName === next.localLocationName,
       createItem: (item) => ({
         ...item,
         timestamp: Date.now(),
@@ -46,8 +51,12 @@ export function useSearchHistory(projectId: string) {
   return {
     history,
     isLoaded,
-    addSearch: (keyword: string, locationCode: number, locationName: string) =>
-      addItem({ keyword, locationCode, locationName }),
+    addSearch: (
+      keyword: string,
+      locationCode: number,
+      locationName: string,
+      localLocationName: string | undefined,
+    ) => addItem({ keyword, locationCode, locationName, localLocationName }),
     clearHistory: clearItems,
     removeHistoryItem: removeItem,
   };

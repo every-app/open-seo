@@ -49,7 +49,7 @@ interface RankCheckParams {
   maxCostCredits?: number;
 }
 
-export async function prepareRankCheckKeywords(input: {
+async function prepareRankCheckKeywords(input: {
   runId: string;
   configId: string;
   billingCustomer: BillingCustomerContext;
@@ -86,7 +86,7 @@ export async function prepareRankCheckKeywords(input: {
   }
 
   const { costCredits } = estimateRankCheckCredits(
-    trackingKeywords.length,
+    trackingKeywords.map((kw) => kw.keyword),
     input.devices,
     input.serpDepth,
     input.trigger === "scheduled" ? "queued" : "live",

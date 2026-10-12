@@ -13,6 +13,7 @@ type TurnstileApi = {
     element: HTMLElement,
     options: {
       sitekey: string;
+      size: "compact";
       callback: (token: string) => void;
       "expired-callback"?: () => void;
       "error-callback"?: () => void;
@@ -68,6 +69,9 @@ export function TurnstileWidget({
   // effect (a fresh onToken each render must not tear down and re-render it).
   const onTokenRef = useRef(onToken);
   onTokenRef.current = onToken;
+  // Set when the script can't load (ad blocker, network filter), so the form
+  // explains why it can't submit instead of sitting on a disabled button.
+  const [scriptFailed, setScriptFailed] = useState(false);
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY) return;
@@ -84,6 +88,7 @@ export function TurnstileWidget({
       }
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
+        size: "compact",
         callback: (token) => onTokenRef.current(token),
         "expired-callback": () => onTokenRef.current(null),
         "error-callback": () => onTokenRef.current(null),
@@ -98,6 +103,11 @@ export function TurnstileWidget({
       );
       const script = existing ?? document.createElement("script");
       script.addEventListener("load", renderWidget);
+      script.addEventListener("error", () => {
+        // Drop the failed tag so the next mount requests the script again.
+        script.remove();
+        if (!cancelled) setScriptFailed(true);
+      });
       if (!existing) {
         script.src = TURNSTILE_SCRIPT_SRC;
         script.async = true;
@@ -123,5 +133,13 @@ export function TurnstileWidget({
   }, [resetNonce]);
 
   if (!TURNSTILE_SITE_KEY) return null;
+  if (scriptFailed) {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        The security check couldn&rsquo;t load. Allow challenges.cloudflare.com
+        in your browser or ad blocker, then reload the page.
+      </p>
+    );
+  }
   return <div ref={containerRef} className="flex justify-center" />;
 }

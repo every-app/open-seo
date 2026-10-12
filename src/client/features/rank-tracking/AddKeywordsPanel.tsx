@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/client/components/ui/button";
+import { Checkbox } from "@/client/components/ui/checkbox";
+import { Label } from "@/client/components/ui/label";
+import { Textarea } from "@/client/components/ui/textarea";
 
 export function AddKeywordsPanel({
   configId,
@@ -14,9 +16,14 @@ export function AddKeywordsPanel({
 }: {
   configId: string;
   projectId: string;
-  onSuccess: (result: { added: number; checkTriggered: boolean }) => void;
+  onSuccess: (result: {
+    added: number;
+    checkTriggered: boolean;
+    checkScheduledSoon: boolean;
+  }) => void;
   onCancel: () => void;
 }) {
+  const matchCaseId = useId();
   const [keywordInput, setKeywordInput] = useState("");
   const [matchCase, setMatchCase] = useState(false);
   const mutation = useMutation({
@@ -28,37 +35,38 @@ export function AddKeywordsPanel({
       setKeywordInput("");
       onSuccess(result);
     },
-    onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to add keywords"));
-    },
   });
   const isPending = mutation.isPending;
   return (
-    <div className="flex gap-2 items-end">
-      <div className="flex flex-col gap-1 flex-1">
-        <textarea
-          className="textarea textarea-bordered textarea-sm w-full"
+    <div className="flex items-end gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <Textarea
           rows={3}
+          // The field grows with its text; a long line must wrap, not widen the card.
+          className="min-w-0"
+          aria-label="Keywords to add"
           placeholder="Enter keywords, one per line"
           value={keywordInput}
           onChange={(e) => setKeywordInput(e.target.value)}
         />
-        <label
-          className="flex items-center gap-2 text-xs cursor-pointer w-fit"
+        <div
+          className="flex w-fit items-center gap-2"
           title="Track these keywords exactly as typed instead of lowercasing them. Google can return different results for a capitalized brand name."
         >
-          <input
-            type="checkbox"
-            className="checkbox checkbox-xs [--radius-selector:0.25rem]"
+          <Checkbox
+            id={matchCaseId}
             checked={matchCase}
-            onChange={(e) => setMatchCase(e.target.checked)}
+            onCheckedChange={(checked) => setMatchCase(checked)}
           />
-          Match case
-        </label>
+          <Label htmlFor={matchCaseId} className="text-xs font-normal">
+            Match case
+          </Label>
+        </div>
       </div>
       <div className="flex flex-col gap-1">
-        <button
-          className="btn btn-primary btn-sm"
+        <Button
+          size="sm"
+          pending={isPending}
           onClick={() => {
             const lines = keywordInput
               .split("\n")
@@ -72,14 +80,13 @@ export function AddKeywordsPanel({
             }
             if (lines.length > 0) mutation.mutate(lines);
           }}
-          disabled={isPending || !keywordInput.trim()}
+          disabled={!keywordInput.trim()}
         >
-          {isPending && <Loader2 className="size-3 animate-spin" />}
           Add
-        </button>
-        <button className="btn btn-ghost btn-sm" onClick={onCancel}>
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );

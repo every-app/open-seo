@@ -1,11 +1,7 @@
 import { useState, type ReactNode } from "react";
-import {
-  ChevronRight,
-  ExternalLink,
-  FileWarning,
-  Info,
-  TriangleAlert,
-} from "lucide-react";
+import { ChevronRight, ExternalLink } from "lucide-react";
+import { TableCell, TableRow } from "@/client/components/ui/table";
+import { SeverityBadge } from "@/client/features/audit/shared";
 import type { LighthouseIssue } from "./types";
 
 export function LighthouseIssueRow({ issue }: { issue: LighthouseIssue }) {
@@ -14,74 +10,76 @@ export function LighthouseIssueRow({ issue }: { issue: LighthouseIssue }) {
 
   return (
     <>
-      <tr
-        className={`hover:bg-base-200/50 transition-colors ${hasDetails ? "cursor-pointer" : ""}`}
+      <TableRow
+        className={hasDetails ? "cursor-pointer" : undefined}
         onClick={() => hasDetails && setOpen(!open)}
       >
-        <td className="py-3 pl-4 pr-2">
+        <TableCell className="py-3">
           {hasDetails ? (
             <ChevronRight
-              className={`size-3.5 text-base-content/40 transition-transform ${open ? "rotate-90" : ""}`}
+              className={`size-3.5 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
             />
           ) : null}
-        </td>
-        <td className="py-3 pr-3">
-          <span
-            className={`badge badge-sm border ${severityBadgeClass(issue.severity)} gap-1`}
-          >
-            {severityIcon(issue.severity)}
+        </TableCell>
+        <TableCell className="py-3">
+          <SeverityBadge severity={issue.severity}>
             {issue.severity}
-          </span>
-        </td>
-        <td className="py-3 pr-3">
+          </SeverityBadge>
+        </TableCell>
+        <TableCell className="py-3">
           <div>
             <p className="font-medium text-sm leading-snug">{issue.title}</p>
             {issue.displayValue ? (
-              <p className="text-xs text-base-content/50 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {issue.displayValue}
               </p>
             ) : null}
           </div>
-        </td>
-        <td className="py-3 pr-3 hidden sm:table-cell">
-          <span className="text-xs text-base-content/50">{issue.category}</span>
-        </td>
-        <td className="py-3 pr-3 hidden md:table-cell text-right">
+        </TableCell>
+        <TableCell className="py-3 hidden sm:table-cell">
+          <span className="text-xs text-muted-foreground">
+            {issue.category}
+          </span>
+        </TableCell>
+        <TableCell className="py-3 hidden md:table-cell text-right">
           {issue.impactMs != null || issue.impactBytes != null ? (
-            <span className="text-xs tabular-nums text-base-content/50">
+            <span className="text-xs tabular-nums text-muted-foreground">
               {issue.impactMs ? formatMs(issue.impactMs) : null}
               {issue.impactMs && issue.impactBytes ? " / " : null}
               {issue.impactBytes ? formatBytes(issue.impactBytes) : null}
             </span>
           ) : null}
-        </td>
-        <td className="py-3 pr-4 text-right">
+        </TableCell>
+        <TableCell className="py-3 text-right">
           {issue.score != null ? (
-            <span className="text-xs tabular-nums text-base-content/50">
+            <span className="text-xs tabular-nums text-muted-foreground">
               {issue.score}
             </span>
           ) : null}
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
       {open ? (
-        <tr className="!bg-transparent">
-          <td colSpan={6} className="pb-4 pt-2 pl-[8.5rem] pr-4">
+        <TableRow className="hover:bg-transparent">
+          <TableCell
+            colSpan={6}
+            className="pb-4 pt-2 pl-10 pr-4 sm:pl-[8.5rem]"
+          >
             <div className="space-y-3">
               {issue.description ? (
-                <div className="text-sm text-base-content/70 leading-relaxed">
+                <div className="text-sm text-muted-foreground leading-relaxed">
                   {renderInlineMarkdown(issue.description)}
                 </div>
               ) : null}
               {issue.items.length > 0 ? (
                 <details className="text-sm">
-                  <summary className="cursor-pointer font-medium text-base-content/60 text-xs">
+                  <summary className="cursor-pointer font-medium text-muted-foreground text-xs">
                     Affected items ({issue.items.length})
                   </summary>
                   <div className="mt-2 space-y-1.5">
                     {issue.items.map((item, itemIndex) => (
                       <pre
                         key={`${issue.auditKey}-${itemIndex}`}
-                        className="bg-base-200/60 p-2 rounded overflow-x-auto text-xs leading-relaxed"
+                        className="bg-muted p-2 rounded overflow-x-auto text-xs leading-relaxed"
                       >
                         {item}
                       </pre>
@@ -90,8 +88,8 @@ export function LighthouseIssueRow({ issue }: { issue: LighthouseIssue }) {
                 </details>
               ) : null}
             </div>
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       ) : null}
     </>
   );
@@ -129,7 +127,7 @@ function renderInlineMarkdown(markdown: string): ReactNode {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="link link-primary inline-flex items-center gap-1"
+        className="inline-flex items-center gap-1 text-primary hover:underline"
       >
         {label}
         <ExternalLink className="size-3" />
@@ -145,20 +143,4 @@ function renderInlineMarkdown(markdown: string): ReactNode {
   }
 
   return nodes.length ? nodes : markdown;
-}
-
-function severityBadgeClass(severity: "critical" | "warning" | "info") {
-  if (severity === "critical") {
-    return "border-error/30 bg-error/10 text-error/80";
-  }
-  if (severity === "warning") {
-    return "border-warning/35 bg-warning/10 text-warning/80";
-  }
-  return "border-info/30 bg-info/10 text-info/80";
-}
-
-function severityIcon(severity: "critical" | "warning" | "info") {
-  if (severity === "critical") return <FileWarning className="size-3" />;
-  if (severity === "warning") return <TriangleAlert className="size-3" />;
-  return <Info className="size-3" />;
 }

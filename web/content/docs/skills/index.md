@@ -5,7 +5,7 @@ description: "Add OpenSEO Agent Skills to Claude Code, Codex, or another AI agen
 
 OpenSEO Agent Skills let you hand repeatable SEO workflows to your AI agent.
 
-Run a slash command when you need keyword research, clustering, competitor analysis, link prospecting, or project setup. The skill gives your agent the workflow instructions.
+Run a slash command when you need keyword research, AI visibility tracking, clustering, competitor analysis, link prospecting, or project setup. The skill gives your agent the workflow instructions.
 
 You stay in charge of strategy. Your agent uses OpenSEO data and the skill instructions to research the answer, then saves the result as a report in your project.
 
@@ -36,6 +36,11 @@ MCP connects your agent to OpenSEO data. Skills tell your agent which SEO workfl
 - [Competitive Landscape](/docs/skills/competitive-landscape): map who is winning across a market and where your openings are.
 - [Competitor Analysis](/docs/skills/competitor-analysis): analyze one competitor and turn the research into strategic takeaways.
 - [Local SEO](/docs/skills/local-seo): audit a Google Business Profile, compare it to local competitors, and map Maps visibility around a location.
+
+## AI visibility workflows
+
+- [AI Visibility Audit](/docs/skills/ai-visibility-audit): find the few changes most likely to get your brand mentioned or cited in AI answers.
+- [AI Prompt Research](/docs/skills/ai-prompt-research): find the questions people ask ChatGPT about your market and which sites the answers cite.
 
 ## Promotion workflows
 

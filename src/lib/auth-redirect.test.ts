@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   getAuthRedirectFromSearch,
-  getCurrentAuthRedirectFromHref,
-  getOAuthAuthorizeRedirectFromSearch,
   getOAuthSignedQuery,
   getSignInHref,
-  getVerifyEmailSearch,
   isDocumentRoute,
   normalizeAuthRedirect,
 } from "./auth-redirect";
@@ -39,26 +36,23 @@ describe("auth redirect helpers", () => {
     expect(isDocumentRoute("/sign-in")).toBe(false);
   });
 
-  it("defaults unsafe or missing redirects to the app root", () => {
+  it("defaults unsafe or missing redirects to the app root, keeping same-origin paths", () => {
     expect(normalizeAuthRedirect(undefined)).toBe("/");
     expect(normalizeAuthRedirect("https://evil.example/app")).toBe("/");
     expect(normalizeAuthRedirect("//evil.example/app")).toBe("/");
-  });
-
-  it("keeps same-origin relative redirects", () => {
     expect(
       normalizeAuthRedirect("/api/auth/oauth2/authorize?client_id=abc"),
     ).toBe("/api/auth/oauth2/authorize?client_id=abc");
   });
 
-  it("rejects external and protocol-relative redirects", () => {
-    expect(normalizeAuthRedirect("https://evil.test")).toBe("/");
-    expect(normalizeAuthRedirect("//evil.test")).toBe("/");
-  });
-
   it("rejects backslash redirects that URL parsers treat as slashes", () => {
     expect(normalizeAuthRedirect("/\\evil.test")).toBe("/");
     expect(normalizeAuthRedirect("/path\\..\\evil")).toBe("/");
+  });
+
+  it("rejects tab and newline redirects that URL parsers strip into //", () => {
+    expect(normalizeAuthRedirect("/\t/evil.test")).toBe("/");
+    expect(normalizeAuthRedirect("/\n/evil.test")).toBe("/");
   });
 
   it("builds sign-in links with the redirect query only when needed", () => {
@@ -68,53 +62,12 @@ describe("auth redirect helpers", () => {
     );
   });
 
-  it("builds verify-email search params without a root redirect", () => {
-    expect(getVerifyEmailSearch("ben@example.com", "/")).toEqual({
-      email: "ben@example.com",
-    });
-    expect(
-      getVerifyEmailSearch("ben@example.com", "/onboarding?step=0"),
-    ).toEqual({
-      email: "ben@example.com",
-      redirect: "/onboarding?step=0",
-    });
-  });
-
-  it("extracts the current path, query, and hash from hrefs", () => {
-    expect(
-      getCurrentAuthRedirectFromHref(
-        "https://open-seo.test/projects?tab=keywords#top",
-      ),
-    ).toBe("/projects?tab=keywords#top");
-  });
-
-  it("preserves safe internal redirects", () => {
-    expect(getAuthRedirectFromSearch("", "/app")).toBe("/app");
-  });
-
   it("extracts Better Auth signed OAuth query parameters through sig", () => {
     const signedQuery = getOAuthSignedQuery(
       `${oauthSearch}&ignored_after_sig=true`,
     );
 
     expect(signedQuery).toBe(oauthSearch);
-  });
-
-  it("builds an internal OAuth authorize continuation redirect", () => {
-    const redirect = getOAuthAuthorizeRedirectFromSearch(oauthSearch);
-
-    expect(redirect).toBe(`/api/auth/oauth2/authorize?${oauthSearch}`);
-    expect(redirect).toContain("client_id=claude-client");
-    expect(redirect).toContain(
-      "redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback",
-    );
-    expect(redirect).toContain("scope=offline_access+mcp");
-    expect(redirect).toContain("state=state-123");
-    expect(redirect).toContain("code_challenge=challenge-123");
-    expect(redirect).toContain("code_challenge_method=S256");
-    expect(redirect).toContain("resource=https%3A%2F%2Fapp.openseo.so%2Fmcp");
-    expect(redirect).toContain("exp=1778271800");
-    expect(redirect).toContain("sig=signed-value");
   });
 
   it("prefers OAuth continuation over a generic redirect", () => {

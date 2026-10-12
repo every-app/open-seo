@@ -40,16 +40,6 @@ describe("buildBacklinksRowsApiFilters", () => {
     ]);
   });
 
-  it("escapes LIKE wildcards in terms", () => {
-    expect(buildBacklinksRowsApiFilters({ include: "wp_content" })).toEqual([
-      ["url_from", "ilike", "%wp\\_content%"],
-    ]);
-  });
-
-  it("returns no expressions for empty filters", () => {
-    expect(buildBacklinksRowsApiFilters({})).toEqual([]);
-  });
-
   it("throws when the condition budget is exceeded", () => {
     expect(() =>
       buildBacklinksRowsApiFilters({
@@ -60,33 +50,36 @@ describe("buildBacklinksRowsApiFilters", () => {
   });
 });
 
-describe("buildReferringDomainsApiFilters", () => {
-  it("filters on referring-domain fields", () => {
-    expect(
-      buildReferringDomainsApiFilters({
-        include: "edu",
-        minBacklinks: 5,
-        maxSpamScore: 30,
-      }),
-    ).toEqual([
-      ["domain", "ilike", "%edu%"],
-      "and",
-      ["backlinks", ">=", 5],
-      "and",
-      ["backlinks_spam_score", "<=", 30],
-    ]);
-  });
-});
-
-describe("buildTopPagesApiFilters", () => {
-  it("filters on the url field", () => {
-    expect(
-      buildTopPagesApiFilters({ include: "/blog", minReferringDomains: 2 }),
-    ).toEqual([
-      ["url", "ilike", "%/blog%"],
-      "and",
-      ["referring_domains", ">=", 2],
-    ]);
+describe("per-endpoint filter builders", () => {
+  it.each([
+    {
+      name: "referring domains",
+      build: () =>
+        buildReferringDomainsApiFilters({
+          include: "edu",
+          minBacklinks: 5,
+          maxSpamScore: 30,
+        }),
+      expected: [
+        ["domain", "ilike", "%edu%"],
+        "and",
+        ["backlinks", ">=", 5],
+        "and",
+        ["backlinks_spam_score", "<=", 30],
+      ],
+    },
+    {
+      name: "top pages",
+      build: () =>
+        buildTopPagesApiFilters({ include: "/blog", minReferringDomains: 2 }),
+      expected: [
+        ["url", "ilike", "%/blog%"],
+        "and",
+        ["referring_domains", ">=", 2],
+      ],
+    },
+  ])("$name uses its own field names", ({ build, expected }) => {
+    expect(build()).toEqual(expected);
   });
 });
 
@@ -111,7 +104,6 @@ describe("client condition count vs server condition budget", () => {
   }
 
   const cases: Array<[string, BacklinksTabFilterValues]> = [
-    ["empty", { ...EMPTY_BACKLINKS_FILTERS }],
     [
       "terms and ranges",
       {

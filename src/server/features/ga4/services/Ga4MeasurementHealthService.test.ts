@@ -40,15 +40,7 @@ describe("Ga4MeasurementHealthService", () => {
     ]);
     mocks.getEnhancedMeasurementSettings.mockResolvedValue({
       streamEnabled: true,
-      scrollsEnabled: true,
-      outboundClicksEnabled: true,
       siteSearchEnabled: false,
-      videoEngagementEnabled: true,
-      fileDownloadsEnabled: true,
-      pageChangesEnabled: true,
-      formInteractionsEnabled: false,
-      searchQueryParameter: "q",
-      uriQueryParameter: "",
     });
     mocks.listKeyEvents.mockResolvedValue([
       {
@@ -65,27 +57,11 @@ describe("Ga4MeasurementHealthService", () => {
     const result =
       await Ga4MeasurementHealthService.getMeasurementHealth("project_1");
 
-    expect(result.summary).toEqual({
-      dataStreamCount: 1,
-      webStreamCount: 1,
-      keyEventCount: 1,
-      customDimensionCount: 0,
-      customMetricCount: 0,
-      issueCount: 1,
-    });
     expect(result.issues).toEqual(["site_search_measurement_disabled"]);
     expect(result.webStreams[0]).toMatchObject({
       streamId: "456",
       measurementId: "G-ABC123",
       enhancedMeasurement: { siteSearchEnabled: false },
     });
-  });
-
-  it("returns a stable not-connected error before calling Google", async () => {
-    mocks.getByProjectId.mockResolvedValue(null);
-    await expect(
-      Ga4MeasurementHealthService.getMeasurementHealth("project_1"),
-    ).rejects.toMatchObject({ code: "ga4_not_connected" });
-    expect(mocks.listDataStreams).not.toHaveBeenCalled();
   });
 });

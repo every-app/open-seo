@@ -41,26 +41,16 @@ describe("buildDubSaleRequest", () => {
     ).toBe(1999);
   });
 
-  it("skips unpaid invoices", () => {
-    expect(
-      buildDubSaleRequest(invoice({ status: "open" }), "org_1"),
-    ).toBeNull();
-  });
-
-  it("skips zero-total invoices", () => {
-    expect(buildDubSaleRequest(invoice({ total: 0 }), "org_1")).toBeNull();
-  });
-
-  it("skips non-USD invoices", () => {
+  it.each([
+    ["unpaid", { status: "open" }],
+    ["zero-total", { total: 0 }],
+    ["non-USD", { currency: "eur" }],
+    // A total this large signals cents were passed where dollars belong.
+    ["implausibly large", { total: 1900 }],
+  ])("skips %s invoices", (_label, overrides) => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(
-      buildDubSaleRequest(invoice({ currency: "eur" }), "org_1"),
-    ).toBeNull();
-  });
-
-  it("skips implausibly large totals that would signal a unit mismatch", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(buildDubSaleRequest(invoice({ total: 1900 }), "org_1")).toBeNull();
+    expect(buildDubSaleRequest(invoice(overrides), "org_1")).toBeNull();
   });
 
   it("falls back to a stable synthetic key when stripeId is missing", () => {

@@ -6,12 +6,23 @@ import {
 } from "@/shared/tag-colors";
 import type { SavedKeywordTag } from "@/types/keywords";
 
-type Size = "xs" | "sm" | "md";
+export function TagDot({
+  tag,
+}: {
+  tag: Pick<SavedKeywordTag, "id" | "color">;
+}) {
+  return (
+    <span
+      className={`size-2 shrink-0 rounded-full ${tagDotClass(resolveTagColor(tag))}`}
+    />
+  );
+}
+
+type Size = "xs" | "sm";
 
 const SIZE_CLASS: Record<Size, string> = {
   xs: "h-5 px-1.5 text-[11px]",
   sm: "h-6 px-2 text-xs",
-  md: "h-7 px-2.5 text-sm",
 };
 
 export function TagChip({
@@ -34,7 +45,7 @@ export function TagChip({
   const interactive = onClick
     ? "cursor-pointer hover:brightness-110 transition"
     : "";
-  const ring = selected ? "ring-2 ring-offset-1 ring-offset-base-100" : "";
+  const ring = selected ? "ring-2 ring-offset-1 ring-offset-background" : "";
 
   const content = (
     <>

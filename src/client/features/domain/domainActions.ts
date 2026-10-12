@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import type { KeywordRow } from "@/client/features/domain/types";
 
@@ -17,7 +16,6 @@ type SaveMutation = (payload: {
 
 type SaveOptions = {
   onSuccess?: () => void;
-  onError?: (error: unknown) => void;
 };
 
 export function saveSelectedKeywords({
@@ -33,11 +31,6 @@ export function saveSelectedKeywords({
   projectId: string;
   locationCode?: number;
 }) {
-  if (selectedKeywords.size === 0) {
-    toast.error("Select at least one keyword first");
-    return;
-  }
-
   const selectedRows = filteredKeywords.filter((row) =>
     selectedKeywords.has(row.keyword),
   );
@@ -60,9 +53,6 @@ export function saveSelectedKeywords({
           keyword_count: selectedKeywords.size,
         });
         toast.success(`Saved ${selectedKeywords.size} keywords`);
-      },
-      onError: (error: unknown) => {
-        toast.error(getStandardErrorMessage(error, "Save failed."));
       },
     },
   );

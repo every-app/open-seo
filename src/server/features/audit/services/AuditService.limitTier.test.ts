@@ -1,23 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  isHostedMock,
-  hasManagedAccessMock,
-  hasPaidPlanMock,
-  getOrCreateCustomerMock,
-} = vi.hoisted(() => ({
-  isHostedMock: vi.fn(),
-  hasManagedAccessMock: vi.fn(),
-  hasPaidPlanMock: vi.fn(),
-  getOrCreateCustomerMock: vi.fn(),
-}));
+const { isHostedMock, hasPaidPlanMock, getOrCreateCustomerMock } = vi.hoisted(
+  () => ({
+    isHostedMock: vi.fn(),
+    hasPaidPlanMock: vi.fn(),
+    getOrCreateCustomerMock: vi.fn(),
+  }),
+);
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: isHostedMock,
 }));
 vi.mock("@/server/billing/subscription", () => ({
-  customerHasManagedAccess: hasManagedAccessMock,
   customerHasPaidPlan: hasPaidPlanMock,
   getOrCreateOrganizationCustomer: getOrCreateCustomerMock,
 }));
@@ -39,8 +34,6 @@ const customer = {
 
 describe("resolveAuditLimitTier", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    hasManagedAccessMock.mockResolvedValue(true);
     hasPaidPlanMock.mockResolvedValue(true);
   });
 
@@ -51,7 +44,6 @@ describe("resolveAuditLimitTier", () => {
       "self_hosted",
     );
     expect(getOrCreateCustomerMock).not.toHaveBeenCalled();
-    expect(hasManagedAccessMock).not.toHaveBeenCalled();
     expect(hasPaidPlanMock).not.toHaveBeenCalled();
   });
 
@@ -63,4 +55,12 @@ describe("resolveAuditLimitTier", () => {
     );
     expect(getOrCreateCustomerMock).toHaveBeenCalledWith(customer);
   });
+});
+
+it("allows a hosted account without a paid subscription through the free audit tier", async () => {
+  isHostedMock.mockResolvedValue(true);
+  hasPaidPlanMock.mockResolvedValue(false);
+  await expect(AuditService.resolveAuditLimitTier(customer)).resolves.toBe(
+    "free",
+  );
 });

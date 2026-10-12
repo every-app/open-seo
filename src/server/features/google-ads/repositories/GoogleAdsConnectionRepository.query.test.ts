@@ -45,9 +45,9 @@ beforeAll(async () => {
       `INSERT INTO user (id) VALUES ('user_1');`,
       `INSERT INTO projects (id) VALUES ('proj_a'), ('proj_b');`,
       `INSERT INTO organization (id) VALUES ('org_1');`,
-      ...migrationStatements("drizzle/0003_light_sage.sql", "account"),
+      ...migrationStatements("drizzle/sqlite/0003_light_sage.sql", "account"),
       ...migrationStatements(
-        "drizzle/0045_google_ads_connections.sql",
+        "drizzle/sqlite/0045_google_ads_connections.sql",
         "google_ads_connections",
       ),
     ].join("\n"),

@@ -1,9 +1,24 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { revalidateLogic } from "@tanstack/react-form";
 import { toast } from "sonner";
+import { z } from "zod";
+import { useAppForm } from "@/client/components/form/useAppForm";
+import { Button } from "@/client/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { sendTeamInvitation } from "@/serverFunctions/organization";
+
+const inviteSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address."),
+});
 
 export function inviteErrorMessage(error: Error) {
   const code = getErrorCode(error);
@@ -23,8 +38,6 @@ export function InviteTeammateModal({
   onClose: () => void;
   onInvited: () => void;
 }) {
-  const [email, setEmail] = useState("");
-
   // Server function (not authClient.inviteMember): it enforces the daily send
   // limits and fails visibly when the invite email doesn't send.
   const inviteMutation = useMutation({
@@ -37,60 +50,66 @@ export function InviteTeammateModal({
       onClose();
     },
     onError: (error: Error) => {
-      toast.error(inviteErrorMessage(error));
+      if (getErrorCode(error) === "CONFLICT") {
+        form.setErrorMap({
+          onSubmit: { fields: { email: "This person is already a member." } },
+        });
+      } else {
+        toast.error(inviteErrorMessage(error));
+      }
       // An email-send failure still creates the pending row — show it.
       onInvited();
     },
   });
 
+  const form = useAppForm({
+    defaultValues: { email: "" },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: inviteSchema },
+    onSubmit: ({ value }) => inviteMutation.mutateAsync(value.email.trim()),
+  });
+
   return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-md">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const trimmed = email.trim();
-            if (trimmed) inviteMutation.mutate(trimmed);
-          }}
-        >
-          <h3 className="text-lg font-bold">Invite a teammate</h3>
-          <p className="mt-2 text-sm text-base-content/60">
-            They&rsquo;ll join as an Admin with full access to each project
-            except for billing. The invitation link expires in 7 days.
-          </p>
-          <label className="form-control mt-4 w-full">
-            <span className="label-text pb-1 text-xs text-base-content/60">
-              Email
-            </span>
-            <input
-              type="email"
-              className="input input-sm input-bordered w-full"
-              placeholder="teammate@company.com"
-              value={email}
-              onChange={(event) => setEmail(event.currentTarget.value)}
-              required
-              autoFocus
-            />
-          </label>
-          <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-              disabled={inviteMutation.isPending || !email.trim()}
-            >
-              {inviteMutation.isPending ? "Sending…" : "Send invite"}
-            </button>
-          </div>
-        </form>
-      </div>
-      <div className="modal-backdrop" onClick={onClose} />
-    </div>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !inviteMutation.isPending) onClose();
+      }}
+    >
+      <DialogContent showCloseButton={false} className="sm:max-w-md">
+        <form.AppForm>
+          <form.Form className="flex flex-col gap-4">
+            <DialogHeader>
+              <DialogTitle>Invite a teammate</DialogTitle>
+              <DialogDescription>
+                They&rsquo;ll join as an Admin with full access to each project
+                except for billing. The invitation link expires in 7 days.
+              </DialogDescription>
+            </DialogHeader>
+            <form.AppField name="email">
+              {(field) => (
+                <field.TextField
+                  label="Email"
+                  type="email"
+                  placeholder="teammate@company.com"
+                  required
+                  autoFocus
+                />
+              )}
+            </form.AppField>
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={onClose}
+                disabled={inviteMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <form.SubmitButton>Send invite</form.SubmitButton>
+            </DialogFooter>
+          </form.Form>
+        </form.AppForm>
+      </DialogContent>
+    </Dialog>
   );
 }

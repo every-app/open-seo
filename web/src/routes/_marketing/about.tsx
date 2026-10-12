@@ -5,6 +5,7 @@ import AboutContent, {
   frontmatter,
 } from "../../../content/marketing/about.mdx";
 import { buildPageSeo } from "@/lib/seo";
+import { SocialLinks } from "@/components/social-links";
 
 export const Route = createFileRoute("/_marketing/about")({
   head: () =>
@@ -45,6 +46,18 @@ function AboutPage() {
       <DocsBody className="min-w-0 text-neutral-800 [&_a]:!text-neutral-950 [&_h2]:!text-neutral-950 [&_h2_a]:!no-underline [&_h3]:!text-neutral-950 [&_h3_a]:!no-underline [&_p]:!text-neutral-700 [&_p_a]:font-medium [&_p_a]:underline [&_p_a]:decoration-[var(--color-brand-accent)] [&_p_a]:underline-offset-4 [&_p_a:hover]:!text-neutral-700 [&_strong]:!text-neutral-950">
         <AboutContent components={defaultMdxComponents} />
       </DocsBody>
+
+      <section className="mt-10 border-t border-[var(--color-border-subtle)] pt-8">
+        <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
+          Follow OpenSEO
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--color-brand-muted)]">
+          Find us on YouTube, X, LinkedIn, and Instagram.
+        </p>
+        <div className="mt-3 text-sm text-neutral-700">
+          <SocialLinks />
+        </div>
+      </section>
 
       <a
         href="https://app.openseo.so/sign-up"

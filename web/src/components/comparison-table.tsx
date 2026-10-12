@@ -11,78 +11,24 @@ type Column = {
   highlight?: boolean;
 };
 
-const COLUMNS: Column[] = [
-  { name: "OpenSEO", highlight: true },
-  { name: "DIY open-source repos" },
-  { name: "Data-pipeline tools" },
-];
+export type ComparisonTableProps = {
+  columns: Column[];
+  rows: { label: string; cells: Cell[] }[];
+};
 
-const ROWS: { label: string; cells: Cell[] }[] = [
-  {
-    label: "Setup",
-    cells: [
-      { text: "Simple, guided onboarding", tone: "positive" },
-      { text: "~30 min in the Google Cloud console" },
-      { text: "Account + connector setup" },
-    ],
-  },
-  {
-    label: "Google Cloud project",
-    cells: [
-      { text: "Not needed", tone: "positive" },
-      { text: "Required", tone: "negative" },
-      { text: "Usually not needed", tone: "positive" },
-    ],
-  },
-  {
-    label: "Cost to run",
-    cells: [
-      {
-        text: "Included in the $10/mo plan, zero credits (free to self-host)",
-        tone: "positive",
-      },
-      { text: "Free (your time + your own quota)" },
-      { text: "Paid or limited free tier", tone: "negative" },
-    ],
-  },
-  {
-    label: "Read-only and safe",
-    cells: [
-      { text: "webmasters.readonly", tone: "positive", code: true },
-      { text: "Depends on the scopes you grant" },
-      { text: "Varies" },
-    ],
-  },
-  {
-    label: "Built for SEO",
-    cells: [
-      {
-        text: "Also does keyword, rank, and backlink research",
-        tone: "positive",
-      },
-      { text: "Search Console only", tone: "negative" },
-      { text: "Reporting and analytics focus" },
-    ],
-  },
-  {
-    label: "Self-host option",
-    cells: [
-      { text: "Yes", tone: "positive" },
-      { text: "Yes", tone: "positive" },
-      { text: "No", tone: "negative" },
-    ],
-  },
-];
-
-export function ComparisonTable() {
+export function ComparisonTable({ columns, rows }: ComparisonTableProps) {
   return (
     <div className="not-prose my-8">
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border-subtle)] bg-white">
-        <table className="w-full min-w-[680px] border-collapse text-left">
+        <table
+          className={`w-full border-collapse text-left ${
+            columns.length > 2 ? "min-w-[680px]" : "min-w-[520px]"
+          }`}
+        >
           <thead>
             <tr>
               <td className="w-[22%] p-4" />
-              {COLUMNS.map((col) => (
+              {columns.map((col) => (
                 <th
                   key={col.name}
                   scope="col"
@@ -98,7 +44,7 @@ export function ComparisonTable() {
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row) => (
+            {rows.map((row) => (
               <tr key={row.label}>
                 <th
                   scope="row"
@@ -107,10 +53,10 @@ export function ComparisonTable() {
                   {row.label}
                 </th>
                 {row.cells.map((cell, i) => {
-                  const highlight = COLUMNS[i]?.highlight;
+                  const highlight = columns[i]?.highlight;
                   return (
                     <td
-                      key={COLUMNS[i]?.name ?? i}
+                      key={columns[i]?.name ?? i}
                       className={`border-t border-[var(--color-border-subtle)] p-4 align-top text-sm ${
                         highlight
                           ? "border-x border-[var(--color-border-subtle)] bg-[#fbfaf8]"

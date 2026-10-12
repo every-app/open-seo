@@ -342,7 +342,7 @@ export class SamChatAgent extends Think {
         if (depleted) {
           turn.refusal = "credits";
           return this.refusalTurn(
-            "You're out of credits. Top up to keep using SAM.",
+            "You're out of credits. Upgrade your plan or buy more credits on the Billing page to keep using SAM.",
           );
         }
         this.turnMonthlyRemaining = monthlyRemaining;

@@ -1,85 +1,12 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { KeywordResearchRow } from "@/types/keywords";
+import type { KeywordResearchDisplayRow } from "../groupSharedVolumeRows";
 
-const KEYWORD_RESEARCH_PAGE_SIZES = [50, 100, 300, 500] as const;
+export const KEYWORD_RESEARCH_PAGE_SIZES = [50, 100, 300, 500] as const;
 const DEFAULT_KEYWORD_RESEARCH_PAGE_SIZE = 50;
 const KEYWORD_RESEARCH_PAGE_SIZE_STORAGE_KEY =
   "keyword-research-table-page-size";
 
 type KeywordResearchPageSize = (typeof KEYWORD_RESEARCH_PAGE_SIZES)[number];
-
-type Props = {
-  page: number;
-  pageSize: KeywordResearchPageSize;
-  totalCount: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: KeywordResearchPageSize) => void;
-};
-
-export function KeywordResearchPagination({
-  page,
-  pageSize,
-  totalCount,
-  onPageChange,
-  onPageSizeChange,
-}: Props) {
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const start = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
-  const end = Math.min(totalCount, page * pageSize);
-
-  return (
-    <div className="flex flex-col gap-3 border-t border-base-300 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-sm tabular-nums text-base-content/70">
-        {start.toLocaleString()}-{end.toLocaleString()} of{" "}
-        {totalCount.toLocaleString()}
-      </div>
-      <div className="flex items-center gap-6">
-        <label className="flex items-center gap-2 text-sm text-base-content/70">
-          <span className="whitespace-nowrap">Rows per page</span>
-          <select
-            className="select select-bordered select-sm w-20"
-            value={pageSize}
-            onChange={(event) =>
-              onPageSizeChange(parseKeywordResearchPageSize(event.target.value))
-            }
-          >
-            {KEYWORD_RESEARCH_PAGE_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap text-sm tabular-nums text-base-content/70">
-            Page {page.toLocaleString()} of {totalPages.toLocaleString()}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-square"
-              disabled={page <= 1}
-              onClick={() => onPageChange(page - 1)}
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-square"
-              disabled={page >= totalPages}
-              onClick={() => onPageChange(page + 1)}
-              aria-label="Next page"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function parseKeywordResearchPageSize(value: string): KeywordResearchPageSize {
   const parsed = Number(value);
@@ -89,28 +16,46 @@ function parseKeywordResearchPageSize(value: string): KeywordResearchPageSize {
   );
 }
 
-export function useKeywordResearchPagination(rows: KeywordResearchRow[]) {
+export function keywordResearchPageEnds(
+  rows: KeywordResearchDisplayRow[],
+  pageSize: number,
+) {
+  const ends: number[] = [];
+  for (let start = 0; start < rows.length; ) {
+    let end = Math.min(start + pageSize, rows.length);
+    // Finish the last family before starting the next page.
+    while (end < rows.length && rows[end].parentKeyword !== null) end++;
+    ends.push(end);
+    start = end;
+  }
+  return ends;
+}
+
+export function useKeywordResearchPagination(
+  rows: KeywordResearchDisplayRow[],
+) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<KeywordResearchPageSize>(() =>
     getStoredKeywordResearchPageSize(),
   );
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const pageEnds = useMemo(
+    () => keywordResearchPageEnds(rows, pageSize),
+    [rows, pageSize],
+  );
+  const totalPages = Math.max(1, pageEnds.length);
+  const currentPage = Math.min(page, totalPages);
+  const start = pageEnds[currentPage - 2] ?? 0;
+  const end = pageEnds[currentPage - 1] ?? 0;
 
   useEffect(() => {
     setPage(1);
   }, [rows]);
 
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
-
-  const pageRows = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return rows.slice(start, start + pageSize);
-  }, [page, pageSize, rows]);
+  const pageRows = useMemo(() => rows.slice(start, end), [start, end, rows]);
 
   return {
-    page,
+    page: currentPage,
+    pageRange: { start: start + 1, end, pageCount: totalPages },
     pageSize,
     pageRows,
     setPage,
@@ -119,7 +64,6 @@ export function useKeywordResearchPagination(rows: KeywordResearchRow[]) {
       persistKeywordResearchPageSize(nextPageSize);
       setPage(1);
     },
-    totalPages,
   };
 }
 

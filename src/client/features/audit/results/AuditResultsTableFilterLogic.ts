@@ -1,4 +1,5 @@
 import type { AuditResultsData } from "@/client/features/audit/results/types";
+import type { PageFetchClass } from "@/shared/audit-fetch-class";
 
 export type PageRow = AuditResultsData["pages"][number];
 type PerformanceResultRow = AuditResultsData["lighthouse"][number];
@@ -18,6 +19,7 @@ type LighthouseFailureFields = {
 export type PagesFilters = {
   query: string;
   status: "all" | "ok" | "redirect" | "error" | "missing";
+  fetchClass: "all" | PageFetchClass;
   minWords: string;
   maxWords: string;
   minResponseMs: string;
@@ -39,6 +41,7 @@ export type PerformanceFilters = {
 export const EMPTY_PAGES_FILTERS: PagesFilters = {
   query: "",
   status: "all",
+  fetchClass: "all",
   minWords: "",
   maxWords: "",
   minResponseMs: "",
@@ -81,6 +84,9 @@ export function filterPages(rows: PageRow[], filters: PagesFilters) {
       if (!haystack.includes(query)) return false;
     }
     if (!matchesStatus(row.statusCode, filters.status)) return false;
+    if (filters.fetchClass !== "all" && row.fetchClass !== filters.fetchClass) {
+      return false;
+    }
     if (!matchesRange(row.wordCount, filters.minWords, filters.maxWords)) {
       return false;
     }

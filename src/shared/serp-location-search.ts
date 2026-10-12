@@ -181,5 +181,7 @@ export function rankSerpLocations<T extends RankableSerpLocation>(
         (LOCATION_TYPE_RANK[b.location.locationType] ?? 9) ||
       (a.folded < b.folded ? -1 : a.folded > b.folded ? 1 : 0),
   );
-  return scored.slice(0, 10).map((entry) => entry.location);
+  // Town names repeat across dozens of states and ties sort by state, so a
+  // short list cuts whole states off ("Arlington" never reached Virginia).
+  return scored.slice(0, 50).map((entry) => entry.location);
 }

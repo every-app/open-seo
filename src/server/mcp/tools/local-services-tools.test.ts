@@ -10,7 +10,7 @@ import { makeToolContext, textContent } from "./tool-test-support";
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   isHostedServerAuthMode: vi.fn(),
-  hasSelfHostedGoogleOAuthConfig: vi.fn(),
+  hasGoogleOAuthConfig: vi.fn(),
   getPerformance: vi.fn(),
   listLeads: vi.fn(),
   provideLeadFeedback: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
 }));
 vi.mock("@/server/features/google/oauth-config", () => ({
-  hasSelfHostedGoogleOAuthConfig: mocks.hasSelfHostedGoogleOAuthConfig,
+  hasGoogleOAuthConfig: mocks.hasGoogleOAuthConfig,
 }));
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
@@ -49,7 +49,7 @@ describe("local services MCP tools", () => {
   beforeEach(() => {
     mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
-    mocks.hasSelfHostedGoogleOAuthConfig.mockResolvedValue(false);
+    mocks.hasGoogleOAuthConfig.mockResolvedValue(false);
   });
 
   it("renders performance totals and pacing into text and structured output", async () => {

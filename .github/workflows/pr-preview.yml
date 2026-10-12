@@ -1,11 +1,11 @@
 name: PR Preview
 
 # Alchemy preview stage per private-repo PR: deploy on open/update, destroy on
-# close (stage pr-<n>). Full model in docs/PREVIEW_DEPLOYMENTS.md.
+# close (stage pr-<n>). Full model in docs/maintainers/preview-deployments.md.
 #
 # Public-mirror (every-app/open-seo) PRs NEVER deploy from CI — fork code must
 # not run with deploy secrets. Preview those locally from a worktree instead
-# (docs/PREVIEW_DEPLOYMENTS.md, "Public-mirror PRs"). The repository gate
+# (docs/maintainers/preview-deployments.md, "Public-mirror PRs"). The repository gate
 # below keeps the synced copy of this file inert on the mirror.
 #
 # Required repo secrets: CLOUDFLARE_API_TOKEN (Workers Scripts/KV/D1/R2/
@@ -21,10 +21,9 @@ on:
     paths-ignore:
       - "**/*.md"
       - docs/**
-      - runbooks/**
       - .agents/**
       - web/**
-      - badseo/**
+      - tests/badseo/**
 
 # A newer push supersedes any in-flight deploy for the same PR (alchemy's
 # per-resource state reconciles cleanly on the next run); a close-triggered
@@ -100,7 +99,7 @@ jobs:
       # retries are only for propagation-era errors, including workers.dev 404s.
       # (Cloudflare version preview URLs sit outside this wildcard, but alchemy
       # uploads versions with no preview provisioned, so none are served — see
-      # docs/PREVIEW_DEPLOYMENTS.md.)
+      # docs/maintainers/preview-deployments.md.)
       - name: Verify Access protection
         if: github.event.action != 'closed'
         run: |

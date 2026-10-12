@@ -1,6 +1,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 import {
   AuthPageCard,
   AuthPageShell,
@@ -67,7 +69,7 @@ function getVerifyEmailPageCopy({
   if (errorMessage) {
     return {
       title: "We couldn't confirm your email",
-      helperText: errorMessage,
+      helperText: undefined,
     };
   }
 
@@ -196,7 +198,7 @@ function VerifyEmailPage() {
             <Link
               to="/sign-in"
               search={getSignInSearch(redirectTo)}
-              className="text-base-content/50 hover:text-base-content transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Back to sign in
             </Link>
@@ -204,31 +206,21 @@ function VerifyEmailPage() {
         }
       >
         {!isHostedMode ? null : errorMessage ? (
-          <div className="space-y-3">
-            <div className="alert alert-error">
-              <span>{errorMessage}</span>
-            </div>
-            <Link
-              to="/sign-in"
-              search={getSignInSearch(redirectTo)}
-              className="btn btn-soft w-full"
-            >
-              Back to sign in
-            </Link>
-          </div>
+          <p className="text-sm text-destructive">{errorMessage}</p>
         ) : isPending || isRedirecting ? (
           <div className="flex justify-center py-4">
-            <span className="loading loading-spinner loading-md" />
+            <Spinner />
           </div>
         ) : email ? (
-          <button
+          <Button
             type="button"
-            className="btn btn-soft w-full"
+            variant="secondary"
+            className="w-full"
+            pending={isResending}
             onClick={() => void handleResend()}
-            disabled={isResending}
           >
             {isResending ? "Sending email..." : "Resend email"}
-          </button>
+          </Button>
         ) : null}
       </AuthPageCard>
     </AuthPageShell>

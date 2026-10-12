@@ -1,9 +1,7 @@
 import { formatRelativeTime } from "@/client/lib/relative-time";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { updateProjectContext } from "@/serverFunctions/projectContext";
 import type { getProjectContext } from "@/serverFunctions/projectContext";
 import type {
@@ -38,8 +36,6 @@ export function useContextUpdate(projectId: string) {
       queryClient.setQueryData(queryKey, context);
       toast.success("Project context updated");
     },
-    onError: (error) =>
-      toast.error(getStandardErrorMessage(error, "Couldn't save your changes")),
     // The page instantiates this mutation per section, so two concurrent
     // patches can settle out of order and the slower (earlier-snapshotted)
     // response can land in the cache last; a settle-time refetch converges
@@ -56,7 +52,7 @@ const AUTHOR_LABELS: Record<ContextAuthor, string> = {
 
 export function Provenance({ by, at }: { by: ContextAuthor; at?: string }) {
   return (
-    <span className="text-xs text-base-content/40">
+    <span className="text-xs text-muted-foreground">
       {at
         ? `Updated by ${AUTHOR_LABELS[by]} · ${formatRelativeTime(at)}`
         : `Added by ${AUTHOR_LABELS[by]}`}
@@ -64,122 +60,10 @@ export function Provenance({ by, at }: { by: ContextAuthor; at?: string }) {
   );
 }
 
-export function SectionHeader({
-  title,
-  hint,
-  action,
-}: {
-  title: string;
-  hint?: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="space-y-0.5">
-        <h2 className="text-sm font-medium text-base-content/50">{title}</h2>
-        {hint ? <p className="text-xs text-base-content/50">{hint}</p> : null}
-      </div>
-      {action}
-    </div>
-  );
-}
-
-/** Muted panel used when a list has nothing in it yet. */
-export function EmptyState({ children }: { children: ReactNode }) {
-  return (
-    <p className="rounded-lg border border-dashed border-base-300 px-4 py-3 text-sm text-base-content/60">
-      {children}
-    </p>
-  );
-}
-
 export const listClass =
-  "divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300";
+  "divide-y divide-border overflow-hidden rounded-lg border border-border bg-card";
 
 /** Row actions and footer buttons shared by the inline competitor/page forms. */
 export function RowActions({ children }: { children: ReactNode }) {
   return <div className="flex shrink-0 items-center gap-1">{children}</div>;
-}
-
-/**
- * Two-step delete: the trash icon swaps to an explicit Remove/Cancel pair, so
- * a stray click can't destroy anything and no native confirm dialog is needed.
- */
-export function ConfirmDeleteButton({
-  label,
-  pending,
-  onConfirm,
-}: {
-  label: string;
-  pending: boolean;
-  onConfirm: () => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
-
-  if (confirming) {
-    return (
-      <>
-        <button
-          type="button"
-          className="btn btn-error btn-xs"
-          disabled={pending}
-          onClick={() => {
-            setConfirming(false);
-            onConfirm();
-          }}
-        >
-          Remove
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs"
-          onClick={() => setConfirming(false)}
-        >
-          Cancel
-        </button>
-      </>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      className="btn btn-ghost btn-xs text-error"
-      aria-label={label}
-      disabled={pending}
-      onClick={() => setConfirming(true)}
-    >
-      <Trash2 className="size-3.5" />
-    </button>
-  );
-}
-
-export function FormActions({
-  pending,
-  disabled,
-  onCancel,
-}: {
-  pending: boolean;
-  disabled: boolean;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="flex justify-end gap-2">
-      <button
-        type="button"
-        className="btn btn-ghost btn-xs"
-        onClick={onCancel}
-        disabled={pending}
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        className="btn btn-primary btn-xs"
-        disabled={disabled || pending}
-      >
-        Save
-      </button>
-    </div>
-  );
 }

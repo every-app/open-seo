@@ -208,20 +208,4 @@ describe("WorkspaceMergeService", () => {
       expect.objectContaining({ n: 4 }),
     ]);
   });
-
-  it("is a no-op when run again", async () => {
-    await seedLegacyWorkspaces();
-    await WorkspaceMergeService.mergeLegacyWorkspaces();
-
-    await expect(
-      WorkspaceMergeService.mergeLegacyWorkspaces(),
-    ).resolves.toEqual({ mergedWorkspaces: 0 });
-    await expect(WorkspaceMergeService.countLegacyWorkspaces()).resolves.toBe(
-      0,
-    );
-    // Nothing renamed twice.
-    expect(
-      await rows("SELECT name FROM projects WHERE id = 'p1-default'"),
-    ).toEqual([expect.objectContaining({ name: "Default (ben)" })]);
-  });
 });

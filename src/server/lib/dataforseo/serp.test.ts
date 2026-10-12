@@ -1,12 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/lib/runtime-env", () => ({
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
 }));
 
+import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import {
   fetchLiveSerp,
+  fetchLocalSerpTaskResult,
   fetchRankCheckTaskResult,
+  postLocalSerpTasks,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
 
@@ -56,10 +59,6 @@ describe("live SERP", () => {
 });
 
 describe("rank check task queue", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("posts queued tasks, maps ids by tag, and sums cost over all entries", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
@@ -210,6 +209,131 @@ describe("rank check task queue", () => {
         url: "https://www.example.com/page",
         serpFeatures: ["organic"],
       },
+    });
+  });
+});
+
+describe("Maps task queue", () => {
+  it("posts one task per coordinate, maps ids back by tag, and bills every entry", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        status_code: 20000,
+        tasks: [
+          {
+            id: "task-c",
+            status_code: 20100,
+            cost: 0.0012,
+            data: { tag: "2" },
+          },
+          {
+            status_code: 40501,
+            status_message: "Invalid Field",
+            cost: 0.0006,
+            data: { tag: "1" },
+          },
+          {
+            id: "task-a",
+            status_code: 20100,
+            cost: 0.0012,
+            data: { tag: "0" },
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await postLocalSerpTasks({
+      keyword: "coffee",
+      locationCoordinates: ["1,1,13z", "2,2,13z", "3,3,13z"],
+      languageCode: "en",
+      device: "mobile",
+      depth: 20,
+    });
+
+    expect(
+      parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1]),
+    ).toMatchObject([
+      { location_coordinate: "1,1,13z", priority: 2, tag: "0" },
+      { location_coordinate: "2,2,13z", priority: 2, tag: "1" },
+      { location_coordinate: "3,3,13z", priority: 2, tag: "2" },
+    ]);
+    expect(result.data).toEqual(["task-a", null, "task-c"]);
+    // The rejected entry's cost is still metered: a charge is a charge.
+    expect(result.billing.costUsd).toBeCloseTo(0.003, 10);
+  });
+
+  it("keeps DataForSEO's charge when it rejects every entry", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json({
+          status_code: 20000,
+          tasks: [
+            {
+              status_code: 40501,
+              status_message: "Invalid Field: 'location_coordinate'.",
+              cost: 0.0012,
+              data: { tag: "0" },
+            },
+          ],
+        }),
+      ),
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const posting = postLocalSerpTasks({
+      keyword: "coffee",
+      locationCoordinates: ["1,1,13z"],
+      languageCode: "en",
+      device: "mobile",
+      depth: 20,
+    });
+    // The meter bills a failure only when it is a charged-task error.
+    await expect(posting).rejects.toBeInstanceOf(DataforseoChargedTaskError);
+    await expect(posting).rejects.toMatchObject({
+      billing: { costUsd: 0.0012 },
+    });
+  });
+
+  it("reads a queued Maps task as pending, its items once done, and No Search Results as an empty SERP", async () => {
+    const items = [{ type: "maps_search", rank_absolute: 1, cid: "123" }];
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(
+          Response.json({
+            status_code: 20000,
+            tasks: [{ status_code: 40602 }],
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({
+            status_code: 20000,
+            tasks: [{ status_code: 20000, result: [{ items }] }],
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({
+            status_code: 20000,
+            tasks: [
+              { status_code: 40102, status_message: "No Search Results." },
+            ],
+          }),
+        ),
+    );
+
+    expect(await fetchLocalSerpTaskResult("task-a")).toEqual({
+      status: "pending",
+    });
+    expect(await fetchLocalSerpTaskResult("task-a")).toEqual({
+      status: "completed",
+      items,
+    });
+    expect(await fetchLocalSerpTaskResult("task-b")).toEqual({
+      status: "completed",
+      items: [],
     });
   });
 });

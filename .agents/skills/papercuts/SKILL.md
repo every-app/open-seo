@@ -83,7 +83,7 @@ Carry out an authorized cleanup using the same triage:
    resolving date or commit. Keep deferred reports separate from actionable open
    work, with a reason and a concrete trigger to revisit. Route real bugs to
    normal issue/fix work; route recurring
-   review-policy gaps through `maintain-greptile-rules`.
+   review-policy gaps to `docs/maintainers/review-guidelines.md`.
 
 Preserve useful history for genuinely-resolved papercuts; do not delete them
 merely to make the file shorter. (Noise that never belonged — see step 1 — is

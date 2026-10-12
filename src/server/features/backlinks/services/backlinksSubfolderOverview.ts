@@ -26,6 +26,7 @@ export async function buildSubfolderOverview(
     includeSubdomains: normalizedTarget.includeSubdomains,
     limit: 1,
     mode: "as_is",
+    hideSpam: false,
     filters,
     creditFeature,
   });
@@ -34,6 +35,7 @@ export async function buildSubfolderOverview(
     includeSubdomains: normalizedTarget.includeSubdomains,
     limit: 1,
     mode: "one_per_domain",
+    hideSpam: false,
     filters,
     creditFeature,
   });

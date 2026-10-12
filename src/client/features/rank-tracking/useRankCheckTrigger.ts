@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { triggerRankCheck } from "@/serverFunctions/rank-tracking";
 
@@ -38,9 +37,6 @@ export function useRankCheckTrigger({
 
       captureClientEvent("rank_tracking:check_trigger");
       toast.success("Rank check started");
-    },
-    onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to start rank check"));
     },
   });
 

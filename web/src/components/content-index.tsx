@@ -25,7 +25,7 @@ export function ContentIndex({
   route,
 }: ContentIndexProps) {
   return (
-    <div className="max-w-3xl mx-auto px-6 py-12 md:py-24">
+    <div className="mx-auto w-full min-w-0 max-w-3xl px-6 py-12 [grid-area:main] md:py-24">
       <p className="text-sm font-medium text-fd-muted-foreground">{eyebrow}</p>
       <h1 className="mt-3 text-4xl font-bold tracking-tight text-fd-foreground md:text-5xl">
         {title}

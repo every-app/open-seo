@@ -1,8 +1,13 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { z } from "zod";
 import {
   researchScopeSchema,
   type ResearchScope,
 } from "@/shared/researchScope";
+import {
+  promptExplorerModelSchema,
+  webSearchCountrySelectionSchema,
+} from "@/types/schemas/ai-search";
 import type { SearchTab, SearchTabInput } from "./types";
 
 type TabsState = {
@@ -23,6 +28,15 @@ const EMPTY_STATE: TabsState = {
 const CHANGE_EVENT = "search-tabs-change";
 const stateCache = new Map<string, TabsState>();
 const SEARCH_TABS_LIMIT = 20;
+
+const promptTabInputSchema = z.object({
+  type: z.literal("prompt"),
+  prompt: z.string().min(1),
+  highlightBrand: z.string(),
+  models: z.array(promptExplorerModelSchema).min(1),
+  webSearch: z.boolean(),
+  webSearchCountryCode: webSearchCountrySelectionSchema,
+});
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -106,11 +120,19 @@ function parseTabInput(value: unknown): SearchTabInput | null {
       keyword: value.keyword,
       locationCode:
         typeof value.locationCode === "number" ? value.locationCode : undefined,
+      locationName:
+        typeof value.locationName === "string" ? value.locationName : undefined,
       resultLimit: value.resultLimit,
       mode: value.mode,
       // Tabs persisted before the clickstream toggle existed default to off.
       clickstream: value.clickstream === true,
+      // Tabs persisted before per-search grouping existed default to off.
+      groupKeywords: value.groupKeywords === true,
     };
+  }
+
+  if (value.type === "prompt") {
+    return promptTabInputSchema.safeParse(value).data ?? null;
   }
 
   return null;

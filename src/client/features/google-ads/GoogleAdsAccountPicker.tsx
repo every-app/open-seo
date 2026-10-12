@@ -1,3 +1,10 @@
+import { AlertTriangle, Check } from "lucide-react";
+import { QueryError } from "@/client/components/QueryState";
+import { Spinner } from "@/client/components/Spinner";
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+
 export type AccountSelection = {
   accountId: string;
   customerId: string;
@@ -30,6 +37,7 @@ export function GoogleAdsAccountPicker({
   onSelect,
   onSave,
   saving,
+  linking,
   onRetry,
   onCancel,
   onReconnect,
@@ -41,32 +49,20 @@ export function GoogleAdsAccountPicker({
   onSelect: (selection: AccountSelection) => void;
   onSave: () => void;
   saving: boolean;
+  linking: boolean;
   onRetry: () => void;
   onCancel?: () => void;
   onReconnect: () => void;
 }) {
   if (loading) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-base-content/50">
-        <span className="loading loading-spinner loading-sm" />
-        Loading Google Ads accounts…
-      </div>
-    );
+    return <Spinner size="sm" label="Loading Google Ads accounts…" />;
   }
   if (error) {
     return (
-      <div className="space-y-3 text-sm">
-        <p className="text-base-content/70">
-          Could not load Google Ads accounts.
-        </p>
-        <button
-          type="button"
-          className="btn btn-outline btn-sm"
-          onClick={onRetry}
-        >
-          Try again
-        </button>
-      </div>
+      <QueryError
+        fallback="Could not load Google Ads accounts."
+        onRetry={onRetry}
+      />
     );
   }
   const accessPending = grants.some((grant) => grant.accessPending);
@@ -79,129 +75,122 @@ export function GoogleAdsAccountPicker({
   const candidates = grants.flatMap((grant) =>
     grant.accounts.map((candidate) => ({ grant, candidate })),
   );
+  const reconnectButton = (
+    <Button variant="outline" size="sm" onClick={onReconnect} pending={linking}>
+      {linking ? "Opening Google…" : "Reconnect with Google"}
+    </Button>
+  );
   return (
     <div className="space-y-4 text-sm">
       {accessPending ? (
-        <div className="alert alert-warning items-start text-sm">
-          <p>
+        <Alert variant="warning">
+          <AlertTriangle className="size-4" />
+          <AlertDescription>
             Google Ads API access is still pending on Google&apos;s side
             (developer token approval or API enablement). Until Google approves
             it, OpenSEO can&apos;t read your Ads accounts, so they&apos;ll
             appear here once onboarding finishes — no changes needed here.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
       {setupRequired ? (
-        <div className="alert alert-warning items-start text-sm">
-          <p>
+        <Alert variant="warning">
+          <AlertTriangle className="size-4" />
+          <AlertDescription>
             GOOGLE_ADS_DEVELOPER_TOKEN is not set on this deployment, so Google
             Ads accounts can&apos;t be listed. This is a setup step here, not
             something to wait on Google for.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
       {requiresReconnect ? (
         <div className="space-y-2">
-          <p className="text-base-content/70">
+          <p className="text-muted-foreground">
             The Google Ads connection expired. Reconnect to continue.
           </p>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={onReconnect}
-          >
-            Reconnect with Google
-          </button>
+          {reconnectButton}
         </div>
       ) : null}
       {candidates.length > 0 ? (
-        <fieldset className="space-y-2">
-          <legend className="mb-1 text-xs font-medium uppercase tracking-wide text-base-content/45">
+        <div role="group" aria-labelledby="google-ads-account-legend">
+          <p
+            id="google-ads-account-legend"
+            className="mb-2 text-sm font-medium"
+          >
             Choose the Ads account with your Local Services campaigns
-          </legend>
+          </p>
           {truncated ? (
-            <p className="text-xs text-base-content/50">
+            <p className="mb-2 text-xs text-muted-foreground">
               This Google account reaches more Ads accounts than are listed
               here. If the one you want is missing, connect a Google account
               with narrower access.
             </p>
           ) : null}
-          {candidates.map(({ grant, candidate }) => {
-            const checked =
-              selection?.accountId === grant.accountId &&
-              selection.customerId === candidate.customerId;
-            return (
-              <label
-                key={`${grant.accountId}:${candidate.customerId}`}
-                className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2.5 ${checked ? "border-primary bg-primary/5" : "border-base-300"}`}
-              >
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <input
-                    type="radio"
-                    name="google-ads-account"
-                    className="radio radio-sm radio-primary"
-                    checked={checked}
-                    onChange={() =>
-                      onSelect({
-                        accountId: grant.accountId,
-                        customerId: candidate.customerId,
-                        loginCustomerId: candidate.loginCustomerId,
-                      })
-                    }
-                  />
+          <div className="rounded-lg border border-border p-1.5">
+            {candidates.map(({ grant, candidate }) => {
+              const chosen =
+                selection?.accountId === grant.accountId &&
+                selection.customerId === candidate.customerId;
+              return (
+                <Button
+                  key={`${grant.accountId}:${candidate.customerId}`}
+                  type="button"
+                  variant="ghost"
+                  aria-pressed={chosen}
+                  disabled={saving}
+                  className={`h-auto w-full justify-between gap-3 rounded-md px-2 py-2.5 text-left font-normal hover:bg-accent ${chosen ? "bg-accent" : ""}`}
+                  onClick={() =>
+                    onSelect({
+                      accountId: grant.accountId,
+                      customerId: candidate.customerId,
+                      loginCustomerId: candidate.loginCustomerId,
+                    })
+                  }
+                >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
                       {candidate.descriptiveName ?? candidate.customerId}
                     </span>
-                    <span className="block truncate text-xs text-base-content/50">
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                       ID {candidate.customerId}
                       {grant.email ? ` · ${grant.email}` : ""}
                     </span>
                   </span>
-                </span>
-                {candidate.hasLocalServicesCampaigns ? (
-                  <span className="shrink-0 rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
-                    Local Services
+                  <span className="flex shrink-0 items-center gap-2">
+                    {candidate.hasLocalServicesCampaigns ? (
+                      <Badge variant="success">Local Services</Badge>
+                    ) : null}
+                    {chosen ? <Check className="size-4" /> : null}
                   </span>
-                ) : null}
-              </label>
-            );
-          })}
-        </fieldset>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
       ) : !accessPending && !setupRequired && !requiresReconnect ? (
         <div className="space-y-2">
-          <p className="text-base-content/70">
+          <p className="text-muted-foreground">
             {`No Google Ads accounts found on the connected Google account${connectedEmail ? ` (${connectedEmail})` : ""}.`}
             {accountsUnavailable
               ? " This usually means the Google Ads permission was left unchecked on Google's consent screen."
               : " If this is the wrong Google account, reconnect and pick another."}
           </p>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={onReconnect}
-          >
-            Reconnect with Google
-          </button>
+          {reconnectButton}
         </div>
       ) : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          onClick={onSave}
-          disabled={!selection || saving}
-        >
+      <div className="flex flex-wrap items-center gap-1">
+        <Button size="sm" onClick={onSave} disabled={!selection || saving}>
           {saving ? "Saving…" : "Use this account"}
-        </button>
+        </Button>
         {onCancel ? (
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={saving}
             onClick={onCancel}
           >
             Cancel
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

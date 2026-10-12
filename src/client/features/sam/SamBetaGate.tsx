@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
+import { GateCard } from "@/client/components/GateCard";
+import { Button } from "@/client/components/ui/button";
 
 /**
  * Shown on the chat route until the user opts into Sam. Sam is the OpenSEO
@@ -9,13 +11,11 @@ import { Sparkles } from "lucide-react";
  */
 export function SamBetaGate({ onContinue }: { onContinue: () => void }) {
   return (
-    <div className="flex h-full items-center justify-center overflow-auto px-4 py-8 md:px-6">
-      <div className="w-full max-w-lg rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8">
-        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Sparkles className="size-5" />
-        </div>
-        <h2 className="mt-4 text-xl font-semibold">Sam is in beta</h2>
-        <div className="mt-3 space-y-3 text-sm leading-relaxed text-base-content/70">
+    <GateCard
+      icon={Sparkles}
+      title="Sam is in beta"
+      description={
+        <>
           <p>
             Sam is the OpenSEO MCP and skills wrapped in a chat window. The
             agent you already use, like Claude Code, ChatGPT, Grok Bot, or
@@ -23,16 +23,18 @@ export function SamBetaGate({ onContinue }: { onContinue: () => void }) {
             recommend using OpenSEO there.
           </p>
           <p>You can still use Sam, but it is early and has rough edges.</p>
-        </div>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Link to="/ai" className="btn btn-primary">
+        </>
+      }
+      actions={
+        <>
+          <Button size="lg" nativeButton={false} render={<Link to="/ai" />}>
             Set up your agent
-          </Link>
-          <button type="button" className="btn btn-ghost" onClick={onContinue}>
+          </Button>
+          <Button size="lg" variant="ghost" onClick={onContinue}>
             Use Sam anyway
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </>
+      }
+    />
   );
 }

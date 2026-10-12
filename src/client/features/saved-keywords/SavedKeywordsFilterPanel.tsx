@@ -1,5 +1,10 @@
-import { Minus, Plus, RotateCcw, X } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
+import {
+  DataTableFilterGroup,
+  DataTableFilterPanel,
+  DataTableRangeFilter,
+} from "@/client/components/table/DataTableToolbar";
 import type { SavedKeywordsFilterValues } from "./savedKeywordsFilterTypes";
 import type { SavedKeywordsFilterForm } from "./useSavedKeywordsFilters";
 
@@ -13,27 +18,7 @@ export function SavedKeywordsFilterPanel({
   onReset: () => void;
 }) {
   return (
-    <div className="space-y-3 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">Refine results</p>
-          {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount} active
-            </span>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          className="btn btn-xs btn-ghost gap-1"
-          onClick={onReset}
-          disabled={activeFilterCount === 0}
-        >
-          <RotateCcw className="size-3" />
-          Clear all
-        </button>
-      </div>
-
+    <DataTableFilterPanel activeCount={activeFilterCount} onReset={onReset}>
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
         <TermsTokenInput
           form={form}
@@ -76,7 +61,7 @@ export function SavedKeywordsFilterPanel({
           max={100}
         />
       </div>
-    </div>
+    </DataTableFilterPanel>
   );
 }
 
@@ -127,17 +112,16 @@ function TermsTokenInput({
   const Icon = styles.icon;
 
   return (
-    <div className="space-y-2 rounded-lg border border-base-300 bg-base-100 p-2.5">
-      <div className="flex items-center gap-2">
+    <DataTableFilterGroup
+      label={label}
+      icon={
         <span
           className={`inline-flex size-4 items-center justify-center rounded ${styles.iconBg}`}
         >
           <Icon className="size-2.5" />
         </span>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-          {label}
-        </p>
-      </div>
+      }
+    >
       <form.Field name={name}>
         {(field) => {
           const terms = splitTerms(field.state.value);
@@ -164,7 +148,7 @@ function TermsTokenInput({
             }
           };
           return (
-            <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-base-300 bg-base-200/30 px-2 py-1.5 focus-within:border-primary">
+            <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 focus-within:border-ring">
               {terms.map((term) => (
                 <span
                   key={term}
@@ -189,13 +173,16 @@ function TermsTokenInput({
                 onKeyDown={handleKeyDown}
                 onBlur={addFromDraft}
                 placeholder={terms.length === 0 ? placeholder : ""}
-                className="min-w-[6rem] flex-1 bg-transparent text-xs outline-none placeholder:text-base-content/40"
+                // data-slot opts out of the global 16px input rule, so the
+                // text matches the shadcn inputs: 16px on phones, 14px from md.
+                data-slot="input"
+                className="min-w-[6rem] flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground md:text-sm"
               />
             </div>
           );
         }}
       </form.Field>
-    </div>
+    </DataTableFilterGroup>
   );
 }
 
@@ -221,61 +208,27 @@ function FilterRangeInputs({
   min?: number;
   max?: number;
 }) {
+  const limits = { step, min, max };
   return (
-    <div className="space-y-2 rounded-lg border border-base-300 bg-base-100 p-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {title}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <CompactRangeInput
-          form={form}
-          name={minName}
-          placeholder="Min"
-          step={step}
-          min={min}
-          max={max}
-        />
-        <CompactRangeInput
-          form={form}
-          name={maxName}
-          placeholder="Max"
-          step={step}
-          min={min}
-          max={max}
-        />
-      </div>
-    </div>
-  );
-}
-
-function CompactRangeInput({
-  form,
-  name,
-  placeholder,
-  step,
-  min,
-  max,
-}: {
-  form: SavedKeywordsFilterForm;
-  name: RangeFieldName;
-  placeholder: string;
-  step?: string;
-  min?: number;
-  max?: number;
-}) {
-  return (
-    <form.Field name={name}>
-      {(field) => (
-        <input
-          className="input input-bordered input-xs bg-base-100"
-          placeholder={placeholder}
-          type="number"
-          step={step}
-          min={min}
-          max={max}
-          value={field.state.value}
-          onChange={(event) => field.handleChange(event.target.value)}
-        />
+    <form.Field name={minName}>
+      {(minField) => (
+        <form.Field name={maxName}>
+          {(maxField) => (
+            <DataTableRangeFilter
+              label={title}
+              min={{
+                ...limits,
+                value: minField.state.value,
+                onChange: (event) => minField.handleChange(event.target.value),
+              }}
+              max={{
+                ...limits,
+                value: maxField.state.value,
+                onChange: (event) => maxField.handleChange(event.target.value),
+              }}
+            />
+          )}
+        </form.Field>
       )}
     </form.Field>
   );

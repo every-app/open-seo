@@ -136,36 +136,6 @@ describe("shapeResult", () => {
     expect(result.topQueries[0].brandsMentioned[0]).toHaveLength(200);
   });
 
-  it("round-trips through the cache schema", () => {
-    const topPage: LlmTopPagesItem = {
-      key: "https://a.com",
-      platform: [{ key: "google", mentions: 3, ai_search_volume: 300 }],
-    };
-    const result = shapeResult(
-      baseArgs({
-        platformBundles: [
-          {
-            platform: "google",
-            status: "success",
-            bundle: {
-              aggregated: { platform: [] },
-              topPages: [topPage],
-              mentions: [],
-              complete: true,
-            },
-          },
-        ],
-      }),
-    );
-
-    expect(result.topPages[0]).toMatchObject({
-      domain: "a.com",
-      mentions: 3,
-      capturedVolume: 300,
-    });
-    expect(brandLookupResultSchema.safeParse(result).success).toBe(true);
-  });
-
   it("keeps only in-scope page rows and prompts under a subfolder scope", () => {
     const parsed = parseResearchTarget("acme.com/blog", "subfolder");
     if (!parsed.ok) throw new Error(parsed.message);
@@ -209,6 +179,9 @@ describe("shapeResult", () => {
     expect(result.totalMentions).toBe(12);
     expect(result.aggregatesAreDomainLevel).toBe(true);
     expect(result.resolvedTarget).toBe("acme.com/blog");
+    // A shape the cache schema rejects turns every cache read into a
+    // re-charged lookup.
+    expect(brandLookupResultSchema.safeParse(result).success).toBe(true);
   });
 });
 

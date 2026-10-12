@@ -15,9 +15,6 @@ export function useMetricsRefresh(projectId: string, configId: string) {
       });
       toast.success(`Metrics updated for ${result.updated} keywords`);
     },
-    onError: () => {
-      toast.error("Failed to refresh keyword metrics");
-    },
   });
   return { refresh: mutation.mutate, isRefreshing: mutation.isPending };
 }

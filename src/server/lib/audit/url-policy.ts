@@ -1,4 +1,5 @@
 import { AppError } from "@/server/lib/errors";
+import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
 
 const BLOCKED_HOSTS = new Set([
   "localhost",
@@ -252,10 +253,14 @@ const START_URL_PROBE_TIMEOUT_MS = 10_000;
  * a redirect can't smuggle the audit somewhere the user couldn't have
  * pointed it directly. Probe failures (timeouts, HEAD rejected) fall back
  * to the last validated URL — the crawl records the real fetch result.
+ *
+ * Also reports the final response's `powered-by` header, which is how a
+ * Shopify storefront identifies itself.
  */
 export async function resolveStartUrlRedirects(
   startUrl: string,
-): Promise<string> {
+  access?: CrawlerAccess | null,
+): Promise<{ url: string; poweredBy: string | null }> {
   let current = startUrl;
   for (let hop = 0; hop < START_URL_REDIRECT_HOPS; hop++) {
     let response: Response;
@@ -263,23 +268,30 @@ export async function resolveStartUrlRedirects(
       response = await fetch(current, {
         method: "HEAD",
         redirect: "manual",
-        headers: { "User-Agent": "OpenSEO-Audit/1.0" },
+        headers: {
+          "User-Agent": "OpenSEO-Audit/1.0",
+          ...crawlerHeadersFor(current, access),
+        },
         signal: AbortSignal.timeout(START_URL_PROBE_TIMEOUT_MS),
       });
     } catch {
-      return current;
+      return { url: current, poweredBy: null };
     }
-    if (response.status < 300 || response.status >= 400) return current;
+    if (response.status < 300 || response.status >= 400) {
+      return { url: current, poweredBy: response.headers.get("powered-by") };
+    }
     const location = response.headers.get("location");
-    if (!location) return current;
+    if (!location) {
+      return { url: current, poweredBy: response.headers.get("powered-by") };
+    }
 
     let next: URL;
     try {
       next = new URL(location, current);
     } catch {
-      return current;
+      return { url: current, poweredBy: null };
     }
     current = await normalizeAndValidateStartUrl(next.toString());
   }
-  return current;
+  return { url: current, poweredBy: null };
 }

@@ -1,11 +1,17 @@
+import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
+import {
+  lockRenderingCredits,
+  releaseRenderingLocks,
+  type RenderingLock,
+} from "@/server/lib/audit/rendering-billing";
 import { env } from "cloudflare:workers";
 import {
-  customerHasManagedAccess,
   customerHasPaidPlan,
   getOrCreateOrganizationCustomer,
   type BillingCustomerContext,
 } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import { CrawlerCredentialService } from "@/server/features/audit/services/CrawlerCredentialService";
 import {
   AUDIT_LIMITS,
   clampAuditMaxPages,
@@ -13,6 +19,7 @@ import {
   type AuditLimitTier,
 } from "@/server/features/audit/services/audit-capacity";
 import { AppError } from "@/server/lib/errors";
+import { RENDERED_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import {
   parseAuditConfig,
@@ -26,25 +33,13 @@ import {
 import { reconcileRunningAudit } from "@/server/features/audit/services/auditReconciler";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
-// Plan-tier limits are the abuse bound in hosted mode: free accounts get small
-// audits with a bounded burst, paid keeps the full limits, and customers with
-// no Autumn product at all are turned away. Self-hosted isn't gated.
+// Free accounts keep bounded audit capacity; rendering reserves usage credits.
 async function resolveAuditLimitTier(
   customer: BillingCustomerContext,
 ): Promise<AuditLimitTier> {
   if (!(await isHostedServerAuthMode())) return "self_hosted";
-  // An org minted outside a billing path (better-auth hooks, MCP auth) has no
-  // Autumn customer yet, and `check` 404s instead of reporting no access — a
-  // brand-new MCP user's first audit failed with a raw billing error.
   await getOrCreateOrganizationCustomer(customer);
-  const [hasManagedAccess, hasPaidPlan] = await Promise.all([
-    customerHasManagedAccess(customer.organizationId),
-    customerHasPaidPlan(customer.organizationId),
-  ]);
-  if (!hasManagedAccess) {
-    throw new AppError("PAYMENT_REQUIRED", "Subscribe to run site audits");
-  }
-  return hasPaidPlan ? "paid" : "free";
+  return (await customerHasPaidPlan(customer.organizationId)) ? "paid" : "free";
 }
 
 async function startAudit(input: {
@@ -55,11 +50,25 @@ async function startAudit(input: {
   maxPages?: number;
   lighthouseStrategy?: LighthouseStrategy;
   limitTier: AuditLimitTier;
+  renderJavaScript?: boolean;
 }) {
+  const renderJavaScript = input.renderJavaScript ?? false;
+  if (renderJavaScript && !(await isAuditRenderingAllowed())) {
+    throw new AppError(
+      "AUDIT_RENDERING_UNAVAILABLE",
+      "JavaScript rendering is not available on this deployment. It needs a Cloudflare deployment with Browser Run, or CONTEXT_API_KEY. Run the audit without rendering instead.",
+    );
+  }
   const limits = AUDIT_LIMITS[input.limitTier];
   const maxPages = clampAuditMaxPages(input.maxPages);
   if (maxPages > limits.maxPagesPerAudit) {
     throw new AppError("AUDIT_PAGE_LIMIT_EXCEEDED");
+  }
+  if (renderJavaScript && maxPages > RENDERED_MAX_AUDIT_PAGES) {
+    throw new AppError(
+      "AUDIT_PAGE_LIMIT_EXCEEDED",
+      `Audits that render JavaScript are limited to ${RENDERED_MAX_AUDIT_PAGES.toLocaleString("en-US")} pages.`,
+    );
   }
 
   const lighthouseStrategy = input.lighthouseStrategy ?? "auto";
@@ -69,13 +78,42 @@ async function startAudit(input: {
   });
 
   const auditId = crypto.randomUUID();
-  const config: AuditConfig = { maxPages, lighthouseStrategy };
+  const organizationId = input.billingCustomer.organizationId;
+  const requestedUrl = await normalizeAndValidateStartUrl(input.startUrl);
+  // The probe itself can be rate limited, so it carries the credential too.
+  let credential = await CrawlerCredentialService.resolveCrawlerAccess(
+    organizationId,
+    input.projectId,
+    new URL(requestedUrl).hostname,
+  );
   // Anchor the audit to the site's real origin: a start domain that 301s
   // elsewhere (…net -> …com, apex -> www) would otherwise dead-end after
   // one page at the same-origin crawl boundary.
-  const startUrl = await resolveStartUrlRedirects(
-    await normalizeAndValidateStartUrl(input.startUrl),
+  const probe = await resolveStartUrlRedirects(
+    requestedUrl,
+    await CrawlerCredentialService.openCrawlerAccess(credential?.sealed),
   );
+  const startUrl = probe.url;
+  const startHost = new URL(startUrl).hostname;
+  if (startHost !== new URL(requestedUrl).hostname) {
+    credential = await CrawlerCredentialService.resolveCrawlerAccess(
+      organizationId,
+      input.projectId,
+      startHost,
+    );
+  }
+
+  const config: AuditConfig = {
+    maxPages,
+    lighthouseStrategy,
+    renderJavaScript,
+    // Shopify storefronts answer with `powered-by: Shopify`; knowing this is
+    // what lets the report explain a throttled crawl instead of shrugging.
+    sitePlatform: probe.poweredBy?.toLowerCase().includes("shopify")
+      ? "shopify"
+      : undefined,
+    crawlerCredentialId: credential?.id,
+  };
 
   await AuditRepository.createAudit({
     id: auditId,
@@ -88,6 +126,7 @@ async function startAudit(input: {
     lighthouseTotal: reservation.lighthouseTotal,
   });
 
+  let renderLocks: RenderingLock[] = [];
   try {
     // Concurrency and capacity are enforced after the insert, not before: a
     // pre-insert read is a check-then-act race, so parallel requests would all
@@ -105,6 +144,15 @@ async function startAudit(input: {
     if (usage.capacityUnits > limits.maxCapacityUnits) {
       throw new AppError("AUDIT_CAPACITY_REACHED");
     }
+    // Holds the worst-case rendering cost for the whole audit. Refused here,
+    // the audit never runs; the workflow settles the hold when it ends.
+    if (renderJavaScript) {
+      renderLocks = await lockRenderingCredits({
+        customer: input.billingCustomer,
+        auditId,
+        maxPages,
+      });
+    }
 
     await env.SITE_AUDIT_WORKFLOW.create({
       id: auditId,
@@ -119,6 +167,8 @@ async function startAudit(input: {
         projectId: input.projectId,
         startUrl,
         config,
+        access: credential?.sealed,
+        renderLocks,
       },
     });
   } catch (error) {
@@ -128,6 +178,7 @@ async function startAudit(input: {
     } catch {
       // The workflow may never have been created, or may already be gone.
     }
+    await releaseRenderingLocks(renderLocks);
 
     await AuditRepository.deleteAuditForProject(auditId, input.projectId);
     throw error;

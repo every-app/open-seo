@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/lib/runtime-env", () => ({
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
@@ -7,7 +7,6 @@ vi.mock("@/server/lib/runtime-env", () => ({
 import {
   fetchBusinessDataTaskResult,
   fetchBusinessListingsCategories,
-  fetchBusinessListingsSearch,
   fetchMyBusinessInfo,
   postGoogleReviewsTask,
 } from "@/server/lib/dataforseo/business";
@@ -36,10 +35,6 @@ const okTask = (path: string[], result: unknown[]) => ({
 });
 
 describe("Google business_data fetchers", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("sends a coordinate for my_business_info and returns the single item", async () => {
     const fetchMock = stubDataforseo(
       okTask(
@@ -102,102 +97,50 @@ describe("Google business_data fetchers", () => {
     expect(result.billing.costUsd).toBe(0.002);
   });
 
-  it("posts regular reviews with sort_by and bills from the post entry", async () => {
-    const fetchMock = stubDataforseo({
-      status_code: 20000,
-      tasks: [
-        {
-          id: "task-1",
-          status_code: 20100,
-          cost: 0.00375,
-          path: ["v3", "business_data", "google", "reviews", "task_post"],
-        },
-      ],
-    });
-
-    const result = await postGoogleReviewsTask({
-      cid: "123",
-      locationCode: 2840,
-      languageCode: "en",
-      depth: 20,
-      sortBy: "newest",
+  it.each([
+    {
       includeOtherSources: false,
-    });
-
-    const { url, body } = requestOf(fetchMock);
-    expect(url).toBe(
-      "https://api.dataforseo.com/v3/business_data/google/reviews/task_post",
-    );
-    expect(body).toEqual([
-      {
-        cid: "123",
-        location_code: 2840,
-        language_code: "en",
-        depth: 20,
-        sort_by: "newest",
-        priority: 2,
-      },
-    ]);
-    expect(result).toEqual({
-      data: "task-1",
-      billing: {
-        path: ["v3", "business_data", "google", "reviews", "task_post"],
-        costUsd: 0.00375,
-      },
-    });
-  });
-
-  it("posts to the extended_reviews endpoint when other sources are requested", async () => {
-    const fetchMock = stubDataforseo({
-      status_code: 20000,
-      tasks: [
-        {
-          id: "task-2",
-          status_code: 20100,
-          cost: 0.01,
-          path: [
-            "v3",
-            "business_data",
-            "google",
-            "extended_reviews",
-            "task_post",
-          ],
-        },
-      ],
-    });
-
-    const result = await postGoogleReviewsTask({
-      cid: "123",
-      locationCode: 2840,
-      languageCode: "en",
-      depth: 20,
+      endpoint: "reviews",
       // The extended endpoint has no sort_by; the fetcher drops it.
-      sortBy: "newest",
-      includeOtherSources: true,
-    });
+      sortBy: { sort_by: "newest" },
+    },
+    { includeOtherSources: true, endpoint: "extended_reviews", sortBy: {} },
+  ])(
+    "posts reviews to $endpoint when includeOtherSources=$includeOtherSources and bills from the post entry",
+    async ({ includeOtherSources, endpoint, sortBy }) => {
+      const path = ["v3", "business_data", "google", endpoint, "task_post"];
+      const fetchMock = stubDataforseo({
+        status_code: 20000,
+        tasks: [{ id: "task-1", status_code: 20100, cost: 0.00375, path }],
+      });
 
-    const { url, body } = requestOf(fetchMock);
-    expect(url).toBe(
-      "https://api.dataforseo.com/v3/business_data/google/extended_reviews/task_post",
-    );
-    expect(body).toEqual([
-      {
+      const result = await postGoogleReviewsTask({
         cid: "123",
-        location_code: 2840,
-        language_code: "en",
+        locationCode: 2840,
+        languageCode: "en",
         depth: 20,
-        priority: 2,
-      },
-    ]);
-    expect(result.data).toBe("task-2");
-    expect(result.billing.path).toEqual([
-      "v3",
-      "business_data",
-      "google",
-      "extended_reviews",
-      "task_post",
-    ]);
-  });
+        sortBy: "newest",
+        includeOtherSources,
+      });
+
+      const { url, body } = requestOf(fetchMock);
+      expect(url).toBe(`https://api.dataforseo.com/${path.join("/")}`);
+      expect(body).toEqual([
+        {
+          cid: "123",
+          location_code: 2840,
+          language_code: "en",
+          depth: 20,
+          priority: 2,
+          ...sortBy,
+        },
+      ]);
+      expect(result).toEqual({
+        data: "task-1",
+        billing: { path, costUsd: 0.00375 },
+      });
+    },
+  );
 
   it("never replays a task_post on a 5xx (a retry could double-charge)", async () => {
     const fetchMock = vi
@@ -229,28 +172,6 @@ describe("Google business_data fetchers", () => {
     ).resolves.toEqual({ status: "pending", result: null });
   });
 
-  it("returns the first result once the task completed", async () => {
-    const fetchMock = stubDataforseo(
-      okTask(
-        ["v3", "business_data", "google", "extended_reviews", "task_get"],
-        [{ reviews_count: 12, items: [{ review_text: "Great" }] }],
-      ),
-    );
-
-    const outcome = await fetchBusinessDataTaskResult({
-      endpoint: "extended_reviews",
-      taskId: "task-9",
-    });
-
-    expect(requestOf(fetchMock).url).toBe(
-      "https://api.dataforseo.com/v3/business_data/google/extended_reviews/task_get/task-9",
-    );
-    expect(outcome).toEqual({
-      status: "completed",
-      result: { reviews_count: 12, items: [{ review_text: "Great" }] },
-    });
-  });
-
   it("maps the free categories list onto category/businessCount rows", async () => {
     stubDataforseo(
       okTask(
@@ -267,35 +188,6 @@ describe("Google business_data fetchers", () => {
     expect(result.data).toEqual([
       { category: "pizza_restaurant", businessCount: 12 },
       { category: "plumber", businessCount: null },
-    ]);
-  });
-
-  it("forwards business-listing filters, claim status, and offset", async () => {
-    const fetchMock = stubDataforseo(
-      okTask(
-        ["v3", "business_data", "business_listings", "search", "live"],
-        [{ items: [] }],
-      ),
-    );
-
-    await fetchBusinessListingsSearch({
-      locationCoordinate: "33.1,-84.9,5",
-      isClaimed: false,
-      filters: [["rating.value", ">=", 4]],
-      orderBy: ["rating.value,desc"],
-      limit: 20,
-      offset: 10,
-    });
-
-    expect(requestOf(fetchMock).body).toEqual([
-      {
-        location_coordinate: "33.1,-84.9,5",
-        is_claimed: false,
-        filters: [["rating.value", ">=", 4]],
-        order_by: ["rating.value,desc"],
-        limit: 20,
-        offset: 10,
-      },
     ]);
   });
 });

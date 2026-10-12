@@ -7,11 +7,6 @@ const row = (i: number) => ({ keyword: `keyword ${i}`, volume: i * 10 });
 const capped = z.object({ truncated: z.string() }).loose();
 
 describe("capToolOutput", () => {
-  it("returns small results untouched", () => {
-    const value = { summary: "ok", data: { rows: [row(1)] } };
-    expect(capToolOutput(value)).toBe(value);
-  });
-
   it("halves the largest array until the result fits and says so", () => {
     const rows = Array.from({ length: 800 }, (_, i) => row(i));
     const value = { summary: "800 keywords", data: { rows } };

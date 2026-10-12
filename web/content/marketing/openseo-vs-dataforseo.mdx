@@ -1,0 +1,123 @@
+---
+title: "OpenSEO vs DataForSEO: why use OpenSEO?"
+description: "OpenSEO is built on DataForSEO's data. Here's what OpenSEO adds on top, what it costs, and why it's worth self-hosting even if you'd rather pay DataForSEO directly."
+---
+
+We are probably DataForSEO's biggest fans. DataForSEO's data is the foundation of many OpenSEO features like keyword research, backlinks, and competitor analysis. Without quality data, an SEO tool is worthless. For a long time, the only way most people got this data was through an expensive subscription. Now DataForSEO's pay-as-you-go model has enabled a new wave of affordable SEO tools and workflows.
+
+So, if DataForSEO is so great, why use OpenSEO?
+
+## TL;DR
+
+DataForSEO is focused on providing the best SEO data. OpenSEO is focused on being the best SEO tool for your AI agent, with a beautiful, easy-to-use app for you. Three things make it great for agents:
+
+- **Data.** The same DataForSEO data, pay as you go, trimmed so your agent can actually use it.
+- **Tools.** Rank tracking, prompt tracking, reports, skills, and project context that carries across sessions.
+- **Integrations.** Connect Google Search Console and Google Analytics in one click.
+
+We add a 28% fee on data. If you'd rather pay DataForSEO directly, you can self-host OpenSEO with your own DataForSEO account and skip it.
+
+## Why we built OpenSEO
+
+We started building OpenSEO because we saw tons of people vibe coding their own dashboards and Claude Code workflows on top of DataForSEO. Probably thousands of people have done this, and basically everyone was building the same thing. The goal with OpenSEO was to build a single platform that delivers all these workflows and makes them accessible to people of all SEO skill levels.
+
+## What makes OpenSEO different?
+
+OpenSEO focuses on the user and agent experience. DataForSEO focuses on providing the best SEO data.
+
+DataForSEO "just" provides data (this is extremely hard and valuable). OpenSEO provides data, tools, and integrations, all packaged into an easy-to-use app and a [powerful MCP](/features/mcp).
+
+Our focus is making SEO simple for someone doing it for the first time, but powerful enough to be the AI tool of choice for an agency owner with 50 clients.
+
+- **Data.** We give you DataForSEO's data, and you pay as you go.
+- **Tools.** We make the data easier for AI to use, and build project-level features like rank tracking, prompt tracking, and project context.
+- **Integrations.** We make it dead simple to connect Google Search Console and Google Analytics without creating a Google Cloud project.
+
+Here's what each of those means in practice.
+
+## Data
+
+It's the same data. When OpenSEO shows you a search volume or a backlink count, it came from DataForSEO. We don't have a secret better index, and we don't want one. DataForSEO is great at this, and we'd rather spend our time on the stuff on top.
+
+What we do is decide how you get it. A few things we've learned:
+
+- **Agents don't need the full API response.** DataForSEO's API is built for developers, so the responses are really thorough. Their MCP server returns those responses as they are unless you set up field filters yourself. That's a lot of tokens your agent has to wade through.
+- **So we trim it.** Our keyword research tool drops the 12-month trend data, which is about 80% of each keyword row and rarely matters for picking targets. If the agent wants trends for a few keywords, it asks for just those. Google results come back as rank, domain, title, URL, and description. That's what the agent actually uses.
+- **The agent knows the price first.** Every tool tells the agent roughly what it costs before it calls it, so it plans research instead of burning through your balance.
+- **One bad keyword doesn't fail the batch.** Research a handful of seeds or SERPs in one call, and if one fails you still get the rest.
+- **Retries are free for a while.** If the agent asks for the same Google results in the same project within 12 hours, it gets the saved results without paying again. Agents lose responses and retry more than you'd think.
+
+Smaller, cleaner responses mean your agent gets through more research before its context fills up, and makes fewer mistakes reading the results.
+
+### What it costs
+
+We want to be upfront about how we make money. OpenSEO adds a 28% fee on top of DataForSEO's price. That's how we pay for hosting and support, and fund building the product.
+
+So a keyword research call that costs $0.10 at DataForSEO costs about $0.13 on OpenSEO. The hosted plan is $10 a month, with $10 of usage included. Your Search Console and Google Analytics data, project context, and reports don't use any credits, and standard site audits are included. [Estimate your own month](/pricing).
+
+That said, OpenSEO can end up cheaper than a script you'd write yourself, because we have a full-time engineering team keeping costs down and making sure every feature works well. The best example is rank tracking. Scheduled checks go through DataForSEO's task queue instead of the live API, which costs about a third as much. The catch is you have to post the tasks, poll for results, and handle the ones that get stuck, which is annoying to build. So most DIY setups just call the live API and pay full price.
+
+## Tools
+
+This is the part we see everyone rebuilding over and over.
+
+SEO isn't one chat. It's weeks of research, writing, and checking whether anything worked. Every new Claude session starts from zero, so you end up explaining your business again, listing your competitors again, and sometimes paying for the same research again.
+
+OpenSEO keeps all of that in a project:
+
+- **Project context.** Your business, goals, positioning, competitors, key pages, and writing preferences. Your agent reads it at the start of every session, so you stop repeating yourself.
+- **A research log.** What's already been researched, so the next session checks before buying the same data twice.
+- **Rank tracking and prompt tracking.** Track your Google rankings and how AI assistants like ChatGPT talk about your brand, on a schedule, without keeping your laptop open.
+- **Reports.** Your agent saves finished work as a report in the project instead of leaving it buried in a chat. You can share them, print them, and save a format you like as a template so every report looks the same.
+- **Skills.** We ship [skills](/docs/skills) for keyword research, competitor analysis, site audits, local SEO, link prospecting, and more. We keep improving them based on what works for real customers. Use them as they are, or copy one and make it your own.
+
+You could keep a lot of this in a folder of markdown files on your laptop, and plenty of people do. The difference is that an OpenSEO project works across Claude, Codex, Cursor, and ChatGPT, and across your whole team, without anyone syncing files. If you're an agency with 50 clients, that's 50 projects you don't have to think about.
+
+## Integrations
+
+DataForSEO tells you about the market: what people search for and who ranks. It can't see how your own site is doing. That data lives in your Google accounts.
+
+OpenSEO connects:
+
+- **Google Search Console.** The queries you actually show up for, with real clicks, impressions, and positions. This is the most accurate SEO data you have for your own site.
+- **Google Analytics.** Which organic landing pages bring in visitors who actually convert.
+
+Normally, getting this into Claude means [creating a Google Cloud project](/google-search-console-mcp), setting up an OAuth client, downloading credentials, and running a local server. With OpenSEO you just sign in with Google and pick your property.
+
+The real value is when it's all in one place. Your agent can find keywords where you're stuck on page two with real impressions, pull the volume and difficulty for each, and look at who's beating you. Neither source can do that alone.
+
+We're planning to add more integrations, like WordPress, Shopify, and other analytics tools, so your agent can see more of your business.
+
+## Using DataForSEO directly? Self-host OpenSEO
+
+SEO experts and people who love vibe coding or self-hosting might want to use DataForSEO directly. If that's you, we'd still suggest self-hosting OpenSEO instead of starting from scratch. If you're working with DataForSEO, OpenSEO is almost always a good foundation.
+
+OpenSEO is [open source](https://github.com/every-app/open-seo) under the MIT license ([why we're open source](/open-source-seo)). Self-host it with your own DataForSEO account and you pay DataForSEO's prices with no fee.
+
+You still get everything above: the agent-friendly tools, rank tracking on the cheaper queue, project context, reports, and skills. You don't have to rebuild any of it, or all the patterns for calling DataForSEO efficiently. And since it's your code, you can change anything. Add an endpoint we don't cover, change what a tool returns, or build your own features and skills on top.
+
+What you give up is the managed part. You run the hosting and updates yourself, and you'll need your own Google OAuth client to connect Search Console and Analytics. [Self-hosting guide](/docs/self-hosting).
+
+The only real reason to skip OpenSEO is if you don't want any of its features, like if you're building a data pipeline that just needs raw API responses.
+
+## FAQ
+
+### Does OpenSEO use DataForSEO?
+
+Yes. Keyword, search results, rankings, backlinks, local, and AI visibility data all come from DataForSEO. Your Search Console and Google Analytics data comes from Google.
+
+### Is OpenSEO's data different from DataForSEO's?
+
+No, it's the same data. OpenSEO decides which fields your agent gets and how they're formatted.
+
+### Do I need a DataForSEO account to use OpenSEO?
+
+Not for the hosted version. You need one to self-host.
+
+### Can I use the DataForSEO MCP and OpenSEO together?
+
+Yes. Some people keep the DataForSEO MCP connected for endpoints OpenSEO doesn't cover.
+
+### How much cheaper is self-hosting?
+
+You skip the 28% fee on data, but you pay for your own hosting. DataForSEO's minimum top-up is $50.

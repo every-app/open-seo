@@ -112,7 +112,8 @@ const PAGE_URL = "https://example.com/blog/post";
 function expectParity(html: string) {
   const streamed = analyzeHtml(html, PAGE_URL, 200, 0);
   const reference = analyzeHtmlWithCheerio(html, PAGE_URL);
-  expect(streamed).toEqual(reference);
+  const { javascriptShell: _javascriptShell, ...existingAnalysis } = streamed;
+  expect(existingAnalysis).toEqual(reference);
 }
 
 describe("analyzeHtml parity with the DOM reference", () => {
@@ -207,6 +208,25 @@ describe("analyzeHtml parity with the DOM reference", () => {
   });
 });
 
+describe("analyzeHtml meta names are case-insensitive", () => {
+  const analyzeHead = (head: string) =>
+    analyzeHtml(`<head>${head}</head>`, PAGE_URL, 200, 0);
+
+  it("reads the first description regardless of name case", () => {
+    expect(
+      analyzeHead(
+        `<meta name="Description" content="first"><meta name="description" content="second">`,
+      ).metaDescription,
+    ).toBe("first");
+  });
+
+  it("reads robots for name=ROBOTS", () => {
+    expect(
+      analyzeHead(`<meta name="ROBOTS" content="noindex">`).robotsMeta,
+    ).toBe("noindex");
+  });
+});
+
 describe("analyzeHtml extraction caps", () => {
   it("caps links and images per page", () => {
     const links = Array.from(
@@ -226,4 +246,44 @@ describe("analyzeHtml extraction caps", () => {
     expect(analysis.links).toHaveLength(1_000);
     expect(analysis.images).toHaveLength(1_000);
   });
+});
+
+describe("JavaScript app-shell detection", () => {
+  it.each(["root", "app", "__next", "__nuxt"])(
+    "recognizes an empty %s app shell",
+    (id) => {
+      expect(
+        analyzeHtml(
+          `<body><div id="${id}">Loading...</div><script src="/app.js"></script></body>`,
+          PAGE_URL,
+          200,
+          0,
+        ).javascriptShell,
+      ).toBe(true);
+    },
+  );
+  it("recognizes Angular's app element", () => {
+    expect(
+      analyzeHtml(
+        '<app-root></app-root><script type="module" src="/main.js"></script>',
+        PAGE_URL,
+        200,
+        0,
+      ).javascriptShell,
+    ).toBe(true);
+  });
+  it.each([
+    '<div id="root"><h2>A server-rendered heading</h2></div><script src="/app.js"></script>',
+    '<div id="root"><a href="/about">About</a></div><script src="/app.js"></script>',
+    '<div id="app"><img src="/photo.png"></div><script src="/app.js"></script>',
+    '<div id="root"></div><script type="application/ld+json">{}</script>',
+    '<p>Short but valid content</p><script src="/analytics.js"></script>',
+    '<div id="root"></div>',
+    `<div id="root">${"Readable server-rendered content ".repeat(10)}</div><script src="/app.js"></script>`,
+  ])(
+    "does not confuse ordinary HTML, hydrated content, or structured data with a shell",
+    (html) => {
+      expect(analyzeHtml(html, PAGE_URL, 200, 0).javascriptShell).toBe(false);
+    },
+  );
 });

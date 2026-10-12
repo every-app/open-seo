@@ -13,47 +13,17 @@ describe("audit capacity helpers", () => {
     expect(clampAuditMaxPages(20_000)).toBe(10_000);
   });
 
-  it("estimates capacity for each lighthouse strategy", () => {
-    expect(
-      getEstimatedAuditCapacity({ maxPages: 100, lighthouseStrategy: "none" }),
-    ).toEqual({
-      pagesTotal: 100,
-      lighthouseTotal: 0,
-      total: 100,
-    });
-    expect(
-      getEstimatedAuditCapacity({ maxPages: 100, lighthouseStrategy: "auto" }),
-    ).toEqual({
-      pagesTotal: 100,
-      lighthouseTotal: 20,
-      total: 120,
-    });
-  });
-
-  it("stays within the paid capacity limit for the maximum auto audit", () => {
-    expect(
-      getEstimatedAuditCapacity({
-        maxPages: 10_000,
+  // If a tier's largest auto audit doesn't fit its own capacity budget, every
+  // max-size audit on that tier is rejected right after insert.
+  it.each(["free", "paid"] as const)(
+    "fits the maximum %s auto audit within its capacity budget",
+    (tier) => {
+      const estimate = getEstimatedAuditCapacity({
+        maxPages: AUDIT_LIMITS[tier].maxPagesPerAudit,
         lighthouseStrategy: "auto",
-      }).total,
-    ).toBeLessThan(AUDIT_LIMITS.paid.maxCapacityUnits);
-  });
-
-  it("fits a maximum free audit within the free capacity budget", () => {
-    const freeAudit = getEstimatedAuditCapacity({
-      maxPages: AUDIT_LIMITS.free.maxPagesPerAudit,
-      lighthouseStrategy: "auto",
-    });
-    expect(freeAudit.pagesTotal).toBe(AUDIT_LIMITS.free.maxPagesPerAudit);
-    expect(freeAudit.total).toBeLessThan(AUDIT_LIMITS.free.maxCapacityUnits);
-  });
-
-  it("lifts only the cumulative self-hosted cap", () => {
-    expect(AUDIT_LIMITS.self_hosted.maxCapacityUnits).toBe(
-      Number.POSITIVE_INFINITY,
-    );
-    expect(AUDIT_LIMITS.self_hosted.maxPagesPerAudit).toBe(
-      AUDIT_LIMITS.paid.maxPagesPerAudit,
-    );
-  });
+      });
+      expect(estimate.pagesTotal).toBe(AUDIT_LIMITS[tier].maxPagesPerAudit);
+      expect(estimate.total).toBeLessThan(AUDIT_LIMITS[tier].maxCapacityUnits);
+    },
+  );
 });

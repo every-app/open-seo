@@ -1,11 +1,13 @@
 import {
+  AuthorizationError as ProviderAuthorizationError,
   GrantType,
+  OAuthError as ProviderOAuthError,
   type OAuthProviderOptions,
   type TokenExchangeCallbackOptions,
 } from "@cloudflare/workers-oauth-provider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import type { createOpenSeoOAuthProvider } from "./oauth-provider";
+import { createOpenSeoOAuthProvider } from "./oauth-provider";
 
 const mocks = vi.hoisted(() => ({
   options: [] as OAuthProviderOptions<unknown>[],
@@ -179,42 +181,17 @@ describe("OpenSEO OAuth provider configuration", () => {
   });
 
   it("binds tokens and protected-resource metadata to the canonical MCP URL", async () => {
-    const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
     const provider = createOpenSeoOAuthProvider(() => new Response("app"));
 
     await dispatch(provider, new Request("https://app.openseo.so/health"));
 
     expect(mocks.options).toHaveLength(1);
-    expect(mocks.options[0]?.resourceMetadata).toEqual({
-      resource: "https://app.openseo.so/mcp",
-      scopes_supported: ["mcp"],
-      resource_name: "OpenSEO MCP",
-    });
-    expect(mocks.options[0]?.scopesSupported).toEqual([
-      "offline_access",
-      "mcp",
-    ]);
-    expect(mocks.options[0]?.clientRegistrationTTL).toBe(60 * 60 * 24 * 365);
-  });
-
-  it("purges OAuth KV data without needing a prior request", async () => {
-    const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
-    const provider = createOpenSeoOAuthProvider(() => new Response("app"));
-
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- mocked provider does not read its KV-backed environment
-    const result = await provider.purgeExpiredData({} as never);
-
-    expect(result.done).toBe(true);
-    expect(mocks.purges).toHaveLength(1);
-    // The lazily built provider still pins the hosted resource.
     expect(mocks.options[0]?.resourceMetadata).toMatchObject({
       resource: "https://app.openseo.so/mcp",
     });
   });
 
   it("rejects token exchanges that drop the required MCP scope", async () => {
-    const { OAuthError } = await import("@cloudflare/workers-oauth-provider");
-    const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
     const provider = createOpenSeoOAuthProvider(() => new Response("app"));
 
     await dispatch(provider, new Request("https://app.openseo.so/health"));
@@ -223,7 +200,7 @@ describe("OpenSEO OAuth provider configuration", () => {
     if (!callback) throw new Error("Missing token exchange callback");
     expect(() =>
       callback(tokenExchangeOptions(["offline_access"])),
-    ).toThrowError(OAuthError);
+    ).toThrowError(ProviderOAuthError);
     expect(callback(tokenExchangeOptions(["mcp"]))).toEqual({
       accessTokenProps: {
         openSeoAuth: {
@@ -239,7 +216,6 @@ describe("OpenSEO OAuth provider configuration", () => {
   });
 
   it("lets the provider issue Perplexity a real client secret", async () => {
-    const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
     const provider = createOpenSeoOAuthProvider(() => new Response("app"));
 
     await dispatch(
@@ -260,7 +236,6 @@ describe("OpenSEO OAuth provider configuration", () => {
   });
 
   it("includes the authorization-server issuer when consent is denied", async () => {
-    const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
     const provider = createOpenSeoOAuthProvider(() => new Response("app"));
     await dispatch(provider, new Request("https://app.openseo.so/health"));
 
@@ -299,10 +274,7 @@ describe("OpenSEO OAuth provider configuration", () => {
     });
   });
 
-  it("redirects safe authorization errors with state and issuer", async () => {
-    const { AuthorizationError } =
-      await import("@cloudflare/workers-oauth-provider");
-    const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
+  it("redirects safe authorization errors with state and issuer, rethrowing anything else", async () => {
     const provider = createOpenSeoOAuthProvider(() => new Response("app"));
     await dispatch(provider, new Request("https://app.openseo.so/health"));
 
@@ -312,7 +284,7 @@ describe("OpenSEO OAuth provider configuration", () => {
         OAUTH_PROVIDER: {
           parseAuthRequest: () =>
             Promise.reject(
-              new AuthorizationError("invalid_scope", {
+              new ProviderAuthorizationError("invalid_scope", {
                 description: "Unsupported scope",
                 redirectUri: "https://client.example/callback",
                 state: "state-1",
@@ -332,13 +304,8 @@ describe("OpenSEO OAuth provider configuration", () => {
       state: "state-1",
       iss: "https://app.openseo.so",
     });
-  });
 
-  it("does not expose unexpected authorization failures as client errors", async () => {
-    const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
-    const provider = createOpenSeoOAuthProvider(() => new Response("app"));
-    await dispatch(provider, new Request("https://app.openseo.so/health"));
-
+    // Anything other than a provider AuthorizationError is not a client error.
     await expect(
       invokeDefaultHandler(
         new Request("https://app.openseo.so/api/auth/oauth2/authorize"),

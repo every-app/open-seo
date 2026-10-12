@@ -3,7 +3,7 @@ title: "Cloudflare Self-Hosting"
 description: "Deploy OpenSEO to your own Cloudflare account for internet-facing, multi-device, or team use."
 ---
 
-Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything, including the Cloudflare Access login gate. Works on Cloudflare's free plan.
+Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything, including the Cloudflare Access login gate. Works on Cloudflare's free plan. JavaScript rendering in site audits needs a paid Workers plan.
 
 ## Prerequisites
 
@@ -45,7 +45,7 @@ Already logged in from before without the `access:write` scope? Run `pnpm alchem
 Copy the template and fill in the required values:
 
 ```bash
-cp .env.selfhost.example .env.selfhost
+cp deploy/.env.selfhost.example .env.selfhost
 ```
 
 ## 4) Deploy
@@ -55,6 +55,8 @@ pnpm deploy:selfhost --yes
 ```
 
 This provisions the D1 database, KV namespaces, and R2 bucket, applies the database migrations, deploys the Worker, and creates the Cloudflare Access application protecting it (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one is created for you, named after your workers.dev subdomain.
+
+AI Visibility uses your `DATAFORSEO_API_KEY`; tracked questions are sent to DataForSEO and billed directly by the provider. Set `OPENROUTER_API_KEY` for setup research and generated prompt suggestions. Deployment configures background collection and a five-minute cron that dispatches due daily, weekly, or monthly checks. The app shows the collection cost before a check or schedule starts. See the [AI Visibility guide](/docs/ai-visibility).
 
 ## 5) Validate setup
 
@@ -99,5 +101,5 @@ pnpm deploy:selfhost --yes
 
 ## More guides on GitHub
 
-- [Operations](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): telemetry and other day-to-day tasks.
+- [Operations](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): JavaScript rendering for site audits, telemetry, and other day-to-day tasks.
 - [Legacy deployments](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_LEGACY.md): maintenance for installs created with the retired Deploy-button or manual Wrangler flows.

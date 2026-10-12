@@ -1,4 +1,4 @@
-import { buildCsv, type CsvValue } from "@/client/lib/csv";
+import type { CsvValue } from "@/client/lib/csv";
 import type { CategoryTab, LighthouseIssue } from "./types";
 
 const ISSUE_HEADERS = [
@@ -35,8 +35,4 @@ export function categoryLabel(category: CategoryTab) {
   if (category === "best-practices") return "Best practices";
   if (category === "all") return "All";
   return `${category.charAt(0).toUpperCase()}${category.slice(1)}`;
-}
-
-export function issuesToCsv(issues: LighthouseIssue[]) {
-  return buildCsv(ISSUE_HEADERS, issuesToRows(issues));
 }

@@ -1,165 +1,98 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
+import { MoreHorizontal, Play, RefreshCw } from "lucide-react";
+import { ConfirmDialog } from "@/client/components/ConfirmDialog";
+import { Button } from "@/client/components/ui/button";
 import {
-  ChevronDown,
-  Copy,
-  Download,
-  FileDown,
-  MoreHorizontal,
-  Play,
-  RefreshCw,
-  Sheet,
-} from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 
-function ToolbarMenu({
-  label,
-  icon,
-  title,
-  children,
-}: {
-  label?: string;
-  icon?: ReactNode;
-  title?: string;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        className={`btn btn-ghost btn-sm ${label ? "gap-1" : "btn-square"}`}
-        onClick={() => setOpen((c) => !c)}
-        title={title}
-        aria-label={title ?? label}
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        {icon}
-        {label}
-        {label && <ChevronDown className="size-3.5 opacity-60" />}
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            role="menu"
-            className="absolute right-0 top-full mt-1 z-50 rounded-lg border border-base-300 bg-base-100 shadow-lg py-1 min-w-[230px]"
-            onClick={() => setOpen(false)}
-          >
-            {children}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function MenuItem({
-  icon,
+function ItemText({
   label,
   description,
-  onClick,
-  disabled,
 }: {
-  icon: ReactNode;
   label: string;
-  description?: string;
-  onClick: () => void;
-  disabled?: boolean;
+  description: string;
 }) {
   return (
-    <button
-      type="button"
-      role="menuitem"
-      className="flex w-full items-start gap-2 px-3 py-2 text-sm hover:bg-base-200 disabled:opacity-50"
-      onClick={onClick}
-      disabled={disabled}
-    >
-      <span className="mt-0.5 shrink-0">{icon}</span>
-      <span className="flex flex-col items-start text-left">
-        <span>{label}</span>
-        {description && (
-          <span className="text-xs text-base-content/50">{description}</span>
-        )}
-      </span>
-    </button>
+    <span className="flex flex-col">
+      <span>{label}</span>
+      <span className="text-xs text-muted-foreground">{description}</span>
+    </span>
   );
 }
 
 export function MoreMenu({
   onCheckNow,
   checkBusy,
-  checkDisabled,
   onRefreshMetrics,
   metricsRefreshing,
+  trackedKeywordCount,
   hasData,
 }: {
   onCheckNow: () => void;
   checkBusy: boolean;
-  checkDisabled: boolean;
   onRefreshMetrics: () => void;
   metricsRefreshing: boolean;
+  trackedKeywordCount: number;
   hasData: boolean;
 }) {
+  const [confirmingRefresh, setConfirmingRefresh] = useState(false);
   return (
-    <ToolbarMenu
-      icon={<MoreHorizontal className="size-4" />}
-      title="More actions"
-    >
-      {!checkDisabled && (
-        <MenuItem
-          icon={<Play className="size-3.5" />}
-          label={checkBusy ? "Running..." : "Check rankings"}
-          description="Fetch current Google positions"
-          onClick={onCheckNow}
-          disabled={checkBusy}
-        />
-      )}
-      <MenuItem
-        icon={
-          <RefreshCw
-            className={`size-3.5 ${metricsRefreshing ? "animate-spin" : ""}`}
-          />
-        }
-        label={metricsRefreshing ? "Refreshing..." : "Update keyword stats"}
-        description="Volume, difficulty & CPC — not rankings"
-        onClick={onRefreshMetrics}
-        disabled={metricsRefreshing || !hasData}
-      />
-    </ToolbarMenu>
-  );
-}
-
-export function ExportMenu({
-  onExport,
-  onExportToSheets,
-  onCopyKeywords,
-  hasData,
-}: {
-  onExport: () => void;
-  onExportToSheets: () => void;
-  onCopyKeywords: () => void;
-  hasData: boolean;
-}) {
-  return (
-    <ToolbarMenu label="Export" icon={<Download className="size-3.5" />}>
-      <MenuItem
-        icon={<Sheet className="size-3.5" />}
-        label="Export to Sheets"
-        onClick={onExportToSheets}
-        disabled={!hasData}
-      />
-      <MenuItem
-        icon={<FileDown className="size-3.5" />}
-        label="Export CSV"
-        onClick={onExport}
-        disabled={!hasData}
-      />
-      <MenuItem
-        icon={<Copy className="size-3.5" />}
-        label="Copy keywords"
-        onClick={onCopyKeywords}
-        disabled={!hasData}
-      />
-    </ToolbarMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="More actions"
+              title="More actions"
+            />
+          }
+        >
+          <MoreHorizontal />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-60">
+          <DropdownMenuItem onClick={onCheckNow} disabled={checkBusy}>
+            <Play />
+            <ItemText
+              label={checkBusy ? "Running..." : "Check rankings"}
+              description="Fetch current Google positions"
+            />
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setConfirmingRefresh(true)}
+            disabled={metricsRefreshing || !hasData}
+          >
+            <RefreshCw className={metricsRefreshing ? "animate-spin" : ""} />
+            <ItemText
+              label={
+                metricsRefreshing ? "Refreshing..." : "Update keyword stats"
+              }
+              description="Volume, difficulty & CPC — not rankings"
+            />
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {confirmingRefresh ? (
+        <ConfirmDialog
+          title="Update keyword stats?"
+          confirmLabel="Update stats"
+          onConfirm={() => {
+            setConfirmingRefresh(false);
+            onRefreshMetrics();
+          }}
+          onClose={() => setConfirmingRefresh(false)}
+        >
+          This fetches new volume, difficulty, and CPC for all{" "}
+          {trackedKeywordCount} tracked keyword
+          {trackedKeywordCount !== 1 ? "s" : ""}. Each keyword uses credits.
+          Rankings do not change.
+        </ConfirmDialog>
+      ) : null}
+    </>
   );
 }

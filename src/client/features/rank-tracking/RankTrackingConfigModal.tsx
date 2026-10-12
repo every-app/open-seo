@@ -1,25 +1,44 @@
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Info, Loader2, X } from "lucide-react";
-import { Modal } from "@/client/components/Modal";
+import { useId, useState } from "react";
+import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
+import { useQuery } from "@tanstack/react-query";
+import { revalidateLogic, useStore } from "@tanstack/react-form";
+import { Info } from "lucide-react";
+import { useAppForm } from "@/client/components/form/useAppForm";
+import { CountryCombobox } from "@/client/components/CountryCombobox";
+import { Button } from "@/client/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
+import { Field, FieldLabel } from "@/client/components/ui/field";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { domainField, normalizeDomain } from "@/types/schemas/domain";
-import {
-  depthToPages,
-  pagesToDepth,
-  estimateRankCheckCredits,
-} from "@/shared/rank-tracking";
+import { pagesToDepth, estimateRankCheckCredits } from "@/shared/rank-tracking";
 import { getLanguageCode } from "@/client/features/keywords/locations";
 import {
   SERP_LANGUAGE_OPTIONS,
   getIsoCountryCode,
 } from "@/shared/keyword-locations";
-import { LocationSelect } from "@/client/components/LocationSelect";
 import type { ProjectMarket } from "@/client/features/projects/types";
-import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
+import { QueryError } from "@/client/components/QueryState";
+import { Spinner } from "@/client/components/Spinner";
+import { getFieldError } from "@/client/lib/forms";
 import { SearchTargetingField } from "./SearchTargetingField";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
-import { useSaveConfigMutations } from "./useSaveConfigMutations";
+import {
+  useSaveConfigMutations,
+  type SaveConfigInput,
+} from "./useSaveConfigMutations";
+import { ScheduleField } from "./ScheduleField";
+import {
+  localScheduleTimeFrom,
+  randomScheduleDate,
+  withBrowserTimeZone,
+  type LocalScheduleTime,
+} from "./scheduleTime";
 
 type Props = {
   projectId: string;
@@ -29,6 +48,41 @@ type Props = {
   onConfigCreated?: () => void;
 };
 
+type ConfigFormValues = Omit<SaveConfigInput, "scheduleTime"> & {
+  scheduleTime: LocalScheduleTime;
+};
+
+const LANGUAGE_ITEMS = SERP_LANGUAGE_OPTIONS.map((language) => ({
+  value: language.code,
+  label: language.label,
+}));
+
+const DEVICE_ITEMS: { value: SaveConfigInput["devices"]; label: string }[] = [
+  { value: "both", label: "Desktop + Mobile" },
+  { value: "desktop", label: "Desktop only" },
+  { value: "mobile", label: "Mobile only" },
+];
+
+const DEPTH_ITEMS = Array.from({ length: 10 }, (_, i) => i + 1).map(
+  (pages) => ({
+    value: pagesToDepth(pages),
+    label: `${pages} ${pages === 1 ? "page" : "pages"} (top ${pages * 10} results)`,
+  }),
+);
+
+function validateConfig(values: ConfigFormValues) {
+  const fields: Partial<Record<keyof ConfigFormValues, string>> = {};
+  if (!values.domain.trim()) {
+    fields.domain = "Enter a domain";
+  } else if (!domainField.safeParse(values.domain).success) {
+    fields.domain = "Enter a valid domain, like example.com";
+  }
+  if (values.targetingMode === "local" && !values.locationName) {
+    fields.locationName = "Select a city or region for local targeting";
+  }
+  return Object.keys(fields).length > 0 ? { fields } : undefined;
+}
+
 export function RankTrackingConfigModal({
   projectId,
   existingConfig,
@@ -36,22 +90,41 @@ export function RankTrackingConfigModal({
   onSaved,
   onConfigCreated,
 }: Props) {
-  const projectMarket = useProjectMarket(projectId);
+  // A new domain starts from the project's market, so it waits for projects.
+  const projectsQuery = useQuery({
+    ...projectsQueryOptions(),
+    enabled: !existingConfig,
+  });
+  const initialMarket =
+    existingConfig ??
+    projectsQuery.data?.find((project) => project.id === projectId);
 
-  if (!existingConfig && !projectMarket) {
+  if (!initialMarket) {
     return (
-      <Modal
-        maxWidth="max-w-lg"
-        onClose={onClose}
-        labelledBy="rank-config-modal-title"
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
       >
-        <h2 id="rank-config-modal-title" className="sr-only">
-          Add Domain
-        </h2>
-        <div className="flex min-h-40 items-center justify-center">
-          <Loader2 className="size-5 animate-spin text-base-content/50" />
-        </div>
-      </Modal>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Add Domain</DialogTitle>
+          </DialogHeader>
+          <div className="flex min-h-40 items-center justify-center">
+            {projectsQuery.isPending ? (
+              <Spinner />
+            ) : (
+              <QueryError
+                error={projectsQuery.error}
+                fallback="Failed to load the project."
+                onRetry={() => void projectsQuery.refetch()}
+                isRetrying={projectsQuery.isFetching}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 
@@ -59,7 +132,7 @@ export function RankTrackingConfigModal({
     <RankTrackingConfigModalContent
       projectId={projectId}
       existingConfig={existingConfig}
-      initialMarket={existingConfig ?? projectMarket!}
+      initialMarket={initialMarket}
       onClose={onClose}
       onSaved={onSaved}
       onConfigCreated={onConfigCreated}
@@ -75,323 +148,265 @@ function RankTrackingConfigModalContent({
   onSaved,
   onConfigCreated,
 }: Props & { initialMarket: ProjectMarket }) {
+  const countryId = useId();
   const isEdit = !!existingConfig;
-  const [step, setStep] = useState<"config" | "keywords">("config");
-  const [domain, setDomain] = useState(existingConfig?.domain ?? "");
-  const [devices, setDevices] = useState<"both" | "desktop" | "mobile">(
-    existingConfig?.devices ?? "mobile",
-  );
-  const [locationCode, setLocationCode] = useState(
-    existingConfig?.locationCode ?? initialMarket.locationCode,
-  );
-  const [languageCode, setLanguageCode] = useState(
-    existingConfig?.languageCode ?? initialMarket.languageCode,
-  );
-  const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
-  const [schedule, setSchedule] = useState<
-    RankTrackingConfig["scheduleInterval"]
-  >(existingConfig?.scheduleInterval ?? "weekly");
-  const [targetingMode, setTargetingMode] = useState<"national" | "local">(
-    existingConfig?.locationName ? "local" : "national",
-  );
-  const [locationName, setLocationName] = useState<string | undefined>(
-    existingConfig?.locationName ?? undefined,
-  );
-  const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
-
-  const selectedCountryCode = useMemo(
-    () => getIsoCountryCode(locationCode),
-    [locationCode],
-  );
+  const [createdConfigId, setCreatedConfigId] = useState<string>();
+  // An untouched edit leaves the stored run time alone; anything that changes
+  // the schedule sends the time on screen so it is the one that gets saved.
+  const [scheduleTimeEdited, setScheduleTimeEdited] = useState(false);
 
   const { createMutation, updateMutation } = useSaveConfigMutations({
     projectId,
     existingConfig,
-    fields: {
-      devices,
-      serpDepth,
-      locationCode,
-      languageCode,
-      targetingMode,
-      locationName,
-      schedule,
-    },
     onCreated: (configId) => {
       setCreatedConfigId(configId);
       onConfigCreated?.();
-      setStep("keywords");
     },
     onUpdated: () => onSaved(),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isPending) return;
-    if (!domain.trim()) {
-      toast.error("Please enter a domain");
-      return;
-    }
-    if (targetingMode === "local" && !locationName) {
-      toast.error("Please select a city or region for local targeting");
-      return;
-    }
-    const parsedDomain = domainField.safeParse(domain);
-    if (!parsedDomain.success) {
-      toast.error("Please enter a valid domain");
-      return;
-    }
-    setDomain(parsedDomain.data);
-    if (isEdit) {
-      updateMutation.mutate(parsedDomain.data);
-    } else {
-      createMutation.mutate(parsedDomain.data);
-    }
-  };
+  // Built once: the schedule default is random, and new default values would
+  // reset the form on every render.
+  const [defaultValues] = useState<ConfigFormValues>(() => ({
+    domain: existingConfig?.domain ?? "",
+    locationCode: existingConfig?.locationCode ?? initialMarket.locationCode,
+    languageCode: existingConfig?.languageCode ?? initialMarket.languageCode,
+    targetingMode: existingConfig?.locationName ? "local" : "national",
+    locationName: existingConfig?.locationName ?? undefined,
+    devices: existingConfig?.devices ?? "mobile",
+    schedule: existingConfig?.scheduleInterval ?? "weekly",
+    // Shown and edited in the browser's timezone; the server converts it to UTC.
+    scheduleTime: localScheduleTimeFrom(
+      existingConfig?.nextCheckAt
+        ? new Date(existingConfig.nextCheckAt)
+        : randomScheduleDate(),
+    ),
+    serpDepth: existingConfig?.serpDepth ?? 40,
+  }));
 
-  const handleDomainBlur = () => {
-    try {
-      setDomain(normalizeDomain(domain));
-    } catch {
-      // Keep invalid partial input editable; submit validation will show the error.
-    }
-  };
+  const form = useAppForm({
+    defaultValues,
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: ({ value }) => validateConfig(value) },
+    onSubmit: async ({ value, formApi }) => {
+      const domain = domainField.parse(value.domain);
+      formApi.setFieldValue("domain", domain);
+      const sendScheduleTime =
+        value.schedule !== "manual" &&
+        (!existingConfig ||
+          scheduleTimeEdited ||
+          value.schedule !== existingConfig.scheduleInterval);
+      const input: SaveConfigInput = {
+        ...value,
+        domain,
+        scheduleTime: sendScheduleTime
+          ? withBrowserTimeZone(value.scheduleTime)
+          : undefined,
+      };
+      await (isEdit
+        ? updateMutation.mutateAsync(input)
+        : createMutation.mutateAsync(input));
+    },
+  });
+  const values = useStore(form.store, (state) => state.values);
+  const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
-
-  if (step === "keywords" && createdConfigId) {
-    const closeKeywordStep = () => onSaved(createdConfigId);
-
-    return (
-      <Modal
-        maxWidth="max-w-3xl"
-        onClose={closeKeywordStep}
-        labelledBy="keyword-suggestions-title"
-      >
-        <KeywordSuggestionStep
-          configId={createdConfigId}
-          projectId={projectId}
-          domain={domain}
-          locationCode={locationCode}
-          onDone={(id) => onSaved(id)}
-          onClose={closeKeywordStep}
-        />
-      </Modal>
-    );
-  }
+  const closeKeywordStep = () => onSaved(createdConfigId);
 
   return (
-    <Modal
-      maxWidth="max-w-lg"
-      onClose={onClose}
-      labelledBy="rank-config-modal-title"
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (open || isSubmitting) return;
+        if (createdConfigId) closeKeywordStep();
+        else onClose();
+      }}
     >
-      <div className="flex items-center justify-between">
-        <h2 id="rank-config-modal-title" className="text-lg font-semibold">
-          {isEdit ? "Edit Domain Config" : "Add Domain"}
-        </h2>
-        <button className="btn btn-ghost btn-sm btn-square" onClick={onClose}>
-          <X className="size-4" />
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Target Domain</span>
-          </label>
-          <input
-            type="text"
-            placeholder="example.com"
-            className="input input-bordered w-full"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            onBlur={handleDomainBlur}
+      <DialogContent
+        showCloseButton={!!createdConfigId}
+        className={createdConfigId ? "sm:max-w-3xl" : "sm:max-w-lg"}
+      >
+        {createdConfigId ? (
+          <KeywordSuggestionStep
+            configId={createdConfigId}
+            projectId={projectId}
+            domain={values.domain}
+            locationCode={values.locationCode}
+            onDone={onSaved}
+            onClose={closeKeywordStep}
           />
-        </div>
+        ) : (
+          <form.AppForm>
+            <form.Form className="flex flex-col gap-4">
+              <DialogHeader>
+                <DialogTitle>
+                  {isEdit ? "Edit Domain Config" : "Add Domain"}
+                </DialogTitle>
+              </DialogHeader>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Country</span>
-          </label>
-          <LocationSelect
-            value={locationCode}
-            onChange={(newLocationCode) => {
-              setLocationCode(newLocationCode);
-              setLanguageCode(getLanguageCode(newLocationCode));
-              // A picked city belongs to the previous country.
-              setLocationName(undefined);
-            }}
-          />
-        </div>
+              <form.AppField
+                name="domain"
+                listeners={{
+                  onBlur: ({ value }) => {
+                    try {
+                      form.setFieldValue("domain", normalizeDomain(value), {
+                        dontValidate: true,
+                      });
+                    } catch {
+                      // Keep invalid partial input editable; submit shows the error.
+                    }
+                  },
+                }}
+              >
+                {(field) => (
+                  <field.TextField
+                    label="Target Domain"
+                    placeholder="example.com"
+                  />
+                )}
+              </form.AppField>
 
-        <SearchTargetingField
-          mode={targetingMode}
-          onModeChange={setTargetingMode}
-          locationName={locationName}
-          onLocationNameChange={setLocationName}
-          countryCode={selectedCountryCode}
-        />
+              <Field>
+                <FieldLabel htmlFor={countryId}>Country</FieldLabel>
+                <CountryCombobox
+                  id={countryId}
+                  value={values.locationCode}
+                  onChange={(locationCode) => {
+                    form.setFieldValue("locationCode", locationCode);
+                    form.setFieldValue(
+                      "languageCode",
+                      getLanguageCode(locationCode),
+                    );
+                    // A picked city belongs to the previous country.
+                    form.setFieldValue("locationName", undefined);
+                  }}
+                />
+              </Field>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Language</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
-            value={languageCode}
-            onChange={(e) => setLanguageCode(e.target.value)}
-          >
-            {SERP_LANGUAGE_OPTIONS.map((language) => (
-              <option key={language.code} value={language.code}>
-                {language.label}
-              </option>
-            ))}
-          </select>
-          <div className="mt-1.5 text-xs text-base-content/50">
-            Defaults to the country's language. Any language can be tracked in
-            any country — pick the one your customers search in.
-          </div>
-        </div>
+              <form.Field name="locationName">
+                {(field) => (
+                  <SearchTargetingField
+                    mode={values.targetingMode}
+                    onModeChange={(mode) =>
+                      form.setFieldValue("targetingMode", mode)
+                    }
+                    locationName={field.state.value}
+                    onLocationNameChange={field.handleChange}
+                    countryCode={getIsoCountryCode(values.locationCode)}
+                    error={getFieldError(field.state.meta.errors) ?? undefined}
+                  />
+                )}
+              </form.Field>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Devices</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
-            value={devices}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (
-                value === "both" ||
-                value === "desktop" ||
-                value === "mobile"
-              ) {
-                setDevices(value);
-              }
-            }}
-          >
-            <option value="both">Desktop + Mobile</option>
-            <option value="desktop">Desktop only</option>
-            <option value="mobile">Mobile only</option>
-          </select>
-          <div className="mt-1.5 text-xs text-base-content/50">
-            Most Google searches come from mobile, but select this based on your
-            customer.
-          </div>
-          {devices === "both" && (
-            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-info">
-              <Info className="size-3.5 shrink-0 mt-0.5" />
-              <span>
-                Tracking both devices uses 2x credits per keyword check
-              </span>
-            </div>
-          )}
-        </div>
+              <form.AppField name="languageCode">
+                {(field) => (
+                  <field.SelectField
+                    label="Language"
+                    items={LANGUAGE_ITEMS}
+                    description="Defaults to the country's language. Any language can be tracked in any country — pick the one your customers search in."
+                  />
+                )}
+              </form.AppField>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Schedule</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
-            value={schedule}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (
-                value === "daily" ||
-                value === "weekly" ||
-                value === "monthly" ||
-                value === "manual"
-              ) {
-                setSchedule(value);
-              }
-            }}
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly (end of month)</option>
-            <option value="manual">Manual only</option>
-          </select>
-          {schedule === "daily" && (
-            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-warning">
-              <Info className="size-3.5 shrink-0 mt-0.5" />
-              <span>Daily checks use 7x more credits than weekly</span>
-            </div>
-          )}
-        </div>
-
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Search Depth</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
-            value={depthToPages(serpDepth)}
-            onChange={(e) => setSerpDepth(pagesToDepth(Number(e.target.value)))}
-          >
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((pages) => (
-              <option key={pages} value={pages}>
-                {pages} {pages === 1 ? "page" : "pages"} (top {pages * 10}{" "}
-                results)
-              </option>
-            ))}
-          </select>
-          <div className="mt-1.5 text-xs text-base-content/50">
-            10 pages is ~8x more expensive than 1 page
-          </div>
-        </div>
-
-        {(() => {
-          // Scheduled checks run through the cheaper task queue; manual
-          // configs only ever pay the live price.
-          const { costUsd: costPerKeyword } = estimateRankCheckCredits(
-            1,
-            devices,
-            serpDepth,
-            schedule === "manual" ? "live" : "queued",
-          );
-          const checksPerMonth =
-            schedule === "daily" ? 30 : schedule === "weekly" ? 4 : 1;
-          return (
-            <div className="rounded-lg bg-base-200/50 px-3 py-2.5 text-xs text-base-content/70 space-y-0.5">
-              <div>
-                <span className="font-mono font-semibold text-base-content">
-                  ~${costPerKeyword.toFixed(4)}
-                </span>{" "}
-                per keyword per check
+              <div className="flex flex-col gap-1.5">
+                <form.AppField name="devices">
+                  {(field) => (
+                    <field.SelectField
+                      label="Devices"
+                      items={DEVICE_ITEMS}
+                      description="Most Google searches come from mobile, but select this based on your customer."
+                    />
+                  )}
+                </form.AppField>
+                {values.devices === "both" && (
+                  <p className="flex items-start gap-1.5 text-xs text-info">
+                    <Info className="mt-0.5 size-3.5 shrink-0" />
+                    Tracking both devices uses 2x credits per keyword check
+                  </p>
+                )}
               </div>
-              {schedule !== "manual" && (
-                <div>
-                  50 keywords would cost{" "}
-                  <span className="font-mono font-semibold text-base-content">
-                    ~${(costPerKeyword * 50 * checksPerMonth).toFixed(2)}
-                  </span>
-                  /month
-                </div>
-              )}
-            </div>
-          );
-        })()}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm"
-            disabled={isPending || !domain.trim()}
-          >
-            {isPending && <Loader2 className="size-3.5 animate-spin" />}
-            {isEdit ? "Save Changes" : "Add Domain"}
-          </button>
+              <ScheduleField
+                schedule={values.schedule}
+                onScheduleChange={(schedule) =>
+                  form.setFieldValue("schedule", schedule)
+                }
+                scheduleTime={values.scheduleTime}
+                onScheduleTimeChange={(time) => {
+                  form.setFieldValue("scheduleTime", time);
+                  setScheduleTimeEdited(true);
+                }}
+              />
+
+              <form.AppField name="serpDepth">
+                {(field) => (
+                  <field.SelectField
+                    label="Search Depth"
+                    items={DEPTH_ITEMS}
+                    description="10 pages is ~8x more expensive than 1 page"
+                  />
+                )}
+              </form.AppField>
+
+              <CostEstimate
+                devices={values.devices}
+                serpDepth={values.serpDepth}
+                schedule={values.schedule}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <form.SubmitButton>
+                  {isEdit ? "Save Changes" : "Add Domain"}
+                </form.SubmitButton>
+              </DialogFooter>
+            </form.Form>
+          </form.AppForm>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CostEstimate({
+  devices,
+  serpDepth,
+  schedule,
+}: Pick<ConfigFormValues, "devices" | "serpDepth" | "schedule">) {
+  // Scheduled checks run through the cheaper task queue; manual configs only
+  // ever pay the live price.
+  const { costUsd: costPerKeyword } = estimateRankCheckCredits(
+    ["plain keyword"],
+    devices,
+    serpDepth,
+    schedule === "manual" ? "live" : "queued",
+  );
+  const checksPerMonth =
+    schedule === "daily" ? 30 : schedule === "weekly" ? 4 : 1;
+  return (
+    <div className="space-y-0.5 rounded-lg bg-muted px-3 py-2.5 text-xs text-muted-foreground">
+      <div>
+        <span className="font-mono font-semibold text-foreground">
+          ~${costPerKeyword.toFixed(4)}
+        </span>{" "}
+        per keyword per check
+      </div>
+      {schedule !== "manual" && (
+        <div>
+          50 keywords would cost{" "}
+          <span className="font-mono font-semibold text-foreground">
+            ~${(costPerKeyword * 50 * checksPerMonth).toFixed(2)}
+          </span>
+          /month
         </div>
-      </form>
-    </Modal>
+      )}
+    </div>
   );
 }

@@ -1,11 +1,13 @@
-import { useForm } from "@tanstack/react-form";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useAppForm } from "@/client/components/form/useAppForm";
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
 import {
   AuthPageCard,
   AuthPageShell,
   authRedirectSearchSchema,
 } from "@/client/features/auth/AuthPage";
-import { getFieldError, getFormError } from "@/client/lib/forms";
+import { getFormError } from "@/client/lib/forms";
 import { authClient } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
@@ -25,7 +27,7 @@ function ForgotPasswordPage() {
   const redirectTo = normalizeAuthRedirect(search.redirect);
   const isHostedMode = isHostedClientAuthMode();
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: {
       email: "",
     },
@@ -80,7 +82,7 @@ function ForgotPasswordPage() {
               title={isSuccess ? "Check your email" : "Forgot password"}
               helperText={
                 isSuccess
-                  ? `If an account exists for ${submittedEmail}, we sent a reset link.`
+                  ? undefined
                   : isHostedMode
                     ? "Enter your email and we'll send you a password reset link."
                     : "Password reset isn't available right now."
@@ -90,7 +92,7 @@ function ForgotPasswordPage() {
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="text-base-content/50 hover:text-base-content transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Back to sign in
                   </Link>
@@ -98,56 +100,46 @@ function ForgotPasswordPage() {
               }
             >
               {isSuccess ? (
-                <div className="alert alert-success">
-                  <span>
-                    If an account exists for that email, you'll receive password
-                    reset instructions shortly.
-                  </span>
-                </div>
+                <Alert variant="success">
+                  <AlertDescription>
+                    If an account exists for {submittedEmail}, you'll receive
+                    password reset instructions shortly.
+                  </AlertDescription>
+                </Alert>
               ) : (
-                <form
-                  className="space-y-4"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void form.handleSubmit();
-                  }}
-                >
-                  <form.Field name="email">
-                    {(field) => {
-                      const error = getFieldError(field.state.meta.errors);
+                <form.AppForm>
+                  <form.Form className="space-y-4">
+                    <form.AppField name="email">
+                      {(field) => (
+                        <field.TextField
+                          label="Email address"
+                          type="email"
+                          placeholder="Email address..."
+                          autoComplete="email"
+                          disabled={!isHostedMode}
+                          required
+                        />
+                      )}
+                    </form.AppField>
 
-                      return (
-                        <div>
-                          <input
-                            type="email"
-                            className="input input-bordered w-full"
-                            placeholder="Email address..."
-                            value={field.state.value}
-                            onChange={(event) =>
-                              field.handleChange(event.target.value)
-                            }
-                            autoComplete="email"
-                            disabled={!isHostedMode}
-                            required
-                          />
-                          {error ? (
-                            <p className="mt-1 text-sm text-error">{error}</p>
-                          ) : null}
-                        </div>
-                      );
-                    }}
-                  </form.Field>
-
-                  {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
-                  ) : null}
-                  <button
-                    className="btn btn-soft w-full"
-                    disabled={!isHostedMode || isSubmitting}
-                  >
-                    {isSubmitting ? "Sending reset link..." : "Send reset link"}
-                  </button>
-                </form>
+                    {errorMessage ? (
+                      <Alert variant="destructive">
+                        <AlertDescription>{errorMessage}</AlertDescription>
+                      </Alert>
+                    ) : null}
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="w-full"
+                      pending={isSubmitting}
+                      disabled={!isHostedMode}
+                    >
+                      {isSubmitting
+                        ? "Sending reset link..."
+                        : "Send reset link"}
+                    </Button>
+                  </form.Form>
+                </form.AppForm>
               )}
             </AuthPageCard>
           );

@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { List, Rows3 } from "lucide-react";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { BacklinksFilterPanel } from "./BacklinksFilterPanel";
+import { backlinksFilterConditionLimit } from "./backlinksFilterTypes";
 import { BacklinksTable } from "./BacklinksTable";
 import { ReferringDomainsTable } from "./ReferringDomainsTable";
 import { TopPagesTable } from "./TopPagesTable";
@@ -12,22 +13,26 @@ import type {
 import { TAB_DESCRIPTIONS } from "./backlinksPageUtils";
 import {
   BacklinksActionsMenu,
-  BacklinksExportMenu,
+  BacklinksBestLinksMenu,
 } from "./BacklinksToolbarMenus";
-import { buildBacklinksTabExport } from "./export";
+import { buildBacklinksTabExport, buildBacklinksTabFilename } from "./export";
 import type { BacklinksDomainExpansion } from "./useBacklinksDomainExpansion";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 import { useAhrefsDomainRatings } from "./useAhrefsDomainRatings";
 import { TablePagination } from "@/client/components/table/TablePagination";
+import { BACKLINKS_PAGE_SIZES } from "@/types/schemas/backlinks";
+import type { ResearchScope } from "@/shared/researchScope";
+import { ExportMenu } from "@/client/components/ExportMenu";
+import { QueryError } from "@/client/components/QueryState";
+import { SegmentedToggle } from "@/client/components/SegmentedToggle";
+import type { DataTableFrameProps } from "@/client/components/table/DataTable";
 import {
-  BACKLINKS_PAGE_SIZES,
-  type BacklinksTab,
-} from "@/types/schemas/backlinks";
-import { MAX_DATAFORSEO_FILTER_CONDITIONS } from "@/types/schemas/domain";
-import {
-  BACKLINKS_SUBFOLDER_FILTER_CONDITIONS,
-  type ResearchScope,
-} from "@/shared/researchScope";
+  DataTableFilterToggle,
+  DataTableTabs,
+  DataTableToolbar,
+} from "@/client/components/table/DataTableToolbar";
+import { TabsTrigger } from "@/client/components/ui/tabs";
+import { exportRows } from "@/client/lib/exportRows";
 
 const BACKLINKS_RESULTS_TABS: Array<{
   tab: BacklinksSearchState["tab"];
@@ -46,9 +51,15 @@ export function BacklinksResultsCard({
   filters,
   sorting,
   view,
+  hideSpam,
+  onHideSpamChange,
   domainExpansion,
   isTabLoading,
+  showTable,
   tabErrorMessage,
+  tabError,
+  onRetryTab,
+  isTabRetrying,
   exportTarget,
   pagination,
   onPageChange,
@@ -64,9 +75,15 @@ export function BacklinksResultsCard({
   filters: BacklinksFiltersState;
   sorting: SortingState;
   view: "all" | undefined;
+  hideSpam: boolean;
+  onHideSpamChange: (hideSpam: boolean) => void;
   domainExpansion: BacklinksDomainExpansion;
   isTabLoading: boolean;
+  showTable: boolean;
   tabErrorMessage: string | null;
+  tabError?: unknown;
+  onRetryTab?: () => void;
+  isTabRetrying: boolean;
   exportTarget: string;
   pagination: {
     page: number;
@@ -109,147 +126,117 @@ export function BacklinksResultsCard({
     if (missing.length > 0) void loadRatings(missing);
   }, [domainRatings, ratableDomains, loadRatings]);
 
-  return (
-    <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
-        <div className="space-y-2">
-          <div role="tablist" className="tabs tabs-border w-fit">
-            {BACKLINKS_RESULTS_TABS.filter(
-              // Referring domains can't be filtered to a path prefix.
-              ({ tab }) => !(scope === "subfolder" && tab === "domains"),
-            ).map(({ label, tab }) => (
-              <TabLink
-                key={tab}
-                activeTab={activeTab}
-                label={label}
-                onSelect={onTabChange}
-                tab={tab}
-              />
-            ))}
-          </div>
-          <p className="max-w-xl text-sm text-base-content/60">
-            {TAB_DESCRIPTIONS[activeTab]}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <BacklinksExportMenu
-            activeTab={activeTab}
-            exportTarget={exportTarget}
-            headers={exportTable.headers}
-            rows={exportTable.rows}
-          />
-          {activeTab !== "pages" ? (
-            <BacklinksActionsMenu
-              isLoadingRatings={isLoadingRatings}
-              loadRatings={loadRatings}
-              ratableDomains={ratableDomains}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-base-300">
-        <button
-          className={`btn btn-ghost btn-sm gap-1.5 ${filters.showFilters ? "btn-active" : ""}`}
-          onClick={() => filters.setShowFilters((current) => !current)}
-          title="Toggle table filters"
+  const filterState = filters[activeTab];
+  const frame: DataTableFrameProps = {
+    isLoading: isTabLoading,
+    isFiltered: activeFilterCount > 0,
+    onClearFilters: () => {
+      filterState.reset();
+      onPageChange(1);
+    },
+    error: tabErrorMessage ? (
+      <QueryError
+        cause={tabError}
+        fallback={tabErrorMessage}
+        onRetry={onRetryTab}
+        isRetrying={isTabRetrying}
+      />
+    ) : null,
+    toolbar: (
+      <>
+        <DataTableTabs
+          value={activeTab}
+          onValueChange={(value) => {
+            const next = BACKLINKS_RESULTS_TABS.find(
+              (item) => item.tab === value,
+            );
+            if (next) onTabChange(next.tab);
+          }}
+          description={TAB_DESCRIPTIONS[activeTab]}
         >
-          <SlidersHorizontal className="size-3.5" />
-          Filters
-          {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
-            </span>
-          ) : null}
-        </button>
-        {activeTab === "backlinks" ? (
-          <div
-            role="tablist"
-            aria-label="Backlinks view"
-            className="ml-auto tabs tabs-border tabs-xs w-fit"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view !== "all"}
-              className={`tab ${view !== "all" ? "tab-active" : ""}`}
-              title="Show each referring domain's strongest link; expand a row for the rest"
-              onClick={() => onViewChange(undefined)}
-            >
-              One per domain
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === "all"}
-              className={`tab ${view === "all" ? "tab-active" : ""}`}
-              title="List every individual backlink"
-              onClick={() => onViewChange("all")}
-            >
-              All links
-            </button>
-          </div>
-        ) : null}
-      </div>
-
-      {filters.showFilters ? (
-        <BacklinksFilterPanel
-          activeTab={activeTab}
-          filters={filters}
-          onApplied={() => onPageChange(1)}
-          // The subfolder url-prefix group (and, on the backlinks tab, the
-          // server-appended spam condition) shares the 8-condition budget.
-          maxConditions={
-            scope === "subfolder"
-              ? MAX_DATAFORSEO_FILTER_CONDITIONS -
-                BACKLINKS_SUBFOLDER_FILTER_CONDITIONS -
-                (activeTab === "pages" ? 0 : 1)
-              : undefined
+          {BACKLINKS_RESULTS_TABS.filter(
+            // Referring domains can't be filtered to a path prefix.
+            ({ tab }) => !(scope === "subfolder" && tab === "domains"),
+          ).map(({ label, tab }) => (
+            <TabsTrigger key={tab} value={tab}>
+              {label}
+            </TabsTrigger>
+          ))}
+        </DataTableTabs>
+        <DataTableToolbar
+          actions={
+            <>
+              <ExportMenu
+                actions={["sheets", "csv"]}
+                scopes={[{ id: "page", label: "Current page · selected view" }]}
+                disabled={exportTable.rows.length === 0}
+                onExport={(format) =>
+                  void exportRows({
+                    format,
+                    feature: `backlinks_${activeTab}`,
+                    ...exportTable,
+                    filename: buildBacklinksTabFilename(
+                      activeTab,
+                      exportTarget,
+                    ),
+                  })
+                }
+              />
+              {activeTab !== "pages" ? (
+                <BacklinksActionsMenu
+                  isLoadingRatings={isLoadingRatings}
+                  loadRatings={loadRatings}
+                  ratableDomains={ratableDomains}
+                />
+              ) : null}
+            </>
           }
-        />
-      ) : null}
-
-      <div className="p-4">
-        {tabErrorMessage ? (
-          <div className="alert alert-error mb-3">
-            <span>{tabErrorMessage}</span>
-          </div>
-        ) : null}
-        {isTabLoading && !tabErrorMessage ? (
-          <TabLoadingState label={TAB_LOADING_LABELS[activeTab]} />
-        ) : null}
-        {!isTabLoading && !tabErrorMessage ? (
-          <>
-            {activeTab === "backlinks" ? (
-              <BacklinksTable
-                rows={tabRows.backlinks}
-                domainRatings={domainRatings}
-                sorting={sorting}
-                onSortingChange={onSortingChange}
-                expansion={view === "all" ? null : domainExpansion}
+        >
+          <DataTableFilterToggle
+            open={filters.showFilters}
+            activeCount={activeFilterCount}
+            onToggle={() => filters.setShowFilters((current) => !current)}
+          />
+          {activeTab === "backlinks" ? (
+            <>
+              <BacklinksBestLinksMenu
+                hideSpam={hideSpam}
+                onHideSpamChange={onHideSpamChange}
               />
-            ) : null}
-            {activeTab === "domains" ? (
-              <ReferringDomainsTable
-                rows={tabRows.referringDomains}
-                domainRatings={domainRatings}
-                sorting={sorting}
-                onSortingChange={onSortingChange}
+              <SegmentedToggle
+                showLabels
+                value={view ?? "one"}
+                onChange={(next) =>
+                  onViewChange(next === "all" ? "all" : undefined)
+                }
+                items={[
+                  {
+                    value: "one",
+                    icon: <Rows3 />,
+                    label: "One per domain",
+                  },
+                  { value: "all", icon: <List />, label: "All links" },
+                ]}
               />
-            ) : null}
-            {activeTab === "pages" ? (
-              <TopPagesTable
-                rows={tabRows.topPages}
-                sorting={sorting}
-                onSortingChange={onSortingChange}
-              />
-            ) : null}
-          </>
+            </>
+          ) : null}
+        </DataTableToolbar>
+        {filters.showFilters ? (
+          <BacklinksFilterPanel
+            activeTab={activeTab}
+            filters={filters}
+            onApplied={() => onPageChange(1)}
+            // Restored filters are also checked before the query can run.
+            maxConditions={backlinksFilterConditionLimit(
+              scope,
+              activeTab === "backlinks" && hideSpam,
+            )}
+          />
         ) : null}
-      </div>
-
-      {/* Kept visible on tab errors so a failing page still offers a way back. */}
+      </>
+    ),
+    // Kept visible on tab errors so a failing page still offers a way back.
+    footer: (
       <TablePagination
         page={pagination.page}
         pageSize={pagination.pageSize}
@@ -260,15 +247,43 @@ export function BacklinksResultsCard({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
-    </div>
+    ),
+  };
+
+  return (
+    <>
+      {/* A filter budget error hides the rows: the query never ran for the
+          current filters. */}
+      {activeTab === "backlinks" ? (
+        <BacklinksTable
+          rows={showTable ? tabRows.backlinks : []}
+          domainRatings={domainRatings}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          expansion={view === "all" ? null : domainExpansion}
+          {...frame}
+        />
+      ) : null}
+      {activeTab === "domains" ? (
+        <ReferringDomainsTable
+          rows={showTable ? tabRows.referringDomains : []}
+          domainRatings={domainRatings}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          {...frame}
+        />
+      ) : null}
+      {activeTab === "pages" ? (
+        <TopPagesTable
+          rows={showTable ? tabRows.topPages : []}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          {...frame}
+        />
+      ) : null}
+    </>
   );
 }
-
-const TAB_LOADING_LABELS: Record<BacklinksTab, string> = {
-  backlinks: "Loading backlinks",
-  domains: "Loading referring domains",
-  pages: "Loading top pages",
-};
 
 /** Unique domains the DR column keys on, from both the backlinks and referring
  * domains tables, normalized to match how each table renders its domain. */
@@ -280,41 +295,4 @@ function collectRatableDomains(tabRows: BacklinksTabRows): string[] {
   return [
     ...new Set(domains.filter((domain): domain is string => Boolean(domain))),
   ];
-}
-
-function TabLink({
-  activeTab,
-  label,
-  onSelect,
-  tab,
-}: {
-  activeTab: BacklinksSearchState["tab"];
-  label: string;
-  onSelect: (tab: BacklinksSearchState["tab"]) => void;
-  tab: BacklinksSearchState["tab"];
-}) {
-  const isActive = activeTab === tab;
-
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={isActive}
-      className={`tab ${isActive ? "tab-active" : ""}`}
-      onClick={() => onSelect(tab)}
-    >
-      {label}
-    </button>
-  );
-}
-
-function TabLoadingState({ label }: { label: string }) {
-  return (
-    <div className="space-y-3 py-2">
-      <p className="text-sm text-base-content/60">{label}...</p>
-      <div className="skeleton h-10 w-full" />
-      <div className="skeleton h-10 w-full" />
-      <div className="skeleton h-10 w-full" />
-    </div>
-  );
 }

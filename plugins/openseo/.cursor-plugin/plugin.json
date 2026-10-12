@@ -1,7 +1,7 @@
 {
   "name": "openseo",
-  "version": "1.0.0",
-  "description": "SEO made simple. Research keywords and competitors, audit sites, track rankings, and use Search Console data from your agent.",
+  "version": "1.0.21",
+  "description": "Research keywords and competitors, audit sites, track rankings and AI visibility, and use connected Search Console data from your AI assistant.",
   "author": {
     "name": "Every App, Inc",
     "email": "support@openseo.so"
@@ -21,5 +21,5 @@
   ],
   "logo": "https://raw.githubusercontent.com/every-app/open-seo/main/public/transparent-logo.png",
   "skills": "skills",
-  "mcpServers": "mcp.json"
+  "mcpServers": ".mcp.json"
 }

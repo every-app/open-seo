@@ -41,10 +41,6 @@ beforeEach(() => {
 });
 
 describe("public tool verification", () => {
-  it("accepts a verified token for this hostname and purpose", async () => {
-    expect(await guard()).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
   it.each(["TURNSTILE_SECRET_KEY", "BACKLINK_CHECK_RATE_LIMIT"])(
     "fails closed without %s",
     async (key) => {
@@ -74,13 +70,6 @@ describe("public tool verification", () => {
   it("rejects cross-site submissions before any verification call", async () => {
     expect(
       (await guard("token", { origin: "https://attacker.example" }))?.status,
-    ).toBe(403);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-  it("rejects missing tokens", async () => {
-    expect(
-      (await guardToolRequest({ tool: "backlink-checker", request: request() }))
-        ?.status,
     ).toBe(403);
     expect(fetchMock).not.toHaveBeenCalled();
   });

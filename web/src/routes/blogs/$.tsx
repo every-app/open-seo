@@ -3,7 +3,7 @@ import { createClientLoader } from "fumadocs-mdx/runtime/vite";
 import { DocsBody } from "fumadocs-ui/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { SiteFooter } from "@/components/site-footer";
-import { BlogLayout } from "@/components/blog-layout";
+import { BlogLayout, PostDate } from "@/components/blog-layout";
 import type { ComponentPropsWithoutRef } from "react";
 import { Suspense } from "react";
 import { getBlogPost } from "@/lib/content.functions";
@@ -86,13 +86,20 @@ function BlogPost() {
     path: string;
     title: string;
     description?: string;
+    author: string;
+    date: string;
   };
   const Content = clientMdxLoader.getComponent(data.path);
 
   return (
     <BlogLayout>
       <article className="fd-light mx-auto max-w-3xl px-6 py-12 text-neutral-950 md:py-24">
-        <BlogHeader title={data.title} description={data.description} />
+        <BlogHeader
+          title={data.title}
+          description={data.description}
+          author={data.author}
+          date={data.date}
+        />
         <Suspense>
           <Content />
         </Suspense>
@@ -107,13 +114,26 @@ function BlogPost() {
   );
 }
 
+// Keyed by the `author` name in blog frontmatter.
+const authorXUrls = new Map([
+  ["Ben Senescu", "https://x.com/bensenescu"],
+  ["Jeremy Rivera", "https://x.com/JeremyRiveraSEO"],
+  ["Sohan Bhat", "https://x.com/sohanbhat2324"],
+]);
+
 function BlogHeader({
   title,
   description,
+  author,
+  date,
 }: {
   title: string;
   description?: string;
+  author: string;
+  date: string;
 }) {
+  const authorUrl = authorXUrls.get(author);
+
   return (
     <header className="mb-10 border-b border-[var(--color-border-subtle)] pb-8">
       <div className="mb-4">
@@ -133,6 +153,23 @@ function BlogHeader({
           {description}
         </p>
       )}
+      <p className="mt-6 text-sm text-[var(--color-brand-muted)]">
+        By{" "}
+        {authorUrl ? (
+          <a
+            href={authorUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
+          >
+            {author}
+          </a>
+        ) : (
+          <span className="font-medium text-neutral-950">{author}</span>
+        )}
+        <span aria-hidden="true"> · </span>
+        <PostDate date={date} />
+      </p>
     </header>
   );
 }

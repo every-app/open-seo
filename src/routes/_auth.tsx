@@ -1,10 +1,11 @@
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   AuthPageShell,
   authRedirectSearchSchema,
 } from "@/client/features/auth/AuthPage";
 import { useSession } from "@/lib/auth-client";
+import { PageLoading } from "@/client/components/Spinner";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getCurrentAuthRedirect, isDocumentRoute } from "@/lib/auth-redirect";
 
@@ -17,8 +18,13 @@ function AuthPageLayout() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
+  const [hasResolvedSession, setHasResolvedSession] = useState(false);
   const isHostedMode = isHostedClientAuthMode();
   const redirectTo = getCurrentAuthRedirect(search.redirect);
+
+  useEffect(() => {
+    if (!isPending) setHasResolvedSession(true);
+  }, [isPending]);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -38,8 +44,12 @@ function AuthPageLayout() {
     });
   }, [navigate, redirectTo, session?.user?.id]);
 
-  if (isHostedMode && (isPending || session?.user?.id)) {
-    return null;
+  // Loading the session, or handing a signed-in user off to the destination.
+  if (
+    isHostedMode &&
+    ((isPending && !hasResolvedSession) || session?.user?.id)
+  ) {
+    return <PageLoading />;
   }
 
   return (

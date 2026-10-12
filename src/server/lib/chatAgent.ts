@@ -35,6 +35,10 @@ export function openRouterCostUsd(providerMetadata: unknown): number {
   return parsed.success ? parsed.data.openrouter.usage.cost : 0;
 }
 
+export function requireOpenRouterCostUsd(providerMetadata: unknown): number {
+  return openRouterUsageSchema.parse(providerMetadata).openrouter.usage.cost;
+}
+
 // The provider package re-exports only LanguageModelV3 itself, so the stream
 // shape is derived from the interface.
 type StreamResult = Awaited<ReturnType<LanguageModelV3["doStream"]>>;

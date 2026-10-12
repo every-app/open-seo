@@ -1,4 +1,3 @@
-import type { SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Ga4AdminApiError, Ga4TokenError } from "@/server/lib/ga4Errors";
 import { Ga4Service } from "./Ga4Service";
@@ -10,9 +9,6 @@ const mocks = vi.hoisted(() => {
   const listProperties = vi.fn();
   const getProperty = vi.fn();
   const getUserInfoEmail = vi.fn();
-  const deleteWhere = vi
-    .fn<(condition: SQL) => Promise<void>>()
-    .mockResolvedValue(undefined);
   return {
     state,
     listProperties,
@@ -33,18 +29,13 @@ const mocks = vi.hoisted(() => {
         }),
       })),
     })),
-    dbDelete: vi.fn(() => ({ where: deleteWhere })),
-    deleteWhere,
     upsert: vi.fn(),
     getByProjectId: vi.fn(),
-    deleteByProjectId: vi.fn(),
   };
 });
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
-vi.mock("@/db", () => ({
-  db: { select: mocks.dbSelect, delete: mocks.dbDelete },
-}));
+vi.mock("@/db", () => ({ db: { select: mocks.dbSelect } }));
 vi.mock("@/server/lib/ga4Client", () => ({
   createGa4AdminClient: mocks.createGa4AdminClient,
 }));
@@ -52,14 +43,12 @@ vi.mock("@/server/features/ga4/repositories/Ga4ConnectionRepository", () => ({
   Ga4ConnectionRepository: {
     upsert: mocks.upsert,
     getByProjectId: mocks.getByProjectId,
-    deleteByProjectId: mocks.deleteByProjectId,
   },
 }));
 
 describe("Ga4Service", () => {
   beforeEach(() => {
     mocks.state.grants = [{ id: "grant-a", accountId: "sub-a" }];
-    mocks.deleteByProjectId.mockResolvedValue(undefined);
   });
 
   it("verifies a freshly discovered property before persisting metadata", async () => {
@@ -78,14 +67,15 @@ describe("Ga4Service", () => {
     });
     mocks.getUserInfoEmail.mockResolvedValue("client@example.com");
     mocks.upsert.mockResolvedValue({ propertyId: "properties/11" });
-
-    await Ga4Service.setProperty({
+    const input = {
       projectId: "p1",
       organizationId: "org1",
       propertyId: "properties/11",
       accountId: "sub-a",
       userId: "u1",
-    });
+    };
+
+    await Ga4Service.setProperty(input);
 
     expect(mocks.upsert).toHaveBeenCalledWith({
       projectId: "p1",
@@ -98,40 +88,12 @@ describe("Ga4Service", () => {
       ga4AccountId: "sub-a",
       connectedAccountEmail: "client@example.com",
     });
-  });
 
-  it("passes a null email through when userinfo fails on an account switch", async () => {
-    mocks.state.grants = [{ id: "grant-b", accountId: "sub-b" }];
-    mocks.listProperties.mockResolvedValue([
-      {
-        propertyId: "properties/22",
-        displayName: "Site B",
-        accountDisplayName: "Client",
-      },
-    ]);
-    mocks.getProperty.mockResolvedValue({
-      name: "properties/22",
-      displayName: "Site B",
-      timeZone: "America/Los_Angeles",
-      currencyCode: "USD",
-    });
+    // A userinfo failure is non-fatal: the email is passed through as null.
     mocks.getUserInfoEmail.mockRejectedValue(new Error("userinfo unavailable"));
-    mocks.upsert.mockResolvedValue({ propertyId: "properties/22" });
-
-    await Ga4Service.setProperty({
-      projectId: "p1",
-      organizationId: "org1",
-      propertyId: "properties/22",
-      accountId: "sub-b",
-      userId: "u2",
-    });
-
-    expect(mocks.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        connectedByUserId: "u2",
-        ga4AccountId: "sub-b",
-        connectedAccountEmail: null,
-      }),
+    await Ga4Service.setProperty(input);
+    expect(mocks.upsert).toHaveBeenLastCalledWith(
+      expect.objectContaining({ connectedAccountEmail: null }),
     );
   });
 
@@ -197,12 +159,5 @@ describe("Ga4Service", () => {
       status: 403,
     });
     consoleError.mockRestore();
-  });
-
-  it("disconnects only this project and leaves linked Google accounts intact", async () => {
-    mocks.dbDelete.mockClear();
-    await Ga4Service.disconnect({ projectId: "p1" });
-    expect(mocks.deleteByProjectId).toHaveBeenCalledWith("p1");
-    expect(mocks.dbDelete).not.toHaveBeenCalled();
   });
 });

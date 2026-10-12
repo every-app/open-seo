@@ -1,5 +1,10 @@
-import { Send, Trash2 } from "lucide-react";
-import { PortalMenu } from "@/client/components/PortalMenu";
+import { Crown, Send, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ConfirmDialog } from "@/client/components/ConfirmDialog";
+import { RowActionsMenu } from "@/client/components/RowActionsMenu";
+import { Badge } from "@/client/components/ui/badge";
+import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
+import { TableCell, TableRow } from "@/client/components/ui/table";
 import { hasOrgPermission } from "@/lib/org-permissions";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -15,7 +20,7 @@ function formatRole(role: string) {
     .join(", ");
 }
 
-type Member = {
+export type Member = {
   id: string;
   userId: string;
   role: string;
@@ -36,6 +41,7 @@ export function MemberRow({
   isOwner,
   isRemoving,
   onRemove,
+  onTransferOwnership,
 }: {
   member: Member;
   isSelf: boolean;
@@ -43,6 +49,7 @@ export function MemberRow({
   isOwner: boolean;
   isRemoving: boolean;
   onRemove: () => void;
+  onTransferOwnership: () => void;
 }) {
   const memberIsOwner = hasOrgPermission(member.role, {
     billing: ["manage"],
@@ -50,57 +57,62 @@ export function MemberRow({
   // Owners are protected server-side (only an owner can touch an owner; the
   // last owner can't be removed) — don't render controls that would just 403.
   const canRemove = canManageTeam && !isSelf && (!memberIsOwner || isOwner);
+  // Owners can always remove, so this only ever adds to the remove menu.
+  const canTransferOwnership = isOwner && !isSelf && !memberIsOwner;
+  const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
 
   return (
-    <tr className="hover">
-      <td className="max-w-[280px]">
+    <TableRow>
+      <TableCell className="max-w-[280px]">
         <p className="truncate font-medium" data-ph-mask>
           {member.user.name || member.user.email}
           {isSelf ? (
-            <span className="font-normal text-base-content/50"> (you)</span>
+            <span className="font-normal text-muted-foreground"> (you)</span>
           ) : null}
         </p>
-        <p className="truncate text-xs text-base-content/50" data-ph-mask>
+        <p className="truncate text-xs text-muted-foreground" data-ph-mask>
           {member.user.email}
         </p>
-      </td>
-      <td>
-        <span className="badge badge-ghost badge-sm">
-          {formatRole(member.role)}
-        </span>
-      </td>
-      <td className="text-xs text-base-content/70">Active</td>
-      <td>
+      </TableCell>
+      <TableCell>
+        <Badge variant="secondary">{formatRole(member.role)}</Badge>
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">Active</TableCell>
+      <TableCell>
         {canRemove ? (
-          <PortalMenu
-            ariaLabel={`Actions for ${member.user.email}`}
-            menuClassName="w-52"
-          >
-            {(close) => (
-              <li>
-                <button
-                  className="text-error"
-                  disabled={isRemoving}
-                  onClick={() => {
-                    close();
-                    if (
-                      window.confirm(
-                        `Remove ${member.user.email} from this organization? They lose access immediately.`,
-                      )
-                    ) {
-                      onRemove();
-                    }
-                  }}
-                >
-                  <Trash2 className="size-3.5" />
-                  Remove member
-                </button>
-              </li>
-            )}
-          </PortalMenu>
+          <RowActionsMenu label={`Actions for ${member.user.email}`}>
+            {canTransferOwnership ? (
+              <DropdownMenuItem onClick={onTransferOwnership}>
+                <Crown />
+                Transfer ownership
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={isRemoving}
+              onClick={() => setIsConfirmingRemove(true)}
+            >
+              <Trash2 />
+              Remove member
+            </DropdownMenuItem>
+          </RowActionsMenu>
         ) : null}
-      </td>
-    </tr>
+        {isConfirmingRemove ? (
+          <ConfirmDialog
+            title={`Remove ${member.user.email} from this organization?`}
+            confirmLabel="Remove member"
+            destructive
+            onClose={() => setIsConfirmingRemove(false)}
+            onConfirm={() => {
+              setIsConfirmingRemove(false);
+              onRemove();
+            }}
+          >
+            They lose access immediately.
+          </ConfirmDialog>
+        ) : null}
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -120,59 +132,41 @@ export function InvitationRow({
   onCancel: () => void;
 }) {
   return (
-    <tr className="hover">
-      <td className="max-w-[280px]">
+    <TableRow>
+      <TableCell className="max-w-[280px]">
         <p className="truncate font-medium" data-ph-mask>
           {invitation.email}
         </p>
-      </td>
-      <td>
-        <span className="badge badge-ghost badge-sm">
+      </TableCell>
+      <TableCell>
+        <Badge variant="secondary">
           {formatRole(invitation.role ?? "member")}
-        </span>
-      </td>
-      <td className="text-xs text-base-content/70">
+        </Badge>
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
         Invited &middot; expires{" "}
         {new Date(invitation.expiresAt).toLocaleDateString()}
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         {canManageTeam ? (
-          <PortalMenu
-            ariaLabel={`Actions for the invitation to ${invitation.email}`}
-            menuClassName="w-52"
+          <RowActionsMenu
+            label={`Actions for the invitation to ${invitation.email}`}
           >
-            {(close) => (
-              <>
-                <li>
-                  <button
-                    disabled={isResending}
-                    onClick={() => {
-                      close();
-                      onResend();
-                    }}
-                  >
-                    <Send className="size-3.5" />
-                    Resend invitation
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="text-error"
-                    disabled={isCanceling}
-                    onClick={() => {
-                      close();
-                      onCancel();
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                    Cancel invitation
-                  </button>
-                </li>
-              </>
-            )}
-          </PortalMenu>
+            <DropdownMenuItem disabled={isResending} onClick={onResend}>
+              <Send />
+              Resend invitation
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={isCanceling}
+              onClick={onCancel}
+            >
+              <Trash2 />
+              Cancel invitation
+            </DropdownMenuItem>
+          </RowActionsMenu>
         ) : null}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

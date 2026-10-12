@@ -1,19 +1,18 @@
 {
   "entry": [
     // Alchemy deploy stack (run by the alchemy CLI, not imported by the app)
-    "alchemy.run.ts",
-    "alchemy.preview-access.run.ts",
-    // Detect Tanstack Start Routes
-    "cli-auth.ts",
+    "deploy/alchemy/alchemy.run.ts",
+    "deploy/alchemy/alchemy.preview-access.run.ts",
     // Site-audit aux worker entry (wrangler.audit.jsonc)
     "src/audit-worker.ts",
+    // Detect Tanstack Start Routes
     "src/start.ts",
     "src/router.tsx",
     "src/routes/**/*.ts",
     "src/routes/**/*.tsx",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
-    "drizzle.config.ts",
-    "drizzle-pg.config.ts",
+    "drizzle/sqlite.config.ts",
+    "drizzle/pg.config.ts",
     // DB schema — exports consumed via `import * as schema` / drizzle()
     "src/db/index.ts",
     "src/db/schema.ts",
@@ -22,8 +21,10 @@
     "src/db/pg/schema.ts",
     // Standalone CLI/dev scripts, invoked via package.json scripts
     "scripts/**",
+    // shadcn components are copied in whole; pages use only some exports
+    "src/client/components/ui/**",
   ],
-  // badseo/ is the standalone broken-SEO fixture worker (own deps/config),
+  // tests/badseo/ is the standalone broken-SEO fixture worker (own deps/config),
   // like web/ it isn't part of the app's module graph.
   "project": [
     "**/*.{js,mjs,ts,tsx}",
@@ -31,17 +32,19 @@
     "!web/**",
     // Alchemy state/bundle artifacts (gitignored)
     "!.alchemy/**",
-    "!badseo/**",
+    "!tests/badseo/**",
     // Skill-bundled scripts, run by hand from the skill's instructions
     "!.agents/**",
     "!.claude/**",
   ],
-  "ignore": ["drizzle-prod.config.ts"],
-  // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
+  "ignore": ["drizzle/remote-d1.config.ts"],
+  // Disable Drizzle plugin - it tries to load drizzle/sqlite.config.ts which imports cloudflare:workers
   "drizzle": false,
   "ignoreDependencies": [
     // Tailwindcss used via @tailwindcss/vite plugin
     "tailwindcss",
-    "daisyui",
+    // Imported by app.css; shadcn is also the component CLI
+    "tw-animate-css",
+    "shadcn",
   ],
 }

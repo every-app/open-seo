@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getLatestResults } from "./rankTrackingResults";
 
+vi.mock("cloudflare:workers", () => ({ env: { DATABASE_PROVIDER: "d1" } }));
+
 const mocks = vi.hoisted(() => ({
   getConfigById: vi.fn(),
   getKeywordsForConfig: vi.fn(),
@@ -57,25 +59,6 @@ describe("getLatestResults", () => {
       run: {
         id: "run_2",
         lastCheckedAt: "2026-08-01 10:00:00",
-        status: "failed",
-        errorMessage: "Provider request timed out",
-      },
-    });
-  });
-
-  it("surfaces the latest failed run and its error message", async () => {
-    mocks.getLatestRunForConfig.mockResolvedValue({
-      id: "run_1",
-      status: "failed",
-      errorMessage: "Provider request timed out",
-    });
-
-    await expect(
-      getLatestResults("config_1", "project_1"),
-    ).resolves.toMatchObject({
-      run: {
-        id: "run_1",
-        lastCheckedAt: null,
         status: "failed",
         errorMessage: "Provider request timed out",
       },

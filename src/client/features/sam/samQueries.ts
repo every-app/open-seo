@@ -9,5 +9,7 @@ export const samSessionsQueryOptions = (projectId: string) =>
   });
 
 export function invalidateSamSessions(projectId: string) {
-  void queryClient.invalidateQueries({ queryKey: ["samSessions", projectId] });
+  return queryClient.invalidateQueries({
+    queryKey: samSessionsQueryOptions(projectId).queryKey,
+  });
 }

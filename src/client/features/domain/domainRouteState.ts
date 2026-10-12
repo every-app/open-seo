@@ -90,7 +90,12 @@ export function getDomainRouteState(
     tab: search.tab ?? "keywords",
     defaultLocationCode,
     locationCode: normalizedLocationCode,
-    sentLocationCode: search.loc,
+    // A non-Labs `loc` is dropped so the server uses the same default the
+    // location select shows.
+    sentLocationCode:
+      search.loc != null && isLabsLocationCode(search.loc)
+        ? search.loc
+        : undefined,
     page: search.page != null && search.page > 0 ? search.page : 1,
     pageSize: search.size ?? DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
     appliedFilters: {

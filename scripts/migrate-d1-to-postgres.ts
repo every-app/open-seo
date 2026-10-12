@@ -33,8 +33,8 @@
  *
  * Setup: put the credentials in `.env.local` (auto-loaded), then run the script
  * directly with tsx. See the runbooks for the full procedure:
- *   - runbooks/d1-to-postgres-simple.md   (happy path)
- *   - runbooks/d1-to-postgres-detailed.md (full detail + cutover)
+ *   - docs/maintainers/runbooks/d1-to-postgres-simple.md   (happy path)
+ *   - docs/maintainers/runbooks/d1-to-postgres-detailed.md (full detail + cutover)
  *
  *   # .env.local
  *   CLOUDFLARE_ACCOUNT_ID=...

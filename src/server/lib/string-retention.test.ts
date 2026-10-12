@@ -2,12 +2,7 @@ import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
 describe("retained string memory", () => {
-  it.each([
-    "scraped title",
-    "scraped text",
-    "tool output",
-    "tool output with smaller budget",
-  ])(
+  it.each(["scraped text", "tool output"])(
     "releases the large source behind %s",
     (scenario) => {
       // Isolate GC from Vitest's heap. Each result must outlive its independently
@@ -27,11 +22,9 @@ describe("retained string memory", () => {
           const scenario = ${JSON.stringify(scenario)};
           const title = "Example memory regression 🌱";
           globalThis.fetch = async () => {
-            const content = scenario === "scraped text"
-              ? "sample words ".repeat(100_000)
-              : "<script>" + "x".repeat(1_500_000) + "</script>Visible text";
             const bytes = new TextEncoder().encode(
-              "<title>" + title + "</title><body>" + content + "</body>");
+              "<title>" + title + "</title><body>" +
+              "sample words ".repeat(100_000) + "</body>");
             let offset = 0;
             return new Response(new ReadableStream({
               pull(controller) {
@@ -42,7 +35,7 @@ describe("retained string memory", () => {
             }), { headers: { "content-type": "text/html" } });
           };
           const makeResult = async () => {
-            if (scenario.startsWith("scraped")) {
+            if (scenario === "scraped text") {
               // Documentation-only IP avoids DNS; fetch is fully stubbed.
               const result = await readPages(["https://192.0.2.1/example"]);
               assert.equal(result.blocked, false);
@@ -52,7 +45,7 @@ describe("retained string memory", () => {
             }
             const input = { pages: [{ text: new TextDecoder().decode(
               new TextEncoder().encode("x".repeat(1_500_000))) }] };
-            const budget = scenario.endsWith("smaller budget") ? 2000 : 32000;
+            const budget = 2000;
             const result = capToolOutput(input, budget);
             assert.ok(JSON.stringify(result).length <= budget);
             assert.equal(input.pages[0].text.length, 1_500_000);

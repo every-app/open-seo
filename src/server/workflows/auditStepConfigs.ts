@@ -30,6 +30,15 @@ export const LIGHTHOUSE_FETCH_STEP: WorkflowStepConfig = {
   timeout: "5 minutes",
 };
 
+/**
+ * Confirms a rendered audit's credit lock. Finalizing a lock twice is refused,
+ * so a replay must not run it again; a failed settlement expires on its own.
+ */
+export const SETTLE_RENDERING_STEP: WorkflowStepConfig = {
+  retries: { limit: 0, delay: "1 second" },
+  timeout: "1 minute",
+};
+
 /** R2 + DB persistence is idempotent and safe to retry after the paid step. */
 export const LIGHTHOUSE_PERSIST_STEP: WorkflowStepConfig = {
   retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },

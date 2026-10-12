@@ -4,7 +4,7 @@ import type {
   LlmMentionItem,
   LlmTopPagesItem,
 } from "@/server/lib/dataforseoLlmSchemas";
-import { safeHostname, safeHttpUrl } from "@/server/features/ai-search/safeUrl";
+import { safeHostname, safeHttpUrl } from "@/shared/safe-url";
 import { roundOrNull } from "@/server/features/ai-search/services/shareOfVoice";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 import {
