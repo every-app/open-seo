@@ -108,6 +108,29 @@ describe("fetchKeywordMetricsForList", () => {
     ]);
   });
 
+  it("skips keywords Google Ads rejects instead of failing the batch", async () => {
+    const adsSearchVolume = vi.fn().mockResolvedValue([]);
+
+    const rows = await fetchKeywordMetricsForList(
+      fakeClient({ adsSearchVolume }),
+      {
+        keywords: ["hotel reykjavik", "hotel (cheap)", "best hotel?"],
+        locationCode: 2352,
+        languageCode: "is",
+        creditFeature: "rank_tracking",
+      },
+    );
+
+    expect(adsSearchVolume).toHaveBeenCalledWith(
+      expect.objectContaining({ keywords: ["hotel reykjavik"] }),
+    );
+    // Rejected keywords get empty metrics, so a refresh clears stale values.
+    expect(rows).toEqual([
+      expect.objectContaining({ keyword: "hotel (cheap)", searchVolume: null }),
+      expect.objectContaining({ keyword: "best hotel?", searchVolume: null }),
+    ]);
+  });
+
   it("batches keyword lists above the per-call cap", async () => {
     const keywordOverview = vi
       .fn()
@@ -159,7 +182,11 @@ describe("fetchKeywordMetricsForList", () => {
     const client = fakeClient({ adsSearchVolume, keywordOverview });
 
     const rows = await fetchKeywordMetricsForList(client, {
-      keywords: ["plumber near me", "emergency plumber near me"],
+      keywords: [
+        "plumber near me",
+        "emergency plumber near me",
+        "plumber (24/7)",
+      ],
       locationCode: 2840,
       languageCode: "en",
       locationName: "Springfield,Illinois,United States",
@@ -187,6 +214,12 @@ describe("fetchKeywordMetricsForList", () => {
       cpc: null,
       keywordDifficulty: 17,
       intent: "transactional",
+    });
+    // Neither source returned it: an empty row still clears stale metrics.
+    expect(rows[2]).toMatchObject({
+      keyword: "plumber (24/7)",
+      searchVolume: null,
+      keywordDifficulty: null,
     });
   });
 });

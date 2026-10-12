@@ -66,6 +66,7 @@ beforeAll(async () => {
       search_volume INTEGER,
       keyword_difficulty INTEGER,
       cpc REAL,
+      pinned_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE rank_check_runs (
@@ -355,5 +356,41 @@ describe("deleteConfigCascade", () => {
     expect(await remaining("SELECT run_id FROM rank_snapshots")).toEqual([
       "run_kept",
     ]);
+  });
+});
+
+describe("setKeywordsPinned", () => {
+  it("pins and unpins only keywords of the given config", async () => {
+    await seedProject("proj_1");
+    await seedConfig({ id: "cfg_a" });
+    await seedConfig({ id: "cfg_b" });
+    for (const [id, configId] of [
+      ["kw1", "cfg_a"],
+      ["kw2", "cfg_b"],
+    ] as const) {
+      await client.execute({
+        sql: "INSERT INTO rank_tracking_keywords (id, config_id, keyword) VALUES (?, ?, ?)",
+        args: [id, configId, id],
+      });
+    }
+    const pinnedIds = async () =>
+      (
+        await client.execute(
+          "SELECT id FROM rank_tracking_keywords WHERE pinned_at IS NOT NULL",
+        )
+      ).rows.map((row) => row.id);
+
+    // kw2 belongs to another config, so the config predicate skips it.
+    expect(
+      await RankTrackingRepository.setKeywordsPinned(
+        ["kw1", "kw2"],
+        "cfg_a",
+        true,
+      ),
+    ).toEqual(["kw1"]);
+    expect(await pinnedIds()).toEqual(["kw1"]);
+
+    await RankTrackingRepository.setKeywordsPinned(["kw1"], "cfg_a", false);
+    expect(await pinnedIds()).toEqual([]);
   });
 });

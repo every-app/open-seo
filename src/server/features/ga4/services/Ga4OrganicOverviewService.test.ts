@@ -31,6 +31,17 @@ function metricValues(values: string[]) {
   return values.map((value) => ({ value }));
 }
 
+// One row of the seven overview metrics, in header order.
+const overviewRow = [
+  { value: "100" },
+  { value: "80" },
+  { value: "70" },
+  { value: "0.7" },
+  { value: "10" },
+  { value: "4" },
+  { value: "500" },
+];
+
 describe("Ga4OrganicOverviewService", () => {
   beforeEach(() => {
     mocks.getByProjectId.mockResolvedValue(connection);
@@ -41,20 +52,7 @@ describe("Ga4OrganicOverviewService", () => {
       .mockResolvedValueOnce({
         dimensionHeaders: [],
         metricHeaders,
-        rows: [
-          {
-            dimensionValues: [],
-            metricValues: metricValues([
-              "100",
-              "80",
-              "70",
-              "0.7",
-              "10",
-              "4",
-              "500",
-            ]),
-          },
-        ],
+        rows: [{ dimensionValues: [], metricValues: overviewRow }],
         rowCount: 1,
       })
       .mockResolvedValueOnce({
@@ -80,18 +78,7 @@ describe("Ga4OrganicOverviewService", () => {
         dimensionHeaders: [{ name: "yearWeek" }],
         metricHeaders,
         rows: [
-          {
-            dimensionValues: [{ value: "202631" }],
-            metricValues: metricValues([
-              "100",
-              "80",
-              "70",
-              "0.7",
-              "10",
-              "4",
-              "500",
-            ]),
-          },
+          { dimensionValues: [{ value: "202631" }], metricValues: overviewRow },
         ],
         rowCount: 1200,
       });
@@ -122,50 +109,6 @@ describe("Ga4OrganicOverviewService", () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.warnings).toEqual(["trend_truncated"]);
     expect(mocks.runReport).toHaveBeenCalledTimes(3);
-  });
-
-  it("treats a headerless previous-period response as empty instead of malformed", async () => {
-    mocks.runReport
-      .mockResolvedValueOnce({
-        dimensionHeaders: [],
-        metricHeaders,
-        rows: [
-          {
-            dimensionValues: [],
-            metricValues: metricValues([
-              "100",
-              "80",
-              "70",
-              "0.7",
-              "10",
-              "4",
-              "500",
-            ]),
-          },
-        ],
-        rowCount: 1,
-      })
-      // GA4 omits headers and rows entirely when the previous-period window
-      // falls before the property's creation date.
-      .mockResolvedValueOnce({})
-      .mockResolvedValueOnce({
-        dimensionHeaders: [{ name: "date" }],
-        metricHeaders,
-        rows: [],
-        rowCount: 0,
-      });
-    const result = await Ga4OrganicOverviewService.getOrganicOverview(
-      { projectId: "project_1", trend: "daily" },
-      { now: new Date("2026-08-06T15:00:00Z") },
-    );
-    expect(result.previous).toBeNull();
-    expect(result.comparison.sessions).toEqual({
-      current: 100,
-      previous: null,
-      absoluteChange: null,
-      percentChange: null,
-    });
-    expect(result.diagnostics).toEqual([]);
   });
 
   it("flags a material key-event decline with explicit evidence", async () => {

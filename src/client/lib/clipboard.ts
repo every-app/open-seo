@@ -1,4 +1,5 @@
 import { normalizeExportValue, type CsvValue, type ExportValue } from "./csv";
+import { safeHttpUrl } from "@/shared/safe-url";
 
 export const GOOGLE_SHEETS_NEW_URL = "https://sheets.new";
 
@@ -54,20 +55,11 @@ function buildHtmlTable(headers: string[], rows: ExportValue[][]): string {
 function escapeHtmlCell(value: ExportValue): string {
   if (typeof value === "number" || typeof value === "boolean")
     return String(value);
-  if (isLinkableUrl(value)) {
+  if (safeHttpUrl(value)) {
     const safeValue = escapeHtml(value);
     return `<a href="${escapeHtml(value)}">${safeValue}</a>`;
   }
   return escapeHtml(value);
-}
-
-function isLinkableUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function escapeHtml(value: string): string {

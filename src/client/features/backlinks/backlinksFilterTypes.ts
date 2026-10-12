@@ -114,6 +114,27 @@ export function countActiveFilters(values: Record<string, string>): number {
   return Object.values(values).filter((v) => v.trim() !== "").length;
 }
 
+export function backlinksFilterConditionLimit(
+  scope: ResearchScope,
+  hideSpam: boolean,
+): number {
+  return (
+    MAX_DATAFORSEO_FILTER_CONDITIONS -
+    (scope === "subfolder" ? BACKLINKS_SUBFOLDER_FILTER_CONDITIONS : 0) -
+    (hideSpam ? 2 : 0)
+  );
+}
+
+export function backlinksFilterBudgetError(
+  values: BacklinksTabFilterValues,
+  scope: ResearchScope,
+  hideSpam: boolean,
+): string | null {
+  const limit = backlinksFilterConditionLimit(scope, hideSpam);
+  if (countFilterConditions(values) <= limit) return null;
+  return `These filters exceed the ${limit}-condition limit for this view. Remove conditions in Filters${hideSpam ? " or choose All links (spammy included) from Best links" : ""}. Your filters have been kept.`;
+}
+
 /**
  * Mirrors how the server translates filters to DataForSEO conditions: each
  * include/exclude term is one condition, every other non-empty field is one.
@@ -188,3 +209,8 @@ export function toTopPagesFiltersPayload(
     maxRank: toNumberOrUndefined(values.maxRank),
   };
 }
+import { MAX_DATAFORSEO_FILTER_CONDITIONS } from "@/types/schemas/domain";
+import {
+  BACKLINKS_SUBFOLDER_FILTER_CONDITIONS,
+  type ResearchScope,
+} from "@/shared/researchScope";

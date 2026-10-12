@@ -1,9 +1,13 @@
+import { DashboardSiteService } from "@/server/features/dashboard/services/DashboardSiteService";
+import { AppError } from "@/server/lib/errors";
 import { createServerFn } from "@tanstack/react-start";
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
 import { DashboardService } from "@/server/features/dashboard/services/DashboardService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   dashboardProjectInputSchema,
+  dashboardBacklinksInputSchema,
+  dashboardStepClickSchema,
   dashboardStepDismissalSchema,
 } from "@/types/schemas/dashboard";
 
@@ -29,29 +33,11 @@ export const getDashboardOverview = createServerFn({ method: "POST" })
     }),
   );
 
-// Visit-triggered: the client calls this when the overview reports a missing
-// or stale backlink snapshot. Metered against org credits at most once per
-// project per day (the service re-checks freshness server-side).
-export const refreshDashboardBacklinkSnapshot = createServerFn({
-  method: "POST",
-})
+export const markDashboardStepClicked = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(dashboardProjectInputSchema)
-  .handler(({ context }) =>
-    DashboardService.ensureBacklinkSnapshot({
-      projectId: context.projectId,
-      domain: context.project.domain,
-      billingCustomer: context,
-    }),
-  );
-
-export const markDashboardCompetitorClicked = createServerFn({
-  method: "POST",
-})
-  .middleware(requireProjectContext)
-  .validator(dashboardProjectInputSchema)
-  .handler(async ({ context }) => {
-    await ActivationRepository.markCompetitorStepClicked(context.projectId);
+  .validator(dashboardStepClickSchema)
+  .handler(async ({ context, data }) => {
+    await ActivationRepository.markStepClicked(context.projectId, data.step);
     return { ok: true as const };
   });
 
@@ -77,4 +63,45 @@ export const setDashboardStepDismissed = createServerFn({ method: "POST" })
       data.dismissed,
     );
     return { ok: true };
+  });
+
+export const getDashboardKeywords = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(dashboardProjectInputSchema)
+  .handler(({ context }) =>
+    DashboardSiteService.getKeywords(context.projectId, context.organizationId),
+  );
+export const getDashboardBacklinks = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(dashboardBacklinksInputSchema)
+  .handler(({ context, data }) => {
+    if (!context.project.domain)
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Add your website in project settings first.",
+      );
+    return DashboardSiteService.getBacklinks(
+      { domain: context.project.domain, kind: data.kind },
+      context,
+    );
+  });
+export const getDashboardEmergingQueries = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(dashboardProjectInputSchema)
+  .handler(({ context }) =>
+    DashboardSiteService.getEmergingQueries(
+      context.projectId,
+      context.organizationId,
+    ),
+  );
+export const getDashboardLinkActivity = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(dashboardProjectInputSchema)
+  .handler(({ context }) => {
+    if (!context.project.domain)
+      throw new AppError("VALIDATION_ERROR", "Add your website first.");
+    return DashboardSiteService.getLinkActivity(
+      context.project.domain,
+      context,
+    );
   });

@@ -103,14 +103,14 @@ export async function handleMcpApiKeyRequest(
 
     const userId = result.key.referenceId;
 
-    // Per-user request throttle. The binding is declared in alchemy.run.ts
+    // Per-user request throttle. The binding is declared in deploy/alchemy/alchemy.run.ts
     // (hosted prod only); local dev and self-host run without it and skip
     // limiting, which is fine single-user. This replaces the better-auth
     // plugin limiter, whose broken idle-gap window hard-blocked active MCP
     // clients (see lib/auth-api-key.ts). Cloudflare's counter is per-colo
     // best-effort, which is all this needs to be: credits bound spend, this
     // bounds runaway request volume.
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the binding is declared as a rate limiter in alchemy.run.ts; absent outside hosted prod
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the binding is declared as a rate limiter in deploy/alchemy/alchemy.run.ts; absent outside hosted prod
     const rateLimit = (env as { MCP_RATE_LIMIT?: RateLimit }).MCP_RATE_LIMIT;
     if (rateLimit) {
       const { success } = await rateLimit.limit({ key: userId });

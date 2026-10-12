@@ -1,60 +1,56 @@
+import type { ReactNode } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
+import { SegmentedToggle } from "@/client/components/SegmentedToggle";
+import {
+  DropdownMenuLabel,
+  DropdownMenuGroup,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/client/components/ui/dropdown-menu";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
 
 const THEME_OPTIONS: {
   value: ThemePreference;
   label: string;
-  icon: typeof Sun;
+  icon: ReactNode;
 }[] = [
-  { value: "system", label: "System", icon: Monitor },
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: <Monitor /> },
+  { value: "light", label: "Light", icon: <Sun /> },
+  { value: "dark", label: "Dark", icon: <Moon /> },
 ];
 
-export function ThemePreferenceMenuItems() {
+/** System / Light / Dark segmented radio, shared by Settings and account menus. */
+export function ThemePreferenceRadio() {
   const { themePreference, setThemePreference } = useThemePreference();
 
   return (
-    <>
-      <li className="menu-title pt-2">
-        <span>Theme</span>
-      </li>
+    <SegmentedToggle
+      items={THEME_OPTIONS}
+      value={themePreference}
+      onChange={setThemePreference}
+    />
+  );
+}
 
-      <li>
-        <div
-          role="radiogroup"
-          aria-label="Theme preference"
-          className="flex gap-0.5 rounded-lg bg-base-200 p-0.5"
-        >
-          {THEME_OPTIONS.map((option) => {
-            const isActive = option.value === themePreference;
-            const Icon = option.icon;
+export function ThemePreferenceDropdownItems() {
+  const { themePreference, setThemePreference } = useThemePreference();
 
-            return (
-              <div
-                key={option.value}
-                className="tooltip tooltip-bottom flex flex-1 before:whitespace-nowrap"
-                data-tip={option.label}
-              >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={isActive}
-                  aria-label={option.label}
-                  className={`flex flex-1 cursor-pointer items-center justify-center rounded-md px-2.5 py-1.5 transition-colors ${
-                    isActive
-                      ? "bg-base-100 text-base-content shadow-sm"
-                      : "text-base-content/50 hover:text-base-content/80"
-                  }`}
-                  onClick={() => setThemePreference(option.value)}
-                >
-                  <Icon className="size-4" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </li>
-    </>
+  return (
+    <DropdownMenuGroup>
+      <DropdownMenuLabel>Theme</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        value={themePreference}
+        onValueChange={(value) => {
+          const option = THEME_OPTIONS.find((item) => item.value === value);
+          if (option) setThemePreference(option.value);
+        }}
+      >
+        {THEME_OPTIONS.map(({ value, label, icon }) => (
+          <DropdownMenuRadioItem key={value} value={value}>
+            {icon} {label}
+          </DropdownMenuRadioItem>
+        ))}
+      </DropdownMenuRadioGroup>
+    </DropdownMenuGroup>
   );
 }

@@ -5,16 +5,13 @@ import {
 } from "@/lib/auth-turnstile";
 
 describe("hosted Turnstile auth config", () => {
-  it("enforces captcha from the hosted server secret even when the runtime site key is absent", () => {
+  it("enforces captcha from the hosted server secret alone, and only in hosted mode", () => {
     expect(
       getHostedTurnstileSecretKey({
         AUTH_MODE: "hosted",
         TURNSTILE_SECRET_KEY: " server-secret ",
       }),
     ).toBe("server-secret");
-  });
-
-  it("does not install captcha outside hosted mode", () => {
     expect(
       getHostedTurnstileSecretKey({
         AUTH_MODE: "local_noauth",
@@ -23,16 +20,14 @@ describe("hosted Turnstile auth config", () => {
     ).toBeUndefined();
   });
 
-  it("fails hosted config when a runtime site key is configured without a secret", () => {
+  it("fails hosted config on a site key without a secret, not on a secret without a site key", () => {
     expect(
       hasHostedTurnstileConfig({
         AUTH_MODE: "hosted",
         TURNSTILE_SITE_KEY: "site-key",
       }),
     ).toBe(false);
-  });
-
-  it("allows hosted config with no runtime site key so build/runtime divergence can still enforce from the secret", () => {
+    // Build/runtime divergence: the secret alone still enforces captcha.
     expect(
       hasHostedTurnstileConfig({
         AUTH_MODE: "hosted",

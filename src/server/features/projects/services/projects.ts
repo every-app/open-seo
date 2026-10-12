@@ -47,6 +47,15 @@ function resolveMarketInput(input: {
   return { locationCode, languageCode };
 }
 
+// Drizzle wraps the driver error in a "Failed query" error, so check the cause
+// chain. SQLite reports the violation in the message, Postgres as code 23505.
+function isUniqueViolation(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (error.message.includes("UNIQUE constraint failed")) return true;
+  if ("code" in error && error.code === "23505") return true;
+  return isUniqueViolation(error.cause);
+}
+
 // The projects table's only unique index guards the auto-created ("Default",
 // null) singleton. A UNIQUE violation while writing exactly that name/domain
 // therefore means one already exists — gating on the input (not just the error
@@ -55,12 +64,7 @@ function isReservedDefaultConflict(
   error: unknown,
   input: { name: string; domain?: string },
 ) {
-  return (
-    input.name === "Default" &&
-    !input.domain &&
-    error instanceof Error &&
-    error.message.includes("UNIQUE constraint failed")
-  );
+  return input.name === "Default" && !input.domain && isUniqueViolation(error);
 }
 
 const RESERVED_DEFAULT_MESSAGE =
@@ -176,10 +180,7 @@ export async function restoreProject(
     // The Default singleton index is the only unique index on projects, and
     // restore only writes archived_at — so a UNIQUE failure can only mean an
     // active Default/no-domain project already exists.
-    if (
-      error instanceof Error &&
-      error.message.includes("UNIQUE constraint failed")
-    ) {
+    if (isUniqueViolation(error)) {
       throw new AppError(
         "CONFLICT",
         'An active project named "Default" with no domain already exists. Rename it first, then restore this one.',

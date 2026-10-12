@@ -6,7 +6,7 @@ export type SelectionAnchor = {
   selected: boolean;
 };
 
-type SelectionRow<T> = Pick<Row<T>, "id" | "getIsSelected">;
+type SelectionRow<T> = Pick<Row<T>, "id" | "getIsSelected" | "getCanSelect">;
 
 type SelectionTable<T> = Pick<Table<T>, "setRowSelection"> & {
   getRowModel: () => {
@@ -55,7 +55,7 @@ export function applyShiftRangeSelection<T>(
 
     for (let index = from; index <= to; index++) {
       const rangeRow = rows[index];
-      if (!rangeRow) continue;
+      if (!rangeRow?.getCanSelect()) continue;
 
       if (selected) {
         nextSelection[rangeRow.id] = true;

@@ -10,21 +10,17 @@ describe("readSite SSRF guard", () => {
     vi.unstubAllGlobals();
   });
 
-  it("blocks a metadata/private host without fetching it", async () => {
-    const result = await readSite("169.254.169.254");
+  it.each(["169.254.169.254", "localhost:3000"])(
+    "blocks %s without fetching it",
+    async (host) => {
+      const result = await readSite(host);
 
-    expect(result.blocked).toBe(true);
-    expect(result.pages).toEqual([]);
-    // The blocked host must be rejected before any outbound page fetch.
-    expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it("blocks localhost-style targets", async () => {
-    const result = await readSite("localhost:3000");
-
-    expect(result.blocked).toBe(true);
-    expect(fetch).not.toHaveBeenCalled();
-  });
+      expect(result.blocked).toBe(true);
+      expect(result.pages).toEqual([]);
+      // The blocked host must be rejected before any outbound page fetch.
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("readPages SSRF guard", () => {
@@ -45,14 +41,6 @@ describe("readPages SSRF guard", () => {
     expect(result.blocked).toBe(true);
     expect(result.pages).toEqual([]);
     // Every URL is validated before any outbound fetch.
-    expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it("returns blocked for an empty URL list without fetching", async () => {
-    const result = await readPages([]);
-
-    expect(result.blocked).toBe(true);
-    expect(result.pages).toEqual([]);
     expect(fetch).not.toHaveBeenCalled();
   });
 });

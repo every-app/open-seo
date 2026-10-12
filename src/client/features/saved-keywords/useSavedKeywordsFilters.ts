@@ -2,7 +2,6 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useCallback } from "react";
 import {
   countActiveSavedKeywordsFilters,
-  EMPTY_SAVED_KEYWORDS_FILTERS,
   type SavedKeywordsFilterValues,
 } from "./savedKeywordsFilterTypes";
 
@@ -17,8 +16,10 @@ const FILTER_KEYS: Array<keyof SavedKeywordsFilterValues> = [
   "maxKd",
 ];
 
-export function useSavedKeywordsFilters() {
-  const filtersForm = useForm({ defaultValues: EMPTY_SAVED_KEYWORDS_FILTERS });
+export function useSavedKeywordsFilters(
+  initialValues: SavedKeywordsFilterValues,
+) {
+  const filtersForm = useForm({ defaultValues: initialValues });
   const values = useStore(filtersForm.store, (s) => s.values);
   const activeFilterCount = countActiveSavedKeywordsFilters(values);
 

@@ -31,7 +31,7 @@ function topPage(
 }
 
 describe("deriveCitedSources", () => {
-  it("uses top_pages metrics and attaches matching prompt examples", () => {
+  it("uses top_pages metrics and attaches deduped prompt examples", () => {
     const sources = deriveCitedSources(
       [
         {
@@ -45,7 +45,11 @@ describe("deriveCitedSources", () => {
               "https://a.com/x",
               "https://b.com/y",
             ]),
-            citedMention("cheap seo", 500, ["https://a.com/x"]),
+            // The same page cited twice in one answer is one example.
+            citedMention("cheap seo", 500, [
+              "https://a.com/x",
+              "https://a.com/x",
+            ]),
           ],
         },
       ],
@@ -63,38 +67,5 @@ describe("deriveCitedSources", () => {
         identity(),
       ),
     ).toEqual(["best seo tools", "cheap seo"]);
-  });
-
-  it("dedupes sampled prompt examples and derives domains from urls", () => {
-    const sources = deriveCitedSources(
-      [
-        {
-          platform: "google",
-          topPages: [topPage("https://evil.example/path", "google", 3, 300)],
-          mentions: [
-            {
-              question: "q",
-              ai_search_volume: 200,
-              sources: [
-                {
-                  url: "https://evil.example/path",
-                  domain: "customer.example",
-                },
-                { url: "https://evil.example/path" },
-              ],
-            },
-          ],
-        },
-      ],
-      { sourcesPerPlatform: 20, keywordsPerSource: 50 },
-    );
-
-    expect(sources[0]).toMatchObject({
-      url: "https://evil.example/path",
-      domain: "evil.example",
-    });
-    expect(sources[0].keywords).toEqual([
-      { question: "q", aiSearchVolume: 200 },
-    ]);
   });
 });

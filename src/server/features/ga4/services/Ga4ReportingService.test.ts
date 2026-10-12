@@ -62,6 +62,13 @@ function acquisitionResponse(
   };
 }
 
+const noComparison = {
+  current: null,
+  previous: null,
+  absoluteChange: null,
+  percentChange: null,
+};
+
 describe("Ga4ReportingService", () => {
   beforeEach(() => {
     mocks.getByProjectId.mockResolvedValue(connection);
@@ -175,42 +182,6 @@ describe("Ga4ReportingService", () => {
     expect(result.rows[0]?.purchaseRevenue).toBeNull();
   });
 
-  it("uses the all-channel page report and optional date dimension", async () => {
-    mocks.runReport.mockResolvedValue({
-      dimensionHeaders: [
-        { name: "hostName" },
-        { name: "pagePath" },
-        { name: "date" },
-      ],
-      metricHeaders: [
-        "screenPageViews",
-        "activeUsers",
-        "userEngagementDuration",
-        "keyEvents",
-      ].map((name) => ({ name })),
-      rowCount: 0,
-    });
-    await Ga4ReportingService.runReport(
-      {
-        projectId: "project_1",
-        kind: "page_performance",
-        channel: "all",
-        includeDate: true,
-      },
-      { now: new Date("2026-08-06T15:00:00Z") },
-    );
-    expect(mocks.runReport).toHaveBeenCalledWith(
-      expect.objectContaining({
-        dimensions: [
-          { name: "hostName" },
-          { name: "pagePath" },
-          { name: "date" },
-        ],
-        dimensionFilter: undefined,
-      }),
-    );
-  });
-
   it("returns stable connection and quota errors", async () => {
     mocks.getByProjectId.mockResolvedValueOnce(null);
     await expect(
@@ -253,65 +224,14 @@ describe("Ga4ReportingService", () => {
     expect(mocks.runReport).not.toHaveBeenCalled();
   });
 
+  // The plain metric/dimension lists restate Ga4ReportDefinitions; these rows
+  // cover the non-obvious request shapes each report kind adds.
   it.each([
-    [
-      "traffic_acquisition",
-      { acquisitionBreakdown: "source_medium", channel: "all" },
-      "sessionSourceMedium",
-      [
-        "sessions",
-        "activeUsers",
-        "engagedSessions",
-        "engagementRate",
-        "keyEvents",
-        "transactions",
-        "purchaseRevenue",
-      ],
-    ],
-    [
-      "ecommerce_performance",
-      { ecommerceBreakdown: "item", channel: "organic_search" },
-      "itemName",
-      ["itemsViewed", "itemsAddedToCart", "itemsPurchased", "itemRevenue"],
-    ],
-    [
-      "site_search",
-      { channel: "all" },
-      "searchTerm",
-      [
-        "eventCount",
-        "activeUsers",
-        "sessions",
-        "engagedSessions",
-        "engagementRate",
-      ],
-    ],
-    [
-      "audience_breakdown",
-      { audienceBreakdown: "new_vs_returning", channel: "organic_search" },
-      "newVsReturning",
-      ["activeUsers", "sessions", "engagementRate", "keyEvents"],
-    ],
-  ] as const)(
-    "builds the fixed %s report",
-    async (kind, options, dimension, metrics) => {
-      mocks.runReport.mockResolvedValue({
-        dimensionHeaders:
-          kind === "ecommerce_performance"
-            ? [{ name: "itemName" }, { name: "itemId" }]
-            : [{ name: dimension }],
-        metricHeaders: metrics.map((name) => ({ name })),
-        rowCount: 0,
-      });
-      await Ga4ReportingService.runReport(
-        { projectId: "project_1", kind, ...options },
-        { now: new Date("2026-08-06T15:00:00Z") },
-      );
-      const request = mocks.runReport.mock.calls[0]?.[0];
-      expect(request?.dimensions[0]?.name).toBe(dimension);
-      expect(request?.metrics).toEqual(metrics.map((name) => ({ name })));
-      if (kind === "site_search") {
-        expect(request?.dimensionFilter).toEqual({
+    {
+      name: "site_search keeps only real search terms",
+      input: { kind: "site_search", channel: "all" },
+      request: {
+        dimensionFilter: {
           andGroup: {
             expressions: [
               {
@@ -327,19 +247,115 @@ describe("Ga4ReportingService", () => {
                 notExpression: {
                   filter: {
                     fieldName: "searchTerm",
-                    stringFilter: {
-                      matchType: "EXACT",
-                      value: "(not set)",
-                    },
+                    stringFilter: { matchType: "EXACT", value: "(not set)" },
                   },
                 },
               },
             ],
           },
-        });
-      }
+        },
+      },
     },
-  );
+    {
+      name: "page_performance over all channels adds the date dimension",
+      input: { kind: "page_performance", channel: "all", includeDate: true },
+      request: {
+        dimensions: [
+          { name: "hostName" },
+          { name: "pagePath" },
+          { name: "date" },
+        ],
+        dimensionFilter: undefined,
+      },
+    },
+    {
+      name: "key_events drops events that never fired",
+      input: { kind: "key_events", channel: "organic_search" },
+      request: {
+        metricFilter: {
+          filter: {
+            fieldName: "keyEvents",
+            numericFilter: { operation: "GREATER_THAN" },
+          },
+        },
+      },
+    },
+    {
+      name: "ecommerce landing pages can be limited to those with transactions",
+      input: {
+        kind: "ecommerce_performance",
+        ecommerceBreakdown: "landing_page",
+        ecommerceOnlyWithTransactions: true,
+        channel: "organic_search",
+      },
+      request: {
+        dimensions: [{ name: "hostName" }, { name: "landingPage" }],
+        metricFilter: {
+          filter: {
+            fieldName: "transactions",
+            numericFilter: { operation: "GREATER_THAN" },
+          },
+        },
+      },
+    },
+  ] as const)("builds the request: $name", async ({ input, request }) => {
+    // A headerless response is a legitimately empty report.
+    mocks.runReport.mockResolvedValue({});
+    await Ga4ReportingService.runReport(
+      { projectId: "project_1", ...input },
+      { now: new Date("2026-08-06T15:00:00Z") },
+    );
+    expect(mocks.runReport.mock.calls[0]?.[0]).toMatchObject(request);
+  });
+
+  it("treats a headerless previous-period response as empty instead of malformed", async () => {
+    mocks.runReport
+      .mockResolvedValueOnce({
+        dimensionHeaders: [{ name: "deviceCategory" }],
+        metricHeaders: [
+          "activeUsers",
+          "sessions",
+          "engagementRate",
+          "keyEvents",
+        ].map((name) => ({ name })),
+        rows: [
+          {
+            dimensionValues: [{ value: "mobile" }],
+            metricValues: ["10", "12", "0.5", "2"].map((value) => ({ value })),
+          },
+        ],
+        rowCount: 1,
+      })
+      // GA4 omits headers and rows entirely when the previous-period window
+      // falls before the property's creation date.
+      .mockResolvedValueOnce({});
+
+    const result = await Ga4ReportingService.runReport(
+      {
+        projectId: "project_1",
+        kind: "audience_breakdown",
+        audienceBreakdown: "device",
+        comparePreviousPeriod: true,
+      },
+      { now: new Date("2026-08-06T15:00:00Z") },
+    );
+
+    expect(result.comparison?.rows).toEqual([
+      {
+        dimensions: { deviceCategory: "mobile" },
+        metrics: {
+          activeUsers: { ...noComparison, current: 10 },
+          sessions: { ...noComparison, current: 12 },
+          engagementRate: { ...noComparison, current: 0.5 },
+          keyEvents: { ...noComparison, current: 2 },
+        },
+      },
+    ]);
+    expect(result.comparison?.coverage.previous).toEqual({
+      fetchedRowCount: 0,
+      totalRowCount: 0,
+    });
+  });
 
   describe("diagnostic pagination", () => {
     it.each([

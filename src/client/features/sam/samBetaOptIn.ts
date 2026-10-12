@@ -13,10 +13,25 @@ const subscribe = (listener: () => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
 };
-const read = () => localStorage.getItem(STORAGE_KEY) === "1";
+// Opting in is one-way, so the in-memory flag wins. It covers a localStorage
+// that cannot read or store (private browsing, strict modes, a full quota).
+let optedInThisSession = false;
+const read = () => {
+  if (optedInThisSession) return true;
+  try {
+    return localStorage.getItem(STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
 
 export function optInToSamBeta() {
-  localStorage.setItem(STORAGE_KEY, "1");
+  optedInThisSession = true;
+  try {
+    localStorage.setItem(STORAGE_KEY, "1");
+  } catch {
+    // Kept in memory above.
+  }
   captureClientEvent("sam:beta_opt_in");
   listeners.forEach((listener) => listener());
 }

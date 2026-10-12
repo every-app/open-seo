@@ -188,7 +188,7 @@ export function applyFilters(
   });
 }
 
-export function matchesPositionFilter(
+function matchesPositionFilter(
   position: number | null,
   minValue: string,
   maxValue: string,
@@ -204,7 +204,7 @@ export function matchesPositionFilter(
   return position >= min && position <= max;
 }
 
-export function matchesMetricRangeFilter(
+function matchesMetricRangeFilter(
   value: number | null,
   minValue: string,
   maxValue: string,

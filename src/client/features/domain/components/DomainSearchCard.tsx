@@ -1,13 +1,29 @@
 import type { FormEvent } from "react";
-import { AlertCircle, Search } from "lucide-react";
-import { getFieldError, getFormError } from "@/client/lib/forms";
+import { useStore } from "@tanstack/react-form";
+import { getFieldError } from "@/client/lib/forms";
 import type { DomainOverviewControlsForm } from "@/client/features/domain/DomainOverviewPage";
 import { toSortMode } from "@/client/features/domain/utils";
 import type { DomainSortMode } from "@/client/features/domain/types";
 import { LABS_LOCATION_OPTIONS } from "@/client/features/keywords/locations";
 import { LocationSelect } from "@/client/components/LocationSelect";
 import { ResearchScopeSelect } from "@/client/components/ResearchScopeSelect";
+import { SearchCard, SearchInput } from "@/client/components/SearchCard";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui/select";
 import type { ResearchScope } from "@/shared/researchScope";
+
+const SORT_ITEMS: { value: DomainSortMode; label: string }[] = [
+  { value: "rank", label: "By Rank" },
+  { value: "traffic", label: "By Traffic" },
+  { value: "volume", label: "By Volume" },
+  { value: "score", label: "By Score" },
+  { value: "cpc", label: "By CPC" },
+];
 
 type Props = {
   controlsForm: DomainOverviewControlsForm;
@@ -28,125 +44,87 @@ export function DomainSearchCard({
   onSortChange,
   onLocationChange,
 }: Props) {
+  const domainError = useStore(controlsForm.store, (state) =>
+    getFieldError(state.fieldMeta.domain?.errors ?? []),
+  );
+
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-4">
-        <form
-          className="flex flex-col gap-3 lg:flex-row lg:items-center"
-          onSubmit={onSubmit}
-        >
-          <controlsForm.Field name="domain">
-            {(field) => {
-              const domainError = getFieldError(field.state.meta.errors);
-
-              return (
-                <label
-                  className={`input input-bordered flex items-center gap-2 w-full lg:flex-1 lg:min-w-0 lg:max-w-md ${domainError ? "input-error" : ""}`}
-                >
-                  <Search className="size-4 text-base-content/60" />
-                  <input
-                    className="grow min-w-0"
-                    placeholder="Enter a domain or URL"
-                    value={field.state.value}
-                    onChange={(event) => {
-                      field.handleChange(event.target.value);
-                      onDomainChange(event.target.value);
-                    }}
-                    aria-invalid={domainError ? true : undefined}
-                    aria-describedby={
-                      domainError ? "domain-input-error" : undefined
-                    }
-                  />
-                </label>
-              );
+    <SearchCard
+      onSubmit={onSubmit}
+      pending={isLoading}
+      error={domainError}
+      errorId="domain-input-error"
+    >
+      <controlsForm.Field name="domain">
+        {(field) => (
+          <SearchInput
+            placeholder="Enter a domain or URL"
+            aria-label="Domain or URL"
+            value={field.state.value}
+            onChange={(event) => {
+              field.handleChange(event.target.value);
+              onDomainChange(event.target.value);
             }}
-          </controlsForm.Field>
+            aria-invalid={domainError ? true : undefined}
+            aria-describedby={domainError ? "domain-input-error" : undefined}
+          />
+        )}
+      </controlsForm.Field>
 
-          <controlsForm.Field name="scope">
-            {(field) => (
-              <ResearchScopeSelect
-                value={field.state.value}
-                className="w-full lg:w-40"
-                onChange={(scope) => {
-                  field.handleChange(scope);
-                  onScopeChange(scope);
-                }}
-              />
-            )}
-          </controlsForm.Field>
+      <controlsForm.Field name="scope">
+        {(field) => (
+          <ResearchScopeSelect
+            value={field.state.value}
+            className="w-full lg:w-40"
+            onChange={(scope) => {
+              field.handleChange(scope);
+              onScopeChange(scope);
+            }}
+          />
+        )}
+      </controlsForm.Field>
 
-          <controlsForm.Field name="locationCode">
-            {(field) => (
-              <LocationSelect
-                value={field.state.value}
-                options={LABS_LOCATION_OPTIONS}
-                className="w-full lg:w-44 lg:shrink-0"
-                onChange={(code) => {
-                  field.handleChange(code);
-                  onLocationChange(code);
-                }}
-              />
-            )}
-          </controlsForm.Field>
+      <controlsForm.Field name="locationCode">
+        {(field) => (
+          <LocationSelect
+            value={field.state.value}
+            options={LABS_LOCATION_OPTIONS}
+            className="w-full lg:w-44 lg:shrink-0"
+            onChange={(code) => {
+              field.handleChange(code);
+              onLocationChange(code);
+            }}
+          />
+        )}
+      </controlsForm.Field>
 
-          <controlsForm.Field name="sort">
-            {(field) => (
-              <select
-                className="select select-bordered shrink-0"
-                value={field.state.value}
-                onChange={(event) => {
-                  const next = toSortMode(event.target.value) ?? "traffic";
-                  field.handleChange(next);
-                  onSortChange(next);
-                }}
-              >
-                <option value="rank">By Rank</option>
-                <option value="traffic">By Traffic</option>
-                <option value="volume">By Volume</option>
-                <option value="score">By Score</option>
-                <option value="cpc">By CPC</option>
-              </select>
-            )}
-          </controlsForm.Field>
-
-          <controlsForm.Subscribe selector={(state) => state.isSubmitting}>
-            {(isSubmitting) => (
-              <button
-                type="submit"
-                className="btn btn-primary shrink-0 px-6"
-                disabled={isLoading || isSubmitting}
-              >
-                {isLoading || isSubmitting ? "Loading..." : "Search"}
-              </button>
-            )}
-          </controlsForm.Subscribe>
-        </form>
-
-        <controlsForm.Field name="domain">
-          {(field) => {
-            const domainError = getFieldError(field.state.meta.errors);
-
-            return domainError ? (
-              <p id="domain-input-error" className="text-sm text-error">
-                {domainError}
-              </p>
-            ) : null;
-          }}
-        </controlsForm.Field>
-
-        <controlsForm.Subscribe selector={(state) => state.errorMap.onSubmit}>
-          {(submitError) => {
-            const errorMessage = getFormError(submitError);
-
-            return errorMessage ? (
-              <div className="rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error flex items-start gap-2">
-                <AlertCircle className="size-4 shrink-0 mt-0.5" />
-                <span>{errorMessage}</span>
-              </div>
-            ) : null;
-          }}
-        </controlsForm.Subscribe>
-      </div>
-    </div>
+      <controlsForm.Field name="sort">
+        {(field) => (
+          <Select
+            items={SORT_ITEMS}
+            value={field.state.value}
+            onValueChange={(value) => {
+              const next = toSortMode(value ?? "") ?? "traffic";
+              field.handleChange(next);
+              onSortChange(next);
+            }}
+          >
+            <SelectTrigger
+              aria-label="Sort keywords"
+              className="w-full shrink-0 lg:w-36"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_ITEMS.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </controlsForm.Field>
+    </SearchCard>
   );
 }

@@ -12,9 +12,11 @@
       "enabled": true,
     },
   },
-  // Smart Placement relocates only the `fetch` handler (cron + Workflow runs
-  // stay at the edge) toward external subrequests — Postgres via Hyperdrive,
-  // SEO APIs — not D1/KV/R2 bindings, so it's a DB no-op on the D1 default.
+  // Smart Placement moves only the `fetch` handler (cron, Workflow, and RPC
+  // runs are unaffected); local dev and Docker ignore it. Hosted prod
+  // overrides it with a us-east-1 region pin next to its Postgres
+  // (deploy/alchemy/alchemy.run.ts), which the legacy `pnpm run deploy` would
+  // undo: it targets the same prod script.
   // Must live here: a dashboard-only toggle is wiped by `wrangler deploy`.
   "placement": {
     "mode": "smart",
@@ -35,6 +37,11 @@
       "name": "rank-check-workflow",
       "binding": "RANK_CHECK_WORKFLOW",
       "class_name": "RankCheckWorkflow",
+    },
+    {
+      "name": "ai-visibility-workflow",
+      "binding": "AI_VISIBILITY_WORKFLOW",
+      "class_name": "AiVisibilityWorkflow",
     },
   ],
   // Durable Object backing the SAM in-app agent (Agents SDK AIChatAgent). One
@@ -99,7 +106,7 @@
   },
   // This config serves local dev and Docker self-host only. All Cloudflare
   // deployments — previews, prod, self-host — go through Alchemy
-  // (alchemy.run.ts), which provisions real resources per stage and never
+  // (deploy/alchemy/alchemy.run.ts), which provisions real resources per stage and never
   // reads these ids.
   //
   // The ids below are NOT dead config: miniflare derives its on-disk storage
@@ -121,7 +128,7 @@
       "binding": "DB",
       "database_name": "open-seo",
       "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
-      "migrations_dir": "drizzle",
+      "migrations_dir": "drizzle/sqlite",
     },
   ],
   // Postgres scale path (opt-in; D1 is the default). Hyperdrive is the ONLY way

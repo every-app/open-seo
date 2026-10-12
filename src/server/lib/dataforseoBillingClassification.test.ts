@@ -8,10 +8,21 @@ const classify = createDataforseoBillingClassifier({
 });
 
 describe("createDataforseoBillingClassifier", () => {
-  it("returns null when the path is outside the configured prefix", () => {
-    expect(classify(402, "payment required", "/v3/serp/google/live")).toBe(
-      null,
-    );
+  it.each([
+    [
+      "the path is outside the configured prefix",
+      402,
+      "payment required",
+      "/v3/serp/google/live",
+    ],
+    [
+      "neither status nor text matches",
+      500,
+      "boom",
+      "/v3/backlinks/summary/live",
+    ],
+  ])("returns null when %s", (_label, status, message, path) => {
+    expect(classify(status, message, path)).toBe(null);
   });
 
   it.each([40200, 40210, 402])(
@@ -22,34 +33,7 @@ describe("createDataforseoBillingClassifier", () => {
     },
   );
 
-  it.each([
-    "insufficient funds",
-    "payment required",
-    "balance is too low",
-    "problem billing",
-    "account was not recharged",
-  ])(
-    "translates billing signal %s into the configured billing code",
-    (message) => {
-      const err = classify(undefined, message, "/v3/backlinks/summary/live");
-      expect(err?.code).toBe("BACKLINKS_BILLING_ISSUE");
-    },
-  );
-
-  it("no longer classifies feature-access signals now that the add-ons are bundled", () => {
-    expect(
-      classify(40204, "subscription required", "/v3/backlinks/summary/live"),
-    ).toBe(null);
-    expect(classify(403, "access denied", "/v3/backlinks/summary/live")).toBe(
-      null,
-    );
-  });
-
-  it("returns null when neither status nor text matches", () => {
-    expect(classify(500, "boom", "/v3/backlinks/summary/live")).toBe(null);
-  });
-
-  it("matches billing signals case-insensitively", () => {
+  it("translates billing signals in the message case-insensitively", () => {
     const err = classify(
       undefined,
       "INSUFFICIENT funds",

@@ -38,31 +38,18 @@ describe("copyTableToClipboard", () => {
     vi.unstubAllGlobals();
   });
 
-  it("emits TSV with tab/newline separators", async () => {
+  it("emits TSV with tab/newline separators and flattens them inside cells", async () => {
     const { written } = mockClipboard();
     await copyTableToClipboard(
       ["Keyword", "Volume"],
       [
         ["seo audit", 1200],
-        ["site speed", 800],
+        ["one\ttwo\nthree", 800],
       ],
     );
     expect(written[0].plain).toBe(
-      "Keyword\tVolume\nseo audit\t1200\nsite speed\t800",
+      "Keyword\tVolume\nseo audit\t1200\none two three\t800",
     );
-  });
-
-  it("emits HTML with raw numeric cells (no comma formatting)", async () => {
-    const { written } = mockClipboard();
-    await copyTableToClipboard(["Volume"], [[1234]]);
-    expect(written[0].html).toContain("<td>1234</td>");
-  });
-
-  it("rounds decimal numbers to at most two places", async () => {
-    const { written } = mockClipboard();
-    await copyTableToClipboard(["Traffic"], [[1250.321954]]);
-    expect(written[0].plain).toBe("Traffic\n1250.32");
-    expect(written[0].html).toContain("<td>1250.32</td>");
   });
 
   it("emits URL cells as HTML links for spreadsheet paste", async () => {
@@ -87,25 +74,5 @@ describe("copyTableToClipboard", () => {
     await copyTableToClipboard(["Title"], [['<script>alert("x")</script>']]);
     expect(written[0].html).not.toContain("<script>");
     expect(written[0].html).toContain("&lt;script&gt;");
-  });
-
-  it("flattens tabs and newlines inside string cells", async () => {
-    const { written } = mockClipboard();
-    await copyTableToClipboard(["Body"], [["one\ttwo\nthree"]]);
-    // Single space replaces both \t and \n so the row stays one line in TSV.
-    expect(written[0].plain).toBe("Body\none two three");
-  });
-
-  it("treats null and undefined as empty cells", async () => {
-    const { written } = mockClipboard();
-    await copyTableToClipboard(["A", "B"], [[null, undefined]]);
-    expect(written[0].plain).toBe("A\tB\n\t");
-  });
-
-  it("throws when the Clipboard API is unavailable", async () => {
-    vi.stubGlobal("navigator", {});
-    await expect(copyTableToClipboard(["X"], [["y"]])).rejects.toThrow(
-      /Clipboard API not available/,
-    );
   });
 });

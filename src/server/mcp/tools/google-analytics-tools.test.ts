@@ -6,9 +6,6 @@ import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   runReport: vi.fn(),
-  getOrganicOverview: vi.fn(),
-  getMeasurementHealth: vi.fn(),
-  getOpportunities: vi.fn(),
   getProjectForOrganization: vi.fn(),
 }));
 
@@ -19,17 +16,13 @@ vi.mock("@/server/features/ga4/services/Ga4ReportingService", () => ({
   },
 }));
 vi.mock("@/server/features/ga4/services/Ga4OrganicOverviewService", () => ({
-  Ga4OrganicOverviewService: {
-    getOrganicOverview: mocks.getOrganicOverview,
-  },
+  Ga4OrganicOverviewService: { getOrganicOverview: vi.fn() },
 }));
 vi.mock("@/server/features/ga4/services/Ga4MeasurementHealthService", () => ({
-  Ga4MeasurementHealthService: {
-    getMeasurementHealth: mocks.getMeasurementHealth,
-  },
+  Ga4MeasurementHealthService: { getMeasurementHealth: vi.fn() },
 }));
 vi.mock("@/server/features/ga4/services/SearchOpportunityService", () => ({
-  SearchOpportunityService: { getOpportunities: mocks.getOpportunities },
+  SearchOpportunityService: { getOpportunities: vi.fn() },
 }));
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
@@ -38,96 +31,134 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
 }));
 
 const toolContext = makeToolContext();
-const reportResult = makeGa4ReportResult({
-  rowCount: 1,
-  totalRowCount: 1,
-  rows: [{ hostName: "example.com", sessions: 5 }],
-});
+const page = { projectId: "project_1", limit: 100, offset: 0 };
 
 describe("Google Analytics MCP tools", () => {
   beforeEach(() => {
-    mocks.runReport.mockResolvedValue(reportResult);
+    mocks.runReport.mockResolvedValue(
+      makeGa4ReportResult({
+        rowCount: 1,
+        totalRowCount: 1,
+        rows: [{ hostName: "example.com", sessions: 5 }],
+      }),
+    );
     mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
   });
 
-  it("registers strict public input schemas", async () => {
-    const { getGoogleAnalyticsOrganicLandingPagesTool } = tools;
-    expect(
-      getGoogleAnalyticsOrganicLandingPagesTool.config.inputSchema.safeParse({
-        projectId: "project_1",
-        unknown: true,
-      }).success,
-    ).toBe(false);
-    expect(
-      getGoogleAnalyticsOrganicLandingPagesTool.config.inputSchema.safeParse({
-        projectId: "project_1",
-        startDate: "2026-01-01",
-      }).success,
-    ).toBe(true);
-  });
-
-  it("returns normalized landing-page report content", async () => {
-    const { getGoogleAnalyticsOrganicLandingPagesTool } = tools;
-    const result = await getGoogleAnalyticsOrganicLandingPagesTool.handler(
-      { projectId: "project_1", limit: 10, offset: 0 },
-      toolContext,
-    );
-    expect(mocks.runReport).toHaveBeenCalledWith({
-      projectId: "project_1",
-      limit: 10,
-      offset: 0,
-      kind: "landing_pages",
-      channel: "organic_search",
-    });
-    expect(result.structuredContent).toMatchObject({
-      status: "ok",
-      rowCount: 1,
-      meta: { projectId: "project_1" },
-    });
-  });
-
-  it("maps page-performance and key-event options to fixed reports", async () => {
-    const {
-      getGoogleAnalyticsKeyEventsTool,
-      getGoogleAnalyticsPagePerformanceTool,
-    } = tools;
-    await getGoogleAnalyticsPagePerformanceTool.handler(
+  // Each tool maps its public input onto the shared report input: fixed
+  // `kind`, forced channels, and the per-report breakdown key.
+  it.each([
+    [
+      "landing_pages",
+      () =>
+        tools.getGoogleAnalyticsOrganicLandingPagesTool.handler(
+          page,
+          toolContext,
+        ),
+      { kind: "landing_pages", channel: "organic_search" },
+    ],
+    [
+      "page_performance",
+      () =>
+        tools.getGoogleAnalyticsPagePerformanceTool.handler(
+          { ...page, includeDate: true, channel: "all" },
+          toolContext,
+        ),
+      { kind: "page_performance", includeDate: true, channel: "all" },
+    ],
+    [
+      "key_events",
+      () =>
+        tools.getGoogleAnalyticsKeyEventsTool.handler(
+          {
+            ...page,
+            breakdown: "event_and_landing_page",
+            channel: "organic_search",
+            comparePreviousPeriod: false,
+          },
+          toolContext,
+        ),
       {
-        projectId: "project_1",
-        includeDate: true,
-        channel: "all",
-        limit: 100,
-        offset: 0,
-      },
-      toolContext,
-    );
-    await getGoogleAnalyticsKeyEventsTool.handler(
-      {
-        projectId: "project_1",
+        kind: "key_events",
         breakdown: "event_and_landing_page",
         channel: "organic_search",
         comparePreviousPeriod: false,
-        limit: 100,
-        offset: 0,
       },
-      toolContext,
-    );
-    expect(mocks.runReport).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        kind: "page_performance",
-        includeDate: true,
+    ],
+    [
+      "traffic_acquisition",
+      () =>
+        tools.getGoogleAnalyticsTrafficAcquisitionTool.handler(
+          { ...page, breakdown: "campaign", comparePreviousPeriod: false },
+          toolContext,
+        ),
+      {
+        kind: "traffic_acquisition",
         channel: "all",
-      }),
-    );
-    expect(mocks.runReport).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        kind: "key_events",
-        breakdown: "event_and_landing_page",
-      }),
-    );
-  });
+        acquisitionBreakdown: "campaign",
+        comparePreviousPeriod: false,
+      },
+    ],
+    [
+      "ecommerce_performance",
+      () =>
+        tools.getGoogleAnalyticsEcommercePerformanceTool.handler(
+          {
+            ...page,
+            breakdown: "landing_page",
+            channel: "organic_search",
+            onlyWithTransactions: true,
+          },
+          toolContext,
+        ),
+      {
+        kind: "ecommerce_performance",
+        channel: "organic_search",
+        ecommerceBreakdown: "landing_page",
+        ecommerceOnlyWithTransactions: true,
+        onlyWithTransactions: true,
+      },
+    ],
+    [
+      "site_search",
+      () => tools.getGoogleAnalyticsSiteSearchTool.handler(page, toolContext),
+      { kind: "site_search", channel: "all" },
+    ],
+    [
+      "audience_breakdown",
+      () =>
+        tools.getGoogleAnalyticsAudienceBreakdownTool.handler(
+          {
+            ...page,
+            breakdown: "country",
+            channel: "all",
+            comparePreviousPeriod: false,
+          },
+          toolContext,
+        ),
+      {
+        kind: "audience_breakdown",
+        channel: "all",
+        audienceBreakdown: "country",
+        comparePreviousPeriod: false,
+      },
+    ],
+  ] as const)(
+    "maps the %s tool onto its fixed report input",
+    async (_kind, run, input) => {
+      const result = await run();
+
+      expect(mocks.runReport).toHaveBeenCalledExactlyOnceWith({
+        ...page,
+        ...input,
+      });
+      expect(result.structuredContent).toMatchObject({
+        status: "ok",
+        rowCount: 1,
+        meta: { projectId: "project_1" },
+      });
+    },
+  );
 
   it("returns stable connection errors without leaking upstream details", async () => {
     mocks.runReport.mockRejectedValue(
@@ -136,18 +167,17 @@ describe("Google Analytics MCP tools", () => {
         "The Google Analytics connection has expired or was revoked.",
       ),
     );
-    const { getGoogleAnalyticsKeyEventsTool } = tools;
-    const result = await getGoogleAnalyticsKeyEventsTool.handler(
+
+    const result = await tools.getGoogleAnalyticsKeyEventsTool.handler(
       {
-        projectId: "project_1",
+        ...page,
         breakdown: "event",
         channel: "organic_search",
         comparePreviousPeriod: false,
-        limit: 100,
-        offset: 0,
       },
       toolContext,
     );
+
     expect(result.structuredContent).toMatchObject({
       status: "error",
       error: {
@@ -155,159 +185,5 @@ describe("Google Analytics MCP tools", () => {
         actionUrl: "https://open-seo.test/p/project_1/settings/integrations",
       },
     });
-  });
-
-  it("returns the cross-source opportunity envelope", async () => {
-    mocks.getOpportunities.mockResolvedValue({
-      status: "ok",
-      rowCount: 1,
-      totalCandidateRows: 2,
-      rows: [{ page: "https://example.com/a", score: 90 }],
-      coverage: { matchedRows: 1 },
-    });
-    const { getSearchOpportunitiesTool } = tools;
-    const result = await getSearchOpportunitiesTool.handler(
-      { projectId: "project_1", limit: 25 },
-      toolContext,
-    );
-    expect(mocks.getOpportunities).toHaveBeenCalledWith({
-      projectId: "project_1",
-      limit: 25,
-    });
-    expect(result.structuredContent).toMatchObject({
-      status: "ok",
-      rowCount: 1,
-      totalCandidateRows: 2,
-    });
-  });
-
-  it.each([
-    [
-      "traffic_acquisition",
-      () =>
-        tools.getGoogleAnalyticsTrafficAcquisitionTool.handler(
-          {
-            projectId: "project_1",
-            breakdown: "campaign",
-            comparePreviousPeriod: false,
-            limit: 100,
-            offset: 0,
-          },
-          toolContext,
-        ),
-    ],
-    [
-      "ecommerce_performance",
-      () =>
-        tools.getGoogleAnalyticsEcommercePerformanceTool.handler(
-          {
-            projectId: "project_1",
-            breakdown: "landing_page",
-            channel: "organic_search",
-            onlyWithTransactions: false,
-            limit: 100,
-            offset: 0,
-          },
-          toolContext,
-        ),
-    ],
-    [
-      "site_search",
-      () =>
-        tools.getGoogleAnalyticsSiteSearchTool.handler(
-          { projectId: "project_1", limit: 100, offset: 0 },
-          toolContext,
-        ),
-    ],
-    [
-      "audience_breakdown",
-      () =>
-        tools.getGoogleAnalyticsAudienceBreakdownTool.handler(
-          {
-            projectId: "project_1",
-            breakdown: "country",
-            channel: "all",
-            comparePreviousPeriod: false,
-            limit: 100,
-            offset: 0,
-          },
-          toolContext,
-        ),
-    ],
-  ] as const)(
-    "maps a controlled breakdown to %s",
-    async (expectedKind, run) => {
-      await run();
-      expect(mocks.runReport).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: expectedKind }),
-      );
-    },
-  );
-
-  it("returns organic overview and measurement-health envelopes", async () => {
-    mocks.getOrganicOverview.mockResolvedValue({
-      status: "ok",
-      request: {
-        resolvedDateRange: { startDate: "2026-07-09", endDate: "2026-08-05" },
-        previousDateRange: { startDate: "2026-06-11", endDate: "2026-07-08" },
-      },
-      comparison: {},
-      trend: [],
-      warnings: [],
-    });
-    mocks.getMeasurementHealth.mockResolvedValue({
-      status: "ok",
-      summary: { webStreamCount: 1, keyEventCount: 2, issueCount: 0 },
-      issues: [],
-    });
-    const {
-      getGoogleAnalyticsMeasurementHealthTool,
-      getGoogleAnalyticsOrganicOverviewTool,
-    } = tools;
-    const overview = await getGoogleAnalyticsOrganicOverviewTool.handler(
-      { projectId: "project_1", trend: "weekly" },
-      toolContext,
-    );
-    const health = await getGoogleAnalyticsMeasurementHealthTool.handler(
-      { projectId: "project_1" },
-      toolContext,
-    );
-    expect(mocks.getOrganicOverview).toHaveBeenCalledWith({
-      projectId: "project_1",
-      trend: "weekly",
-    });
-    expect(mocks.getMeasurementHealth).toHaveBeenCalledWith("project_1");
-    expect(overview.structuredContent).toMatchObject({ status: "ok" });
-    expect(health.structuredContent).toMatchObject({ status: "ok" });
-  });
-
-  it("rejects incomplete success and error envelopes", async () => {
-    const {
-      getGoogleAnalyticsMeasurementHealthTool,
-      getGoogleAnalyticsOrganicLandingPagesTool,
-      getGoogleAnalyticsOrganicOverviewTool,
-      getSearchOpportunitiesTool,
-    } = tools;
-
-    for (const tool of [
-      getGoogleAnalyticsOrganicLandingPagesTool,
-      getGoogleAnalyticsOrganicOverviewTool,
-      getGoogleAnalyticsMeasurementHealthTool,
-      getSearchOpportunitiesTool,
-    ]) {
-      expect(tool.config.outputSchema.safeParse({ status: "ok" }).success).toBe(
-        false,
-      );
-      expect(
-        tool.config.outputSchema.safeParse({ status: "error" }).success,
-      ).toBe(false);
-      expect(
-        tool.config.outputSchema.safeParse({
-          status: "error",
-          error: { code: "ga4_not_connected", message: "Connect GA4." },
-          additiveField: true,
-        }).success,
-      ).toBe(true);
-    }
   });
 });

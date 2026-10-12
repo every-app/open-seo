@@ -7,8 +7,8 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn<typeof fetch>(),
 }));
 
-vi.mock("@/lib/auth", () => ({
-  getAuth: () => ({ api: { getAccessToken: mocks.getAccessToken } }),
+vi.mock("@/server/features/google/googleOAuth", () => ({
+  getGoogleAccessToken: mocks.getAccessToken,
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   getOptionalEnvValue: () => Promise.resolve("developer-token"),
@@ -19,7 +19,7 @@ const client = () =>
 
 describe("createGoogleAdsClient", () => {
   beforeEach(() => {
-    mocks.getAccessToken.mockResolvedValue({ accessToken: "ads_tok" });
+    mocks.getAccessToken.mockResolvedValue("ads_tok");
     // A fresh Response per call: a body can only be read once.
     mocks.fetch.mockImplementation(() =>
       Promise.resolve(
@@ -43,7 +43,7 @@ describe("createGoogleAdsClient", () => {
   it("retries after a failed mint instead of failing every later request", async () => {
     mocks.getAccessToken
       .mockRejectedValueOnce(new Error("transient refresh failure"))
-      .mockResolvedValue({ accessToken: "ads_tok" });
+      .mockResolvedValue("ads_tok");
     const ads = client();
     await expect(ads.listAccessibleCustomers()).rejects.toBeInstanceOf(
       GoogleAdsTokenError,

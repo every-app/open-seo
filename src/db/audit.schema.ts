@@ -83,6 +83,8 @@ export const auditPages = sqliteTable(
     h4Count: integer("h4_count").notNull().default(0),
     h5Count: integer("h5_count").notNull().default(0),
     h6Count: integer("h6_count").notNull().default(0),
+    // No longer written; existing rows still hold data. Drop with images_json
+    // and hreflang_tags_json once no deployed code references them.
     headingOrderJson: text("heading_order_json"),
     // Content
     wordCount: integer("word_count").notNull().default(0),

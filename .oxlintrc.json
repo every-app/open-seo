@@ -11,7 +11,7 @@
     ".output",
     "web",
     "src/routeTree.gen.ts",
-    "worker-configuration.d.ts",
+    "src/worker-configuration.d.ts",
     "scripts"
   ],
   "rules": {

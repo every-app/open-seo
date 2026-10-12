@@ -13,6 +13,7 @@ import * as sqliteGoogleAds from "./google-ads.schema";
 import * as sqliteGoogleIntegrationHealth from "./google-integration-health.schema";
 import * as sqliteGsc from "./gsc.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
+import * as sqliteAiVisibility from "./ai-visibility.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgSeoHistory from "./pg/seo-history.schema";
 import * as pgProjectContext from "./pg/project-context.schema";
@@ -27,6 +28,7 @@ import * as pgGoogleAds from "./pg/google-ads.schema";
 import * as pgGoogleIntegrationHealth from "./pg/google-integration-health.schema";
 import * as pgGsc from "./pg/gsc.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
+import * as pgAiVisibility from "./pg/ai-visibility.schema";
 
 // Canonical schema barrel. Repositories import their tables from here and the
 // provider-aware `db` from "@/db", so each repository is written ONCE for both
@@ -51,7 +53,8 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteGoogleAds &
   typeof sqliteGoogleIntegrationHealth &
   typeof sqliteGsc &
-  typeof sqliteTelemetry;
+  typeof sqliteTelemetry &
+  typeof sqliteAiVisibility;
 
 const runtimeSchema =
   getDatabaseProvider() === "postgres"
@@ -70,6 +73,7 @@ const runtimeSchema =
         ...pgGoogleIntegrationHealth,
         ...pgGsc,
         ...pgTelemetry,
+        ...pgAiVisibility,
       }
     : {
         ...sqliteApp,
@@ -86,6 +90,7 @@ const runtimeSchema =
         ...sqliteGoogleIntegrationHealth,
         ...sqliteGsc,
         ...sqliteTelemetry,
+        ...sqliteAiVisibility,
       };
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- guarded by schema-parity.test.ts
@@ -107,6 +112,8 @@ export const {
   projectActivationState,
   dashboardStepDismissals,
   backlinkSnapshots,
+  dataRefreshClaims,
+  crawlerCredentials,
   projectContextSections,
   projectCompetitors,
   projectKeyPages,
@@ -132,4 +139,10 @@ export const {
   googleIntegrationHealth,
   gscConnections,
   telemetryState,
+  aiTrackers,
+  aiPrompts,
+  aiRuns,
+  aiObservations,
+  aiSources,
+  aiMatches,
 } = schema;

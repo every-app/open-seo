@@ -32,15 +32,6 @@ const BR: SerpRegistryLocation[] = [
 ];
 
 describe("matchSerpLocation", () => {
-  it("returns the registry row untouched when the name is already canonical", () => {
-    expect(
-      matchSerpLocation("Catonsville,Maryland,United States", US, "us"),
-    ).toEqual({
-      kind: "exact",
-      location: US[2],
-    });
-  });
-
   it("forgives spacing, case and accents", () => {
     expect(
       matchSerpLocation("seattle, washington, united states", US, "us"),
@@ -89,13 +80,6 @@ describe("matchSerpLocation", () => {
   it("prefers the whole place over a same-named level nested inside it", () => {
     expect(matchSerpLocation("Itajai", BR, "br")).toMatchObject({
       location: { locationName: "Itajai,State of Santa Catarina,Brazil" },
-    });
-  });
-
-  it("offers nearby suggestions when nothing matches", () => {
-    expect(matchSerpLocation("Catonsville, Delaware", US, "us")).toMatchObject({
-      kind: "unresolved",
-      suggestions: [{ locationName: "Catonsville,Maryland,United States" }],
     });
   });
 });

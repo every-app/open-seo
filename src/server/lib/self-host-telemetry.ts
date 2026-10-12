@@ -38,13 +38,13 @@ const ONBOARDING_CHECK_INTERVAL_MS = 60 * 1000;
 const STEADY_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const TELEMETRY_STATE_ID = 1;
 
-export function getHeartbeatIntervalMs(installAgeMs: number) {
+function getHeartbeatIntervalMs(installAgeMs: number) {
   return installAgeMs < ONBOARDING_WINDOW_MS
     ? ONBOARDING_HEARTBEAT_INTERVAL_MS
     : DAILY_HEARTBEAT_INTERVAL_MS;
 }
 
-export function getCheckIntervalMs(installAgeMs: number | null) {
+function getCheckIntervalMs(installAgeMs: number | null) {
   if (installAgeMs === null) return 0;
   return installAgeMs < ONBOARDING_WINDOW_MS
     ? ONBOARDING_CHECK_INTERVAL_MS

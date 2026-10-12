@@ -4,13 +4,17 @@ import {
   asc,
   desc,
   eq,
+  exists,
   gt,
   inArray,
   lt,
+  ne,
   notExists,
+  or,
   sql,
 } from "drizzle-orm";
 import { db } from "@/db";
+import { runBatch } from "@/db/runBatch";
 import {
   invitation,
   member,
@@ -120,6 +124,99 @@ async function getMembership(userId: string, organizationId: string) {
   return membership ?? null;
 }
 
+async function getMemberInOrganization(
+  memberId: string,
+  organizationId: string,
+) {
+  const [membership] = await db
+    .select({ userId: member.userId, role: member.role })
+    .from(member)
+    .where(
+      and(eq(member.id, memberId), eq(member.organizationId, organizationId)),
+    )
+    .limit(1);
+
+  return membership ?? null;
+}
+
+// Promotes the new owner and demotes the current owner to admin in one atomic
+// batch. Each update re-checks the other member row, so a concurrent removal
+// or role change turns the whole transfer into a no-op instead of leaving the
+// org with two owners or none. Naming the owner's own member row is a no-op too.
+async function transferOwnership(input: {
+  organizationId: string;
+  ownerUserId: string;
+  newOwnerMemberId: string;
+}) {
+  const currentOwner = aliasedTable(member, "current_owner");
+  const newOwner = aliasedTable(member, "new_owner");
+
+  await runBatch((tx) => [
+    // Row-lock both members first. Postgres runs the batch as a READ
+    // COMMITTED transaction, so without this a concurrent transfer could
+    // promote a second member, or a removal could land between the two
+    // updates. A blocked transaction resumes after this one commits and its
+    // re-checks then see the new roles. No-op write on D1, whose batch is
+    // already serialized.
+    tx
+      .update(member)
+      .set({ role: sql`${member.role}` })
+      .where(
+        and(
+          eq(member.organizationId, input.organizationId),
+          or(
+            eq(member.userId, input.ownerUserId),
+            eq(member.id, input.newOwnerMemberId),
+          ),
+        ),
+      ),
+    tx
+      .update(member)
+      .set({ role: "owner" })
+      .where(
+        and(
+          eq(member.id, input.newOwnerMemberId),
+          eq(member.organizationId, input.organizationId),
+          exists(
+            tx
+              .select({ id: currentOwner.id })
+              .from(currentOwner)
+              .where(
+                and(
+                  eq(currentOwner.organizationId, input.organizationId),
+                  eq(currentOwner.userId, input.ownerUserId),
+                  eq(currentOwner.role, "owner"),
+                ),
+              ),
+          ),
+        ),
+      ),
+    tx
+      .update(member)
+      .set({ role: "admin" })
+      .where(
+        and(
+          eq(member.organizationId, input.organizationId),
+          eq(member.userId, input.ownerUserId),
+          eq(member.role, "owner"),
+          exists(
+            tx
+              .select({ id: newOwner.id })
+              .from(newOwner)
+              .where(
+                and(
+                  eq(newOwner.id, input.newOwnerMemberId),
+                  eq(newOwner.organizationId, input.organizationId),
+                  ne(newOwner.userId, input.ownerUserId),
+                  eq(newOwner.role, "owner"),
+                ),
+              ),
+          ),
+        ),
+      ),
+  ]);
+}
+
 // Fallback active-org choice when there is no valid last-active pointer: the
 // most recently joined org, so a just-accepted invitation wins over the
 // signup-minted personal workspace.
@@ -190,6 +287,8 @@ export const AuthRepository = {
   findFirstFoundedOrganizationIdForUser,
   findNewestMembershipForUser,
   getMembership,
+  getMemberInOrganization,
+  transferOwnership,
   listMembershipsForUser,
   getLastActiveOrganizationId,
   setLastActiveOrganization,

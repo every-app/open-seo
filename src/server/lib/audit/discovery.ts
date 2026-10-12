@@ -4,6 +4,8 @@
 import robotsParser from "robots-parser";
 import { XMLParser } from "fast-xml-parser";
 import { isSameOrigin, normalizeUrl } from "./url-utils";
+import { isCrawlableUrl } from "./url-policy";
+import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
 
 const SITEMAP_FETCH_TIMEOUT_MS = 15_000;
 // robots.txt is checkpointed as durable Workflow step state (~1MiB cap, shared
@@ -37,19 +39,67 @@ export interface RobotsResult {
  * from parsing so Workflows can checkpoint the text as durable step state and
  * re-derive the parsed result deterministically on replay.
  */
-async function fetchRobotsTxtText(origin: string): Promise<string | null> {
+async function fetchRobotsTxtText(
+  origin: string,
+  access?: CrawlerAccess | null,
+): Promise<string | null> {
   try {
-    const response = await fetch(`${origin}/robots.txt`, {
-      headers: { "User-Agent": "OpenSEO-Audit/1.0" },
-      signal: AbortSignal.timeout(10_000),
-    });
-
-    if (!response.ok) return null;
-    return (await response.text()).slice(0, MAX_ROBOTS_TXT_BYTES);
+    const fetched = await fetchFollowingRedirects(
+      `${origin}/robots.txt`,
+      10_000,
+      access,
+    );
+    if (!fetched?.response.ok) return null;
+    return (await fetched.response.text()).slice(0, MAX_ROBOTS_TXT_BYTES);
   } catch (error) {
     console.warn("Failed to fetch robots.txt:", error);
     return null;
   }
+}
+
+const MAX_DISCOVERY_REDIRECT_HOPS = 5;
+
+/**
+ * Redirects are followed by hand so each hop is revalidated against the crawl
+ * policy and crawler-access headers — bot-protection credentials — are
+ * re-matched against the hop's host instead of riding along to another site.
+ */
+async function fetchFollowingRedirects(
+  url: string,
+  timeoutMs: number,
+  access: CrawlerAccess | null | undefined,
+): Promise<{ response: Response; finalUrl: string } | null> {
+  // One budget for the whole chain, as the automatic follow had.
+  const deadline = Date.now() + timeoutMs;
+  let current = url;
+  for (let hop = 0; hop <= MAX_DISCOVERY_REDIRECT_HOPS; hop++) {
+    const response = await fetch(current, {
+      headers: {
+        "User-Agent": "OpenSEO-Audit/1.0",
+        ...crawlerHeadersFor(current, access),
+      },
+      redirect: "manual",
+      signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
+    });
+
+    if (response.status < 300 || response.status >= 400) {
+      return { response, finalUrl: current };
+    }
+
+    const location = response.headers.get("location");
+    await response.body?.cancel();
+    if (!location) return null;
+
+    let next: string;
+    try {
+      next = new URL(location, current).toString();
+    } catch {
+      return null;
+    }
+    if (!isCrawlableUrl(next)) return null;
+    current = next;
+  }
+  return null;
 }
 
 /** Deterministic: same text in, same result out. Null = everything allowed. */
@@ -158,7 +208,10 @@ async function readBodyCapped(
   return new TextDecoder().decode(joined);
 }
 
-async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
+async function fetchSitemapDocumentWithRetry(
+  sitemapUrl: string,
+  access?: CrawlerAccess | null,
+): Promise<{
   nestedSitemaps: string[];
   pageUrls: string[];
   timedOut: boolean;
@@ -172,12 +225,17 @@ async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
 
   for (let attempt = 0; attempt <= SITEMAP_RETRIES; attempt++) {
     try {
-      const response = await fetch(normalizedSitemapUrl, {
-        headers: { "User-Agent": "OpenSEO-Audit/1.0" },
-        signal: AbortSignal.timeout(SITEMAP_FETCH_TIMEOUT_MS),
-      });
+      const fetched = await fetchFollowingRedirects(
+        normalizedSitemapUrl,
+        SITEMAP_FETCH_TIMEOUT_MS,
+        access,
+      );
+      if (!fetched) {
+        return { nestedSitemaps: [], pageUrls: [], timedOut: false };
+      }
+      const { response } = fetched;
 
-      const finalUrl = normalizeUrl(response.url, normalizedSitemapUrl);
+      const finalUrl = normalizeUrl(fetched.finalUrl, normalizedSitemapUrl);
       if (!finalUrl || !isSameOrigin(finalUrl, normalizedSitemapUrl)) {
         return { nestedSitemaps: [], pageUrls: [], timedOut: false };
       }
@@ -226,8 +284,9 @@ async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
 export async function discoverUrls(
   origin: string,
   maxPages = 50,
+  access?: CrawlerAccess | null,
 ): Promise<{ urls: string[]; robotsText: string | null }> {
-  const robotsText = await fetchRobotsTxtText(origin);
+  const robotsText = await fetchRobotsTxtText(origin, access);
   const robots = parseRobotsTxt(origin, robotsText);
 
   // Collect sitemap URLs: from robots.txt + default location
@@ -269,7 +328,10 @@ export async function discoverUrls(
         seenSitemapDocs.add(normalizedUrl);
         fetchedDocs += 1;
 
-        const result = await fetchSitemapDocumentWithRetry(normalizedUrl);
+        const result = await fetchSitemapDocumentWithRetry(
+          normalizedUrl,
+          access,
+        );
         if (
           result.pageUrls.length === 0 &&
           result.nestedSitemaps.length === 0

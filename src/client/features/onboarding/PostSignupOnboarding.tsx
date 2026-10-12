@@ -1,5 +1,5 @@
 import { OnboardingCard } from "./OnboardingCard";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 import { Fragment } from "react";
 import {
@@ -8,12 +8,17 @@ import {
   INTEREST_OPTIONS,
   ONBOARDING_LAST_STEP,
   ONBOARDING_OPTION_LABELS,
+  ONBOARDING_STEPS,
   type OnboardingAnswers,
   SOURCE_OPTIONS,
   WORK_FOR_OPTIONS,
 } from "@/client/features/onboarding/onboardingModel";
 import { AgentSetup } from "@/client/features/ai-mcp/AgentSetup";
+import { WebsiteOnboardingStep } from "@/client/features/onboarding/WebsiteOnboardingStep";
 import { SearchConsoleOnboardingStep } from "@/client/features/onboarding/SearchConsoleOnboardingStep";
+import { WizardFooter } from "@/client/features/onboarding/WizardFooter";
+import { Input } from "@/client/components/ui/input";
+import { Toggle } from "@/client/components/ui/toggle";
 
 type PostSignupOnboardingProps = {
   step: number;
@@ -22,7 +27,7 @@ type PostSignupOnboardingProps = {
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
-  onFinish: (mcpSetupIntent?: "yes" | "no") => void;
+  onFinish: () => void;
   isSaving: boolean;
   accountMenu: ReactNode;
 };
@@ -38,14 +43,14 @@ export function PostSignupOnboarding({
   isSaving,
   accountMenu,
 }: PostSignupOnboardingProps) {
+  const stepName = ONBOARDING_STEPS[step];
+  const isLastStep = step === ONBOARDING_LAST_STEP;
   const canContinue =
-    step === 0
+    stepName === "interests"
       ? answers.selectedInterests.length > 0
-      : step === 1
+      : stepName === "work_for"
         ? Boolean(answers.workFor)
-        : step === 2
-          ? Boolean(answers.source)
-          : true;
+        : Boolean(answers.source);
 
   const updateAnswers = (patch: Partial<OnboardingAnswers>) =>
     onAnswersChange({ ...answers, ...patch });
@@ -54,8 +59,18 @@ export function PostSignupOnboarding({
     <>
       {accountMenu}
       <OnboardingCard step={step + 1} total={ONBOARDING_LAST_STEP + 1}>
-        <fieldset disabled={isSaving}>
-          {step === 0 ? (
+        <fieldset disabled={isSaving} className="min-w-0">
+          {stepName === "website" ? (
+            <WebsiteOnboardingStep onNext={onNext} onSkip={onSkip} />
+          ) : stepName === "search_console" ? (
+            <SearchConsoleOnboardingStep
+              onNext={onNext}
+              onBack={onBack}
+              onSkip={onSkip}
+            />
+          ) : stepName === "agent_setup" ? (
+            <AgentSetup onNext={onNext} onBack={onBack} disabled={isSaving} />
+          ) : stepName === "interests" ? (
             <OnboardingChoiceGroup
               title="What brings you here?"
               description="Pick up to three things you want to work on."
@@ -75,7 +90,7 @@ export function PostSignupOnboarding({
               }
               multiple
             />
-          ) : step === 1 ? (
+          ) : stepName === "work_for" ? (
             <OnboardingChoiceGroup
               title="Who are you doing SEO for?"
               options={[...WORK_FOR_OPTIONS]}
@@ -83,16 +98,16 @@ export function PostSignupOnboarding({
               onToggle={(workFor) => updateAnswers({ workFor })}
               otherValue={answers.workForOther}
               onOtherChange={(workForOther) => updateAnswers({ workForOther })}
-              followUp={{
-                showForValue: CLIENT_WORK_FOR,
-                label: "About how many client sites do you work on?",
-                options: [...CLIENT_WEBSITE_COUNT_OPTIONS],
-                value: answers.clientWebsiteCount,
-                onChange: (clientWebsiteCount) =>
-                  updateAnswers({ clientWebsiteCount }),
-              }}
+              followUp={
+                <ClientWebsiteCountPicker
+                  value={answers.clientWebsiteCount}
+                  onChange={(clientWebsiteCount) =>
+                    updateAnswers({ clientWebsiteCount })
+                  }
+                />
+              }
             />
-          ) : step === 2 ? (
+          ) : (
             <OnboardingChoiceGroup
               title="How did you find OpenSEO?"
               options={[...SOURCE_OPTIONS]}
@@ -101,59 +116,16 @@ export function PostSignupOnboarding({
               otherValue={answers.sourceOther}
               onOtherChange={(sourceOther) => updateAnswers({ sourceOther })}
             />
-          ) : step === 3 ? (
-            <SearchConsoleOnboardingStep
-              onNext={onNext}
-              onBack={onBack}
-              onSkip={onSkip}
-            />
-          ) : (
-            <AgentSetup
-              onComplete={onFinish}
-              onBack={onBack}
-              disabled={isSaving}
-            />
           )}
 
-          {step < 3 && (
-            <div className="mt-8 flex items-center justify-between gap-3">
-              {step > 0 ? (
-                <button
-                  type="button"
-                  className="flex min-h-10 items-center gap-1.5 text-xs text-base-content/60 hover:text-base-content"
-                  onClick={onBack}
-                >
-                  <ArrowLeft className="size-3.5" /> Back
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={onSkip}
-                >
-                  Skip
-                </button>
-              )}
-              <div className="flex items-center gap-2">
-                {step > 0 && (
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm text-base-content/55"
-                    onClick={onSkip}
-                  >
-                    Skip
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  disabled={!canContinue || isSaving}
-                  onClick={onNext}
-                >
-                  Continue <ArrowRight className="size-4" />
-                </button>
-              </div>
-            </div>
+          {step > ONBOARDING_STEPS.indexOf("agent_setup") && (
+            <WizardFooter
+              onBack={onBack}
+              onSkip={isLastStep ? onFinish : onSkip}
+              onContinue={isLastStep ? onFinish : onNext}
+              continueLabel={isLastStep ? "Finish" : "Continue"}
+              continueDisabled={!canContinue || isSaving}
+            />
           )}
         </fieldset>
       </OnboardingCard>
@@ -182,17 +154,10 @@ function OnboardingChoiceGroup({
   onOtherChange: (value: string) => void;
   multiple?: boolean;
   maxSelections?: number;
-  followUp?: {
-    showForValue: string;
-    label: string;
-    options: string[];
-    value: string;
-    onChange: (value: string) => void;
-  };
+  /** Shown under the "My clients" option while it is selected. */
+  followUp?: ReactNode;
 }) {
   const isOtherSelected = selectedValues.includes("Other");
-  const showFollowUp =
-    followUp !== undefined && selectedValues.includes(followUp.showForValue);
   const atLimit =
     maxSelections !== undefined && selectedValues.length >= maxSelections;
 
@@ -201,7 +166,7 @@ function OnboardingChoiceGroup({
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         {description ? (
-          <p className="mt-3 text-sm leading-relaxed text-base-content/60">
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {description}
           </p>
         ) : null}
@@ -211,76 +176,75 @@ function OnboardingChoiceGroup({
         {options.map((option) => {
           const selected = selectedValues.includes(option);
           const disabled = atLimit && !selected;
-          const showFollowUpHere =
-            showFollowUp && followUp?.showForValue === option;
 
           return (
             <Fragment key={option}>
-              <button
-                type="button"
-                className={`flex min-h-11 items-center gap-3 rounded-full border px-4 py-2.5 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary ${selected ? "border-primary bg-primary/5 text-primary" : "border-base-300 hover:bg-base-200"} disabled:cursor-not-allowed disabled:opacity-35`}
-                aria-pressed={selected}
+              <Toggle
+                variant="outline"
+                pressed={selected}
+                className={`h-auto min-h-11 gap-3 rounded-full px-4 py-2.5 text-left font-normal disabled:opacity-35 ${selected ? "border-primary bg-primary/5 text-primary aria-pressed:bg-primary/5" : "border-border hover:bg-background"}`}
                 disabled={disabled}
-                onClick={() => onToggle(option)}
+                onPressedChange={() => onToggle(option)}
               >
                 <span
-                  className={`flex size-4 shrink-0 items-center justify-center border ${multiple ? "rounded" : "rounded-full"} ${selected ? "border-primary bg-primary text-primary-content" : "border-base-content/30"}`}
+                  className={`flex size-4 shrink-0 items-center justify-center border ${multiple ? "rounded" : "rounded-full"} ${selected ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30"}`}
                 >
                   {selected && <Check className="size-3" />}
                 </span>
                 <span className="capitalize">
                   {ONBOARDING_OPTION_LABELS[option] ?? option}
                 </span>
-              </button>
+              </Toggle>
 
-              {showFollowUpHere && followUp ? (
-                <div className="w-full rounded-lg border border-base-300 bg-base-200/40 p-4">
-                  <p className="text-sm text-base-content/70">
-                    {followUp.label}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {followUp.options.map((followUpOption) => {
-                      const followUpSelected =
-                        followUp.value === followUpOption;
-
-                      return (
-                        <button
-                          key={followUpOption}
-                          type="button"
-                          className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                            followUpSelected
-                              ? "border-base-content bg-base-200 text-base-content"
-                              : "border-base-300 text-base-content/75 hover:border-base-content/40 hover:bg-base-200/60"
-                          }`}
-                          aria-pressed={followUpSelected}
-                          onClick={() =>
-                            followUp.onChange(
-                              followUpSelected ? "" : followUpOption,
-                            )
-                          }
-                        >
-                          {followUpOption}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
+              {selected && option === CLIENT_WORK_FOR ? followUp : null}
             </Fragment>
           );
         })}
       </div>
 
       {isOtherSelected ? (
-        <input
+        <Input
           type="text"
-          className="input input-bordered mt-4 w-full"
+          className="mt-4 border-foreground/20 bg-card text-base md:text-base"
           aria-label={multiple ? "Other tasks" : "Other answer"}
           placeholder={multiple ? "Tell us what else..." : "Tell us more..."}
           value={otherValue}
           onChange={(event) => onOtherChange(event.target.value)}
         />
       ) : null}
+    </div>
+  );
+}
+
+function ClientWebsiteCountPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="w-full rounded-lg border border-border bg-background/40 p-4">
+      <p className="text-sm text-foreground/70">
+        About how many client sites do you work on?
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {CLIENT_WEBSITE_COUNT_OPTIONS.map((option) => {
+          const selected = value === option;
+
+          return (
+            <Toggle
+              key={option}
+              variant="outline"
+              pressed={selected}
+              className={`h-auto rounded-md px-3 py-1.5 font-normal ${selected ? "border-foreground aria-pressed:bg-background" : "border-border text-foreground/75 hover:border-foreground/40 hover:bg-background/60"}`}
+              onPressedChange={() => onChange(selected ? "" : option)}
+            >
+              {option}
+            </Toggle>
+          );
+        })}
+      </div>
     </div>
   );
 }

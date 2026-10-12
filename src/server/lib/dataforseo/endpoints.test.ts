@@ -1,16 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/lib/runtime-env", () => ({
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
 }));
 
+// Skip the live model-catalog fetch (covered in llm-models.test.ts); the
+// unknown "claude-sonnet-4-0" keeps the reject-before-dispatch test honest.
+vi.mock("@/server/lib/dataforseo/llm-models", () => ({
+  isKnownLlmModelName: vi.fn(
+    async (_slug: string, name: string) => name !== "claude-sonnet-4-0",
+  ),
+}));
+
 import { fetchQuestionsAnswers } from "@/server/lib/dataforseo/business";
 import {
-  fetchLlmAggregatedMetrics,
   fetchLlmCrossAggregatedMetrics,
-  fetchLlmMentionsSearch,
   fetchLlmResponse,
-  fetchLlmTopPages,
 } from "@/server/lib/dataforseo/ai";
 import { buildLlmTarget } from "@/server/lib/dataforseo/shared";
 
@@ -23,10 +28,6 @@ function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
 }
 
 describe("DataForSEO SDK-backed endpoints", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("uses the live endpoint for Google Business Q&A and returns items + billing", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
@@ -82,102 +83,6 @@ describe("DataForSEO SDK-backed endpoints", () => {
       path: ["v3", "business_data", "google", "questions_and_answers", "live"],
       costUsd: 0.0006,
     });
-  });
-
-  it("serializes LLM mentions domain targets for search, top pages, and aggregated endpoints", async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockImplementation((url) => {
-      const path =
-        typeof url === "string" || url instanceof URL
-          ? url.toString()
-          : url.url;
-      const result = path.includes("/aggregated_metrics/")
-        ? { total: { platform: [] } }
-        : { items: [] };
-
-      return Promise.resolve(
-        Response.json({
-          status_code: 20000,
-          tasks: [
-            {
-              status_code: 20000,
-              path: new URL(path).pathname.split("/").filter(Boolean),
-              cost: 0.0001,
-              result_count: 1,
-              result: [result],
-            },
-          ],
-        }),
-      );
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    const target = buildLlmTarget({
-      type: "domain",
-      value: "example.com",
-    });
-
-    await fetchLlmMentionsSearch({
-      target,
-      platform: "google",
-      locationCode: 2840,
-      languageCode: "en",
-    });
-    await fetchLlmAggregatedMetrics({
-      target,
-      platform: "google",
-      locationCode: 2840,
-      languageCode: "en",
-    });
-    await fetchLlmTopPages({
-      target,
-      platform: "google",
-      locationCode: 2840,
-      languageCode: "en",
-      itemsListLimit: 10,
-    });
-    const expectedTarget = [
-      {
-        search_scope: ["any"],
-        search_filter: "include",
-        domain: "example.com",
-        include_subdomains: true,
-      },
-    ];
-    const payloads = fetchMock.mock.calls.map(([, init]) =>
-      parseDataforseoRequestBody(init),
-    );
-
-    expect(payloads).toEqual([
-      [
-        {
-          target: expectedTarget,
-          location_code: 2840,
-          language_code: "en",
-          platform: "google",
-          limit: 100,
-        },
-      ],
-      [
-        {
-          target: expectedTarget,
-          location_code: 2840,
-          language_code: "en",
-          platform: "google",
-          internal_list_limit: 10,
-        },
-      ],
-      [
-        {
-          target: expectedTarget,
-          location_code: 2840,
-          language_code: "en",
-          platform: "google",
-          links_scope: "sources",
-          items_list_limit: 10,
-          internal_list_limit: 5,
-        },
-      ],
-    ]);
   });
 
   it("serializes cross-aggregated target groups", async () => {
@@ -253,52 +158,7 @@ describe("DataForSEO SDK-backed endpoints", () => {
     ]);
   });
 
-  it("serializes LLM mentions keyword targets", async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({
-        status_code: 20000,
-        tasks: [
-          {
-            status_code: 20000,
-            path: ["v3", "ai_optimization", "llm_mentions", "search", "live"],
-            cost: 0.0001,
-            result_count: 1,
-            result: [{ items: [] }],
-          },
-        ],
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    await fetchLlmMentionsSearch({
-      target: buildLlmTarget({
-        type: "keyword",
-        value: "Acme Storage",
-      }),
-      platform: "chat_gpt",
-      locationCode: 2840,
-      languageCode: "en",
-    });
-
-    expect(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])).toEqual([
-      {
-        target: [
-          {
-            search_scope: ["any", "brand_entities"],
-            search_filter: "include",
-            keyword: "Acme Storage",
-            match_type: "word_match",
-          },
-        ],
-        location_code: 2840,
-        language_code: "en",
-        platform: "chat_gpt",
-        limit: 100,
-      },
-    ]);
-  });
-
-  it("preserves web_search for Perplexity LLM responses", async () => {
+  it("drops the search country when web search is off — DataForSEO rejects it", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
         status_code: 20000,
@@ -351,6 +211,53 @@ describe("DataForSEO SDK-backed endpoints", () => {
         model_name: "sonar",
         web_search: false,
         max_output_tokens: 1024,
+      },
+    ]);
+  });
+});
+
+const okLlmResponse = () =>
+  Response.json({
+    status_code: 20000,
+    tasks: [{ status_code: 20000, path: ["v3"], cost: 0.001, result: [{}] }],
+  });
+
+describe("fetchLlmResponse force_web_search", () => {
+  it("sends it only for Claude — ChatGPT rejects it with a 40501 Invalid Field", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(okLlmResponse())
+      .mockResolvedValueOnce(okLlmResponse());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const base = { userPrompt: "What is OpenSEO?", webSearch: true } as const;
+    const claude = {
+      modelSlug: "claude",
+      modelName: "claude-sonnet-4-6",
+    } as const;
+    const chatGpt = {
+      modelSlug: "chat_gpt",
+      modelName: "gpt-5",
+      webSearchCountryCode: "US",
+    } as const;
+    await fetchLlmResponse({ ...base, ...claude });
+    await fetchLlmResponse({ ...base, ...chatGpt });
+
+    expect(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])).toEqual([
+      {
+        user_prompt: "What is OpenSEO?",
+        model_name: "claude-sonnet-4-6",
+        web_search: true,
+        force_web_search: true,
+        max_output_tokens: 1024,
+      },
+    ]);
+    expect(parseDataforseoRequestBody(fetchMock.mock.calls[1]?.[1])).toEqual([
+      {
+        user_prompt: "What is OpenSEO?",
+        model_name: "gpt-5",
+        web_search: true,
+        max_output_tokens: 1024,
         web_search_country_iso_code: "US",
       },
     ]);
@@ -358,10 +265,6 @@ describe("DataForSEO SDK-backed endpoints", () => {
 });
 
 describe("fetchLlmResponse model_name validation", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("rejects an unknown model_name before dispatching a paid LLM task", async () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
@@ -376,5 +279,77 @@ describe("fetchLlmResponse model_name validation", () => {
     ).rejects.toThrow(/Unsupported DataForSEO model_name/);
 
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("LLM response country requests", () => {
+  it.each([
+    ["chat_gpt", "gpt-5", "BG"],
+    ["perplexity", "sonar", "BG"],
+    ["claude", "claude-sonnet-4-6", "FI"],
+  ] as const)(
+    "sends the Bulgarian prompt and supported %s country hint unchanged",
+    async (modelSlug, modelName, country) => {
+      const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(okLlmResponse());
+      vi.stubGlobal("fetch", fetchMock);
+      const prompt =
+        "Кое студио в София бихте препоръчали за PPF защитно фолио?";
+      await fetchLlmResponse({
+        userPrompt: prompt,
+        modelSlug,
+        modelName,
+        webSearch: true,
+        webSearchCountryCode: country,
+      });
+      expect(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])).toEqual([
+        expect.objectContaining({
+          user_prompt: prompt,
+          web_search_country_iso_code: country,
+        }),
+      ]);
+    },
+  );
+
+  it.each([
+    ["claude", "claude-sonnet-4-6", "BG"],
+    ["gemini", "gemini-2.5-pro", "US"],
+    ["chat_gpt", "gpt-5", "XX"],
+  ] as const)(
+    "rejects unsupported %s country hints before a paid dispatch",
+    async (modelSlug, modelName, country) => {
+      const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(okLlmResponse());
+      vi.stubGlobal("fetch", fetchMock);
+      await expect(
+        fetchLlmResponse({
+          userPrompt: "Find local studios",
+          modelSlug,
+          modelName,
+          webSearchCountryCode: country,
+        }),
+      ).rejects.toThrow(/Unsupported web-search country/);
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("runs Gemini with provider defaults when no country was requested", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(okLlmResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchLlmResponse({
+      userPrompt: "Find local studios",
+      modelSlug: "gemini",
+      modelName: "gemini-2.5-pro",
+    });
+    expect(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])).toEqual([
+      {
+        user_prompt: "Find local studios",
+        model_name: "gemini-2.5-pro",
+        web_search: true,
+        max_output_tokens: 1024,
+      },
+    ]);
   });
 });

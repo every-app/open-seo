@@ -1,16 +1,13 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
 import { DashboardOnboarding } from "./DashboardOnboarding";
 import { setupSteps } from "./dashboardSteps";
 
 vi.mock("@/serverFunctions/dashboard", () => ({
   setDashboardStepDismissed: vi.fn(),
-}));
-vi.mock("@/client/features/integrations/googleLinkError", () => ({
-  getGoogleLinkError: () => null,
 }));
 vi.mock("./DashboardSetupAction", () => ({
   DashboardSetupAction: () => createElement("div", null, "Connection setup"),
@@ -23,6 +20,8 @@ const fresh: DashboardActivation = {
   googleAds: { connected: false, customerDescriptiveName: null },
   mcp: { authorizedAt: null, firstToolCallAt: null, cardDismissedAt: null },
   competitorClickedAt: null,
+  keywordsClickedAt: null,
+  hasAudit: false,
   hasMultipleProjects: false,
   hasTeammate: false,
   dismissedSteps: [],
@@ -41,33 +40,25 @@ function renderChecklist(activation = fresh) {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
-
 describe("dashboard onboarding visibility", () => {
-  it("opens Search Console setup on the successful OAuth return URL", () => {
-    vi.stubGlobal("window", {
-      location: new URL("https://app.openseo.so/p/project-a#connect-gsc"),
+  it("keeps skipped steps available to restore", () => {
+    const markup = renderChecklist({
+      ...fresh,
+      dismissedSteps: setupSteps.map((step) => step.id),
     });
-    const markup = renderChecklist();
-    expect(markup).toContain('aria-expanded="true" aria-controls="setup-gsc"');
-    expect(markup).toContain("Connection setup");
+    expect(markup).toContain("saved for later");
   });
 
-  it("keeps setup actions collapsed on an ordinary dashboard visit", () => {
-    vi.stubGlobal("window", {
-      location: new URL("https://app.openseo.so/p/project-a"),
-    });
-    const markup = renderChecklist();
-    expect(markup).not.toContain("Connection setup");
-    expect(markup).toContain('id="setup-gsc" hidden=""');
-  });
-
-  it("renders nothing once every step is completed or skipped", () => {
+  it("renders nothing once every step is complete", () => {
     expect(
       renderChecklist({
         ...fresh,
-        domain: "example.com",
-        dismissedSteps: setupSteps.map((step) => step.id),
+        competitorClickedAt: "2026-09-28",
+        keywordsClickedAt: "2026-09-28",
+        hasAudit: true,
+        mcp: { ...fresh.mcp, authorizedAt: "2026-09-28" },
+        hasTeammate: true,
+        hasMultipleProjects: true,
       }),
     ).toBe("");
   });

@@ -36,7 +36,7 @@ export function buildSamSystemPrompt(
     ].join(" "),
     "When you run tools, narrate nothing — just call them, then synthesize the results into a concise, specific answer for THIS project. Prefer doing the work over describing what you could do.",
     "You are talking to a signed-in user inside the OpenSEO app. Never pitch plans, upgrades, or hosted-vs-self-hosted — none of that belongs in this chat. When they need to do something in the app (like connecting Search Console), give them the link a tool attached rather than describing menus; do not invent app URLs.",
-    "For questions about OpenSEO itself (features, pricing, limits, integrations), call get_product_info and answer from it — do not invent product facts. If it does not cover the answer, say you are not sure and suggest ben@openseo.so.",
+    "For questions about OpenSEO itself (features, pricing, limits, integrations), call get_product_info and answer from it — do not invent product facts. If it does not cover the answer, say you are not sure and suggest support@openseo.so.",
     `Active project: "${project.projectName}" (projectId: ${project.projectId}).`,
     project.domain
       ? `Project website: ${project.domain}. Default market: ${market} (location ${project.locationCode}, language ${project.languageCode}).`

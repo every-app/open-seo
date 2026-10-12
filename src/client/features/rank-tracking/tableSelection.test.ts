@@ -10,6 +10,7 @@ function makeRow(id: string, selectedIds: Set<string>) {
   return {
     id,
     getIsSelected: () => selectedIds.has(id),
+    getCanSelect: () => id !== "locked",
   };
 }
 
@@ -46,32 +47,26 @@ function makeTable(ids: string[], selectedIds: Set<string>) {
 }
 
 describe("applyShiftRangeSelection", () => {
-  it("records the next selected state on a plain click", () => {
+  it("selects the visible range from an anchor set by a plain click", () => {
     const selectedIds = new Set<string>();
-    const table = makeTable(["a", "b"], selectedIds);
+    const table = makeTable(["a", "b", "c", "d"], selectedIds);
     const anchorRef: MutableRefObject<SelectionAnchor | null> = {
       current: null,
     };
-    const event = makeEvent(false);
 
+    const plainClick = makeEvent(false);
     expect(
       applyShiftRangeSelection(
-        event,
+        plainClick,
         makeRow("a", selectedIds),
         table,
         anchorRef,
       ),
     ).toBe(false);
     expect(anchorRef.current).toEqual({ id: "a", selected: true });
-    expect(event.defaultPrevented).toBe(false);
-  });
+    expect(plainClick.defaultPrevented).toBe(false);
+    selectedIds.add("a");
 
-  it("selects the visible range from a selected anchor", () => {
-    const selectedIds = new Set<string>(["a"]);
-    const table = makeTable(["a", "b", "c", "d"], selectedIds);
-    const anchorRef: MutableRefObject<SelectionAnchor | null> = {
-      current: { id: "a", selected: true },
-    };
     const event = makeEvent(true);
 
     expect(
@@ -103,5 +98,22 @@ describe("applyShiftRangeSelection", () => {
 
     expect(Array.from(selectedIds)).toEqual(["a"]);
     expect(anchorRef.current).toEqual({ id: "d", selected: false });
+  });
+
+  it("skips rows that can't be selected", () => {
+    const selectedIds = new Set<string>();
+    const table = makeTable(["a", "locked", "c"], selectedIds);
+    const anchorRef: MutableRefObject<SelectionAnchor | null> = {
+      current: { id: "a", selected: true },
+    };
+
+    applyShiftRangeSelection(
+      makeEvent(true),
+      makeRow("c", selectedIds),
+      table,
+      anchorRef,
+    );
+
+    expect(Array.from(selectedIds)).toEqual(["a", "c"]);
   });
 });

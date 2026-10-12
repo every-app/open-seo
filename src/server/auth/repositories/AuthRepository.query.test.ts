@@ -111,3 +111,71 @@ describe("findFirstFoundedOrganizationIdForUser", () => {
     ).toBeNull();
   });
 });
+
+describe("transferOwnership", () => {
+  async function roleOf(userId: string, organizationId = "org") {
+    return (await AuthRepository.getMembership(userId, organizationId))?.role;
+  }
+
+  beforeEach(async () => {
+    await insertMember({
+      organizationId: "org",
+      userId: "owner",
+      role: "owner",
+      createdAt: 1000,
+    });
+    await insertMember({
+      organizationId: "org",
+      userId: "teammate",
+      role: "admin",
+      createdAt: 2000,
+    });
+  });
+
+  it("makes the teammate the owner and the previous owner an admin", async () => {
+    await AuthRepository.transferOwnership({
+      organizationId: "org",
+      ownerUserId: "owner",
+      newOwnerMemberId: "org:teammate",
+    });
+
+    expect(await roleOf("owner")).toBe("admin");
+    expect(await roleOf("teammate")).toBe("owner");
+  });
+
+  it("changes nothing when the caller is not the owner", async () => {
+    await insertMember({
+      organizationId: "org",
+      userId: "other_admin",
+      role: "admin",
+      createdAt: 3000,
+    });
+
+    await AuthRepository.transferOwnership({
+      organizationId: "org",
+      ownerUserId: "teammate",
+      newOwnerMemberId: "org:other_admin",
+    });
+
+    expect(await roleOf("owner")).toBe("owner");
+    expect(await roleOf("other_admin")).toBe("admin");
+  });
+
+  it("leaves ownership unchanged when the new owner is not a member of the org", async () => {
+    await insertMember({
+      organizationId: "other_org",
+      userId: "outsider",
+      role: "owner",
+      createdAt: 3000,
+    });
+
+    await AuthRepository.transferOwnership({
+      organizationId: "org",
+      ownerUserId: "owner",
+      newOwnerMemberId: "other_org:outsider",
+    });
+
+    expect(await roleOf("owner")).toBe("owner");
+    expect(await roleOf("outsider", "other_org")).toBe("owner");
+  });
+});

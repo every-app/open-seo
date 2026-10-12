@@ -1,4 +1,10 @@
 import {
+  DataTableFilterGroup,
+  DataTableRangeFilter,
+} from "@/client/components/table/DataTableToolbar";
+import { Input } from "@/client/components/ui/input";
+import { Toggle } from "@/client/components/ui/toggle";
+import {
   KEYWORD_INTENT_ORDER,
   parseIntentFilter,
   toggleIntentFilter,
@@ -6,55 +12,37 @@ import {
 import { INTENT_LABELS } from "@/client/features/keywords/components/IntentBadge";
 import type { KeywordResearchControllerState } from "./types";
 
-export function FilterIntentSelect({
-  form,
-}: {
-  form: KeywordResearchControllerState["filtersForm"];
-}) {
+type FiltersForm = KeywordResearchControllerState["filtersForm"];
+
+export function FilterIntentSelect({ form }: { form: FiltersForm }) {
   return (
-    <div
-      role="group"
-      aria-labelledby="keyword-intent-filter-label"
-      className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2"
-    >
-      <p
-        id="keyword-intent-filter-label"
-        className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60"
-      >
-        Intent
-      </p>
+    <DataTableFilterGroup label="Intent">
       <form.Field name="intents">
         {(field) => {
           const selected = parseIntentFilter(field.state.value);
           return (
             <div className="flex flex-wrap gap-1.5">
-              {KEYWORD_INTENT_ORDER.map((intent) => {
-                const isActive = selected.includes(intent);
-                return (
-                  <button
-                    key={intent}
-                    type="button"
-                    aria-pressed={isActive}
-                    className={`btn btn-xs ${
-                      isActive
-                        ? "btn-primary"
-                        : "btn-ghost border border-base-300"
-                    }`}
-                    onClick={() =>
-                      field.handleChange(
-                        toggleIntentFilter(field.state.value, intent),
-                      )
-                    }
-                  >
-                    {INTENT_LABELS[intent]}
-                  </button>
-                );
-              })}
+              {KEYWORD_INTENT_ORDER.map((intent) => (
+                <Toggle
+                  key={intent}
+                  variant="outline"
+                  size="sm"
+                  className="aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary"
+                  pressed={selected.includes(intent)}
+                  onPressedChange={() =>
+                    field.handleChange(
+                      toggleIntentFilter(field.state.value, intent),
+                    )
+                  }
+                >
+                  {INTENT_LABELS[intent]}
+                </Toggle>
+              ))}
             </div>
           );
         }}
       </form.Field>
-    </div>
+    </DataTableFilterGroup>
   );
 }
 
@@ -64,27 +52,25 @@ export function FilterTextInput({
   label,
   placeholder,
 }: {
-  form: KeywordResearchControllerState["filtersForm"];
+  form: FiltersForm;
   name: "include" | "exclude";
   label: string;
   placeholder: string;
 }) {
   return (
-    <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {label}
-      </span>
+    <DataTableFilterGroup label={label}>
       <form.Field name={name}>
         {(field) => (
-          <input
-            className="input input-bordered input-sm bg-base-100"
+          <Input
+            aria-label={label}
+            className="h-7"
             placeholder={placeholder}
             value={field.state.value}
             onChange={(event) => field.handleChange(event.target.value)}
           />
         )}
       </form.Field>
-    </label>
+    </DataTableFilterGroup>
   );
 }
 
@@ -95,79 +81,33 @@ export function FilterRangeInputs({
   maxName,
   step,
 }: {
-  form: KeywordResearchControllerState["filtersForm"];
+  form: FiltersForm;
   title: string;
   minName: "minVol" | "minCpc" | "minKd";
   maxName: "maxVol" | "maxCpc" | "maxKd";
   step?: string;
 }) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {title}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <CompactRangeInput
-          form={form}
-          name={minName}
-          placeholder="Min"
-          step={step}
-        />
-        <CompactRangeInput
-          form={form}
-          name={maxName}
-          placeholder="Max"
-          step={step}
-        />
-      </div>
-    </div>
-  );
-}
-
-function CompactRangeInput({
-  form,
-  name,
-  placeholder,
-  step,
-}: {
-  form: KeywordResearchControllerState["filtersForm"];
-  name: "minVol" | "maxVol" | "minCpc" | "maxCpc" | "minKd" | "maxKd";
-  placeholder: string;
-  step?: string;
-}) {
-  return (
-    <form.Field name={name}>
-      {(field) => (
-        <input
-          className="input input-bordered input-xs bg-base-100"
-          placeholder={placeholder}
-          type="number"
-          step={step}
-          value={field.state.value}
-          onChange={(event) => field.handleChange(event.target.value)}
-        />
+    <form.Field name={minName}>
+      {(minField) => (
+        <form.Field name={maxName}>
+          {(maxField) => (
+            <DataTableRangeFilter
+              label={title}
+              min={{
+                step,
+                value: minField.state.value,
+                onChange: (event) => minField.handleChange(event.target.value),
+              }}
+              max={{
+                step,
+                value: maxField.state.value,
+                onChange: (event) => maxField.handleChange(event.target.value),
+              }}
+            />
+          )}
+        </form.Field>
       )}
     </form.Field>
-  );
-}
-
-export function EmptyFilterResults({
-  activeFilterCount,
-  resetFilters,
-}: {
-  activeFilterCount: number;
-  resetFilters: () => void;
-}) {
-  return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-4 text-base-content/50 gap-3">
-      <p className="text-sm font-medium">
-        No keywords match your current filters.
-      </p>
-      {activeFilterCount > 0 ? (
-        <button className="btn btn-ghost btn-sm" onClick={resetFilters}>
-          Clear filters
-        </button>
-      ) : null}
-    </div>
   );
 }

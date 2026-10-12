@@ -33,7 +33,7 @@ if (!existsSync(envFile)) {
   fail(
     `${em(envFile)} not found — create it first:`,
     "",
-    `  ${cmd("cp .env.selfhost.example .env.selfhost")}`,
+    `  ${cmd("cp deploy/.env.selfhost.example .env.selfhost")}`,
     "",
     `then set ${em("DATAFORSEO_API_KEY")} and ${em("ACCESS_ALLOWED_EMAILS")}.`,
   );

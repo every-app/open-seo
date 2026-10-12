@@ -1,8 +1,17 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getOnboardingAnswers } from "@/serverFunctions/onboarding";
 
-// 0 interests · 1 who for · 2 source · 3 Search Console · 4 agent setup
-export const ONBOARDING_LAST_STEP = 4;
+// Step names go to analytics alongside the index, so reports survive reorders.
+export const ONBOARDING_STEPS = [
+  "website",
+  "search_console",
+  "agent_setup",
+  "interests",
+  "work_for",
+  "source",
+] as const;
+export const ONBOARDING_LAST_STEP = ONBOARDING_STEPS.length - 1;
+const INTERESTS_STEP = ONBOARDING_STEPS.indexOf("interests");
 
 // Option values below are persisted and used by analytics. Change display copy
 // here instead of renaming those values, so historical answers stay comparable.
@@ -62,7 +71,6 @@ export type OnboardingAnswers = {
   clientWebsiteCount: string;
   source: string;
   sourceOther: string;
-  mcpSetupIntent?: "yes" | "no" | "";
 };
 
 /** Answers as persisted in the DB (read back via getOnboardingAnswers). */
@@ -71,7 +79,6 @@ type SavedOnboardingAnswers = {
   workFor: string | null;
   clientWebsiteCount: string | null;
   foundVia: string | null;
-  mcpSetupIntent: string | null;
 };
 
 export const onboardingAnswersQueryOptions = () =>
@@ -112,10 +119,6 @@ export function restoreOnboardingAnswers(
       work.value === CLIENT_WORK_FOR ? (saved.clientWebsiteCount ?? "") : "",
     source: found.value,
     sourceOther: found.other,
-    mcpSetupIntent:
-      saved.mcpSetupIntent === "yes" || saved.mcpSetupIntent === "no"
-        ? saved.mcpSetupIntent
-        : "",
   };
 }
 
@@ -126,7 +129,7 @@ export function restoreOnboardingAnswers(
 export function buildOnboardingPayload(
   answers: OnboardingAnswers,
   step: number,
-  extra: { completed?: boolean; mcpSetupIntent?: "yes" | "no" } = {},
+  extra: { completed?: boolean } = {},
 ) {
   const interestedFeatures = answers.selectedInterests.map((value) =>
     value === "Other" && answers.interestOther.trim()
@@ -147,12 +150,9 @@ export function buildOnboardingPayload(
       : answers.source || undefined;
 
   return {
-    ...(step >= 0 ? { interestedFeatures } : {}),
-    ...(step >= 1 ? { workFor, clientWebsiteCount } : {}),
-    ...(step >= 2 ? { foundVia } : {}),
-    ...(step >= ONBOARDING_LAST_STEP && answers.mcpSetupIntent
-      ? { mcpSetupIntent: answers.mcpSetupIntent }
-      : {}),
+    ...(step >= INTERESTS_STEP ? { interestedFeatures } : {}),
+    ...(step >= INTERESTS_STEP + 1 ? { workFor, clientWebsiteCount } : {}),
+    ...(step >= INTERESTS_STEP + 2 ? { foundVia } : {}),
     ...extra,
   };
 }

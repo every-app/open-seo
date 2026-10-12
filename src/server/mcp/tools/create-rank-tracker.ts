@@ -16,6 +16,7 @@ import {
   projectIdSchema,
 } from "@/server/mcp/schemas";
 import { domainField } from "@/types/schemas/domain";
+import { scheduleTimeSchema } from "@/types/schemas/schedule-time";
 
 const inputSchema = {
   projectId: projectIdSchema,
@@ -52,6 +53,11 @@ const inputSchema = {
     .optional()
     .describe(
       "Check schedule. Defaults to manual so creating a tracker cannot cause future credit spend. Scheduled checks may use credits later.",
+    ),
+  scheduleTime: scheduleTimeSchema
+    .optional()
+    .describe(
+      "When scheduled checks run. Pass the user's timeZone with it so their local time is converted for you; the schedule is then fixed in UTC and shifts an hour when their clocks change. Omit it unless the user asks for a specific time: the default spreads checks across quiet hours. Daily runs at this time every day, weekly on the given weekday, monthly at this time on the last day of the month. Checks start within about 15 minutes of the chosen time. Not valid with a manual schedule.",
     ),
 } as const;
 
@@ -96,6 +102,7 @@ export const createRankTrackerTool = {
       devices: args.devices ?? "mobile",
       serpDepth: args.serpDepth ?? 40,
       scheduleInterval: args.scheduleInterval ?? "manual",
+      scheduleTime: args.scheduleTime,
     });
     waitUntil(
       captureServerEvent({
@@ -113,7 +120,7 @@ export const createRankTrackerTool = {
     );
 
     return mcpResponse({
-      text: `Created rank tracker ${config.id} for ${config.domain} (${config.devices}, top ${config.serpDepth}, ${config.scheduleInterval}). No keywords were added, no check was started, and no credits were used.${config.locationName ? ` Local tracking for ${config.locationName}.` : ""}${config.scheduleInterval === "manual" ? "" : " Scheduled checks will spend credits after keywords are added; estimate and obtain approval before adding them."}`,
+      text: `Created rank tracker ${config.id} for ${config.domain} (${config.devices}, top ${config.serpDepth}, ${config.scheduleInterval}). No keywords were added, no check was started, and no credits were used.${config.locationName ? ` Local tracking for ${config.locationName}.` : ""}${config.nextCheckAt ? ` First scheduled check: ${config.nextCheckAt}.` : ""}${config.scheduleInterval === "manual" ? "" : " Scheduled checks will spend credits after keywords are added; estimate and obtain approval before adding them."}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

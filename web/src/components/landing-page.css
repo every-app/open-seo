@@ -144,14 +144,6 @@
   font-size: 12px;
   line-height: 1.4;
 }
-.itc-eyebrow {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.3;
-  letter-spacing: 0;
-  margin: 0 0 16px;
-  color: var(--ink-muted);
-}
 .itc-muted {
   color: var(--ink-muted);
 }
@@ -280,6 +272,40 @@
   border: 1px solid var(--hairline-soft);
   overflow: hidden;
   background: var(--canvas);
+}
+.itc-demo-video {
+  position: relative;
+}
+.itc-demo-play {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(17, 17, 17, 0.12);
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+.itc-demo-play:hover,
+.itc-demo-play:focus-visible {
+  background: rgba(17, 17, 17, 0.2);
+}
+.itc-demo-play:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: -3px;
+}
+.itc-demo-play-button {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: clamp(64px, 8vw, 96px);
+  height: clamp(64px, 8vw, 96px);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
 }
 
 /* ── Hero ── */
@@ -547,20 +573,6 @@
   margin-top: 24px;
 }
 
-/* ── Free tools row ── */
-.itc-free-tools-row {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-top: 32px;
-}
-
-.itc-free-tools-label {
-  font-weight: 500;
-  margin: 0;
-}
-
 /* ── MCP (the single orange moment) ── */
 .itc-mcp-section {
   background: #eee8de;
@@ -573,7 +585,7 @@
 .itc-mcp-grid {
   display: grid;
   gap: 48px;
-  align-items: center;
+  align-items: start;
 }
 @media (min-width: 980px) {
   .itc-mcp-grid {
@@ -631,6 +643,85 @@
 .itc-terminal .t-dim {
   color: var(--inverse-muted);
 }
+/* Recommended skills: slash-command names set like inline code, with the
+   descriptions sharing one left edge. */
+.itc-skill-list {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: center;
+}
+.itc-skill-list li {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: span 2;
+  align-items: center;
+}
+.itc-skill-code {
+  justify-self: start;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.itc-skill-blurb {
+  color: var(--ink-muted);
+  font-size: 16px;
+  line-height: 1.5;
+}
+@media (max-width: 479px) {
+  .itc-skill-list,
+  .itc-skill-list li {
+    grid-template-columns: 1fr;
+  }
+  .itc-skill-list li {
+    row-gap: 4px;
+  }
+}
+.itc-mcp-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-top: 32px;
+}
+.itc-toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.itc-toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  animation: itc-toast-in 0.2s ease;
+}
+@keyframes itc-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .itc-toast {
+    animation: none;
+  }
+}
 .itc-agent-icons {
   display: flex;
   flex-wrap: wrap;
@@ -650,6 +741,43 @@
 .itc-agent-icon svg {
   height: 28px;
   width: 28px;
+}
+
+/* ── Beyond data ── */
+.itc-inline-link {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-underline-offset: 4px;
+}
+.itc-inline-link:hover {
+  color: var(--ink-muted);
+}
+.itc-bd-cards {
+  display: grid;
+  gap: 16px;
+  margin-top: 40px;
+}
+@media (min-width: 768px) {
+  .itc-bd-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.itc-bd-card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+.itc-bd-icons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.itc-bd-link {
+  margin-top: auto;
+  padding-top: 16px;
+  font-size: 14px;
 }
 
 /* ── Footer ── */

@@ -8,9 +8,17 @@ const DARK_THEME_NAME = "openseo-dark";
 const THEME_STORAGE_KEY = "theme-preference";
 const THEME_CHANGE_EVENT = "theme-preference-change";
 
+// Set when localStorage cannot store a pick (private browsing, strict modes,
+// a full quota): the pick then holds for this page session and wins over
+// whatever localStorage still returns.
+let unsavedThemePreference: ThemePreference | null = null;
+
 function readThemePreference(): ThemePreference {
   if (typeof window === "undefined") {
     return "system";
+  }
+  if (unsavedThemePreference) {
+    return unsavedThemePreference;
   }
 
   try {
@@ -31,8 +39,9 @@ function writeThemePreference(themePreference: ThemePreference) {
     } else {
       window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
     }
+    unsavedThemePreference = null;
   } catch {
-    // localStorage can be unavailable in private browsing or strict browser modes.
+    unsavedThemePreference = themePreference;
   }
 }
 

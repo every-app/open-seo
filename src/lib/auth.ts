@@ -87,8 +87,9 @@ function createAuth() {
               // plugin lets an owner grant owner to another member. Owners
               // control billing, so a second owner is a billing-escalation
               // path (and, if the first owner then leaves, a fresh-org /
-              // free-grant loop at next sign-in). Ownership transfers stay a
-              // support action — reject owner here.
+              // free-grant loop at next sign-in). Ownership moves only through
+              // the transferOwnership server function, which swaps the two
+              // roles atomically — reject owner here.
               beforeUpdateMemberRole: async ({ newRole }) => {
                 if (
                   newRole
@@ -98,7 +99,7 @@ function createAuth() {
                 ) {
                   throw new APIError("BAD_REQUEST", {
                     message:
-                      "The owner role can't be granted from here. Contact support to transfer ownership.",
+                      "The owner role can't be granted from here. Use Transfer ownership in organization settings.",
                   });
                 }
               },
@@ -184,13 +185,11 @@ function createAuth() {
           },
         },
     socialProviders: getSocialProviders(),
-    // Where OAuth redirect-flow failures land when Better Auth can't honor a
-    // per-flow errorCallbackURL (Google-side errors like a canceled consent
-    // screen, replayed callback URLs, sign-in failures). Without this the
-    // default /api/auth/error page 302s to `/?error=...` and the dashboard
-    // silently discards the code. Self-hosted never serves these flows (its
-    // Google OAuth endpoints are hand-rolled), so the placeholder baseUrl
-    // there is harmless.
+    // Where Google sign-in failures land (canceled consent screen, replayed
+    // callback URLs). Without this the default /api/auth/error page 302s to
+    // `/?error=...` and the dashboard silently discards the code. Self-hosted
+    // never serves social sign-in, so the placeholder baseUrl there is
+    // harmless.
     onAPIError: { errorURL: `${baseUrl}/auth-error` },
     trustedOrigins: getTrustedOrigins(baseUrl),
     database,
@@ -330,10 +329,10 @@ function getHostedSecret() {
 
 function getSocialProviders() {
   // Google social login is hosted-only. Self-hosted builds the auth instance
-  // solely for Search Console token ops, which use the genericOAuth provider
-  // (createBaseAuthConfig) with its own creds — so it must NOT require the
+  // for sessions and for the token-encryption secret that Search Console /
+  // Analytics grants use (googleOAuth.ts) — so it must NOT require the
   // social-login config here, otherwise getAuth() construction would be coupled
-  // to GSC creds rather than just BETTER_AUTH_SECRET.
+  // to Google creds rather than just BETTER_AUTH_SECRET.
   if (!isHostedAuthMode(env.AUTH_MODE)) {
     return {};
   }

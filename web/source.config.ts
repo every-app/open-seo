@@ -13,7 +13,8 @@ export const blog = defineCollections({
   dir: "content/blogs",
   schema: pageSchema.extend({
     author: z.string(),
-    date: z.string(),
+    // YYYY-MM-DD: the blog index sorts on this string.
+    date: z.iso.date(),
   }),
 });
 

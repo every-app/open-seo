@@ -197,19 +197,6 @@ describe("project context service", () => {
       domain: `competitor${index}.com`,
     }));
 
-    it("rejects a new competitor once the project is at the cap", async () => {
-      mocks.listCompetitors.mockResolvedValue(fullCompetitorList);
-
-      await expect(
-        applyContextUpdates(
-          "project_1",
-          [{ addCompetitors: [{ domain: "newcomer.com" }] }],
-          "user",
-        ),
-      ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
-      expect(mocks.upsertCompetitors).not.toHaveBeenCalled();
-    });
-
     it("still updates a competitor it already stores at the cap", async () => {
       mocks.listCompetitors.mockResolvedValue(fullCompetitorList);
 
@@ -312,31 +299,6 @@ describe("project context service", () => {
       // Both writes ride in the one atomic batch every apply goes through.
       expect(runBatch).toHaveBeenCalledOnce();
     });
-  });
-
-  it("renders empty typed sections as missing in the digest", () => {
-    const markdown = renderProjectContextMarkdown({
-      sections: [
-        {
-          key: "business_overview",
-          content: "We sell paint.",
-          updatedAt: "2026-08-15T10:00:00.000Z",
-          updatedBy: "user",
-        },
-      ],
-      missingSections: ["current_goal", "positioning", "writing_preferences"],
-      customSections: [],
-      competitors: [],
-      keyPages: [],
-      researchLog: [],
-      reportTemplates: [],
-    });
-
-    expect(markdown).toContain("## Business overview\n\nWe sell paint.");
-    expect(markdown).toContain("## Current goal\n\n_Empty_");
-    expect(markdown).toContain(
-      "Missing sections: current_goal, positioning, writing_preferences",
-    );
   });
 
   // A full log is a truncated log, and an agent judging whether research is

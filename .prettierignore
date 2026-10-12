@@ -4,16 +4,16 @@ pnpm-lock.yaml
 # no parser for dotenv files; explicit `prettier <file>` aborts without this
 .env*
 routeTree.gen.ts
-.opencode/package.json
 
-# vendored skills are hash-pinned in skills-lock.json; don't reformat them
+# vendored skills are hash-pinned by the skills CLI; don't reformat them
 .agents/skills/
 # real copies synced from .agents/skills/ via `pnpm sync-plugin-skills` — must
 # stay byte-identical to the canonical source, not reformatted
 plugins/openseo/skills/
 dist/
-drizzle/
-drizzle-pg/
+# generated migrations; the drizzle-kit configs beside them are still formatted
+drizzle/sqlite/
+drizzle/pg/
 planning/
-worker-configuration.d.ts
+src/worker-configuration.d.ts
 web/

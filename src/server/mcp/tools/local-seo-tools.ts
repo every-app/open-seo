@@ -4,8 +4,10 @@ import {
   createDataforseoClient,
   fetchBusinessDataTaskResult,
   fetchBusinessListingsCategories,
+  fetchLocalSerpTaskResult,
   type BusinessTaskEndpoint,
   type BusinessTaskOutcome,
+  type LocalSerpTaskOutcome,
 } from "@/server/lib/dataforseo";
 import { AppError } from "@/server/lib/errors";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
@@ -226,7 +228,7 @@ export const getBusinessProfileTool = {
     }),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: false,
     },
   },
@@ -375,7 +377,7 @@ export const getBusinessReviewsTool = {
     }),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: false,
     },
   },
@@ -515,7 +517,7 @@ export const getBusinessUpdatesTool = {
     }),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: false,
     },
   },
@@ -677,7 +679,16 @@ const KM_PER_DEGREE_LATITUDE = 110.574;
 const KM_PER_DEGREE_LONGITUDE = 111.32;
 const MIN_LONGITUDE_COSINE = 0.01;
 const RANK_GRID_DEPTH = 20;
-const RANK_GRID_CONCURRENCY = 3;
+// The grid's searches run as queued Maps tasks (~5-40 s each, in parallel at
+// DataForSEO). Polling stops 40 s into the call so it answers inside the 60 s
+// many MCP clients wait; tasks still running are collected by the next call.
+const RANK_GRID_COLLECT_MS = 40_000;
+const RANK_GRID_POLL_INTERVAL_MS = 5000;
+// The posted task ids are the grid's receipt: the same grid again within this
+// window collects those searches instead of buying them twice, so a caller
+// that lost the response, or got "processing", can simply call again.
+const RANK_GRID_RECEIPT_TTL_SECONDS = 60 * 60;
+const rankGridReceiptSchema = z.array(z.string().nullable());
 // Without an explicit zoom DataForSEO infers one per coordinate, which yields
 // "No Search Results" for some points and makes ranks incomparable across the
 // grid. A fixed zoom fails the other way: a mobile viewport at zoom 14 spans
@@ -843,13 +854,34 @@ function matchGridItem(
   });
 }
 
-// A per-point failure usually means only that point's SERP failed, but these
-// codes mean every remaining call would fail (and possibly bill) the same way —
-// surface them instead of rendering a misleading grid.
-const GRID_ABORT_ERROR_CODES = new Set<string>([
-  "INSUFFICIENT_CREDITS",
-  "DATAFORSEO_AUTH_FAILED",
-]);
+/** Polls one grid task until it finishes or the deadline passes. */
+async function collectRankGridTask(
+  taskId: string | null,
+  deadline: number,
+): Promise<LocalSerpTaskOutcome> {
+  // A point DataForSEO refused at post time has no task to collect.
+  if (!taskId) {
+    return {
+      status: "failed",
+      message: "DataForSEO did not accept this search.",
+    };
+  }
+  for (;;) {
+    const outcome = await fetchLocalSerpTaskResult(taskId);
+    if (outcome.status === "failed") {
+      console.warn(
+        `[local-rank-grid] task ${taskId} failed: ${outcome.message}`,
+      );
+    }
+    if (
+      outcome.status !== "pending" ||
+      Date.now() + RANK_GRID_POLL_INTERVAL_MS > deadline
+    ) {
+      return outcome;
+    }
+    await wait(RANK_GRID_POLL_INTERVAL_MS);
+  }
+}
 
 function renderGrid(results: GridPointResult[], gridSize: number): string {
   const lines: string[] = [];
@@ -870,46 +902,55 @@ export const getLocalRankGridTool = {
   config: {
     title: "Get local rank grid",
     description:
-      "Runs one Google Maps search per point of a square grid around a coordinate and reports where the target business ranks at each point — plus each point's result count and #1 business — revealing how far its Maps visibility reaches. Cost scales with the grid: gridSize squared SERP calls (3x3 = 9, the sensible default; 5x5 = 25). Charges credits per grid point.",
+      "Runs one Google Maps search per point of a square grid around a coordinate and reports where the target business ranks at each point — plus each point's result count and #1 business — revealing how far its Maps visibility reaches. Cost scales with the grid: gridSize squared SERP calls (3x3 = 9, the sensible default; 5x5 = 25). Charges credits per grid point. The searches run as one queued batch that usually finishes within this call; if some are still running you get status 'processing'. Calling again with the same arguments within an hour collects the same searches at no extra charge, so repeat the call in about a minute to finish a 'processing' grid or to recover a lost response.",
     inputSchema: getLocalRankGridInputSchema,
     outputSchema: z.looseObject({
-      grid: z.array(
-        z.looseObject({
-          row: z.number(),
-          col: z.number(),
-          latitude: z.number(),
-          longitude: z.number(),
-          rank: z.number().nullable(),
-          resultsCount: z.number().optional(),
-          topResult: z
-            .looseObject({
-              title: z.string().nullable(),
-              cid: z.string().nullable(),
-            })
-            .nullable()
-            .optional(),
-          error: z.boolean().optional(),
-        }),
-      ),
-      summary: z.looseObject({
-        pointsSearched: z.number(),
-        pointsFound: z.number(),
-        averageRank: z.number().nullable(),
-        top3Count: z.number(),
-        top10Count: z.number(),
-      }),
+      status: z.enum(["completed", "processing"]),
+      pointsReady: z.number().optional(),
+      pointsTotal: z.number().optional(),
+      retryAfterSeconds: z.number().optional(),
+      grid: z
+        .array(
+          z.looseObject({
+            row: z.number(),
+            col: z.number(),
+            latitude: z.number(),
+            longitude: z.number(),
+            rank: z.number().nullable(),
+            resultsCount: z.number().optional(),
+            topResult: z
+              .looseObject({
+                title: z.string().nullable(),
+                cid: z.string().nullable(),
+              })
+              .nullable()
+              .optional(),
+            error: z.boolean().optional(),
+          }),
+        )
+        .optional(),
+      summary: z
+        .looseObject({
+          pointsSearched: z.number(),
+          pointsFound: z.number(),
+          averageRank: z.number().nullable(),
+          top3Count: z.number(),
+          top10Count: z.number(),
+        })
+        .optional(),
       matchedBusiness: z
         .looseObject({
           title: z.string().nullable(),
           cid: z.string().nullable(),
           placeId: z.string().nullable(),
         })
-        .nullable(),
+        .nullable()
+        .optional(),
       ...optionalMetaOutputSchema,
     }),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: false,
     },
   },
@@ -925,73 +966,128 @@ export const getLocalRankGridTool = {
       );
     }
 
+    const deadline = Date.now() + RANK_GRID_COLLECT_MS;
     const gridSize = args.gridSize ?? 3;
     const spacingKm = args.spacingKm ?? 2;
     const zoom = args.zoom ?? rankGridZoom(spacingKm, args.center.latitude);
-    const points = buildRankGridPoints(args.center, gridSize, spacingKm);
-    const client = createDataforseoClient(context.billing);
+    const device = args.device ?? "mobile";
     const languageCode = args.languageCode ?? context.project.languageCode;
+    const points = buildRankGridPoints(args.center, gridSize, spacingKm);
+
+    // The target is not part of the key: it only filters the collected rows.
+    const receiptKey = await buildCacheKey("mcp:local-rank-grid", {
+      organizationId: context.billing.organizationId,
+      projectId: args.projectId,
+      keyword: args.keyword,
+      latitude: args.center.latitude,
+      longitude: args.center.longitude,
+      gridSize,
+      spacingKm,
+      zoom,
+      device,
+      languageCode,
+    });
+    const receipt = rankGridReceiptSchema.safeParse(
+      await getCached(receiptKey),
+    );
+    let taskIds: Array<string | null>;
+    if (receipt.success) {
+      taskIds = receipt.data;
+    } else {
+      // Only the post is metered; collection is free.
+      taskIds = await createDataforseoClient(
+        context.billing,
+      ).serp.localTaskPost({
+        keyword: args.keyword,
+        locationCoordinates: points.map((point) =>
+          formatLocalSerpCoordinate({ ...point, zoom }),
+        ),
+        languageCode,
+        device,
+        depth: RANK_GRID_DEPTH,
+      });
+      // The searches are already paid for, so a failed receipt write must not
+      // fail this call; it only means a repeat would buy them again.
+      await setCached(receiptKey, taskIds, RANK_GRID_RECEIPT_TTL_SECONDS).catch(
+        (error) => {
+          console.error("[local-rank-grid] receipt write failed:", error);
+        },
+      );
+    }
+
+    const outcomes = await Promise.all(
+      taskIds.map((taskId) => collectRankGridTask(taskId, deadline)),
+    );
+    const ready = outcomes.filter(
+      (outcome) => outcome.status !== "pending",
+    ).length;
+    if (ready < points.length) {
+      return mcpResponse({
+        text: `Local rank grid for "${args.keyword}": ${ready} of ${points.length} searches are back. Call get_local_rank_grid again with the same arguments in about a minute to collect the rest; that charges no extra credits.`,
+        meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
+        // Clients that read only structured results still see the progress
+        // and when to call again.
+        structuredContent: {
+          status: "processing",
+          pointsReady: ready,
+          pointsTotal: points.length,
+          retryAfterSeconds: 60,
+        },
+      });
+    }
+
+    // Every search failing means a systemic failure, not a business that
+    // simply doesn't rank — surface it instead of an empty grid.
+    const failures = outcomes.flatMap((outcome) =>
+      outcome.status === "failed" ? [outcome.message] : [],
+    );
+    if (failures.length === points.length) {
+      // Forget the receipt so a retry posts fresh searches instead of
+      // replaying this failure for the next hour.
+      await setCached(receiptKey, null, 0).catch((error) => {
+        console.error("[local-rank-grid] receipt reset failed:", error);
+      });
+      throw new AppError(
+        "UPSTREAM_UNAVAILABLE",
+        `Every grid search failed at DataForSEO: ${failures[0]}`,
+      );
+    }
 
     let matchedBusiness: {
       title: string | null;
       cid: string | null;
       placeId: string | null;
     } | null = null;
-    let lastError: unknown = null;
-
-    const searchPoint = async (point: GridPoint): Promise<GridPointResult> => {
-      try {
-        const items = await client.serp.local({
-          keyword: args.keyword,
-          locationCoordinate: formatLocalSerpCoordinate({ ...point, zoom }),
-          languageCode,
-          searchType: "maps",
-          device: args.device ?? "mobile",
-          depth: RANK_GRID_DEPTH,
-          searchPlaces: false,
-        });
-        const match = matchGridItem(items, args.target);
-        if (match && !matchedBusiness) {
-          matchedBusiness = {
-            title: readString(match, "title"),
-            cid: readString(match, "cid"),
-            placeId: readString(match, "place_id"),
-          };
-        }
-        const rank =
-          readPath(match, "rank_absolute") ?? readPath(match, "rank_group");
-        const first = items[0];
-        return {
-          ...point,
-          rank: typeof rank === "number" ? rank : null,
-          resultsCount: items.length,
-          topResult:
-            first == null
-              ? null
-              : {
-                  title: readString(first, "title"),
-                  cid: readString(first, "cid"),
-                },
-        };
-      } catch (error) {
-        if (error instanceof AppError && GRID_ABORT_ERROR_CODES.has(error.code))
-          throw error;
-        lastError = error;
+    const grid = points.map((point, index): GridPointResult => {
+      const outcome = outcomes[index];
+      if (outcome.status !== "completed") {
         return { ...point, rank: null, error: true };
       }
-    };
-
-    // A few points at a time; an abort-worthy failure rejects its batch and
-    // stops later batches from dispatching (and billing).
-    const grid: GridPointResult[] = [];
-    for (let i = 0; i < points.length; i += RANK_GRID_CONCURRENCY) {
-      const batch = points.slice(i, i + RANK_GRID_CONCURRENCY);
-      grid.push(...(await Promise.all(batch.map(searchPoint))));
-    }
-
-    // Every point failing means a systemic failure (auth, balance, bad market),
-    // not a business that simply doesn't rank — surface it instead of an empty grid.
-    if (grid.every((point) => point.error)) throw lastError;
+      const { items } = outcome;
+      const match = matchGridItem(items, args.target);
+      if (match && !matchedBusiness) {
+        matchedBusiness = {
+          title: readString(match, "title"),
+          cid: readString(match, "cid"),
+          placeId: readString(match, "place_id"),
+        };
+      }
+      const rank =
+        readPath(match, "rank_absolute") ?? readPath(match, "rank_group");
+      const first = items[0];
+      return {
+        ...point,
+        rank: typeof rank === "number" ? rank : null,
+        resultsCount: items.length,
+        topResult:
+          first == null
+            ? null
+            : {
+                title: readString(first, "title"),
+                cid: readString(first, "cid"),
+              },
+      };
+    });
 
     const found = grid.filter((point) => point.rank != null);
     const ranks = found.map((point) => point.rank ?? 0);
@@ -1021,7 +1117,12 @@ export const getLocalRankGridTool = {
     return mcpResponse({
       text,
       meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
-      structuredContent: { grid, summary, matchedBusiness },
+      structuredContent: {
+        status: "completed",
+        grid,
+        summary,
+        matchedBusiness,
+      },
     });
   }),
 };

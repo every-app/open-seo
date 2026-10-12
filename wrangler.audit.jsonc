@@ -45,7 +45,7 @@
     },
   ],
   // This config serves local dev and Docker self-host only; Alchemy
-  // deployments provision the audit worker from alchemy.run.ts and never read
+  // deployments provision the audit worker from deploy/alchemy/alchemy.run.ts and never read
   // these ids. Mirror any DB/KV/R2 resource-id edits you make in
   // wrangler.jsonc into this file too — both workers share the same D1/KV/R2
   // (no OAUTH_KV here; only the app worker runs OAuth), and miniflare derives
@@ -61,7 +61,7 @@
       "binding": "DB",
       "database_name": "open-seo",
       "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
-      "migrations_dir": "drizzle",
+      "migrations_dir": "drizzle/sqlite",
     },
   ],
   // Postgres scale path — same rules as wrangler.jsonc: only local Postgres

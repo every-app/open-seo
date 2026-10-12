@@ -76,8 +76,41 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
   }
 
   // Content checks only make sense for analyzed HTML documents (a PDF has no
-  // title tag to miss; an empty-shell HTML page very much does).
+  // title tag to miss).
   if (!page.isHtml) {
+    return issues;
+  }
+
+  // Indexability + canonical signals
+  if (!page.isIndexable) {
+    report("noindex-page", {
+      robotsMeta: page.robotsMeta,
+      xRobotsTag: page.xRobotsTag,
+    });
+  }
+  if (
+    page.canonicalUrl &&
+    page.headerCanonicalUrl &&
+    page.canonicalUrl !== page.headerCanonicalUrl
+  ) {
+    report("canonical-conflict", {
+      htmlCanonical: page.canonicalUrl,
+      headerCanonical: page.headerCanonicalUrl,
+    });
+  }
+  const effectiveCanonical = page.canonicalUrl ?? page.headerCanonicalUrl;
+  if (effectiveCanonical && effectiveCanonical !== page.url) {
+    report("canonicalized-page", { canonicalUrl: effectiveCanonical });
+  }
+
+  if (page.crawlDepth !== null && page.crawlDepth >= DEEP_PAGE_DEPTH) {
+    report("deep-page", { crawlDepth: page.crawlDepth });
+  }
+
+  // The initial app shell cannot establish what the rendered page is missing.
+  // Report the coverage gap instead of thin-content/missing-heading claims.
+  if (page.javascriptShell) {
+    report("javascript-rendering-suspected", { wordCount: page.wordCount });
     return issues;
   }
 
@@ -113,28 +146,6 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
     report("heading-order-skip");
   }
 
-  // Indexability + canonical signals
-  if (!page.isIndexable) {
-    report("noindex-page", {
-      robotsMeta: page.robotsMeta,
-      xRobotsTag: page.xRobotsTag,
-    });
-  }
-  if (
-    page.canonicalUrl &&
-    page.headerCanonicalUrl &&
-    page.canonicalUrl !== page.headerCanonicalUrl
-  ) {
-    report("canonical-conflict", {
-      htmlCanonical: page.canonicalUrl,
-      headerCanonical: page.headerCanonicalUrl,
-    });
-  }
-  const effectiveCanonical = page.canonicalUrl ?? page.headerCanonicalUrl;
-  if (effectiveCanonical && effectiveCanonical !== page.url) {
-    report("canonicalized-page", { canonicalUrl: effectiveCanonical });
-  }
-
   // Content quality
   if (page.isIndexable && page.wordCount < THIN_CONTENT_WORDS) {
     report("thin-content", { wordCount: page.wordCount });
@@ -149,9 +160,6 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
   // Structure
   if (page.isIndexable && page.links.length === 0) {
     report("no-outgoing-links");
-  }
-  if (page.crawlDepth !== null && page.crawlDepth >= DEEP_PAGE_DEPTH) {
-    report("deep-page", { crawlDepth: page.crawlDepth });
   }
 
   return issues;

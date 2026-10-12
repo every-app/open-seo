@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createGscClient, GscApiError, GscTokenError } from "./gscClient";
 
 const mocks = vi.hoisted(() => ({
   getAccessToken: vi.fn(),
   fetch: vi.fn<typeof fetch>(),
 }));
 
-vi.mock("@/lib/auth", () => ({
-  getAuth: () => ({ api: { getAccessToken: mocks.getAccessToken } }),
+vi.mock("@/server/features/google/googleOAuth", () => ({
+  getGoogleAccessToken: mocks.getAccessToken,
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -15,9 +16,7 @@ function jsonResponse(body: unknown, status = 200) {
 
 describe("gscClient", () => {
   beforeEach(() => {
-    mocks.getAccessToken.mockReset();
-    mocks.getAccessToken.mockResolvedValue({ accessToken: "tok_123" });
-    mocks.fetch.mockReset();
+    mocks.getAccessToken.mockResolvedValue("tok_123");
     vi.stubGlobal("fetch", mocks.fetch);
   });
   afterEach(() => {
@@ -30,7 +29,6 @@ describe("gscClient", () => {
         siteEntry: [{ siteUrl: "https://x/", permissionLevel: "siteOwner" }],
       }),
     );
-    const { createGscClient } = await import("./gscClient");
     const sites = await createGscClient({ userId: "u1" }).listSites();
 
     expect(sites).toHaveLength(1);
@@ -41,7 +39,6 @@ describe("gscClient", () => {
 
   it("targets the selected Better Auth grant by Google sub", async () => {
     mocks.fetch.mockResolvedValue(jsonResponse({ siteEntry: [] }));
-    const { createGscClient } = await import("./gscClient");
 
     await createGscClient({
       userId: "u1",
@@ -49,22 +46,21 @@ describe("gscClient", () => {
     }).listSites();
 
     expect(mocks.getAccessToken).toHaveBeenCalledWith({
-      body: {
-        providerId: "google-search-console",
-        userId: "u1",
-        accountId: "google-sub-a",
-      },
+      providerId: "google-search-console",
+      userId: "u1",
+      accountId: "google-sub-a",
     });
   });
 
   it("omits accountId for the legacy null-account fallback", async () => {
     mocks.fetch.mockResolvedValue(jsonResponse({ siteEntry: [] }));
-    const { createGscClient } = await import("./gscClient");
 
     await createGscClient({ userId: "u1" }).listSites();
 
     expect(mocks.getAccessToken).toHaveBeenCalledWith({
-      body: { providerId: "google-search-console", userId: "u1" },
+      providerId: "google-search-console",
+      userId: "u1",
+      accountId: undefined,
     });
   });
 
@@ -72,7 +68,6 @@ describe("gscClient", () => {
     mocks.fetch.mockResolvedValue(
       jsonResponse({ email: "client@example.com" }),
     );
-    const { createGscClient } = await import("./gscClient");
 
     const email = await createGscClient({
       userId: "u1",
@@ -87,7 +82,6 @@ describe("gscClient", () => {
 
   it("encodes the siteUrl in the searchAnalytics path (both property forms)", async () => {
     mocks.fetch.mockImplementation(async () => jsonResponse({ rows: [] }));
-    const { createGscClient } = await import("./gscClient");
     const client = createGscClient({ userId: "u1" });
 
     await client.querySearchAnalytics("sc-domain:example.com", {
@@ -115,7 +109,6 @@ describe("gscClient", () => {
         },
       }),
     );
-    const { createGscClient } = await import("./gscClient");
     const result = await createGscClient({ userId: "u1" }).inspectUrl(
       "sc-domain:example.com",
       "https://example.com/post",
@@ -143,7 +136,6 @@ describe("gscClient", () => {
     mocks.fetch.mockImplementation(async () =>
       jsonResponse({ error: "forbidden" }, 403),
     );
-    const { createGscClient, GscApiError } = await import("./gscClient");
     await expect(
       createGscClient({ userId: "u1" }).listSites(),
     ).rejects.toMatchObject({ status: 403 });
@@ -154,7 +146,6 @@ describe("gscClient", () => {
 
   it("maps 429 to a rate-limit GscApiError", async () => {
     mocks.fetch.mockResolvedValue(jsonResponse({ error: "slow down" }, 429));
-    const { createGscClient } = await import("./gscClient");
     await expect(
       createGscClient({ userId: "u1" }).listSites(),
     ).rejects.toMatchObject({ status: 429 });
@@ -162,7 +153,6 @@ describe("gscClient", () => {
 
   it("throws GscTokenError when no access token can be minted", async () => {
     mocks.getAccessToken.mockRejectedValue(new Error("revoked"));
-    const { createGscClient, GscTokenError } = await import("./gscClient");
     await expect(
       createGscClient({ userId: "u1" }).listSites(),
     ).rejects.toBeInstanceOf(GscTokenError);

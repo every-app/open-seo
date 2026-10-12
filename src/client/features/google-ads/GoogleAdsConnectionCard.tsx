@@ -1,19 +1,26 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { CardShell } from "@/client/components/CardShell";
+import { QueryError } from "@/client/components/QueryState";
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Skeleton } from "@/client/components/ui/skeleton";
 import {
   GoogleAdsAccountPicker,
   type AccountSelection,
 } from "@/client/features/google-ads/GoogleAdsAccountPicker";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
+import { ConnectionStatusPill } from "@/client/features/integrations/GoogleConnectionCard";
 import { GoogleLinkErrorAlert } from "@/client/features/integrations/GoogleLinkErrorAlert";
 import { GoogleOAuthSetupWarning } from "@/client/features/integrations/GoogleOAuthSetupWarning";
-import { IntegrationConnectionCard } from "@/client/features/integrations/IntegrationConnectionCard";
 import { GoogleAdsLogo } from "@/client/features/integrations/GoogleProductLogos";
-import { startGoogleLink } from "@/client/features/integrations/startGoogleLink";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import {
+  startGoogleLink,
+  useGoogleLinkPending,
+} from "@/client/features/integrations/startGoogleLink";
 import { captureClientEvent } from "@/client/lib/posthog";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   disconnectGoogleAds,
   getGoogleAdsConnection,
@@ -23,8 +30,8 @@ import {
 import { GOOGLE_ADS_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/google-ads";
 
 export function GoogleAdsConnectionCard({ projectId }: { projectId: string }) {
-  const hosted = isHostedClientAuthMode();
   const queryClient = useQueryClient();
+  const linking = useGoogleLinkPending();
   const [picking, setPicking] = React.useState(false);
   const [selection, setSelection] = React.useState<AccountSelection | null>(
     null,
@@ -35,14 +42,15 @@ export function GoogleAdsConnectionCard({ projectId }: { projectId: string }) {
     queryFn: () => getGoogleAdsConnection({ data: { projectId } }),
   });
   const connection = connectionQuery.data;
+  const connectionUnavailable = connectionQuery.isError && !connection;
   const connected = Boolean(connection?.connected);
-  const selfHostedNeedsSetup =
-    !hosted && connectionQuery.isSuccess && !connection?.googleOAuthConfigured;
+  const needsGoogleOAuthSetup =
+    connectionQuery.isSuccess && !connection?.googleOAuthConfigured;
   const showPicker = picking || (connection?.currentUserHasGrant && !connected);
   const accountsQuery = useQuery({
     queryKey: ["googleAdsAccounts", projectId],
     queryFn: () => listGoogleAdsAccounts({ data: { projectId } }),
-    enabled: Boolean(showPicker && !selfHostedNeedsSetup),
+    enabled: Boolean(showPicker && !needsGoogleOAuthSetup),
   });
   const grants = React.useMemo(
     () => accountsQuery.data?.accounts ?? [],
@@ -94,7 +102,6 @@ export function GoogleAdsConnectionCard({ projectId }: { projectId: string }) {
       setPicking(false);
       invalidateConnectionState();
     },
-    onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
   const disconnectMutation = useMutation({
     mutationFn: () => disconnectGoogleAds({ data: { projectId } }),
@@ -104,34 +111,42 @@ export function GoogleAdsConnectionCard({ projectId }: { projectId: string }) {
       setSelection(null);
       invalidateConnectionState();
     },
-    onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
   const handleConnect = () =>
     void startGoogleLink("gads", window.location.href);
 
   return (
-    <IntegrationConnectionCard
+    <CardShell
       title="Google Ads (Local Services)"
       icon={<GoogleAdsLogo className="size-5" />}
-      status={
-        connectionQuery.isLoading
-          ? undefined
-          : selfHostedNeedsSetup
-            ? "setup_required"
-            : connection?.reconnectRequired
-              ? "reconnect_required"
-              : connected
-                ? "connected"
-                : "disconnected"
+      action={
+        connectionQuery.isPending || connectionUnavailable ? undefined : (
+          <ConnectionStatusPill
+            connected={connected && !needsGoogleOAuthSetup}
+            setupRequired={needsGoogleOAuthSetup}
+            connection={connection}
+          />
+        )
       }
     >
       <GoogleLinkErrorAlert provider="gads" className="mb-4" />
-      {connectionQuery.isLoading ? (
-        <div className="flex items-center gap-2 text-sm text-base-content/50">
-          <span className="loading loading-spinner loading-sm" />
-          Checking…
+      {connectionQuery.isPending ? (
+        <div
+          role="status"
+          aria-label="Loading connection"
+          className="space-y-3"
+        >
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-9 w-24" />
         </div>
-      ) : selfHostedNeedsSetup ? (
+      ) : connectionUnavailable ? (
+        <QueryError
+          error={connectionQuery.error}
+          fallback="Couldn't check this project's connection."
+          onRetry={() => void connectionQuery.refetch()}
+          isRetrying={connectionQuery.isFetching}
+        />
+      ) : needsGoogleOAuthSetup ? (
         <GoogleOAuthSetupWarning
           integrationName="Google Ads"
           docsUrl={GOOGLE_ADS_SELF_HOSTED_SETUP_DOCS_URL}
@@ -161,27 +176,31 @@ export function GoogleAdsConnectionCard({ projectId }: { projectId: string }) {
           onSelect={setSelection}
           onSave={() => selection && setAccountMutation.mutate(selection)}
           saving={setAccountMutation.isPending}
+          linking={linking}
           onRetry={() => void accountsQuery.refetch()}
           onCancel={connected ? () => setPicking(false) : undefined}
           onReconnect={handleConnect}
         />
       ) : (
-        <div className="space-y-4">
-          <p className="text-sm text-base-content/70">
+        <div className="flex flex-1 flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
             Connect Google Ads to track Local Services Ads leads, spend, and
             budget pacing next to your organic data.
           </p>
-          <button
-            type="button"
-            onClick={handleConnect}
-            className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <GoogleGlyph className="size-[18px]" />
-            Connect with Google
-          </button>
+          <div className="mt-auto flex flex-wrap items-center justify-end gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleConnect}
+              pending={linking}
+            >
+              {linking ? null : <GoogleGlyph className="size-[18px]" />}
+              {linking ? "Opening Google…" : "Connect"}
+            </Button>
+          </div>
         </div>
       )}
-    </IntegrationConnectionCard>
+    </CardShell>
   );
 }
 
@@ -205,65 +224,41 @@ function ConnectedState({
   disconnecting: boolean;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="rounded-lg border border-base-300 bg-base-200/30 px-4 py-3.5">
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-base-content/45">
-              Selected Ads account
-            </p>
-            <p className="mt-0.5 truncate text-sm font-semibold">
-              {descriptiveName ?? customerId}
-            </p>
-          </div>
-          <span className="rounded-md border border-base-300 bg-base-100 px-2 py-1 font-mono text-[11px] text-base-content/60">
-            ID {customerId}
-          </span>
-        </div>
-        <dl className="mt-3 grid gap-x-6 gap-y-2 border-t border-base-300/70 pt-3 text-xs sm:grid-cols-2">
-          {currencyCode ? (
-            <div>
-              <dt className="text-base-content/45">Currency</dt>
-              <dd className="mt-0.5 font-medium text-base-content/75">
-                {currencyCode}
-              </dd>
-            </div>
-          ) : null}
-          {connectedByEmail ? (
-            <div className="min-w-0">
-              <dt className="text-base-content/45">Connected account</dt>
-              <dd className="mt-0.5 truncate font-medium text-base-content/75">
-                {connectedByEmail}
-              </dd>
-            </div>
-          ) : null}
-        </dl>
+    <div className="space-y-4">
+      <div className="min-w-0">
+        <p className="break-words text-sm font-semibold">
+          {descriptiveName ?? customerId}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          ID {customerId}
+          {currencyCode ? ` · ${currencyCode}` : ""}
+        </p>
+        {connectedByEmail ? (
+          <p className="mt-1 break-all text-sm text-muted-foreground">
+            {connectedByEmail}
+          </p>
+        ) : null}
       </div>
       {!developerTokenConfigured ? (
-        <div className="alert alert-warning items-start text-sm">
-          <p>
+        <Alert variant="warning">
+          <AlertTriangle className="size-4" />
+          <AlertDescription>
             GOOGLE_ADS_DEVELOPER_TOKEN is not set on this deployment, so reports
             can&apos;t run yet.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          className="btn btn-outline btn-sm border-base-300 font-medium"
-          onClick={onChange}
-        >
+      <fieldset
+        disabled={disconnecting}
+        className="flex flex-wrap items-center gap-1"
+      >
+        <Button variant="outline" size="sm" onClick={onChange}>
           Change account
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm font-medium text-error hover:bg-error/10"
-          onClick={onDisconnect}
-          disabled={disconnecting}
-        >
+        </Button>
+        <Button variant="destructive" size="sm" onClick={onDisconnect}>
           {disconnecting ? "Disconnecting…" : "Disconnect"}
-        </button>
-      </div>
+        </Button>
+      </fieldset>
     </div>
   );
 }

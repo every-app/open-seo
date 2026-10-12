@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   GA4_INTEGRATION,
-  handleSelfHostedGoogleOAuthCallbackRequest,
-} from "@/server/features/google/selfHostedOAuth";
+  handleGoogleOAuthCallbackRequest,
+} from "@/server/features/google/googleOAuth";
 
 export const Route = createFileRoute("/api/ga4/oauth/callback")({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) =>
-        handleSelfHostedGoogleOAuthCallbackRequest(request, GA4_INTEGRATION),
+        handleGoogleOAuthCallbackRequest(request, GA4_INTEGRATION),
     },
   },
 });

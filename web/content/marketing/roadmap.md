@@ -25,7 +25,6 @@ Have a feature request that belongs here? [Tell us on Discord](https://discord.g
 
 ## Soon
 
-- Prompt tracking for AI search visibility
 - Google Business Profile integration
 - Google Maps geo-grid rank tracking
 - Support multi-user for Docker self hosting

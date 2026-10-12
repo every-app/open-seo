@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("cloudflare:workers", () => ({ waitUntil: vi.fn() }));
 
@@ -45,8 +45,7 @@ vi.mock("@/server/lib/dataforseo", () => {
 vi.mock("@/server/lib/r2-cache", () => cacheMock);
 
 import { getBrandLookup } from "./brandLookup";
-import { shapeResult, type ShapeArgs } from "./brandLookupShaping";
-import { resolveCompetitorGroups } from "./shareOfVoice";
+import { shapeResult } from "./brandLookupShaping";
 import { brandLookupSearchSchema } from "@/types/schemas/ai-search";
 import type {
   LlmMentionItem,
@@ -60,138 +59,69 @@ const billingCustomer: BillingCustomerContext = {
   userEmail: "alice@example.com",
 };
 
-type PlatformBundle = {
-  aggregated: { platform?: Array<Record<string, unknown>> | null };
-  topPages: LlmTopPagesItem[];
-  mentions: LlmMentionItem[];
-  complete: boolean;
-};
-
-function platformBundle(
-  platform: "chat_gpt" | "google",
-  mentions: number | null,
-  aiSearchVolume: number | null,
-): ShapeArgs["platformBundles"][number] {
-  return {
-    platform,
-    status: "success",
-    bundle: {
-      aggregated: {
-        platform: [
-          {
-            key: platform,
-            mentions,
-            ai_search_volume: aiSearchVolume,
-            // Deprecated field still present in upstream payloads; must be
-            // ignored end-to-end.
-            impressions: 999,
-          },
-        ],
-      },
-      topPages: [],
-      mentions: [],
-      complete: true,
-    } as PlatformBundle,
-  };
-}
-
-function baseArgs(overrides: Partial<ShapeArgs>): ShapeArgs {
-  return {
-    query: "acme",
-    detected: { type: "keyword", value: "acme" },
-    researchTarget: null,
-    platformBundles: [
-      platformBundle("chat_gpt", 10, 100),
-      platformBundle("google", 5, 50),
-    ],
-    crossOutcomes: [],
-    competitorKeys: [],
-    userLocationCode: 2840,
-    userLanguageCode: "en",
-    ...overrides,
-  };
-}
-
-function resetBrandLookupMocks(): void {
-  vi.clearAllMocks();
-  cacheMock.getCached.mockResolvedValue(null);
-  cacheMock.setCached.mockResolvedValue(undefined);
-  dataforseoClientMock.aiSearch.aggregatedMetrics.mockResolvedValue({
-    platform: [{ key: "google", mentions: 5, ai_search_volume: 50 }],
-  });
-  dataforseoClientMock.aiSearch.topPages.mockImplementation(
-    async ({ platform }: { platform: "chat_gpt" | "google" }) => [
-      topPage(`https://${platform}.example/source`, platform, 3, 300),
-    ],
-  );
-  dataforseoClientMock.aiSearch.mentionsSearch.mockImplementation(
-    async ({ platform }: { platform: "chat_gpt" | "google" }) => [
-      citedMention("best source", 100, [`https://${platform}.example/source`]),
-    ],
-  );
-  dataforseoClientMock.aiSearch.crossAggregatedMetrics.mockResolvedValue([]);
-}
+// A previously cached result for the same target, built through the real
+// shaper so it passes the cache schema on read.
+const cachedResult = shapeResult({
+  query: "acme",
+  detected: { type: "keyword", value: "acme" },
+  researchTarget: null,
+  platformBundles: [],
+  crossOutcomes: [],
+  competitorKeys: [],
+  userLocationCode: 2840,
+  userLanguageCode: "en",
+});
 
 describe("getBrandLookup", () => {
-  it("fetches top_pages as part of the base lookup", async () => {
-    resetBrandLookupMocks();
-
-    await getBrandLookup(
-      {
-        projectId: "project_123",
-        query: "acme.com",
-        competitors: [],
-        locationCode: 2840,
-        languageCode: "en",
-      },
-      billingCustomer,
+  beforeEach(() => {
+    cacheMock.getCached.mockResolvedValue(null);
+    cacheMock.setCached.mockResolvedValue(undefined);
+    dataforseoClientMock.aiSearch.aggregatedMetrics.mockResolvedValue({
+      platform: [{ key: "google", mentions: 5, ai_search_volume: 50 }],
+    });
+    dataforseoClientMock.aiSearch.topPages.mockImplementation(
+      async ({ platform }: { platform: "chat_gpt" | "google" }) => [
+        topPage(`https://${platform}.example/source`, platform, 3, 300),
+      ],
     );
-
-    expect(dataforseoClientMock.aiSearch.topPages).toHaveBeenCalledTimes(2);
-    expect(dataforseoClientMock.aiSearch.topPages).toHaveBeenCalledWith(
-      expect.objectContaining({
-        platform: "chat_gpt",
-        itemsListLimit: 10,
-      }),
+    dataforseoClientMock.aiSearch.mentionsSearch.mockImplementation(
+      async ({ platform }: { platform: "chat_gpt" | "google" }) => [
+        citedMention("best source", 100, [
+          `https://${platform}.example/source`,
+        ]),
+      ],
     );
-    expect(dataforseoClientMock.aiSearch.topPages).toHaveBeenCalledWith(
-      expect.objectContaining({
-        platform: "google",
-        itemsListLimit: 10,
-      }),
-    );
-    expect(cacheMock.setCached).toHaveBeenCalledTimes(1);
+    dataforseoClientMock.aiSearch.crossAggregatedMetrics.mockResolvedValue([]);
   });
 
   it("does not cache a renderable partial result when top_pages fails", async () => {
-    resetBrandLookupMocks();
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
+    const input = {
+      projectId: "project_123",
+      query: "acme.com",
+      competitors: [],
+      locationCode: 2840,
+      languageCode: "en",
+    };
     dataforseoClientMock.aiSearch.topPages.mockRejectedValueOnce(
       new Error("top pages failed"),
     );
 
-    const result = await getBrandLookup(
-      {
-        projectId: "project_123",
-        query: "acme.com",
-        competitors: [],
-        locationCode: 2840,
-        languageCode: "en",
-      },
-      billingCustomer,
-    );
-
-    expect(result.hasData).toBe(true);
+    const partial = await getBrandLookup(input, billingCustomer);
+    expect(partial.hasData).toBe(true);
     expect(cacheMock.setCached).not.toHaveBeenCalled();
+
+    // Positive control: the same lookup with every call succeeding is cached.
+    await getBrandLookup(input, billingCustomer);
+    expect(cacheMock.setCached).toHaveBeenCalledTimes(1);
     consoleError.mockRestore();
   });
 
   it("uses semantic cache keys and reapplies the current display query", async () => {
-    resetBrandLookupMocks();
     cacheMock.getCached.mockResolvedValueOnce({
-      ...shapeResult(baseArgs({})),
+      ...cachedResult,
       query: "Nike",
       resolvedTarget: "Nike",
     });
@@ -221,8 +151,6 @@ describe("getBrandLookup", () => {
   });
 
   it("drops subdomains and keys the cache on scope for a URL query", async () => {
-    resetBrandLookupMocks();
-
     const result = await getBrandLookup(
       {
         projectId: "project_123",
@@ -252,36 +180,17 @@ describe("getBrandLookup", () => {
   });
 });
 
-describe("resolveCompetitorGroups", () => {
-  it("dedupes case-insensitively and drops target collisions", () => {
-    // DataForSEO matches keyword targets case-insensitively, so "Nike" and
-    // "nike" would be two paid groups returning identical counts.
-    const groups = resolveCompetitorGroups("Nike", [
-      "nike",
-      "Adidas",
-      "ADIDAS",
-      "puma.com",
-      "www.PUMA.com",
-    ]);
-    expect(groups.map((g) => g.label)).toEqual(["Adidas", "puma.com"]);
-  });
-});
-
 describe("brandLookupSearchSchema — `c` competitor param", () => {
-  it("parses a raw comma-separated string from the URL", () => {
-    expect(brandLookupSearchSchema.parse({ c: "nike, adidas" }).c).toEqual([
-      "nike",
-      "adidas",
-    ]);
-  });
-
-  it("accepts an already-parsed array (TanStack re-validates its own output)", () => {
-    // navigate() feeds the previous transformed output (a string[]) back through
-    // validateSearch — this must not throw "expected string, received array".
-    expect(brandLookupSearchSchema.parse({ c: ["nike", "adidas"] }).c).toEqual([
-      "nike",
-      "adidas",
-    ]);
+  it.each([
+    ["a raw comma-separated string from the URL", "nike, adidas"],
+    // navigate() feeds the previous transformed output (a string[]) back
+    // through validateSearch — this must not throw "expected string".
+    [
+      "an already-parsed array (TanStack re-validates its own output)",
+      ["nike", "adidas"],
+    ],
+  ])("parses %s", (_form, c) => {
+    expect(brandLookupSearchSchema.parse({ c }).c).toEqual(["nike", "adidas"]);
   });
 
   it("dedupes and caps at 5 regardless of input form", () => {
@@ -293,10 +202,6 @@ describe("brandLookupSearchSchema — `c` competitor param", () => {
       "d",
       "e",
     ]);
-  });
-
-  it("leaves `c` undefined when absent", () => {
-    expect(brandLookupSearchSchema.parse({}).c).toBeUndefined();
   });
 });
 

@@ -1,4 +1,7 @@
-import { SlidersHorizontal } from "lucide-react";
+import {
+  DataTableFilterToggle,
+  DataTableToolbar,
+} from "@/client/components/table/DataTableToolbar";
 import { SavedKeywordsFilterPanel } from "./SavedKeywordsFilterPanel";
 import { SavedKeywordsTagFilter } from "./SavedKeywordsTagFilter";
 import type { TagColorKey } from "@/shared/tag-colors";
@@ -10,12 +13,11 @@ export function SavedKeywordsFilters({
   activeFilterCount,
   showFilters,
   onToggleFilters,
-  onResetAllFilters,
+  onResetFilters,
   availableTags,
   selectedTagIds,
   busyTagIds,
-  onToggleTagFilter,
-  onClearTagSelection,
+  onSelectedTagIdsChange,
   onUpdateTag,
   onDeleteTag,
 }: {
@@ -23,12 +25,11 @@ export function SavedKeywordsFilters({
   activeFilterCount: number;
   showFilters: boolean;
   onToggleFilters: () => void;
-  onResetAllFilters: () => void;
+  onResetFilters: () => void;
   availableTags: SavedKeywordTagSummary[];
   selectedTagIds: string[];
   busyTagIds: Set<string>;
-  onToggleTagFilter: (tagId: string) => void;
-  onClearTagSelection: () => void;
+  onSelectedTagIdsChange: (tagIds: string[]) => void;
   onUpdateTag: (input: {
     tagId: string;
     name?: string;
@@ -38,37 +39,30 @@ export function SavedKeywordsFilters({
 }) {
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 px-4 py-2.5">
-        <button
-          type="button"
-          className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
-          onClick={onToggleFilters}
-          title="Toggle table filters"
-        >
-          <SlidersHorizontal className="size-3.5" />
-          Filters
-          {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
-            </span>
-          ) : null}
-        </button>
-        <SavedKeywordsTagFilter
-          availableTags={availableTags}
-          selectedTagIds={selectedTagIds}
-          busyTagIds={busyTagIds}
-          onToggleTagFilter={onToggleTagFilter}
-          onClearSelection={onClearTagSelection}
-          onUpdateTag={onUpdateTag}
-          onDeleteTag={onDeleteTag}
+      <DataTableToolbar
+        actions={
+          <SavedKeywordsTagFilter
+            availableTags={availableTags}
+            selectedTagIds={selectedTagIds}
+            busyTagIds={busyTagIds}
+            onSelectedTagIdsChange={onSelectedTagIdsChange}
+            onUpdateTag={onUpdateTag}
+            onDeleteTag={onDeleteTag}
+          />
+        }
+      >
+        <DataTableFilterToggle
+          open={showFilters}
+          activeCount={activeFilterCount}
+          onToggle={onToggleFilters}
         />
-      </div>
+      </DataTableToolbar>
 
       {showFilters ? (
         <SavedKeywordsFilterPanel
           form={filtersForm}
           activeFilterCount={activeFilterCount}
-          onReset={onResetAllFilters}
+          onReset={onResetFilters}
         />
       ) : null}
     </>

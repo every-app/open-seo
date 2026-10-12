@@ -7,7 +7,7 @@ metadata:
 
 # OpenSEO release notes
 
-Cut a release for this repo end to end. The deliverables are a version bump in `package.json`, a new `release-notes/v<version>.md`, and a PR against `origin/main` titled `release: v<version>`.
+Cut a release for this repo end to end. The deliverables are a version bump in `package.json`, a new `docs/release-notes/v<version>.md`, and a PR against `origin/main` titled `release: v<version>`.
 
 ## 1. Bump the version
 
@@ -23,7 +23,7 @@ Cut a release for this repo end to end. The deliverables are a version bump in `
 
 ## 3. Draft the notes
 
-Write `release-notes/v<version>.md`. **`release-notes/v0.0.24.md` is the canonical style exemplar** — match it (v0.0.25 and later follow the same style); v0.0.23 and earlier are the old verbose style, never imitate them. The notes are a scannable digest, not documentation: the whole file fits on one screen (roughly 15 lines including headings), and every line earns its place.
+Write `docs/release-notes/v<version>.md`. **`docs/release-notes/v0.0.24.md` is the canonical style exemplar** — match it (v0.0.25 and later follow the same style); v0.0.23 and earlier are the old verbose style, never imitate them. The notes are a scannable digest, not documentation: the whole file fits on one screen (roughly 15 lines including headings), and every line earns its place.
 
 Format:
 
@@ -59,12 +59,12 @@ Curation — this is where the work is. Cut aggressively; the Full Changelog lin
 
 - Commit the version bump, release notes, and any skill changes on a branch named `claude/v<version>` (use the current branch if it already follows this pattern).
 - Push to `origin` and open a PR against `main` titled exactly `release: v<version>`. PR body: the release notes content.
-- Do not tag or publish the GitHub release — that happens after merge. After merge, run `pnpm release:publish`. It reads the version from `package.json` and publishes the matching `release-notes/v<version>.md` to `every-app/open-seo`.
+- Do not tag or publish the GitHub release — that happens after merge. After merge, run `pnpm release:publish`. It reads the version from `package.json` and publishes the matching `docs/release-notes/v<version>.md` to `every-app/open-seo`.
 - The equivalent command is:
 
   ```sh
   gh release create v<version> \
     --repo every-app/open-seo \
     --title v<version> \
-    --notes-file release-notes/v<version>.md
+    --notes-file docs/release-notes/v<version>.md
   ```

@@ -6,7 +6,7 @@
  * https://api.dataforseo.com/v3/dataforseo_labs/locations_and_languages).
  * Countries Labs does not cover are marked `googleAdsOnly` and are served by
  * the DataForSEO Keywords Data API (Google Ads endpoints), which covers the
- * full Google geotarget list — see specs/0004-keyword-data-source-routing.md.
+ * full Google geotarget list — see docs/maintainers/specs/0004-keyword-data-source-routing.md.
  * Google-Ads-only rows have no keyword difficulty or search intent.
  *
  * For countries with multiple Google-supported languages, we pick the

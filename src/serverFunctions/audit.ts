@@ -1,3 +1,4 @@
+import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { requireOrgPermission } from "@/server/auth/org-gate";
@@ -27,6 +28,7 @@ export const startAudit = createServerFn({ method: "POST" })
       maxPages: data.maxPages,
       lighthouseStrategy: data.lighthouseStrategy,
       limitTier,
+      renderJavaScript: data.renderJavaScript,
     });
 
     waitUntil(
@@ -84,3 +86,10 @@ export const deleteAudit = createServerFn({ method: "POST" })
     await AuditService.remove(data.auditId, context.projectId);
     return { success: true };
   });
+
+export const getAuditCapabilities = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(getAuditHistorySchema)
+  .handler(async () => ({
+    canRenderJavaScript: await isAuditRenderingAllowed(),
+  }));

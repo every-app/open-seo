@@ -47,7 +47,7 @@ Already logged in from before without the `access:write` scope? Run `pnpm alchem
 Copy the template and fill in the required values:
 
 ```bash
-cp .env.selfhost.example .env.selfhost
+cp deploy/.env.selfhost.example .env.selfhost
 ```
 
 ## 4) Deploy

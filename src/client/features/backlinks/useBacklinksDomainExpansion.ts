@@ -26,11 +26,13 @@ export type BacklinksDomainExpansion = {
 export function useBacklinksDomainExpansion({
   projectId,
   searchState,
+  rows,
 }: {
   projectId: string;
   searchState: BacklinksSearchState;
+  rows: BacklinksRow[];
 }): BacklinksDomainExpansion {
-  const { target, scope } = searchState;
+  const { target, scope, includeSpam } = searchState;
   const [expanded, setExpanded] = useState<string[]>([]);
 
   // Collapse everything when the lookup changes.
@@ -40,12 +42,17 @@ export function useBacklinksDomainExpansion({
 
   const queries = useQueries({
     queries: expanded.map((domain) => ({
+      enabled:
+        searchState.tab === "backlinks" &&
+        searchState.view !== "all" &&
+        rows.some((row) => row.domainFrom === domain),
       queryKey: [
         "backlinksDomainLinks",
         projectId,
         scope,
         target,
         domain,
+        includeSpam ?? false,
       ] as const,
       staleTime: DOMAIN_LINKS_STALE_TIME_MS,
       queryFn: () =>
@@ -60,6 +67,7 @@ export function useBacklinksDomainExpansion({
             sortOrder: "desc",
             filters: { domainFrom: domain },
             mode: "as_is",
+            hideSpam: !includeSpam,
           },
         }),
     })),

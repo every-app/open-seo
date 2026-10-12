@@ -1,14 +1,19 @@
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import type { ComponentProps } from "react";
+import { Line, LineChart, ReferenceArea } from "recharts";
+import { TrendingUp } from "lucide-react";
+import { EmptyState } from "@/client/components/EmptyState";
+import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceArea,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import type { TooltipContentProps } from "recharts";
+  ChartGrid,
+  ChartXAxis,
+  ChartYAxis,
+} from "@/client/components/ChartAxes";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/client/components/ui/chart";
 
 export interface TrendSeries {
   /** key into each data row holding the position value (1 = best, serpDepth = bottom band) */
@@ -17,21 +22,6 @@ export interface TrendSeries {
   color: string;
   /** dashed = device line where nulls are plotted in the bottom "not in top N" band */
   strokeDasharray?: string;
-}
-
-interface TooltipEntry {
-  dataKey?: string | number;
-  name?: string;
-  value: number | null;
-  color?: string;
-}
-
-/** Narrowed shape of a recharts tooltip payload entry (typed `any` upstream). */
-interface RechartsPayloadEntry {
-  dataKey?: string | number;
-  name?: string;
-  value?: number | string | null;
-  color?: string;
 }
 
 /**
@@ -45,147 +35,113 @@ export function RankTrendChart({
   data,
   series,
   serpDepth,
-  height = 224,
-  renderTooltip,
+  valueFormatter,
   showBottomBand = false,
 }: {
   data: Array<Record<string, unknown>>;
   series: TrendSeries[];
   serpDepth: number;
-  height?: number;
-  renderTooltip: (label: number, entries: TooltipEntry[]) => ReactNode;
+  valueFormatter?: ComponentProps<typeof ChartTooltipContent>["valueFormatter"];
   /** Show the muted "not in top {serpDepth}" band — only meaningful for a
    * single keyword's position line, not for an averaged value. */
   showBottomBand?: boolean;
 }) {
-  const { containerRef, width: chartWidth } = useChartWidth();
+  const config: ChartConfig = Object.fromEntries(
+    series.map((s) => [s.dataKey, { label: s.name, color: s.color }]),
+  );
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-[11px] text-base-content/50">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>Google position (1 = best)</span>
         <span className="inline-flex items-center gap-1">
           Better <span aria-hidden>↑</span>
         </span>
       </div>
-      <div ref={containerRef} className="w-full min-w-0" style={{ height }}>
-        {chartWidth > 0 ? (
-          <LineChart
-            width={chartWidth}
-            height={height}
-            data={data}
-            margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="currentColor"
-              opacity={0.1}
-              vertical={false}
+      <ChartContainer config={config} className="h-56">
+        <LineChart
+          data={data}
+          margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+        >
+          <ChartGrid />
+          {/* Muted bottom band: not in top {serpDepth} */}
+          {showBottomBand && (
+            <ReferenceArea
+              y1={serpDepth - 0.5}
+              y2={serpDepth}
+              fill="currentColor"
+              fillOpacity={0.06}
+              ifOverflow="extendDomain"
             />
-            {/* Muted bottom band: not in top {serpDepth} */}
-            {showBottomBand && (
-              <ReferenceArea
-                y1={serpDepth - 0.5}
-                y2={serpDepth}
-                fill="currentColor"
-                fillOpacity={0.06}
-                ifOverflow="extendDomain"
+          )}
+          <ChartXAxis {...TIME_AXIS} />
+          <ChartYAxis
+            reversed
+            domain={[1, serpDepth]}
+            allowDecimals={false}
+            width={32}
+          />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                labelFormatter={formatDateLabel}
+                valueFormatter={valueFormatter}
               />
-            )}
-            <XAxis
-              dataKey="checkedAt"
-              type="number"
-              scale="time"
-              domain={["dataMin", "dataMax"]}
-              tickFormatter={formatDateTick}
-              tick={{ fontSize: 10, fill: "#888" }}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={32}
+            }
+          />
+          {series.map((s) => (
+            <Line
+              key={s.dataKey}
+              type="monotone"
+              dataKey={s.dataKey}
+              stroke={`var(--color-${s.dataKey})`}
+              strokeWidth={2}
+              strokeDasharray={s.strokeDasharray}
+              dot={{ r: 2 }}
+              activeDot={{ r: 4 }}
+              connectNulls={false}
+              isAnimationActive={false}
             />
-            <YAxis
-              reversed
-              domain={[1, serpDepth]}
-              allowDecimals={false}
-              tick={{ fontSize: 10, fill: "#888" }}
-              tickLine={false}
-              axisLine={false}
-              width={32}
-            />
-            <Tooltip
-              content={(props: TooltipContentProps<number, string>) => {
-                const { active, payload, label } = props;
-                if (!active || !payload?.length || typeof label !== "number") {
-                  return null;
-                }
-                const entries: TooltipEntry[] = payload.map(
-                  (p: RechartsPayloadEntry) => ({
-                    dataKey: p.dataKey,
-                    name: p.name,
-                    value: typeof p.value === "number" ? p.value : null,
-                    color: p.color,
-                  }),
-                );
-                return renderTooltip(label, entries);
-              }}
-              cursor={{ stroke: "rgba(150,150,150,0.3)" }}
-            />
-            {series.map((s) => (
-              <Line
-                key={s.dataKey}
-                type="monotone"
-                dataKey={s.dataKey}
-                name={s.name}
-                stroke={s.color}
-                strokeWidth={2}
-                strokeDasharray={s.strokeDasharray}
-                dot={{ r: 2 }}
-                activeDot={{ r: 4 }}
-                connectNulls={false}
-                isAnimationActive={false}
-              />
-            ))}
-          </LineChart>
-        ) : null}
-      </div>
+          ))}
+        </LineChart>
+      </ChartContainer>
     </div>
   );
 }
 
-export function formatDateTick(value: number): string {
+/** X axis for charts keyed by a `checkedAt` timestamp in ms. */
+export const TIME_AXIS = {
+  dataKey: "checkedAt",
+  type: "number",
+  scale: "time",
+  domain: ["dataMin", "dataMax"],
+  tickFormatter: formatDateTick,
+} as const;
+
+function formatDateTick(value: number): string {
   return new Date(value).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
 }
 
-/** Responsive chart width via ResizeObserver — recharts needs an explicit px
- * width. Uses a callback ref so it measures whenever the chart node mounts,
- * including after a loading state (an effect-on-mount would miss that and leave
- * the width stuck at 0). Shared by the line chart and the distribution chart. */
-export function useChartWidth() {
-  const [width, setWidth] = useState(0);
-  const observerRef = useRef<ResizeObserver | null>(null);
-
-  const containerRef = useCallback((el: HTMLDivElement | null) => {
-    observerRef.current?.disconnect();
-    observerRef.current = null;
-    if (!el) return;
-    setWidth(el.clientWidth);
-    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
-    observer.observe(el);
-    observerRef.current = observer;
-  }, []);
-
-  return { containerRef, width };
+/** Tooltip label for a `checkedAt` timestamp: "Sep 28, 2026". */
+export function formatDateLabel(label: unknown): string {
+  return typeof label === "number"
+    ? new Date(label).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
 }
 
 /** 30d / 90d / All range toggle shared by the modal and overview charts. */
 const TREND_RANGES = [
-  { label: "30d", sinceDays: 30 },
-  { label: "90d", sinceDays: 90 },
-  { label: "All", sinceDays: 730 },
-] as const;
+  { value: "30", icon: null, label: "30d" },
+  { value: "90", icon: null, label: "90d" },
+  { value: "730", icon: null, label: "All" },
+];
 
 export function TrendRangeToggle({
   value,
@@ -195,19 +151,27 @@ export function TrendRangeToggle({
   onChange: (sinceDays: number) => void;
 }) {
   return (
-    <div className="join">
-      {TREND_RANGES.map((range) => (
-        <button
-          key={range.label}
-          type="button"
-          className={`btn btn-xs join-item ${
-            value === range.sinceDays ? "btn-active" : "btn-ghost"
-          }`}
-          onClick={() => onChange(range.sinceDays)}
-        >
-          {range.label}
-        </button>
-      ))}
-    </div>
+    <SegmentedToggle
+      showLabels
+      items={TREND_RANGES}
+      value={String(value)}
+      onChange={(next) => onChange(Number(next))}
+    />
+  );
+}
+
+/** Shown instead of a trend chart until there are two checks to connect. */
+export function TrendEmptyState({ checks }: { checks: number }) {
+  return (
+    <EmptyState
+      icon={TrendingUp}
+      size="sm"
+      title={checks === 0 ? "No history yet" : "Only 1 check so far"}
+      description={
+        checks === 0
+          ? "Run a check to start tracking positions over time."
+          : "The trend fills in after the next check."
+      }
+    />
   );
 }

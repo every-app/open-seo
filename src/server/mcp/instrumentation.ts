@@ -1,7 +1,7 @@
 import { waitUntil } from "cloudflare:workers";
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import type { z } from "zod";
-import { asAppError } from "@/server/lib/errors";
+import { AppError, asAppError } from "@/server/lib/errors";
 import { recordExternalMcpToolCall } from "@/server/features/activation/mcpActivation";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
@@ -195,7 +195,21 @@ export function instrumentMcpToolHandler<TArgs>(
           ),
         );
       }
-      throw error;
+      throw agentFacingError(error, appError);
     }
   };
+}
+
+// The agent sees only the error message, and a bare INSUFFICIENT_CREDITS code
+// gives it nothing to tell the user, so it tends to retry. Explain it instead,
+// without promoting upgrades or purchases (the server instructions forbid
+// that); every other error passes through unchanged.
+function agentFacingError(error: unknown, appError: AppError | null): unknown {
+  if (appError?.code !== "INSUFFICIENT_CREDITS") return error;
+  const detail =
+    appError.message === appError.code ? "" : `${appError.message} `;
+  return new AppError(
+    "INSUFFICIENT_CREDITS",
+    `${detail}This OpenSEO organization doesn't have enough credits for this request. Retrying won't help until the organization has more credits.`,
+  );
 }

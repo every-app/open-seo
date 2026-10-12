@@ -1,15 +1,17 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlertCircle, TriangleAlert } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   exportAuditLighthouseIssues,
   getAuditLighthouseIssues,
 } from "@/serverFunctions/lighthouse";
 import { downloadFile } from "@/client/lib/download";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { exportTableToSheets } from "@/client/lib/exportToSheets";
+import { QueryError } from "@/client/components/QueryState";
+import { TableCard } from "@/client/components/ui/table";
+import { getErrorCode } from "@/client/lib/error-messages";
+import { exportRows } from "@/client/lib/exportRows";
 import type { CategoryTab, ExportPayload, LighthouseIssue } from "./types";
-import { categoryLabel, issuesToCsv, issuesToTable } from "./utils";
+import { categoryLabel, issuesToTable } from "./utils";
 import {
   LighthouseIssueList,
   LighthouseIssuesHeader,
@@ -17,18 +19,20 @@ import {
 } from "./LighthouseIssuesParts";
 import { categoryTabs } from "./types";
 
-type LighthouseIssuesScreenProps = {
+export function LighthouseIssuesScreen({
+  projectId,
+  resultId,
+  category,
+  auditId,
+}: {
   projectId: string;
   resultId: string;
   category: CategoryTab;
-  backLabel: string;
-  onBack: () => void;
-  onCategoryChange: (next: CategoryTab) => void;
-};
-
-export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
-  const { projectId, resultId, category, backLabel, onBack, onCategoryChange } =
-    props;
+  auditId: string | undefined;
+}) {
+  const navigate = useNavigate({
+    from: "/p/$projectId/audit/issues/$resultId",
+  });
 
   const issuesQuery = useQuery({
     queryKey: ["auditLighthouseIssues", projectId, resultId],
@@ -42,6 +46,7 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
   });
 
   const exportMutation = useMutation({
+    meta: { errorToast: false },
     mutationFn: (
       data: ExportPayload,
     ): Promise<{ filename: string; content: string }> =>
@@ -59,8 +64,7 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
     categoryCounts,
     runCopy,
     runExport,
-    runExportCsv,
-    runExportSheets,
+    runExportRows,
     selectedCategoryLabel,
     severityCounts,
     visibleIssues,
@@ -70,22 +74,24 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
     allIssues: issuesQuery.data?.issues ?? [],
   });
 
-  const issuesErrorMessage = getStandardErrorMessage(
-    issuesQuery.error,
-    "Failed to load Lighthouse issues.",
-  );
-  const showsLegacyPayloadNotice =
-    issuesQuery.data != null && !issuesQuery.data.hasIssueDetails;
-  const emptyMessage = showsLegacyPayloadNotice
-    ? "This audit was saved without issue-level Lighthouse details. Re-run the audit to populate this screen."
-    : undefined;
+  // Runs stored before issue details were kept have no issues to list.
+  const emptyMessage =
+    issuesQuery.data != null && !issuesQuery.data.hasIssueDetails
+      ? "This Lighthouse run was saved without issue details. Re-run the audit to see them."
+      : undefined;
 
   return (
-    <div className="px-4 py-3 md:px-6 md:py-4 pb-24 md:pb-8 overflow-auto">
-      <div className="mx-auto max-w-5xl space-y-4">
+    <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
+      <div className="mx-auto max-w-7xl space-y-4">
         <LighthouseIssuesHeader
-          backLabel={backLabel}
-          onBack={onBack}
+          onBack={() =>
+            void navigate({
+              to: "/p/$projectId/audit",
+              params: { projectId },
+              search: auditId ? { auditId } : undefined,
+            })
+          }
+          isLoading={issuesQuery.isPending}
           scannedAt={issuesQuery.data?.createdAt}
           finalUrl={issuesQuery.data?.finalUrl}
           scores={issuesQuery.data?.scores}
@@ -93,50 +99,50 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
           severityCounts={severityCounts}
         />
 
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-4">
-            {issuesQuery.isError ? (
-              <div className="alert alert-error">
-                <AlertCircle className="size-4" />
-                <span>{issuesErrorMessage}</span>
-              </div>
-            ) : null}
+        <TableCard>
+          {issuesQuery.isError ? (
+            <div className="p-4">
+              <QueryError
+                error={issuesQuery.error}
+                fallback="Failed to load Lighthouse issues."
+                // A missing result stays missing, so retry cannot help.
+                onRetry={
+                  getErrorCode(issuesQuery.error) === "NOT_FOUND"
+                    ? undefined
+                    : () => void issuesQuery.refetch()
+                }
+                isRetrying={issuesQuery.isFetching}
+              />
+            </div>
+          ) : null}
 
-            {showsLegacyPayloadNotice ? (
-              <div className="alert alert-warning">
-                <TriangleAlert className="size-4" />
-                <span>
-                  This Lighthouse run was stored before issue details were
-                  preserved. Re-run the audit to see category counts and issue
-                  cards.
-                </span>
-              </div>
-            ) : null}
-
-            <LighthouseIssuesToolbar
-              category={category}
-              categoryCounts={categoryCounts}
-              selectedCategoryLabel={selectedCategoryLabel}
-              isBusy={exportMutation.isPending}
-              visibleIssues={visibleIssues}
-              allIssues={allIssues}
-              onCategoryChange={onCategoryChange}
-              onCopy={(data, message) => {
-                void runCopy(data, message);
-              }}
-              onExport={(data) => {
-                void runExport(data);
-              }}
-              onExportCsv={runExportCsv}
-              onExportSheets={runExportSheets}
-            />
-            <LighthouseIssueList
-              issues={visibleIssues}
-              isLoading={issuesQuery.isLoading}
-              emptyMessage={emptyMessage}
-            />
-          </div>
-        </div>
+          <LighthouseIssuesToolbar
+            category={category}
+            categoryCounts={categoryCounts}
+            selectedCategoryLabel={selectedCategoryLabel}
+            isBusy={exportMutation.isPending}
+            visibleIssues={visibleIssues}
+            allIssues={allIssues}
+            onCategoryChange={(next) =>
+              void navigate({
+                search: (prev) => ({ ...prev, category: next }),
+                replace: true,
+              })
+            }
+            onCopy={(data, message) => {
+              void runCopy(data, message);
+            }}
+            onExport={(data) => {
+              void runExport(data);
+            }}
+            onExportRows={runExportRows}
+          />
+          <LighthouseIssueList
+            issues={visibleIssues}
+            isLoading={issuesQuery.isLoading}
+            emptyMessage={emptyMessage}
+          />
+        </TableCard>
       </div>
     </div>
   );
@@ -175,24 +181,16 @@ function useLighthouseIssuesActions({
     }
   };
 
-  const runExportCsv = (
+  const runExportRows = (
+    format: "csv" | "sheets",
     rows: LighthouseIssue[],
     variant: "all" | "current",
   ) => {
-    const filename = `lighthouse-${variant}-${category}-issues.csv`;
-    downloadFile(issuesToCsv(rows), filename, "text/csv");
-    toast.success("CSV download started");
-  };
-
-  const runExportSheets = (
-    rows: LighthouseIssue[],
-    variant: "all" | "current",
-  ) => {
-    const table = issuesToTable(rows);
-    void exportTableToSheets({
-      headers: table.headers,
-      rows: table.rows,
+    void exportRows({
+      format,
       feature: `lighthouse_issues_${variant}`,
+      ...issuesToTable(rows),
+      filename: `lighthouse-${variant}-${category}-issues`,
     });
   };
 
@@ -213,8 +211,7 @@ function useLighthouseIssuesActions({
     categoryCounts,
     runCopy,
     runExport,
-    runExportCsv,
-    runExportSheets,
+    runExportRows,
     selectedCategoryLabel,
     severityCounts,
     visibleIssues,

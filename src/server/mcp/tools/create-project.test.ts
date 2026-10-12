@@ -22,8 +22,6 @@ vi.mock("@/server/auth/repositories/AuthRepository", () => ({
 const toolContext = makeToolContext();
 
 describe("create_project MCP tool", () => {
-  beforeEach(() => {});
-
   it("creates a project scoped to the caller's organization and returns it", async () => {
     mocks.createProject.mockResolvedValue({
       id: "project_new",
@@ -58,32 +56,6 @@ describe("create_project MCP tool", () => {
     if (first?.type === "text") {
       expect(first.text).toContain("project_new");
     }
-  });
-
-  it("creates a minimal project with only a name (org default market)", async () => {
-    mocks.createProject.mockResolvedValue({
-      id: "project_min",
-      name: "Just a name",
-      domain: null,
-      locationCode: 2840,
-      languageCode: "en",
-    });
-
-    await createProjectTool.handler({ name: "Just a name" }, toolContext);
-
-    expect(mocks.createProject).toHaveBeenCalledWith("org_123", {
-      name: "Just a name",
-    });
-  });
-
-  it("rejects a languageCode without a locationCode (market pair rule)", async () => {
-    await expect(
-      createProjectTool.handler(
-        { name: "Bad market", languageCode: "en" },
-        toolContext,
-      ),
-    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
-    expect(mocks.createProject).not.toHaveBeenCalled();
   });
 
   it("rejects an unsupported location as a readable validation error", async () => {

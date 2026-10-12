@@ -1,4 +1,4 @@
-import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
+import type { CsvValue } from "@/client/lib/csv";
 import { formatPlatformLabel } from "@/client/features/ai-search/platformLabels";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 
@@ -50,17 +50,14 @@ export function buildBrandLookupExport(
   };
 }
 
-export function downloadBrandLookupCsv(
+export function brandLookupExportFilename(
   tab: CitationTab,
   resolvedTarget: string,
-  table: { headers: string[]; rows: CsvValue[][] },
 ) {
   const slug = slugify(resolvedTarget);
-  const filename =
-    tab === "pages"
-      ? `ai-brand-lookup-pages-${slug}.csv`
-      : `ai-brand-lookup-queries-${slug}.csv`;
-  downloadCsv(filename, buildCsv(table.headers, table.rows));
+  return tab === "pages"
+    ? `ai-brand-lookup-pages-${slug}`
+    : `ai-brand-lookup-queries-${slug}`;
 }
 
 function slugify(value: string): string {

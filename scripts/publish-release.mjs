@@ -34,7 +34,7 @@ if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/.test(version)) {
 }
 
 const tag = `v${version}`;
-const notesFile = `release-notes/${tag}.md`;
+const notesFile = `docs/release-notes/${tag}.md`;
 if (!existsSync(path.join(repoRoot, notesFile))) {
   throw new Error(`Missing release notes: ${notesFile}`);
 }

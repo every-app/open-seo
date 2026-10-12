@@ -1,44 +1,45 @@
-import { ChevronDown, Download, Loader2, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { Button } from "@/client/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 
 export function TableBulkActionBar({
   selectedCount,
   selectedLabel = "selected",
   actions,
   onClear,
-  placement = "fixed",
 }: {
   selectedCount: number;
   selectedLabel?: string;
   actions: ReactNode;
   onClear: () => void;
-  placement?: "fixed" | "inline";
 }) {
   if (selectedCount === 0) return null;
 
-  const wrapperClass =
-    placement === "fixed"
-      ? "pointer-events-none fixed inset-x-0 bottom-6 z-30 flex justify-center px-4"
-      : "flex justify-center";
-  const toolbarClass =
-    placement === "fixed"
-      ? "pointer-events-auto flex items-stretch overflow-visible rounded-xl border border-base-content/15 bg-base-300/85 shadow-2xl backdrop-blur"
-      : "flex items-stretch overflow-visible rounded-xl border border-base-content/15 bg-base-200";
-
   return (
-    <div className={wrapperClass}>
-      <div role="toolbar" aria-label="Bulk actions" className={toolbarClass}>
-        <div className="flex items-center gap-2 border-r border-base-content/10 px-3 py-2 text-sm">
-          <button
-            type="button"
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-30 flex justify-center px-4">
+      <div
+        role="toolbar"
+        aria-label="Bulk actions"
+        className="pointer-events-auto flex items-stretch rounded-xl border border-border bg-popover/90 text-popover-foreground shadow-2xl backdrop-blur"
+      >
+        <div className="flex items-center gap-2 border-r border-border py-2 pr-3 pl-2 text-sm">
+          <Button
+            variant="ghost"
+            size="icon-xs"
             aria-label="Clear selection"
-            className="-ml-1 rounded p-1 text-base-content/55 hover:bg-base-content/10 hover:text-base-content"
+            className="text-muted-foreground"
             onClick={onClear}
           >
-            <X className="size-3.5" />
-          </button>
+            <X />
+          </Button>
           <span className="font-medium tabular-nums">{selectedCount}</span>
-          <span className="text-base-content/60">{selectedLabel}</span>
+          <span className="text-muted-foreground">{selectedLabel}</span>
         </div>
         {actions}
       </div>
@@ -59,21 +60,21 @@ export function TableBulkActionButton({
   disabled?: boolean;
   variant?: "default" | "danger";
 }) {
-  const color =
-    variant === "danger"
-      ? "text-error hover:bg-error/10"
-      : "text-base-content/85 hover:bg-base-content/10";
-
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm disabled:opacity-50 ${color}`}
+      className={
+        variant === "danger"
+          ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+          : undefined
+      }
     >
       {icon}
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -90,79 +91,25 @@ export function TableBulkExportMenu({
   busy?: boolean;
 }) {
   return (
-    <div className="dropdown dropdown-top dropdown-end">
-      <button
-        type="button"
-        tabIndex={0}
-        disabled={busy}
-        aria-haspopup="menu"
-        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-base-content/85 hover:bg-base-content/10 disabled:opacity-50"
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="sm" pending={busy} />}
       >
-        {busy ? (
-          <Loader2 className="size-3.5 animate-spin" />
-        ) : (
-          <Download className="size-3.5" />
-        )}
+        {busy ? null : <Download data-icon="inline-start" />}
         Export
-        <ChevronDown className="size-3 opacity-60" />
-      </button>
-      <ul
-        tabIndex={0}
-        role="menu"
-        className="dropdown-content menu z-10 mb-2 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-      >
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="end" className="w-52">
         {actions.map((action, index) => (
-          <li key={index}>
-            <button
-              type="button"
-              onClick={action.onClick}
-              disabled={busy || action.disabled}
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          </li>
+          <DropdownMenuItem
+            key={index}
+            onClick={action.onClick}
+            disabled={busy || action.disabled}
+          >
+            {action.icon}
+            {action.label}
+          </DropdownMenuItem>
         ))}
-      </ul>
-    </div>
-  );
-}
-
-export function TableExportMenu({
-  actions,
-  buttonClassName = "btn btn-sm gap-1",
-  menuClassName = "dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56",
-}: {
-  actions: Array<{
-    label: ReactNode;
-    icon?: ReactNode;
-    onClick: () => void;
-    disabled?: boolean;
-  }>;
-  buttonClassName?: string;
-  menuClassName?: string;
-}) {
-  return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className={buttonClassName}>
-        <Download className="size-4" />
-        Export
-        <ChevronDown className="size-3 opacity-60" />
-      </div>
-      <ul tabIndex={0} className={menuClassName}>
-        {actions.map((action, index) => (
-          <li key={index}>
-            <button
-              type="button"
-              onClick={action.onClick}
-              disabled={action.disabled}
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

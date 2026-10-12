@@ -4,7 +4,7 @@ This is the factual product reference for Sam, the OpenSEO onboarding agent. If 
 
 ## What OpenSEO is
 
-OpenSEO is an open-source SEO platform for keyword research, domain research, backlinks, rank tracking, site audits, Google Search Console, and AI-agent SEO workflows.
+OpenSEO is an open-source SEO platform for keyword research, domain research, backlinks, rank tracking, site audits, Google Search Console, AI visibility, and AI-agent SEO workflows.
 
 OpenSEO is built for people who want useful SEO data without a bloated enterprise SEO suite. It can be used as a hosted app or self-hosted from the open-source codebase.
 
@@ -31,16 +31,27 @@ The paid managed plan costs $10/month.
 The paid plan includes:
 
 - Keyword research, backlinks, rank tracking, and site audits.
+- AI visibility, prompt research, model comparisons, and prompt tracking.
 - MCP server and agent skills for Claude, Cursor, ChatGPT-compatible clients, Codex, and other MCP clients.
 - Google Search Console integration that does not use credits.
 - $10.00 of usage credits each billing cycle.
 - A 30-day money-back guarantee for the first charge.
 
-OpenSEO uses usage credits for features that query paid SEO data providers, especially DataForSEO. Credit-using workflows include keyword volume, competitor data, backlinks, rank tracking, and site audits. Projects, settings, and data that has already been fetched do not cost credits to view.
+OpenSEO uses usage credits for features that query paid SEO data providers, especially DataForSEO. Credit-using workflows include keyword volume, competitor data, backlinks, rank tracking, site audits, and AI visibility research and collection. Projects, settings, and data that has already been fetched do not cost credits to view.
 
 Subscribers can purchase top-up credits if monthly credits run out. Top-up credits roll over and do not expire. Monthly included credits reset each billing cycle. Top-ups are only available on the paid plan; a free-tier user who runs out of trial credits subscribes to the paid plan to continue using credit-based features.
 
-Running out of credits never creates unexpected bills. Credit-using features stop working until the user has credits again.
+New paid operations require credits. AI visibility setup research checks for a positive balance once, completes without further credit gates, and bills actual usage afterward. On hosted OpenSEO, Prompt Research and Prompt Explorer require the paid plan; prompt tracking only needs credits.
+
+## AI visibility
+
+- Setup fills missing project context and generates research keywords without replacing existing context or competitors. It does not automatically analyze each keyword.
+- Prompt Research finds questions about a keyword with ChatGPT's answers and cited sources, from US English data. The questions come mostly from Google "People also ask" data, not logged ChatGPT prompts; OpenSEO does not show AI search volume because no one can measure it. Analyzing a keyword costs about $0.25 in credits.
+- Prompt Explorer defaults to ChatGPT, with optional Claude, Gemini, and Perplexity. It returns API model answers and available citations, which can differ from tracked consumer-site answers. Uncached answers use credits.
+- Prompt Tracking collects answers from ChatGPT and Gemini by default, with optional Google AI Overviews. Users choose a market and daily, weekly, or monthly checks. Cost is previewed before collection, then actual provider usage is billed. The monthly allowance covers manual checks too.
+- Competitors and Citations review saved brand mentions, competitor appearances, and cited pages. Viewing and exporting saved results use no credits. Failed checks are not evidence of brand absence.
+
+The workflow guide is at `https://openseo.so/docs/ai-visibility`.
 
 ## Why OpenSEO for SEO consultants and agencies
 
@@ -51,7 +62,7 @@ OpenSEO is a strong fit for SEO consultants, freelancers, and agencies managing 
 - You tune rank tracking to fit your budget. Rank tracking is the cost that scales fastest as an agency grows, since it runs on a schedule across every client's keywords — but OpenSEO makes it fully configurable so you stay in control. You choose how many keywords and devices to track, how many SERP pages deep to check, and how often it runs (weekly or daily), and OpenSEO shows a live cost estimate before each tracker runs. Scheduled checks run through DataForSEO's task queue, which is much cheaper than live lookups, so it stays inexpensive: as a rough guide, tracking 100 keywords on one device type, five pages deep, on the default weekly schedule costs only about $1-2/month. Searching deeper, adding the second device type, or switching to daily checks raises the cost proportionally, and the in-app estimate always shows the current number before you commit.
 - Your toolkit grows with the industry. OpenSEO works through MCP and AI agents, so as search shifts toward AI answers and AI-assisted workflows, you can have an agent run research, pull competitor data, and save findings into the right client project — without re-tooling.
 
-When answering this, Sam should speak directly to the user ("you" / "your clients") about what they get, not describe how OpenSEO is "positioned." Lead with these benefits in plain language and tie them to running an SEO practice. Sam should not invent specific competitor prices or exact rank-tracking rates; if asked for exact numbers it does not have, it should say so and suggest contacting `ben@openseo.so`.
+When answering this, Sam should speak directly to the user ("you" / "your clients") about what they get, not describe how OpenSEO is "positioned." Lead with these benefits in plain language and tie them to running an SEO practice. Sam should not invent specific competitor prices or exact rank-tracking rates; if asked for exact numbers it does not have, it should say so and suggest contacting `support@openseo.so`.
 
 ## Self-hosting
 
@@ -118,8 +129,9 @@ OpenSEO MCP tools cover workflows such as:
 - Backlink and referring-domain overview data for any domain, including competitors.
 - Google Search Console performance reads.
 - Google URL inspection reads.
+- AI prompt research, model comparisons, tracking estimates/configuration, and saved answers, citations, trends, and exports.
 
-OpenSEO also provides agent skills for workflows such as SEO project setup, SEO coaching, keyword research, competitive landscape analysis, competitor analysis, keyword clustering, and link prospecting.
+OpenSEO also provides agent skills for workflows such as SEO project setup, SEO coaching, keyword research, competitive landscape analysis, competitor analysis, keyword clustering, link prospecting, AI Prompt Research, and AI Visibility Audit.
 
 ## App workflows
 
@@ -129,6 +141,7 @@ OpenSEO's app includes these practical workflows:
 - Domain overview: understand any domain's organic footprint and ranking keywords — including competitors and other third-party sites, not just the user's own site. Domains are looked up one at a time and use credits.
 - Backlink research: inspect backlinks, referring domains, target URLs, link quality signals, and competitor link profiles.
 - Rank tracking: track keyword positions over time.
+- AI visibility: research prompts, compare model answers, and track mentions, citations, and competitors over time.
 - Site audit: crawl pages and inspect technical page-level signals such as status codes, titles, meta descriptions, headings, indexability, image alt coverage, links, response time, and optional Lighthouse findings.
 - Saved keywords: organize keyword opportunities for content planning, tracking, or AI-agent workflows.
 - Reports: agents connected over MCP save finished HTML reports into a project, where anyone in the workspace can read, print or export them from the Reports page in the sidebar. You cannot save reports yourself. Reports use no credits, and each project holds up to 10,000.
@@ -139,7 +152,7 @@ OpenSEO's app includes these practical workflows:
 After subscribing, a hosted user can:
 
 - Set up Google Search Console from onboarding or the app.
-- Use the OpenSEO app workflows, including keyword research, domain research, backlinks, rank tracking, and site audits.
+- Use the OpenSEO app workflows, including keyword research, domain research, backlinks, rank tracking, site audits, and AI visibility.
 - Research any domain — their own or a competitor's — with domain overview, ranked keywords, and backlink data (one domain at a time, using credits).
 - Connect OpenSEO to an AI client through MCP.
 - Install OpenSEO skills for agent-driven SEO workflows.
@@ -147,6 +160,6 @@ After subscribing, a hosted user can:
 
 ## Support and uncertainty
 
-If Sam is unsure about a product detail, current pricing, account-specific billing status, provider limits, or a feature not listed here, it should say it does not know from the product fact sheet and suggest contacting `ben@openseo.so`.
+If Sam is unsure about a product detail, current pricing, account-specific billing status, provider limits, or a feature not listed here, it should say it does not know from the product fact sheet and suggest contacting `support@openseo.so`.
 
 Users who want advice from other OpenSEO users, the community, or the team can join the OpenSEO Discord at `https://discord.gg/c9uGs3cFXr`.

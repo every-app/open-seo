@@ -7,23 +7,18 @@ vi.mock("@/serverFunctions/billing", () => ({
 import { getBillingFeatureBreakdownRows } from "./BillingFeatureBreakdown";
 
 describe("getBillingFeatureBreakdownRows", () => {
-  it("uses explicit creditFeature when present", () => {
+  it("prefers an explicit creditFeature (or its raw alias) over the path", () => {
     const rows = getBillingFeatureBreakdownRows([
       {
+        timestamp: 0,
         value: 250,
         properties: {
           creditFeature: "rank_tracking",
           paths: ["v3/serp/google/organic/live/regular"],
         },
       },
-    ]);
-
-    expect(rows).toEqual([{ label: "Rank Tracking", usd: 0.25 }]);
-  });
-
-  it("supports raw Autumn property aliases", () => {
-    const rows = getBillingFeatureBreakdownRows([
       {
+        timestamp: 0,
         value: 200,
         properties: {
           credit_feature: "local_seo",
@@ -32,28 +27,35 @@ describe("getBillingFeatureBreakdownRows", () => {
       },
     ]);
 
-    expect(rows).toEqual([{ label: "Local SEO", usd: 0.2 }]);
+    expect(rows).toEqual([
+      { label: "Rank Tracking", usd: 0.25 },
+      { label: "Local SEO", usd: 0.2 },
+    ]);
   });
 
   it("infers legacy events from DataForSEO paths", () => {
     const rows = getBillingFeatureBreakdownRows([
       {
+        timestamp: 0,
         value: 500,
         properties: { paths: ["v3/backlinks/summary/live"] },
       },
       {
+        timestamp: 0,
         value: 250,
         properties: {
           paths: ["v3/dataforseo_labs/google/domain_rank_overview/live"],
         },
       },
       {
+        timestamp: 0,
         value: 125,
         properties: {
           paths: ["v3/ai_optimization/llm_mentions/search/live"],
         },
       },
       {
+        timestamp: 0,
         value: 100,
         properties: { paths: ["backlinks/summary"] },
       },
@@ -69,12 +71,14 @@ describe("getBillingFeatureBreakdownRows", () => {
   it("supports legacy JSON-encoded path groups", () => {
     const rows = getBillingFeatureBreakdownRows([
       {
+        timestamp: 0,
         value: 300,
         properties: {
           paths: '["v3/ai_optimization/chat_gpt/llm_responses/live"]',
         },
       },
       {
+        timestamp: 0,
         value: 200,
         properties: {
           paths: '["v3","ai_optimization","perplexity","llm_responses","live"]',
@@ -83,16 +87,5 @@ describe("getBillingFeatureBreakdownRows", () => {
     ]);
 
     expect(rows).toEqual([{ label: "AI Prompt Responses", usd: 0.5 }]);
-  });
-
-  it("falls back to Other when neither feature nor path is available", () => {
-    const rows = getBillingFeatureBreakdownRows([
-      {
-        value: 100,
-        properties: {},
-      },
-    ]);
-
-    expect(rows).toEqual([{ label: "Other", usd: 0.1 }]);
   });
 });

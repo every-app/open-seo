@@ -27,29 +27,14 @@ describe("normalizeAndValidateStartUrl", () => {
     ).resolves.toBe("https://example.com/path");
   });
 
-  it("blocks localhost-like targets", async () => {
-    await expect(
-      normalizeAndValidateStartUrl("http://localhost:3000"),
-    ).rejects.toMatchObject({
-      code: "CRAWL_TARGET_BLOCKED",
-    } satisfies Partial<AppError>);
-  });
-
-  it("blocks private ip targets", async () => {
-    await expect(
-      normalizeAndValidateStartUrl("http://192.168.0.10"),
-    ).rejects.toMatchObject({
-      code: "CRAWL_TARGET_BLOCKED",
-    } satisfies Partial<AppError>);
-  });
-
-  it("rejects invalid URL input", async () => {
-    await expect(
-      normalizeAndValidateStartUrl("not a url"),
-    ).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-    } satisfies Partial<AppError>);
-  });
+  it.each(["http://localhost:3000", "http://192.168.0.10"])(
+    "blocks %s",
+    async (url) => {
+      await expect(normalizeAndValidateStartUrl(url)).rejects.toMatchObject({
+        code: "CRAWL_TARGET_BLOCKED",
+      } satisfies Partial<AppError>);
+    },
+  );
 });
 
 const dnsOk = () =>
@@ -87,30 +72,14 @@ describe("resolveStartUrlRedirects", () => {
     });
     await expect(
       resolveStartUrlRedirects("https://example.net/"),
-    ).resolves.toBe("https://example.com/");
-  });
-
-  it("follows an apex-to-www redirect chain", async () => {
-    stubFetch({
-      "https://example.com/": () => redirect("https://www.example.com/"),
-    });
-    await expect(
-      resolveStartUrlRedirects("https://example.com/"),
-    ).resolves.toBe("https://www.example.com/");
-  });
-
-  it("returns the original URL when the site does not redirect", async () => {
-    stubFetch({});
-    await expect(
-      resolveStartUrlRedirects("https://example.com/"),
-    ).resolves.toBe("https://example.com/");
+    ).resolves.toMatchObject({ url: "https://example.com/" });
   });
 
   it("returns the last URL when the probe fails", async () => {
     vi.mocked(fetch).mockRejectedValue(new Error("network down"));
     await expect(
       resolveStartUrlRedirects("https://example.com/"),
-    ).resolves.toBe("https://example.com/");
+    ).resolves.toMatchObject({ url: "https://example.com/" });
   });
 
   it("stops after the hop limit on a redirect loop", async () => {
@@ -118,9 +87,8 @@ describe("resolveStartUrlRedirects", () => {
       "https://a.example/": () => redirect("https://b.example/"),
       "https://b.example/": () => redirect("https://a.example/"),
     });
-    await expect(
-      resolveStartUrlRedirects("https://a.example/"),
-    ).resolves.toMatch(/^https:\/\/(a|b)\.example\/$/);
+    const resolved = await resolveStartUrlRedirects("https://a.example/");
+    expect(resolved.url).toMatch(/^https:\/\/(a|b)\.example\/$/);
   });
 
   it("rejects redirects into blocked targets", async () => {

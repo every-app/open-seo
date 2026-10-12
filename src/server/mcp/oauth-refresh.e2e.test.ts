@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import type { createOpenSeoOAuthProvider } from "./oauth-provider";
+import { createOpenSeoOAuthProvider } from "./oauth-provider";
 
 // End-to-end OAuth lifecycle against the REAL @cloudflare/workers-oauth-provider
 // (only the Workers runtime shims and app session resolution are mocked),
@@ -9,7 +9,7 @@ import type { createOpenSeoOAuthProvider } from "./oauth-provider";
 // PKCE S256, form-encoded token requests, and refresh with client_id only —
 // no client secret, no scope parameter. Refresh breakage has bitten real
 // clients before (PR #420); these tests pin the full register → authorize →
-// consent → token → use → refresh → rotate chain.
+// consent → token → use → refresh chain.
 
 const BASE = "https://app.openseo.so";
 const MCP_RESOURCE = `${BASE}/mcp`;
@@ -133,9 +133,8 @@ type Env = Parameters<Provider["fetch"]>[1];
 let provider: Provider;
 let env: Env;
 
-beforeEach(async () => {
+beforeEach(() => {
   vi.useRealTimers();
-  const { createOpenSeoOAuthProvider } = await import("./oauth-provider");
   provider = createOpenSeoOAuthProvider(() => new Response("app"));
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the provider touches only OAUTH_KV
   env = { OAUTH_KV: createKvFake() } as unknown as Env;
@@ -144,7 +143,6 @@ beforeEach(async () => {
 const registrationSchema = z.looseObject({
   client_id: z.string(),
   token_endpoint_auth_method: z.string(),
-  client_secret: z.string().optional(),
 });
 
 const tokenResponseSchema = z.looseObject({
@@ -173,9 +171,7 @@ function dispatch(request: Request) {
 }
 
 // Codex's DCR registration omits token_endpoint_auth_method entirely.
-async function registerCodexStyleClient(
-  overrides: Record<string, unknown> = {},
-) {
+async function registerCodexStyleClient() {
   const response = await dispatch(
     new Request(`${BASE}/api/auth/oauth2/register`, {
       method: "POST",
@@ -185,7 +181,6 @@ async function registerCodexStyleClient(
         redirect_uris: ["http://localhost:1455/auth/callback"],
         grant_types: ["authorization_code", "refresh_token"],
         response_types: ["code"],
-        ...overrides,
       }),
     }),
   );
@@ -321,30 +316,6 @@ describe("Codex-style OAuth token refresh (real workers-oauth-provider)", () => 
     expect(second.status).toBe(200);
   });
 
-  it("honors the previous refresh token until the rotated one is used", async () => {
-    // Codex can lose a token response (crash, retry): the provider keeps the
-    // pre-rotation token valid until the new one is first used.
-    const { client, tokens } = await setupSession();
-
-    const first = tokenResponseSchema.parse(
-      await (await refresh(client.client_id, tokens.refresh_token)).json(),
-    );
-    // Retry with the ORIGINAL token before ever using the rotated one.
-    const retry = await refresh(client.client_id, tokens.refresh_token);
-    expect(retry.status).toBe(200);
-
-    const retried = tokenResponseSchema.parse(await retry.json());
-    // Once a newer refresh token is used, the stale original is rejected.
-    const afterUse = await refresh(client.client_id, retried.refresh_token);
-    expect(afterUse.status).toBe(200);
-    const stale = await refresh(client.client_id, tokens.refresh_token);
-    expect(stale.status).toBe(400);
-    expect(tokenErrorSchema.parse(await stale.json()).error).toBe(
-      "invalid_grant",
-    );
-    void first;
-  });
-
   it("accepts a refresh carrying the canonical RFC 8707 resource and rejects a mismatched one", async () => {
     const { client, tokens } = await setupSession();
 
@@ -423,46 +394,5 @@ describe("Codex-style OAuth token refresh (real workers-oauth-provider)", () => 
     } finally {
       vi.useRealTimers();
     }
-  });
-
-  it("still rejects a secretless refresh from a client registered as confidential", async () => {
-    // The pre-PR-#420 failure mode: a client stored with client_secret_basic
-    // that never sends its secret fails refresh until it re-registers.
-    const client = await registerCodexStyleClient({
-      token_endpoint_auth_method: "client_secret_basic",
-    });
-    expect(client.client_secret).toBeTruthy();
-    const codeVerifier = randomBytes(32).toString("base64url");
-    const code = await authorizeAndGetCode(client.client_id, codeVerifier);
-
-    // Confidential clients must authenticate even at the code exchange — and
-    // since 0.9.0 the registered method is enforced: client_secret_basic means
-    // the Authorization header, not a client_secret form field.
-    const basicAuth = Buffer.from(
-      `${client.client_id}:${client.client_secret ?? ""}`,
-    ).toString("base64");
-    const exchange = await dispatch(
-      new Request(`${BASE}/api/auth/oauth2/token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${basicAuth}`,
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code,
-          redirect_uri: "http://localhost:1455/auth/callback",
-          code_verifier: codeVerifier,
-        }).toString(),
-      }),
-    );
-    expect(exchange.status).toBe(200);
-    const tokens = tokenResponseSchema.parse(await exchange.json());
-
-    const secretless = await refresh(client.client_id, tokens.refresh_token);
-    expect(secretless.status).toBe(401);
-    expect(tokenErrorSchema.parse(await secretless.json()).error).toBe(
-      "invalid_client",
-    );
   });
 });

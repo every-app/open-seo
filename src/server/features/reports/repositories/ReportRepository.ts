@@ -1,4 +1,4 @@
-import { and, count, desc, eq, sum } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sum } from "drizzle-orm";
 import { db } from "@/db";
 import { projects, reports } from "@/db/schema";
 import type { ReportMetadata } from "@/types/schemas/reports";
@@ -227,14 +227,24 @@ async function setShareToken(
   // The service mints both halves, so the token it hands back to the caller
   // and the stamp stored with it come from one clock.
   share: { shareToken: string; sharedAt: string } | null,
-): Promise<void> {
-  await db
+): Promise<boolean> {
+  const updated = await db
     .update(reports)
     .set({
       shareToken: share?.shareToken ?? null,
       sharedAt: share?.sharedAt ?? null,
     })
-    .where(and(eq(reports.id, reportId), eq(reports.projectId, projectId)));
+    .where(
+      and(
+        eq(reports.id, reportId),
+        eq(reports.projectId, projectId),
+        // Concurrent publishers must keep the first token. Revocation clears
+        // whichever token is current when the update runs.
+        share ? isNull(reports.shareToken) : undefined,
+      ),
+    )
+    .returning({ id: reports.id });
+  return updated.length > 0;
 }
 
 /** True when a row was deleted; false when the id is not in this project. */

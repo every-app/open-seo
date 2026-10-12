@@ -62,7 +62,7 @@ export const getDomainOverviewTool = {
       .passthrough(),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: false,
     },
   },

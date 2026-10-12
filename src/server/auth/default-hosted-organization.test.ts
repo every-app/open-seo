@@ -36,20 +36,15 @@ describe("resolveSignInHostedOrganization", () => {
   // must NOT get a personal organization auto-minted at sign-in — accepting the
   // invite should leave them in exactly the inviter's org.
   it("defers organization creation while an invitation is pending", async () => {
-    mocks.hasPendingInvitationForEmail.mockResolvedValue(true);
-    const createOrganization = vi.fn();
+    const createOrganization = vi.fn().mockResolvedValue({ id: "org-new" });
 
+    mocks.hasPendingInvitationForEmail.mockResolvedValue(true);
     await expect(
       resolveSignInHostedOrganization("user-1", createOrganization),
     ).resolves.toBeNull();
-
     expect(createOrganization).not.toHaveBeenCalled();
-  });
 
-  it("creates the default organization when no invitation is pending", async () => {
     mocks.hasPendingInvitationForEmail.mockResolvedValue(false);
-    const createOrganization = vi.fn().mockResolvedValue({ id: "org-new" });
-
     await expect(
       resolveSignInHostedOrganization("user-1", createOrganization),
     ).resolves.toMatchObject({ organizationId: "org-new" });

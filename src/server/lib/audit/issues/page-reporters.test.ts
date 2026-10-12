@@ -62,26 +62,45 @@ function issueTypes(page: CrawledPageResult): string[] {
 }
 
 describe("runPageReporters", () => {
+  it("keeps known signals on an unread shell without inventing missing-content issues", () => {
+    const types = issueTypes(
+      makePage({
+        javascriptShell: true,
+        title: "",
+        metaDescription: "",
+        h1Count: 0,
+        wordCount: 1,
+        links: [],
+        isIndexable: false,
+        robotsMeta: "noindex",
+        canonicalUrl: "https://example.com/canonical",
+        headerCanonicalUrl: "https://example.com/header-canonical",
+        responseTimeMs: 2000,
+        crawlDepth: 5,
+      }),
+    );
+    expect(types).toEqual([
+      "slow-response",
+      "noindex-page",
+      "canonical-conflict",
+      "canonicalized-page",
+      "deep-page",
+      "javascript-rendering-suspected",
+    ]);
+  });
+
   it("reports nothing for a healthy page", () => {
     expect(issueTypes(makePage({}))).toEqual([]);
   });
 
-  it("reports only blocked-page for a blocked fetch", () => {
-    expect(
-      issueTypes(makePage({ fetchClass: "blocked", statusCode: 403 })),
-    ).toEqual(["blocked-page"]);
-  });
-
-  it("reports only rate-limited-page for a fetch the site kept 429ing", () => {
-    expect(
-      issueTypes(makePage({ fetchClass: "rate_limited", statusCode: 429 })),
-    ).toEqual(["rate-limited-page"]);
-  });
-
-  it("reports nothing for a fetch error", () => {
-    expect(
-      issueTypes(makePage({ fetchClass: "error", statusCode: 0 })),
-    ).toEqual([]);
+  // A fetch that never produced a page yields exactly its fetch issue, and
+  // none of the content checks.
+  it.each([
+    [{ fetchClass: "blocked", statusCode: 403 }, ["blocked-page"]],
+    [{ fetchClass: "rate_limited", statusCode: 429 }, ["rate-limited-page"]],
+    [{ fetchClass: "error", statusCode: 0 }, []],
+  ] as const)("reports %o as %j", (overrides, expected) => {
+    expect(issueTypes(makePage(overrides))).toEqual(expected);
   });
 
   it("classifies error statuses by range", () => {
@@ -97,26 +116,37 @@ describe("runPageReporters", () => {
     ).toEqual([]);
   });
 
-  it("checks titles and meta descriptions", () => {
-    expect(issueTypes(makePage({ title: "" }))).toContain("missing-title");
-    expect(issueTypes(makePage({ title: "x".repeat(70) }))).toContain(
-      "title-too-long",
-    );
-    expect(issueTypes(makePage({ title: "Tiny" }))).toContain(
-      "title-too-short",
-    );
-    expect(issueTypes(makePage({ metaDescription: "" }))).toContain(
-      "missing-meta-description",
-    );
-    expect(
-      issueTypes(makePage({ metaDescription: "x".repeat(200) })),
-    ).toContain("meta-description-too-long");
-    expect(issueTypes(makePage({ metaDescription: "x".repeat(69) }))).toContain(
-      "meta-description-too-short",
-    );
-    expect(
-      issueTypes(makePage({ metaDescription: "x".repeat(70) })),
-    ).not.toContain("meta-description-too-short");
+  it.each<[Partial<CrawledPageResult>, string]>([
+    [{ title: "" }, "missing-title"],
+    [{ title: "x".repeat(70) }, "title-too-long"],
+    [{ title: "Tiny" }, "title-too-short"],
+    [{ metaDescription: "" }, "missing-meta-description"],
+    [{ metaDescription: "x".repeat(200) }, "meta-description-too-long"],
+    [{ metaDescription: "x".repeat(69) }, "meta-description-too-short"],
+    [{ h1Count: 0 }, "missing-h1"],
+    [{ h1Count: 3 }, "multiple-h1"],
+    [{ headingOrder: [1, 2, 4] }, "heading-order-skip"],
+    [{ wordCount: 50 }, "thin-content"],
+    [{ responseTimeMs: 3000 }, "slow-response"],
+    [{ crawlDepth: 6 }, "deep-page"],
+    [{ links: [] }, "no-outgoing-links"],
+  ])("flags %o as %s", (overrides, issueType) => {
+    expect(issueTypes(makePage(overrides))).toContain(issueType);
+  });
+
+  it.each<[Partial<CrawledPageResult>, string]>([
+    [{ metaDescription: "x".repeat(70) }, "meta-description-too-short"],
+    [
+      { wordCount: 50, isIndexable: false, robotsMeta: "noindex" },
+      "thin-content",
+    ],
+    [{ crawlDepth: null }, "deep-page"],
+    [{ links: [], isIndexable: false }, "no-outgoing-links"],
+  ])("does not flag %o as %s", (overrides, issueType) => {
+    expect(issueTypes(makePage(overrides))).not.toContain(issueType);
+  });
+
+  it("reports the measured length with a short meta description", () => {
     expect(
       runPageReporters(makePage({ metaDescription: "x".repeat(69) })).find(
         (issue) => issue.issueType === "meta-description-too-short",
@@ -124,41 +154,32 @@ describe("runPageReporters", () => {
     ).toEqual({ length: 69 });
   });
 
-  it("checks headings", () => {
-    expect(issueTypes(makePage({ h1Count: 0 }))).toContain("missing-h1");
-    expect(issueTypes(makePage({ h1Count: 3 }))).toContain("multiple-h1");
-    expect(issueTypes(makePage({ headingOrder: [1, 2, 4] }))).toContain(
-      "heading-order-skip",
-    );
-  });
-
-  it("skips content checks for non-HTML responses", () => {
-    const nonHtml = makePage({
-      isHtml: false,
-      title: "",
-      metaDescription: "",
-      h1Count: 0,
-      headingOrder: [],
-      wordCount: 0,
-      contentHash: null,
-    });
-    expect(issueTypes(nonHtml)).toEqual([]);
-  });
-
-  it("still checks empty-shell HTML pages", () => {
-    const shell = makePage({
-      isHtml: true,
-      title: "",
-      metaDescription: "",
-      h1Count: 0,
-      headingOrder: [],
-      wordCount: 0,
-      contentHash: null,
-    });
-    const types = issueTypes(shell);
-    expect(types).toContain("missing-title");
-    expect(types).toContain("missing-h1");
-    expect(types).toContain("thin-content");
+  // The same empty shell: a PDF gets no content checks, an HTML page all of them.
+  it.each([
+    [false, []],
+    [
+      true,
+      [
+        "missing-title",
+        "missing-meta-description",
+        "missing-h1",
+        "thin-content",
+      ],
+    ],
+  ])("with isHtml %s an empty shell reports %j", (isHtml, expected) => {
+    expect(
+      issueTypes(
+        makePage({
+          isHtml,
+          title: "",
+          metaDescription: "",
+          h1Count: 0,
+          headingOrder: [],
+          wordCount: 0,
+          contentHash: null,
+        }),
+      ),
+    ).toEqual(expected);
   });
 
   it("flags indexability and canonical signals", () => {
@@ -178,35 +199,6 @@ describe("runPageReporters", () => {
     expect(
       issueTypes(makePage({ canonicalUrl: "https://example.com/a" })),
     ).not.toContain("canonicalized-page");
-  });
-
-  it("flags thin content only on indexable pages", () => {
-    expect(issueTypes(makePage({ wordCount: 50 }))).toContain("thin-content");
-    expect(
-      issueTypes(
-        makePage({ wordCount: 50, isIndexable: false, robotsMeta: "noindex" }),
-      ),
-    ).not.toContain("thin-content");
-  });
-
-  it("flags slow responses and deep pages", () => {
-    expect(issueTypes(makePage({ responseTimeMs: 3000 }))).toContain(
-      "slow-response",
-    );
-    expect(issueTypes(makePage({ crawlDepth: 6 }))).toContain("deep-page");
-    expect(issueTypes(makePage({ crawlDepth: null }))).not.toContain(
-      "deep-page",
-    );
-  });
-
-  it("flags indexable pages with no outgoing links", () => {
-    expect(issueTypes(makePage({ links: [] }))).toContain("no-outgoing-links");
-    expect(
-      issueTypes(makePage({ links: [], isIndexable: false })),
-    ).not.toContain("no-outgoing-links");
-    expect(issueTypes(makePage({ links: [HEALTHY_LINK] }))).not.toContain(
-      "no-outgoing-links",
-    );
   });
 });
 
@@ -244,7 +236,7 @@ describe("findDuplicates", () => {
     ]);
   });
 
-  it("excludes noindexed and canonicalized pages from duplicate groups", () => {
+  it("excludes noindexed, canonicalized, and blocked pages from duplicate groups", () => {
     const issues = findDuplicates([
       makeSlimPage({ url: "https://example.com/a", title: "Same" }),
       makeSlimPage({
@@ -257,15 +249,8 @@ describe("findDuplicates", () => {
         title: "Same",
         isIndexable: false,
       }),
-    ]);
-    expect(issues).toHaveLength(0);
-  });
-
-  it("ignores non-2xx and blocked pages", () => {
-    const issues = findDuplicates([
-      makeSlimPage({ url: "https://example.com/a", title: "Same" }),
       makeSlimPage({
-        url: "https://example.com/b",
+        url: "https://example.com/d",
         title: "Same",
         fetchClass: "blocked",
         statusCode: 403,
@@ -324,20 +309,20 @@ describe("findRedirectChainsAndLoops", () => {
     ]);
   });
 
-  it("flags loops", () => {
-    const issues = findRedirectChainsAndLoops([
-      redirect("https://example.com/a", "https://example.com/b"),
-      redirect("https://example.com/b", "https://example.com/a"),
-    ]);
-    expect(
-      issues.filter((issue) => issue.issueType === "redirect-loop").length,
-    ).toBeGreaterThan(0);
-  });
-
-  it("flags self-loops", () => {
-    const issues = findRedirectChainsAndLoops([
-      redirect("https://example.com/a", "https://example.com/a"),
-    ]);
+  it.each([
+    [
+      "a two-page loop",
+      [
+        redirect("https://example.com/a", "https://example.com/b"),
+        redirect("https://example.com/b", "https://example.com/a"),
+      ],
+    ],
+    [
+      "a self-loop",
+      [redirect("https://example.com/a", "https://example.com/a")],
+    ],
+  ])("flags %s once", (_case, pages) => {
+    const issues = findRedirectChainsAndLoops(pages);
     expect(issues).toHaveLength(1);
     expect(issues[0].issueType).toBe("redirect-loop");
   });

@@ -64,7 +64,7 @@ supports manual inspection but cannot be fetched by those crawlers.
 
 ## Website and BadSEO
 
-The marketing website (`web/`) and audit test site (`badseo/`) are separate
+The marketing website (`web/`) and audit test site (`tests/badseo/`) are separate
 pnpm projects with their own lockfiles. The root install does not install their
 dependencies. From the repository root, install the project you plan to work on:
 
@@ -77,27 +77,27 @@ pnpm --dir web run types:check
 pnpm --dir web run build
 
 # Audit test site (keep the root dependencies installed for its audit harness)
-pnpm --dir badseo install --frozen-lockfile
-pnpm --dir badseo run dev
+pnpm --dir tests/badseo install --frozen-lockfile
+pnpm --dir tests/badseo run dev
 # Validate BadSEO changes
-pnpm --dir badseo run build
+pnpm --dir tests/badseo run build
 ```
 
 Run BadSEO's audit harness from another terminal while its dev server is running:
 
 ```sh
-pnpm --dir badseo run audit http://localhost:8787
+pnpm --dir tests/badseo run audit http://localhost:8787
 ```
 
 Use the root formatter for BadSEO; the website has its own formatter:
 
 ```sh
 # From the repository root
-pnpm exec prettier --write "badseo/**/*.{ts,tsx,json,jsonc,md}"
+pnpm exec prettier --write "tests/badseo/**/*.{ts,tsx,json,jsonc,md}"
 pnpm --dir web run format:write
 ```
 
-See [BadSEO's README](../badseo/README.md) for fixture and audit instructions.
+See [BadSEO's README](../tests/badseo/README.md) for fixture and audit instructions.
 
 ## Database Commands
 

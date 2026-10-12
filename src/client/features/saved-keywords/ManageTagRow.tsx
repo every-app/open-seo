@@ -1,5 +1,8 @@
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { useId, useState } from "react";
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
 import {
   resolveTagColor,
   TAG_COLOR_KEYS,
@@ -21,6 +24,7 @@ export function ManageTagRow({
   onDelete: () => void;
   onCancel: () => void;
 }) {
+  const nameId = useId();
   const [name, setName] = useState(tag.name);
   const currentColor = resolveTagColor(tag);
   const [color, setColor] = useState<TagColorKey>(currentColor);
@@ -29,34 +33,28 @@ export function ManageTagRow({
   const canSave = (nameChanged || colorChanged) && !isBusy;
 
   return (
-    <div className="space-y-2 border-y border-base-300 bg-base-200/40 px-3 py-2.5">
-      <div className="space-y-1">
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-base-content/55">
-          Rename
-        </label>
-        <div className="flex items-center gap-1.5">
-          <Pencil className="size-3 opacity-50" />
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="min-w-0 flex-1 rounded border border-base-300 bg-base-100 px-2 py-1 text-sm outline-none focus:border-primary"
-          />
-        </div>
+    <div className="space-y-3 border-y border-border bg-muted/40 px-4 py-3">
+      <div className="space-y-1.5">
+        <Label htmlFor={nameId}>Name</Label>
+        <Input
+          id={nameId}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
       </div>
 
-      <div className="space-y-1">
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-base-content/55">
-          Color
-        </label>
+      <div className="space-y-1.5">
+        <p className="text-sm leading-none font-medium">Color</p>
         <div className="flex flex-wrap items-center gap-1.5">
           {TAG_COLOR_KEYS.map((key) => (
             <button
               key={key}
               type="button"
               aria-label={key}
-              className={`size-5 rounded-full transition ${tagSwatchClass(key)} ${
+              aria-pressed={color === key}
+              className={`size-5 rounded-full transition outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${tagSwatchClass(key)} ${
                 color === key
-                  ? "ring-2 ring-offset-2 ring-offset-base-200 ring-base-content/40"
+                  ? "ring-2 ring-foreground/40 ring-offset-2 ring-offset-background"
                   : "hover:scale-110"
               }`}
               onClick={() => setColor(key)}
@@ -65,27 +63,23 @@ export function ManageTagRow({
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1">
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-xs text-error hover:underline disabled:opacity-50"
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="xs"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
           onClick={onDelete}
           disabled={isBusy}
         >
-          <Trash2 className="size-3" />
+          <Trash2 data-icon="inline-start" />
           Delete
-        </button>
+        </Button>
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="rounded px-2 py-1 text-xs text-base-content/70 hover:bg-base-300"
-            onClick={onCancel}
-          >
+          <Button variant="ghost" size="xs" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-content disabled:opacity-50"
+          </Button>
+          <Button
+            size="xs"
             disabled={!canSave}
             onClick={() =>
               onSave({
@@ -95,7 +89,7 @@ export function ManageTagRow({
             }
           >
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </div>

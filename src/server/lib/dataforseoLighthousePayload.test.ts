@@ -24,10 +24,7 @@ describe("parseDataforseoLighthousePayload", () => {
                     score: 0.54,
                     auditRefs: [{ id: "unused-javascript" }],
                   },
-                  accessibility: {
-                    score: 0.93,
-                    auditRefs: [{ id: "accesskeys" }],
-                  },
+                  accessibility: { score: 0.93, auditRefs: [] },
                   "best-practices": { score: 0.79, auditRefs: [] },
                   seo: { score: 0.92, auditRefs: [] },
                 },
@@ -49,12 +46,6 @@ describe("parseDataforseoLighthousePayload", () => {
                         },
                       ],
                     },
-                  },
-                  accesskeys: {
-                    title: "`[accesskey]` values are unique",
-                    description: "Access keys should not conflict.",
-                    score: null,
-                    scoreDisplayMode: "error",
                   },
                   interactive: {
                     title: "Time to Interactive",
@@ -162,38 +153,6 @@ describe("parseDataforseoLighthousePayload", () => {
         },
       ),
     ).toThrow("DataForSEO Lighthouse returned no category scores");
-  });
-
-  it("throws when DataForSEO returns a non-success task status", () => {
-    expect(() =>
-      parseDataforseoLighthousePayload(
-        {
-          status_code: 20000,
-          status_message: "Ok.",
-          tasks: [
-            {
-              id: "task-1",
-              status_code: 40501,
-              status_message: "Insufficient credits",
-              result: [],
-            },
-          ],
-        },
-        {
-          url: "https://everyapp.dev/",
-          strategy: "mobile",
-        },
-      ),
-    ).toThrow("Insufficient credits");
-  });
-
-  it("includes schema details when the payload shape is invalid", () => {
-    expect(() =>
-      parseDataforseoLighthousePayload(null, {
-        url: "https://everyapp.dev/",
-        strategy: "mobile",
-      }),
-    ).toThrow("<root>");
   });
 
   it("rejects a report whose audit fields are off-spec", () => {

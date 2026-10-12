@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAuth } from "@/lib/auth";
+import { getGoogleAccessToken } from "@/server/features/google/googleOAuth";
 import {
   GoogleAdsApiError,
   GoogleAdsConfigError,
@@ -91,16 +91,11 @@ async function getGoogleAdsAccessToken(opts: {
   userId: string;
   googleAdsAccountId: string;
 }): Promise<string> {
-  let result: { accessToken?: string } | undefined;
   try {
-    // Headerless call: getAccessToken trusts body.userId when no request
-    // session is present, and auto-refreshes via the genericOAuth provider.
-    result = await getAuth().api.getAccessToken({
-      body: {
-        providerId: GOOGLE_ADS_OAUTH_PROVIDER_ID,
-        userId: opts.userId,
-        accountId: opts.googleAdsAccountId,
-      },
+    return await getGoogleAccessToken({
+      providerId: GOOGLE_ADS_OAUTH_PROVIDER_ID,
+      userId: opts.userId,
+      accountId: opts.googleAdsAccountId,
     });
   } catch (error) {
     throw new GoogleAdsTokenError(
@@ -108,10 +103,6 @@ async function getGoogleAdsAccessToken(opts: {
       error,
     );
   }
-  if (!result?.accessToken) {
-    throw new GoogleAdsTokenError("Google Ads returned no access token.");
-  }
-  return result.accessToken;
 }
 
 type GoogleAdsSearchOptions = {

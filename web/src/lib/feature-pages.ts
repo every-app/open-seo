@@ -697,10 +697,10 @@ export const featurePages = {
   aiBrandVisibility: {
     slug: FEATURE_PAGE_SLUGS.aiBrandVisibility,
     eyebrow: "AI Visibility",
-    navDescription: "Look up brand mentions in AI search.",
-    title: "Brand lookup for ChatGPT and Google AI Overview visibility",
+    navDescription: "Research prompts and track mentions and citations.",
+    title: "Track your brand in AI answers",
     description:
-      "Look up a brand or domain and review ChatGPT and Google AI Overview mentions, cited pages, and related prompts.",
+      "Research prompts, then track brand mentions, cited pages, and competitor appearances in ChatGPT, Gemini, and Google AI Overviews.",
     primaryKeyword: "ai visibility tool",
     secondaryKeywords: [
       "brand visibility ai search",
@@ -712,19 +712,19 @@ export const featurePages = {
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/cde3e4f8-079f-4890-cb17-371087107400/public",
     workflows: [
       {
-        title: "Look up a brand",
+        title: "Research prompts",
         description:
-          "Search for a brand or domain and inspect how ChatGPT and Google AI Overview mention or cite it in available results.",
+          "Find the questions people ask about a keyword, see what ChatGPT answers and cites, and choose questions to track.",
       },
       {
-        title: "Review citations and platforms",
+        title: "Track answers over time",
         description:
-          "Review the URLs, domains, and platforms contributing to brand mentions.",
+          "Preview cost, then run a check or schedule daily, weekly, or monthly collection in your selected market.",
       },
       {
-        title: "Find visibility gaps",
+        title: "Review competitors and citations",
         description:
-          "Use cited pages and related prompts as clues for content, reputation, or comparison coverage to investigate.",
+          "Use your saved project competitors and captured answers to see which brands and pages appear.",
       },
     ],
     metrics: [
@@ -734,7 +734,7 @@ export const featurePages = {
       { label: "Cited domains", value: "Sources" },
     ],
     useCases: [
-      "See whether ChatGPT and Google AI Overview data mention or cite your brand or domain.",
+      "See whether tracked ChatGPT, Gemini, and Google AI Overviews answers mention your brand or cite your website.",
       "Find pages and domains cited alongside brand mentions.",
       "Use cited sources and prompts to plan content experiments for answer-engine visibility.",
     ],
@@ -744,7 +744,8 @@ export const featurePages = {
       "OpenSEO helps teams connect AI mention and citation research to concrete SEO planning.",
     ],
     related: [
-      { label: "AI Search Prompts", href: "/features/ai-search-prompts" },
+      { label: "AI Visibility Guide", href: "/docs/ai-visibility" },
+      { label: "Prompt Explorer", href: "/features/ai-search-prompts" },
       { label: "Domain Overview", href: "/features/domain-overview" },
       { label: "OpenSEO MCP", href: "/features/mcp" },
     ],
@@ -752,7 +753,7 @@ export const featurePages = {
       {
         question: "What is AI brand visibility?",
         answer:
-          "AI brand visibility is how often your brand or domain appears in available ChatGPT and Google AI Overview mention and citation data.",
+          "It describes brand mentions and website citations in the prompts, engines, and market you track. It does not measure every AI conversation or traffic to your site.",
       },
       {
         question: "How is AI visibility different from traditional SEO?",
@@ -772,7 +773,7 @@ export const featurePages = {
     navDescription: "Compare answers across supported models.",
     title: "AI search prompt explorer for visibility research",
     description:
-      "Run the same prompt across supported AI models, compare the answers, and review citations when they are returned.",
+      "Start with ChatGPT, or add Claude, Gemini, and Perplexity to compare API model answers and available citations.",
     primaryKeyword: "ai search visibility",
     secondaryKeywords: [
       "chatgpt search visibility",
@@ -811,12 +812,12 @@ export const featurePages = {
       "Check whether a brand appears in AI answers and citations.",
     ],
     differentiators: [
-      "Prompt research lives in the same workspace as domain, keyword, and brand visibility workflows.",
+      "Prompt Explorer lives beside Prompt Research and Prompt Tracking in your project.",
       "OpenSEO treats AI search as a research layer, not a replacement for SEO fundamentals.",
-      "OpenSEO MCP exposes keyword, SERP, domain, backlink, saved keyword, and rank-tracking tools to AI agents.",
+      "OpenSEO MCP lets your agent explore prompts and work with saved AI visibility results.",
     ],
     related: [
-      { label: "AI Brand Visibility", href: "/features/ai-brand-visibility" },
+      { label: "AI Visibility", href: "/features/ai-brand-visibility" },
       { label: "Keyword Research", href: "/features/keyword-research" },
       { label: "OpenSEO MCP", href: "/features/mcp" },
     ],

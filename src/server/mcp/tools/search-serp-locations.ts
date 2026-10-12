@@ -23,7 +23,7 @@ export const searchSerpLocationsTool = {
   config: {
     title: "Search SERP locations",
     description:
-      "Find the exact DataForSEO location name for local rank tracking. Returns up to 10 matches; pass the chosen `locationName` verbatim to create_rank_tracker. Uses no credits.",
+      "Find the exact DataForSEO location name of a city, county, or region. Returns up to 50 matches; pass the chosen `locationName` verbatim to create_rank_tracker for local rank tracking, or to research_keywords for local search volume. Uses no credits.",
     inputSchema,
     outputSchema: z.looseObject({
       locations: z.array(

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const createDataforseoClientMock = vi.hoisted(() => vi.fn());
 
@@ -12,18 +12,32 @@ vi.mock("@/server/lib/r2", () => ({
 
 import { fetchLighthouseResult, selectLighthouseSample } from "./lighthouse";
 
-afterEach(() => {
-  vi.clearAllMocks();
+const okPage = (url: string) => ({
+  url,
+  statusCode: 200,
+  fetchClass: "ok" as const,
 });
 
 describe("selectLighthouseSample", () => {
+  it("does not spend checks on a bot challenge that answered 200", () => {
+    const selected = selectLighthouseSample(
+      [
+        { ...okPage("https://example.com/"), fetchClass: "blocked" },
+        okPage("https://example.com/about"),
+      ],
+      "https://example.com/",
+      "auto",
+    );
+
+    expect(selected).toEqual(["https://example.com/about"]);
+  });
+
   it("includes a start page reached through a trailing-slash redirect", () => {
     const pages = [
-      ...Array.from({ length: 10 }, (_, index) => ({
-        url: `https://example.com/section${index}`,
-        statusCode: 200,
-      })),
-      { url: "https://example.com/services/", statusCode: 200 },
+      ...Array.from({ length: 10 }, (_, index) =>
+        okPage(`https://example.com/section${index}`),
+      ),
+      okPage("https://example.com/services/"),
     ];
 
     const selected = selectLighthouseSample(
@@ -39,8 +53,8 @@ describe("selectLighthouseSample", () => {
   it("prefers an exact start page when both slash forms return 2xx", () => {
     const selected = selectLighthouseSample(
       [
-        { url: "https://example.com/services/", statusCode: 200 },
-        { url: "https://example.com/services", statusCode: 200 },
+        okPage("https://example.com/services/"),
+        okPage("https://example.com/services"),
       ],
       "https://example.com/services",
       "auto",
@@ -52,9 +66,9 @@ describe("selectLighthouseSample", () => {
   it("does not sample another page from the start page's template", () => {
     const selected = selectLighthouseSample(
       [
-        { url: "https://example.com/products/123", statusCode: 200 },
-        { url: "https://example.com/products/456", statusCode: 200 },
-        { url: "https://example.com/about", statusCode: 200 },
+        okPage("https://example.com/products/123"),
+        okPage("https://example.com/products/456"),
+        okPage("https://example.com/about"),
       ],
       "https://example.com/products/123",
       "auto",

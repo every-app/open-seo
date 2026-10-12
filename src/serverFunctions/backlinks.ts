@@ -8,8 +8,7 @@ import {
   topPagesPageRequestSchema,
 } from "@/types/schemas/backlinks";
 
-// The web UI exposes spam score as a regular user filter, so the implicit
-// DataForSEO spam-score cutoff stays off for all web requests.
+// Referring-domain scores aggregate multiple links and retain their own filters.
 const WEB_SPAM_OPTIONS = { hideSpam: false };
 
 export const getBacklinksOverview = createServerFn({
@@ -34,7 +33,9 @@ export const getBacklinksRows = createServerFn({
   .middleware(requireProjectContext)
   .validator(backlinksRowsPageRequestSchema)
   .handler(({ data, context }) =>
-    BacklinksService.profileBacklinksPage(data, context, WEB_SPAM_OPTIONS),
+    BacklinksService.profileBacklinksPage(data, context, {
+      hideSpam: data.hideSpam ?? true,
+    }),
   );
 
 export const getBacklinksReferringDomains = createServerFn({

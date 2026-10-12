@@ -11,7 +11,7 @@ Query Cloudflare Workers Observability for prod errors, count them correctly, an
 
 ## Access
 
-- Resolve the account at runtime — never hardcode it: the `cloudflare-api` MCP server pre-binds `accountId` in `mcp__cloudflare-api__execute`, and `npx wrangler whoami` prints it. The workers to triage are the ones this repo deploys (see `alchemy.run.ts`): the main app worker plus the aux workers (audit engine, landing, self-host).
+- Resolve the account at runtime — never hardcode it: the `cloudflare-api` MCP server pre-binds `accountId` in `mcp__cloudflare-api__execute`, and `npx wrangler whoami` prints it. The workers to triage are the ones this repo deploys (see `deploy/alchemy/alchemy.run.ts`): the main app worker plus the aux workers (audit engine, landing, self-host).
 - Query via the `cloudflare-api` MCP server (`mcp__cloudflare-api__execute`). If its tools are absent, run its authenticate flow and give the user the URL — **wrangler's OAuth token gets a 403 on the observability API** (missing scope), so don't burn time on curl-with-wrangler-token.
 - PostHog is the second error source but **cannot see** `exceededMemory` / `canceled` / `responseStreamDisconnected` outcomes — worker-outcome questions are answerable only here.
 

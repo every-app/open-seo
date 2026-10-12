@@ -6,7 +6,9 @@ import {
   type KeywordFilterValues,
 } from "@/client/features/keywords/keywordResearchTypes";
 
-const STORAGE_KEY = "keyword-default-filters";
+function storageKey(projectId: string) {
+  return `keyword-default-filters:${projectId}`;
+}
 
 export const filterValuesSchema = z.object({
   include: z.string(),
@@ -22,9 +24,9 @@ export const filterValuesSchema = z.object({
   intents: z.string().default(""),
 });
 
-function loadFiltersFromStorage(): KeywordFilterValues {
+function loadFiltersFromStorage(projectId: string): KeywordFilterValues {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(projectId));
     if (!raw) return EMPTY_FILTERS;
     return filterValuesSchema.parse(JSON.parse(raw));
   } catch {
@@ -32,29 +34,29 @@ function loadFiltersFromStorage(): KeywordFilterValues {
   }
 }
 
-function saveFiltersToStorage(filters: KeywordFilterValues) {
+function saveFiltersToStorage(projectId: string, filters: KeywordFilterValues) {
   try {
     const hasAnyFilter = Object.values(filters).some((v) => v.trim() !== "");
     if (hasAnyFilter) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+      localStorage.setItem(storageKey(projectId), JSON.stringify(filters));
     } else {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKey(projectId));
     }
   } catch {
     // storage full or unavailable
   }
 }
 
-export function useLocalKeywordFilters() {
+export function useLocalKeywordFilters(projectId: string) {
   const filtersForm = useForm({
-    defaultValues: loadFiltersFromStorage(),
+    defaultValues: loadFiltersFromStorage(projectId),
   });
 
   const values = useStore(filtersForm.store, (s) => s.values);
 
   useEffect(() => {
-    saveFiltersToStorage(values);
-  }, [values]);
+    saveFiltersToStorage(projectId, values);
+  }, [projectId, values]);
 
   const resetFilters = useCallback(() => {
     const keys: Array<keyof KeywordFilterValues> = [

@@ -1,7 +1,7 @@
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import { toSqliteTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
+import { toRankTrackingTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
 import { AppError } from "@/server/lib/errors";
-import type { ComparePeriod } from "@/types/schemas/rank-tracking";
+import type { ComparePeriod } from "@/types/schemas/rank-tracking-search";
 import type {
   RankTrackingDeviceResult,
   RankTrackingRow,
@@ -33,7 +33,7 @@ export async function getLatestResults(
   } | null;
 }> {
   const days = PERIOD_DAYS[comparePeriod];
-  const targetDate = toSqliteTimestamp(
+  const targetDate = toRankTrackingTimestamp(
     new Date(Date.now() - days * 24 * 60 * 60 * 1000),
   );
 
@@ -102,6 +102,7 @@ export async function getLatestResults(
         trackingKeywordId: keyword.id,
         keyword: keyword.keyword,
         matchCase: keyword.matchCase,
+        pinned: keyword.pinnedAt !== null,
         searchVolume: keyword.searchVolume,
         keywordDifficulty: keyword.keywordDifficulty,
         cpc: keyword.cpc,

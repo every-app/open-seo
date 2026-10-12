@@ -1,27 +1,31 @@
-import { memo, useMemo } from "react";
+import { useMemo } from "react";
 import {
   createColumnHelper,
   type ColumnDef,
   type RowSelectionState,
 } from "@tanstack/react-table";
 import {
-  AppDataTable,
+  DataTable,
   makeSelectionColumn,
-  useAppTable,
+  type DataTableFrameProps,
+  useDataTable,
   useSelectionAnchor,
-} from "@/client/components/table/AppDataTable";
+} from "@/client/components/table/DataTable";
 import { ExternalUrlCell } from "@/client/components/table/url";
-import { DifficultyBadge } from "@/client/features/domain/components/DifficultyBadge";
-import { SortableHeader } from "@/client/features/domain/components/SortableHeader";
-import { useDomainRenderDebug } from "@/client/features/domain/domainDebug";
-import { formatNumber, formatRounded } from "@/client/features/domain/utils";
+import { ScoreBadge } from "@/client/components/table/ScoreBadge";
+import { SortableHeader } from "@/client/components/table/SortableHeader";
+import {
+  domainSortColumn,
+  formatNumber,
+  formatRounded,
+} from "@/client/features/domain/utils";
 import type {
   DomainSortMode,
   KeywordRow,
   SortOrder,
 } from "@/client/features/domain/types";
 
-type Props = {
+type Props = DataTableFrameProps & {
   domain: string;
   rows: KeywordRow[];
   selectedKeywords: Set<string>;
@@ -34,7 +38,7 @@ type Props = {
 
 const keywordColumnHelper = createColumnHelper<KeywordRow>();
 
-function DomainKeywordsTableComponent({
+export function DomainKeywordsTable({
   domain,
   rows,
   selectedKeywords,
@@ -43,8 +47,8 @@ function DomainKeywordsTableComponent({
   currentSortOrder,
   onSortClick,
   onToggleKeyword,
+  ...frame
 }: Props) {
-  const renderStarted = performance.now();
   const selectAnchorRef = useSelectionAnchor();
   const rowSelection = useMemo<RowSelectionState>(
     () =>
@@ -66,9 +70,11 @@ function DomainKeywordsTableComponent({
         header: () => (
           <SortableHeader
             label="Rank"
-            isActive={sortMode === "rank"}
-            order={currentSortOrder}
-            onClick={() => onSortClick("rank")}
+            column={domainSortColumn(
+              sortMode === "rank",
+              currentSortOrder,
+              () => onSortClick("rank"),
+            )}
           />
         ),
         cell: ({ getValue }) => getValue() ?? "-",
@@ -77,9 +83,11 @@ function DomainKeywordsTableComponent({
         header: () => (
           <SortableHeader
             label="Volume"
-            isActive={sortMode === "volume"}
-            order={currentSortOrder}
-            onClick={() => onSortClick("volume")}
+            column={domainSortColumn(
+              sortMode === "volume",
+              currentSortOrder,
+              () => onSortClick("volume"),
+            )}
           />
         ),
         cell: ({ getValue }) => formatNumber(getValue()),
@@ -88,9 +96,11 @@ function DomainKeywordsTableComponent({
         header: () => (
           <SortableHeader
             label="Traffic"
-            isActive={sortMode === "traffic"}
-            order={currentSortOrder}
-            onClick={() => onSortClick("traffic")}
+            column={domainSortColumn(
+              sortMode === "traffic",
+              currentSortOrder,
+              () => onSortClick("traffic"),
+            )}
           />
         ),
         cell: ({ getValue }) => formatRounded(getValue()),
@@ -100,9 +110,9 @@ function DomainKeywordsTableComponent({
           <SortableHeader
             label="CPC"
             helpText="Cost per click in USD."
-            isActive={sortMode === "cpc"}
-            order={currentSortOrder}
-            onClick={() => onSortClick("cpc")}
+            column={domainSortColumn(sortMode === "cpc", currentSortOrder, () =>
+              onSortClick("cpc"),
+            )}
           />
         ),
         cell: ({ getValue }) => {
@@ -129,17 +139,19 @@ function DomainKeywordsTableComponent({
           <SortableHeader
             label="Score"
             helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
-            isActive={sortMode === "score"}
-            order={currentSortOrder}
-            onClick={() => onSortClick("score")}
+            column={domainSortColumn(
+              sortMode === "score",
+              currentSortOrder,
+              () => onSortClick("score"),
+            )}
           />
         ),
-        cell: ({ getValue }) => <DifficultyBadge value={getValue()} />,
+        cell: ({ getValue }) => <ScoreBadge value={getValue()} />,
       }),
     ],
     [currentSortOrder, domain, onSortClick, selectAnchorRef, sortMode],
   );
-  const table = useAppTable({
+  const table = useDataTable({
     data: rows,
     columns,
     state: { rowSelection },
@@ -159,33 +171,11 @@ function DomainKeywordsTableComponent({
     getRowId: (row) => row.keyword,
     enableRowSelection: true,
   });
-  useDomainRenderDebug("DomainKeywordsTable", {
-    rows: rows.length,
-    selectedCount: selectedKeywords.size,
-    durationMs: Math.round(performance.now() - renderStarted),
-    sortMode,
-    currentSortOrder,
-  });
-
   return (
-    <div className="overflow-x-auto">
-      <div className="mb-2 text-xs text-base-content/60">
-        {selectedKeywords.size > 0
-          ? `${selectedKeywords.size} selected`
-          : "Select keywords to save"}
-      </div>
-      <AppDataTable
-        table={table}
-        className="table table-sm"
-        wrapperClassName=""
-        empty={
-          <div className="py-6 text-center text-base-content/60">
-            No keywords match this search.
-          </div>
-        }
-      />
-    </div>
+    <DataTable
+      table={table}
+      empty={{ title: "No keywords match this search." }}
+      {...frame}
+    />
   );
 }
-
-export const DomainKeywordsTable = memo(DomainKeywordsTableComponent);

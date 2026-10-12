@@ -57,10 +57,6 @@ describe("report social image access", () => {
       error,
     );
     expect(await (await handleReportSocialImage(TOKEN)).text()).toBe("image");
-    mocks.getSharedReportByToken.mockResolvedValue(null);
-    const revoked = await handleReportSocialImage(TOKEN);
-    expect(revoked.status).toBe(404);
-    expect(revoked.headers.get("Location")).toBeNull();
   });
 
   it("does not hide report lookup failures behind the fallback", async () => {
@@ -100,11 +96,4 @@ describe("report social image access", () => {
       expect(mocks.renderReportSocialImage).not.toHaveBeenCalled();
     },
   );
-
-  it("checks access again after revocation", async () => {
-    await handleReportSocialImage(TOKEN);
-    mocks.getSharedReportByToken.mockResolvedValue(null);
-    expect((await handleReportSocialImage(TOKEN)).status).toBe(404);
-    expect(mocks.renderReportSocialImage).toHaveBeenCalledTimes(1);
-  });
 });

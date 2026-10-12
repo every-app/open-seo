@@ -22,7 +22,7 @@ export function mapBacklinksRows(rows: BacklinksItem[]) {
     pageFromRank: item.page_from_rank ?? null,
     spamScore: item.backlink_spam_score ?? item.backlinks_spam_score ?? null,
     firstSeen: item.first_seen ?? null,
-    lastSeen: item.lost_date ?? item.last_visited ?? null,
+    lastSeen: item.lost_date ?? item.last_seen ?? item.last_visited ?? null,
     isLost: item.is_lost ?? Boolean(item.lost_date),
     isBroken: item.is_broken ?? false,
     linksCount: item.links_count ?? null,

@@ -3,7 +3,7 @@
  *
  * Use only if the latest migrations fail with a unique-constraint error for
  * projects_one_default_per_organization_idx. See
- * docs/default-project-cleanup.md for the full Cloudflare D1 and local D1
+ * docs/maintainers/runbooks/default-project-cleanup.md for the full Cloudflare D1 and local D1
  * recovery runbook.
  */
 
@@ -59,7 +59,7 @@ Options:
 Dry run is the default. It prints the rows that would be deleted, remapped, or
 deduped without mutating application tables.
 
-See docs/default-project-cleanup.md for the full recovery runbook.`);
+See docs/maintainers/runbooks/default-project-cleanup.md for the full recovery runbook.`);
 }
 
 function runDryRun() {

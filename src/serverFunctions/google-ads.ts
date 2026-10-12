@@ -8,11 +8,11 @@ import {
   getStoredRefreshHealth,
   probeAndRecordRefreshHealth,
 } from "@/server/features/google/services/GoogleIntegrationTokenHealthService";
-import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
+import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import {
-  createSelfHostedGoogleAuthorizationUrl,
+  createGoogleAuthorizationUrl,
   GOOGLE_ADS_INTEGRATION,
-} from "@/server/features/google/selfHostedOAuth";
+} from "@/server/features/google/googleOAuth";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { AppError } from "@/server/lib/errors";
 import { GoogleAdsReportError } from "@/server/lib/googleAdsErrors";
@@ -35,7 +35,7 @@ const setAccountSchema = projectScopedSchema.extend({
   // reaches it directly. Verified against the grant server-side before use.
   loginCustomerId: z.string().regex(/^\d+$/).nullable(),
 });
-const startSelfHostedLinkSchema = z.object({
+const startLinkSchema = z.object({
   callbackURL: z.string().min(1),
 });
 
@@ -54,7 +54,7 @@ export const getGoogleAdsConnection = createServerFn({ method: "POST" })
         GoogleAdsService.getConnection(context.projectId),
         GoogleAdsService.userHasGrant(context.userId),
         isHostedServerAuthMode(),
-        hasSelfHostedGoogleOAuthConfig(),
+        hasGoogleOAuthConfig(),
         hasDeveloperToken(),
       ]);
     const health = connection
@@ -205,16 +205,13 @@ export const disconnectGoogleAds = createServerFn({ method: "POST" })
     return { connected: false as const };
   });
 
-export const startSelfHostedGoogleAdsLink = createServerFn({ method: "POST" })
+export const startGoogleAdsLink = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .validator(startSelfHostedLinkSchema)
+  .validator(startLinkSchema)
   .handler(async ({ data, context }) => ({
-    url: await createSelfHostedGoogleAuthorizationUrl({
+    url: await createGoogleAuthorizationUrl({
       integration: GOOGLE_ADS_INTEGRATION,
-      user: {
-        userId: context.userId,
-        userEmail: context.userEmail,
-      },
+      userId: context.userId,
       callbackURL: data.callbackURL,
       publicOrigin: getPublicOrigin(getRequest()),
     }),

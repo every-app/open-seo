@@ -1,16 +1,24 @@
-import { useForm } from "@tanstack/react-form";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useAppForm } from "@/client/components/form/useAppForm";
+import { Button } from "@/client/components/ui/button";
 import {
   AuthPageCard,
   AuthMethodChooser,
+  authInputClassName,
+  authSubmitClassName,
   authRedirectSearchSchema,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
-import { getFieldError, getFormError } from "@/client/lib/forms";
+import { useGoogleAuth } from "@/client/features/auth/useGoogleAuth";
+import { getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
-import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
+import {
+  getSignInSearch,
+  getVerifyEmailSearch,
+  toAuthCallbackURL,
+} from "@/lib/auth-redirect";
 import { z } from "zod";
 
 const signInSchema = z.object({
@@ -29,12 +37,10 @@ function SignInPage() {
   const { redirectTo, oauthQuery, isHostedMode } = useAuthPageState(
     search.redirect,
   );
-  const authCallbackURL = redirectTo;
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [isStartingGoogle, setIsStartingGoogle] = useState(false);
-  const [socialError, setSocialError] = useState<string | null>(null);
+  const google = useGoogleAuth({ redirectTo });
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: {
       email: "",
       password: "",
@@ -52,7 +58,7 @@ function SignInPage() {
         const result = await authClient.signIn.email({
           email,
           password: value.password,
-          callbackURL: authCallbackURL,
+          callbackURL: toAuthCallbackURL(redirectTo),
           ...(oauthQuery ? { oauth_query: oauthQuery } : {}),
         });
 
@@ -94,31 +100,6 @@ function SignInPage() {
     },
   });
 
-  async function handleContinueWithGoogle() {
-    setSocialError(null);
-    setIsStartingGoogle(true);
-
-    try {
-      captureClientEvent("auth:sign_in_google_start", {
-        redirect_to: redirectTo,
-      });
-      const result = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: authCallbackURL,
-      });
-
-      if (result.error) {
-        setSocialError(
-          result.error.message || "Google sign in is not available right now.",
-        );
-        setIsStartingGoogle(false);
-      }
-    } catch {
-      setSocialError("Google sign in is not available right now.");
-      setIsStartingGoogle(false);
-    }
-  }
-
   return (
     <AuthPageCard
       title="Sign in"
@@ -127,15 +108,15 @@ function SignInPage() {
           <div
             className={
               showEmailForm
-                ? "flex justify-between text-sm text-base-content/50"
-                : "text-sm text-base-content/50"
+                ? "flex w-full justify-between text-sm text-foreground/50"
+                : "w-full text-sm text-foreground/50"
             }
           >
             {showEmailForm ? (
               <Link
                 to="/forgot-password"
                 search={getSignInSearch(redirectTo)}
-                className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                className="text-foreground underline underline-offset-2 hover:text-foreground/80 transition-colors"
               >
                 Forgot password?
               </Link>
@@ -143,7 +124,7 @@ function SignInPage() {
             <Link
               to="/sign-up"
               search={getSignInSearch(redirectTo)}
-              className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+              className="text-foreground underline underline-offset-2 hover:text-foreground/80 transition-colors"
             >
               Create account
             </Link>
@@ -156,99 +137,76 @@ function SignInPage() {
           <AuthMethodChooser
             googleLabel="Continue with Google"
             disabled={!isHostedMode}
-            isBusy={isStartingGoogle}
+            isBusy={google.isStarting}
             onContinueWithGoogle={() => {
-              void handleContinueWithGoogle();
+              void google.start();
             }}
             onContinueWithEmail={() => {
               setShowEmailForm(true);
-              setSocialError(null);
+              google.clearError();
             }}
           />
-          {socialError ? (
-            <p className="text-sm text-error">{socialError}</p>
+          {google.error ? (
+            <p className="text-sm text-destructive">{google.error}</p>
           ) : null}
         </>
       ) : (
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void form.handleSubmit();
-          }}
-        >
-          <form.Field name="email">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
+        <form.AppForm>
+          <form.Form className="space-y-4">
+            <form.AppField name="email">
+              {(field) => (
+                <field.TextField
+                  label="Email address"
+                  hideLabel
+                  className={authInputClassName}
+                  type="email"
+                  placeholder="Email address..."
+                  autoComplete="email"
+                  required
+                />
+              )}
+            </form.AppField>
+            <form.AppField name="password">
+              {(field) => (
+                <field.TextField
+                  label="Password"
+                  hideLabel
+                  className={authInputClassName}
+                  type="password"
+                  placeholder="Password..."
+                  autoComplete="current-password"
+                  required
+                />
+              )}
+            </form.AppField>
 
-              return (
-                <div>
-                  <input
-                    type="email"
-                    className="input input-bordered w-full"
-                    placeholder="Email address..."
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="email"
-                    disabled={!isHostedMode}
-                    required
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
-              );
-            }}
-          </form.Field>
-
-          <form.Field name="password">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
-
-              return (
-                <div>
-                  <input
-                    type="password"
-                    className="input input-bordered w-full"
-                    placeholder="Password..."
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="current-password"
-                    disabled={!isHostedMode}
-                    required
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
-              );
-            }}
-          </form.Field>
-
-          <form.Subscribe
-            selector={(state) => ({
-              submitError: state.errorMap.onSubmit,
-              isSubmitting: state.isSubmitting,
-            })}
-          >
-            {({ submitError, isSubmitting }) => {
-              const errorMessage = getFormError(submitError);
-              return (
-                <>
-                  {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
-                  ) : null}
-                  <button
-                    className="btn btn-soft w-full"
-                    disabled={!isHostedMode || isSubmitting}
-                  >
-                    {isSubmitting ? "Signing in..." : "Sign in"}
-                  </button>
-                </>
-              );
-            }}
-          </form.Subscribe>
-        </form>
+            <form.Subscribe
+              selector={(state) => ({
+                submitError: state.errorMap.onSubmit,
+                isSubmitting: state.isSubmitting,
+              })}
+            >
+              {({ submitError, isSubmitting }) => {
+                const errorMessage = getFormError(submitError);
+                return (
+                  <>
+                    {errorMessage ? (
+                      <p className="text-sm text-destructive">{errorMessage}</p>
+                    ) : null}
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className={authSubmitClassName}
+                      pending={isSubmitting}
+                    >
+                      {isSubmitting ? "Signing in..." : "Sign in"}
+                    </Button>
+                  </>
+                );
+              }}
+            </form.Subscribe>
+          </form.Form>
+        </form.AppForm>
       )}
     </AuthPageCard>
   );

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MAX_CONFIGS_PER_PROJECT } from "@/shared/rank-tracking";
+import type * as RunGuards from "./rankCheckRunGuards";
 import { RankTrackingService } from "./RankTrackingService";
 
 const mocks = vi.hoisted(() => ({
@@ -9,23 +10,33 @@ const mocks = vi.hoisted(() => ({
   createConfig: vi.fn(),
   updateConfig: vi.fn(),
   getActiveRunForConfig: vi.fn(),
-  getKeywordCountForConfig: vi.fn(),
   deleteConfigCascade: vi.fn(),
   reconcileActiveRankCheckRun: vi.fn(),
+  getKeywordCountsForConfigs: vi.fn(),
+  getKeywordsForConfig: vi.fn(),
+  tryCreateRun: vi.fn(),
+  startWorkflow: vi.fn(),
+  isHosted: vi.fn(),
+  customerHasPaidPlan: vi.fn(),
 }));
 
-vi.mock("cloudflare:workers", () => ({ env: {} }));
+vi.mock("cloudflare:workers", () => ({
+  env: { RANK_CHECK_WORKFLOW: { create: mocks.startWorkflow } },
+}));
 vi.mock("@/server/lib/runtime-env", () => ({
   getRequiredEnvValue: () => Promise.resolve("basic-key"),
-  isHostedServerAuthMode: () => Promise.resolve(false),
+  isHostedServerAuthMode: mocks.isHosted,
+}));
+vi.mock("@/server/billing/subscription", () => ({
+  customerHasPaidPlan: mocks.customerHasPaidPlan,
 }));
 vi.mock("@/server/lib/dataforseo", () => ({ createDataforseoClient: vi.fn() }));
 vi.mock(
   "@/server/features/rank-tracking/repositories/RankTrackingRepository",
   () => ({ RankTrackingRepository: mocks }),
 );
-vi.mock("./rankCheckRunGuards", () => ({
-  beginRankCheckRun: vi.fn(),
+vi.mock("./rankCheckRunGuards", async (importOriginal) => ({
+  ...(await importOriginal<typeof RunGuards>()),
   reconcileActiveRankCheckRun: mocks.reconcileActiveRankCheckRun,
 }));
 vi.mock(
@@ -175,62 +186,35 @@ describe("RankTrackingService.createConfig", () => {
     expect(mocks.createConfig).not.toHaveBeenCalled();
   });
 
-  it("creates a new config when none exists for the domain + location", async () => {
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
-    mocks.getConfigsForProject.mockResolvedValue([]);
-    mocks.createConfig.mockResolvedValue(undefined);
+  // Omitted fields fall back to the project market; a location alone snaps
+  // the language to that location, not to the project's.
+  it.each([
+    ["the project's market", {}, { locationCode: 2704, languageCode: "vi" }],
+    [
+      "the location's language",
+      { locationCode: 2276 },
+      { locationCode: 2276, languageCode: "de" },
+    ],
+  ])(
+    "resolves an omitted language to %s",
+    async (_case, overrides, expected) => {
+      mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+      mocks.getConfigsForProject.mockResolvedValue([]);
+      mocks.createConfig.mockResolvedValue(undefined);
 
-    const result = await RankTrackingService.createConfig(baseInput);
-
-    expect(result.id).toBeTruthy();
-    expect(mocks.createConfig).toHaveBeenCalledTimes(1);
-    expect(mocks.updateConfig).not.toHaveBeenCalled();
-    expect(mocks.createConfig).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: result.id,
+      await RankTrackingService.createConfig({
         projectId: "project_1",
+        projectMarket: { locationCode: 2704, languageCode: "vi" },
         domain: "acme.com",
-        devices: "desktop",
         serpDepth: 40,
-        scheduleInterval: "daily",
-      }),
-    );
-  });
+        ...overrides,
+      });
 
-  it("uses the project's market when location and language are omitted", async () => {
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
-    mocks.getConfigsForProject.mockResolvedValue([]);
-    mocks.createConfig.mockResolvedValue(undefined);
-
-    await RankTrackingService.createConfig({
-      projectId: "project_1",
-      projectMarket: { locationCode: 2704, languageCode: "vi" },
-      domain: "acme.com",
-      serpDepth: 40,
-    });
-
-    expect(mocks.createConfig).toHaveBeenCalledWith(
-      expect.objectContaining({ locationCode: 2704, languageCode: "vi" }),
-    );
-  });
-
-  it("snaps the language when only location overrides the project market", async () => {
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
-    mocks.getConfigsForProject.mockResolvedValue([]);
-    mocks.createConfig.mockResolvedValue(undefined);
-
-    await RankTrackingService.createConfig({
-      projectId: "project_1",
-      projectMarket: { locationCode: 2704, languageCode: "vi" },
-      domain: "acme.com",
-      locationCode: 2276,
-      serpDepth: 40,
-    });
-
-    expect(mocks.createConfig).toHaveBeenCalledWith(
-      expect.objectContaining({ locationCode: 2276, languageCode: "de" }),
-    );
-  });
+      expect(mocks.createConfig).toHaveBeenCalledWith(
+        expect.objectContaining(expected),
+      );
+    },
+  );
 
   it("rejects a locationName the sandbox refuses, pointing at search_serp_locations", async () => {
     stubSandbox(40501, "Invalid Field: 'location_name'.");
@@ -286,12 +270,149 @@ describe("RankTrackingService.deleteTracker", () => {
       errorMessage: "Rank check workflow instance no longer exists",
       completedAt: "2026-08-01T12:00:00.000Z",
     });
-    mocks.getKeywordCountForConfig.mockResolvedValue(3);
+    mocks.getKeywordCountsForConfigs.mockResolvedValue(
+      new Map([["config_1", 3]]),
+    );
     mocks.deleteConfigCascade.mockResolvedValue(undefined);
 
     await expect(
       RankTrackingService.deleteTracker("config_1", "project_1"),
     ).resolves.toEqual({ config: trackerConfig, keywordCount: 3 });
     expect(mocks.deleteConfigCascade).toHaveBeenCalledWith("config_1");
+  });
+});
+
+describe("RankTrackingService.updateConfig schedule", () => {
+  beforeEach(() => {
+    mocks.getConfigById.mockResolvedValue({
+      ...archivedConfig,
+      isActive: true,
+      nextCheckAt: "2026-03-15T21:00:00.000Z",
+    });
+  });
+
+  it("keeps the run time when a save resends an unchanged interval", async () => {
+    await RankTrackingService.updateConfig("config_archived", "project_1", {
+      devices: "mobile",
+      scheduleInterval: "weekly",
+    });
+
+    expect(mocks.updateConfig.mock.calls[0][2]).toEqual({ devices: "mobile" });
+  });
+
+  it("moves the run time to a chosen time", async () => {
+    vi.useFakeTimers();
+    // A Tuesday.
+    vi.setSystemTime(new Date("2026-03-10T12:00:00.000Z"));
+
+    await RankTrackingService.updateConfig("config_archived", "project_1", {
+      scheduleTime: { weekday: 1, hour: 9, minute: 30 },
+    });
+    vi.useRealTimers();
+
+    expect(mocks.updateConfig).toHaveBeenCalledWith(
+      "config_archived",
+      "project_1",
+      { scheduleInterval: "weekly", nextCheckAt: "2026-03-16T09:30:00.000Z" },
+    );
+  });
+
+  it.each([
+    [
+      "a weekly time without a weekday",
+      { scheduleTime: { hour: 9, minute: 30 } },
+    ],
+    [
+      "a chosen time on a manual schedule",
+      {
+        scheduleInterval: "manual" as const,
+        scheduleTime: { hour: 9, minute: 30 },
+      },
+    ],
+  ])("rejects %s", async (_case, input) => {
+    await expect(
+      RankTrackingService.updateConfig("config_archived", "project_1", input),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(mocks.updateConfig).not.toHaveBeenCalled();
+  });
+});
+
+const minutesFromNow = (minutes: number) =>
+  new Date(Date.now() + minutes * 60_000).toISOString();
+
+describe("RankTrackingService.triggerAutoCheck", () => {
+  const input = {
+    configId: "config_archived",
+    projectId: "project_1",
+    billingCustomer: {
+      userId: "user_1",
+      userEmail: "user@openseo.so",
+      organizationId: "org_1",
+      projectId: "project_1",
+    },
+  };
+
+  beforeEach(() => {
+    mocks.getKeywordCountsForConfigs.mockResolvedValue(
+      new Map([["config_archived", 2]]),
+    );
+    mocks.getKeywordsForConfig.mockResolvedValue([
+      { id: "kw_1" },
+      { id: "kw_2" },
+    ]);
+    mocks.tryCreateRun.mockResolvedValue(true);
+    mocks.isHosted.mockResolvedValue(false);
+  });
+
+  it("starts a check when the scheduled check is more than an hour away", async () => {
+    mocks.getConfigById.mockResolvedValue({
+      ...archivedConfig,
+      nextCheckAt: minutesFromNow(61),
+    });
+
+    await expect(
+      RankTrackingService.triggerAutoCheck(input),
+    ).resolves.toMatchObject({ ok: true });
+    expect(mocks.startWorkflow).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the keywords to a scheduled check due within the hour", async () => {
+    mocks.getConfigById.mockResolvedValue({
+      ...archivedConfig,
+      nextCheckAt: minutesFromNow(59),
+    });
+
+    await expect(RankTrackingService.triggerAutoCheck(input)).resolves.toEqual({
+      ok: false,
+      reason: "scheduled_soon",
+    });
+    expect(mocks.startWorkflow).not.toHaveBeenCalled();
+  });
+
+  it("refuses a free plan before promising a scheduled check", async () => {
+    mocks.isHosted.mockResolvedValue(true);
+    mocks.customerHasPaidPlan.mockResolvedValue(false);
+    mocks.getConfigById.mockResolvedValue({
+      ...archivedConfig,
+      nextCheckAt: minutesFromNow(59),
+    });
+
+    await expect(
+      RankTrackingService.triggerAutoCheck(input),
+    ).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
+  });
+
+  it("starts nothing for a domain without keywords", async () => {
+    mocks.getConfigById.mockResolvedValue({
+      ...archivedConfig,
+      nextCheckAt: null,
+    });
+    mocks.getKeywordCountsForConfigs.mockResolvedValue(new Map());
+
+    await expect(RankTrackingService.triggerAutoCheck(input)).resolves.toEqual({
+      ok: false,
+      reason: "no_keywords",
+    });
+    expect(mocks.startWorkflow).not.toHaveBeenCalled();
   });
 });

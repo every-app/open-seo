@@ -12,6 +12,7 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { reportShareUrl } from "@/server/mcp/tools/report-sharing-tools";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { formatCount } from "@/shared/format";
 import {
@@ -37,8 +38,8 @@ const size = (bytes: number) =>
     ? `${formatCount(bytes)} bytes`
     : `${formatCount(Math.round(bytes / 1000))} KB`;
 
-// The public share token is a capability; only the app mints and shows it.
-// Agents get every other column.
+// Keep raw tokens out of metadata and bulk lists. Single-report tools return
+// the public URL explicitly when sharing is enabled.
 const forAgent = (report: ReportMetadata) =>
   omit(report, ["shareToken", "sharedAt"]);
 
@@ -114,12 +115,12 @@ export const saveReportTool = {
   config: {
     title: "Save report",
     description:
-      "Saves a finished HTML report to this project, where anyone in the workspace can read and print it. Uses no credits. Call list_reports first and pass the matching reportId to replace that report instead of creating a near-duplicate — a save whose title already exists in the project is refused. Give the report a specific title (the report type or subject and full report date), a summary carrying the verdict, the top action and the key numbers, and the skill slug you are running. Then reply with the returned url, a one-line verdict and the single top action; do not paste the report into chat.",
+      "Saves a finished HTML report to this project, where anyone in the workspace can read and print it. Uses no credits. New reports are private; replacing a report preserves its sharing setting and updates what any existing public link shows. Only when the user explicitly requests public sharing (in their prompt or instructions for the skill), call set_report_sharing after saving. Call list_reports first and pass the matching reportId to replace that report instead of creating a near-duplicate — a save whose title already exists in the project is refused. Give the report a specific title (the report type or subject and full report date), a summary carrying the verdict, the top action and the key numbers, and the skill slug you are running. Then reply with the returned url, a one-line verdict and the single top action; do not paste the report into chat.",
     inputSchema: saveInputSchema,
     outputSchema: saveOutputSchema,
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       // A save with a reportId overwrites the stored document, with no undo.
       destructiveHint: true,
     },
@@ -296,7 +297,7 @@ const getInputSchema = {
 } as const;
 
 const getOutputSchema = z.looseObject({
-  report: looseObjectOutputSchema,
+  report: z.looseObject({ shareUrl: z.string().nullable() }),
   ...optionalMetaOutputSchema,
 });
 
@@ -305,7 +306,7 @@ export const getReportTool = {
   config: {
     title: "Get report",
     description:
-      "Reads one saved report: title, skill, attribution, size, and the full summary. Uses no credits. This is the cheap way to see what a report already says before you revise it — pass includeHtml only when you need the document itself.",
+      "Reads one saved report: title, skill, attribution, size, the full summary, and shareUrl (null when private or public sharing is unavailable on this deployment). Reading never publishes a report. Use set_report_sharing only when the user explicitly requests a sharing change. Uses no credits. This is the cheap way to see what a report already says before you revise it — pass includeHtml only when you need the document itself.",
     inputSchema: getInputSchema,
     outputSchema: getOutputSchema,
     annotations: {
@@ -330,6 +331,7 @@ export const getReportTool = {
 
       const path = reportPath(args.projectId, report.id);
       const url = buildDashboardUrl(context.baseUrl, path);
+      const shareUrl = await reportShareUrl(report, context.baseUrl);
 
       return mcpResponse({
         // The document goes in `text` only. It is what the agent actually
@@ -339,6 +341,7 @@ export const getReportTool = {
           `${report.title} (${report.id})`,
           metaLine(report),
           url,
+          shareUrl ? `Public link: ${shareUrl}` : "No public link available.",
           "",
           report.summary,
           ...(html
@@ -355,6 +358,7 @@ export const getReportTool = {
             ...forAgent(report),
             htmlBytes: report.sizeBytes,
             url,
+            shareUrl,
           },
         },
       });
@@ -381,7 +385,7 @@ export const deleteReportTool = {
     }),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: true,
     },
   },

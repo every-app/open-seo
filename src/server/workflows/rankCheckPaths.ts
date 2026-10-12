@@ -77,34 +77,36 @@ function expandToTaskInputs(
 
 /**
  * Check keyword/device pairs against the live endpoint and persist snapshots.
- * Per-call failures are logged and skipped (the metered client already charged
- * or refused each call individually). Returns the snapshot count written.
+ * The batch is billed with one credit hold and one settle. Per-call failures
+ * are logged and skipped; if the hold itself fails, no call runs and every
+ * pair fails with that error. Returns the snapshot count written.
  */
 async function checkBatchLive(
   ctx: CheckContext,
   tasks: RankCheckTaskInput[],
 ): Promise<number> {
-  const settled = await Promise.allSettled(
-    tasks.map((task) =>
-      ctx.client.serp
-        .rankCheck({
-          keyword: task.keyword,
-          keywordId: task.keywordId,
-          locationCode: ctx.locationCode,
-          languageCode: ctx.languageCode,
-          locationName: ctx.locationName,
-          device: task.device,
-          targetDomain: ctx.domain,
-          depth: ctx.serpDepth,
-        })
-        .then((r) => ({ ...r, device: task.device })),
-    ),
-  );
+  let settled: PromiseSettledResult<RankCheckResult>[];
+  try {
+    settled = await ctx.client.serp.rankCheckBatch(
+      tasks.map((task) => ({
+        keyword: task.keyword,
+        keywordId: task.keywordId,
+        locationCode: ctx.locationCode,
+        languageCode: ctx.languageCode,
+        locationName: ctx.locationName,
+        device: task.device,
+        targetDomain: ctx.domain,
+        depth: ctx.serpDepth,
+      })),
+    );
+  } catch (error) {
+    settled = tasks.map(() => ({ status: "rejected", reason: error }));
+  }
   const results: RankCheckResultWithDevice[] = [];
   let firstError: string | null = null;
   settled.forEach((outcome, index) => {
     if (outcome.status === "fulfilled") {
-      results.push(outcome.value);
+      results.push({ ...outcome.value, device: tasks[index].device });
       return;
     }
     const reason: unknown = outcome.reason;
@@ -135,7 +137,7 @@ async function checkBatchLive(
  * Check keywords via Live API, parallel devices per keyword, real-time progress.
  * Snapshots are written incrementally after each batch so partial results
  * survive batch failures. ~6s per keyword batch.
- * Billing is handled per-call by the metered client.
+ * Each batch is billed with one credit hold and one settle (checkBatchLive).
  */
 export async function runLiveCheck(
   step: WorkflowStep,
@@ -286,7 +288,7 @@ export interface QueuedCheckStats {
  * ~15 minutes, writing snapshots incrementally as tasks complete. Anything
  * still unfinished after the polling window — plus tasks DataForSEO rejected
  * or failed — gets one shot at the live endpoint so a run never hangs on a
- * stuck queue. Billing happens at task_post (and per live-fallback call).
+ * stuck queue. Billing happens at task_post (and per live-fallback batch).
  */
 export async function runQueuedCheck(
   step: WorkflowStep,

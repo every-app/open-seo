@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import type { CsvValue } from "@/client/lib/csv";
+import { exportRows } from "@/client/lib/exportRows";
 import { captureClientEvent } from "@/client/lib/posthog";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { SaveKeywordsInput } from "@/types/schemas/keywords";
@@ -11,17 +11,25 @@ import type {
   ResultLimit,
 } from "@/client/features/keywords/keywordResearchTypes";
 import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
+import type { KeywordResearchDisplayRow } from "@/client/features/keywords/groupSharedVolumeRows";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 
-export const KEYWORD_RESEARCH_HEADERS = [
-  "Keyword",
-  "Volume",
-  "CPC",
-  "Competition",
-  "Score",
-  "Intent",
-];
+/** Local exports name the area the volume, CPC, and competition cover. */
+function keywordResearchHeaders(locationName?: string) {
+  const scope = locationName ? ` (${formatLocationLabel(locationName)})` : "";
+  return [
+    "Keyword",
+    `Volume${scope}`,
+    `CPC${scope}`,
+    `Competition${scope}`,
+    "Score",
+    "Intent",
+  ];
+}
 
-export function keywordResearchExportRow(row: KeywordResearchRow): CsvValue[] {
+export const KEYWORD_RESEARCH_HEADERS = keywordResearchHeaders();
+
+function keywordResearchExportRow(row: KeywordResearchRow): CsvValue[] {
   return [
     row.keyword,
     row.searchVolume ?? "",
@@ -34,15 +42,11 @@ export function keywordResearchExportRow(row: KeywordResearchRow): CsvValue[] {
 
 type SaveExportActionParams = {
   selectedRows: Set<string>;
-  rows: KeywordResearchRow[];
-  filteredRows: KeywordResearchRow[];
+  filteredRows: KeywordResearchDisplayRow[];
   input: KeywordResearchControllerInput;
   saveKeywordsMutate: (
     variables: SaveKeywordsInput,
-    options: {
-      onSuccess: () => void;
-      onError: (error: unknown) => void;
-    },
+    options: { onSuccess: () => void },
   ) => void;
   setShowSaveDialog: (show: boolean) => void;
 };
@@ -62,16 +66,20 @@ export function parseKeywordInput(value: string) {
 export function buildKeywordSearchKey(params: {
   keyword: string;
   locationCode: number | undefined;
+  locationName: string | undefined;
   resultLimit: ResultLimit;
   mode: KeywordMode;
   clickstream: boolean;
+  groupKeywords: boolean;
 }) {
   return [
     parseKeywordInput(params.keyword).join(""),
     params.locationCode,
+    params.locationName,
     params.resultLimit,
     params.mode,
     params.clickstream ? "cs" : "",
+    params.groupKeywords ? "grouped" : "",
   ].join("|");
 }
 
@@ -93,38 +101,43 @@ export function getNextSortParams(
 export function useSaveAndExportActions(params: SaveExportActionParams) {
   const {
     selectedRows,
-    rows,
     filteredRows,
     input,
     saveKeywordsMutate,
     setShowSaveDialog,
   } = params;
 
+  // Save and export act on the same rows: the selected rows that the current
+  // filters show.
+  const selectedKeywordRows = useMemo(
+    () => filteredRows.filter((row) => selectedRows.has(row.keyword)),
+    [filteredRows, selectedRows],
+  );
+
   const handleSaveKeywords = () => {
-    if (selectedRows.size === 0) {
-      toast.error("Select at least one keyword first");
-      return;
-    }
     setShowSaveDialog(true);
   };
 
   const confirmSave = () => {
-    const metrics = rows
-      .filter((row) => selectedRows.has(row.keyword))
-      .map((row) => ({
-        keyword: row.keyword,
-        searchVolume: row.searchVolume,
-        cpc: row.cpc,
-        competition: row.competition,
-        keywordDifficulty: row.keywordDifficulty,
-        intent: row.intent,
-        monthlySearches: row.trend,
-      }));
+    const count = selectedKeywordRows.length;
+    // Saved keyword metrics are stored per country, so local numbers are not
+    // saved. The saved list keeps the national metrics.
+    const metrics = input.locationName
+      ? undefined
+      : selectedKeywordRows.map((row) => ({
+          keyword: row.keyword,
+          searchVolume: row.searchVolume,
+          cpc: row.cpc,
+          competition: row.competition,
+          keywordDifficulty: row.keywordDifficulty,
+          intent: row.intent,
+          monthlySearches: row.trend,
+        }));
 
     saveKeywordsMutate(
       {
         projectId: input.projectId,
-        keywords: [...selectedRows],
+        keywords: selectedKeywordRows.map((row) => row.keyword),
         locationCode: input.locationCode,
         metrics,
       },
@@ -132,49 +145,52 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
         onSuccess: () => {
           captureClientEvent("keyword:save", {
             source_feature: "keyword_research",
-            keyword_count: selectedRows.size,
+            keyword_count: count,
           });
-          toast.success(`Saved ${selectedRows.size} keywords`);
+          toast.success(`Saved ${count} keywords`);
           setShowSaveDialog(false);
-        },
-        onError: (error: unknown) => {
-          toast.error(getStandardErrorMessage(error, "Save failed."));
         },
       },
     );
   };
 
-  const sheetsExportRows: CsvValue[][] = useMemo(
-    () => filteredRows.map(keywordResearchExportRow),
-    [filteredRows],
-  );
-
-  const exportCsv = () => {
-    if (sheetsExportRows.length === 0) {
-      toast.error("No data to export");
-      return;
-    }
-    downloadKeywordResearchCsv(sheetsExportRows);
-    captureClientEvent("data:export", {
-      source_feature: "keyword_research",
-      result_count: sheetsExportRows.length,
+  const exportKeywords = (
+    format: "csv" | "sheets",
+    exportedRows: KeywordResearchRow[],
+    scope?: "selection",
+  ) => {
+    const tableRows = exportedRows.map(keywordResearchExportRow);
+    void exportRows({
+      format,
+      feature: "keyword_research",
+      headers: keywordResearchHeaders(input.locationName),
+      rows: format === "csv" ? formatCentsForCsv(tableRows) : tableRows,
+      filename: "keyword-research",
+      scope,
     });
   };
 
-  return { handleSaveKeywords, confirmSave, exportCsv, sheetsExportRows };
+  return {
+    handleSaveKeywords,
+    confirmSave,
+    selectedKeywordRows,
+    exportAll: (format: "csv" | "sheets") =>
+      exportKeywords(format, filteredRows),
+    exportSelection: (format: "csv" | "sheets") =>
+      exportKeywords(format, selectedKeywordRows, "selection"),
+  };
 }
 
-export function downloadKeywordResearchCsv(rows: CsvValue[][]) {
-  // CSV file keeps cents-formatted CPC/competition for human readability.
-  const csvRows = rows.map((row) =>
+/**
+ * CSV downloads show CPC and competition (columns 3 and 4 of the keyword
+ * headers) with two decimals. Sheets keeps raw numbers.
+ */
+export function formatCentsForCsv(rows: CsvValue[][]): CsvValue[][] {
+  return rows.map((row) =>
     row.map((cell, idx) =>
       (idx === 2 || idx === 3) && typeof cell === "number"
         ? cell.toFixed(2)
         : cell,
     ),
-  );
-  downloadCsv(
-    "keyword-research.csv",
-    buildCsv(KEYWORD_RESEARCH_HEADERS, csvRows),
   );
 }

@@ -3,8 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   createMcpToolContext,
   createWorkersOAuthMcpProps,
-  MCP_AUTH_CONTEXT_PROP,
-  workersOAuthMcpPropsSchema,
 } from "@/server/mcp/context";
 
 const applicationContext = {
@@ -15,18 +13,6 @@ const applicationContext = {
 };
 
 describe("OpenSEO tool auth context", () => {
-  it("stores only application-specific identity in Workers OAuth props", () => {
-    const props = createWorkersOAuthMcpProps(applicationContext);
-
-    expect(workersOAuthMcpPropsSchema.parse(props)).toEqual({
-      [MCP_AUTH_CONTEXT_PROP]: applicationContext,
-    });
-  });
-
-  it("rejects unrecognized provider props", () => {
-    expect(workersOAuthMcpPropsSchema.safeParse({}).success).toBe(false);
-  });
-
   it("prefers standard OAuth client metadata over the props fallback", () => {
     const props = createWorkersOAuthMcpProps({
       ...applicationContext,

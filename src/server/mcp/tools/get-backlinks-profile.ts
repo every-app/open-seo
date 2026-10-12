@@ -69,7 +69,9 @@ const inputSchema = {
   hideSpam: z
     .boolean()
     .optional()
-    .describe("Filter out spammy backlinks. Defaults to true."),
+    .describe(
+      "Hide backlinks with Spam scores of 40 or higher. Defaults to true. Unknown scores remain visible. This is a heuristic, not a judgment about a link. Set false to inspect all matching links. True leaves six user filter conditions (two for subfolders); false allows eight (four for subfolders). Each include/exclude term and numeric bound counts separately.",
+    ),
 } as const;
 
 type Args = z.infer<z.ZodObject<typeof inputSchema>>;
@@ -133,7 +135,7 @@ export const getBacklinksProfileTool = {
     }),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
       destructiveHint: false,
     },
   },

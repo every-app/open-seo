@@ -1,9 +1,27 @@
-import { Check, Loader2, Plus, Search, X } from "lucide-react";
+import { Check, Plus, Search, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { Modal } from "@/client/components/Modal";
-import { resolveTagColor, tagDotClass } from "@/shared/tag-colors";
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Checkbox } from "@/client/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/client/components/ui/input-group";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
 import type { SavedKeywordTag, SavedKeywordTagSummary } from "@/types/keywords";
-import { TagChip } from "./TagChip";
+import { TagChip, TagDot } from "./TagChip";
 
 type Mode = "add" | "remove";
 
@@ -93,38 +111,44 @@ export function SavedKeywordsBulkTagsModal({
   };
 
   return (
-    <Modal maxWidth="max-w-lg" onClose={onClose} labelledBy="bulk-tags-title">
-      <div className="space-y-4">
-        <div>
-          <h3 id="bulk-tags-title" className="text-lg font-semibold">
-            Update tags
-          </h3>
-          <p className="text-sm text-base-content/65">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Update tags</DialogTitle>
+          <DialogDescription>
             Apply or remove tags across {selectedCount} selected keyword
             {selectedCount !== 1 ? "s" : ""}.
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="inline-flex rounded-md border border-base-300 bg-base-200/40 p-0.5 text-sm">
-          <SegmentButton
-            active={mode === "add"}
-            onClick={() => setMode("add")}
-            label="Add tags"
-            count={addNames.length}
-          />
-          <SegmentButton
-            active={mode === "remove"}
-            onClick={() => setMode("remove")}
+        <ToggleGroup
+          size="sm"
+          spacing={0.5}
+          value={[mode]}
+          onValueChange={(next) => {
+            // A press on the active item empties the group. Keep one mode on.
+            if (next[0] === "add" || next[0] === "remove") setMode(next[0]);
+          }}
+          className="rounded-lg bg-muted p-0.5 ring-1 ring-border ring-inset"
+        >
+          <SegmentItem value="add" label="Add tags" count={addNames.length} />
+          <SegmentItem
+            value="remove"
             label="Remove tags"
             count={removeIds.length}
             disabled={selectedRowTags.length === 0}
           />
-        </div>
+        </ToggleGroup>
 
         {mode === "add" ? (
           <div className="space-y-2">
             {addNames.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-base-300 bg-base-200/40 px-2 py-2">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-muted/40 p-2">
                 {addNames.map((name) => {
                   const existing = availableByNormalized.get(
                     name.toLocaleLowerCase(),
@@ -155,10 +179,13 @@ export function SavedKeywordsBulkTagsModal({
               </div>
             ) : null}
 
-            <label className="flex items-center gap-2 rounded-md border border-base-300 bg-base-100 px-2 py-2">
-              <Search className="size-3.5 opacity-50" />
-              <input
+            <InputGroup>
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+              <InputGroupInput
                 ref={inputRef}
+                aria-label="Search or create a tag"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={(event) => {
@@ -168,90 +195,70 @@ export function SavedKeywordsBulkTagsModal({
                   }
                 }}
                 placeholder="Search or create…"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
               />
-            </label>
+            </InputGroup>
 
-            <div className="max-h-56 overflow-y-auto rounded-md border border-base-300">
+            <div className="max-h-56 overflow-y-auto rounded-lg border border-border py-1">
               {showCreate ? (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start rounded-none font-normal"
                   onClick={handleCreate}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-base-200"
                 >
-                  <Plus className="size-3.5 text-primary" />
-                  <span className="text-base-content/70">Create</span>
+                  <Plus data-icon="inline-start" className="text-primary" />
+                  <span className="text-muted-foreground">Create</span>
                   <span className="font-medium">
                     &ldquo;{trimmedQuery}&rdquo;
                   </span>
-                </button>
+                </Button>
               ) : null}
 
               {filteredAvailable.length === 0 && !showCreate ? (
-                <div className="px-3 py-6 text-center text-xs text-base-content/55">
+                <p className="px-3 py-6 text-center text-xs text-muted-foreground">
                   {availableTags.length === 0
                     ? "No tags yet. Type a name above to create one."
                     : "No tags match that search."}
-                </div>
+                </p>
               ) : null}
 
-              {filteredAvailable.map((tag) => {
-                const checked = normalizedAddSet.has(tag.normalizedName);
-                const color = resolveTagColor(tag);
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => handleToggleAdd(tag)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200"
-                  >
-                    <span
-                      className={`flex size-4 shrink-0 items-center justify-center rounded border ${
-                        checked
-                          ? "border-primary bg-primary text-primary-content"
-                          : "border-base-300"
-                      }`}
-                    >
-                      {checked ? <Check className="size-3" /> : null}
-                    </span>
-                    <span
-                      className={`size-2 shrink-0 rounded-full ${tagDotClass(color)}`}
-                    />
-                    <span className="flex-1 truncate text-sm">{tag.name}</span>
-                    <span className="text-[11px] tabular-nums text-base-content/45">
-                      {tag.keywordCount}
-                    </span>
-                  </button>
-                );
-              })}
+              {filteredAvailable.map((tag) => (
+                <label
+                  key={tag.id}
+                  className="flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted"
+                >
+                  <Checkbox
+                    checked={normalizedAddSet.has(tag.normalizedName)}
+                    onCheckedChange={() => handleToggleAdd(tag)}
+                  />
+                  <TagDot tag={tag} />
+                  <span className="min-w-0 flex-1 truncate">{tag.name}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {tag.keywordCount}
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
         ) : (
           <div className="space-y-2">
-            {selectedRowTags.length === 0 ? (
-              <div className="rounded-md border border-base-300 bg-base-200/40 px-3 py-6 text-center text-xs text-base-content/55">
-                The selected keywords don&apos;t have any tags to remove.
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-1.5 rounded-md border border-base-300 p-3">
-                {selectedRowTags.map((tag) => {
-                  const checked = removeIds.includes(tag.id);
-                  return (
-                    <TagChip
-                      key={tag.id}
-                      tag={tag}
-                      size="sm"
-                      onClick={() => handleToggleRemove(tag)}
-                      selected={checked}
-                      trailing={checked ? <Check className="size-3" /> : null}
-                      title={checked ? "Will be removed" : "Click to remove"}
-                    />
-                  );
-                })}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-1.5 rounded-lg border border-border p-3">
+              {selectedRowTags.map((tag) => {
+                const checked = removeIds.includes(tag.id);
+                return (
+                  <TagChip
+                    key={tag.id}
+                    tag={tag}
+                    size="sm"
+                    onClick={() => handleToggleRemove(tag)}
+                    selected={checked}
+                    trailing={checked ? <Check className="size-3" /> : null}
+                    title={checked ? "Will be removed" : "Click to remove"}
+                  />
+                );
+              })}
+            </div>
             {removeIds.length > 0 ? (
-              <p className="text-xs text-base-content/55">
+              <p className="text-xs text-muted-foreground">
                 {removeIds.length} tag{removeIds.length !== 1 ? "s" : ""} will
                 be detached from the selected keywords.
               </p>
@@ -259,17 +266,12 @@ export function SavedKeywordsBulkTagsModal({
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <button
-            type="button"
-            className="rounded-md px-3 py-1.5 text-sm text-base-content/70 hover:bg-base-200"
-            onClick={onClose}
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-content disabled:opacity-50"
+          </Button>
+          <Button
+            pending={isPending}
             disabled={!canApply}
             onClick={() =>
               onApply({
@@ -278,45 +280,33 @@ export function SavedKeywordsBulkTagsModal({
               })
             }
           >
-            {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
             Apply
-          </button>
-        </div>
-      </div>
-    </Modal>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function SegmentButton({
-  active,
-  onClick,
+function SegmentItem({
+  value,
   label,
   count,
   disabled,
 }: {
-  active: boolean;
-  onClick: () => void;
+  value: Mode;
   label: string;
   count: number;
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <ToggleGroupItem
+      value={value}
       disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded px-3 py-1 text-sm transition ${
-        active
-          ? "bg-base-100 font-medium shadow-sm"
-          : "text-base-content/65 hover:text-base-content"
-      } disabled:opacity-40`}
+      className="h-6 text-muted-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm"
     >
       {label}
-      {count > 0 ? (
-        <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-content">
-          {count}
-        </span>
-      ) : null}
-    </button>
+      {count > 0 ? <Badge size="sm">{count}</Badge> : null}
+    </ToggleGroupItem>
   );
 }

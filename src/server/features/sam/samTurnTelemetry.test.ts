@@ -39,7 +39,12 @@ const toolCall = (overrides: Record<string, unknown> = {}) =>
 describe("SamTurnStats", () => {
   it("sums steps and tool calls into the turn event, counting {error} outputs as failures", () => {
     const stats = new SamTurnStats();
-    stats.recordStep(step(), 0.01);
+    // Each generation is linked to the turn as its trace.
+    expect(stats.recordStep(step(), 0.01)).toMatchObject({
+      $ai_trace_id: stats.turnId,
+      $ai_parent_id: stats.turnId,
+      $ai_model: "openai/gpt-5.6-luna",
+    });
     stats.recordStep(step({ toolCalls: [], finishReason: "stop" }), 0.02);
     stats.recordSpend(0.03);
     stats.recordToolCall(toolCall());
@@ -62,19 +67,6 @@ describe("SamTurnStats", () => {
       tool_failures: 2,
       tools: ["research_keywords", "read_pages"],
       tool_ms: 360,
-    });
-  });
-
-  it("links each generation to the turn as its trace", () => {
-    const stats = new SamTurnStats();
-    const generation = stats.recordStep(step(), 0.01);
-    expect(generation).toMatchObject({
-      $ai_trace_id: stats.turnId,
-      $ai_parent_id: stats.turnId,
-      $ai_model: "openai/gpt-5.6-luna",
-      $ai_input_tokens: 1000,
-      $ai_total_cost_usd: 0.01,
-      $ai_tools_called: "research_keywords",
     });
     expect(stats.traceProperties("error", "boom")).toMatchObject({
       $ai_trace_id: stats.turnId,

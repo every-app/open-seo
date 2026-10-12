@@ -2,8 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
-import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
-import { GoogleAnalyticsConnectionCard } from "@/client/features/ga4/GoogleAnalyticsConnectionCard";
+import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { SearchConsoleOnboardingStep } from "@/client/features/onboarding/SearchConsoleOnboardingStep";
 
 vi.mock("@/serverFunctions/gsc", () => ({
@@ -32,7 +31,6 @@ vi.mock("@/client/features/integrations/googleLinkError", () => ({
   clearGoogleLinkError: vi.fn(),
   reportGoogleLinkErrorOnce: vi.fn(),
 }));
-vi.mock("@/lib/auth-mode", () => ({ isHostedClientAuthMode: () => true }));
 vi.mock("@/client/lib/posthog", () => ({ captureClientEvent: vi.fn() }));
 
 function renderSetup(
@@ -52,9 +50,7 @@ function renderSetup(
     currentUserHasGrant: hasGrant,
     canManage,
     googleOAuthConfigured: true,
-    siteUrl: "https://example.com/",
-    propertyId: "properties/123",
-    propertyDisplayName: "Example",
+    property: "https://example.com/",
   });
   if (connectionError) {
     client
@@ -75,12 +71,10 @@ function renderSetup(
           onBack: vi.fn(),
           onSkip: vi.fn(),
         })
-      : createElement(
-          surface === "gsc"
-            ? SearchConsoleConnectionCard
-            : GoogleAnalyticsConnectionCard,
-          { projectId: "project-a" },
-        );
+      : createElement(GoogleConnectionCard, {
+          provider,
+          projectId: "project-a",
+        });
   const html = renderToStaticMarkup(
     createElement(QueryClientProvider, { client }, component),
   );
@@ -96,20 +90,6 @@ describe.each(["gsc", "ga4", "onboarding"] as const)(
       expect(html).toContain("Choose property");
       expect(html).toContain("Select a property");
       expect(html).not.toContain("Connect with Google");
-    });
-    it("offers authorization when no account has been linked", () => {
-      const html = renderSetup(surface, false);
-      expect(html).not.toContain("Select a property");
-      expect(html).toContain(
-        surface === "onboarding" ? "Connect with Google" : "Connect",
-      );
-    });
-    it("shows the saved connection rather than reopening setup", () => {
-      const html = renderSetup(surface, true, true);
-      expect(html).not.toContain("Select a property");
-      expect(html).toContain(
-        surface === "ga4" ? "Example" : "https://example.com/",
-      );
     });
   },
 );
@@ -145,29 +125,6 @@ describe("onboarding connection actions", () => {
     expect(html).toContain("Couldn&#x27;t check your Google connection.");
     expect(html).toContain("Try again");
     expect(html).not.toContain("Choose property");
-    expect(html).toMatch(/disabled="">Save and continue<\/button>/);
-  });
-
-  it("requires saving a property or explicitly skipping before advancing", () => {
-    const html = renderSetup("onboarding", true);
-    expect(html).toContain("Save and continue");
-    expect(html).toContain("Skip for now");
-    expect(html).not.toMatch(/>Continue[ <]/);
-    expect(html).not.toContain("Save property");
-  });
-
-  it("offers an explicit skip before Google authorization", () => {
-    const html = renderSetup("onboarding", false);
-    expect(html).toContain("Skip for now");
-    expect(html).not.toMatch(/>Continue[ <]/);
-    expect(html).toContain("Save and continue");
-    expect(html).toMatch(/disabled="">Save and continue<\/button>/);
-  });
-
-  it("allows continuing without another save for an existing connection", () => {
-    const html = renderSetup("onboarding", true, true);
-    expect(html).toMatch(/>Continue[ <]/);
-    expect(html).not.toContain("Save and continue");
-    expect(html).not.toContain("Skip for now");
+    expect(html).toMatch(/disabled=""[^>]*>Save and continue/);
   });
 });

@@ -1,0 +1,34 @@
+allowBuilds:
+  esbuild: set this to true or false
+  workerd: set this to true or false
+minimumReleaseAge: 11520
+minimumReleaseAgeExclude:
+  - "@every-app/*"
+  # TEMPORARY (remove after 2026-10-08): latest TanStack Start release
+  # requested for the security refresh. Exempt only these matching versions.
+  - "@tanstack/react-router@1.170.41"
+  - "@tanstack/react-start-client@1.168.39"
+  - "@tanstack/react-start-rsc@0.1.59"
+  - "@tanstack/react-start-server@1.167.46"
+  - "@tanstack/react-start@1.168.60"
+  - "@tanstack/react-store@0.11.2"
+  - "@tanstack/router-core@1.171.34"
+  - "@tanstack/router-generator@1.167.40"
+  - "@tanstack/router-plugin@1.168.42"
+  - "@tanstack/start-client-core@1.170.34"
+  - "@tanstack/start-plugin-core@1.171.49"
+  - "@tanstack/start-server-core@1.169.39"
+  - "@tanstack/start-storage-context@1.167.36"
+  - "@tanstack/store@0.11.2"
+
+# Security floors for transitive dependencies; keep compatible majors.
+overrides:
+  "@babel/core": "^7.29.6"
+  browserslist: "^4.28.7"
+  baseline-browser-mapping: "^2.11.0"
+  js-yaml: "^4.3.2"
+  "nanoid@3": "^3.3.18"
+  postcss: "^8.5.23"
+  undici: "^7.29.1"
+  # GHSA-rgj7-g3m4-5g8c — Miniflare 4 pins 0.34.5; 0.35.4 fixes bundled libheif.
+  "miniflare>sharp": "0.35.4"

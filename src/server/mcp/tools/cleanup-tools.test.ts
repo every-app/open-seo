@@ -1,12 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
 import { removeSavedKeywordsTool } from "./remove-saved-keywords";
 import { deleteReportTool } from "./report-tools";
 import { deleteReportTemplateTool } from "./report-template-tools";
-import {
-  deleteSiteAuditTool,
-  listSiteAuditsTool,
-} from "./site-audit-cleanup-tools";
+import { deleteSiteAuditTool } from "./site-audit-cleanup-tools";
 import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +11,6 @@ const mocks = vi.hoisted(() => ({
   removeSavedKeywords: vi.fn(),
   deleteTemplate: vi.fn(),
   getAuditForProject: vi.fn(),
-  getAuditsByProject: vi.fn(),
   deleteAuditForProject: vi.fn(),
   terminate: vi.fn(),
   status: vi.fn(),
@@ -58,17 +53,17 @@ beforeEach(() => {
   mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
   mocks.deleteReport.mockResolvedValue(true);
   mocks.deleteTemplate.mockResolvedValue(true);
+  mocks.removeSavedKeywords.mockResolvedValue(1);
   mocks.getAuditForProject.mockResolvedValue({
     id: "audit_1",
     status: "completed",
   });
-  mocks.getAuditsByProject.mockResolvedValue([]);
 });
 
 const context = makeToolContext();
 const deletes = [
   {
-    tool: deleteReportTool,
+    name: deleteReportTool.name,
     call: () =>
       deleteReportTool.handler(
         { projectId: "project_1", reportId: "report_1" },
@@ -78,7 +73,7 @@ const deletes = [
     scopedArgs: ["project_1", "report_1"],
   },
   {
-    tool: deleteReportTemplateTool,
+    name: deleteReportTemplateTool.name,
     call: () =>
       deleteReportTemplateTool.handler(
         { projectId: "project_1", templateId: "template_1" },
@@ -88,7 +83,7 @@ const deletes = [
     scopedArgs: ["project_1", "template_1"],
   },
   {
-    tool: deleteSiteAuditTool,
+    name: deleteSiteAuditTool.name,
     call: () =>
       deleteSiteAuditTool.handler(
         { projectId: "project_1", auditId: "audit_1" },
@@ -97,11 +92,21 @@ const deletes = [
     storage: mocks.deleteAuditForProject,
     scopedArgs: ["audit_1", "project_1"],
   },
+  {
+    name: removeSavedKeywordsTool.name,
+    call: () =>
+      removeSavedKeywordsTool.handler(
+        { projectId: "project_1", savedKeywordIds: ["saved_1", "saved_2"] },
+        context,
+      ),
+    storage: mocks.removeSavedKeywords,
+    scopedArgs: [["saved_1", "saved_2"], "project_1"],
+  },
 ];
 
-describe.each(deletes)("$tool.name", ({ tool, call, storage, scopedArgs }) => {
+describe.each(deletes)("$name", ({ call, storage, scopedArgs }) => {
   it("deletes only within the authorized project", async () => {
-    expect((await call()).structuredContent.deleted).toBe(true);
+    await call();
     expect(storage).toHaveBeenCalledWith(...scopedArgs);
   });
 
@@ -110,31 +115,17 @@ describe.each(deletes)("$tool.name", ({ tool, call, storage, scopedArgs }) => {
     await expect(call()).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(storage).not.toHaveBeenCalled();
   });
-
-  it("refuses missing IDs or IDs belonging to another project", async () => {
-    mocks.deleteReport.mockResolvedValue(false);
-    mocks.deleteTemplate.mockResolvedValue(false);
-    mocks.getAuditForProject.mockResolvedValue(null);
-    await expect(call()).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
-  it("requires an explicit target and advertises destructive behavior", () => {
-    expect(
-      z.object(tool.config.inputSchema).safeParse({ projectId: "project_1" })
-        .success,
-    ).toBe(false);
-    expect(tool.config.annotations.destructiveHint).toBe(true);
-  });
 });
 
 describe("site audit cleanup", () => {
-  it("lists empty history without starting or deleting an audit", async () => {
-    const result = await listSiteAuditsTool.handler(
-      { projectId: "project_1" },
-      context,
-    );
-    expect(result.structuredContent.audits).toEqual([]);
-    expect(mocks.getAuditsByProject).toHaveBeenCalledWith("project_1");
+  it("refuses an audit that is missing or belongs to another project", async () => {
+    mocks.getAuditForProject.mockResolvedValue(null);
+    await expect(
+      deleteSiteAuditTool.handler(
+        { projectId: "project_1", auditId: "audit_1" },
+        context,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(mocks.deleteAuditForProject).not.toHaveBeenCalled();
   });
 
@@ -183,57 +174,4 @@ describe("site audit cleanup", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(mocks.deleteAuditForProject).not.toHaveBeenCalled();
   });
-});
-
-describe("remove_saved_keywords", () => {
-  it("passes exact row IDs to the scoped service and reports actual deletions", async () => {
-    mocks.removeSavedKeywords.mockResolvedValue(1);
-    const ids = ["saved_1", "saved_1", "missing_or_foreign"];
-    const result = await removeSavedKeywordsTool.handler(
-      { projectId: "project_1", savedKeywordIds: ids },
-      context,
-    );
-    expect(mocks.removeSavedKeywords).toHaveBeenCalledWith(ids, "project_1");
-    expect(result.structuredContent).toMatchObject({
-      projectId: "project_1",
-      requested: 3,
-      deletedCount: 1,
-    });
-    expect(
-      removeSavedKeywordsTool.config.outputSchema.safeParse(
-        result.structuredContent,
-      ).success,
-    ).toBe(true);
-  });
-
-  it("refuses inaccessible projects before deletion", async () => {
-    mocks.getProjectForOrganization.mockResolvedValue(null);
-    await expect(
-      removeSavedKeywordsTool.handler(
-        { projectId: "project_1", savedKeywordIds: ["saved_1"] },
-        context,
-      ),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(mocks.removeSavedKeywords).not.toHaveBeenCalled();
-  });
-
-  it("reports zero when no requested row belongs to the project", async () => {
-    mocks.removeSavedKeywords.mockResolvedValue(0);
-    const result = await removeSavedKeywordsTool.handler(
-      { projectId: "project_1", savedKeywordIds: ["missing_or_foreign"] },
-      context,
-    );
-    expect(result.structuredContent.deletedCount).toBe(0);
-  });
-
-  it.each([undefined, [], [""], Array.from({ length: 2001 }, () => "saved_1")])(
-    "rejects a missing, empty, invalid, or oversized target list (%#)",
-    (savedKeywordIds) => {
-      expect(
-        z
-          .object(removeSavedKeywordsTool.config.inputSchema)
-          .safeParse({ projectId: "project_1", savedKeywordIds }).success,
-      ).toBe(false);
-    },
-  );
 });

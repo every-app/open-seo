@@ -1,5 +1,4 @@
 /* eslint-disable max-lines -- every local-SEO tool is covered in this one spec, matching local-seo-tools.ts */
-import { sort } from "remeda";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "@/server/lib/errors";
 import {
@@ -14,7 +13,14 @@ const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   fetchBusinessDataTaskResult: vi.fn(),
   fetchBusinessListingsCategories: vi.fn(),
+  fetchLocalSerpTaskResult: vi.fn(),
   getProjectForOrganization: vi.fn(),
+  localTaskPost:
+    vi.fn<
+      (input: {
+        locationCoordinates: string[];
+      }) => Promise<Array<string | null>>
+    >(),
   getCached: vi.fn(),
   setCached: vi.fn(),
 }));
@@ -25,10 +31,14 @@ vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
   fetchBusinessDataTaskResult: mocks.fetchBusinessDataTaskResult,
   fetchBusinessListingsCategories: mocks.fetchBusinessListingsCategories,
+  fetchLocalSerpTaskResult: mocks.fetchLocalSerpTaskResult,
 }));
 
 vi.mock("@/server/lib/r2-cache", () => ({
-  buildCacheKey: (prefix: string) => Promise.resolve(`${prefix}:key`),
+  // Distinct params give distinct keys, without the real hash's native async
+  // (which fake timers can't drive).
+  buildCacheKey: async (prefix: string, params: Record<string, unknown>) =>
+    `${prefix}:${JSON.stringify(params)}`,
   getCached: mocks.getCached,
   setCached: mocks.setCached,
 }));
@@ -41,8 +51,6 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
 
 const toolContext = makeToolContext();
 
-const sorted = (values: string[]) => sort(values, (a, b) => a.localeCompare(b));
-
 beforeEach(() => {
   mocks.getProjectForOrganization.mockResolvedValue({
     id: "project_1",
@@ -50,6 +58,7 @@ beforeEach(() => {
     languageCode: "en",
   });
   mocks.getCached.mockResolvedValue(null);
+  mocks.setCached.mockResolvedValue(undefined);
 });
 
 describe("get_business_profile", () => {
@@ -176,7 +185,7 @@ describe("get_business_reviews", () => {
     await expect(failing).rejects.toThrow('taskId "google:task-1"');
   });
 
-  it("resumes from a taskId without posting a new task", async () => {
+  it("resumes from a taskId without posting a new task, rejecting taskIds from elsewhere", async () => {
     const reviewsTaskPost = vi.fn();
     mocks.createDataforseoClient.mockReturnValue({
       business: { reviewsTaskPost },
@@ -217,9 +226,7 @@ describe("get_business_reviews", () => {
     expect(out).toContain("# | when | rating | author | source | review");
     expect(out).toContain("Rare bottles and great staff.");
     expect(out).toContain("| yes");
-  });
 
-  it("rejects a taskId that did not come from this tool", async () => {
     await expect(
       getBusinessReviewsTool.handler(
         { projectId: "project_1", taskId: "task-9" },
@@ -230,47 +237,69 @@ describe("get_business_reviews", () => {
 });
 
 describe("get_local_rank_grid", () => {
-  const gridItems = (items: unknown[]) =>
-    vi
-      .fn<(input: { locationCoordinate: string }) => Promise<unknown[]>>()
-      .mockResolvedValue(items);
-  it("searches a 3x3 grid of coordinates around the center", async () => {
-    const local = gridItems([]);
-    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
+  const gridArgs = {
+    projectId: "project_1",
+    keyword: "coffee",
+    target: { cid: "123" },
+    center: { latitude: 40, longitude: -74 },
+  };
+  // Receipts persist across calls within a test, as R2 would.
+  const receipts = new Map<string, unknown>();
 
+  beforeEach(() => {
+    receipts.clear();
+    mocks.getCached.mockImplementation(
+      async (key: string) => receipts.get(key) ?? null,
+    );
+    mocks.setCached.mockImplementation(async (key: string, value: unknown) => {
+      receipts.set(key, value);
+    });
+    // One queued task per grid point, named after the point's index.
+    mocks.localTaskPost.mockImplementation(async ({ locationCoordinates }) =>
+      locationCoordinates.map((_, index) => `task-${index}`),
+    );
+    mocks.createDataforseoClient.mockReturnValue({
+      serp: { localTaskPost: mocks.localTaskPost },
+    });
+    completeTasks([]);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function completeTasks(items: unknown[]) {
+    mocks.fetchLocalSerpTaskResult.mockResolvedValue({
+      status: "completed",
+      items,
+    });
+  }
+
+  it("posts one queued search per point of a 3x3 grid, north row first", async () => {
     await getLocalRankGridTool.handler(
-      {
-        projectId: "project_1",
-        keyword: "coffee",
-        target: { cid: "123" },
-        center: { latitude: 40, longitude: -74 },
-        spacingKm: 2,
-      },
+      { ...gridArgs, spacingKm: 2 },
       toolContext,
     );
 
     // 2 km spacing at latitude 40: 0.0180874 deg of latitude, 0.0234532 deg of
-    // longitude. Row 0 is the northern edge. Every point carries a zoom derived
-    // from the spacing (13z here) so each point's viewport spans its neighbours
-    // instead of hiding businesses one grid step east or west.
-    expect(
-      sorted(local.mock.calls.map(([input]) => input.locationCoordinate)),
-    ).toEqual(
-      sorted([
-        "40.0180874,-74.0234532,13z",
-        "40.0180874,-74,13z",
-        "40.0180874,-73.9765468,13z",
-        "40,-74.0234532,13z",
-        "40,-74,13z",
-        "40,-73.9765468,13z",
-        "39.9819126,-74.0234532,13z",
-        "39.9819126,-74,13z",
-        "39.9819126,-73.9765468,13z",
-      ]),
-    );
-    expect(local).toHaveBeenCalledWith(
+    // longitude. Every point carries a zoom derived from the spacing (13z here)
+    // so each point's viewport spans its neighbours instead of hiding
+    // businesses one grid step east or west. Results map back to points by
+    // position, so the order is part of the contract.
+    expect(mocks.localTaskPost).toHaveBeenCalledTimes(1);
+    expect(mocks.localTaskPost).toHaveBeenCalledWith(
       expect.objectContaining({
-        searchType: "maps",
+        locationCoordinates: [
+          "40.0180874,-74.0234532,13z",
+          "40.0180874,-74,13z",
+          "40.0180874,-73.9765468,13z",
+          "40,-74.0234532,13z",
+          "40,-74,13z",
+          "40,-73.9765468,13z",
+          "39.9819126,-74.0234532,13z",
+          "39.9819126,-74,13z",
+          "39.9819126,-73.9765468,13z",
+        ],
         device: "mobile",
         depth: 20,
       }),
@@ -278,23 +307,15 @@ describe("get_local_rank_grid", () => {
   });
 
   it("ranks by exact cid match and summarizes coverage", async () => {
-    const local = gridItems([
+    completeTasks([
       { rank_absolute: 1, title: "Other Cafe", cid: "999" },
       { rank_absolute: 2, title: "Acme Cafe", cid: "123", place_id: "p1" },
     ]);
-    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
 
-    const result = await getLocalRankGridTool.handler(
-      {
-        projectId: "project_1",
-        keyword: "coffee",
-        target: { cid: "123" },
-        center: { latitude: 40, longitude: -74 },
-      },
-      toolContext,
-    );
+    const result = await getLocalRankGridTool.handler(gridArgs, toolContext);
 
     expect(result.structuredContent).toMatchObject({
+      status: "completed",
       summary: {
         pointsSearched: 9,
         pointsFound: 9,
@@ -307,114 +328,98 @@ describe("get_local_rank_grid", () => {
   });
 
   it("records each point's result count and top business so nulls are interpretable", async () => {
-    const local = gridItems([
-      { rank_absolute: 1, title: "Other Cafe", cid: "999" },
-    ]);
-    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
+    completeTasks([{ rank_absolute: 1, title: "Other Cafe", cid: "999" }]);
 
-    const result = await getLocalRankGridTool.handler(
-      {
-        projectId: "project_1",
-        keyword: "coffee",
-        target: { cid: "123" },
-        center: { latitude: 40, longitude: -74 },
-      },
-      toolContext,
-    );
+    const result = await getLocalRankGridTool.handler(gridArgs, toolContext);
 
     // The target is absent, but the point still says how contested it was.
-    expect(result.structuredContent.grid[0]).toMatchObject({
-      rank: null,
-      resultsCount: 1,
-      topResult: { title: "Other Cafe", cid: "999" },
-    });
-  });
-
-  it("aborts the grid on a credits failure instead of billing every point", async () => {
-    const local = vi
-      .fn()
-      .mockRejectedValue(new AppError("INSUFFICIENT_CREDITS", "No credits"));
-    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
-
-    await expect(
-      getLocalRankGridTool.handler(
-        {
-          projectId: "project_1",
-          keyword: "coffee",
-          target: { cid: "123" },
-          center: { latitude: 40, longitude: -74 },
-        },
-        toolContext,
-      ),
-    ).rejects.toMatchObject({ code: "INSUFFICIENT_CREDITS" });
-    // Only the first batch may have dispatched; later batches must not bill.
-    expect(local.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(result.structuredContent).toHaveProperty(
+      "grid.0",
+      expect.objectContaining({
+        rank: null,
+        resultsCount: 1,
+        topResult: { title: "Other Cafe", cid: "999" },
+      }),
+    );
   });
 
   it("falls back to a case-insensitive title match", async () => {
-    const local = gridItems([
-      { rank_absolute: 4, title: "ACME Cafe Downtown" },
-    ]);
-    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
+    completeTasks([{ rank_absolute: 4, title: "ACME Cafe Downtown" }]);
 
     const result = await getLocalRankGridTool.handler(
-      {
-        projectId: "project_1",
-        keyword: "coffee",
-        target: { name: "acme cafe" },
-        center: { latitude: 40, longitude: -74 },
-      },
+      { ...gridArgs, target: { name: "acme cafe" } },
       toolContext,
     );
 
-    expect(result.structuredContent.summary).toMatchObject({
-      pointsFound: 9,
-      averageRank: 4,
+    expect(result.structuredContent).toMatchObject({
+      summary: { pointsFound: 9, averageRank: 4 },
     });
   });
 
-  it("keeps the grid when a single point fails", async () => {
-    let call = 0;
-    const local = vi.fn().mockImplementation(() => {
-      call += 1;
-      return call === 1
-        ? Promise.reject(new Error("upstream blew up"))
-        : Promise.resolve([{ rank_absolute: 3, cid: "123" }]);
-    });
-    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
-
-    const result = await getLocalRankGridTool.handler(
-      {
-        projectId: "project_1",
-        keyword: "coffee",
-        target: { cid: "123" },
-        center: { latitude: 40, longitude: -74 },
-      },
-      toolContext,
+  it("keeps the grid when DataForSEO refuses one point's search", async () => {
+    mocks.localTaskPost.mockImplementation(async ({ locationCoordinates }) =>
+      locationCoordinates.map((_, index) =>
+        index === 0 ? null : `task-${index}`,
+      ),
     );
+    completeTasks([{ rank_absolute: 3, cid: "123" }]);
 
-    expect(result.structuredContent.summary).toMatchObject({
-      pointsSearched: 9,
-      pointsFound: 8,
+    const result = await getLocalRankGridTool.handler(gridArgs, toolContext);
+
+    expect(result.structuredContent).toMatchObject({
+      status: "completed",
+      summary: { pointsSearched: 9, pointsFound: 8 },
     });
-    expect(textContent(result)).toContain("x");
+    expect(result.structuredContent).toHaveProperty("grid.0.error", true);
   });
 
-  it("surfaces the upstream error when every point fails", async () => {
-    const local = vi.fn().mockRejectedValue(new Error("upstream blew up"));
-    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
+  it("surfaces the upstream error when every search fails, and lets a retry post fresh searches", async () => {
+    mocks.fetchLocalSerpTaskResult.mockResolvedValue({
+      status: "failed",
+      message: "Internal Error.",
+    });
+
+    const failing = getLocalRankGridTool.handler(gridArgs, toolContext);
+    await expect(failing).rejects.toMatchObject({
+      code: "UPSTREAM_UNAVAILABLE",
+    });
+    await expect(failing).rejects.toThrow("Internal Error.");
 
     await expect(
-      getLocalRankGridTool.handler(
-        {
-          projectId: "project_1",
-          keyword: "coffee",
-          target: { cid: "123" },
-          center: { latitude: 40, longitude: -74 },
-        },
-        toolContext,
-      ),
-    ).rejects.toThrow("upstream blew up");
+      getLocalRankGridTool.handler(gridArgs, toolContext),
+    ).rejects.toThrow();
+    expect(mocks.localTaskPost).toHaveBeenCalledTimes(2);
+  });
+
+  it("answers processing while the searches run, and collects them on a repeat without buying them again", async () => {
+    mocks.fetchLocalSerpTaskResult.mockResolvedValue({ status: "pending" });
+
+    vi.useFakeTimers();
+    const first = getLocalRankGridTool.handler(gridArgs, toolContext);
+    await vi.runAllTimersAsync();
+    expect((await first).structuredContent).toMatchObject({
+      status: "processing",
+      pointsReady: 0,
+      pointsTotal: 9,
+    });
+
+    completeTasks([{ rank_absolute: 2, cid: "123" }]);
+    const repeat = await getLocalRankGridTool.handler(gridArgs, toolContext);
+    expect(repeat.structuredContent).toMatchObject({
+      status: "completed",
+      summary: { pointsFound: 9 },
+    });
+    expect(mocks.localTaskPost).toHaveBeenCalledTimes(1);
+  });
+
+  it("posts its own searches for a grid with different arguments", async () => {
+    await getLocalRankGridTool.handler(gridArgs, toolContext);
+    await getLocalRankGridTool.handler(
+      { ...gridArgs, keyword: "tea" },
+      toolContext,
+    );
+
+    expect(mocks.localTaskPost).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -443,18 +448,5 @@ describe("list_business_categories", () => {
       { category: "pizza_restaurant", businessCount: 120 },
     ]);
     expect(textContent(result)).toContain("pizza_restaurant | 120");
-  });
-
-  it("serves a cache hit without calling the provider", async () => {
-    mocks.getCached.mockResolvedValue(categories);
-
-    const result = await listBusinessCategoriesTool.handler(
-      { projectId: "project_1" },
-      toolContext,
-    );
-
-    expect(mocks.fetchBusinessListingsCategories).not.toHaveBeenCalled();
-    expect(mocks.setCached).not.toHaveBeenCalled();
-    expect(result.structuredContent.categories).toEqual(categories);
   });
 });

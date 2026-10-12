@@ -1,7 +1,7 @@
 {
   "name": "openseo",
-  "version": "1.0.0",
-  "description": "Without good data, your agent gives generic advice. Keyword research, competitor research, backlinks, and site audits. All for $10/month.",
+  "version": "1.0.21",
+  "description": "Research keywords and competitors, audit sites, track rankings and AI visibility, and use connected Search Console data from your AI assistant.",
   "author": {
     "name": "OpenSEO",
     "url": "https://openseo.so"
@@ -17,28 +17,35 @@
     "backlinks",
     "search-console",
     "rank-tracking",
-    "local-seo"
+    "local-seo",
+    "ai-visibility"
   ],
   "skills": "./skills/",
-  "mcpServers": {
-    "openseo": {
-      "url": "https://app.openseo.so/mcp"
-    }
-  },
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "OpenSEO",
-    "shortDescription": "Without good data, your agent gives generic advice. Keyword research, competitor research, backlinks, and site audits. All for $10/month.",
-    "longDescription": "Without good data, your agent gives generic advice. Keyword research, competitor research, backlinks, and site audits. All for $10/month.",
+    "shortDescription": "SEO made simple.",
+    "longDescription": "Get found on Google and recommended by AI.\n\nWith the OpenSEO plugin, ChatGPT can use SEO data and your saved project context to give advice tailored to your business.\n\nResearch keywords, analyze competitors and backlinks, run technical site audits, and track AI visibility directly in ChatGPT.",
     "developerName": "OpenSEO",
     "category": "Productivity",
-    "capabilities": ["Interactive"],
+    "capabilities": [
+      "Keyword research",
+      "Competitor analysis",
+      "Site audits",
+      "Search Console"
+    ],
     "websiteURL": "https://openseo.so",
     "privacyPolicyURL": "https://openseo.so/privacy",
     "termsOfServiceURL": "https://openseo.so/terms-and-conditions",
     "defaultPrompt": [
       "Research keywords for my site and shortlist the best opportunities.",
       "Audit my site and give me a one-page report with a single next action.",
-      "Track my rankings for these keywords and summarize what changed."
-    ]
+      "Track my rankings for these keywords and summarize what changed.",
+      "Suggest prompts to track in AI answers for my business and show me the cost.",
+      "Which sources and competitors appear in my saved AI answers?"
+    ],
+    "supportURL": "https://openseo.so/support",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
   }
 }

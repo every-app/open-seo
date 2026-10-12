@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildGa4ReportRequest } from "./Ga4ReportDefinitions";
 import {
-  buildEcommerceActivity,
   buildReportComparison,
   buildReportSpecificEnhancements,
-  buildSiteSearchActivity,
-  previousPeriod,
   supportsComparison,
 } from "./Ga4ReportEnhancements";
 import type { NormalizedGa4Report } from "./Ga4ReportNormalization";
@@ -27,43 +23,7 @@ function report(
 }
 
 describe("GA4 report enhancements", () => {
-  it("filters key events and optional transaction-only landing pages", () => {
-    const keyEvents = buildGa4ReportRequest({
-      kind: "key_events",
-      startDate: "2026-07-09",
-      endDate: "2026-08-05",
-      channel: "organic_search",
-      limit: 100,
-      offset: 0,
-    });
-    const ecommerce = buildGa4ReportRequest({
-      kind: "ecommerce_performance",
-      ecommerceBreakdown: "landing_page",
-      ecommerceOnlyWithTransactions: true,
-      startDate: "2026-07-09",
-      endDate: "2026-08-05",
-      channel: "organic_search",
-      limit: 100,
-      offset: 0,
-    });
-    expect(keyEvents.metricFilter).toMatchObject({
-      filter: {
-        fieldName: "keyEvents",
-        numericFilter: { operation: "GREATER_THAN" },
-      },
-    });
-    expect(ecommerce.metricFilter).toMatchObject({
-      filter: {
-        fieldName: "transactions",
-        numericFilter: { operation: "GREATER_THAN" },
-      },
-    });
-  });
-
   it("compares an equal prior period using the union of row keys", () => {
-    expect(
-      previousPeriod({ startDate: "2026-07-09", endDate: "2026-08-05" }),
-    ).toEqual({ startDate: "2026-06-11", endDate: "2026-07-08" });
     const comparison = buildReportComparison({
       current: report([{ eventName: "form_submit", keyEvents: 3 }]),
       previous: report([
@@ -169,7 +129,7 @@ describe("GA4 report enhancements", () => {
       },
       { startDate: "2026-07-09", endDate: "2026-08-05" },
     );
-    const ecommerce = buildEcommerceActivity(
+    const ecommerce = buildReportSpecificEnhancements(
       report([{ itemName: "Example", itemsViewed: 1 }], 2),
       {
         projectId: "project_1",
@@ -179,11 +139,14 @@ describe("GA4 report enhancements", () => {
       { startDate: "2026-07-09", endDate: "2026-08-05" },
     );
     expect(diagnostics.diagnostics).toEqual([]);
-    expect(ecommerce.status).toBe("unknown");
+    expect(ecommerce).toMatchObject({
+      diagnostics: [],
+      ecommerceActivity: { status: "unknown" },
+    });
   });
 
   it("reports scoped ecommerce and site-search activity states", () => {
-    const ecommerce = buildEcommerceActivity(
+    const ecommerce = buildReportSpecificEnhancements(
       report([]),
       {
         projectId: "project_1",
@@ -193,20 +156,27 @@ describe("GA4 report enhancements", () => {
       },
       { startDate: "2026-07-09", endDate: "2026-08-05" },
     );
-    const search = buildSiteSearchActivity(
+    const search = buildReportSpecificEnhancements(
       report([{ searchTerm: "seo", eventCount: 4 }]),
+      { projectId: "project_1", kind: "site_search" },
       { startDate: "2026-07-09", endDate: "2026-08-05" },
     );
     expect(ecommerce).toMatchObject({
-      status: "none",
-      channel: "organic_search",
-      breakdown: "landing_page",
-      evidence: { transactions: 0, purchaseRevenue: 0 },
+      diagnostics: [{ code: "no_ecommerce_activity" }],
+      ecommerceActivity: {
+        status: "none",
+        channel: "organic_search",
+        breakdown: "landing_page",
+        evidence: { transactions: 0, purchaseRevenue: 0 },
+      },
     });
     expect(search).toMatchObject({
-      status: "detected",
-      searchTermCount: 1,
-      searchEventCount: 4,
+      diagnostics: [],
+      siteSearchActivity: {
+        status: "detected",
+        searchTermCount: 1,
+        searchEventCount: 4,
+      },
     });
   });
 });

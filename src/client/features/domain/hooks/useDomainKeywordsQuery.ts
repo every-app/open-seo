@@ -1,7 +1,5 @@
-import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getDomainKeywordsPage } from "@/serverFunctions/domain";
-import { debugDomain } from "@/client/features/domain/domainDebug";
 import type { ResearchScope } from "@/shared/researchScope";
 import type {
   DomainFilterValues,
@@ -49,12 +47,10 @@ function toFiltersPayload(
 }
 
 export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
-  const filtersPayload = useMemo(
-    () => toFiltersPayload(input.appliedFilters),
-    [input.appliedFilters],
-  );
-  const queryKey = useMemo(
-    () => [
+  const filtersPayload = toFiltersPayload(input.appliedFilters);
+  return useQuery({
+    enabled: input.enabled && Boolean(input.domain),
+    queryKey: [
       "domain-keywords",
       input.projectId,
       input.domain,
@@ -66,29 +62,6 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
       input.sortOrder,
       filtersPayload,
     ],
-    [
-      filtersPayload,
-      input.domain,
-      input.scope,
-      input.locationCode,
-      input.page,
-      input.pageSize,
-      input.projectId,
-      input.sortMode,
-      input.sortOrder,
-    ],
-  );
-
-  useEffect(() => {
-    debugDomain("useDomainKeywordsQuery:key", {
-      queryKey,
-      enabled: input.enabled && Boolean(input.domain),
-    });
-  }, [input.domain, input.enabled, queryKey]);
-
-  const query = useQuery({
-    enabled: input.enabled && Boolean(input.domain),
-    queryKey,
     queryFn: () =>
       getDomainKeywordsPage({
         data: {
@@ -105,18 +78,4 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
       }),
     staleTime: 60_000,
   });
-  useEffect(() => {
-    debugDomain("useDomainKeywordsQuery:state", {
-      status: query.status,
-      fetchStatus: query.fetchStatus,
-      isFetching: query.isFetching,
-      rows: query.data?.keywords.length ?? 0,
-    });
-  }, [
-    query.data?.keywords.length,
-    query.fetchStatus,
-    query.isFetching,
-    query.status,
-  ]);
-  return query;
 }

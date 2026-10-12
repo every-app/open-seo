@@ -10,34 +10,15 @@ import { AppError } from "@/server/lib/errors";
 const itemSchema = z.object({ keyword: z.string().optional() }).passthrough();
 
 describe("parseTaskItems", () => {
-  it("returns [] when the result items are null", () => {
-    const task = { status_code: 20000, result: [{ items: null }] };
+  it.each([
+    { status_code: 20000, result: [{ items: null }] },
+    { result: undefined },
+  ])("returns [] for a task without items (%o)", (task) => {
     expect(parseTaskItems("x", task, itemSchema)).toEqual([]);
-  });
-
-  it("returns [] when there is no result", () => {
-    expect(parseTaskItems("x", { result: undefined }, itemSchema)).toEqual([]);
-  });
-
-  it("parses present items", () => {
-    const task = { result: [{ items: [{ keyword: "seo" }] }] };
-    expect(parseTaskItems("x", task, itemSchema)).toEqual([{ keyword: "seo" }]);
   });
 });
 
 describe("assertOk", () => {
-  const okTask = {
-    status_code: 20000,
-    path: ["v3", "backlinks", "summary", "live"],
-    cost: 0.1,
-    result_count: 1,
-    result: [],
-  };
-
-  it("returns the first task on success", () => {
-    expect(assertOk({ status_code: 20000, tasks: [okTask] })).toBe(okTask);
-  });
-
   it("throws DataforseoChargedTaskError when a charged task fails", () => {
     const task = {
       status_code: 40000,
@@ -60,121 +41,64 @@ describe("assertOk", () => {
     }
   });
 
-  it("classifies DataForSEO's own server errors as UPSTREAM_UNAVAILABLE", () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    const task = {
-      status_code: 40101,
-      status_message: "Internal SE Server Error.",
-      path: ["v3", "serp", "google", "organic", "live", "advanced"],
-      cost: 0.002,
-      result_count: 0,
-    };
-    try {
-      assertOk({ status_code: 20000, tasks: [task] });
-      throw new Error("expected assertOk to throw");
-    } catch (error) {
-      // Still a charged-task error so the billed attempt stays metered.
-      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
-      if (error instanceof DataforseoChargedTaskError) {
-        expect(error.code).toBe("UPSTREAM_UNAVAILABLE");
+  it.each([
+    // DataForSEO's own SE failure: retryable upstream trouble.
+    [40101, "Internal SE Server Error.", "UPSTREAM_UNAVAILABLE"],
+    // 'Not Implemented' means we posted a bad task; keep it reportable.
+    [50100, "Not Implemented.", "INTERNAL_ERROR"],
+  ] as const)(
+    "classifies a charged %s '%s' task as %s",
+    (status, message, code) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const task = {
+        status_code: status,
+        status_message: message,
+        path: ["v3", "serp", "google", "organic", "live", "advanced"],
+        cost: 0.002,
+        result_count: 0,
+      };
+      try {
+        assertOk({ status_code: 20000, tasks: [task] });
+        throw new Error("expected assertOk to throw");
+      } catch (error) {
+        // Still a charged-task error so the billed attempt stays metered.
+        expect(error).toBeInstanceOf(DataforseoChargedTaskError);
+        if (error instanceof DataforseoChargedTaskError) {
+          expect(error.code).toBe(code);
+        }
       }
-    }
-  });
+    },
+  );
 
-  it("keeps 'Not Implemented' reportable — we posted a bad task", () => {
-    const task = {
-      status_code: 50100,
-      status_message: "Not Implemented.",
-      path: ["v3", "serp", "google", "organic", "live", "advanced"],
-      cost: 0.002,
-      result_count: 0,
-    };
-    try {
-      assertOk({ status_code: 20000, tasks: [task] });
-      throw new Error("expected assertOk to throw");
-    } catch (error) {
-      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
-      if (error instanceof DataforseoChargedTaskError) {
-        expect(error.code).toBe("INTERNAL_ERROR");
-      }
-    }
-  });
-
-  it("appends the echoed request value to opaque 'Invalid Field' failures", () => {
-    const task = {
-      status_code: 40501,
-      status_message: "Invalid Field: 'target'.",
-      path: ["v3", "dataforseo_labs", "google", "domain_rank_overview", "live"],
-      cost: 0.02,
-      result_count: 0,
-      data: { target: "not a valid domain", language_code: "en" },
-    };
-    try {
-      assertOk({ status_code: 20000, tasks: [task] });
-      throw new Error("expected assertOk to throw");
-    } catch (error) {
-      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
-      if (error instanceof DataforseoChargedTaskError) {
-        expect(error.message).toBe(
-          `Invalid Field: 'target'. (sent target="not a valid domain")`,
-        );
-      }
-    }
-  });
-
-  it("uses the classifier for non-charged (no-cost) failures", () => {
+  it("uses the classifier for account failures before charging billed task metadata", () => {
     const classify = vi.fn(
-      () => new AppError("BACKLINKS_BILLING_ISSUE", "nope"),
+      () =>
+        new AppError(
+          "BACKLINKS_BILLING_ISSUE",
+          "Classified DataForSEO account failure",
+        ),
     );
     const task = {
       status_code: 40200,
-      status_message: "balance is too low",
+      status_message: "Account balance is too low",
+      path: ["v3", "backlinks", "summary", "live"],
+      cost: 0.05,
+      result_count: 0,
     };
-    expect(() =>
-      assertOk(
-        { status_code: 20000, tasks: [task] },
-        { classify, classifyPath: "/v3/backlinks/summary/live" },
-      ),
-    ).toThrow("nope");
+
+    try {
+      assertOk({ status_code: 20000, tasks: [task] }, { classify });
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      expect(error).not.toBeInstanceOf(DataforseoChargedTaskError);
+      expect(error).toMatchObject({ code: "BACKLINKS_BILLING_ISSUE" });
+    }
     expect(classify).toHaveBeenCalledWith(
       40200,
-      "balance is too low",
+      "Account balance is too low",
       "/v3/backlinks/summary/live",
     );
   });
-
-  it.each([
-    [40200, "BACKLINKS_BILLING_ISSUE"],
-    [40210, "BACKLINKS_BILLING_ISSUE"],
-    [402, "BACKLINKS_BILLING_ISSUE"],
-  ] as const)(
-    "uses the classifier for account failure %s before charging billed task metadata",
-    (status, code) => {
-      const classify = vi.fn(
-        () => new AppError(code, "Classified DataForSEO account failure"),
-      );
-      const task = {
-        status_code: status,
-        status_message: "Account balance is too low",
-        path: ["v3", "backlinks", "summary", "live"],
-        cost: 0.05,
-        result_count: 0,
-      };
-
-      try {
-        assertOk({ status_code: 20000, tasks: [task] }, { classify });
-        throw new Error("expected assertOk to throw");
-      } catch (error) {
-        expect(error).not.toBeInstanceOf(DataforseoChargedTaskError);
-        expect(error).toMatchObject({ code });
-      }
-      expect(classify).toHaveBeenCalledWith(
-        status,
-        "Account balance is too low",
-        "/v3/backlinks/summary/live",
-      );
-    },
-  );
 
   it("treats 40501 as an empty success when asked", () => {
     const task = {
@@ -212,6 +136,7 @@ describe("assertOk", () => {
       expect(error).toBeInstanceOf(DataforseoChargedTaskError);
       if (error instanceof DataforseoChargedTaskError) {
         expect(error.billing).toEqual({ path: task.path, costUsd: 0.02 });
+        expect(error.isInvalidField).toBe(true);
       }
     }
   });

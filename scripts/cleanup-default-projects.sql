@@ -4,7 +4,7 @@
 -- projects_one_default_per_organization_idx. Prefer the TypeScript runner in
 -- scripts/d1-default-project-cleanup.ts; it adds dry-run output, active-run
 -- preflight checks, validation, and remote confirmation. See
--- docs/default-project-cleanup.md for the full recovery runbook.
+-- docs/maintainers/runbooks/default-project-cleanup.md for the full recovery runbook.
 --
 -- "Newest" matches the app's default project selection. The id tie-breaker is
 -- only here to keep this cleanup deterministic when several race-created rows

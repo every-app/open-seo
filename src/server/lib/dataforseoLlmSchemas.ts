@@ -42,7 +42,9 @@ const brandEntitySchema = z
 export const llmMentionItemSchema = z
   .object({
     question: z.string().nullable().optional(),
+    answer: z.string().nullable().optional(),
     sources: z.array(mentionSourceSchema).nullable().optional(),
+    search_results: z.array(mentionSourceSchema).nullable().optional(),
     ai_search_volume: z.number().nullable().optional(),
     monthly_searches: z.array(monthlyVolumeSchema).nullable().optional(),
     first_response_at: z.string().nullable().optional(),

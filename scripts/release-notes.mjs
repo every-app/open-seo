@@ -102,7 +102,7 @@ function getPackageVersion() {
 
 function getReleaseNoteVersions() {
   try {
-    return readdirSync("release-notes").flatMap((name) => {
+    return readdirSync("docs/release-notes").flatMap((name) => {
       const version = name.match(
         /^v(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)\.md$/,
       )?.[1];

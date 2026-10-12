@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  deleteReportTemplate,
-  saveReportTemplate,
-} from "./ReportTemplateService";
+import { ReportTemplateService } from "./ReportTemplateService";
 import {
   REPORT_TEMPLATE_MAX_PER_PROJECT,
   type ReportTemplate,
@@ -35,9 +32,11 @@ const stored = (overrides: Partial<ReportTemplate> = {}): ReportTemplate => ({
 });
 
 const save = (
-  overrides: Partial<Parameters<typeof saveReportTemplate>[0]> = {},
+  overrides: Partial<
+    Parameters<typeof ReportTemplateService.saveReportTemplate>[0]
+  > = {},
 ) =>
-  saveReportTemplate({
+  ReportTemplateService.saveReportTemplate({
     projectId: "project_1",
     name: "Client-ready audit summary",
     description: "For the site owner, non-technical.",
@@ -52,15 +51,6 @@ beforeEach(() => {
 });
 
 describe("saveReportTemplate", () => {
-  it("creates a template in the project", async () => {
-    const result = await save();
-
-    expect(result.created).toBe(true);
-    expect(mocks.insertTemplate).toHaveBeenCalledWith(
-      expect.objectContaining({ projectId: "project_1" }),
-    );
-  });
-
   it("updates by id instead of inserting", async () => {
     mocks.listTemplates.mockResolvedValue([stored()]);
 
@@ -115,7 +105,7 @@ describe("deleteReportTemplate", () => {
     mocks.deleteTemplate.mockResolvedValue(false);
 
     await expect(
-      deleteReportTemplate("project_1", "template_x"),
+      ReportTemplateService.deleteReportTemplate("project_1", "template_x"),
     ).rejects.toThrow(/No report template template_x/);
     expect(mocks.deleteTemplate).toHaveBeenCalledWith(
       "project_1",

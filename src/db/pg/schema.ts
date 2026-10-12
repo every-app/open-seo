@@ -11,3 +11,4 @@ export * from "./ga4.schema";
 export * from "./google-ads.schema";
 export * from "./gsc.schema";
 export * from "./telemetry.schema";
+export * from "./ai-visibility.schema";

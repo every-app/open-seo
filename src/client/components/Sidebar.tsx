@@ -1,18 +1,16 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useMatchRoute } from "@tanstack/react-router";
 import type { LinkOptions } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState, type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
+import { toast } from "sonner";
 import {
   ArrowLeftRight,
   Check,
   CircleHelp,
   CreditCard,
-  LayoutGrid,
   LogOut,
-  MessageCircle,
   Settings,
   User,
-  X,
 } from "lucide-react";
 import { organizationContextQueryOptions } from "@/client/features/team/organizationQueries";
 import { switchOrganization } from "@/serverFunctions/organization";
@@ -21,345 +19,316 @@ import {
   getProjectNavGroups,
 } from "@/client/navigation/items";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
-import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
-import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
-import { closeDropdown } from "@/client/lib/dropdown";
+import {
+  SamChatListSkeleton,
+  SamSidebarPanel,
+} from "@/client/features/sam/SamSidebarPanel";
+import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
+import {
+  Sidebar as UiSidebar,
+  SidebarContent,
+  SidebarFooter as UiSidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  useSidebar,
+} from "@/client/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 
-interface SidebarProps {
-  projectId: string | null;
-  onNavigate?: () => void;
-  onClose?: () => void;
-}
-
-const navItemBaseClass =
-  "relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-base-content/70";
-
-// Hover uses a lighter tint than the active background (bg-base-300/50) so a
-// hovered item next to the active one stays visually distinct instead of
-// merging into a single block.
-const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/30 hover:text-base-content`;
-
-const navItemActiveProps = {
-  // Keep the active tint on hover so the active item does not fall back to the
-  // lighter hover background of navItemClass.
-  className:
-    "bg-base-300/50 hover:bg-base-300/50 font-medium text-base-content",
-};
+const navButtonClass =
+  "relative text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-active:before:absolute data-active:before:inset-y-1 data-active:before:left-0 data-active:before:w-[3px] data-active:before:rounded-r-full data-active:before:bg-primary";
 
 function SidebarNavLink({
   icon: Icon,
   label,
-  onNavigate,
   linkProps,
+  placeholder = false,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
-  onNavigate?: () => void;
   linkProps: LinkOptions;
+  /** Show the row without its link, while its project is still unknown. */
+  placeholder?: boolean;
 }) {
-  return (
-    <Link
-      onClick={onNavigate}
-      activeOptions={{ exact: false, includeSearch: false }}
-      {...linkProps}
-      className={navItemClass}
-      activeProps={navItemActiveProps}
+  const { setOpenMobile } = useSidebar();
+  const matchRoute = useMatchRoute();
+  const isPromptHistory =
+    linkProps.to === "/p/$projectId/ai-visibility" &&
+    Boolean(
+      matchRoute({
+        to: "/p/$projectId/ai-visibility/prompts/$promptId",
+        fuzzy: true,
+      }),
+    );
+  const row = (isActive: boolean) => (
+    <SidebarMenuButton
+      render={<span />}
+      isActive={isActive}
+      aria-disabled={placeholder || undefined}
+      className={navButtonClass}
     >
-      {({ isActive }: { isActive: boolean }) => (
-        <>
-          {isActive ? (
-            <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-primary" />
-          ) : null}
-          <Icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{label}</span>
-        </>
+      <Icon className="size-4" />
+      <span>{label}</span>
+    </SidebarMenuButton>
+  );
+  return (
+    <SidebarMenuItem>
+      {placeholder ? (
+        row(false)
+      ) : (
+        <Link
+          {...linkProps}
+          activeOptions={{
+            exact: false,
+            includeSearch: false,
+            ...linkProps.activeOptions,
+          }}
+          onClick={() => setOpenMobile(false)}
+          inactiveProps={
+            isPromptHistory ? { "aria-current": "page" } : undefined
+          }
+        >
+          {({ isActive }) => row(isActive || isPromptHistory)}
+        </Link>
       )}
-    </Link>
+    </SidebarMenuItem>
   );
 }
 
-export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
-  const navGroups = projectId
-    ? getProjectNavGroups(projectId)
-    : [connectNavGroup];
-  const navigate = useNavigate();
-  const location = useLocation();
-  const onSamRoute = location.pathname.includes("/sam");
-
-  // PostHog-style sidebar tabs: Browse shows the regular nav, Chat shows the
-  // SAM chat history. The tab is view state (switching to Browse leaves the
-  // conversation open in the content panel), but the route wins: landing on
-  // /sam selects Chat, navigating anywhere else flips back to Browse.
-  const [view, setView] = useState<"browse" | "chat">(
-    onSamRoute ? "chat" : "browse",
-  );
-  useEffect(() => {
-    setView(onSamRoute ? "chat" : "browse");
-  }, [onSamRoute]);
-
-  const openChat = () => {
-    setView("chat");
-    if (!projectId) return;
-    if (!onSamRoute) {
-      void navigate({
-        to: "/p/$projectId/sam",
-        params: { projectId },
-        search: {},
-      });
-      onNavigate?.();
-    }
-  };
-
-  // Coming back from Chat, land on the dashboard rather than leaving the
-  // conversation filling the content panel next to a Browse nav.
-  const openBrowse = () => {
-    setView("browse");
-    if (!projectId || !onSamRoute) return;
-    void navigate({ to: "/p/$projectId", params: { projectId } });
-    onNavigate?.();
-  };
+export function Sidebar({
+  projectId,
+  projectPending,
+  ready,
+}: {
+  projectId: string | null;
+  /** No project is known yet, but the projects list may still name one. */
+  projectPending: boolean;
+  /** The session is confirmed, so the sidebar's own data can load. */
+  ready: boolean;
+}) {
+  // Until a project is known, show the project nav as rows without links, so
+  // the sidebar has its full shape from the first paint instead of growing
+  // once projects load. The placeholder rows never render these links.
+  const navPlaceholder = projectId === null && projectPending;
+  const navGroups =
+    projectId !== null || navPlaceholder
+      ? getProjectNavGroups(projectId ?? "")
+      : [connectNavGroup];
+  const { pathname } = useLocation();
+  const { setOpenMobile } = useSidebar();
+  // SAM is hidden from navigation: the chat route is only reachable by URL,
+  // and while it is open its chat list takes the nav's place.
+  const onSamRoute = pathname.includes("/sam");
 
   return (
-    <div className="flex h-full w-60 flex-col bg-base-200">
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
+    <UiSidebar variant="inset" collapsible="offcanvas" className="md:!p-0">
+      <SidebarHeader className="gap-0 px-3 pb-1 pt-3">
         <Link
           to="/"
-          onClick={onNavigate}
-          className="text-base font-semibold text-base-content"
+          onClick={() => setOpenMobile(false)}
+          className="px-1 pb-2 text-base font-semibold text-sidebar-foreground"
         >
           OpenSEO
         </Link>
-        {onClose ? (
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-sm btn-circle"
-            aria-label="Close sidebar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        ) : null}
-      </div>
-
-      <div className="px-3 pb-1">
         <ProjectSwitcher
           activeProjectId={projectId}
-          onCloseDrawer={onNavigate}
+          ready={ready}
+          onCloseDrawer={() => setOpenMobile(false)}
         />
-      </div>
+      </SidebarHeader>
 
-      {projectId ? (
-        // Same underline tab idiom as the in-page tab strips (e.g. Domain
-        // Overview's Top Keywords / Top Pages).
-        <div className="px-3 pb-1">
-          <div role="tablist" className="tabs tabs-border w-full">
-            <SidebarViewTab
-              icon={LayoutGrid}
-              label="Browse"
-              active={view === "browse"}
-              onClick={openBrowse}
+      <SidebarContent>
+        {onSamRoute && projectId ? (
+          ready ? (
+            <SamSidebarPanel
+              projectId={projectId}
+              onNavigate={() => setOpenMobile(false)}
             />
-            <SidebarViewTab
-              icon={MessageCircle}
-              label="Chat"
-              active={view === "chat"}
-              onClick={openChat}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {view === "chat" && projectId ? (
-        <SamSidebarPanel projectId={projectId} onNavigate={onNavigate} />
-      ) : (
-        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-          {navGroups.map((group) => (
-            <div key={group.label} className="mb-1">
-              <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
-                {group.label}
-              </div>
-              {group.items.map((item) => {
-                const { icon, label, ...linkProps } = item;
-                return (
-                  <SidebarNavLink
-                    key={linkProps.to}
-                    icon={icon}
-                    label={label}
-                    onNavigate={onNavigate}
-                    linkProps={linkProps}
-                  />
-                );
-              })}
+          ) : (
+            <div className="px-2 py-1">
+              <SamChatListSkeleton />
             </div>
-          ))}
-        </nav>
-      )}
-
-      <SidebarFooter onNavigate={onNavigate} />
-    </div>
+          )
+        ) : (
+          <nav
+            aria-label="Main navigation"
+            aria-busy={navPlaceholder || undefined}
+          >
+            {navGroups.map((group) => (
+              <SidebarGroup key={group.label} className="py-1">
+                <SidebarGroupLabel className="h-7 uppercase tracking-wider text-sidebar-foreground/40">
+                  {group.label}
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => {
+                      const { icon, label, ...linkProps } = item;
+                      return (
+                        <SidebarNavLink
+                          key={linkProps.to}
+                          icon={icon}
+                          label={label}
+                          linkProps={linkProps}
+                          placeholder={navPlaceholder}
+                        />
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ))}
+          </nav>
+        )}
+      </SidebarContent>
+      <AccountFooter ready={ready} />
+    </UiSidebar>
   );
 }
 
-function SidebarViewTab({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={`tab flex-1 gap-1.5 ${active ? "tab-active" : ""}`}
-    >
-      <Icon className="size-4" />
-      {label}
-    </button>
-  );
-}
-
-function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
+function AccountFooter({ ready }: { ready: boolean }) {
   const { data: session } = useSession();
-  const isHostedMode = isHostedClientAuthMode();
+  const { setOpenMobile } = useSidebar();
   const email = session?.user?.email;
   const [isSwitching, setIsSwitching] = useState(false);
-
   const orgContextQuery = useQuery({
     ...organizationContextQueryOptions(),
-    enabled: isHostedMode && Boolean(email),
+    enabled: Boolean(email),
   });
   const organizations = orgContextQuery.data?.organizations ?? [];
   const activeOrganizationId = orgContextQuery.data?.organizationId;
-
-  const closeMenu = () => {
-    closeDropdown();
-    onNavigate?.();
-  };
 
   async function handleSwitchOrganization(organizationId: string) {
     if (isSwitching || organizationId === activeOrganizationId) return;
     setIsSwitching(true);
     try {
       await switchOrganization({ data: { organizationId } });
-      // Full reload: every cached query and the project-scoped URL belong to
-      // the previous organization.
       window.location.assign("/");
-    } catch {
+    } catch (error) {
+      toast.error(getStandardErrorMessage(error));
       setIsSwitching(false);
     }
   }
 
   return (
-    <div className="shrink-0 border-t border-base-300 px-2 py-2 pb-safe">
-      <SidebarNavLink
-        icon={CircleHelp}
-        label="Help & Community"
-        onNavigate={onNavigate}
-        linkProps={{ to: "/support" }}
-      />
-
-      {email ? (
-        <div className="dropdown dropdown-top w-full">
-          <button
-            type="button"
-            tabIndex={0}
-            className={`${navItemClass} w-full`}
-            aria-label="Open account menu"
-          >
-            <User className="h-4 w-4 shrink-0" />
-            <span className="truncate" data-ph-mask>
-              {email}
-            </span>
-          </button>
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-30 menu mb-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-          >
-            {organizations.length > 1 ? (
-              <>
-                <li className="menu-title flex flex-row items-center gap-1.5 max-w-full">
-                  <ArrowLeftRight className="h-3 w-3" />
-                  Organization
-                </li>
-                {organizations.map((organization) => (
-                  <li key={organization.organizationId}>
-                    <button
-                      type="button"
-                      disabled={isSwitching}
-                      onClick={() =>
-                        void handleSwitchOrganization(
-                          organization.organizationId,
-                        )
-                      }
-                    >
-                      <span className="truncate">
-                        {organization.organizationName}
-                      </span>
-                      {organization.organizationId === activeOrganizationId ? (
-                        <Check className="h-4 w-4 shrink-0" />
-                      ) : null}
-                    </button>
-                  </li>
-                ))}
-                <li
-                  aria-hidden
-                  className="pointer-events-none my-1 h-px bg-base-300 p-0"
-                />
-              </>
-            ) : null}
-            <li>
-              <Link to="/settings" onClick={closeMenu}>
-                <Settings className="h-4 w-4" />
-                Settings
-              </Link>
-            </li>
-            {isHostedMode ? (
-              <li>
-                <Link to={BILLING_ROUTE} onClick={closeMenu}>
-                  <CreditCard className="h-4 w-4" />
-                  Billing
-                </Link>
-              </li>
-            ) : null}
-            <ThemePreferenceMenuItems />
-            {isHostedMode ? (
-              <>
-                <li
-                  aria-hidden
-                  className="pointer-events-none my-1 h-px bg-base-300 p-0"
-                />
-                <li>
-                  <button
-                    type="button"
-                    className="text-error"
-                    onClick={() => signOutAndRedirect()}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </li>
-              </>
-            ) : null}
-          </ul>
-        </div>
-      ) : (
+    <UiSidebarFooter className="gap-0 border-t border-sidebar-border pb-safe">
+      <SidebarMenu>
         <SidebarNavLink
-          icon={Settings}
-          label="Settings"
-          onNavigate={onNavigate}
-          linkProps={{ to: "/settings" }}
+          icon={CircleHelp}
+          label="Help & Community"
+          linkProps={{ to: "/support" }}
         />
-      )}
-    </div>
+        {email ? (
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton
+                    className={navButtonClass}
+                    aria-label="Open account menu"
+                  />
+                }
+              >
+                <User className="size-4" />
+                <span className="truncate" data-ph-mask>
+                  {email}
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" className="w-56">
+                {organizations.length > 1 ? (
+                  <>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="flex items-center gap-1.5">
+                        <ArrowLeftRight className="size-3" />
+                        Organization
+                      </DropdownMenuLabel>
+                      {organizations.map((organization) => (
+                        <DropdownMenuItem
+                          key={organization.organizationId}
+                          disabled={isSwitching}
+                          onClick={() =>
+                            void handleSwitchOrganization(
+                              organization.organizationId,
+                            )
+                          }
+                        >
+                          <span className="truncate">
+                            {organization.organizationName}
+                          </span>
+                          {organization.organizationId ===
+                          activeOrganizationId ? (
+                            <Check className="ml-auto size-4" />
+                          ) : null}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                  </>
+                ) : null}
+                <DropdownMenuItem
+                  render={
+                    <Link to="/settings" onClick={() => setOpenMobile(false)} />
+                  }
+                >
+                  <Settings className="size-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  render={
+                    <Link
+                      to={BILLING_ROUTE}
+                      onClick={() => setOpenMobile(false)}
+                    />
+                  }
+                >
+                  <CreditCard className="size-4" />
+                  Billing
+                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Theme</DropdownMenuLabel>
+                  <div className="px-1 pb-1">
+                    <ThemePreferenceRadio />
+                  </div>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => signOutAndRedirect()}
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        ) : ready ? (
+          <SidebarNavLink
+            icon={Settings}
+            label="Settings"
+            linkProps={{ to: "/settings" }}
+          />
+        ) : (
+          // The account row's slot while the session loads.
+          <SidebarMenuItem>
+            <SidebarMenuSkeleton showIcon />
+          </SidebarMenuItem>
+        )}
+      </SidebarMenu>
+    </UiSidebarFooter>
   );
 }

@@ -1,10 +1,10 @@
+import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CardShell,
-  moreDetailsClass,
-  Stat,
-} from "@/client/features/dashboard/cardParts";
+import { CardShell } from "@/client/components/CardShell";
+import { MetricsTable } from "@/client/components/MetricsTable";
+import { SkeletonTableRows } from "@/client/components/SkeletonPresets";
+import { moreDetailsClass } from "@/client/features/dashboard/cardParts";
 import { getLocalServicesDashboardReport } from "@/serverFunctions/google-ads";
 
 // Google reports spend in the Ads account's own currency. Intl throws on a
@@ -39,7 +39,6 @@ export function LocalServicesCard({ projectId }: { projectId: string }) {
   return (
     <CardShell
       title="Local Services Ads"
-      stamp="Google Ads · last 28 days"
       action={
         <Link
           to="/p/$projectId/settings/integrations"
@@ -51,40 +50,41 @@ export function LocalServicesCard({ projectId }: { projectId: string }) {
         </Link>
       }
     >
+      <p className="mb-4 text-sm text-muted-foreground">
+        Google Ads · Last 28 days
+      </p>
       {reportQuery.isPending ? (
-        <div className="grid grid-cols-2 gap-3" aria-busy>
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="skeleton h-20" />
-          ))}
+        <div aria-busy>
+          <SkeletonTableRows rows={4} columns={2} />
         </div>
       ) : reportQuery.isError ? (
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           Couldn&rsquo;t load Local Services data. Try again shortly.
         </p>
       ) : report?.connected &&
         "accessPending" in report &&
         report.accessPending ? (
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           Waiting on Google&rsquo;s Ads API access approval. Data appears here
           automatically once Google finishes onboarding.
         </p>
       ) : report?.connected &&
         "requestRejected" in report &&
         report.requestRejected ? (
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           Couldn&rsquo;t load Local Services data. Google rejected the report
           request, so retrying won&rsquo;t help.
         </p>
       ) : report?.connected && report.performance ? (
         <Performance performance={report.performance} />
       ) : (
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           The Google Ads connection needs attention.{" "}
           <Link
             to="/p/$projectId/settings/integrations"
             params={{ projectId }}
             hash="google-ads"
-            className="link"
+            className="font-medium underline underline-offset-2"
           >
             Reconnect
           </Link>
@@ -101,48 +101,57 @@ type Performance = NonNullable<
   >["performance"]
 >;
 
+function Detail({ children }: { children: ReactNode }) {
+  return (
+    <span className="block text-xs text-muted-foreground">{children}</span>
+  );
+}
+
 function Performance({ performance }: { performance: Performance }) {
   const { currencyCode, leadTotals, pacing } = performance;
   const amount = (microsValue: number | null | undefined) =>
     money(microsValue, currencyCode);
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <Stat label="Spend" value={amount(performance.spendMicros)} />
-        <Stat
-          label="Leads"
-          value={`${leadTotals.total}${leadTotals.truncated ? "+" : ""}`}
-          sub={
-            <span className="text-xs text-base-content/50">
-              {leadTotals.charged} charged · {leadTotals.booked} booked
-            </span>
-          }
-        />
-        <Stat
-          label={
-            leadTotals.truncated
+      <MetricsTable
+        rows={[
+          { label: "Spend", value: amount(performance.spendMicros) },
+          {
+            label: (
+              <>
+                Leads
+                <Detail>
+                  {leadTotals.charged} charged · {leadTotals.booked} booked
+                </Detail>
+              </>
+            ),
+            value: `${leadTotals.total}${leadTotals.truncated ? "+" : ""}`,
+          },
+          {
+            label: leadTotals.truncated
               ? "Cost / charged lead (max)"
-              : "Cost / charged lead"
-          }
-          value={amount(performance.costPerChargedLeadMicros)}
-        />
-        <Stat
-          label="7-day pacing"
-          value={
-            pacing.utilization === null
-              ? "—"
-              : `${Math.round(pacing.utilization * 100)}%`
-          }
-          sub={
-            <span className="text-xs text-base-content/50">
-              {amount(pacing.last7DaysSpendMicros)} of{" "}
-              {amount(pacing.weeklyBudgetMicros)}/wk
-            </span>
-          }
-        />
-      </div>
+              : "Cost / charged lead",
+            value: amount(performance.costPerChargedLeadMicros),
+          },
+          {
+            label: (
+              <>
+                7-day pacing
+                <Detail>
+                  {amount(pacing.last7DaysSpendMicros)} of{" "}
+                  {amount(pacing.weeklyBudgetMicros)}/wk
+                </Detail>
+              </>
+            ),
+            value:
+              pacing.utilization === null
+                ? "—"
+                : `${Math.round(pacing.utilization * 100)}%`,
+          },
+        ]}
+      />
       {leadTotals.truncated ? (
-        <p className="text-xs text-base-content/50">
+        <p className="text-xs text-muted-foreground">
           Lead counts stop at {leadTotals.total.toLocaleString()} for this
           window. Spend is complete, so cost per charged lead is an upper bound.
         </p>

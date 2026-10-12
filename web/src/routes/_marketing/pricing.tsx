@@ -42,9 +42,12 @@ const RAW_COST_USD = {
   // Scheduled checks use the queued API. The app defaults to one device and
   // the top 40 results: $0.0006 for page one + $0.00045 per extra page.
   rankCheck: 0.0006 + (DEFAULT_RANK_DEPTH / 10 - 1) * 0.00045,
-  // A 150–300 result Labs search is currently $0.030–$0.048 raw. Use the
-  // midpoint so the customer estimate is a memorable $0.05 per search.
-  keywordLabs: 0.039,
+  // Labs live costs $0.012/task + $0.00012/row (measured Sep 2026). Auto mode
+  // blends two half-limit calls (suggestions + ideas), so the default
+  // 150-result search is 2 x (0.012 + 75 x 0.00012) = $0.042; 300 results is
+  // $0.060 and 500 is $0.084. Price the default, which is what nearly every
+  // search uses.
+  keywordLabs: 0.042,
   // The MCP-only local SERP tool defaults to a live Google Maps/Local Finder
   // request with 20 results: $0.002 for page one + $0.0015 for page two.
   localSerp: 0.002 + (DEFAULT_LOCAL_SERP_DEPTH / 10 - 1) * 0.0015,
@@ -52,10 +55,11 @@ const RAW_COST_USD = {
   // Backlinks API pricing is $0.024/request + $0.000036/result for each call.
   backlinkProfile:
     0.024 + 0.000036 + (0.024 + BACKLINK_HISTORY_DAYS * 0.000036),
-  aiCitationPerPlatform: 0.85, // AI-citation / brand scan, per platform (biggest driver)
+  aiPromptCheck: 0.0012, // One standard-queue answer per prompt and AI platform.
 } as const;
 
-// Ahrefs Lite list price, verified 2026-07-01 (ahrefs.com/pricing).
+// Ahrefs Lite list price, verified 2026-10-05 (ahrefs.com/pricing). Starter
+// ($29) is cheaper but has 200 credits and no API, so Lite is the comparison.
 const COMPETITORS = {
   ahrefsLite: 129,
 } as const;
@@ -68,10 +72,10 @@ function creditsForRaw(rawUsd: number): number {
 
 // Credits charged per unit of each action (computed once from the model above).
 const CREDITS_PER_UNIT = {
-  keywordLabs: creditsForRaw(RAW_COST_USD.keywordLabs), // 50
+  keywordLabs: creditsForRaw(RAW_COST_USD.keywordLabs), // 54
   localSerp: creditsForRaw(RAW_COST_USD.localSerp), // 5
   backlinkProfile: creditsForRaw(RAW_COST_USD.backlinkProfile), // 79
-  aiCitation: creditsForRaw(RAW_COST_USD.aiCitationPerPlatform), // 1088
+  aiPromptCheck: creditsForRaw(RAW_COST_USD.aiPromptCheck), // 2
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -84,7 +88,7 @@ type Inputs = {
   keywordRuns: number; // keyword-research runs / month
   localSerps: number; // MCP-only Google Maps / Local Finder SERPs per month
   backlinks: number; // backlink profile lookups / month
-  aiScans: number; // AI-citation scans / month (per platform)
+  aiPromptChecks: number; // One prompt on one AI platform, per month.
 };
 
 const PRESETS: Record<"business" | "freelancer", Inputs> = {
@@ -96,9 +100,9 @@ const PRESETS: Record<"business" | "freelancer", Inputs> = {
     keywordRuns: 100,
     localSerps: 0,
     backlinks: 20,
-    aiScans: 0,
+    aiPromptChecks: 0,
   },
-  // About $25/mo of usage: an agency checking 15 client sites weekly.
+  // About $27/mo of usage: an agency checking 15 client sites weekly.
   freelancer: {
     sites: 15,
     keywordsPerSite: 20,
@@ -106,7 +110,7 @@ const PRESETS: Record<"business" | "freelancer", Inputs> = {
     keywordRuns: 370,
     localSerps: 200,
     backlinks: 30,
-    aiScans: 0,
+    aiPromptChecks: 0,
   },
 };
 
@@ -148,9 +152,9 @@ function Pricing() {
       },
       {
         key: "ai",
-        label: "ChatGPT brand checks",
-        detail: `${inputs.aiScans.toLocaleString()} checks this month`,
-        credits: inputs.aiScans * CREDITS_PER_UNIT.aiCitation,
+        label: "AI prompt tracking",
+        detail: `${inputs.aiPromptChecks.toLocaleString()} checks this month`,
+        credits: inputs.aiPromptChecks * CREDITS_PER_UNIT.aiPromptCheck,
       },
       ...(persona === "freelancer"
         ? [
@@ -215,6 +219,7 @@ function Pricing() {
         <ul className="mt-4 space-y-2">
           {[
             "Keyword research, backlinks, rank tracking, and site audits",
+            "AI visibility, prompt research, and tracking",
             "Works inside Claude, Cursor, and ChatGPT",
             "Google Search Console data is free and doesn't touch your $10",
             "Includes $10 of usage every month",
@@ -298,12 +303,13 @@ function Pricing() {
                 onChange={(v) => set("backlinks", v)}
               />
               <Slider
-                label="ChatGPT brand checks / month"
-                hint="This is the expensive one, about $1.09 each."
-                value={inputs.aiScans}
+                label="AI prompt checks / month"
+                hint="One prompt on one AI platform. About $0.002 per check."
+                value={inputs.aiPromptChecks}
                 min={0}
-                max={50}
-                onChange={(v) => set("aiScans", v)}
+                max={persona === "business" ? 2000 : 10000}
+                step={10}
+                onChange={(v) => set("aiPromptChecks", v)}
               />
               {persona === "freelancer" ? (
                 <>
@@ -398,7 +404,14 @@ function Pricing() {
             </div>
 
             <p className="mt-5 border-t border-[var(--color-border-subtle)] pt-5 text-sm text-[var(--color-brand-muted)]">
-              For comparison: Ahrefs&apos; cheapest plan is{" "}
+              For comparison:{" "}
+              <a
+                href="/ahrefs-pricing"
+                className="underline decoration-[var(--color-brand-accent)] underline-offset-4 hover:text-neutral-950"
+              >
+                Ahrefs Lite
+              </a>{" "}
+              is{" "}
               <span className="font-medium text-neutral-950">
                 {usd(COMPETITORS.ahrefsLite)}/mo
               </span>
@@ -428,9 +441,7 @@ function Pricing() {
               What if I use all my credits for the month?
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
-              You&apos;ll never have unexpected costs or bills. If you use all
-              your credits, you&apos;ll see errors when you try to do tasks. You
-              can purchase more top up credits at any time.
+              Buy top-up credits at any time to keep using paid features.
             </dd>
           </div>
           <div className="py-4 first:pt-0 last:pb-0">
@@ -438,8 +449,8 @@ function Pricing() {
               What features use credits?
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
-              Credits are consumed by features that query DataForSEO&apos;s API
-              — backlinks, keyword volume, competitor data, and site audits.
+              Keyword research, backlinks, competitor data, site audits, rank
+              tracking, and AI visibility research and tracking use credits.
               Your projects, settings, and any data already fetched don&apos;t
               cost credits.
             </dd>

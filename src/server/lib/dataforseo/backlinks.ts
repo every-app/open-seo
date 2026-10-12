@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  normalizeBacklinksSpamFilterOptions,
+  DEFAULT_BACKLINKS_SPAM_THRESHOLD,
   type BacklinksSpamFilterOptions,
 } from "@/types/schemas/backlinks";
 import { createDataforseoBillingClassifier } from "@/server/lib/dataforseoBillingClassification";
@@ -33,6 +33,7 @@ type BacklinksListRequest = BacklinksRequest &
     filters?: unknown[];
     /** Result grouping (backlinks list only): "one_per_domain" | "as_is". */
     mode?: string;
+    status?: "live" | "lost" | "all";
   };
 type BacklinksTimeseriesRequest = {
   target: string;
@@ -87,6 +88,7 @@ export const backlinksItemSchema = z
     backlinks_spam_score: z.number().nullable().optional(),
     backlink_spam_score: z.number().nullable().optional(),
     first_seen: z.string().nullable().optional(),
+    last_seen: z.string().nullable().optional(),
     last_visited: z.string().nullable().optional(),
     lost_date: z.string().nullable().optional(),
     is_new: z.boolean().nullable().optional(),
@@ -203,12 +205,19 @@ export async function fetchBacklinksSummary(input: BacklinksRequest) {
   };
 }
 
+// Shared with pricing.ts, whose estimate must reserve for the rows this
+// module actually requests.
+export const BACKLINKS_DEFAULT_LIMIT = 100;
+
 export async function fetchBacklinksRows(input: BacklinksListRequest) {
-  const spamFilterOptions = normalizeBacklinksSpamFilterOptions(input);
   const filters = combineFilters(
     input.filters,
-    spamFilterOptions.hideSpam
-      ? ["backlink_spam_score", "<=", spamFilterOptions.spamThreshold]
+    (input.hideSpam ?? true)
+      ? [
+          ["backlink_spam_score", "<", DEFAULT_BACKLINKS_SPAM_THRESHOLD],
+          "or",
+          ["backlink_spam_score", "=", null],
+        ]
       : undefined,
   );
   const response = await dataforseoPost(
@@ -216,7 +225,8 @@ export async function fetchBacklinksRows(input: BacklinksListRequest) {
     [
       {
         ...buildCommonPayload(input),
-        limit: input.limit ?? 100,
+        backlinks_status_type: input.status ?? "live",
+        limit: input.limit ?? BACKLINKS_DEFAULT_LIMIT,
         offset: input.offset,
         order_by: input.orderBy ?? ["rank,desc"],
         mode: input.mode,
@@ -239,11 +249,10 @@ export async function fetchBacklinksRows(input: BacklinksListRequest) {
 }
 
 export async function fetchReferringDomains(input: BacklinksListRequest) {
-  const spamFilterOptions = normalizeBacklinksSpamFilterOptions(input);
   const filters = combineFilters(
     input.filters,
-    spamFilterOptions.hideSpam
-      ? ["backlinks_spam_score", "<=", spamFilterOptions.spamThreshold]
+    (input.hideSpam ?? true)
+      ? ["backlinks_spam_score", "<=", DEFAULT_BACKLINKS_SPAM_THRESHOLD]
       : undefined,
   );
   const response = await dataforseoPost(
@@ -251,7 +260,7 @@ export async function fetchReferringDomains(input: BacklinksListRequest) {
     [
       {
         ...buildCommonPayload(input),
-        limit: input.limit ?? 100,
+        limit: input.limit ?? BACKLINKS_DEFAULT_LIMIT,
         offset: input.offset,
         order_by: input.orderBy ?? ["backlinks,desc"],
         ...(filters ? { filters } : {}),
@@ -284,7 +293,7 @@ export async function fetchDomainPagesSummary(input: BacklinksListRequest) {
     [
       {
         ...buildCommonPayload(input),
-        limit: input.limit ?? 100,
+        limit: input.limit ?? BACKLINKS_DEFAULT_LIMIT,
         offset: input.offset,
         order_by: input.orderBy ?? ["backlinks,desc"],
         ...(filters ? { filters } : {}),

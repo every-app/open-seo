@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useAppForm } from "@/client/components/form/useAppForm";
 import {
   createFormValidationErrors,
   shouldValidateFieldOnChange,
@@ -14,6 +14,7 @@ import { parseKeywordInput } from "@/client/features/keywords/state/keywordContr
 type UseKeywordControlsFormInput = {
   keywordInput: string;
   locationCode: number;
+  locationName: string | undefined;
   resultLimit: ResultLimit;
   keywordMode: KeywordMode;
   clickstream: boolean;
@@ -22,6 +23,7 @@ type UseKeywordControlsFormInput = {
 export type KeywordControlsValues = {
   keyword: string;
   locationCode: number;
+  locationName: string | undefined;
   resultLimit: ResultLimit;
   mode: KeywordMode;
   clickstream: boolean;
@@ -60,10 +62,11 @@ export function useKeywordControlsForm(
   input: UseKeywordControlsFormInput,
   onSubmit: (value: KeywordControlsValues) => void,
 ) {
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: {
       keyword: input.keywordInput,
       locationCode: input.locationCode,
+      locationName: input.locationName,
       resultLimit: input.resultLimit,
       mode: input.keywordMode,
       clickstream: input.clickstream,
@@ -87,6 +90,7 @@ export function useKeywordControlsForm(
     form.reset({
       keyword: input.keywordInput,
       locationCode: input.locationCode,
+      locationName: input.locationName,
       resultLimit: input.resultLimit,
       mode: input.keywordMode,
       clickstream: input.clickstream,
@@ -96,6 +100,7 @@ export function useKeywordControlsForm(
     input.keywordInput,
     input.keywordMode,
     input.locationCode,
+    input.locationName,
     input.resultLimit,
     input.clickstream,
   ]);

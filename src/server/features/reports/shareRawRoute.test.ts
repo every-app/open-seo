@@ -117,12 +117,16 @@ describe("handleSharedReportRequest", () => {
   it.each([
     [
       "an unknown or revoked token",
+      TOKEN,
       () => mocks.getSharedReportByToken.mockResolvedValue(null),
     ],
+    // A token of the wrong shape is refused before the database is asked.
+    ["a malformed token", "nope", () => {}],
     // Restoring the project brings the link back, so this is not a 404 body
     // that says anything different.
     [
       "an archived project",
+      TOKEN,
       () =>
         mocks.getSharedReportByToken.mockResolvedValue({
           ...SHARED_REPORT,
@@ -132,25 +136,22 @@ describe("handleSharedReportRequest", () => {
     // Sharing is hosted-only.
     [
       "a deployment that is not hosted",
+      TOKEN,
       () => {
         mocks.env.AUTH_MODE = "cloudflare_access";
       },
     ],
-  ])("answers the same 404 for %s", async (_case, arrange) => {
+  ])("answers the same 404 for %s", async (_case, token, arrange) => {
     arrange();
 
-    const response = await handleSharedReportRequest(TOKEN, framed());
+    const response = await handleSharedReportRequest(token, framed());
 
     expect(response.status).toBe(404);
     expect(await response.text()).toBe(NOT_SHARED_BODY);
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(mocks.getReportHtml).not.toHaveBeenCalled();
-  });
-
-  it("answers a malformed token without querying", async () => {
-    const response = await handleSharedReportRequest("nope", framed());
-
-    expect(response.status).toBe(404);
-    expect(mocks.getSharedReportByToken).not.toHaveBeenCalled();
+    if (token !== TOKEN) {
+      expect(mocks.getSharedReportByToken).not.toHaveBeenCalled();
+    }
   });
 });

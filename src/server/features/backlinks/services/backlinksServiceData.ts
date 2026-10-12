@@ -7,13 +7,12 @@ import {
   type BacklinksHistoryItem,
   type BacklinksSummaryItem,
 } from "@/server/lib/dataforseo";
-import {
-  normalizeBacklinksSpamFilterOptions,
-  type BacklinksLookupInput,
-  type BacklinksRowsPageInput,
-  type BacklinksSpamFilterOptions,
-  type ReferringDomainsPageInput,
-  type TopPagesPageInput,
+import type {
+  BacklinksLookupInput,
+  BacklinksRowsPageInput,
+  BacklinksSpamFilterOptions,
+  ReferringDomainsPageInput,
+  TopPagesPageInput,
 } from "@/types/schemas/backlinks";
 
 import {
@@ -178,7 +177,7 @@ export async function profileBacklinksRowsPage(
   assertFilterConditionBudget(
     scopeFilter.conditionCount +
       countExpressionConditions(userFilters) +
-      (normalizeBacklinksSpamFilterOptions(spamOptions).hideSpam ? 1 : 0),
+      ((spamOptions?.hideSpam ?? true) ? 2 : 0),
   );
   const filters = prependScopeClauses(scopeFilter, userFilters);
 

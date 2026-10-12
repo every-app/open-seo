@@ -61,7 +61,7 @@ type SaveParams = {
  * Create-or-update in one call. Everything is validated before anything is
  * written, so a rejected save leaves the stored template untouched.
  */
-export async function saveReportTemplate(params: SaveParams): Promise<{
+async function saveReportTemplate(params: SaveParams): Promise<{
   templateId: string;
   name: string;
   created: boolean;
@@ -165,7 +165,7 @@ export async function saveReportTemplate(params: SaveParams): Promise<{
   return { templateId: id, name, created: true };
 }
 
-export async function deleteReportTemplate(
+async function deleteReportTemplate(
   projectId: string,
   templateId: string,
 ): Promise<void> {

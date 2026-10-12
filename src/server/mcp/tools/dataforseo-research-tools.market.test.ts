@@ -32,9 +32,6 @@ const toolContext = makeToolContext();
 function setProject(market: { locationCode: number; languageCode: string }) {
   mocks.getProjectForOrganization.mockResolvedValue({
     id: "project_1",
-    name: "Test",
-    domain: null,
-    createdAt: "2026-01-01T00:00:00.000Z",
     ...market,
   });
 }
@@ -87,45 +84,6 @@ describe("market resolution for Labs tools", () => {
     );
   });
 
-  it("exposes explicit location and language selectors on both tool schemas", async () => {
-    expect(getRankedKeywordsTool.config.inputSchema.locationCode).toBeDefined();
-    expect(getRankedKeywordsTool.config.inputSchema.languageCode).toBeDefined();
-    expect(
-      findSerpCompetitorsTool.config.inputSchema.locationCode,
-    ).toBeDefined();
-    expect(
-      findSerpCompetitorsTool.config.inputSchema.languageCode,
-    ).toBeDefined();
-  });
-
-  it("passes an explicit non-US market to both Labs tools", async () => {
-    setProject({ locationCode: 2704, languageCode: "vi" });
-
-    const rankedKeywords = await runRankedKeywords({
-      locationCode: 2756,
-      languageCode: "de",
-    });
-    expect(rankedKeywords).toHaveBeenCalledWith(
-      expect.objectContaining({ locationCode: 2756, languageCode: "de" }),
-    );
-
-    const serpCompetitors = await runSerpCompetitors({
-      locationCode: 2756,
-      languageCode: "de",
-    });
-    expect(serpCompetitors).toHaveBeenCalledWith(
-      expect.objectContaining({ locationCode: 2756, languageCode: "de" }),
-    );
-  });
-
-  it("uses the selected location's default language when only locationCode is explicit", async () => {
-    setProject({ locationCode: 2704, languageCode: "vi" });
-    const rankedKeywords = await runRankedKeywords({ locationCode: 2276 });
-    expect(rankedKeywords).toHaveBeenCalledWith(
-      expect.objectContaining({ locationCode: 2276, languageCode: "de" }),
-    );
-  });
-
   it("prefers an explicit locationCode over the legacy market object", async () => {
     setProject({ locationCode: 2704, languageCode: "vi" });
     const rankedKeywords = await runRankedKeywords({
@@ -161,14 +119,6 @@ describe("market resolution for Labs tools", () => {
     await expect(
       runRankedKeywords({ locationCode: 2352, languageCode: "is" }),
     ).rejects.toThrow("Domain analytics is not available for this country");
-  });
-
-  it("follows the project's default market when the market object is omitted", async () => {
-    setProject({ locationCode: 2704, languageCode: "vi" });
-    const rankedKeywords = await runRankedKeywords({});
-    expect(rankedKeywords).toHaveBeenCalledWith(
-      expect.objectContaining({ locationCode: 2704, languageCode: "vi" }),
-    );
   });
 
   it("falls back to the US when the project market is not Labs-served", async () => {

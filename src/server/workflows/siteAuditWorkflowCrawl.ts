@@ -1,4 +1,4 @@
-import type { WorkflowStep } from "cloudflare:workers";
+import { env, type WorkflowStep } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import type { RobotsResult } from "@/server/lib/audit/discovery";
 import type { CrawledPageResult } from "@/server/lib/audit/types";
@@ -25,6 +25,8 @@ import {
   type CrawlThrottleState,
 } from "@/server/lib/audit/crawl-throttle";
 import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
+import type { RenderUsage } from "@/shared/audit-rendering";
+import type { CrawlerAccess } from "@/shared/crawler-access";
 import { pgStep } from "@/server/workflows/pgStep";
 import { CRAWL_CHUNK_STEP } from "@/server/workflows/auditStepConfigs";
 
@@ -91,6 +93,14 @@ type CrawlPhaseParams = {
   robots: RobotsResult;
   /** Frontier size after discovery seeding (from the discover-urls step). */
   seededCount: number;
+  renderJavaScript?: boolean;
+  /**
+   * Rendering totals across chunks. Mutated as each chunk step returns, so a
+   * failed audit can still settle what its completed chunks rendered.
+   */
+  renderUsage: RenderUsage;
+  /** Crawler-access headers for the audited host, when the org has one. */
+  access?: CrawlerAccess | null;
 };
 
 export type CrawlPhaseResult = {
@@ -135,6 +145,10 @@ export async function runCrawlPhase(
     // with up-to-date scratchpad totals) — finalize must not see stale ones.
     attemptedTotal = result.attempted;
     pending = result.pending;
+    params.renderUsage.cloudflareAttempts +=
+      result.renderUsage?.cloudflareAttempts ?? 0;
+    params.renderUsage.contextCredits +=
+      result.renderUsage?.contextCredits ?? 0;
     if (result.rateLimited) {
       return {
         pagesCrawled: attemptedTotal,
@@ -179,6 +193,7 @@ async function runCrawlChunk(
   rateLimited?: boolean;
   throttleState?: CrawlThrottleState;
   resumeAt?: number;
+  renderUsage?: RenderUsage;
 }> {
   const { auditId, workflowInstanceId, origin, maxPages, robots, chunkNo } =
     input;
@@ -280,8 +295,30 @@ async function runCrawlChunk(
       });
   };
 
+  // This attempt's rendering counts, returned in the step result. The audit's
+  // credit lock is settled once, when the audit ends.
+  const renderUsage: RenderUsage = { cloudflareAttempts: 0, contextCredits: 0 };
+  const render = input.renderJavaScript
+    ? async (url: string) => {
+        const { RenderedPageService } =
+          await import("@/server/lib/audit/rendered-page");
+        return RenderedPageService.renderPage(url, {
+          browser: env.BROWSER,
+          contextApiKey: env.CONTEXT_API_KEY,
+          auditId,
+          usage: renderUsage,
+        });
+      }
+    : undefined;
+
   const launch = (entry: ClaimedUrl) => {
-    const promise = crawlPage(entry.url, entry.depth, entry.inSitemap, throttle)
+    const promise = crawlPage(
+      entry.url,
+      entry.depth,
+      entry.inSitemap,
+      throttle,
+      { access: input.access, render },
+    )
       .then((page) => {
         if (!page) {
           deferred.push(entry.url);
@@ -358,6 +395,7 @@ async function runCrawlChunk(
       throttleState.pausedUntil > Date.now()
         ? throttleState.pausedUntil
         : undefined,
+    renderUsage,
   };
 }
 

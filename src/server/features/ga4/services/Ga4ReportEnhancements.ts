@@ -247,7 +247,7 @@ function activityStatus(
   return detected ? "detected" : "none";
 }
 
-export function buildEcommerceActivity(
+function buildEcommerceActivity(
   report: NormalizedGa4Report,
   input: Ga4ReportInput,
   dateRange: DateRange,
@@ -283,7 +283,7 @@ export function buildEcommerceActivity(
   };
 }
 
-export function buildSiteSearchActivity(
+function buildSiteSearchActivity(
   report: NormalizedGa4Report,
   dateRange: DateRange,
 ) {

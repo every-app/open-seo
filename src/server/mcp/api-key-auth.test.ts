@@ -57,11 +57,9 @@ function request(headers?: HeadersInit, method = "POST") {
 
 describe("handleMcpApiKeyRequest", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mocks.getHostedUser.mockResolvedValue({
       id: "user-1",
       email: "person@example.com",
-      name: "Person",
     });
     mocks.resolveExistingActiveHostedOrganization.mockResolvedValue({
       organizationId: "org-1",
@@ -73,60 +71,51 @@ describe("handleMcpApiKeyRequest", () => {
     );
   });
 
-  it("handles a valid key with the hosted user, organization, and MCP scopes", async () => {
-    mocks.verifyApiKey.mockResolvedValue({
-      valid: true,
-      error: null,
-      key: { referenceId: "user-1" },
-    });
-    const mcpRequest = request({ Authorization: "Bearer oseo_secret" });
+  it.each([
+    ["Bearer", { Authorization: "Bearer oseo_secret" }],
+    ["case-insensitive bearer", { Authorization: "bearer oseo_secret" }],
+    ["x-api-key", { "x-api-key": "oseo_secret" }],
+  ])(
+    "handles a valid key sent as %s with the hosted user, organization, and MCP scopes",
+    async (_label, headers) => {
+      mocks.verifyApiKey.mockResolvedValue({
+        valid: true,
+        error: null,
+        key: { referenceId: "user-1" },
+      });
+      const mcpRequest = request(headers);
 
-    const response = await handleMcpApiKeyRequest(mcpRequest, env, ctx);
+      const response = await handleMcpApiKeyRequest(mcpRequest, env, ctx);
 
-    expect(await response?.text()).toBe("mcp response");
-    expect(mocks.verifyApiKey).toHaveBeenCalledWith({
-      body: { key: "oseo_secret" },
-    });
-    expect(mocks.resolveExistingActiveHostedOrganization).toHaveBeenCalledWith(
-      "user-1",
-    );
-    expect(mocks.recordMcpAuthorized).toHaveBeenCalledWith("org-1");
-    expect(mocks.handleAuthenticatedOpenSeoMcpRequest).toHaveBeenCalledTimes(1);
-    const [passedRequest, props, passedEnv, passedCtx] =
-      mocks.handleAuthenticatedOpenSeoMcpRequest.mock.calls[0];
-    expect(passedRequest).toBe(mcpRequest);
-    expect(passedEnv).toBe(env);
-    expect(passedCtx).toBe(ctx);
-    expect(props).toMatchObject({
-      [MCP_AUTH_CONTEXT_PROP]: {
-        userId: "user-1",
-        userEmail: "person@example.com",
-        organizationId: "org-1",
-        role: "owner",
-        scopes: [...MCP_OAUTH_SCOPES],
-        clientId: "api_key",
-        baseUrl: "https://app.openseo.so",
-      },
-    });
-  });
-
-  it("accepts the key via a case-insensitive bearer scheme", async () => {
-    mocks.verifyApiKey.mockResolvedValue({
-      valid: true,
-      error: null,
-      key: { referenceId: "user-1" },
-    });
-
-    await handleMcpApiKeyRequest(
-      request({ Authorization: "bearer oseo_secret" }),
-      env,
-      ctx,
-    );
-
-    expect(mocks.verifyApiKey).toHaveBeenCalledWith({
-      body: { key: "oseo_secret" },
-    });
-  });
+      expect(await response?.text()).toBe("mcp response");
+      expect(mocks.verifyApiKey).toHaveBeenCalledWith({
+        body: { key: "oseo_secret" },
+      });
+      expect(
+        mocks.resolveExistingActiveHostedOrganization,
+      ).toHaveBeenCalledWith("user-1");
+      expect(mocks.recordMcpAuthorized).toHaveBeenCalledWith("org-1");
+      expect(mocks.handleAuthenticatedOpenSeoMcpRequest).toHaveBeenCalledTimes(
+        1,
+      );
+      const [passedRequest, props, passedEnv, passedCtx] =
+        mocks.handleAuthenticatedOpenSeoMcpRequest.mock.calls[0];
+      expect(passedRequest).toBe(mcpRequest);
+      expect(passedEnv).toBe(env);
+      expect(passedCtx).toBe(ctx);
+      expect(props).toMatchObject({
+        [MCP_AUTH_CONTEXT_PROP]: {
+          userId: "user-1",
+          userEmail: "person@example.com",
+          organizationId: "org-1",
+          role: "owner",
+          scopes: [...MCP_OAUTH_SCOPES],
+          clientId: "api_key",
+          baseUrl: "https://app.openseo.so",
+        },
+      });
+    },
+  );
 
   it("returns 403 when the user has no organization membership", async () => {
     mocks.verifyApiKey.mockResolvedValue({
@@ -193,62 +182,29 @@ describe("handleMcpApiKeyRequest", () => {
     expect(mocks.handleAuthenticatedOpenSeoMcpRequest).not.toHaveBeenCalled();
   });
 
-  it("returns a JSON 500 when auth resolution throws", async () => {
-    mocks.verifyApiKey.mockRejectedValue(new Error("db down"));
-
-    const response = await handleMcpApiKeyRequest(
-      request({ Authorization: "Bearer oseo_secret" }),
-      env,
-      ctx,
-    );
-
-    expect(response?.status).toBe(500);
-    await expect(response?.json()).resolves.toMatchObject({
-      error: "internal_error",
-    });
-    expect(mocks.handleAuthenticatedOpenSeoMcpRequest).not.toHaveBeenCalled();
-  });
-
-  it("leaves non-OpenSEO bearer tokens for OAuth", async () => {
-    await expect(
-      handleMcpApiKeyRequest(
-        request({ Authorization: "Bearer oauth-access-token" }),
-        env,
-        ctx,
-      ),
-    ).resolves.toBeNull();
-    expect(mocks.verifyApiKey).not.toHaveBeenCalled();
-  });
-
-  it("leaves non-OpenSEO x-api-key values for OAuth", async () => {
-    await expect(
-      handleMcpApiKeyRequest(
-        request({
-          "x-api-key": "some-foreign-key",
-          Authorization: "Bearer oauth-access-token",
-        }),
-        env,
-        ctx,
-      ),
-    ).resolves.toBeNull();
-    expect(mocks.verifyApiKey).not.toHaveBeenCalled();
-  });
-
-  it("leaves requests without credentials for OAuth", async () => {
-    await expect(
-      handleMcpApiKeyRequest(request(), env, ctx),
-    ).resolves.toBeNull();
-    expect(mocks.verifyApiKey).not.toHaveBeenCalled();
-  });
-
-  it("leaves OPTIONS requests with API keys for the CORS handler", async () => {
-    await expect(
-      handleMcpApiKeyRequest(
-        request({ "x-api-key": "oseo_secret" }, "OPTIONS"),
-        env,
-        ctx,
-      ),
-    ).resolves.toBeNull();
-    expect(mocks.verifyApiKey).not.toHaveBeenCalled();
-  });
+  it.each([
+    [
+      "non-OpenSEO bearer tokens",
+      request({ Authorization: "Bearer oauth-access-token" }),
+    ],
+    [
+      "non-OpenSEO x-api-key values",
+      request({
+        "x-api-key": "some-foreign-key",
+        Authorization: "Bearer oauth-access-token",
+      }),
+    ],
+    [
+      "OPTIONS requests with API keys",
+      request({ "x-api-key": "oseo_secret" }, "OPTIONS"),
+    ],
+  ])(
+    "leaves %s for the OAuth and CORS handlers",
+    async (_label, mcpRequest) => {
+      await expect(
+        handleMcpApiKeyRequest(mcpRequest, env, ctx),
+      ).resolves.toBeNull();
+      expect(mocks.verifyApiKey).not.toHaveBeenCalled();
+    },
+  );
 });

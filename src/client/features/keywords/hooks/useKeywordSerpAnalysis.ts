@@ -16,6 +16,7 @@ const SERP_DEEP_DEPTH = 100;
 export function useKeywordSerpAnalysis(
   projectId: string,
   locationCode: number | undefined,
+  locationName: string | undefined,
 ) {
   const [serpKeyword, setSerpKeywordState] = useState<string | null>(null);
   const [serpPage, setSerpPageState] = useState(0);
@@ -25,7 +26,13 @@ export function useKeywordSerpAnalysis(
 
   // Everything but the depth identifies the snapshot; the depth decides how
   // deep it goes.
-  const snapshotKey = ["serpAnalysis", projectId, serpKeyword, locationCode];
+  const snapshotKey = [
+    "serpAnalysis",
+    projectId,
+    serpKeyword,
+    locationCode,
+    locationName,
+  ];
 
   const serpQuery = useQuery({
     queryKey: [...snapshotKey, requestedDepth],
@@ -35,6 +42,7 @@ export function useKeywordSerpAnalysis(
           projectId,
           keyword: serpKeyword!,
           locationCode,
+          locationName,
           depth: requestedDepth,
         },
       }),
@@ -126,7 +134,6 @@ export function useKeywordSerpAnalysis(
     serpPage: visiblePage,
     setSerpPage,
     SERP_PAGE_SIZE,
-    serpQuery,
     serpResults,
     activeSerpKeyword,
     serpLoading,
@@ -134,5 +141,7 @@ export function useKeywordSerpAnalysis(
     canLoadMoreSerp,
     deepFetchFailed,
     serpError,
+    // `isLoading` stays false while a failed query refetches.
+    serpRetrying: serpQuery.isFetching,
   };
 }

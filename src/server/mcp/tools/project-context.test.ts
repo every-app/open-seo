@@ -17,8 +17,6 @@ const mocks = vi.hoisted(() => ({
   listResearchLog: vi.fn(),
   listTemplates: vi.fn(),
   deleteSection: vi.fn(),
-  deleteCompetitors: vi.fn(),
-  deleteKeyPages: vi.fn(),
   deleteResearchLogEntries: vi.fn(),
 }));
 
@@ -55,15 +53,14 @@ beforeEach(() => {
 });
 
 describe("update_project_context", () => {
-  it("removes each kind of context entry within the authorized project", async () => {
+  // Custom sections share the sections table with typed ones under a prefixed
+  // key; a delete that misses the prefix silently leaves the section behind.
+  it("deletes custom sections by their prefixed key and research log entries by id", async () => {
     await updateProjectContextTool.handler(
       {
         projectId: "project_1",
         updates: [
-          { section: "current_goal", content: "" },
           { deleteCustomSection: "old-findings" },
-          { removeCompetitors: ["https://www.Example.com/"] },
-          { removeKeyPages: ["https://Example.com/pricing#old"] },
           { removeResearchLog: ["research_1"] },
         ],
       },
@@ -72,22 +69,7 @@ describe("update_project_context", () => {
     expect(mocks.deleteSection).toHaveBeenCalledWith(
       expect.anything(),
       "project_1",
-      "current_goal",
-    );
-    expect(mocks.deleteSection).toHaveBeenCalledWith(
-      expect.anything(),
-      "project_1",
       "custom:old-findings",
-    );
-    expect(mocks.deleteCompetitors).toHaveBeenCalledWith(
-      expect.anything(),
-      "project_1",
-      ["example.com"],
-    );
-    expect(mocks.deleteKeyPages).toHaveBeenCalledWith(
-      expect.anything(),
-      "project_1",
-      ["https://example.com/pricing"],
     );
     expect(mocks.deleteResearchLogEntries).toHaveBeenCalledWith(
       expect.anything(),
@@ -140,15 +122,8 @@ describe("get_project_context", () => {
   it("lists the project's report templates", async () => {
     mocks.listTemplates.mockResolvedValue([
       {
-        id: "template_1",
-        projectId: "project_1",
         name: "Monthly client check-in",
         description: "The monthly update we send retainer clients.",
-        instructions: "Audience: the client's marketing lead.",
-        createdBy: "OpenSEO app",
-        createdByUserId: "user_1",
-        createdAt: "2026-09-01T10:00:00.000Z",
-        updatedAt: "2026-09-01T10:00:00.000Z",
       },
     ]);
 

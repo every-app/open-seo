@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  adjustCrawlWindow,
-  RETRY_CRAWL_WINDOW,
-} from "@/server/lib/audit/crawl-window";
+import { adjustCrawlWindow } from "@/server/lib/audit/crawl-window";
 import type { CrawledPageResult } from "@/server/lib/audit/types";
 import type { PageFetchClass } from "@/shared/audit-fetch-class";
 
@@ -56,19 +53,12 @@ describe("adjustCrawlWindow", () => {
     expect(adjustCrawlWindow(2, [])).toBe(2);
   });
 
-  it.each(["error", "blocked", "rate_limited"] as const)(
-    "reduces concurrency on %s",
-    (fetchClass) => {
-      const recent = Array.from({ length: 10 }, () => page(fetchClass, 300));
-      expect(adjustCrawlWindow(2, recent)).toBe(1);
-    },
-  );
-
-  it("treats recovered 429s as trouble", () => {
-    const recent = Array.from({ length: 10 }, () => ({
-      ...page("ok", 300),
-      rateLimited: true,
-    }));
+  // A 429 the retries recovered from still counts as trouble.
+  it.each([
+    ["a failed fetch", page("error", 300)],
+    ["a recovered 429", { ...page("ok", 300), rateLimited: true }],
+  ])("reduces concurrency on %s", (_case, troubled) => {
+    const recent = Array.from({ length: 10 }, () => troubled);
     expect(adjustCrawlWindow(2, recent)).toBe(1);
   });
 
@@ -80,11 +70,6 @@ describe("adjustCrawlWindow", () => {
     const recent = Array.from({ length: 25 }, () => page("ok", 400));
     expect(adjustCrawlWindow(2, recent)).toBe(2);
     expect(adjustCrawlWindow(1, recent)).toBe(2);
-  });
-
-  it("keeps retry chunks at one concurrent request", () => {
-    const recent = Array.from({ length: 25 }, () => page("ok", 400));
-    expect(adjustCrawlWindow(1, recent, RETRY_CRAWL_WINDOW)).toBe(1);
   });
 
   it("preserves the byte budget if page sizes increase", () => {

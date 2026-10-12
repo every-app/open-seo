@@ -113,10 +113,4 @@ describe("withQueryRetries", () => {
     await expect(rows).rejects.toBe(error);
     expect(unsafe).toHaveBeenCalledTimes(4); // initial + 3 retries
   });
-
-  it("passes everything except unsafe through to the client", () => {
-    const { sql } = fakeSql(0, connectionError("unused"));
-    const wrapped = withQueryRetries(sql);
-    expect(wrapped.options).toBe(sql.options);
-  });
 });

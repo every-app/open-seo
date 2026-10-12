@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/site-footer";
-import { BlogLayout } from "@/components/blog-layout";
+import { BlogLayout, PostDate } from "@/components/blog-layout";
 import { getBlogPosts } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
 
@@ -43,7 +43,11 @@ function BlogIndex() {
                   params={{ _splat: post.slugs.join("/") }}
                   className="group block h-full rounded-lg border border-[var(--color-border-subtle)] bg-white p-6 transition-colors hover:border-neutral-900"
                 >
-                  <h2 className="text-2xl font-semibold tracking-tight text-neutral-950 transition-colors group-hover:text-[var(--color-brand-accent)]">
+                  <PostDate
+                    date={post.date}
+                    className="block text-sm text-[var(--color-brand-muted)]"
+                  />
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-950 transition-colors group-hover:text-[var(--color-brand-accent)]">
                     {post.title}
                   </h2>
                   {post.description && (

@@ -94,7 +94,7 @@ If you're new to SEO, OpenSEO should definitely be the first tool you select. Go
 
 ### For experts
 
-If you love your current solution, you should probably just stick with that. But, if you think your current tool is bloated, poorly designed, or too expensive, OpenSEO is striving to be an all-in-one replacement for tools like [Semrush](https://www.semrush.com/) and [Ahrefs](https://ahrefs.com/).
+If you love your current solution, you should probably just stick with that. But, if you think your current tool is bloated, poorly designed, or too expensive, OpenSEO is striving to be an all-in-one replacement for tools like Semrush and Ahrefs. See how OpenSEO compares as a [Semrush alternative](/semrush-alternative) and an [Ahrefs alternative](/ahrefs-alternative).
 
 ## AI native: More than a replacement for other SEO tools
 

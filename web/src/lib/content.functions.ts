@@ -12,6 +12,8 @@ export const getBlogPost = createServerFn({ method: "GET" })
       path: page.path,
       title: page.data.title,
       description: page.data.description,
+      author: page.data.author,
+      date: page.data.date,
       url: page.url,
     };
   });
@@ -19,12 +21,15 @@ export const getBlogPost = createServerFn({ method: "GET" })
 export const getBlogPosts = createServerFn({ method: "GET" }).handler(
   async () => {
     const pages = blogSource.getPages();
-    return pages.map((page: (typeof pages)[number]) => ({
-      title: page.data.title,
-      description: page.data.description,
-      url: page.url,
-      slugs: page.slugs,
-    }));
+    return pages
+      .map((page: (typeof pages)[number]) => ({
+        title: page.data.title,
+        description: page.data.description,
+        date: page.data.date,
+        url: page.url,
+        slugs: page.slugs,
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
   },
 );
 

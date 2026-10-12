@@ -2,12 +2,12 @@ import { createColumnHelper } from "@tanstack/react-table";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
-  AppDataTable,
-  useAppTable,
-} from "@/client/components/table/AppDataTable";
+  DataTable,
+  useDataTable,
+  type DataTableFrameProps,
+} from "@/client/components/table/DataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
-import { HeaderHelpLabel } from "@/client/features/keywords/components";
-import { EmptyTableState } from "./BacklinksPageEmptyTableState";
+import { HelpLabel } from "@/client/components/HelpLabel";
 import type { TopPageRow } from "./backlinksPageTypes";
 import type { TopPagesSortField } from "@/types/schemas/backlinks";
 import { formatNumber } from "./backlinksPageUtils";
@@ -20,8 +20,9 @@ const columns = [
   columnHelper.accessor("page", {
     id: "page",
     enableSorting: false,
+    meta: { cellClassName: "min-w-80" },
     header: () => (
-      <HeaderHelpLabel
+      <HelpLabel
         label="Page"
         helpText="Page on the target site receiving backlinks."
       />
@@ -32,7 +33,7 @@ const columns = [
         <SafeExternalLink
           url={page}
           label={page}
-          className="link link-hover break-all inline-flex items-center gap-1"
+          className="inline-flex items-center gap-1 break-all underline-offset-4 hover:underline"
         />
       ) : (
         "-"
@@ -93,12 +94,13 @@ export function TopPagesTable({
   rows,
   sorting,
   onSortingChange,
-}: {
+  ...frame
+}: DataTableFrameProps & {
   rows: TopPageRow[];
   sorting: SortingState;
   onSortingChange: OnChangeFn<SortingState>;
 }) {
-  const table = useAppTable({
+  const table = useDataTable({
     data: rows,
     columns,
     state: { sorting },
@@ -106,16 +108,11 @@ export function TopPagesTable({
     manualSorting: true,
   });
 
-  if (rows.length === 0) {
-    return <EmptyTableState label="No top pages match this filter." />;
-  }
-
   return (
-    <AppDataTable
+    <DataTable
       table={table}
-      getCellClassName={(_, columnId) =>
-        columnId === "page" ? "min-w-80" : undefined
-      }
+      empty={{ title: "No top pages found for this target." }}
+      {...frame}
     />
   );
 }

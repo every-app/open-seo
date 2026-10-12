@@ -22,10 +22,9 @@ export function SavedKeywordsBulkActionBar({
   onExportSheets: () => void;
   onDelete: () => void;
   onClear: () => void;
-  exportingSelection: "csv" | "sheets" | null;
+  exportingSelection: boolean;
 }) {
   if (selectedCount === 0) return null;
-  const exportBusy = exportingSelection != null;
 
   return (
     <TableBulkActionBar
@@ -42,7 +41,7 @@ export function SavedKeywordsBulkActionBar({
             </TableBulkActionButton>
 
             <TableBulkExportMenu
-              busy={exportBusy}
+              busy={exportingSelection}
               actions={[
                 {
                   label: "Copy keywords",
@@ -63,7 +62,7 @@ export function SavedKeywordsBulkActionBar({
             />
           </div>
 
-          <div className="flex items-center border-l border-base-content/10 px-1.5">
+          <div className="flex items-center border-l border-border px-1.5">
             <TableBulkActionButton
               icon={<Trash2 className="size-3.5" />}
               onClick={onDelete}

@@ -10,7 +10,6 @@ const onboardingAnswersSchema = z.object({
   workFor: z.string().optional(),
   clientWebsiteCount: z.string().optional(),
   foundVia: z.string().optional(),
-  mcpSetupIntent: z.enum(["yes", "no"]).optional(),
   completed: z.boolean().optional(),
 });
 
@@ -25,7 +24,6 @@ export const getOnboardingAnswers = createServerFn({ method: "GET" })
         workFor: true,
         clientWebsiteCount: true,
         foundVia: true,
-        mcpSetupIntent: true,
       },
       where: eq(userOnboardingAnswers.userId, context.userId),
     });
@@ -59,7 +57,6 @@ export const getOnboardingAnswers = createServerFn({ method: "GET" })
         workFor: answers?.workFor ?? null,
         clientWebsiteCount: answers?.clientWebsiteCount ?? null,
         foundVia: answers?.foundVia ?? null,
-        mcpSetupIntent: answers?.mcpSetupIntent ?? null,
       },
     };
   });
@@ -79,9 +76,6 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
         ? { clientWebsiteCount: data.clientWebsiteCount }
         : {}),
       ...(data.foundVia !== undefined ? { foundVia: data.foundVia } : {}),
-      ...(data.mcpSetupIntent !== undefined
-        ? { mcpSetupIntent: data.mcpSetupIntent }
-        : {}),
       // Completing onboarding means the user passed the Search Console step, so
       // resolve the GSC prompt — the legacy re-engagement nudge must not fire
       // for anyone who already saw that step.
@@ -100,7 +94,6 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
         workFor: data.workFor,
         clientWebsiteCount: data.clientWebsiteCount,
         foundVia: data.foundVia,
-        mcpSetupIntent: data.mcpSetupIntent,
         completedAt,
         gscNudgeDismissedAt: completedAt,
         updatedAt: now,

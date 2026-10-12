@@ -134,13 +134,19 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Summarize a domain's organic footprint.
 - Find keywords a domain already ranks for.
 - Check backlink and referring-domain overview data.
+- Explore a prompt in ChatGPT or compare answers and available citations across selected AI models. ChatGPT is the default; uncached answers use credits.
+- Research questions about a keyword with ChatGPT's answers and cited sources (uses credits).
+- Configure AI prompt tracking, preview cost, and start or pause scheduled checks.
+- Read and export saved AI answers, trends, citations, and competitor appearances without using credits.
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
 - Read and update a project's shared context: business, goal, positioning, writing preferences, competitors, key pages, and a research log (free, no credits).
-- Save and read HTML reports on a project (free, no credits).
+- Save and read HTML reports on a project (free, no credits). New reports are private. On hosted OpenSEO, explicitly ask the agent to publish with `set_report_sharing` (`public: true`) or revoke the link (`public: false`). `get_report` returns `report.shareUrl` for an existing public link, or `null` when unavailable.
 - List a project's report templates, and save a reusable report brief to the project (free, no credits).
 
 ## What to do after setup
+
+See the [AI Visibility guide](/docs/ai-visibility) for supported engines, research coverage, and costs.
 
 Once OpenSEO MCP is connected, [set up OpenSEO Agent Skills](/docs/skills/setup). MCP gives your agent access to OpenSEO data. Skills are separate `SKILL.md` files that tell your agent how to use that data for specific SEO jobs.
 
@@ -148,6 +154,8 @@ Start with one focused workflow instead of asking your agent to "do SEO" broadly
 
 - Use [SEO project setup](/docs/skills/seo-project-setup) to save your goals, positioning, competitors, and key pages to your project context, so every other skill reuses them.
 - Use [SEO coach](/docs/skills/seo-coach) if you are new to SEO or are not sure which workflow to run first.
+- Use [AI Prompt Research](/docs/skills/ai-prompt-research) to find questions and cited sources before choosing what to track.
+- Use [AI Visibility Audit](/docs/skills/ai-visibility-audit) to investigate why competitors appear and which changes to try.
 - Use [keyword research](/docs/skills/keyword-research) to discover keyword opportunities.
 - Use [competitive landscape](/docs/skills/competitive-landscape) to map a market before choosing competitors or pages.
 - Use [competitor analysis](/docs/skills/competitor-analysis) to study one competitor.

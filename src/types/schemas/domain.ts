@@ -67,7 +67,7 @@ export const domainKeywordSuggestionsSchema = z.object({
 });
 
 export const DOMAIN_KEYWORDS_PAGE_SIZES = [50, 100, 200] as const;
-export const DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE = 100;
+export const DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE = 50;
 export const MAX_DATAFORSEO_FILTER_CONDITIONS = 8;
 
 const optionalNumber = z
@@ -145,14 +145,27 @@ export const domainPagesPageRequestSchema = z.object({
   search: z.string().optional(),
 });
 
-const optionalSearchNumberParam = z.coerce.number().optional().catch(undefined);
-const optionalSearchPositiveIntParam = z.coerce
+export const optionalSearchNumberParam = z.coerce
+  .number()
+  .optional()
+  .catch(undefined);
+export const optionalSearchPositiveIntParam = z.coerce
   .number()
   .int()
   .positive()
   .optional()
   .catch(undefined);
 const filterStringParam = z.string().optional();
+
+/**
+ * Free-text filter param. The router parses `?minVol=100` as a number, so
+ * numbers are kept as text instead of being dropped.
+ */
+export const searchTextParam = z
+  .union([z.string(), z.number()])
+  .transform(String)
+  .optional()
+  .catch(undefined);
 const filterNumberParam = optionalSearchNumberParam;
 
 export const domainSearchSchema = z.object({

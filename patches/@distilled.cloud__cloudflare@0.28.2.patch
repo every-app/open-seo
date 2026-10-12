@@ -1,0 +1,13 @@
+diff --git a/lib/services/workers.js b/lib/services/workers.js
+index b7bfc387d51cbcc647316f6c39ecbfe044aef6e6..64a3c7a49578dae5dc6f44c84f70d3161251afc1 100644
+--- a/lib/services/workers.js
++++ b/lib/services/workers.js
+@@ -1731,7 +1731,7 @@ const ListScriptsResponseResultPlacement3 =
+ const ListScriptsResponseResultPlacement4 = 
+ /*@__PURE__*/ /*#__PURE__*/ Schema.suspend(() => Schema.Struct({
+     mode: Schema.Literal("targeted"),
+-    region: Schema.String,
++    region: Schema.optional(Schema.Union([Schema.String, Schema.Null])),
+     lastAnalyzedAt: Schema.optional(Schema.Union([Schema.String, Schema.Null])),
+     status: Schema.optional(Schema.Union([
+         Schema.Union([

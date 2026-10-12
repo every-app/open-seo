@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { TAG_COLOR_KEYS } from "@/shared/tag-colors";
-import { booleanSearchParamSchema } from "@/types/schemas/domain";
+import {
+  booleanSearchParamSchema,
+  optionalSearchNumberParam,
+  optionalSearchPositiveIntParam,
+  searchTextParam,
+} from "@/types/schemas/domain";
 
 const savedKeywordTagSchema = z.string().trim().min(1).max(64);
 const tagColorSchema = z.enum(TAG_COLOR_KEYS);
@@ -14,12 +19,20 @@ const savedKeywordSortFields = [
   "fetchedAt",
 ] as const;
 const sortDirs = ["asc", "desc"] as const;
+const savedKeywordPageSizeSchema = z.union([
+  z.literal(50),
+  z.literal(100),
+  z.literal(250),
+]);
 
 export const researchKeywordsSchema = z.object({
   projectId: z.string().min(1),
   keywords: z.array(z.string().min(1)).min(1).max(200),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
+  // Canonical DataForSEO name of a city, county, or region inside the
+  // country. Scopes volume, CPC, and competition to that area.
+  locationName: z.string().trim().min(1).max(200).optional(),
   resultLimit: z
     .union([z.literal(150), z.literal(300), z.literal(500)])
     .default(150),
@@ -29,6 +42,7 @@ export const researchKeywordsSchema = z.object({
     .default("auto"),
   // Clickstream-refined volumes double the DataForSEO request cost; opt-in.
   clickstream: z.boolean().optional().default(false),
+  groupKeywords: z.boolean().optional().default(false),
 });
 
 export const savedKeywordMetricSchema = z.object({
@@ -92,12 +106,36 @@ export const getSavedKeywordsSchema = z.object({
   tagIds: z.array(z.string().min(1)).max(50).optional(),
   tagNames: z.array(savedKeywordTagSchema).max(50).optional(),
   page: z.number().int().positive().default(1),
-  pageSize: z
-    .union([z.literal(50), z.literal(100), z.literal(250)])
-    .default(50),
+  pageSize: savedKeywordPageSizeSchema.default(50),
   sort: z.enum(savedKeywordSortFields).default("createdAt"),
   order: z.enum(sortDirs).default("desc"),
 });
+
+/**
+ * /p/$projectId/saved query params. `sort=createdAt` is the unsorted table:
+ * the server's insertion order.
+ */
+export const savedKeywordsSearchSchema = z.object({
+  include: searchTextParam,
+  exclude: searchTextParam,
+  minVol: optionalSearchNumberParam,
+  maxVol: optionalSearchNumberParam,
+  minCpc: optionalSearchNumberParam,
+  maxCpc: optionalSearchNumberParam,
+  minKd: optionalSearchNumberParam,
+  maxKd: optionalSearchNumberParam,
+  tags: z.array(z.string()).optional().catch(undefined),
+  sort: z.enum(savedKeywordSortFields).optional().catch(undefined),
+  order: z.enum(sortDirs).optional().catch(undefined),
+  page: optionalSearchPositiveIntParam,
+  size: z.coerce
+    .number()
+    .pipe(savedKeywordPageSizeSchema)
+    .optional()
+    .catch(undefined),
+});
+
+export type SavedKeywordsSearch = z.infer<typeof savedKeywordsSearchSchema>;
 
 export const exportSavedKeywordsSchema = getSavedKeywordsSchema.omit({
   page: true,
@@ -176,6 +214,8 @@ export const serpAnalysisSchema = z.object({
   keyword: z.string().min(1),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
+  // Same area as the research it belongs to, for a local SERP.
+  locationName: z.string().trim().min(1).max(200).optional(),
   // Only the two depths the app offers: the default top-20 snapshot, and the
   // full 100 the SERP panel buys when a user pages past the loaded results.
   // Each 10 of depth is another crawled Google page (~2.5 credits).
@@ -199,9 +239,11 @@ const keywordModes = ["auto", "related", "suggestions", "ideas"] as const;
 export const keywordsSearchSchema = z.object({
   q: z.string().optional(),
   loc: z.coerce.number().int().positive().optional(),
+  locName: z.string().optional(),
   kLimit: z.union([z.literal(150), z.literal(300), z.literal(500)]).optional(),
   mode: z.enum(keywordModes).optional(),
   cs: booleanSearchParamSchema.optional(),
+  grp: booleanSearchParamSchema.optional(),
   sort: z.enum(keywordSortFields).optional(),
   order: z.enum(sortDirs).optional(),
   minVol: z.string().optional(),

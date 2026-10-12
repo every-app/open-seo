@@ -1,17 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   GOOGLE_ADS_INTEGRATION,
-  handleSelfHostedGoogleOAuthCallbackRequest,
-} from "@/server/features/google/selfHostedOAuth";
+  handleGoogleOAuthCallbackRequest,
+} from "@/server/features/google/googleOAuth";
 
 export const Route = createFileRoute("/api/gads/oauth/callback")({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) =>
-        handleSelfHostedGoogleOAuthCallbackRequest(
-          request,
-          GOOGLE_ADS_INTEGRATION,
-        ),
+        handleGoogleOAuthCallbackRequest(request, GOOGLE_ADS_INTEGRATION),
     },
   },
 });

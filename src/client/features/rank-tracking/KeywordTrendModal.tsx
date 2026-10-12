@@ -1,18 +1,39 @@
 import { useMemo, useState } from "react";
-import { Copy, Download, Loader2 } from "lucide-react";
+import { Copy, Download, ExternalLink } from "lucide-react";
 import { reverse, sortBy } from "remeda";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { Modal } from "@/client/components/Modal";
-import { buildCsv, downloadCsv } from "@/client/lib/csv";
+import { QueryState } from "@/client/components/QueryState";
+import { Skeleton } from "@/client/components/ui/skeleton";
+import { Button } from "@/client/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import { buildCsv, type CsvValue } from "@/client/lib/csv";
+import { exportRows } from "@/client/lib/exportRows";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getRankKeywordHistory } from "@/serverFunctions/rank-tracking";
 import type { RankKeywordHistoryPoint } from "@/serverFunctions/rank-tracking";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { formatLocationLabel } from "@/shared/keyword-locations";
+import { googleSerpUrl } from "@/shared/google-serp-url";
 import { csvChange, DeviceRankCell } from "./RankTrackingTableParts";
 import {
   RankTrendChart,
+  TrendEmptyState,
   TrendRangeToggle,
   type TrendSeries,
 } from "./RankTrackingTrendChart";
@@ -36,6 +57,7 @@ export function KeywordTrendModal({
   configId,
   domain,
   locationCode,
+  languageCode,
   locationName,
   serpDepth,
   onClose,
@@ -45,13 +67,14 @@ export function KeywordTrendModal({
   configId: string;
   domain: string;
   locationCode: number;
+  languageCode: string;
   locationName?: string;
   serpDepth: number;
   onClose: () => void;
 }) {
   const [sinceDays, setSinceDays] = useState(730);
 
-  const { data: history, isLoading } = useQuery({
+  const historyQuery = useQuery({
     queryKey: [
       "rankKeywordHistory",
       projectId,
@@ -69,6 +92,7 @@ export function KeywordTrendModal({
         },
       }),
   });
+  const history = historyQuery.data;
 
   const points = useMemo(() => history ?? [], [history]);
   const devices = useMemo(() => deriveDevices(points), [points]);
@@ -113,221 +137,194 @@ export function KeywordTrendModal({
 
   const historyRows = useMemo(() => buildHistoryRows(points), [points]);
 
-  const exportRows = () =>
-    historyRows.map((r) => [
-      new Date(r.checkedAt).toISOString(),
-      DEVICE_STYLE[r.device].label,
-      r.position ?? "",
-      csvChange(r.position, r.previousPosition),
-    ]);
-
   const handleCopy = () => {
-    const headers = ["Date", "Device", "Position", "Change vs previous"];
-    void navigator.clipboard.writeText(buildCsv(headers, exportRows()));
+    void navigator.clipboard.writeText(
+      buildCsv(HISTORY_HEADERS, historyRows.map(historyExportRow)),
+    );
     toast.success("Copied to clipboard");
     captureClientEvent("rank_tracking:keyword_trend_copy");
   };
 
   const handleExport = () => {
-    const headers = ["Date", "Device", "Position", "Change vs previous"];
-    downloadCsv(
-      `rank-history-${slugify(target.keyword)}.csv`,
-      buildCsv(headers, exportRows()),
-    );
+    void exportRows({
+      format: "csv",
+      feature: "rank_tracking_keyword_trend",
+      headers: HISTORY_HEADERS,
+      rows: historyRows.map(historyExportRow),
+      filename: `rank-history-${slugify(target.keyword)}`,
+    });
     captureClientEvent("rank_tracking:keyword_trend_export");
   };
 
   return (
-    <Modal
-      onClose={onClose}
-      labelledBy="keyword-trend-title"
-      maxWidth="max-w-3xl"
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 id="keyword-trend-title" className="text-lg font-semibold">
-            {target.keyword}
-          </h3>
-          <p className="text-xs text-base-content/60">
-            {domain} &middot;{" "}
-            {locationName
-              ? formatLocationLabel(locationName, 2)
-              : (LOCATIONS[locationCode] ?? "US")}{" "}
-            &middot; Position over time
-          </p>
-        </div>
-        <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
-      </div>
-
-      {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-base-content/50" />
-        </div>
-      ) : maxPerDevice <= 1 ? (
-        <EmptyState count={maxPerDevice} />
-      ) : (
-        <>
-          <RankTrendChart
-            data={chartData}
-            series={series}
-            serpDepth={serpDepth}
-            showBottomBand
-            renderTooltip={(label, entries) => (
-              <ChartTooltip
-                label={label}
-                entries={entries}
-                serpDepth={serpDepth}
-                bottomBandKeys={bottomBandKeys}
-              />
-            )}
-          />
-
-          <div className="flex items-center justify-end gap-2">
-            <button className="btn btn-ghost btn-xs gap-1" onClick={handleCopy}>
-              <Copy className="size-3.5" />
-              Copy
-            </button>
-            <button
-              className="btn btn-ghost btn-xs gap-1"
-              onClick={handleExport}
+      <DialogContent showCloseButton={false} className="sm:max-w-3xl">
+        <DialogHeader className="flex-row items-start justify-between gap-3">
+          <div className="space-y-1">
+            <DialogTitle>{target.keyword}</DialogTitle>
+            <DialogDescription className="text-xs">
+              {domain} &middot;{" "}
+              {locationName
+                ? formatLocationLabel(locationName, 2)
+                : (LOCATIONS[locationCode] ?? "US")}{" "}
+              &middot; Position over time
+            </DialogDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              title="Search this keyword on Google with the tracked language, country, and city"
+              render={
+                <a
+                  href={googleSerpUrl(target.keyword, {
+                    locationCode,
+                    languageCode,
+                    locationName,
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
             >
-              <Download className="size-3.5" />
-              Export CSV
-            </button>
+              <ExternalLink data-icon="inline-start" />
+              Open on Google
+            </Button>
+            <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
           </div>
+        </DialogHeader>
 
-          <div className="max-h-64 overflow-auto rounded-lg border border-base-300">
-            <table className="table table-sm">
-              <thead className="sticky top-0 bg-base-100">
-                <tr>
-                  <th>Date</th>
-                  {devices.length > 1 && <th>Device</th>}
-                  <th>Position</th>
-                  <th>Δ vs previous check</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historyRows.map((r, idx) => {
-                  // No prior ranking to compare against (first check, or the
-                  // previous check was unranked): show the lone position as a
-                  // centered neutral pill so it doesn't look like a stray number
-                  // next to the "before → after" rows.
-                  const noPrevious =
-                    r.position !== null && r.previousPosition === null;
-                  return (
-                    <tr key={`${r.device}-${r.checkedAt}-${idx}`}>
-                      <td className="whitespace-nowrap text-xs">
-                        {new Date(r.checkedAt).toLocaleDateString()}
-                      </td>
-                      {devices.length > 1 && (
-                        <td className="text-xs">
-                          {DEVICE_STYLE[r.device].label}
-                        </td>
-                      )}
-                      <td>
-                        {r.position === null ? (
-                          <span className="text-base-content/40 text-xs">
-                            Not in top {serpDepth}
-                          </span>
-                        ) : (
-                          <span className="font-mono text-sm">
-                            {r.position}
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {noPrevious ? (
-                          // Invisible placeholders matching the "before → after"
-                          // layout so the lone pill lines up under the position
-                          // badge column instead of floating.
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="w-6" aria-hidden />
-                            <span aria-hidden className="opacity-0">
-                              →
-                            </span>
-                            <span className="font-mono rounded bg-base-200 px-1.5 py-0.5 text-xs font-semibold text-base-content/70">
-                              {r.position}
-                            </span>
-                          </span>
-                        ) : (
-                          <DeviceRankCell
-                            result={{
-                              position: r.position,
-                              previousPosition: r.previousPosition,
-                              rankingUrl: null,
-                              serpFeatures: [],
-                            }}
-                          />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      <div className="flex justify-end">
-        <button className="btn btn-ghost btn-sm" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
-function EmptyState({ count }: { count: number }) {
-  return (
-    <div className="rounded-lg border border-dashed border-base-300 p-10 text-center text-sm text-base-content/60">
-      {count === 0
-        ? "No history yet — run a check to start tracking position over time."
-        : "Only 1 check so far — the trend chart fills in after the next check."}
-    </div>
-  );
-}
-
-function ChartTooltip({
-  label,
-  entries,
-  serpDepth,
-  bottomBandKeys,
-}: {
-  label: number;
-  entries: Array<{ dataKey?: string | number; value: number | null }>;
-  serpDepth: number;
-  bottomBandKeys: Set<string>;
-}) {
-  return (
-    <div className="rounded-md border border-base-300 bg-base-100 px-3 py-2 shadow-sm space-y-0.5">
-      <p className="text-xs text-base-content/60">
-        {new Date(label).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}
-      </p>
-      {entries.map((e) => {
-        const device =
-          e.dataKey === "desktop" || e.dataKey === "mobile"
-            ? DEVICE_STYLE[e.dataKey].label
-            : String(e.dataKey ?? "");
-        const inBottomBand = bottomBandKeys.has(`${label}:${e.dataKey}`);
-        return (
-          <p key={String(e.dataKey)} className="text-sm font-medium">
-            {device}:{" "}
-            {inBottomBand ? (
-              <span className="text-base-content/60">
-                Not in top {serpDepth}
-              </span>
+        <QueryState
+          query={historyQuery}
+          errorFallback="Failed to load keyword history"
+          loading={<Skeleton className="h-56 w-full" />}
+        >
+          {() =>
+            maxPerDevice <= 1 ? (
+              <TrendEmptyState checks={maxPerDevice} />
             ) : (
-              e.value
-            )}
-          </p>
-        );
-      })}
-    </div>
+              <>
+                <RankTrendChart
+                  data={chartData}
+                  series={series}
+                  serpDepth={serpDepth}
+                  showBottomBand
+                  valueFormatter={(value, item) => {
+                    // The payload is the chart row, typed `any` upstream.
+                    const row: unknown = item.payload;
+                    const checkedAt =
+                      typeof row === "object" &&
+                      row !== null &&
+                      "checkedAt" in row
+                        ? row.checkedAt
+                        : undefined;
+                    return typeof checkedAt === "number" &&
+                      typeof item.dataKey === "string" &&
+                      bottomBandKeys.has(`${checkedAt}:${item.dataKey}`) ? (
+                      <span className="font-normal text-muted-foreground">
+                        Not in top {serpDepth}
+                      </span>
+                    ) : (
+                      String(value)
+                    );
+                  }}
+                />
+
+                <div className="flex items-center justify-end gap-2">
+                  <Button variant="ghost" size="xs" onClick={handleCopy}>
+                    <Copy data-icon="inline-start" />
+                    Copy
+                  </Button>
+                  <Button variant="ghost" size="xs" onClick={handleExport}>
+                    <Download data-icon="inline-start" />
+                    Export CSV
+                  </Button>
+                </div>
+
+                <div className="overflow-hidden rounded-lg border border-border">
+                  <Table containerClassName="max-h-64">
+                    <TableHeader className="sticky top-0 z-10 bg-popover">
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        {devices.length > 1 && <TableHead>Device</TableHead>}
+                        <TableHead>Position</TableHead>
+                        <TableHead>Δ vs previous check</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {historyRows.map((r, idx) => {
+                        // No prior ranking to compare against (first check, or the
+                        // previous check was unranked): show the lone position as a
+                        // centered neutral pill so it doesn't look like a stray number
+                        // next to the "before → after" rows.
+                        const noPrevious =
+                          r.position !== null && r.previousPosition === null;
+                        return (
+                          <TableRow key={`${r.device}-${r.checkedAt}-${idx}`}>
+                            <TableCell className="text-xs whitespace-nowrap">
+                              {new Date(r.checkedAt).toLocaleDateString()}
+                            </TableCell>
+                            {devices.length > 1 && (
+                              <TableCell className="text-xs">
+                                {DEVICE_STYLE[r.device].label}
+                              </TableCell>
+                            )}
+                            <TableCell>
+                              {r.position === null ? (
+                                <span className="text-xs text-muted-foreground">
+                                  Not in top {serpDepth}
+                                </span>
+                              ) : (
+                                <span className="font-mono text-sm">
+                                  {r.position}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {noPrevious ? (
+                                // Invisible placeholders matching the "before → after"
+                                // layout so the lone pill lines up under the position
+                                // badge column instead of floating.
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span className="w-6" aria-hidden />
+                                  <span aria-hidden className="opacity-0">
+                                    →
+                                  </span>
+                                  <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-muted-foreground">
+                                    {r.position}
+                                  </span>
+                                </span>
+                              ) : (
+                                <DeviceRankCell
+                                  result={{
+                                    position: r.position,
+                                    previousPosition: r.previousPosition,
+                                    rankingUrl: null,
+                                    serpFeatures: [],
+                                  }}
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )
+          }
+        </QueryState>
+
+        <DialogFooter showCloseButton />
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -402,4 +399,15 @@ function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+const HISTORY_HEADERS = ["Date", "Device", "Position", "Change vs previous"];
+
+function historyExportRow(row: HistoryRow): CsvValue[] {
+  return [
+    new Date(row.checkedAt).toISOString(),
+    DEVICE_STYLE[row.device].label,
+    row.position ?? "",
+    csvChange(row.position, row.previousPosition),
+  ];
 }

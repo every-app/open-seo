@@ -3,7 +3,6 @@ import {
   buildStrikingDistanceRows,
   previousPeriod,
   sumSearchTotals,
-  toDimensionRows,
 } from "@/server/features/gsc/searchPerformanceReport";
 
 describe("sumSearchTotals", () => {
@@ -29,30 +28,6 @@ describe("sumSearchTotals", () => {
   });
 });
 
-describe("toDimensionRows", () => {
-  it("keeps the first key and drops keyless rows", () => {
-    const rows = toDimensionRows([
-      {
-        keys: ["magento agency"],
-        clicks: 3,
-        impressions: 40,
-        ctr: 0.075,
-        position: 6.2,
-      },
-      { clicks: 1, impressions: 5, ctr: 0.2, position: 1 },
-    ]);
-    expect(rows).toEqual([
-      {
-        key: "magento agency",
-        clicks: 3,
-        impressions: 40,
-        ctr: 0.075,
-        position: 6.2,
-      },
-    ]);
-  });
-});
-
 const row = (query: string, position: number, impressions: number) => ({
   keys: [query, `https://example.com/${query}`],
   clicks: 1,
@@ -70,36 +45,21 @@ const pageRow = (
 ) => ({ keys: [query, page], clicks: 1, impressions, ctr: 0.01, position });
 
 describe("buildStrikingDistanceRows", () => {
-  it("keeps only positions 5..20 and sorts by impressions desc", () => {
+  it("keeps positions 5..20 inclusive and sorts by impressions desc", () => {
     const rows = buildStrikingDistanceRows([
       row("top-spot", 2, 900),
+      row("low-edge", 5, 10),
       row("close", 6.4, 100),
       row("closer", 11, 400),
+      row("high-edge", 20, 20),
       row("page-3", 24, 800),
     ]);
-    expect(rows.map((r) => r.query)).toEqual(["closer", "close"]);
-  });
-
-  it("includes the boundary positions and respects the limit", () => {
-    const rows = buildStrikingDistanceRows(
-      [row("low-edge", 5, 10), row("high-edge", 20, 20)],
-      1,
-    );
-    expect(rows).toHaveLength(1);
-    expect(rows[0].query).toBe("high-edge");
-  });
-
-  it("drops rows without both query and page keys", () => {
-    const rows = buildStrikingDistanceRows([
-      {
-        keys: ["only-query"],
-        clicks: 1,
-        impressions: 50,
-        ctr: 0.02,
-        position: 8,
-      },
+    expect(rows.map((r) => r.query)).toEqual([
+      "closer",
+      "close",
+      "high-edge",
+      "low-edge",
     ]);
-    expect(rows).toHaveLength(0);
   });
 
   it("drops a query whose top page already ranks above the band", () => {
@@ -124,17 +84,16 @@ describe("buildStrikingDistanceRows", () => {
 });
 
 describe("previousPeriod", () => {
-  it("returns the same-length window ending the day before the start", () => {
-    expect(previousPeriod("2026-06-01", "2026-06-28")).toEqual({
-      startDate: "2026-05-04",
-      endDate: "2026-05-31",
-    });
-  });
-
-  it("handles a single-day range", () => {
-    expect(previousPeriod("2026-06-10", "2026-06-10")).toEqual({
-      startDate: "2026-06-09",
-      endDate: "2026-06-09",
-    });
-  });
+  it.each([
+    ["2026-06-01", "2026-06-28", "2026-05-04", "2026-05-31"],
+    ["2026-06-10", "2026-06-10", "2026-06-09", "2026-06-09"],
+  ])(
+    "returns the same-length window ending the day before %s..%s",
+    (startDate, endDate, prevStart, prevEnd) => {
+      expect(previousPeriod(startDate, endDate)).toEqual({
+        startDate: prevStart,
+        endDate: prevEnd,
+      });
+    },
+  );
 });

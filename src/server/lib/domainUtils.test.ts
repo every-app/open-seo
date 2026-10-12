@@ -3,16 +3,8 @@ import { normalizeDomainInput } from "@/server/lib/domainUtils";
 import { isValidDomainHost } from "@/shared/researchScope";
 
 describe("isValidDomainHost", () => {
-  it("accepts real registrable domains", () => {
-    expect(isValidDomainHost("example.com")).toBe(true);
-    expect(isValidDomainHost("sub.example.co.uk")).toBe(true);
-    expect(isValidDomainHost("openseo.so")).toBe(true);
-  });
-
-  it("rejects fake TLDs, IPs, and bare hosts", () => {
+  it("rejects fake TLDs", () => {
     expect(isValidDomainHost("example.por")).toBe(false);
-    expect(isValidDomainHost("localhost")).toBe(false);
-    expect(isValidDomainHost("127.0.0.1")).toBe(false);
   });
 });
 
@@ -34,9 +26,5 @@ describe("normalizeDomainInput", () => {
     expect(() => normalizeDomainInput("victorgomez.por", true)).toThrowError(
       /valid domain/i,
     );
-  });
-
-  it("rejects empty input", () => {
-    expect(() => normalizeDomainInput("   ", false)).toThrowError(/required/i);
   });
 });

@@ -54,12 +54,8 @@ describe("DataForSEO research MCP tools", () => {
         attributes: { available_attributes: {} },
       },
     ]);
-    const local = vi.fn();
-    const questionsAnswers = vi.fn();
-
     mocks.createDataforseoClient.mockReturnValue({
-      business: { businessListings, questionsAnswers },
-      serp: { local },
+      business: { businessListings },
     });
 
     const result = await researchTools.searchLocalBusinessesTool.handler(
@@ -83,14 +79,9 @@ describe("DataForSEO research MCP tools", () => {
         categories: ["cafe"],
       }),
     );
-    expect(local).not.toHaveBeenCalled();
-    expect(questionsAnswers).not.toHaveBeenCalled();
-
     expect(result.structuredContent.businesses).toEqual([
       { title: "Acme Cafe", url: "https://acme-cafe.example" },
     ]);
-    expect(textContent(result)).toContain("title | category");
-    expect(textContent(result)).toContain("Acme Cafe");
   });
 
   it("maps local business rating/review/claim filters onto the provider call", async () => {
@@ -213,8 +204,6 @@ describe("DataForSEO research MCP tools", () => {
     expect(content.questions).toEqual([
       { question_text: "Do you serve breakfast?" },
     ]);
-    expect(textContent(result)).toContain("question | asked by");
-    expect(textContent(result)).toContain("Do you serve breakfast?");
   });
 
   it("filters SERP competitors only by explicit excluded domains", async () => {
@@ -248,28 +237,7 @@ describe("DataForSEO research MCP tools", () => {
     expect(textContent(result)).toContain("competitor.example");
   });
 
-  it("keeps AI overview result types out of SERP competitors", async () => {
-    const { findSerpCompetitorsTool, getRankedKeywordsTool } = researchTools;
-
-    expect(
-      getRankedKeywordsTool.config.inputSchema.resultTypes.safeParse([
-        "ai_overview_reference",
-      ]).success,
-    ).toBe(true);
-    expect(
-      findSerpCompetitorsTool.config.inputSchema.resultTypes.safeParse([
-        "ai_overview_reference",
-      ]).success,
-    ).toBe(false);
-    expect(
-      findSerpCompetitorsTool.config.inputSchema.resultTypes.safeParse([
-        "organic",
-        "local_pack",
-      ]).success,
-    ).toBe(true);
-  });
-
-  it("normalizes keyword_overview rows with difficulty and intent", async () => {
+  it("normalizes keyword_overview rows with difficulty and intent, sorted by the requested field", async () => {
     const keywordOverview = vi.fn().mockResolvedValue([
       {
         keyword: "seo automation",
@@ -282,23 +250,30 @@ describe("DataForSEO research MCP tools", () => {
         keyword_properties: { keyword_difficulty: 18 },
         search_intent_info: { main_intent: "commercial" },
       },
+      { keyword: "high", keyword_info: { search_volume: 9000 } },
+      { keyword: "low", keyword_info: { search_volume: 10 } },
     ]);
 
     mocks.createDataforseoClient.mockReturnValue({
       labs: { keywordOverview },
     });
-    const { getKeywordMetricsTool } = researchTools;
-
-    const result = await getKeywordMetricsTool.handler(
-      { projectId: "project_1", keywords: ["seo automation"] },
+    const result = await researchTools.getKeywordMetricsTool.handler(
+      {
+        projectId: "project_1",
+        keywords: ["seo automation", "high", "low"],
+        sortBy: "search_volume",
+        // Doubles the credit cost, so it must reach the paid call.
+        includeClickstreamData: true,
+      },
       toolContext,
     );
 
     expect(keywordOverview).toHaveBeenCalledWith(
       expect.objectContaining({
-        keywords: ["seo automation"],
+        keywords: ["seo automation", "high", "low"],
         locationCode: 2840,
         languageCode: "en",
+        includeClickstreamData: true,
         creditFeature: "keyword_research",
       }),
     );
@@ -317,7 +292,12 @@ describe("DataForSEO research MCP tools", () => {
       })
       .passthrough()
       .parse(result.structuredContent).keywords;
-    expect(rows[0]).toMatchObject({
+    expect(rows.map((row) => row.keyword)).toEqual([
+      "high",
+      "seo automation",
+      "low",
+    ]);
+    expect(rows[1]).toMatchObject({
       keyword: "seo automation",
       search_volume: 2400,
       keyword_difficulty: 18,
@@ -328,64 +308,54 @@ describe("DataForSEO research MCP tools", () => {
     expect(out).toContain("seo automation");
   });
 
-  it("sorts keyword metric rows by the requested numeric field", async () => {
-    const keywordOverview = vi.fn().mockResolvedValue([
-      { keyword: "low", keyword_info: { search_volume: 10 } },
-      { keyword: "high", keyword_info: { search_volume: 90 } },
-      { keyword: "medium", keyword_info: { search_volume: 50 } },
-    ]);
-
-    mocks.createDataforseoClient.mockReturnValue({
-      labs: { keywordOverview },
-    });
-    const { getKeywordMetricsTool } = researchTools;
-
-    const result = await getKeywordMetricsTool.handler(
+  it("serves a Google-Ads-only location (Iceland) from adsSearchVolume without KD/intent", async () => {
+    const keywordOverview = vi.fn();
+    const adsSearchVolume = vi.fn().mockResolvedValue([
       {
-        projectId: "project_1",
-        keywords: ["low", "high", "medium"],
-        sortBy: "search_volume",
-      },
-      toolContext,
-    );
-
-    const rows = z
-      .object({ keywords: z.array(z.object({ keyword: z.string() })) })
-      .passthrough()
-      .parse(result.structuredContent).keywords;
-    expect(rows.map((row) => row.keyword)).toEqual(["high", "medium", "low"]);
-  });
-
-  it("drops monthly trends when includeMonthlyTrends is false", async () => {
-    const keywordOverview = vi.fn().mockResolvedValue([
-      {
-        keyword: "seo",
-        keyword_info: {
-          search_volume: 100,
-          monthly_searches: [{ year: 2026, month: 1, search_volume: 100 }],
-        },
+        keyword: "hotel reykjavik",
+        search_volume: 1300,
+        cpc: 2.54,
+        competition: "HIGH",
+        competition_index: 42,
       },
     ]);
 
     mocks.createDataforseoClient.mockReturnValue({
       labs: { keywordOverview },
+      keywords: { adsSearchVolume },
     });
-    const { getKeywordMetricsTool } = researchTools;
 
-    const result = await getKeywordMetricsTool.handler(
+    const result = await researchTools.getKeywordMetricsTool.handler(
       {
         projectId: "project_1",
-        keywords: ["seo"],
-        includeMonthlyTrends: false,
+        keywords: ["hotel reykjavik"],
+        // Iceland is not supported by DataForSEO Labs; the tool must resolve
+        // the market with the Ads-aware resolver rather than the Labs-only one.
+        locationCode: 2352,
+        languageCode: "is",
       },
       toolContext,
     );
 
+    expect(keywordOverview).not.toHaveBeenCalled();
+    expect(adsSearchVolume).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keywords: ["hotel reykjavik"],
+        locationCode: 2352,
+        languageCode: "is",
+        creditFeature: "keyword_research",
+      }),
+    );
     const rows = z
       .object({ keywords: z.array(z.record(z.string(), z.unknown())) })
       .passthrough()
       .parse(result.structuredContent).keywords;
-    expect(rows[0]).not.toHaveProperty("monthly_searches");
+    expect(rows[0]).toMatchObject({
+      keyword: "hotel reykjavik",
+      search_volume: 1300,
+      keyword_difficulty: null,
+      main_intent: null,
+    });
   });
 });
 

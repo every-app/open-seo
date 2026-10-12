@@ -9,25 +9,14 @@ const fresh: DashboardActivation = {
   googleAds: { connected: false, customerDescriptiveName: null },
   mcp: { authorizedAt: null, firstToolCallAt: null, cardDismissedAt: null },
   competitorClickedAt: null,
+  keywordsClickedAt: null,
+  hasAudit: false,
   hasMultipleProjects: false,
   hasTeammate: false,
   dismissedSteps: [],
 };
 
 describe("dashboard checklist", () => {
-  it("starts with the website and has no SAM chat step", () => {
-    expect(setupSteps.map((step) => step.id)).toEqual([
-      "domain",
-      "project",
-      "competitor",
-      "mcp",
-      "gsc",
-      "team",
-    ]);
-    expect(
-      setupSteps.every((step) => getStepStatus(fresh, step.id) === "todo"),
-    ).toBe(true);
-  });
   it("does not count skipped steps as completed", () => {
     expect(
       getStepStatus({ ...fresh, dismissedSteps: ["project"] }, "project"),
@@ -42,20 +31,16 @@ describe("dashboard checklist", () => {
   it("recognizes setup completed elsewhere even after skipping it", () => {
     const complete: DashboardActivation = {
       ...fresh,
-      domain: "example.com",
       hasMultipleProjects: true,
       hasTeammate: true,
+      hasAudit: true,
       competitorClickedAt: "2026-09-05",
-      gsc: { connected: true, siteUrl: "sc-domain:example.com" },
+      keywordsClickedAt: "2026-09-05",
       mcp: { ...fresh.mcp, firstToolCallAt: "2026-09-05" },
       dismissedSteps: setupSteps.map((step) => step.id),
     };
     expect(
       setupSteps.every((step) => getStepStatus(complete, step.id) === "done"),
     ).toBe(true);
-  });
-  it("makes disconnected and no-longer-completed steps available again", () => {
-    expect(getStepStatus(fresh, "gsc")).toBe("todo");
-    expect(getStepStatus(fresh, "team")).toBe("todo");
   });
 });

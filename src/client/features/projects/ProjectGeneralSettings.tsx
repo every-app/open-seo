@@ -1,135 +1,159 @@
-import * as React from "react";
+import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { z } from "zod";
+import { revalidateLogic } from "@tanstack/react-form";
+import { useAppForm } from "@/client/components/form/useAppForm";
+import { InlineConfirm } from "@/client/components/InlineConfirm";
+import { SectionHeader } from "@/client/components/PageHeader";
+import { QueryError, QueryState } from "@/client/components/QueryState";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   clearLastProjectId,
   getLastProjectId,
 } from "@/client/lib/active-project";
-import {
-  archiveProject,
-  getProjects,
-  updateProject,
-} from "@/serverFunctions/projects";
+import { toastInitialAudit } from "@/client/features/projects/initialAuditToast";
+import { archiveProject, updateProject } from "@/serverFunctions/projects";
 import type { ProjectSummary } from "./types";
 
 export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: () => getProjects(),
-  });
-  const projects = projectsQuery.data ?? [];
-  const project = projects.find((entry) => entry.id === projectId) ?? null;
-
-  if (!project) {
-    return (
-      <div className="flex justify-center py-10">
-        <span className="loading loading-spinner loading-md" />
-      </div>
-    );
-  }
+  const projectsQuery = useQuery(projectsQueryOptions());
 
   return (
-    <div className="space-y-8">
-      {/* key resets the form's local state when switching between projects */}
-      <GeneralSection key={project.id} project={project} />
-      <DangerSection project={project} canArchive={projects.length > 1} />
-    </div>
+    <QueryState
+      query={projectsQuery}
+      errorFallback="Failed to load the project"
+    >
+      {(projects) => {
+        const project = projects.find((entry) => entry.id === projectId);
+        if (!project) {
+          return <QueryError fallback="This project was not found." />;
+        }
+        return (
+          <div className="space-y-8">
+            {/* key resets the form's local state when switching between projects */}
+            <GeneralSection key={project.id} project={project} />
+            <DangerSection project={project} canArchive={projects.length > 1} />
+          </div>
+        );
+      }}
+    </QueryState>
   );
 }
 
+const generalSchema = z.object({
+  name: z.string().trim().min(1, "Enter a project name."),
+  domain: z.string(),
+  market: z.object({ locationCode: z.number(), languageCode: z.string() }),
+});
+
 function GeneralSection({ project }: { project: ProjectSummary }) {
   const queryClient = useQueryClient();
-  const [name, setName] = React.useState(project.name);
-  const [domain, setDomain] = React.useState(project.domain ?? "");
-  const [market, setMarket] = React.useState({
-    locationCode: project.locationCode,
-    languageCode: project.languageCode,
-  });
 
   const updateMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (values: z.infer<typeof generalSchema>) =>
       updateProject({
         data: {
           projectId: project.id,
-          name: name.trim(),
-          domain: domain.trim() || undefined,
-          ...market,
+          name: values.name.trim(),
+          domain: values.domain.trim() || undefined,
+          ...values.market,
         },
       }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+    onSuccess: async (saved) => {
+      await queryClient.invalidateQueries({
+        queryKey: projectsQueryOptions().queryKey,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboardActivation", project.id],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboardOverview", project.id],
+      });
       toast.success("Project updated");
+      toastInitialAudit(saved.initialAudit);
     },
-    onError: (error) =>
-      toast.error(getStandardErrorMessage(error, "Failed to update project")),
   });
 
-  const isDirty =
-    name.trim() !== project.name ||
-    (domain.trim() || "") !== (project.domain ?? "") ||
-    market.locationCode !== project.locationCode ||
-    market.languageCode !== project.languageCode;
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (updateMutation.isPending) return;
-    if (!name.trim()) {
-      toast.error("Project name is required");
-      return;
-    }
-    updateMutation.mutate();
-  };
+  const form = useAppForm({
+    defaultValues: {
+      name: project.name,
+      domain: project.domain ?? "",
+      market: {
+        locationCode: project.locationCode,
+        languageCode: project.languageCode,
+      },
+    },
+    validationLogic: revalidateLogic(),
+    validators: { onDynamic: generalSchema },
+    onSubmit: async ({ value, formApi }) => {
+      await updateMutation.mutateAsync(value);
+      // The saved values are the new baseline, so Save disables again. An edit
+      // made while the save ran replaces the values object, and then the form
+      // keeps that edit and Save stays on.
+      if (formApi.state.values === value) formApi.reset(value);
+    },
+  });
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-base-content/50">General</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Name</span>
-          <input
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            maxLength={120}
-            className="input input-bordered w-full"
-          />
-        </label>
+      <SectionHeader title="General" />
+      <form.AppForm>
+        <form.Form className="flex flex-col gap-4">
+          <form.AppField name="name">
+            {(field) => (
+              <field.TextField label="Name" maxLength={120} required />
+            )}
+          </form.AppField>
 
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">
-            Domain <span className="text-base-content/50">(optional)</span>
-          </span>
-          <input
-            type="text"
-            value={domain}
-            onChange={(event) => setDomain(event.target.value)}
-            placeholder="example.com"
-            maxLength={255}
-            className="input input-bordered w-full"
-          />
-        </label>
+          <p className="text-sm text-muted-foreground">
+            Adding your website starts a 50-page scan with JavaScript rendering.
+            Rendering uses your credits.
+          </p>
+          <form.AppField name="domain">
+            {(field) => (
+              <field.TextField
+                label={
+                  <>
+                    Domain{" "}
+                    <span className="font-normal text-muted-foreground">
+                      (optional)
+                    </span>
+                  </>
+                }
+                placeholder="example.com"
+                maxLength={255}
+              />
+            )}
+          </form.AppField>
 
-        <div className="flex flex-col gap-1.5">
-          <ProjectMarketFields value={market} onChange={setMarket} />
-          <span className="text-xs text-base-content/50">
-            Keyword, SERP, and domain data uses this country and language unless
-            a call asks for a different one.
-          </span>
-        </div>
+          <div className="flex flex-col gap-1.5">
+            <form.Field name="market">
+              {(field) => (
+                <ProjectMarketFields
+                  value={field.state.value}
+                  onChange={field.handleChange}
+                />
+              )}
+            </form.Field>
+            <span className="text-xs text-muted-foreground">
+              Keyword, SERP, and domain data uses this country and language
+              unless a call asks for a different one.
+            </span>
+          </div>
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm"
-            disabled={updateMutation.isPending || !isDirty}
-          >
-            Save changes
-          </button>
-        </div>
-      </form>
+          <div className="flex justify-end">
+            <form.Subscribe selector={(state) => state.isDefaultValue}>
+              {(isDefaultValue) => (
+                <form.SubmitButton disabled={isDefaultValue}>
+                  Save changes
+                </form.SubmitButton>
+              )}
+            </form.Subscribe>
+          </div>
+        </form.Form>
+      </form.AppForm>
     </section>
   );
 }
@@ -143,73 +167,39 @@ function DangerSection({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [confirming, setConfirming] = React.useState(false);
-
   const archiveMutation = useMutation({
     mutationFn: () => archiveProject({ data: { projectId: project.id } }),
     onSuccess: async () => {
       if (getLastProjectId() === project.id) clearLastProjectId();
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({
+        queryKey: projectsQueryOptions().queryKey,
+      });
       toast.success("Project archived");
       // Re-resolve to a remaining project via the landing redirect.
       void navigate({ to: "/" });
     },
-    onError: (error) =>
-      toast.error(getStandardErrorMessage(error, "Failed to archive project")),
   });
 
   return (
-    <section className="space-y-3 border-t border-base-300 pt-8">
-      <h2 className="text-sm font-medium text-base-content/50">
-        Archive project
-      </h2>
-
-      {confirming ? (
-        <div className="space-y-3">
-          <p className="text-sm text-base-content/70">
-            Archiving{" "}
-            <span className="font-medium text-base-content">
-              {project.name}
-            </span>{" "}
-            removes it from your workspace and stops its scheduled rank
-            tracking. You can restore it later from the Projects page.
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="btn btn-error btn-sm"
-              onClick={() => archiveMutation.mutate()}
-              disabled={archiveMutation.isPending}
-            >
-              Yes, archive project
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => setConfirming(false)}
-              disabled={archiveMutation.isPending}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-base-content/60">
-            {canArchive
-              ? "Archive this project to remove it from your organization."
-              : "You can't archive your only project."}
-          </p>
-          <button
-            type="button"
-            className="btn btn-outline btn-error btn-sm shrink-0"
-            onClick={() => setConfirming(true)}
+    <section className="space-y-3 border-t border-border pt-8">
+      <SectionHeader title="Archive project" />
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm text-muted-foreground">
+          {canArchive
+            ? "Archiving removes the project from your workspace and stops its scheduled rank tracking. You can restore it later from the Projects page."
+            : "You can't archive your only project."}
+        </p>
+        <div className="flex shrink-0 gap-2">
+          <InlineConfirm
+            label={`Archive ${project.name}`}
+            triggerLabel="Archive project"
+            confirmLabel="Yes, archive project"
+            pending={archiveMutation.isPending}
             disabled={!canArchive}
-          >
-            Archive project
-          </button>
+            onConfirm={() => archiveMutation.mutate()}
+          />
         </div>
-      )}
+      </div>
     </section>
   );
 }

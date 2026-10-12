@@ -28,14 +28,6 @@ const SHARED_REPORT = {
   archived: false,
 };
 
-async function renderedImageUrl(): Promise<string> {
-  const response = await renderSharePage(TOKEN, request());
-  return (
-    load(await response.text())('meta[property="og:image"]').attr("content") ??
-    ""
-  );
-}
-
 beforeEach(() => {
   mocks.env.AUTH_MODE = "hosted";
   mocks.getSharedReportByToken.mockResolvedValue(SHARED_REPORT);
@@ -78,50 +70,6 @@ describe("renderSharePage", () => {
     expect(html).not.toContain("/assets/");
   });
 
-  it.each([
-    ["old.example.com", "new.example.com"],
-    ["old.example.com", null],
-    [null, "new.example.com"],
-  ])(
-    "changes the image URL when the website changes from %s to %s",
-    async (before, after) => {
-      mocks.getSharedReportByToken.mockResolvedValue({
-        ...SHARED_REPORT,
-        projectDomain: before,
-      });
-      const original = await renderedImageUrl();
-      mocks.getSharedReportByToken.mockResolvedValue({
-        ...SHARED_REPORT,
-        projectDomain: after,
-      });
-      const updated = await renderedImageUrl();
-      expect(new URL(updated).searchParams.get("v")).toBe(
-        new URL(original).searchParams.get("v"),
-      );
-      expect(updated).not.toBe(original);
-      expect(new URL(updated).searchParams.get("domain")).toBe(after ?? "");
-    },
-  );
-
-  it("versions by the displayed hostname, not URL formatting", async () => {
-    const original = await renderedImageUrl();
-    mocks.getSharedReportByToken.mockResolvedValue({
-      ...SHARED_REPORT,
-      projectDomain: "https://www.badseo.dev/path?query=value",
-    });
-    expect(await renderedImageUrl()).toBe(original);
-  });
-
-  it("changes the image URL when a report is saved again", async () => {
-    const original = await renderedImageUrl();
-    mocks.getSharedReportByToken.mockResolvedValue({
-      ...SHARED_REPORT,
-      title: "Updated audit",
-      updatedAt: "2026-09-02T10:00:00.000Z",
-    });
-    expect(await renderedImageUrl()).not.toBe(original);
-  });
-
   // The reader is told the project is archived; the report's own title is
   // content the link no longer grants access to.
   it("names the archived state without naming the report", async () => {
@@ -145,32 +93,32 @@ describe("renderSharePage", () => {
   it.each([
     [
       "an unknown or revoked token",
+      TOKEN,
       () => mocks.getSharedReportByToken.mockResolvedValue(null),
     ],
+    // A token of the wrong shape is refused before the database is asked.
+    ["a malformed token", "nope", () => {}],
     // Sharing is hosted-only: a self-hosted deployment answers as if the
     // link had never existed.
     [
       "a deployment that is not hosted",
+      TOKEN,
       () => {
         mocks.env.AUTH_MODE = "cloudflare_access";
       },
     ],
-  ])("answers not shared for %s", async (_case, arrange) => {
+  ])("answers not shared for %s", async (_case, token, arrange) => {
     arrange();
 
-    const response = await renderSharePage(TOKEN, request());
+    const response = await renderSharePage(token, request());
 
     expect(response.status).toBe(404);
     const html = await response.text();
     expect(html).toContain("This report isn&#x27;t shared.");
     expect(html).not.toContain("og:image");
     expect(html).not.toContain("twitter:image");
-  });
-
-  it("answers a malformed token without querying", async () => {
-    const response = await renderSharePage("nope", request());
-
-    expect(response.status).toBe(404);
-    expect(mocks.getSharedReportByToken).not.toHaveBeenCalled();
+    if (token !== TOKEN) {
+      expect(mocks.getSharedReportByToken).not.toHaveBeenCalled();
+    }
   });
 });

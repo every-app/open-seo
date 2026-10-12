@@ -9,6 +9,7 @@ import {
 
 export const startAuditSchema = z.object({
   projectId: z.string().min(1),
+  renderJavaScript: z.boolean().optional().default(false),
   startUrl: z.string().min(1, "URL is required").max(2048),
   maxPages: z
     .number()
@@ -50,5 +51,7 @@ const auditTabs = ["issues", "pages", "performance"] as const;
 
 export const auditSearchSchema = z.object({
   auditId: z.string().optional().catch(undefined),
+  // Pre-fills the launch form (the dashboard's "Audit your site" step).
+  url: z.string().optional().catch(undefined),
   tab: z.enum(auditTabs).catch("issues").default("issues"),
 });

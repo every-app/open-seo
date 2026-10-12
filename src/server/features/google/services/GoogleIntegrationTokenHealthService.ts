@@ -101,13 +101,12 @@ function redactedTokenSubjectHash(accountId: string | null): string | null {
 }
 
 async function probeRefreshToken(input: ProbeInput): Promise<void> {
-  const { getAuth } = await import("@/lib/auth");
-  await getAuth().api.getAccessToken({
-    body: {
-      providerId: input.providerId,
-      userId: input.connectedByUserId,
-      ...(input.accountId ? { accountId: input.accountId } : {}),
-    },
+  const { getGoogleAccessToken } =
+    await import("@/server/features/google/googleOAuth");
+  await getGoogleAccessToken({
+    providerId: input.providerId,
+    userId: input.connectedByUserId,
+    ...(input.accountId ? { accountId: input.accountId } : {}),
   });
 }
 

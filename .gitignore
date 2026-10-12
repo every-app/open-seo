@@ -41,6 +41,7 @@ dist-sourcemaps/
 # Local Claude config (skills are shared)
 .claude/*
 !.claude/skills/
+!.claude/CLAUDE.md
 
 # Alchemy local state + bundle artifacts (SaaS deploys)
 .alchemy/
