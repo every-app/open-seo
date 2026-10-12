@@ -287,22 +287,34 @@ describe("Google OAuth grants", () => {
     ]);
   });
 
-  it("updates a Google Ads grant in place on re-consent, keeping its refresh token", async () => {
-    mocks.fetch.mockResolvedValue(
+  it("keeps one Google Ads grant when two first consents race, and its refresh token on re-consent", async () => {
+    mocks.fetch.mockImplementation(async () =>
       tokenResponse({
         access_token: "first",
         refresh_token: "refresh-1",
         id_token: idToken,
       }),
     );
-    await callback(
-      oauth.GOOGLE_ADS_INTEGRATION,
-      await authorizationState(oauth.GOOGLE_ADS_INTEGRATION),
-      { code: "code-1" },
+    // The partial unique index does not cover google-ads rows, so only the
+    // grant's own id can stop a second row. The trigger stands in for another
+    // callback saving the same grant between this one's update and insert.
+    await client.execute(
+      `CREATE TRIGGER racing_callback BEFORE INSERT ON account WHEN NEW.provider_id = 'google-ads' BEGIN
+         INSERT INTO account (id, account_id, provider_id, user_id, access_token, updated_at)
+         VALUES (NEW.provider_id || ':' || NEW.user_id || ':' || NEW.account_id, NEW.account_id, NEW.provider_id, NEW.user_id, 'racer', 0);
+       END`,
     );
+    try {
+      await callback(
+        oauth.GOOGLE_ADS_INTEGRATION,
+        await authorizationState(oauth.GOOGLE_ADS_INTEGRATION),
+        { code: "code-1" },
+      );
+    } finally {
+      await client.execute("DROP TRIGGER IF EXISTS racing_callback");
+    }
 
-    // The partial unique index does not cover google-ads rows, so nothing but
-    // the grant code stops a second consent from adding a second row.
+    // Google omits the refresh token when the user already consented once.
     mocks.fetch.mockImplementation(async () =>
       tokenResponse({ access_token: "second", id_token: idToken }),
     );

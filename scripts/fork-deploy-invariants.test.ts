@@ -117,19 +117,28 @@ describe("shipped migrations", () => {
   it.each([
     { dir: "drizzle/sqlite", from: 49 },
     { dir: "drizzle/pg", from: 27 },
-  ])("$dir: journal matches its files and stays in date order", (flavor) => {
-    const entries = readJournal(flavor.dir);
-    expect(entries.map((entry) => entry.idx)).toEqual(
-      entries.map((_, index) => index),
-    );
-    expect(entries.map((entry) => entry.tag).sort()).toEqual(
-      migrationFiles(flavor.dir),
-    );
-    for (const entry of entries.slice(flavor.from)) {
-      const earlier = entries.slice(0, entry.idx).map((prev) => prev.when);
-      expect(entry.when, entry.tag).toBeGreaterThan(Math.max(...earlier));
-    }
-  });
+  ])(
+    "$dir: journal matches its files, in date order, with no migration twice",
+    (flavor) => {
+      const entries = readJournal(flavor.dir);
+      expect(entries.map((entry) => entry.idx)).toEqual(
+        entries.map((_, index) => index),
+      );
+      expect(entries.map((entry) => entry.tag).sort()).toEqual(
+        migrationFiles(flavor.dir),
+      );
+      for (const entry of entries.slice(flavor.from)) {
+        const earlier = entries.slice(0, entry.idx).map((prev) => prev.when);
+        expect(entry.when, entry.tag).toBeGreaterThan(Math.max(...earlier));
+      }
+      // A shipped migration arriving again under upstream's own number is a new
+      // file name to wrangler, which would run its statements a second time.
+      const bodies = migrationFiles(flavor.dir).map((name) =>
+        readFileSync(`${flavor.dir}/${name}.sql`, "utf8").trim(),
+      );
+      expect(new Set(bodies).size).toBe(bodies.length);
+    },
+  );
 });
 
 // Railway builds the service from `Dockerfile.selfhost` at the repo root, the

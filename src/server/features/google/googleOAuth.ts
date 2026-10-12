@@ -158,15 +158,16 @@ async function upsertGrant(input: {
   // and Analytics grants only, so a Google Ads grant is updated in place.
   if (input.integration.provider === "gads") {
     const { refreshToken, ...values } = accountValues;
+    const changes = {
+      ...values,
+      // Google may omit the refresh token on a later consent; keep the
+      // stored one.
+      ...(refreshToken ? { refreshToken } : {}),
+      updatedAt: new Date(),
+    };
     const updated = await db
       .update(account)
-      .set({
-        ...values,
-        // Google may omit the refresh token on a later consent; keep the
-        // stored one.
-        ...(refreshToken ? { refreshToken } : {}),
-        updatedAt: new Date(),
-      })
+      .set(changes)
       .where(
         and(
           eq(account.userId, input.userId),
@@ -176,12 +177,17 @@ async function upsertGrant(input: {
       )
       .returning({ id: account.id });
     if (updated.length > 0) return;
-    await db.insert(account).values({
-      id: crypto.randomUUID(),
-      ...accountValues,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    // A first grant gets an id derived from its owner, so two callbacks that
+    // finish together meet on the primary key rather than both inserting.
+    await db
+      .insert(account)
+      .values({
+        id: `${input.integration.providerId}:${input.userId}:${input.googleAccountId}`,
+        ...accountValues,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({ target: account.id, set: changes });
     return;
   }
   await db
