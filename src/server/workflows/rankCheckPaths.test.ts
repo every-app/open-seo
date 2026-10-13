@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   rankCheckTaskPost: vi.fn(),
   insertSnapshots: vi.fn(),
   getSnapshotsForRun: vi.fn(),
+  getRankedHistoryForConfig: vi.fn(),
   setRunErrorIfEmpty: vi.fn(),
   updateRun: vi.fn(),
 }));
@@ -38,11 +39,11 @@ vi.mock("@/server/lib/dataforseo", () => ({
 
 type CheckContext = Parameters<typeof runLiveCheck>[1];
 
-const rankResult = (position: number | null) => ({
+const rankResult = (position: number | null, url: string | null = null) => ({
   keywordId: "kw_0",
   keyword: "kw_0",
   position,
-  url: null,
+  url,
   serpFeatures: [],
 });
 
@@ -55,6 +56,7 @@ function checkContext(overrides: Partial<CheckContext> = {}): CheckContext {
         rankCheckTaskPost: mocks.rankCheckTaskPost,
       },
     } as unknown as CheckContext["client"],
+    configId: "config_1",
     keywords: [{ id: "kw_0", keyword: "kw_0" }],
     devices: "mobile",
     serpDepth: 40,
@@ -175,9 +177,9 @@ const LOCALIZED_PAGE =
   '</path><circle cx="12" cy="9" r="2.5"></circle></svg></span></span></span><span><span class="V8fWH"><div></div></span><span class="BBwThe">Ellensburg, WA</span></span></div><div class="eakexd EpKMFb"><span class="JIFdL" aria-hidden="true">&nbsp;&#8729; </span><a class="N5az4b" href="#" role="button" tabindex="0"><span class="nh8Ece">Choose area</span></a><span id="tsuid_s2PNatOMLvKJ9u8PvtOYyQs_27"><div jsaction="yL';
 const ready = (...pages: string[]) => ({ status: "ready" as const, pages });
 
-const completedAt = (position: number) => ({
+const completedAt = (position: number | null, url: string | null = null) => ({
   status: "completed" as const,
-  result: rankResult(position),
+  result: rankResult(position, url),
 });
 
 async function runQueued(validateSerps = true) {
@@ -196,6 +198,7 @@ describe("validated queued rank checks", () => {
         tasks.map((task) => ({ ...task, taskId: `task_${++nextTask}` })),
     );
     mocks.getSnapshotsForRun.mockResolvedValue([]);
+    mocks.getRankedHistoryForConfig.mockResolvedValue([]);
     vi.mocked(fetchRankCheckTaskResult).mockResolvedValue(completedAt(1));
     vi.mocked(fetchRankCheckTaskHtml).mockResolvedValue(ready(LOCALIZED_PAGE));
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -267,6 +270,62 @@ describe("validated queued rank checks", () => {
 
     expect(mocks.insertSnapshots).toHaveBeenCalledTimes(1);
     expect(stats).toMatchObject({ validated: 1, withheld: 0 });
+  });
+
+  // The page looks precise, so only the pair's own history can catch it.
+  it("recrawls a reading that falls off the pair's recent history and stores the one that fits", async () => {
+    mocks.getRankedHistoryForConfig.mockResolvedValue([
+      {
+        trackingKeywordId: "kw_0",
+        device: "mobile",
+        position: 1,
+        url: "https://www.example.com/",
+      },
+    ]);
+    vi.mocked(fetchRankCheckTaskResult)
+      .mockResolvedValueOnce(completedAt(null))
+      .mockResolvedValueOnce(completedAt(2, "https://www.example.com/"));
+
+    const stats = await runQueued();
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
+    expect(mocks.insertSnapshots).toHaveBeenCalledExactlyOnceWith([
+      expect.objectContaining({ position: 2 }),
+    ]);
+    expect(stats).toMatchObject({
+      historySuspect: 1,
+      reposted: 1,
+      withheld: 0,
+    });
+  });
+
+  it("holds a different page ranking below the pair's usual one", async () => {
+    mocks.getRankedHistoryForConfig.mockResolvedValue([
+      {
+        trackingKeywordId: "kw_0",
+        device: "mobile",
+        position: 1,
+        url: "https://www.example.com/",
+      },
+    ]);
+    vi.mocked(fetchRankCheckTaskResult).mockResolvedValue(
+      completedAt(2, "https://www.example.com/small-business-lawyer"),
+    );
+
+    const stats = await runQueued();
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(4);
+    expect(mocks.insertSnapshots).not.toHaveBeenCalled();
+    expect(stats).toMatchObject({ historySuspect: 4, withheld: 1 });
+  });
+
+  it("accepts an unranked reading for a pair with no ranked history", async () => {
+    vi.mocked(fetchRankCheckTaskResult).mockResolvedValue(completedAt(null));
+
+    const stats = await runQueued();
+
+    expect(mocks.insertSnapshots).toHaveBeenCalledTimes(1);
+    expect(stats).toMatchObject({ historySuspect: 0, validated: 1 });
   });
 
   it("stops reposting once the window can no longer collect a new crawl", async () => {

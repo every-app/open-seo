@@ -152,7 +152,7 @@ function heldReadingsNote(stats: QueuedCheckStats | null): string | null {
   if (total === 0) return null;
   const parts = [
     stats.withheld > 0
-      ? `${stats.withheld} with Google's location dropped on every crawl`
+      ? `${stats.withheld} judged a bad page on every crawl`
       : null,
     stats.undelivered > 0
       ? `${stats.undelivered} not delivered or not checkable by the queue in time`
@@ -238,7 +238,7 @@ async function finalizeRankCheckRun(input: {
   // One-line summary per run so fallback rates are visible in Workers Logs.
   // Keys match the PostHog event properties for log/event correlation.
   const queueSummary = input.queueStats
-    ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked} validated=${input.queueStats.validated} location_dropped=${input.queueStats.locationDropped} reposted=${input.queueStats.reposted} withheld=${input.queueStats.withheld} undelivered=${input.queueStats.undelivered} html_unavailable=${input.queueStats.htmlUnavailable}`
+    ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked} validated=${input.queueStats.validated} location_dropped=${input.queueStats.locationDropped} history_suspect=${input.queueStats.historySuspect} reposted=${input.queueStats.reposted} withheld=${input.queueStats.withheld} undelivered=${input.queueStats.undelivered} html_unavailable=${input.queueStats.htmlUnavailable}`
     : "";
   // Error text can echo vendor/user content — keep it one line and bounded.
   const errorSummary = errorMessage
@@ -265,6 +265,7 @@ async function finalizeRankCheckRun(input: {
             fallback_checked: input.queueStats.fallbackChecked,
             validated: input.queueStats.validated,
             location_dropped: input.queueStats.locationDropped,
+            history_suspect: input.queueStats.historySuspect,
             reposted: input.queueStats.reposted,
             withheld: input.queueStats.withheld,
             undelivered: input.queueStats.undelivered,
@@ -393,6 +394,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       try {
         const checkContext = {
           client,
+          configId,
           keywords,
           devices,
           serpDepth,

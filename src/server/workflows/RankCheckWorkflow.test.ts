@@ -200,6 +200,7 @@ describe("rank check finalization", () => {
       fallbackChecked: 0,
       validated: 4,
       locationDropped: 4,
+      historySuspect: 2,
       reposted: 3,
       withheld: 1,
       undelivered: 1,
@@ -214,7 +215,7 @@ describe("rank check finalization", () => {
       expect.objectContaining({
         status: "completed",
         errorMessage:
-          "Held 2 reading(s) at their previous position: 1 with Google's location dropped on every crawl, 1 not delivered or not checkable by the queue in time.",
+          "Held 2 reading(s) at their previous position: 1 judged a bad page on every crawl, 1 not delivered or not checkable by the queue in time.",
       }),
     );
     expect(mocks.updateConfig).toHaveBeenCalled();

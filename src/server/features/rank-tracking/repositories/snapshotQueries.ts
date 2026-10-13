@@ -6,6 +6,7 @@ import {
   eq,
   gte,
   inArray,
+  isNotNull,
   lte,
   max,
   min,
@@ -279,4 +280,44 @@ export async function getEarliestSnapshotsForKeywords(
   }
 
   return allResults;
+}
+
+/**
+ * Every ranked reading (position not null) a config's keywords got in its
+ * last `runLimit` completed runs, newest first. The validated queue path
+ * builds each keyword/device pair's recent-history baseline from it; runs
+ * that held a pair wrote nothing for it, so they do not dilute the history.
+ */
+export async function getRankedHistoryForConfig(
+  configId: string,
+  runLimit = 12,
+) {
+  const recentRunIds = db
+    .select({ id: rankCheckRuns.id })
+    .from(rankCheckRuns)
+    .where(
+      and(
+        eq(rankCheckRuns.configId, configId),
+        eq(rankCheckRuns.status, "completed"),
+      ),
+    )
+    .orderBy(desc(rankCheckRuns.completedAt))
+    .limit(runLimit);
+
+  return db
+    .select({
+      trackingKeywordId: rankSnapshots.trackingKeywordId,
+      device: rankSnapshots.device,
+      position: rankSnapshots.position,
+      url: rankSnapshots.url,
+      checkedAt: rankSnapshots.checkedAt,
+    })
+    .from(rankSnapshots)
+    .where(
+      and(
+        inArray(rankSnapshots.runId, recentRunIds),
+        isNotNull(rankSnapshots.position),
+      ),
+    )
+    .orderBy(desc(rankSnapshots.checkedAt));
 }

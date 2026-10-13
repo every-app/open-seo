@@ -52,6 +52,7 @@ export function mapResultsToSnapshotRows(
 
 export interface CheckContext {
   client: ReturnType<typeof createDataforseoClient>;
+  configId: string;
   keywords: KeywordEntry[];
   devices: RankTrackingConfig["devices"];
   serpDepth: number;
