@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   autumnCheck: vi.fn(),
   createDataforseoClient: vi.fn(),
   runLiveCheck: vi.fn(),
+  runQueuedCheck: vi.fn(),
   failRunIfActive: vi.fn(),
   captureServerEvent: vi.fn(),
   isHostedServerAuthMode: vi.fn(),
@@ -33,7 +34,13 @@ vi.mock("@/server/features/rank-tracking/services/rankCheckRunGuards", () => ({
 }));
 vi.mock("@/server/workflows/rankCheckPaths", () => ({
   runLiveCheck: mocks.runLiveCheck,
-  runQueuedCheck: vi.fn(),
+  SINGLE_ATTEMPT_STEP_CONFIG: {
+    retries: { limit: 0, delay: "1 second" },
+    timeout: "2 minutes",
+  },
+}));
+vi.mock("@/server/workflows/rankCheckQueuedPath", () => ({
+  runQueuedCheck: mocks.runQueuedCheck,
 }));
 vi.mock("@/server/workflows/pgStep", () => ({
   pgStep: (
@@ -76,7 +83,7 @@ const payload = {
   domain: "example.com",
   locationCode: 2840,
   languageCode: "en",
-  devices: "desktop" as const,
+  devices: "desktop" as "both" | "desktop" | "mobile",
   serpDepth: 10,
   trigger: "manual" as const,
 };
@@ -89,7 +96,10 @@ function keywords(count: number) {
 }
 
 function runWorkflow(
-  overrides: Partial<typeof payload> & { maxCostCredits?: number },
+  overrides: Partial<typeof payload> & {
+    maxCostCredits?: number;
+    validateSerps?: boolean;
+  },
 ) {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the mocked base class does not inspect Worker constructor context
   const workflow = new RankCheckWorkflow({} as ExecutionContext, {} as Env);
@@ -174,5 +184,39 @@ describe("rank check finalization", () => {
       }),
     );
     expect(mocks.updateConfig).not.toHaveBeenCalled();
+  });
+
+  // Every keyword has a snapshot here (the other device's), which is exactly
+  // the case a snapshot count would read as a clean run.
+  it("records held readings on a completed validated run", async () => {
+    mocks.getRunById.mockResolvedValue({ ...activeRun, keywordsTotal: 3 });
+    mocks.getSnapshotsForRun.mockResolvedValue(
+      keywords(3).map((kw) => ({ trackingKeywordId: kw.id })),
+    );
+    mocks.runQueuedCheck.mockResolvedValue({
+      queueTasks: 6,
+      queueCollected: 5,
+      fallbackTasks: 0,
+      fallbackChecked: 0,
+      validated: 4,
+      locationDropped: 4,
+      reposted: 3,
+      withheld: 1,
+      undelivered: 1,
+      htmlUnavailable: 0,
+    });
+
+    await runWorkflow({ devices: "both", validateSerps: true });
+
+    expect(mocks.runLiveCheck).not.toHaveBeenCalled();
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({
+        status: "completed",
+        errorMessage:
+          "Held 2 reading(s) at their previous position: 1 with Google's location dropped on every crawl, 1 not delivered or not checkable by the queue in time.",
+      }),
+    );
+    expect(mocks.updateConfig).toHaveBeenCalled();
   });
 });

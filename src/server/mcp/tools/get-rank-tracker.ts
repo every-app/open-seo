@@ -51,7 +51,7 @@ function formatLatestRun(
   if (run.status === "failed")
     return `Latest run: failed — ${run.errorMessage ?? "Unknown error"}`;
   if (run.status === "completed")
-    return `Latest run: ${run.completedAt ?? run.lastCheckedAt ?? "completed"}`;
+    return `Latest run: ${run.completedAt ?? run.lastCheckedAt ?? "completed"}${run.errorMessage ? ` — ${run.errorMessage}` : ""}`;
   return `Latest run: ${run.status}`;
 }
 

@@ -25,7 +25,7 @@ const inputSchema = {
     .boolean()
     .optional()
     .describe(
-      "Check every result against the Google page that produced it and withhold readings where Google dropped the tracker's location, so the keyword keeps its previous position instead of recording a false drop. Runs through DataForSEO's task queue: about a third of the live price, 5 to 20 minutes instead of seconds. English-language trackers only. Default false.",
+      "Check every result against the Google page that produced it and hold readings where Google dropped the tracker's location at their previous position instead of recording a false drop. Runs through DataForSEO's task queue, 5 to 25 minutes instead of seconds; approve the figure from estimate_rank_tracker_cost with validated: true (its four-crawl worst case). English-language, city- or region-level trackers only. Default false.",
     ),
 } as const;
 
@@ -91,7 +91,7 @@ export const runRankTrackerTool = {
 
     return mcpResponse({
       text: args.validated
-        ? `Validated rank check ${result.runId} started for tracker ${args.trackerId}. It runs through the task queue and takes 5 to 20 minutes: poll get_rank_tracker until lastCheckedAt advances. Readings whose page shows Google dropped the location are refetched and otherwise withheld; the run's error line reports how many kept their previous position.`
+        ? `Validated rank check ${result.runId} started for tracker ${args.trackerId}. It runs through the task queue and takes 5 to 25 minutes: poll get_rank_tracker until lastCheckedAt advances. Readings whose page shows Google dropped the location are crawled again and otherwise held at their previous position; get_rank_tracker's latest-run line reports how many were held.`
         : `Rank check ${result.runId} started for tracker ${args.trackerId}. Poll get_rank_tracker until lastCheckedAt advances, then read the updated positions.`,
       meta: buildProjectMeta(context, args.projectId, trackerPath),
       structuredContent: {

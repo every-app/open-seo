@@ -8,7 +8,10 @@ import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
-import { runLiveCheck } from "@/server/workflows/rankCheckPaths";
+import {
+  runLiveCheck,
+  SINGLE_ATTEMPT_STEP_CONFIG,
+} from "@/server/workflows/rankCheckPaths";
 import {
   runQueuedCheck,
   type QueuedCheckStats,
@@ -25,13 +28,11 @@ import {
 import {
   estimateRankCheckCredits,
   rankCheckCostApprovalError,
+  rankCheckMethod,
+  type RankCheckMethod,
+  VALIDATED_CRAWLS_PER_PAIR,
 } from "@/shared/rank-tracking";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-
-const SINGLE_ATTEMPT_STEP_CONFIG = {
-  retries: { limit: 0, delay: "1 second" as const },
-  timeout: "2 minutes" as const,
-};
 
 interface RankCheckParams {
   runId: string;
@@ -57,7 +58,9 @@ async function prepareRankCheckKeywords(input: {
   billingCustomer: BillingCustomerContext;
   devices: RankCheckParams["devices"];
   serpDepth: number;
-  method: "live" | "queued";
+  method: RankCheckMethod;
+  /** Crawls per pair the run may spend; its estimate is that worst case. */
+  crawlsPerPair: number;
   keywordIds?: string[];
   maxCostCredits?: number;
 }) {
@@ -92,6 +95,7 @@ async function prepareRankCheckKeywords(input: {
     input.devices,
     input.serpDepth,
     input.method,
+    input.crawlsPerPair,
   );
   if (input.maxCostCredits != null && costCredits > input.maxCostCredits) {
     throw new AppError(
@@ -137,6 +141,26 @@ async function prepareRankCheckKeywords(input: {
   };
 }
 
+/**
+ * Validated runs hold a reading at its previous position instead of writing a
+ * doubtful one. The run says so even when every keyword still got a snapshot
+ * from its other device, which the snapshot count alone would hide.
+ */
+function heldReadingsNote(stats: QueuedCheckStats | null): string | null {
+  if (!stats) return null;
+  const total = stats.withheld + stats.undelivered;
+  if (total === 0) return null;
+  const parts = [
+    stats.withheld > 0
+      ? `${stats.withheld} with Google's location dropped on every crawl`
+      : null,
+    stats.undelivered > 0
+      ? `${stats.undelivered} not delivered or not checkable by the queue in time`
+      : null,
+  ].filter((part): part is string => part !== null);
+  return `Held ${total} reading(s) at their previous position: ${parts.join(", ")}.`;
+}
+
 async function finalizeRankCheckRun(input: {
   runId: string;
   configId: string;
@@ -173,14 +197,23 @@ async function finalizeRankCheckRun(input: {
   // Batch steps record the first per-keyword rejection on the run as it
   // happens, so a failed run shows the vendor's reason rather than a count.
   const keywordError = run.errorMessage ?? input.batchError;
+  // A validated run that held every reading still finished its protocol, so
+  // only a run with nothing checked and nothing held is a failure.
+  const held = heldReadingsNote(input.queueStats);
   const status =
-    keywordsChecked === 0 && keywordsTotal > 0 ? "failed" : "completed";
+    keywordsChecked === 0 && keywordsTotal > 0 && held === null
+      ? "failed"
+      : "completed";
+  const progress =
+    incompleteCount > 0
+      ? `Checked ${keywordsChecked} of ${keywordsTotal} keyword(s)${keywordError ? `: ${keywordError}` : ""}`
+      : null;
   const errorMessage =
     status === "failed"
       ? (keywordError ?? "No keywords could be checked.")
-      : incompleteCount > 0
-        ? `Checked ${keywordsChecked} of ${keywordsTotal} keyword(s)${keywordError ? `: ${keywordError}` : ""}`
-        : null;
+      : [progress, held]
+          .filter((part): part is string => part !== null)
+          .join(" ") || null;
 
   // Flipping status away from 'pending'/'running' is what releases the
   // partial-index slot for the next run.
@@ -205,7 +238,7 @@ async function finalizeRankCheckRun(input: {
   // One-line summary per run so fallback rates are visible in Workers Logs.
   // Keys match the PostHog event properties for log/event correlation.
   const queueSummary = input.queueStats
-    ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked} validated=${input.queueStats.validated} location_dropped=${input.queueStats.locationDropped} reposted=${input.queueStats.reposted} withheld=${input.queueStats.withheld} html_unavailable=${input.queueStats.htmlUnavailable}`
+    ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked} validated=${input.queueStats.validated} location_dropped=${input.queueStats.locationDropped} reposted=${input.queueStats.reposted} withheld=${input.queueStats.withheld} undelivered=${input.queueStats.undelivered} html_unavailable=${input.queueStats.htmlUnavailable}`
     : "";
   // Error text can echo vendor/user content — keep it one line and bounded.
   const errorSummary = errorMessage
@@ -234,6 +267,7 @@ async function finalizeRankCheckRun(input: {
             location_dropped: input.queueStats.locationDropped,
             reposted: input.queueStats.reposted,
             withheld: input.queueStats.withheld,
+            undelivered: input.queueStats.undelivered,
             html_unavailable: input.queueStats.htmlUnavailable,
           }
         : {}),
@@ -305,10 +339,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       keywordIds,
       maxCostCredits,
     } = event.payload;
-    // Scheduled checks use DataForSEO's task queue (~30% of live cost), as do
-    // validated manual checks; other manual checks stay on the live endpoint
-    // for instant results.
-    const useQueue = trigger === "scheduled" || validateSerps === true;
+    const method = rankCheckMethod(trigger, validateSerps);
 
     // Guard: skip if config was archived after the workflow was triggered
     const configCheck = await pgStep(
@@ -330,7 +361,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
 
     try {
       console.log(
-        `[rank-check] ${runId} starting (trigger=${trigger}, devices=${devices}, validated=${validateSerps === true})`,
+        `[rank-check] ${runId} starting (trigger=${trigger}, devices=${devices}, validate_serps=${validateSerps === true})`,
       );
 
       const prepareResult = await pgStep(
@@ -344,7 +375,8 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
             billingCustomer,
             devices,
             serpDepth,
-            method: useQueue ? "queued" : "live",
+            method,
+            crawlsPerPair: validateSerps ? VALIDATED_CRAWLS_PER_PAIR : 1,
             keywordIds,
             maxCostCredits,
           }),
@@ -371,7 +403,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           runId,
           validateSerps,
         };
-        if (useQueue) {
+        if (method === "queued") {
           queueStats = await runQueuedCheck(step, checkContext);
         } else {
           await runLiveCheck(step, checkContext);

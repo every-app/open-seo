@@ -28,7 +28,27 @@ const QUEUED_EXTRA_PAGE_COST_USD = 0.00045;
  * How a rank check reaches DataForSEO: "live" is the instant endpoint used for
  * manual checks; "queued" is the cheaper task queue used for scheduled checks.
  */
-type RankCheckMethod = "live" | "queued";
+export type RankCheckMethod = "live" | "queued";
+
+/**
+ * Crawls a validated run may spend on one keyword/device pair before it holds
+ * the reading at its previous position (see rankCheckQueuedPath). Validated
+ * runs are estimated and approved at this worst case.
+ */
+export const VALIDATED_CRAWLS_PER_PAIR = 4;
+
+/**
+ * Scheduled checks and validated manual checks go through DataForSEO's task
+ * queue (~30% of live cost, minutes instead of seconds); other manual checks
+ * stay on the live endpoint. The trigger-time estimate and the workflow's
+ * re-estimate must agree, so both read it from here.
+ */
+export function rankCheckMethod(
+  trigger: "manual" | "scheduled",
+  validateSerps: boolean | undefined,
+): RankCheckMethod {
+  return trigger === "scheduled" || validateSerps === true ? "queued" : "live";
+}
 
 /** How many keywords are checked per batch */
 export const KEYWORDS_PER_BATCH = 10;
@@ -89,6 +109,7 @@ export function estimateRankCheckCredits(
   devices: RankTrackingConfig["devices"],
   depth: number,
   method: RankCheckMethod,
+  crawlsPerPair = 1,
 ) {
   // One entry per keyword/device pair, keyword-major like the workflow's
   // task list, so queued chunks group the same pairs the real posts do.
@@ -119,9 +140,11 @@ export function estimateRankCheckCredits(
   }
 
   // This is the nominal queued task_post estimate. Rejected, failed, or
-  // timed-out tasks can later incur additional live-fallback spend.
-  costUsd = roundUsdForBilling(costUsd);
-  return { costUsd, costCredits };
+  // timed-out tasks can later incur additional live-fallback spend. A
+  // validated run re-crawls pairs up to crawlsPerPair times, each crawl a
+  // metered post of its own, so its worst case is that many times the nominal.
+  costUsd = roundUsdForBilling(costUsd * crawlsPerPair);
+  return { costUsd, costCredits: costCredits * crawlsPerPair };
 }
 
 // ---------------------------------------------------------------------------

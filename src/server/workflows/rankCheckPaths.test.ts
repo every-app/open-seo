@@ -38,6 +38,34 @@ vi.mock("@/server/lib/dataforseo", () => ({
 
 type CheckContext = Parameters<typeof runLiveCheck>[1];
 
+const rankResult = (position: number | null) => ({
+  keywordId: "kw_0",
+  keyword: "kw_0",
+  position,
+  url: null,
+  serpFeatures: [],
+});
+
+function checkContext(overrides: Partial<CheckContext> = {}): CheckContext {
+  return {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the paths only call the two mocked serp methods
+    client: {
+      serp: {
+        rankCheckBatch: mocks.rankCheckBatch,
+        rankCheckTaskPost: mocks.rankCheckTaskPost,
+      },
+    } as unknown as CheckContext["client"],
+    keywords: [{ id: "kw_0", keyword: "kw_0" }],
+    devices: "mobile",
+    serpDepth: 40,
+    domain: "example.com",
+    locationCode: 2840,
+    languageCode: "en",
+    runId: "run_1",
+    ...overrides,
+  };
+}
+
 const providerFailure = () =>
   new AppError("UPSTREAM_UNAVAILABLE", "Internal SE Server Error.");
 
@@ -48,32 +76,11 @@ function timeout() {
   return error;
 }
 
-const found = {
-  status: "fulfilled",
-  value: {
-    keywordId: "kw_0",
-    keyword: "kw_0",
-    position: 1,
-    url: null,
-    serpFeatures: [],
-  },
-};
+const found = { status: "fulfilled", value: rankResult(1) };
 const failed = (reason: unknown) => ({ status: "rejected", reason });
 
 async function runLive(devices: CheckContext["devices"] = "mobile") {
-  const ctx: CheckContext = {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the live path only calls serp.rankCheckBatch
-    client: {
-      serp: { rankCheckBatch: mocks.rankCheckBatch },
-    } as unknown as CheckContext["client"],
-    keywords: [{ id: "kw_0", keyword: "kw_0" }],
-    devices,
-    serpDepth: 40,
-    domain: "example.com",
-    locationCode: 2840,
-    languageCode: "en",
-    runId: "run_1",
-  };
+  const ctx = checkContext({ devices });
   vi.useFakeTimers();
   try {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- steps are executed directly by the pgStep mock
@@ -159,35 +166,22 @@ describe("live rank check retries", () => {
 // task_post carries exactly one task and every poll round collects it.
 // ---------------------------------------------------------------------------
 
-const DROPPED_PAGE = "<div>Ellensburg, WA Use precise location</div>";
-const LOCALIZED_PAGE = "<div>Ellensburg, WA Choose area</div>";
+// Real markup captured from DataForSEO task_get/html on 2026-10-12: the
+// location module of a page Google served without the requested location, and
+// the location chip of a page where it applied the location.
+const DROPPED_PAGE =
+  '<geolocation class="vr0Skf edCDP sjVJQd" accuracymode="precise"><span class="O6Aqz" jsslot=""><div class="kGoFr TaBIX n1yRGd btku5b FR7ZSc k1U36b" role="button" tabindex="0"><div class="niO4u VDgVie SlP8xc"><span class="d3o3Ad TwMgNb z1asCe" style="height:18px;line-height:18px;width:18px"><svg></svg></span><div class="sjVJQd">Use precise location</div></div></div></span></geolocation>';
+const LOCALIZED_PAGE =
+  '</path><circle cx="12" cy="9" r="2.5"></circle></svg></span></span></span><span><span class="V8fWH"><div></div></span><span class="BBwThe">Ellensburg, WA</span></span></div><div class="eakexd EpKMFb"><span class="JIFdL" aria-hidden="true">&nbsp;&#8729; </span><a class="N5az4b" href="#" role="button" tabindex="0"><span class="nh8Ece">Choose area</span></a><span id="tsuid_s2PNatOMLvKJ9u8PvtOYyQs_27"><div jsaction="yL';
+const ready = (...pages: string[]) => ({ status: "ready" as const, pages });
 
 const completedAt = (position: number) => ({
   status: "completed" as const,
-  result: {
-    keywordId: "kw_0",
-    keyword: "kw_0",
-    position,
-    url: null,
-    serpFeatures: [],
-  },
+  result: rankResult(position),
 });
 
 async function runQueued(validateSerps = true) {
-  const ctx: Parameters<typeof runQueuedCheck>[1] = {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the queued path posts tasks and collects them through the mocked module
-    client: {
-      serp: { rankCheckTaskPost: mocks.rankCheckTaskPost },
-    } as unknown as Parameters<typeof runQueuedCheck>[1]["client"],
-    keywords: [{ id: "kw_0", keyword: "kw_0" }],
-    devices: "mobile",
-    serpDepth: 40,
-    domain: "example.com",
-    locationCode: 1027577,
-    languageCode: "en",
-    runId: "run_1",
-    validateSerps,
-  };
+  const ctx = checkContext({ locationCode: 1027577, validateSerps });
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- steps run directly through the pgStep mock; only sleep is called
   const step = { sleep: vi.fn() } as unknown as WorkflowStep;
   return runQueuedCheck(step, ctx);
@@ -203,14 +197,14 @@ describe("validated queued rank checks", () => {
     );
     mocks.getSnapshotsForRun.mockResolvedValue([]);
     vi.mocked(fetchRankCheckTaskResult).mockResolvedValue(completedAt(1));
-    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValue(LOCALIZED_PAGE);
+    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValue(ready(LOCALIZED_PAGE));
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   it("crawls a dropped-location reading again and stores the clean page", async () => {
-    vi.mocked(fetchRankCheckTaskHtml)
-      .mockResolvedValueOnce(DROPPED_PAGE)
-      .mockResolvedValueOnce(LOCALIZED_PAGE);
+    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValueOnce(
+      ready(DROPPED_PAGE),
+    );
     vi.mocked(fetchRankCheckTaskResult)
       .mockResolvedValueOnce(completedAt(18))
       .mockResolvedValueOnce(completedAt(2));
@@ -218,8 +212,8 @@ describe("validated queued rank checks", () => {
     const stats = await runQueued();
 
     expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
-    expect(mocks.insertSnapshots.mock.calls).toEqual([
-      [[expect.objectContaining({ position: 2, device: "mobile" })]],
+    expect(mocks.insertSnapshots).toHaveBeenCalledExactlyOnceWith([
+      expect.objectContaining({ position: 2, device: "mobile" }),
     ]);
     expect(stats).toMatchObject({
       locationDropped: 1,
@@ -230,28 +224,64 @@ describe("validated queued rank checks", () => {
     expect(mocks.setRunErrorIfEmpty).not.toHaveBeenCalled();
   });
 
-  it("withholds a reading whose page never shows the location", async () => {
-    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValue(DROPPED_PAGE);
+  it("holds a reading whose page never shows the location", async () => {
+    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValue(ready(DROPPED_PAGE));
 
     const stats = await runQueued();
 
-    // One crawl plus three more, then the keyword keeps its previous position.
+    // One crawl plus three more, then the keyword keeps its previous position;
+    // finalize writes the held count into the run from these stats.
     expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(4);
     expect(mocks.insertSnapshots).not.toHaveBeenCalled();
-    expect(mocks.setRunErrorIfEmpty).toHaveBeenCalledWith(
-      "run_1",
-      expect.stringMatching(/^Withheld 1 reading\(s\)/),
-    );
-    expect(stats).toMatchObject({ withheld: 1, fallbackTasks: 0 });
+    expect(mocks.setRunErrorIfEmpty).not.toHaveBeenCalled();
+    expect(stats).toMatchObject({ withheld: 1, undelivered: 0 });
   });
 
-  it("keeps a reading whose page cannot be read", async () => {
+  it("holds an undelivered reading instead of live-checking it", async () => {
+    vi.mocked(fetchRankCheckTaskResult).mockResolvedValue({
+      status: "pending",
+    });
+
+    const stats = await runQueued();
+
+    expect(mocks.rankCheckBatch).not.toHaveBeenCalled();
+    expect(mocks.insertSnapshots).not.toHaveBeenCalled();
+    expect(stats).toMatchObject({ undelivered: 1, fallbackTasks: 0 });
+  });
+
+  it("reads an unreadable page again next round and holds it when the window closes", async () => {
     vi.mocked(fetchRankCheckTaskHtml).mockRejectedValue(new Error("gone"));
 
     const stats = await runQueued();
 
+    expect(mocks.insertSnapshots).not.toHaveBeenCalled();
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(1);
+    expect(stats.htmlUnavailable).toBeGreaterThan(1);
+    expect(stats).toMatchObject({ undelivered: 1, withheld: 0 });
+  });
+
+  it("writes a no-results page as checked", async () => {
+    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValue(ready());
+
+    const stats = await runQueued();
+
     expect(mocks.insertSnapshots).toHaveBeenCalledTimes(1);
-    expect(stats).toMatchObject({ htmlUnavailable: 1, withheld: 0 });
+    expect(stats).toMatchObject({ validated: 1, withheld: 0 });
+  });
+
+  it("stops reposting once the window can no longer collect a new crawl", async () => {
+    vi.mocked(fetchRankCheckTaskResult)
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce(completedAt(1));
+    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValue(ready(DROPPED_PAGE));
+
+    const stats = await runQueued();
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(1);
+    expect(stats).toMatchObject({ withheld: 1, reposted: 0 });
   });
 
   it("does not read pages on a plain queued check", async () => {

@@ -7,6 +7,7 @@ import {
   estimateScheduledRankCheckCredits,
   isScheduledRankTrackingInterval,
   MAX_KEYWORDS_PER_CONFIG,
+  VALIDATED_CRAWLS_PER_PAIR,
 } from "@/shared/rank-tracking";
 
 async function addKeywords(
@@ -146,6 +147,7 @@ async function estimateCost(
   configId: string,
   projectId: string,
   additionalKeywords: readonly string[] = [],
+  options: { validated?: boolean } = {},
 ) {
   const config = await getValidatedConfig(configId, projectId);
   const existing = await RankTrackingRepository.getKeywordsForConfig(configId);
@@ -155,11 +157,16 @@ async function estimateCost(
     ...additionalKeywords,
   ].slice(0, Math.max(existingKeywordCount, MAX_KEYWORDS_PER_CONFIG));
   const keywordCount = keywords.length;
+  // A validated run is queued and approved at its worst case of
+  // VALIDATED_CRAWLS_PER_PAIR crawls per pair (see rankCheckQueuedPath).
+  const validated = options.validated === true;
+  const method = validated ? "queued" : "live";
   const { costUsd, costCredits } = estimateRankCheckCredits(
     keywords,
     config.devices,
     config.serpDepth,
-    "live",
+    method,
+    validated ? VALIDATED_CRAWLS_PER_PAIR : 1,
   );
   const scheduleInterval = isScheduledRankTrackingInterval(
     config.scheduleInterval,
@@ -172,7 +179,9 @@ async function estimateCost(
     keywordCount,
     devicesCount: devicesCount(config.devices),
     totalChecks: keywordCount * devicesCount(config.devices),
-    method: "live" as const,
+    method,
+    validated,
+    crawlsPerCheck: validated ? VALIDATED_CRAWLS_PER_PAIR : 1,
     existingKeywordCount,
     additionalKeywordCount: keywordCount - existingKeywordCount,
     scheduledEstimate: scheduleInterval
