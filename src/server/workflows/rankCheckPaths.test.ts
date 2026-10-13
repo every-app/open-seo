@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowStep } from "cloudflare:workers";
 import type { RankCheckTaskInput } from "@/server/lib/dataforseo";
-import { runLiveCheck } from "./rankCheckPaths";
+import { SUBREQUEST_LIMIT_ERROR } from "@/shared/rank-tracking";
+import { runLiveCheck, runQueuedCheck } from "./rankCheckPaths";
 import { retryRankChecks } from "./rankCheckRetries";
 
 const mocks = vi.hoisted(() => ({
@@ -56,6 +57,10 @@ function checkContext(keywordIds: string[]) {
   };
 }
 
+function manyKeywordIds(count: number) {
+  return Array.from({ length: count }, (_, i) => `kw_${i}`);
+}
+
 function snapshot(keywordId: string, position: number | null) {
   return { trackingKeywordId: keywordId, device: "desktop", position };
 }
@@ -106,6 +111,103 @@ describe("runLiveCheck", () => {
     );
 
     expect(mocks.rankCheckBatch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("at the platform subrequest limit", () => {
+  const limitError = new Error(
+    "Too many subrequests by single Worker invocation.",
+  );
+
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("stops a queued check without polling again, keeping what it collected", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([]);
+    // The budget runs out partway through the second task_get chunk.
+    let budget = 30;
+    mocks.fetchRankCheckTaskResult.mockImplementation(
+      async (task: RankCheckTaskInput) => {
+        if (budget-- <= 0) throw limitError;
+        return {
+          status: "completed",
+          result: { ...task, position: 5, url: null, serpFeatures: [] },
+        };
+      },
+    );
+
+    const limited = await runQueuedCheck(
+      step,
+      checkContext(manyKeywordIds(80)),
+    );
+
+    expect(limited).toBe(true);
+    // Two chunks of 25, then no third chunk and no second round.
+    expect(mocks.fetchRankCheckTaskResult).toHaveBeenCalledTimes(50);
+    expect(step.sleep).toHaveBeenCalledOnce();
+    expect(mocks.insertSnapshots.mock.calls[0][0]).toHaveLength(30);
+    expect(mocks.updateRun).toHaveBeenCalledWith("run_1", {
+      errorMessage: SUBREQUEST_LIMIT_ERROR,
+    });
+  });
+
+  it("stops a live check after the batch that hit the limit, keeping its results", async () => {
+    mocks.rankCheckBatch.mockImplementation(
+      async (inputs: RankCheckTaskInput[]) =>
+        inputs.map((input, index) =>
+          index < 4
+            ? {
+                status: "fulfilled",
+                value: { ...input, position: 3, url: null, serpFeatures: [] },
+              }
+            : { status: "rejected", reason: limitError },
+        ),
+    );
+
+    const limited = await runLiveCheck(step, checkContext(manyKeywordIds(30)));
+
+    expect(limited).toBe(true);
+    expect(mocks.rankCheckBatch).toHaveBeenCalledOnce();
+    expect(mocks.insertSnapshots.mock.calls[0][0]).toHaveLength(4);
+    expect(mocks.updateRun).toHaveBeenCalledWith("run_1", {
+      errorMessage: SUBREQUEST_LIMIT_ERROR,
+    });
+  });
+
+  it("posts no retries after the check hit the limit, but still drops unconfirmed misses", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_0", null)]);
+
+    await retryRankChecks(
+      step,
+      checkContext(["kw_0"]),
+      "config_1",
+      "scheduled",
+      true,
+    );
+
+    expect(mocks.rankCheckTaskPost).not.toHaveBeenCalled();
+    expect(mocks.deleteNotFoundSnapshots).toHaveBeenCalledWith([
+      { runId: "run_1", trackingKeywordId: "kw_0", device: "desktop" },
+    ]);
+  });
+
+  it("stops retrying once a retry round hits the limit", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_0", null)]);
+    mocks.fetchRankCheckTaskResult.mockRejectedValue(limitError);
+
+    await retryRankChecks(
+      step,
+      checkContext(["kw_0"]),
+      "config_1",
+      "scheduled",
+    );
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledOnce();
+    expect(mocks.updateRun).toHaveBeenCalledWith("run_1", {
+      errorMessage: SUBREQUEST_LIMIT_ERROR,
+    });
   });
 });
 

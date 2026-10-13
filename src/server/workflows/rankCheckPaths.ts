@@ -12,13 +12,28 @@ import type {
 } from "@/server/lib/dataforseo";
 import { AppError } from "@/server/lib/errors";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
-import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
+import {
+  KEYWORDS_PER_BATCH,
+  SUBREQUEST_LIMIT_ERROR,
+} from "@/shared/rank-tracking";
 import { pgStep } from "@/server/workflows/pgStep";
 
 const SINGLE_ATTEMPT_STEP_CONFIG = {
   retries: { limit: 0, delay: "1 second" as const },
   timeout: "2 minutes" as const,
 };
+
+export function isSubrequestLimitError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /too many subrequests/i.test(message);
+}
+
+// Overwrites earlier per-keyword errors, which would hide why the rest is blank.
+async function recordSubrequestLimit(runId: string) {
+  await RankTrackingRepository.updateRun(runId, {
+    errorMessage: SUBREQUEST_LIMIT_ERROR,
+  });
+}
 
 type KeywordEntry = { id: string; keyword: string };
 export type RankCheckResultWithDevice = RankCheckResult & {
@@ -79,7 +94,8 @@ export function expandToTaskInputs(
  * Check keyword/device pairs against the live endpoint and persist snapshots.
  * The batch is billed with one credit hold and one settle. Per-call failures
  * are logged and skipped; if the hold itself fails, no call runs and every
- * pair fails with that error. Returns the snapshot count written.
+ * pair fails with that error. Returns the snapshot count written, or throws
+ * after persisting if a call hit the platform subrequest limit.
  */
 async function checkBatchLive(
   ctx: CheckContext,
@@ -104,6 +120,7 @@ async function checkBatchLive(
   }
   const results: RankCheckResultWithDevice[] = [];
   let firstError: string | null = null;
+  let limitError: string | null = null;
   settled.forEach((outcome, index) => {
     if (outcome.status === "fulfilled") {
       results.push({ ...outcome.value, device: tasks[index].device });
@@ -112,6 +129,7 @@ async function checkBatchLive(
     const reason: unknown = outcome.reason;
     const code = reason instanceof AppError ? reason.code : "UNKNOWN";
     const message = reason instanceof Error ? reason.message : String(reason);
+    if (isSubrequestLimitError(reason)) limitError ??= message;
     // Store the bare code so the app shows its provider-unavailable copy;
     // DataForSEO's raw outage text ("Internal Server Error.") reads like our
     // server broke.
@@ -125,7 +143,9 @@ async function checkBatchLive(
       `[rank-check] ${ctx.runId} live call failed (${code}) keyword="${task.keyword}" device=${task.device}: ${message}`,
     );
   });
-  if (firstError) {
+  if (limitError) {
+    await recordSubrequestLimit(ctx.runId);
+  } else if (firstError) {
     await RankTrackingRepository.setRunErrorIfEmpty(ctx.runId, firstError);
   }
   if (results.length > 0) {
@@ -133,6 +153,8 @@ async function checkBatchLive(
       mapResultsToSnapshotRows(ctx.runId, results),
     );
   }
+  // Throw instead of returning a flag so cached step results stay a number.
+  if (limitError) throw new Error(limitError);
   return results.length;
 }
 
@@ -142,12 +164,13 @@ async function checkBatchLive(
  * survive batch failures. ~6s per keyword batch.
  * Each batch is billed with one credit hold and one settle (checkBatchLive).
  * A failed batch step doesn't stop the run; its pairs are retried by
- * retryRankChecks.
+ * retryRankChecks. A batch that hits the platform subrequest limit does, since
+ * every later call would fail the same way. Returns whether that happened.
  */
 export async function runLiveCheck(
   step: WorkflowStep,
   ctx: CheckContext,
-): Promise<void> {
+): Promise<boolean> {
   for (let i = 0; i < ctx.keywords.length; i += KEYWORDS_PER_BATCH) {
     const keywordBatch = ctx.keywords.slice(i, i + KEYWORDS_PER_BATCH);
     const batchTasks = expandToTaskInputs(keywordBatch, ctx.devices);
@@ -173,8 +196,10 @@ export async function runLiveCheck(
         `[rank-check] ${ctx.runId} live-batch-${batchIndex} failed:`,
         error,
       );
+      if (isSubrequestLimitError(error)) return true;
     }
   }
+  return false;
 }
 
 // Poll cadence for queued tasks. Standard-priority tasks complete in ~5
@@ -208,7 +233,8 @@ export const COLLECT_STEP_CONFIG = {
 /**
  * Fetch results for queued tasks (one free task_get each). Transient task_get
  * failures stay pending for the next round; tasks DataForSEO failed are
- * dropped.
+ * dropped. A chunk that hits the platform subrequest limit stops the round
+ * and records the limit on the run.
  */
 async function fetchQueuedRound(
   ctx: CheckContext,
@@ -216,11 +242,18 @@ async function fetchQueuedRound(
 ): Promise<{
   completed: RankCheckResultWithDevice[];
   stillPending: PostedRankCheckTask[];
+  /** Optional so results cached before this field existed still replay. */
+  subrequestLimited?: boolean;
 }> {
   const completed: RankCheckResultWithDevice[] = [];
   const stillPending: PostedRankCheckTask[] = [];
+  let subrequestLimited = false;
 
-  for (let i = 0; i < tasks.length; i += TASK_GET_CONCURRENCY) {
+  for (
+    let i = 0;
+    i < tasks.length && !subrequestLimited;
+    i += TASK_GET_CONCURRENCY
+  ) {
     const chunk = tasks.slice(i, i + TASK_GET_CONCURRENCY);
     const settled = await Promise.allSettled(
       chunk.map((task) =>
@@ -251,15 +284,22 @@ async function fetchQueuedRound(
         completed.push({ ...result.value.result, device: task.device });
       }
     });
+    subrequestLimited = settled.some(
+      (result) =>
+        result.status === "rejected" && isSubrequestLimitError(result.reason),
+    );
   }
-  return { completed, stillPending };
+  if (subrequestLimited) await recordSubrequestLimit(ctx.runId);
+  return { completed, stillPending, subrequestLimited };
 }
 
 /**
  * Post tasks to DataForSEO's standard queue (~30% of live cost), one metered
  * step per 100, then poll task_get for ~15 minutes. `onCollected` runs inside
  * each collect step with that round's results. A task that's rejected, fails
- * or never finishes gets no result. Returns every collected result.
+ * or never finishes gets no result. Hitting the platform subrequest limit
+ * stops posting and polling. Returns every collected result and whether the
+ * limit was hit.
  */
 export async function runQueuedTasks(
   step: WorkflowStep,
@@ -267,34 +307,56 @@ export async function runQueuedTasks(
   tasks: RankCheckTaskInput[],
   label: string,
   onCollected?: (results: RankCheckResultWithDevice[]) => Promise<void>,
-): Promise<RankCheckResultWithDevice[]> {
+): Promise<{
+  collected: RankCheckResultWithDevice[];
+  subrequestLimited: boolean;
+}> {
   // A failed post must not abort the run: earlier chunks were already
   // charged at DataForSEO, so their results have to be collected.
   let pending: PostedRankCheckTask[] = [];
-  for (let i = 0; i < tasks.length; i += MAX_TASKS_PER_POST) {
+  let subrequestLimited = false;
+  for (
+    let i = 0;
+    i < tasks.length && !subrequestLimited;
+    i += MAX_TASKS_PER_POST
+  ) {
     const chunk = tasks.slice(i, i + MAX_TASKS_PER_POST);
     const postLabel = `${label}post-tasks-${Math.floor(i / MAX_TASKS_PER_POST)}`;
     try {
       pending.push(
-        ...(await pgStep(step, postLabel, SINGLE_ATTEMPT_STEP_CONFIG, () =>
-          ctx.client.serp.rankCheckTaskPost({
-            tasks: chunk,
-            locationCode: ctx.locationCode,
-            languageCode: ctx.languageCode,
-            locationName: ctx.locationName,
-            depth: ctx.serpDepth,
-            targetDomain: ctx.domain,
-          }),
+        ...(await pgStep(
+          step,
+          postLabel,
+          SINGLE_ATTEMPT_STEP_CONFIG,
+          async () => {
+            try {
+              return await ctx.client.serp.rankCheckTaskPost({
+                tasks: chunk,
+                locationCode: ctx.locationCode,
+                languageCode: ctx.languageCode,
+                locationName: ctx.locationName,
+                depth: ctx.serpDepth,
+                targetDomain: ctx.domain,
+              });
+            } catch (error) {
+              if (isSubrequestLimitError(error)) {
+                await recordSubrequestLimit(ctx.runId);
+              }
+              throw error;
+            }
+          },
         )),
       );
     } catch (error) {
       console.warn(`[rank-check] ${ctx.runId} ${postLabel} failed:`, error);
+      subrequestLimited = isSubrequestLimitError(error);
     }
   }
   const collected: RankCheckResultWithDevice[] = [];
 
   // A collect failure (past its retries) leaves that round's tasks pending for
-  // the next round instead of failing the run.
+  // the next round instead of failing the run. Chunks posted before a post hit
+  // the subrequest limit are already paid for, so they are still polled.
   for (
     let round = 0;
     round < QUEUED_POLL_INTERVALS.length && pending.length > 0;
@@ -322,6 +384,10 @@ export async function runQueuedTasks(
       );
       collected.push(...outcome.completed);
       pending = [...outcome.stillPending, ...overflow];
+      if (outcome.subrequestLimited) {
+        subrequestLimited = true;
+        break;
+      }
     } catch (error) {
       console.warn(
         `[rank-check] ${ctx.runId} ${label}collect-${round} failed:`,
@@ -329,19 +395,20 @@ export async function runQueuedTasks(
       );
     }
   }
-  return collected;
+  return { collected, subrequestLimited };
 }
 
 /**
  * Check every keyword/device pair through the task queue (scheduled runs),
  * writing snapshots as tasks complete. Billing happens at task_post. Pairs
- * left without a result are retried by retryRankChecks.
+ * left without a result are retried by retryRankChecks. Returns whether the
+ * check hit the platform subrequest limit.
  */
 export async function runQueuedCheck(
   step: WorkflowStep,
   ctx: CheckContext,
-): Promise<void> {
-  await runQueuedTasks(
+): Promise<boolean> {
+  const { subrequestLimited } = await runQueuedTasks(
     step,
     ctx,
     expandToTaskInputs(ctx.keywords, ctx.devices),
@@ -360,4 +427,5 @@ export async function runQueuedCheck(
       });
     },
   );
+  return subrequestLimited;
 }

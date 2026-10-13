@@ -1,6 +1,6 @@
 # Cloudflare Self-Hosting
 
-Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything. Works on Cloudflare's free plan.
+Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything. Works on Cloudflare's free plan, though larger rank checks need Workers Paid (see [Free-plan limits for rank tracking](#free-plan-limits-for-rank-tracking)).
 
 You sign in with email and password accounts: the first visitor creates the administrator's account, teammates join from invitation links, and MCP clients (Claude, ChatGPT, Codex, Cursor) sign in with the same accounts, with nothing to set up in Cloudflare. The most secure option is to put [Cloudflare Access](#cloudflare-access-the-most-secure-option) in front of the app instead, so Cloudflare checks every request before it reaches OpenSEO. It takes more setup.
 
@@ -78,6 +78,18 @@ MCP clients connect to `https://YOUR_WORKER_HOSTNAME/mcp` and sign in with your 
 
 There is no email delivery, so an operator resets passwords from a terminal. See [Manage accounts](./SELF_HOSTING_CLOUDFLARE_OPERATIONS.md#manage-accounts).
 
+## Free-plan limits for rank tracking
+
+On Cloudflare's free Workers plan, one Workflow invocation can make at most 50 external subrequests. A rank check runs as a Workflow and costs about one request per keyword and device, plus retries, so on the free plan a check covers roughly 40 keywords, or about 20 when tracking both desktop and mobile. A larger check stops at the limit, keeps the rankings it already collected, skips its retries, and shows a warning saying the check was incomplete.
+
+To check every keyword, upgrade the account to [Workers Paid](https://developers.cloudflare.com/workers/platform/pricing/) ($5/month minimum per account), then redeploy:
+
+```bash
+pnpm deploy:selfhost --yes
+```
+
+Upgrading alone may not be enough: in [#334](https://github.com/every-app/open-seo/issues/334), rank checks kept stopping at the limit until the Workers were redeployed after the upgrade.
+
 ## Updating to the latest OpenSEO version
 
 ```bash
@@ -103,6 +115,7 @@ Deployments created before password accounts existed have no `AUTH_MODE` in `.en
 - `https://<your-worker-hostname>/api/health` reports runtime configuration checks and database status.
 - Cloudflare Access login fails: re-check `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy.
 - For server errors, open the Worker `Logs` or run `pnpm exec wrangler tail`. Site audits run in a separate worker: `pnpm exec wrangler tail open-seo-selfhost-audit`.
+- Rank checks stop after a few dozen keywords: see [Free-plan limits for rank tracking](#free-plan-limits-for-rank-tracking).
 
 ## Tearing it down
 
