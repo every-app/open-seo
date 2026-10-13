@@ -353,6 +353,39 @@ export async function fetchRankCheckTaskResult(input: {
   return { status: "completed", result: buildRankCheckResult(input, items) };
 }
 
+/** One page of a stored SERP crawl, as returned by task_get/html. */
+const serpTaskHtmlPageSchema = z
+  .object({ page: z.number().nullable().optional(), html: z.string() })
+  .passthrough();
+
+/**
+ * Collect the page HTML of a queued task's crawl — the same crawl task_get
+ * advanced parsed, so it can vouch for that result. Free and not metered,
+ * like fetchRankCheckTaskResult. Null when the task has no page to show
+ * (still in progress, or failed).
+ */
+export async function fetchRankCheckTaskHtml(
+  taskId: string,
+): Promise<string | null> {
+  const response = await dataforseoGet(
+    `/v3/serp/google/organic/task_get/html/${encodeURIComponent(taskId)}`,
+  );
+  const task = response?.tasks?.[0];
+  if (!response || response.status_code !== 20000 || !task) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      response?.status_message || "DataForSEO task_get/html failed",
+    );
+  }
+  if (task.status_code !== 20000) return null;
+  const pages = parseTaskItems(
+    "google-organic-task-get-html",
+    task,
+    serpTaskHtmlPageSchema,
+  );
+  return pages.length > 0 ? pages.map((page) => page.html).join("\n") : null;
+}
+
 export async function fetchLocalSerp(input: {
   keyword: string;
   locationCoordinate?: string;

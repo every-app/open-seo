@@ -146,6 +146,7 @@ export async function beginRankCheckRun(input: {
   keywordIds?: string[];
   maxCostCredits?: number;
   trigger: "manual" | "scheduled";
+  validateSerps?: boolean;
   workflowStartErrorMessage: string;
 }): Promise<RankCheckTriggerResult> {
   // At most two attempts: once normally, once after clearing a stale blocker.
@@ -175,6 +176,7 @@ export async function beginRankCheckRun(input: {
             devices: input.config.devices,
             serpDepth: input.config.serpDepth,
             trigger: input.trigger,
+            validateSerps: input.validateSerps,
             keywordIds: input.keywordIds,
             maxCostCredits: input.maxCostCredits,
           },

@@ -8,11 +8,11 @@ import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
+import { runLiveCheck } from "@/server/workflows/rankCheckPaths";
 import {
-  runLiveCheck,
   runQueuedCheck,
   type QueuedCheckStats,
-} from "@/server/workflows/rankCheckPaths";
+} from "@/server/workflows/rankCheckQueuedPath";
 import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -45,6 +45,8 @@ interface RankCheckParams {
   devices: "both" | "desktop" | "mobile";
   serpDepth: number;
   trigger: "manual" | "scheduled";
+  /** Fork: queue the check and verify each result's page (runQueuedCheck). */
+  validateSerps?: boolean;
   keywordIds?: string[];
   maxCostCredits?: number;
 }
@@ -55,7 +57,7 @@ async function prepareRankCheckKeywords(input: {
   billingCustomer: BillingCustomerContext;
   devices: RankCheckParams["devices"];
   serpDepth: number;
-  trigger: RankCheckParams["trigger"];
+  method: "live" | "queued";
   keywordIds?: string[];
   maxCostCredits?: number;
 }) {
@@ -89,7 +91,7 @@ async function prepareRankCheckKeywords(input: {
     trackingKeywords.map((kw) => kw.keyword),
     input.devices,
     input.serpDepth,
-    input.trigger === "scheduled" ? "queued" : "live",
+    input.method,
   );
   if (input.maxCostCredits != null && costCredits > input.maxCostCredits) {
     throw new AppError(
@@ -203,7 +205,7 @@ async function finalizeRankCheckRun(input: {
   // One-line summary per run so fallback rates are visible in Workers Logs.
   // Keys match the PostHog event properties for log/event correlation.
   const queueSummary = input.queueStats
-    ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked}`
+    ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked} validated=${input.queueStats.validated} location_dropped=${input.queueStats.locationDropped} reposted=${input.queueStats.reposted} withheld=${input.queueStats.withheld} html_unavailable=${input.queueStats.htmlUnavailable}`
     : "";
   // Error text can echo vendor/user content — keep it one line and bounded.
   const errorSummary = errorMessage
@@ -228,6 +230,11 @@ async function finalizeRankCheckRun(input: {
             queue_collected: input.queueStats.queueCollected,
             fallback_tasks: input.queueStats.fallbackTasks,
             fallback_checked: input.queueStats.fallbackChecked,
+            validated: input.queueStats.validated,
+            location_dropped: input.queueStats.locationDropped,
+            reposted: input.queueStats.reposted,
+            withheld: input.queueStats.withheld,
+            html_unavailable: input.queueStats.htmlUnavailable,
           }
         : {}),
     },
@@ -294,9 +301,14 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       devices,
       serpDepth,
       trigger,
+      validateSerps,
       keywordIds,
       maxCostCredits,
     } = event.payload;
+    // Scheduled checks use DataForSEO's task queue (~30% of live cost), as do
+    // validated manual checks; other manual checks stay on the live endpoint
+    // for instant results.
+    const useQueue = trigger === "scheduled" || validateSerps === true;
 
     // Guard: skip if config was archived after the workflow was triggered
     const configCheck = await pgStep(
@@ -318,7 +330,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
 
     try {
       console.log(
-        `[rank-check] ${runId} starting (trigger=${trigger}, devices=${devices})`,
+        `[rank-check] ${runId} starting (trigger=${trigger}, devices=${devices}, validated=${validateSerps === true})`,
       );
 
       const prepareResult = await pgStep(
@@ -332,7 +344,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
             billingCustomer,
             devices,
             serpDepth,
-            trigger,
+            method: useQueue ? "queued" : "live",
             keywordIds,
             maxCostCredits,
           }),
@@ -357,10 +369,9 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           languageCode,
           locationName,
           runId,
+          validateSerps,
         };
-        // Scheduled checks use DataForSEO's task queue (~30% of live cost);
-        // manual checks stay on the live endpoint for instant results.
-        if (trigger === "scheduled") {
+        if (useQueue) {
           queueStats = await runQueuedCheck(step, checkContext);
         } else {
           await runLiveCheck(step, checkContext);

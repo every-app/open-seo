@@ -276,6 +276,7 @@ async function triggerCheck(input: {
   billingCustomer: BillingCustomerContext;
   keywordIds?: string[];
   maxCostCredits?: number;
+  validateSerps?: boolean;
 }): Promise<RankCheckTriggerResult> {
   const config = await getValidatedConfig(input.configId, input.projectId);
 
@@ -294,7 +295,7 @@ async function triggerCheck(input: {
       keywords.map((kw) => kw.keyword),
       config.devices,
       config.serpDepth,
-      "live",
+      input.validateSerps ? "queued" : "live",
     );
     if (costCredits > input.maxCostCredits) {
       throw new AppError(
@@ -318,6 +319,7 @@ async function triggerCheck(input: {
     keywordIds: input.keywordIds,
     maxCostCredits: input.maxCostCredits,
     trigger: "manual",
+    validateSerps: input.validateSerps,
     workflowStartErrorMessage: "Failed to start rank check workflow",
   });
 }
