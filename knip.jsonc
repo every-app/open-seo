@@ -1,6 +1,7 @@
 {
   "entry": [
     // Alchemy deploy stack (run by the alchemy CLI, not imported by the app)
+    "alchemy.run.ts",
     "deploy/alchemy/alchemy.run.ts",
     "deploy/alchemy/alchemy.preview-access.run.ts",
     // Site-audit aux worker entry (wrangler.audit.jsonc)

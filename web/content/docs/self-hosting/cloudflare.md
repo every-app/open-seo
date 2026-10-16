@@ -91,6 +91,10 @@ https://YOUR_WORKER_HOSTNAME/mcp
 
 Add the teammate to `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy. Everyone allowed through shares one OpenSEO workspace.
 
+## Custom domain
+
+Set `CUSTOM_DOMAIN` in `.env.selfhost` to a hostname in a zone on the same Cloudflare account (for example `seo.example.com`) and redeploy. The app is then served and Access-gated at that hostname only, and the workers.dev URL is turned off. If you use Google Search Console or GA4, add the new origin to the redirect URIs of your Google OAuth client (see [Google Search Console setup](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md)). If you manage the Access application yourself, add the hostname to it in Zero Trust.
+
 ## Updating to the latest OpenSEO version
 
 ```bash
