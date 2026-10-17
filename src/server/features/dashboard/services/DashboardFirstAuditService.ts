@@ -42,7 +42,7 @@ async function start(
       projectId,
       startUrl: `https://${domain}`,
       maxPages: 50,
-      renderJavaScript: true,
+      renderJavaScript: false,
       lighthouseStrategy: "none",
       limitTier,
     });

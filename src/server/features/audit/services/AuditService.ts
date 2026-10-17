@@ -52,12 +52,9 @@ async function startAudit(input: {
   limitTier: AuditLimitTier;
   renderJavaScript?: boolean;
 }) {
-  const renderJavaScript = input.renderJavaScript ?? false;
+  let renderJavaScript = input.renderJavaScript ?? false;
   if (renderJavaScript && !(await isAuditRenderingAllowed())) {
-    throw new AppError(
-      "AUDIT_RENDERING_UNAVAILABLE",
-      "JavaScript rendering is not available on this deployment. It needs a Cloudflare deployment with Browser Run, or CONTEXT_API_KEY. Run the audit without rendering instead.",
-    );
+    renderJavaScript = false;
   }
   const limits = AUDIT_LIMITS[input.limitTier];
   const maxPages = clampAuditMaxPages(input.maxPages);

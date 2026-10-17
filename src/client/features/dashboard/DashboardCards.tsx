@@ -169,7 +169,7 @@ export function AuditHealthCard({
           projectId,
           startUrl: `https://${domain}`,
           maxPages: 50,
-          renderJavaScript: true,
+          renderJavaScript: false,
         },
       }),
     onSuccess: () =>
