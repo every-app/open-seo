@@ -3,11 +3,9 @@ import { useForm } from "@tanstack/react-form";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAgentSetupPrompt } from "@/client/features/ai-mcp/agentSetupPrompt";
-import {
-  AgentSetupPanel,
-  AGENT_SETUP_DESCRIPTION,
-} from "@/client/features/ai-mcp/AgentSetupPanel";
+import { AgentSetupPanel } from "@/client/features/ai-mcp/AgentSetupPanel";
 import { CopyButton } from "@/client/components/CopyButton";
+import { useLocale } from "@/client/lib/i18n";
 import { CreateProjectModal } from "@/client/features/projects/CreateProjectModal";
 import { InviteTeammateModal } from "@/client/features/team/InviteTeammateModal";
 import { PermissionHint } from "@/client/components/PermissionHint";
@@ -45,6 +43,7 @@ export function DashboardSetupAction({
   domain: string | null;
   onComplete: () => void;
 }) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
@@ -130,7 +129,7 @@ export function DashboardSetupAction({
     return (
       <div className="max-w-2xl space-y-4">
         <p className="text-sm leading-relaxed text-muted-foreground">
-          {AGENT_SETUP_DESCRIPTION}
+          {t("ai.panel.description")}
         </p>
         <AgentSetupPanel
           prompt={getAgentSetupPrompt(
