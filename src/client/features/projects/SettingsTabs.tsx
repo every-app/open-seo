@@ -1,13 +1,23 @@
 import { NavTab, NavTabs } from "@/client/components/NavTabs";
-
-const tabs = [
-  { to: "/p/$projectId/settings" as const, label: "General", exact: true },
-  { to: "/p/$projectId/settings/integrations" as const, label: "Integrations" },
-];
+import { useLocale } from "@/client/lib/i18n";
 
 export function SettingsTabs({ projectId }: { projectId: string }) {
+  const { t } = useLocale();
+
+  const tabs = [
+    {
+      to: "/p/$projectId/settings" as const,
+      label: t("project_settings.tabs.general"),
+      exact: true,
+    },
+    {
+      to: "/p/$projectId/settings/integrations" as const,
+      label: t("project_settings.tabs.integrations"),
+    },
+  ];
+
   return (
-    <NavTabs label="Project settings sections">
+    <NavTabs label={t("project_settings.sections")}>
       {tabs.map((tab) => (
         <NavTab
           key={tab.to}

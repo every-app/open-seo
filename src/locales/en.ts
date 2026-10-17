@@ -105,9 +105,13 @@ export const en: TranslationDict = {
   },
   settings: {
     title: "Settings",
+    personal: "Personal",
+    organization: "Organization",
+    sections: "Settings sections",
     appearance: "Appearance",
     theme: "Theme",
     language: "Language",
+    language_desc: "Choose your preferred interface language.",
     about: "About",
     version: "Version",
     analytics: "Analytics",
@@ -115,6 +119,38 @@ export const en: TranslationDict = {
     analytics_help: "Help improve OpenSEO",
     analytics_enabled: "Analytics enabled",
     analytics_disabled: "Analytics disabled",
+  },
+  project_settings: {
+    title: "Project settings",
+    sections: "Project settings sections",
+    tabs: {
+      general: "General",
+      integrations: "Integrations",
+    },
+    general: {
+      title: "General",
+      name: "Name",
+      name_required: "Enter a project name.",
+      scan_notice:
+        "Adding your website starts a 50-page scan with JavaScript rendering. Rendering uses your credits.",
+      domain: "Domain",
+      optional: "(optional)",
+      market_help:
+        "Keyword, SERP, and domain data uses this country and language unless a call asks for a different one.",
+      save_changes: "Save changes",
+      updated: "Project updated",
+      error_loading: "Failed to load the project",
+      not_found: "This project was not found.",
+    },
+    danger: {
+      title: "Archive project",
+      description:
+        "Archiving removes the project from your workspace and stops its scheduled rank tracking. You can restore it later from the Projects page.",
+      only_project: "You can't archive your only project.",
+      archive_button: "Archive project",
+      confirm_button: "Yes, archive project",
+      archived: "Project archived",
+    },
   },
   dashboard: {
     title: "Dashboard",

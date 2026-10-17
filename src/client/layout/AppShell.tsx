@@ -17,7 +17,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/client/components/ui/sidebar";
-import { LanguagePreferenceRadio } from "@/client/components/LanguagePreferenceMenuItems";
 
 export function AuthenticatedAppLayout({
   children,
@@ -147,7 +146,6 @@ function MobileTopBar() {
           OpenSEO
         </Link>
       </div>
-      <LanguagePreferenceRadio />
     </div>
   );
 }

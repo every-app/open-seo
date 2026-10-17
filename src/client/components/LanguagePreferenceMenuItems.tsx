@@ -34,7 +34,11 @@ const LANGUAGE_OPTIONS: {
 ];
 
 /** Deutsch / English segmented radio toggle */
-export function LanguagePreferenceRadio() {
+export function LanguagePreferenceRadio({
+  showLabels = false,
+}: {
+  showLabels?: boolean;
+} = {}) {
   const { locale, setLocale } = useLocale();
 
   return (
@@ -42,6 +46,7 @@ export function LanguagePreferenceRadio() {
       items={LANGUAGE_OPTIONS}
       value={locale}
       onChange={setLocale}
+      showLabels={showLabels}
     />
   );
 }

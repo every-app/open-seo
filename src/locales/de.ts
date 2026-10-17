@@ -103,9 +103,13 @@ export const de = {
   },
   settings: {
     title: "Einstellungen",
+    personal: "Persönlich",
+    organization: "Organisation",
+    sections: "Einstellungsbereiche",
     appearance: "Erscheinungsbild",
     theme: "Theme",
     language: "Sprache",
+    language_desc: "Wähle deine bevorzugte Sprache für die Benutzeroberfläche.",
     about: "Über OpenSEO",
     version: "Version",
     analytics: "Produktanalyse",
@@ -113,6 +117,38 @@ export const de = {
     analytics_help: "Hilf mit, OpenSEO zu verbessern",
     analytics_enabled: "Analyse aktiviert",
     analytics_disabled: "Analyse deaktiviert",
+  },
+  project_settings: {
+    title: "Projekteinstellungen",
+    sections: "Bereiche der Projekteinstellungen",
+    tabs: {
+      general: "Allgemein",
+      integrations: "Integrationen",
+    },
+    general: {
+      title: "Allgemein",
+      name: "Name",
+      name_required: "Gib einen Projektnamen ein.",
+      scan_notice:
+        "Das Hinzufügen deiner Website startet einen Scan von bis zu 50 Seiten mit JavaScript-Rendering. Das Rendering verbraucht dein Kontingent.",
+      domain: "Domain",
+      optional: "(optional)",
+      market_help:
+        "Keyword-, SERP- und Domain-Daten nutzen dieses Land und diese Sprache, sofern bei einer Abfrage nichts anderes angegeben ist.",
+      save_changes: "Änderungen speichern",
+      updated: "Projekt aktualisiert",
+      error_loading: "Fehler beim Laden des Projekts",
+      not_found: "Dieses Projekt wurde nicht gefunden.",
+    },
+    danger: {
+      title: "Projekt archivieren",
+      description:
+        "Durch das Archivieren wird das Projekt aus deinem Workspace entfernt und das geplante Rank-Tracking gestoppt. Du kannst es später über die Projektseite wiederherstellen.",
+      only_project: "Du kannst dein einziges Projekt nicht archivieren.",
+      archive_button: "Projekt archivieren",
+      confirm_button: "Ja, Projekt archivieren",
+      archived: "Projekt archiviert",
+    },
   },
   dashboard: {
     title: "Dashboard",

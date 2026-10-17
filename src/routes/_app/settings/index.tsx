@@ -54,8 +54,13 @@ function PersonalSettings() {
           <ThemePreferenceRadio />
         </div>
         <div className="flex items-center justify-between gap-6">
-          <span className="text-sm">{t("settings.language")}</span>
-          <LanguagePreferenceRadio />
+          <div>
+            <span className="text-sm">{t("settings.language")}</span>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.language_desc")}
+            </p>
+          </div>
+          <LanguagePreferenceRadio showLabels />
         </div>
       </section>
 

@@ -26,7 +26,6 @@ import {
   SamSidebarPanel,
 } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
-import { LanguagePreferenceRadio } from "@/client/components/LanguagePreferenceMenuItems";
 import { useLocale } from "@/client/lib/i18n";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
@@ -144,7 +143,7 @@ export function Sidebar({
   return (
     <UiSidebar variant="inset" collapsible="offcanvas" className="md:!p-0">
       <SidebarHeader className="gap-0 px-3 pb-1 pt-3">
-        <div className="flex items-center justify-between pb-2">
+        <div className="flex items-center pb-2">
           <Link
             to="/"
             onClick={() => setOpenMobile(false)}
@@ -152,7 +151,6 @@ export function Sidebar({
           >
             OpenSEO
           </Link>
-          <LanguagePreferenceRadio />
         </div>
         <ProjectSwitcher
           activeProjectId={projectId}
@@ -239,12 +237,6 @@ function AccountFooter({ ready }: { ready: boolean }) {
 
   return (
     <UiSidebarFooter className="gap-0 border-t border-sidebar-border pb-safe">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border/60">
-        <span className="text-xs font-medium text-sidebar-foreground/70">
-          {t("common.language")}
-        </span>
-        <LanguagePreferenceRadio />
-      </div>
       <SidebarMenu>
         <SidebarNavLink
           icon={CircleHelp}
@@ -321,12 +313,6 @@ function AccountFooter({ ready }: { ready: boolean }) {
                   <DropdownMenuLabel>{t("common.theme")}</DropdownMenuLabel>
                   <div className="px-1 pb-1">
                     <ThemePreferenceRadio />
-                  </div>
-                </DropdownMenuGroup>
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>{t("common.language")}</DropdownMenuLabel>
-                  <div className="px-1 pb-1">
-                    <LanguagePreferenceRadio />
                   </div>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
