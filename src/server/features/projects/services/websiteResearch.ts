@@ -21,6 +21,7 @@ import {
   requireOpenRouterAccess,
 } from "@/server/lib/openrouter";
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
+import { forOrganization } from "@/server/lib/gateway-attribution";
 import { readSite } from "@/server/lib/scrape";
 import {
   CONTEXT_USD_PER_CREDIT,
@@ -63,17 +64,33 @@ async function retryInvalidOutput<T>(
   }
 }
 
-/** Internal research for callers that have already checked admission credits. */
-// oxlint-disable-next-line max-lines-per-function -- the tools share per-attempt research state
-export async function researchWebsite(
+type ResearchedProject = {
+  id: string;
+  name: string;
+  domain: string | null;
+  locationCode: number;
+  languageCode: string;
+};
+
+/**
+ * Internal research for callers that have already checked admission credits.
+ * Its OpenRouter, Context and SERP calls are the customer's organization's
+ * behind an Every App gateway (gateway-attribution.ts).
+ */
+export function researchWebsite(
   website: string,
-  project: {
-    id: string;
-    name: string;
-    domain: string | null;
-    locationCode: number;
-    languageCode: string;
-  },
+  project: ResearchedProject,
+  customer: BillingCustomerContext,
+) {
+  return forOrganization(customer.organizationId, () =>
+    researchWebsiteForOrganization(website, project, customer),
+  );
+}
+
+// oxlint-disable-next-line max-lines-per-function -- the tools share per-attempt research state
+async function researchWebsiteForOrganization(
+  website: string,
+  project: ResearchedProject,
   customer: BillingCustomerContext,
 ) {
   const domain =
@@ -165,7 +182,7 @@ export async function researchWebsite(
       sources.clear();
       return generateText({
         model: buildChatAgentModel(
-          await requireOpenRouterAccess(),
+          await requireOpenRouterAccess(customer.organizationId),
           await getOptionalEnvValue("OPENROUTER_MODEL"),
           "low",
         ),

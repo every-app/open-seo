@@ -444,6 +444,7 @@ exports[`alchemy.run.ts stages > everyapp > deploys the first-party Workers behi
           "DATABASE_PROVIDER": "postgres",
           "DEPLOYMENT_TIER": "first_party",
           "EVERYAPP_APP_ID": "openseo",
+          "EVERYAPP_SHARED": "1",
           "HYPERDRIVE": {
             "resource": {
               "id": "HYPERDRIVE",
@@ -517,7 +518,7 @@ exports[`alchemy.run.ts stages > everyapp > deploys the first-party Workers behi
           "cpuMs": 300000,
         },
         "main": "./dist/open_seo_audit/index.js",
-        "name": "open-seo-everyapp-audit",
+        "name": "every-everyapp-openseo--audit",
         "observability": {
           "enabled": true,
           "traces": {
@@ -574,8 +575,10 @@ exports[`alchemy.run.ts stages > everyapp > deploys the first-party Workers behi
           "DATABASE_PROVIDER": "postgres",
           "DEPLOYMENT_TIER": "first_party",
           "EVERYAPP_APP_ID": "openseo",
+          "EVERYAPP_AUDIENCE": "every-everyapp-openseo",
           "EVERYAPP_IDENTITY_ISSUER": "https://app.everyapp.com",
           "EVERYAPP_IDENTITY_PUBLIC_KEYS": "["-----BEGIN PUBLIC KEY-----\\nMIIB\\n-----END PUBLIC KEY-----\\n"]",
+          "EVERYAPP_SHARED": "1",
           "FIRST_PARTY_SCHEDULED_CHECKS": {
             "config": "",
           },
@@ -681,7 +684,7 @@ exports[`alchemy.run.ts stages > everyapp > deploys the first-party Workers behi
               "id": "site-audit-workflow-everyapp",
               "props": {
                 "className": "SiteAuditWorkflow",
-                "scriptName": "open-seo-everyapp-audit",
+                "scriptName": "every-everyapp-openseo--audit",
               },
               "removal": "destroy",
               "type": "Cloudflare.Workflow",
@@ -692,7 +695,7 @@ exports[`alchemy.run.ts stages > everyapp > deploys the first-party Workers behi
           "cpuMs": 300000,
         },
         "main": "./dist/server/index.js",
-        "name": "open-seo-everyapp",
+        "name": "every-everyapp-openseo",
         "observability": {
           "enabled": true,
           "traces": {

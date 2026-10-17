@@ -1,3 +1,4 @@
+import { UnsecuredJWT } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { workerEnv } = vi.hoisted(() => ({
@@ -5,6 +6,7 @@ const { workerEnv } = vi.hoisted(() => ({
 }));
 vi.mock("cloudflare:workers", () => ({ env: workerEnv }));
 
+import { forOrganization, serveEveryAppRequest } from "./gateway-attribution";
 import {
   getContextFetch,
   getDataforseoFetch,
@@ -65,5 +67,83 @@ describe("provider access behind an Every App gateway", () => {
     await expect(getDataforseoFetch()).rejects.toMatchObject({
       code: "DATAFORSEO_AUTH_FAILED",
     });
+  });
+});
+
+describe("whose calls they are, behind a first-party gateway", () => {
+  const sent: Request[] = [];
+  const binding = {
+    fetch: vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      sent.push(new Request(input, init));
+      return Response.json({ requested: true, configured: true, ready: true });
+    }),
+  };
+
+  function shared() {
+    sent.length = 0;
+    Object.assign(workerEnv, {
+      AUTH_MODE: "everyapp",
+      EVERYAPP_APP_ID: "openseo",
+      EVERYAPP_SHARED: "1",
+      EVERY_APP_GATEWAY: binding,
+    });
+  }
+
+  it("sends background work's organization as x-everyapp-org", async () => {
+    shared();
+    const contextFetch = await forOrganization("org_a", () =>
+      getContextFetch(),
+    );
+    await contextFetch?.("https://api.context.dev/v1/web/scrape/html");
+
+    const [call] = sent;
+    expect(call.headers.get("x-everyapp-org")).toBe("org_a");
+    expect(call.headers.get("x-everyapp-identity")).toBeNull();
+  });
+
+  it("forwards the identity of the request it serves", async () => {
+    shared();
+    const token = new UnsecuredJWT({ org_id: "org_a" })
+      .setExpirationTime("2m")
+      .encode();
+    const request = new Request("https://openseo.app.everyapp.com/", {
+      headers: { "x-everyapp-identity": token },
+    });
+    const user = {
+      id: "user_ana",
+      email: "ana@example.com",
+      orgId: "org_a",
+      orgRole: "member",
+      channel: "web" as const,
+      actor: { sub: "user_ana" },
+      scopes: ["*"],
+      jti: "jti_1",
+    };
+
+    const dataforseo = await serveEveryAppRequest(request, user, () =>
+      getDataforseoFetch(),
+    );
+    await dataforseo("https://api.dataforseo.com/v3/serp/google/locations/us");
+
+    const [call] = sent;
+    expect(call.headers.get("x-everyapp-identity")).toBe(token);
+    expect(call.headers.get("x-everyapp-org")).toBeNull();
+  });
+
+  it("refuses a call that says nobody's, and asks whether a provider is ready for nobody", async () => {
+    shared();
+    await expect(getDataforseoFetch()).rejects.toMatchObject({
+      name: "AttributionError",
+    });
+    await expect(getContextFetch()).rejects.toMatchObject({
+      name: "AttributionError",
+    });
+    expect(sent).toEqual([]);
+
+    expect(await hasProviderAccess("dataforseo")).toBe(true);
+    const [status] = sent;
+    expect(new URL(status.url).pathname).toBe("/api/integrations/dataforseo");
+    expect(status.headers.get("x-everyapp-org")).toBeNull();
+    expect(status.headers.get("x-everyapp-identity")).toBeNull();
   });
 });

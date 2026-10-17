@@ -10,6 +10,10 @@ import {
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import { resolveEveryAppUserContext } from "@/middleware/ensure-user/everyApp";
 import { asAppError } from "@/server/lib/errors";
+import {
+  forOrganization,
+  serveEveryAppRequest,
+} from "@/server/lib/gateway-attribution";
 import type { ToolContext } from "@/server/mcp/context";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { objectSchema } from "@/server/mcp/output-schemas";
@@ -89,11 +93,18 @@ function everyAppTool<Input extends ToolSchema>(
     handler: async (args, { user, request }) => {
       let result: CallToolResult;
       try {
-        result = await handler(
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the SDK validated args against this tool's own inputSchema before calling
-          args as ToolArgs<Input>,
-          await toolContext(user, request),
-        );
+        // The tool's gateway calls forward the call's identity, and are its
+        // organization's (gateway-attribution.ts).
+        result = await serveEveryAppRequest(request, user, async () => {
+          const context = await toolContext(user, request);
+          return forOrganization(context.auth.organizationId, () =>
+            handler(
+              // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the SDK validated args against this tool's own inputSchema before calling
+              args as ToolArgs<Input>,
+              context,
+            ),
+          );
+        });
       } catch (error) {
         // What OpenSEO's MCP server shows an agent; anything else stays a
         // masked internal error with a reference.

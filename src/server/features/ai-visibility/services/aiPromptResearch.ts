@@ -100,7 +100,8 @@ export async function researchAiPrompts(
       "INSUFFICIENT_CREDITS",
       "You need usage credits to research prompts.",
     );
-  const openRouter = await requireOpenRouterAccess();
+  // Its calls are the customer's organization's behind an Every App gateway.
+  const openRouter = await requireOpenRouterAccess(customer.organizationId);
   const state = await getTracker({ projectId: input.projectId });
   const keyword = normalizeAiSuggestion(input.keyword);
   // DataForSEO has ChatGPT prompt data only in US English.

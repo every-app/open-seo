@@ -88,16 +88,16 @@ export async function getDeploymentTier(): Promise<DeploymentTier> {
 /**
  * Whether the five-minute cron starts due rank checks and AI visibility runs.
  *
- * Off by default in the first-party tier: a cron has no request, so its
- * DataForSEO and OpenRouter calls reach the gateway with nobody's
- * organization on them, and the gateway can neither meter nor cap them per
- * organization. They turn on with FIRST_PARTY_SCHEDULED_CHECKS=on once the
- * SDK sends `x-everyapp-org` from background work and the gateway verifies it
- * for a trusted shared Worker. Every other tier keeps running them.
+ * On in every tier. The runs are Workflows, which name the organization that
+ * owns them on each gateway call (`x-everyapp-org`, server/lib/
+ * gateway-attribution.ts), so the gateway attributes and caps them per
+ * organization. FIRST_PARTY_SCHEDULED_CHECKS=off holds them in the
+ * first-party tier, the deployment that pays for every organization's
+ * scheduled work at once.
  */
 export function scheduledChecksEnabled(env: object): boolean {
   if (deploymentTierFor(env) !== "first_party") return true;
-  return read(env, "FIRST_PARTY_SCHEDULED_CHECKS") === "on";
+  return read(env, "FIRST_PARTY_SCHEDULED_CHECKS") !== "off";
 }
 
 /** The label `whoami` and the logs show for the tier. */

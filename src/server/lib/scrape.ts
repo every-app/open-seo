@@ -96,6 +96,8 @@ async function fetchText(
     // Timeouts, TLS and network errors fall through to Context.
   }
   if (!contextUsage) return null;
+  // Behind an Every App gateway, the caller's organization's call (website
+  // research names it with forOrganization).
   const contextFetch = await getContextFetch();
   if (!contextFetch) return null;
   try {

@@ -2,10 +2,11 @@ import {
   ConfigurationError,
   integrationFetch,
   integrationStatus,
-  type IntegrationId,
+  type CapabilityId,
 } from "@every-app/sdk/server";
 import { isEveryAppAuthMode } from "@/lib/auth-mode";
 import { AppError } from "@/server/lib/errors";
+import { gatewayCallFor } from "@/server/lib/gateway-attribution";
 import {
   getOptionalEnvValue,
   getRequiredEnvValue,
@@ -16,9 +17,9 @@ import {
 // Every mode but one holds the keys itself. Behind an Every App gateway
 // (AUTH_MODE=everyapp) the gateway holds them: calls go over the gateway's
 // binding, which puts the key on them, so the deployment needs no key of its
-// own (docs/maintainers/every-app.md). No request is passed: workflows and
-// crons call these with nobody signed in, so the manifest asks for
-// background use.
+// own (docs/maintainers/every-app.md). Each call says whose it is: the
+// request's identity while serving one, else the organization the work is
+// for (gateway-attribution.ts).
 
 async function isBehindEveryAppGateway(): Promise<boolean> {
   return isEveryAppAuthMode(await getOptionalEnvValue("AUTH_MODE"));
@@ -36,18 +37,28 @@ function withAuthorization(authorization: string): typeof fetch {
   };
 }
 
-/** The gateway's fetch for an integration, or null without its binding. */
-async function gatewayFetch(provider: IntegrationId) {
+/**
+ * The gateway's fetch for a capability, its calls for the forOrganization
+ * scope's organization or the request being served, or null without its
+ * binding.
+ */
+async function gatewayFetch(provider: CapabilityId) {
+  const env = await gatewayEnv();
   try {
-    return integrationFetch({ env: await gatewayEnv(), provider });
+    return integrationFetch({ env, provider, for: gatewayCallFor(env) });
   } catch (error) {
-    // No gateway binding (and in local dev, no key in .dev.vars).
+    // No gateway binding (and in local dev, no key in .dev.vars). A call that
+    // says nobody's (AttributionError) is a bug, so it is thrown.
     if (error instanceof ConfigurationError) return null;
     throw error;
   }
 }
 
-/** A fetch that reaches DataForSEO authenticated, for this deployment. */
+/**
+ * A fetch that reaches DataForSEO authenticated, for this deployment. Behind
+ * the gateway its calls are the forOrganization scope's, which the metering
+ * seam (dataforseo/client.ts) opens, or the served request's.
+ */
 export async function getDataforseoFetch(): Promise<typeof fetch> {
   if (await isBehindEveryAppGateway()) {
     const providerFetch = await gatewayFetch("dataforseo");
@@ -63,21 +74,28 @@ export async function getDataforseoFetch(): Promise<typeof fetch> {
   return withAuthorization(`Basic ${apiKey}`);
 }
 
-/** A fetch that reaches Context.dev authenticated, or null without a key. */
+/**
+ * A fetch that reaches Context.dev authenticated, or null without a key.
+ * Behind the gateway its calls are the forOrganization scope's (website
+ * research's, a site audit's), or the served request's.
+ */
 export async function getContextFetch(): Promise<typeof fetch | null> {
   if (await isBehindEveryAppGateway()) return gatewayFetch("context");
   const apiKey = await getOptionalEnvValue("CONTEXT_API_KEY");
   return apiKey ? withAuthorization(`Bearer ${apiKey}`) : null;
 }
 
-const KEY_ENV: Record<IntegrationId, string> = {
+const KEY_ENV: Record<CapabilityId, string> = {
   dataforseo: "DATAFORSEO_API_KEY",
   context: "CONTEXT_API_KEY",
 };
 
-/** Whether calls to the provider would go through, without making one. */
+/**
+ * Whether calls to the provider would go through, without making one. The
+ * gateway answers this for no organization in particular, so it needs none.
+ */
 export async function hasProviderAccess(
-  provider: IntegrationId,
+  provider: CapabilityId,
 ): Promise<boolean> {
   if (await isBehindEveryAppGateway()) {
     const status = await integrationStatus({

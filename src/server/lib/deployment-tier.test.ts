@@ -43,29 +43,33 @@ describe("deploymentTierFor", () => {
 });
 
 describe("scheduledChecksEnabled", () => {
-  it("holds scheduled checks in the first-party tier until switched on", () => {
-    expect(scheduledChecksEnabled({ AUTH_MODE: "everyapp" })).toBe(false);
-    expect(
-      scheduledChecksEnabled({
-        AUTH_MODE: "everyapp",
-        FIRST_PARTY_SCHEDULED_CHECKS: "off",
-      }),
-    ).toBe(false);
+  it("runs scheduled checks in the first-party tier unless switched off", () => {
+    expect(scheduledChecksEnabled({ AUTH_MODE: "everyapp" })).toBe(true);
     expect(
       scheduledChecksEnabled({
         AUTH_MODE: "everyapp",
         FIRST_PARTY_SCHEDULED_CHECKS: "on",
       }),
     ).toBe(true);
+    expect(
+      scheduledChecksEnabled({
+        AUTH_MODE: "everyapp",
+        FIRST_PARTY_SCHEDULED_CHECKS: "off",
+      }),
+    ).toBe(false);
   });
 
-  it("keeps them running in every other tier", () => {
+  it("keeps them running in every other tier, whatever the switch says", () => {
     for (const env of [
-      { AUTH_MODE: "hosted" },
+      { AUTH_MODE: "hosted", FIRST_PARTY_SCHEDULED_CHECKS: "off" },
       { AUTH_MODE: "cloudflare_access" },
       { AUTH_MODE: "local_noauth" },
       {},
-      { AUTH_MODE: "everyapp", EVERY_APP_ORG_ID: "org_1" },
+      {
+        AUTH_MODE: "everyapp",
+        EVERY_APP_ORG_ID: "org_1",
+        FIRST_PARTY_SCHEDULED_CHECKS: "off",
+      },
     ]) {
       expect(scheduledChecksEnabled(env)).toBe(true);
     }

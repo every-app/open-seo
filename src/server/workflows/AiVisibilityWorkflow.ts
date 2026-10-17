@@ -4,6 +4,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import { pgStep } from "./pgStep";
+import { forOrganization } from "@/server/lib/gateway-attribution";
 import {
   collectAiLiveBatch,
   collectAiModelBatch,
@@ -62,6 +63,18 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
   AiVisibilityPayload
 > {
   async run(event: WorkflowEvent<AiVisibilityPayload>, step: WorkflowStep) {
+    // Behind an Every App gateway, every call the run makes is its
+    // organization's; pgStep carries it into each step
+    // (gateway-attribution.ts).
+    return forOrganization(event.payload.customer.organizationId, () =>
+      this.runForOrganization(event, step),
+    );
+  }
+
+  private async runForOrganization(
+    event: WorkflowEvent<AiVisibilityPayload>,
+    step: WorkflowStep,
+  ) {
     const { payload } = event;
     if ("setupProjectId" in payload)
       // No retries: each attempt is a paid model call. The user can retry.

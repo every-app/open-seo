@@ -300,6 +300,8 @@ async function runCrawlChunk(
   // This attempt's rendering counts, returned in the step result. The audit's
   // credit lock is settled once, when the audit ends.
   const renderUsage: RenderUsage = { cloudflareAttempts: 0, contextCredits: 0 };
+  // Behind an Every App gateway its calls are the audit's organization's,
+  // named around the Workflow's run() and carried into this step by pgStep.
   const contextFetch = input.renderJavaScript ? await getContextFetch() : null;
   const render = input.renderJavaScript
     ? async (url: string) => {

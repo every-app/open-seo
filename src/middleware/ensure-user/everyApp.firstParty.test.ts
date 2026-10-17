@@ -28,6 +28,8 @@ import { resetEnsuredEveryAppMemberships } from "@/server/auth/delegated-organiz
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 
+// The Worker's name, which the gateway mints every identity for.
+const AUDIENCE = "every-everyapp-openseo";
 const ISSUER = "https://app.everyapp.com";
 let privateKeyPem: string;
 
@@ -36,6 +38,7 @@ beforeAll(async () => {
   privateKeyPem = await exportPKCS8(keys.privateKey);
   Object.assign(workerEnv, {
     EVERYAPP_APP_ID: "openseo",
+    EVERYAPP_AUDIENCE: AUDIENCE,
     EVERYAPP_IDENTITY_ISSUER: ISSUER,
     EVERYAPP_IDENTITY_PUBLIC_KEYS: JSON.stringify([
       await exportSPKI(keys.publicKey),
@@ -67,7 +70,7 @@ async function signed(input: {
       orgId: input.orgId,
       orgRole: input.orgRole,
     },
-    audience: "openseo",
+    audience: AUDIENCE,
     issuer: ISSUER,
     channel: "web",
   });

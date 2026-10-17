@@ -11,7 +11,7 @@ import { exportPKCS8, exportSPKI, generateKeyPair } from "jose";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const { workerEnv } = vi.hoisted(() => ({
-  workerEnv: { AUTH_MODE: "everyapp" } as Record<string, string>,
+  workerEnv: { AUTH_MODE: "everyapp" } as Record<string, unknown>,
 }));
 vi.mock("cloudflare:workers", () => ({
   env: workerEnv,
@@ -35,6 +35,8 @@ vi.mock("@/server/lib/self-host-telemetry", () => ({
 
 import { everyAppTools } from "./tools";
 
+// The fork's Worker, which the gateway mints every identity for.
+const AUDIENCE = "every-acme-openseo";
 const ISSUER = "https://apps.example.com";
 const ctx: ExecutionContext = {
   waitUntil: () => {},
@@ -48,6 +50,7 @@ beforeAll(async () => {
   privateKeyPem = await exportPKCS8(keys.privateKey);
   Object.assign(workerEnv, {
     EVERYAPP_APP_ID: "openseo",
+    EVERYAPP_AUDIENCE: AUDIENCE,
     EVERYAPP_IDENTITY_ISSUER: ISSUER,
     EVERYAPP_IDENTITY_PUBLIC_KEYS: JSON.stringify([
       await exportSPKI(keys.publicKey),
@@ -73,7 +76,7 @@ function post(path: string, body: unknown, headers: Record<string, string>) {
 describe("OpenSEO's tools on the Every App gateway", () => {
   it("describes every tool within the gateway's catalog limits", async () => {
     const token = await mintSystemJwt(privateKeyPem, {
-      audience: "openseo",
+      audience: AUDIENCE,
       issuer: ISSUER,
       purpose: "tools.list",
     });
@@ -123,7 +126,7 @@ describe("OpenSEO's tools on the Every App gateway", () => {
         orgId: "org_1",
         orgRole: "member",
       },
-      audience: "openseo",
+      audience: AUDIENCE,
       issuer: ISSUER,
       channel: "mcp",
       actor: { sub: "oauth:conn_1" },
@@ -150,5 +153,66 @@ describe("OpenSEO's tools on the Every App gateway", () => {
       mode: "every-app",
       deploymentTier: "fork",
     });
+  });
+
+  it("forwards the tool call's identity on the tool's own gateway calls", async () => {
+    const sent: Request[] = [];
+    Object.assign(workerEnv, {
+      EVERY_APP_GATEWAY: {
+        fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          sent.push(new Request(input, init));
+          return Response.json({
+            status_code: 20000,
+            tasks: [
+              {
+                status_code: 20000,
+                result: [
+                  {
+                    location_code: 1013962,
+                    location_name: "Catonsville,Maryland,United States",
+                    location_type: "City",
+                  },
+                ],
+              },
+            ],
+          });
+        },
+      },
+      KV: { get: async () => null, put: async () => {} },
+    });
+    const token = await mintIdentityJwt(privateKeyPem, {
+      subject: {
+        sub: "user_1",
+        email: "ana@example.com",
+        orgId: "org_1",
+        orgRole: "member",
+      },
+      audience: AUDIENCE,
+      issuer: ISSUER,
+      channel: "mcp",
+      actor: { sub: "oauth:conn_1" },
+      scopes: ["mcp:read"],
+      toolCall: { id: "call_2", name: "search_serp_locations" },
+    });
+    try {
+      const response = await post(
+        TOOLS_CALL_PATH,
+        {
+          v: 1,
+          name: "search_serp_locations",
+          arguments: { query: "Catonsville", countryCode: "us" },
+          callId: "call_2",
+        },
+        { [IDENTITY_HEADER]: token },
+      );
+
+      expect(response.status).toBe(200);
+      expect(sent).toHaveLength(1);
+      expect(sent[0]?.headers.get(IDENTITY_HEADER)).toBe(token);
+      expect(sent[0]?.headers.get("x-everyapp-org")).toBeNull();
+    } finally {
+      delete workerEnv.EVERY_APP_GATEWAY;
+      delete workerEnv.KV;
+    }
   });
 });

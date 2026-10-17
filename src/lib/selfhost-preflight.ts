@@ -59,15 +59,19 @@ function checkAuthMode(env: EnvRecord, items: PreflightItem[]): void {
   }
 
   if (mode === "everyapp") {
-    const deployed =
-      get(env, "EVERYAPP_IDENTITY_PUBLIC_KEYS") && get(env, "EVERYAPP_APP_ID");
+    // The gateway mints each identity for the Worker's name
+    // (EVERYAPP_AUDIENCE); only local dev falls back to the app id.
+    const audience =
+      get(env, "EVERYAPP_AUDIENCE") ||
+      (get(env, "EVERYAPP_DEV") && get(env, "EVERYAPP_APP_ID"));
+    const deployed = get(env, "EVERYAPP_IDENTITY_PUBLIC_KEYS") && audience;
     items.push({
       key: "auth",
       name: "AUTH_MODE",
       level: deployed ? "ok" : "fail",
       message: deployed
         ? "everyapp — signed in through the Every App gateway"
-        : "everyapp needs the gateway's identity keys: deploy with `everyapp app deploy`, or run `pnpm dev:everyapp` locally.",
+        : "everyapp needs the gateway's identity keys and the Worker's name as EVERYAPP_AUDIENCE: deploy with `everyapp app deploy`, or run `pnpm dev:everyapp` locally.",
     });
     return;
   }

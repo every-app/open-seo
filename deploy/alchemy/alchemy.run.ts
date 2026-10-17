@@ -393,7 +393,8 @@ export default Alchemy.Stack(
     // BEFORE the app worker so the app's cross-script workflow/DO bindings
     // always have a target. Takes no direct traffic (url off).
     const auditWorker = yield* Cloudflare.Worker("open-seo-audit", {
-      name: `${workerName(stage)}-audit`,
+      // The everyapp stage's is the name the gateway's registry gives it.
+      name: everyApp?.auditWorker.name ?? `${workerName(stage)}-audit`,
       main: "./dist/open_seo_audit/index.js",
       bundle: false,
       url: false,
@@ -456,7 +457,8 @@ export default Alchemy.Stack(
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
       domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
-      // The everyapp stage: no workers.dev URL, only the gateway reaches it.
+      // The everyapp stage: the registry's name, and no workers.dev URL:
+      // only the gateway reaches it.
       ...everyApp?.appWorker,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by

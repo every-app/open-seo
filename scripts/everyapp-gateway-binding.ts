@@ -7,8 +7,8 @@
  *   pnpm everyapp:bind-gateway
  *
  * Reads .env.everyapp: CLOUDFLARE_ACCOUNT_ID, EVERYAPP_BINDING_API_TOKEN (Workers
- * Scripts: Edit on that account) and EVERYAPP_PLATFORM_ORG_ID. See
- * docs/EVERY_APP_DEPLOYMENT.md.
+ * Scripts: Edit on that account), EVERYAPP_PLATFORM_ORG_ID and the optional
+ * EVERYAPP_WORKER_NAME. See docs/EVERY_APP_DEPLOYMENT.md.
  */
 import process from "node:process";
 import { bindEveryAppGateway } from "../deploy/alchemy/alchemy.everyapp.ts";
@@ -23,6 +23,7 @@ const { workers, props } = await bindEveryAppGateway({
   accountId: requiredEnv("CLOUDFLARE_ACCOUNT_ID"),
   apiToken: requiredEnv("EVERYAPP_BINDING_API_TOKEN"),
   platformOrganizationId: requiredEnv("EVERYAPP_PLATFORM_ORG_ID"),
+  workerName: process.env.EVERYAPP_WORKER_NAME,
 });
 console.log(
   `Bound EVERY_APP_GATEWAY on ${workers.join(" and ")} with ${JSON.stringify(props)}.`,

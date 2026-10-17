@@ -5,6 +5,7 @@ const EVERY_APP = {
   AUTH_MODE: "everyapp",
   EVERYAPP_IDENTITY_PUBLIC_KEYS: "[]",
   EVERYAPP_APP_ID: "openseo",
+  EVERYAPP_AUDIENCE: "every-everyapp-openseo",
 };
 
 function check(env: Record<string, string>, key: string) {
@@ -26,6 +27,15 @@ describe("preflight behind an Every App gateway", () => {
       expect(gsc?.level).toBe("info");
       expect(gsc?.message).toContain("Held by the Every App gateway");
     }
+  });
+
+  it("fails a deployment without the Worker's name as its identity audience", () => {
+    const { EVERYAPP_AUDIENCE: _audience, ...withoutAudience } = EVERY_APP;
+    expect(check(withoutAudience, "auth")?.level).toBe("fail");
+    // Local dev identities name the app id.
+    expect(
+      check({ ...withoutAudience, EVERYAPP_DEV: "1" }, "auth")?.level,
+    ).toBe("ok");
   });
 
   it("says the gateway holds the provider keys", () => {

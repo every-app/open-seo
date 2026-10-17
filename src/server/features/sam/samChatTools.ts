@@ -17,6 +17,7 @@ import {
 import { tool, type Tool, type ToolSet } from "ai";
 import { z, type ZodRawShape } from "zod";
 import { withPgClient } from "@/db";
+import { forOrganization } from "@/server/lib/gateway-attribution";
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import { type ToolAuthContext, type ToolContext } from "@/server/mcp/context";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
@@ -162,8 +163,16 @@ function adaptMcpTool<Shape extends ZodRawShape>(
         // Tool calls run inside Think's inference loop, outside any ambient
         // request scope, so each execution scopes its own Postgres client
         // (no-op in D1 mode) — same rule as the DO's other DB-touching seams.
+        // No request either: behind an Every App gateway, the tool's
+        // provider calls are the session's organization's background work.
         return capToolOutput(
-          toModelOutput(await withPgClient(() => handler(fullArgs, context))),
+          toModelOutput(
+            await withPgClient(() =>
+              forOrganization(context.auth.organizationId, () =>
+                handler(fullArgs, context),
+              ),
+            ),
+          ),
         );
       } catch (error) {
         // Surface the failure to the model so it can recover or report it,

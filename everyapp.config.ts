@@ -55,7 +55,8 @@ export default {
   // What OpenSEO calls through the gateway with keys only the gateway holds
   // (integrationFetch). An approval covers the app; the gateway attributes
   // each call to the organization in the request's identity, or, from
-  // workflows and crons, in `x-everyapp-org` once the SDK sends it.
+  // Workflows and SAM, in `x-everyapp-org` (src/server/lib/
+  // gateway-attribution.ts).
   capabilities: {
     dataforseo: {
       access: "read",

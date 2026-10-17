@@ -230,22 +230,28 @@ describe("alchemy.run.ts stages", () => {
       expect(plan).toMatchSnapshot();
 
       const envs = workerEnvs(plan);
+      // The registry's names for the platform organization "Every App":
+      // `everyapp register` binds no others.
       expect(Object.keys(envs)).toEqual([
-        "open-seo-everyapp-audit",
-        "open-seo-everyapp",
+        "every-everyapp-openseo--audit",
+        "every-everyapp-openseo",
       ]);
-      const app = envs["open-seo-everyapp"];
+      const app = envs["every-everyapp-openseo"];
       expect(app).toMatchObject({
         AUTH_MODE: "everyapp",
         DATABASE_PROVIDER: "postgres",
         DEPLOYMENT_TIER: "first_party",
         EVERYAPP_APP_ID: "openseo",
+        EVERYAPP_AUDIENCE: "every-everyapp-openseo",
         EVERYAPP_IDENTITY_ISSUER: "https://app.everyapp.com",
         GATEWAY_URL: "https://app.everyapp.com",
         BETTER_AUTH_URL: "https://openseo.app.everyapp.com",
       });
       expect(plan.output).toEqual({ url: undefined });
       for (const env of Object.values(envs)) {
+        // One Worker pair for every organization: each gateway call says
+        // whose it is.
+        expect(env.EVERYAPP_SHARED).toBe("1");
         expect(env.HYPERDRIVE).toMatchObject({
           resource: { props: { name: "open-seo-everyapp" } },
         });
@@ -263,6 +269,28 @@ describe("alchemy.run.ts stages", () => {
           expect(env).not.toHaveProperty(name);
         }
       }
+    });
+
+    it("takes the Worker name the gateway's registry gives another platform organization key", () => {
+      const envs = workerEnvs(
+        resolveStage("everyapp", {
+          ...everyAppEnv,
+          EVERYAPP_WORKER_NAME: "every-everyapp2-openseo",
+        }),
+      );
+      expect(Object.keys(envs)).toEqual([
+        "every-everyapp2-openseo--audit",
+        "every-everyapp2-openseo",
+      ]);
+      expect(envs["every-everyapp2-openseo"]).toMatchObject({
+        EVERYAPP_AUDIENCE: "every-everyapp2-openseo",
+      });
+      expect(() =>
+        resolveStage("everyapp", {
+          ...everyAppEnv,
+          EVERYAPP_WORKER_NAME: "open-seo-everyapp",
+        }),
+      ).toThrow(/EVERYAPP_WORKER_NAME/);
     });
 
     it("refuses to deploy without the gateway's identity key", () => {

@@ -76,7 +76,8 @@ export async function generateAiPrompts(
     : suggestedAiTopicSchema;
   const result = await generateText({
     model: buildChatAgentModel(
-      await requireOpenRouterAccess(),
+      // The customer's organization's call behind an Every App gateway.
+      await requireOpenRouterAccess(customer.organizationId),
       await getOptionalEnvValue("OPENROUTER_MODEL"),
       "low",
     ),

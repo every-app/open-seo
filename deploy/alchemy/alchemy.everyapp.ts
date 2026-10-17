@@ -6,17 +6,41 @@
 //
 // One Worker pair for every organization on the gateway: AUTH_MODE=everyapp
 // with no EVERY_APP_ORG_ID (the organization comes from each request's
-// identity), DEPLOYMENT_TIER=first_party, Postgres through Hyperdrive. No
-// provider, Autumn or Google secret: the gateway holds them.
+// identity), EVERYAPP_SHARED=1 (every gateway call says whose it is),
+// DEPLOYMENT_TIER=first_party, Postgres through Hyperdrive. No provider,
+// Autumn or Google secret: the gateway holds them.
 
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Redacted from "effect/Redacted";
 import { z } from "zod";
 import manifest from "../../everyapp.config.ts";
-import { workerName } from "./alchemy.access.ts";
 
 export const EVERYAPP_STAGE = "everyapp";
+
+/**
+ * The app's Worker as the gateway's registry names it,
+ * `every-<platform organization key>-<app id>`: the platform organization
+ * "Every App" has the key `everyapp`. `everyapp register` refuses any other
+ * name (WORKER_NAME_MISMATCH, which names the one it wants), so a gateway
+ * whose platform organization has another key sets EVERYAPP_WORKER_NAME.
+ */
+const DEFAULT_WORKER_NAME = `every-everyapp-${manifest.id}`;
+const WORKER_NAME_PATTERN = new RegExp(`^every-[a-z0-9]{1,12}-${manifest.id}$`);
+
+/**
+ * The stage's two Worker names: the app's, and its audit helper's,
+ * `<app worker>--audit` as the SDK names helper Workers.
+ */
+function everyAppWorkerNames(configured?: string) {
+  const app = configured?.trim() || DEFAULT_WORKER_NAME;
+  if (!WORKER_NAME_PATTERN.test(app)) {
+    throw new Error(
+      `EVERYAPP_WORKER_NAME must be the name the gateway's registry gives OpenSEO's Worker, every-<platform organization key>-${manifest.id}; got "${app}".`,
+    );
+  }
+  return { app, audit: `${app}--audit` };
+}
 
 /** The hosted gateway, which also issues the identity tokens. */
 const HOSTED_GATEWAY_URL = "https://app.everyapp.com";
@@ -73,11 +97,21 @@ export const readEveryAppStage = (stage: string, authMode: string) =>
       Config.withDefault(gatewayUrl),
     );
 
-    // Both Workers, in place of the env file's secrets: the tier, and
-    // OpenSEO's one setting of its own. The gateway binding comes after the
-    // deploy (bindEveryAppGateway).
+    const configuredName = yield* optionalVar("EVERYAPP_WORKER_NAME");
+    const workerNames = yield* Effect.try({
+      try: () => everyAppWorkerNames(configuredName),
+      catch: (error) => error,
+    }).pipe(Effect.orDie);
+
+    // Both Workers, in place of the env file's secrets: the tier, the shared
+    // flag, and OpenSEO's one setting of its own. The gateway binding comes
+    // after the deploy (bindEveryAppGateway).
     const shared = {
       EVERYAPP_APP_ID: manifest.id,
+      // One Worker for every organization: the SDK refuses a gateway call
+      // that names neither a request nor an organization, as an
+      // everyAppWorker() shared deploy sets it.
+      EVERYAPP_SHARED: "1",
       DEPLOYMENT_TIER: "first_party",
       CRAWLER_ACCESS_SECRET: Config.redacted("CRAWLER_ACCESS_SECRET").pipe(
         Config.withDefault(Redacted.make("")),
@@ -92,18 +126,21 @@ export const readEveryAppStage = (stage: string, authMode: string) =>
         ...shared,
         EVERYAPP_IDENTITY_PUBLIC_KEYS: publicKeys,
         EVERYAPP_IDENTITY_ISSUER: issuer,
+        // The gateway mints every identity for the Worker's name (`aud`).
+        EVERYAPP_AUDIENCE: workerNames.app,
         // "Sign out on Every App" (src/serverFunctions/everyApp.ts).
         GATEWAY_URL: gatewayUrl,
-        // Scheduled rank checks and AI visibility wait for the gateway to
-        // attribute background calls (src/server/lib/deployment-tier.ts).
+        // `off` holds scheduled rank checks and AI visibility
+        // (src/server/lib/deployment-tier.ts).
         FIRST_PARTY_SCHEDULED_CHECKS: optionalVar(
           "FIRST_PARTY_SCHEDULED_CHECKS",
         ),
         OPENROUTER_MODEL: optionalVar("OPENROUTER_MODEL"),
       },
       // Nothing reaches the app but the gateway's service binding
-      // (APP__open-seo-everyapp): no workers.dev URL.
-      appWorker: { url: false },
+      // (APP__<app worker>): no workers.dev URL.
+      appWorker: { name: workerNames.app, url: false },
+      auditWorker: { name: workerNames.audit },
     };
   });
 
@@ -114,6 +151,18 @@ const cloudflareResponse = z.object({
     .optional(),
   result: z.unknown(),
 });
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+function errorMessages(body: z.infer<typeof cloudflareResponse>): string {
+  return (body.errors ?? []).map((error) => error.message).join("; ");
+}
 
 const scriptSettings = z.object({
   bindings: z.array(z.object({ name: z.string(), type: z.string() })),
@@ -135,10 +184,13 @@ export async function bindEveryAppGateway(options: {
   accountId: string;
   apiToken: string;
   platformOrganizationId: string;
+  /** EVERYAPP_WORKER_NAME, when the platform organization's key isn't `everyapp`. */
+  workerName?: string;
   fetch?: typeof fetch;
 }) {
   const fetchImpl = options.fetch ?? fetch;
-  const appWorker = workerName(EVERYAPP_STAGE);
+  const names = everyAppWorkerNames(options.workerName);
+  const appWorker = names.app;
   const gateway = {
     type: "service",
     name: GATEWAY_BINDING,
@@ -156,17 +208,25 @@ export async function bindEveryAppGateway(options: {
       ...init,
       headers: { Authorization: `Bearer ${options.apiToken}` },
     });
-    const body = cloudflareResponse.parse(await response.json());
-    if (!response.ok || !body.success) {
-      const errors = (body.errors ?? []).map((error) => error.message);
-      throw new Error(
-        `Cloudflare API ${init.method ?? "GET"} ${url} failed (${response.status}): ${errors.join("; ") || "no error message"}`,
+    const failed = (detail: string) =>
+      new Error(
+        `Cloudflare API ${init.method ?? "GET"} ${url} failed (${response.status}): ${detail || "no error message"}`,
+      );
+    // A failure's body may not be Cloudflare's envelope (a gateway's HTML
+    // page), so read it as text and take the envelope's errors if it is one.
+    const text = await response.text();
+    const body = cloudflareResponse.safeParse(parseJson(text));
+    if (!response.ok) {
+      throw failed(
+        body.success ? errorMessages(body.data) : text.trim().slice(0, 300),
       );
     }
-    return body.result;
+    if (!body.success) throw failed("the response isn't the API's JSON");
+    if (!body.data.success) throw failed(errorMessages(body.data));
+    return body.data.result;
   };
 
-  const workers = [appWorker, `${appWorker}-audit`];
+  const workers = [names.app, names.audit];
   for (const worker of workers) {
     const url = `https://api.cloudflare.com/client/v4/accounts/${options.accountId}/workers/scripts/${worker}/settings`;
     const current = scriptSettings.parse(await call(url, { method: "GET" }));

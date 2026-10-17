@@ -43,8 +43,8 @@ const options = {
 describe("bindEveryAppGateway", () => {
   it("binds both Workers to the gateway as the shared app, keeping their other bindings", async () => {
     const api = cloudflareApi({
-      "open-seo-everyapp": [{ name: "KV" }, { name: "EVERY_APP_GATEWAY" }],
-      "open-seo-everyapp-audit": [{ name: "R2" }],
+      "every-everyapp-openseo": [{ name: "KV" }, { name: "EVERY_APP_GATEWAY" }],
+      "every-everyapp-openseo--audit": [{ name: "R2" }],
     });
 
     await bindEveryAppGateway({ ...options, fetch: api.fetch });
@@ -58,18 +58,18 @@ describe("bindEveryAppGateway", () => {
       props: {
         organizationId: "org_platform",
         appId: "openseo",
-        workerName: "open-seo-everyapp",
+        workerName: "every-everyapp-openseo",
       },
     };
     expect(api.patches).toEqual([
       {
-        url: `${SETTINGS}/open-seo-everyapp/settings`,
+        url: `${SETTINGS}/every-everyapp-openseo/settings`,
         settings: {
           bindings: [{ type: "inherit", name: "KV" }, gateway],
         },
       },
       {
-        url: `${SETTINGS}/open-seo-everyapp-audit/settings`,
+        url: `${SETTINGS}/every-everyapp-openseo--audit/settings`,
         settings: {
           bindings: [{ type: "inherit", name: "R2" }, gateway],
         },
@@ -82,7 +82,42 @@ describe("bindEveryAppGateway", () => {
 
     await expect(
       bindEveryAppGateway({ ...options, fetch: api.fetch }),
-    ).rejects.toThrow(/open-seo-everyapp\/settings failed \(404\): not found/);
+    ).rejects.toThrow(
+      /every-everyapp-openseo\/settings failed \(404\): not found/,
+    );
     expect(api.patches).toEqual([]);
+  });
+
+  it("names the URL and status when a failure's body isn't the API's JSON", async () => {
+    const fetch = vi.fn(
+      async () =>
+        new Response("<html>502 Bad Gateway</html>", {
+          status: 502,
+          headers: { "content-type": "text/html" },
+        }),
+    );
+
+    await expect(bindEveryAppGateway({ ...options, fetch })).rejects.toThrow(
+      `Cloudflare API GET ${SETTINGS}/every-everyapp-openseo/settings failed (502): <html>502 Bad Gateway</html>`,
+    );
+  });
+
+  it("binds the Workers named for another platform organization key", async () => {
+    const api = cloudflareApi({
+      "every-everyapp2-openseo": [],
+      "every-everyapp2-openseo--audit": [],
+    });
+
+    const { workers, props } = await bindEveryAppGateway({
+      ...options,
+      workerName: "every-everyapp2-openseo",
+      fetch: api.fetch,
+    });
+
+    expect(workers).toEqual([
+      "every-everyapp2-openseo",
+      "every-everyapp2-openseo--audit",
+    ]);
+    expect(props.workerName).toBe("every-everyapp2-openseo");
   });
 });

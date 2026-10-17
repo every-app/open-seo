@@ -48,10 +48,15 @@ declare namespace Cloudflare {
     // AUTH_MODE=everyapp only (server/lib/deployment-tier.ts): first_party or
     // fork, derived from EVERY_APP_ORG_ID when unset.
     DEPLOYMENT_TIER?: string;
-    // "on" lets a first-party deployment's cron start scheduled rank checks
-    // and AI visibility runs; off until the gateway attributes background
-    // calls to an organization.
+    // "off" holds a first-party deployment's scheduled rank checks and AI
+    // visibility runs; they run otherwise.
     FIRST_PARTY_SCHEDULED_CHECKS?: string;
+    // "1" on a first-party deployment's Workers: one Worker serves every
+    // organization, so the SDK refuses a gateway call that says nobody's
+    // (server/lib/gateway-attribution.ts).
+    EVERYAPP_SHARED?: string;
+    // The Worker's name, which the gateway mints every identity for (`aud`).
+    EVERYAPP_AUDIENCE?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
     POSTHOG_PUBLIC_KEY?: string;

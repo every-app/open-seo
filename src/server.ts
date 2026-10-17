@@ -5,6 +5,7 @@ import {
 import { routeAgentRequest } from "agents";
 import { everyApp } from "@every-app/sdk/server";
 import { withoutCookies } from "@/server/everyapp/cookies";
+import { serveEveryAppRequest } from "@/server/lib/gateway-attribution";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
@@ -141,8 +142,9 @@ function fetch(
 // AUTH_MODE=everyapp: OpenSEO is private behind an Every App gateway, which
 // signs the person's identity onto every request it forwards. Fail closed on
 // anything else before routing, then resolve users per request as the other
-// modes do. The gateway's tool calls (`/__everyapp/tools/*`) load the MCP
-// tools on first use only.
+// modes do. Gateway calls made while serving the request forward its
+// identity (gateway-attribution.ts). The gateway's tool calls
+// (`/__everyapp/tools/*`) load the MCP tools on first use only.
 async function handleEveryAppRequest(
   request: Request,
   env: Env,
@@ -153,8 +155,10 @@ async function handleEveryAppRequest(
     return everyAppTools.fetch(request, env, ctx);
   }
   return withoutCookies(
-    await everyApp<Env>((verified) =>
-      handleAppRequest(verified, env, ctx),
+    await everyApp<Env>((verified, _env, _ctx, user) =>
+      serveEveryAppRequest(verified, user, () =>
+        handleAppRequest(verified, env, ctx),
+      ),
     ).fetch(request, env, ctx),
   );
 }
@@ -286,13 +290,14 @@ export default {
       console.error("[cron] Stale-audit reconcile failed:", err);
     }
     // Scope a per-request Postgres client for the cron run (no-op in D1 mode).
-    // First-party Every App deployments hold scheduled checks until the
-    // gateway can attribute background calls to an organization
-    // (deployment-tier.ts).
+    // The cron itself calls no provider: it starts Workflows, each carrying
+    // the organization that owns the tracker, which every gateway call the
+    // run makes names (gateway-attribution.ts). A first-party Every App
+    // deployment can hold them (deployment-tier.ts).
     const runChecks = scheduledChecksEnabled(env);
     if (!runChecks) {
       console.log(
-        "[cron] Scheduled rank checks and AI visibility are off for this first-party deployment (FIRST_PARTY_SCHEDULED_CHECKS).",
+        "[cron] Scheduled rank checks and AI visibility are off for this first-party deployment (FIRST_PARTY_SCHEDULED_CHECKS=off).",
       );
     }
     const checks = await Promise.allSettled([

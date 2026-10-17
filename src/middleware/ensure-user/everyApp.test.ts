@@ -15,6 +15,8 @@ vi.mock("@/server/auth/delegated-organization", () => ({
 
 import { resolveEveryAppContext } from "./everyApp";
 
+// The fork's Worker, which the gateway mints every identity for.
+const AUDIENCE = "every-acme-openseo";
 const ISSUER = "https://apps.example.com";
 let privateKeyPem: string;
 
@@ -23,6 +25,7 @@ beforeAll(async () => {
   privateKeyPem = await exportPKCS8(keys.privateKey);
   Object.assign(workerEnv, {
     EVERYAPP_APP_ID: "openseo",
+    EVERYAPP_AUDIENCE: AUDIENCE,
     EVERYAPP_IDENTITY_ISSUER: ISSUER,
     EVERYAPP_IDENTITY_PUBLIC_KEYS: JSON.stringify([
       await exportSPKI(keys.publicKey),
@@ -34,7 +37,7 @@ beforeAll(async () => {
 async function signedBy(orgRole: string, orgId = "org_1") {
   const token = await mintIdentityJwt(privateKeyPem, {
     subject: { sub: "user_1", email: "ana@example.com", orgId, orgRole },
-    audience: "openseo",
+    audience: AUDIENCE,
     issuer: ISSUER,
     channel: "web",
   });

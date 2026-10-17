@@ -27,6 +27,7 @@ import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository
 import { ProjectContextService } from "@/server/features/project-context/services/ProjectContextService";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildSamSkillSource } from "@/server/features/sam/samSkills";
+import { closeSamSocket, scheduleSamSocketClose } from "./samSocketLifetime";
 import { buildSamSystemPrompt } from "@/server/features/sam/samSystemPrompt";
 import {
   SamTelemetry,
@@ -186,12 +187,28 @@ export class SamChatAgent extends Think {
     return super.fetch(request);
   }
 
+  // Behind an Every App gateway, each WebSocket closes a fixed time after it
+  // connects and the client reconnects through the gateway (samSocketLifetime.ts).
+  override async onConnect(...args: Parameters<Think["onConnect"]>) {
+    await super.onConnect(...args);
+    await scheduleSamSocketClose(this.env, this, args[0].id);
+  }
+
+  closeExpiredSocket(connectionId: string): void {
+    closeSamSocket(this.getConnection(connectionId));
+  }
+
   getModel() {
     return this.buildModel("max");
   }
 
+  // Behind an Every App gateway the model's calls are the session's
+  // organization's: SAM's turns are background work no request started.
   private buildModel(reasoningEffort: "max" | "low") {
-    return buildSamChatModel(this.env, reasoningEffort);
+    return buildSamChatModel(this.env, reasoningEffort, async () => {
+      const ctx = await withPgClient(() => this.loadSamContext());
+      return ctx?.project.organizationId;
+    });
   }
 
   override getSkills() {

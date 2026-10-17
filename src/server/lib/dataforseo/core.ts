@@ -1,3 +1,4 @@
+import { gatewayRefusal } from "@every-app/sdk/server";
 import { AppError } from "@/server/lib/errors";
 import type { ErrorCode } from "@/shared/error-codes";
 import { getDataforseoFetch } from "@/server/lib/provider-access";
@@ -56,23 +57,21 @@ function formatDataforseoRequestPath(url: RequestInfo): string {
   }
 }
 
-// Set by an Every App gateway when it refuses a call itself (the app doesn't
-// ask for DataForSEO, the gateway has no key), as opposed to passing on
-// DataForSEO's own answer.
-const GATEWAY_ERROR_HEADER = "x-everyapp-error";
-
-async function gatewayRefusal(response: Response, code: string) {
-  const body: unknown = await response.json().catch(() => null);
-  const message =
-    body && typeof body === "object" && "message" in body
-      ? String(body.message)
-      : `The Every App gateway refused the DataForSEO call (${code}).`;
+/**
+ * A refusal the Every App gateway made itself (the app doesn't ask for
+ * DataForSEO, the gateway has no key, the call names no organization), as
+ * opposed to DataForSEO's own answer
+ * passed through, as OpenSEO's error; null for DataForSEO's answer.
+ */
+async function gatewayRefusalError(response: Response) {
+  const refusal = await gatewayRefusal(response);
+  if (!refusal) return null;
   return new AppError(
-    code === "integration_not_configured"
+    refusal.code === "integration_not_configured"
       ? "DATAFORSEO_AUTH_FAILED"
       : "AUTH_CONFIG_MISSING",
-    message,
-    { provider: "dataforseo", gatewayError: code },
+    refusal.message,
+    { provider: "dataforseo", gatewayError: refusal.code },
   );
 }
 
@@ -124,9 +123,9 @@ function createAuthenticatedFetch(
       }
       if (response.ok) return response;
 
-      // A gateway refusal is a setup problem: retrying can't fix it.
-      const gatewayError = response.headers.get(GATEWAY_ERROR_HEADER);
-      if (gatewayError) throw await gatewayRefusal(response, gatewayError);
+      // A gateway refusal: retrying can't fix it.
+      const refused = await gatewayRefusalError(response);
+      if (refused) throw refused;
 
       // Transient upstream 5xx on an idempotent read -> back off and retry.
       if (response.status >= 500 && attempt < maxServerErrorRetries) {
