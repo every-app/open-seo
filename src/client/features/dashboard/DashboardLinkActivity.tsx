@@ -14,6 +14,8 @@ import { QueryState } from "@/client/components/QueryState";
 import { getDashboardLinkActivity } from "@/serverFunctions/dashboard";
 import { DashboardInfo, ExternalPage, Freshness } from "./siteTabParts";
 import { moreDetailsClass } from "./cardParts";
+import { useLocale } from "@/client/lib/i18n";
+
 export function DashboardLinkActivity({
   projectId,
   domain,
@@ -21,6 +23,7 @@ export function DashboardLinkActivity({
   projectId: string;
   domain: string;
 }) {
+  const { t } = useLocale();
   const query = useQuery({
     queryKey: ["dashboardLinkActivity", projectId, domain],
     queryFn: () => getDashboardLinkActivity({ data: { projectId } }),
@@ -28,18 +31,14 @@ export function DashboardLinkActivity({
     retry: false,
   });
   return (
-    <QueryState query={query} errorFallback="Could not load new links">
+    <QueryState query={query} errorFallback={t("dashboard.cards.new_backlinks_title")}>
       {(data) => (
         <CardShell
-          title="New backlinks"
+          title={t("dashboard.cards.new_backlinks_title")}
           titleInfo={
-            <DashboardInfo label="About new links">
+            <DashboardInfo label={t("dashboard.cards.new_backlinks_about")}>
               <p>
-                Links to your website found in the past week. We show new
-                linking sites first.
-              </p>
-              <p className="mt-2">
-                A link may be older than the date it was found.
+                {t("dashboard.cards.new_backlinks_desc")}
               </p>
             </DashboardInfo>
           }
@@ -50,7 +49,7 @@ export function DashboardLinkActivity({
               search={{ tab: "backlinks" }}
               className={moreDetailsClass}
             >
-              View all →
+              {t("dashboard.cards.view_all")}
             </Link>
           }
         >
@@ -59,8 +58,8 @@ export function DashboardLinkActivity({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Referring domain</TableHead>
-                  <TableHead className="text-right">Backlinks</TableHead>
+                  <TableHead>{t("dashboard.cards.referring_domain")}</TableHead>
+                  <TableHead className="text-right">{t("dashboard.cards.backlinks")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -83,8 +82,8 @@ export function DashboardLinkActivity({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Referring page</TableHead>
-                  <TableHead>Anchor</TableHead>
+                  <TableHead>{t("dashboard.cards.referring_page")}</TableHead>
+                  <TableHead>{t("dashboard.cards.anchor")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -106,9 +105,9 @@ export function DashboardLinkActivity({
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center">
               <Link2 className="size-7 text-muted-foreground" />
-              <h3 className="font-medium">No new links this week</h3>
+              <h3 className="font-medium">{t("dashboard.cards.no_new_links")}</h3>
               <p className="text-sm text-muted-foreground">
-                Explore the sites already linking to you.
+                {t("dashboard.cards.explore_existing_links")}
               </p>
               <Link
                 to="/p/$projectId"
@@ -116,7 +115,7 @@ export function DashboardLinkActivity({
                 search={{ tab: "backlinks" }}
                 className="text-sm text-primary hover:underline"
               >
-                View backlinks →
+                {t("dashboard.cards.view_backlinks")}
               </Link>
             </div>
           )}

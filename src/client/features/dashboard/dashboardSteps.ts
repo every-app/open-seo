@@ -77,3 +77,43 @@ export function getStepStatus(
     return "skipped";
   return "todo";
 }
+
+export function getTranslatedSetupStep(
+  step: { id: DashboardSetupStep; label: string; detail: string },
+  t: (key: string) => string,
+): { label: string; detail: string } {
+  switch (step.id) {
+    case "competitor":
+      return {
+        label: t("dashboard.onboarding.competitor_title"),
+        detail: t("dashboard.onboarding.competitor_desc"),
+      };
+    case "keywords":
+      return {
+        label: t("dashboard.onboarding.keywords_title"),
+        detail: t("dashboard.onboarding.keywords_desc"),
+      };
+    case "audit":
+      return {
+        label: t("dashboard.onboarding.audit_title"),
+        detail: t("dashboard.onboarding.audit_desc"),
+      };
+    case "mcp":
+      return {
+        label: t("dashboard.onboarding.mcp_title"),
+        detail: t("dashboard.onboarding.mcp_desc"),
+      };
+    case "team":
+      return {
+        label: t("dashboard.onboarding.team_title"),
+        detail: t("dashboard.onboarding.team_desc"),
+      };
+    case "project":
+      return {
+        label: t("dashboard.onboarding.project_title"),
+        detail: t("dashboard.onboarding.project_desc"),
+      };
+    default:
+      return step;
+  }
+}

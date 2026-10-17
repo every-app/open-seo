@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
 import { SectionHeader } from "@/client/components/PageHeader";
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
+import { LanguagePreferenceRadio } from "@/client/components/LanguagePreferenceMenuItems";
+import { useLocale } from "@/client/lib/i18n";
 import { Switch } from "@/client/components/ui/switch";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -16,6 +18,7 @@ export const Route = createFileRoute("/_app/settings/")({
 function PersonalSettings() {
   const isHosted = isHostedClientAuthMode();
   const { data: session } = useSession();
+  const { t } = useLocale();
   const [isSaving, setIsSaving] = useState(false);
 
   const analyticsEnabled = session?.user?.analyticsOptedOut !== true;
@@ -29,7 +32,11 @@ function PersonalSettings() {
       if (result.error) {
         toast.error("We couldn't update your analytics setting.");
       } else {
-        toast.success(enabled ? "Analytics enabled" : "Analytics disabled");
+        toast.success(
+          enabled
+            ? t("settings.analytics_enabled")
+            : t("settings.analytics_disabled"),
+        );
       }
     } catch {
       toast.error("We couldn't update your analytics setting.");
@@ -41,10 +48,14 @@ function PersonalSettings() {
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <SectionHeader title="Appearance" />
+        <SectionHeader title={t("settings.appearance")} />
         <div className="flex items-center justify-between gap-6">
-          <span className="text-sm">Theme</span>
+          <span className="text-sm">{t("settings.theme")}</span>
           <ThemePreferenceRadio />
+        </div>
+        <div className="flex items-center justify-between gap-6">
+          <span className="text-sm">{t("settings.language")}</span>
+          <LanguagePreferenceRadio />
         </div>
       </section>
 
@@ -53,12 +64,12 @@ function PersonalSettings() {
           <ApiKeySettings />
 
           <section className="space-y-3">
-            <SectionHeader title="Analytics" />
+            <SectionHeader title={t("settings.analytics")} />
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-sm">Help improve OpenSEO</p>
+                <p className="text-sm">{t("settings.analytics_help")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Share analytics and usage data.
+                  {t("settings.analytics_desc")}
                 </p>
               </div>
               <Switch
@@ -74,9 +85,9 @@ function PersonalSettings() {
         </>
       ) : (
         <section className="space-y-3">
-          <SectionHeader title="About" />
+          <SectionHeader title={t("settings.about")} />
           <div className="flex items-center justify-between gap-6">
-            <span className="text-sm">Version</span>
+            <span className="text-sm">{t("settings.version")}</span>
             <span className="font-mono text-sm text-muted-foreground">
               v{version}
             </span>

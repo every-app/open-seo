@@ -50,6 +50,7 @@ export function GscCard({
   connected: boolean;
   siteUrl: string | null;
 }) {
+  const { t } = useLocale();
   const reportQuery = useQuery({
     queryKey: ["dashboardGscReport", projectId, siteUrl],
     queryFn: () =>
@@ -73,7 +74,7 @@ export function GscCard({
 
   return (
     <CardShell
-      title="Google Search Console Performance"
+      title={t("dashboard.cards.gsc_title")}
       icon={<GoogleSearchConsoleLogo className="size-5" />}
       action={
         <Link
@@ -81,16 +82,16 @@ export function GscCard({
           params={{ projectId }}
           className={moreDetailsClass}
         >
-          View GSC insights →
+          {t("dashboard.cards.gsc_view_insights")}
         </Link>
       }
     >
       <p className="mb-4 text-sm font-medium text-muted-foreground">
-        Last 28 days
+        {t("dashboard.cards.last_28_days")}
       </p>
       {reportQuery.isError ? (
         <p className="text-sm text-muted-foreground">
-          Couldn&rsquo;t load Search Console data. Try again shortly.
+          {t("dashboard.cards.gsc_error")}
         </p>
       ) : !report ? (
         <MetricsTableSkeleton />
@@ -98,15 +99,15 @@ export function GscCard({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Metric</TableHead>
-              <TableHead className="text-right">Value</TableHead>
-              <TableHead className="text-right">Change</TableHead>
+              <TableHead>{t("dashboard.cards.metric")}</TableHead>
+              <TableHead className="text-right">{t("dashboard.cards.value")}</TableHead>
+              <TableHead className="text-right">{t("dashboard.cards.change")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {[
               {
-                label: "Clicks",
+                label: t("dashboard.cards.clicks"),
                 value: formatCount(report.totals.clicks),
                 change: percentChange(
                   report.totals.clicks,
@@ -114,7 +115,7 @@ export function GscCard({
                 ),
               },
               {
-                label: "Impressions",
+                label: t("dashboard.cards.impressions"),
                 value: formatCount(report.totals.impressions),
                 change: percentChange(
                   report.totals.impressions,
@@ -122,12 +123,12 @@ export function GscCard({
                 ),
               },
               {
-                label: "Click-through rate",
+                label: t("dashboard.cards.ctr"),
                 value: formatCtr(report.totals.ctr),
                 change: null,
               },
               {
-                label: "Average position",
+                label: t("dashboard.cards.avg_position"),
                 value: formatPosition(report.totals.position),
                 change: null,
               },
@@ -182,17 +183,16 @@ export function AuditHealthCard({
   });
   if (!audit)
     return (
-      <CardShell title="Site health">
+      <CardShell title={t("dashboard.cards.site_health")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6 text-center">
           <ScanSearch className="size-7 text-muted-foreground" />
-          <h3 className="font-medium">Find what's holding your website back</h3>
+          <h3 className="font-medium">{t("dashboard.cards.find_holding_back")}</h3>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Scan up to 50 pages for broken links, missing titles and pages
-            Google can't index.
+            {t("dashboard.cards.scan_desc")}
           </p>
           {domain ? (
             <Button disabled={scan.isPending} onClick={() => scan.mutate()}>
-              {scan.isPending ? "Starting scan…" : "Scan my website"}
+              {scan.isPending ? t("dashboard.cards.starting_scan") : t("dashboard.cards.scan_website")}
             </Button>
           ) : (
             <Button
@@ -201,13 +201,13 @@ export function AuditHealthCard({
                 <Link to="/p/$projectId/settings" params={{ projectId }} />
               }
             >
-              Add your website
+              {t("dashboard.cards.add_website")}
             </Button>
           )}
           {scan.isError && (
             <QueryError
               error={scan.error}
-              fallback="Could not start your scan"
+              fallback={t("dashboard.cards.site_health")}
             />
           )}
         </div>
@@ -225,7 +225,7 @@ export function AuditHealthCard({
     // not the same as a healthy site, so show progress instead.
     return (
       <CardShell
-        title="Site health"
+        title={t("dashboard.cards.site_health")}
         action={
           <Link
             to="/p/$projectId/audit"
@@ -233,7 +233,7 @@ export function AuditHealthCard({
             search={{ auditId: audit.id }}
             className={moreDetailsClass}
           >
-            View progress
+            {t("dashboard.cards.view_progress")}
           </Link>
         }
       >
@@ -270,7 +270,7 @@ export function AuditHealthCard({
 
   return (
     <CardShell
-      title="Site health"
+      title={t("dashboard.cards.site_health")}
       action={
         <Link
           to="/p/$projectId/audit"
@@ -278,29 +278,30 @@ export function AuditHealthCard({
           search={{ auditId: audit.id, tab: "issues" }}
           className={moreDetailsClass}
         >
-          Review issues
+          {t("dashboard.cards.review_issues")}
         </Link>
       }
     >
       {audit.status === "failed" && (
         <p className="mb-4 text-sm text-destructive">
-          The latest scan didn’t finish. Review the results or try again.
+          {t("dashboard.cards.scan_not_finished")}
         </p>
       )}
       {audit.status === "completed" && (
         <p className="mb-4 text-sm text-muted-foreground">
-          {audit.pagesCrawled} pages checked · {formatDay(audit.startedAt)}
+          {audit.pagesCrawled} {t("dashboard.cards.pages_checked")} ·{" "}
+          {formatDay(audit.startedAt)}
         </p>
       )}
       {audit.topIssues.length === 0 ? (
         audit.status === "completed" ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Check className="size-4 text-success" />
-            No issues found — your site looks healthy.
+            {t("dashboard.cards.no_issues_found")}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Run the audit again to see issues.
+            {t("dashboard.cards.run_again")}
           </p>
         )
       ) : (

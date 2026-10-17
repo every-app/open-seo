@@ -6,7 +6,11 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { setDashboardStepDismissed } from "@/serverFunctions/dashboard";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
 import type { DashboardSetupStep } from "@/types/schemas/dashboard";
-import { getStepStatus, setupSteps } from "./dashboardSteps";
+import {
+  getStepStatus,
+  setupSteps,
+  getTranslatedSetupStep,
+} from "./dashboardSteps";
 import { DashboardSetupAction } from "./DashboardSetupAction";
 import {
   Accordion,
@@ -20,6 +24,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/client/components/ui/collapsible";
+import { useLocale } from "@/client/lib/i18n";
 
 export function DashboardOnboarding({
   projectId,
@@ -28,6 +33,7 @@ export function DashboardOnboarding({
   projectId: string;
   activation: DashboardActivation;
 }) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<DashboardSetupStep | null>(null);
   const dismiss = useMutation({
@@ -63,14 +69,13 @@ export function DashboardOnboarding({
 
   return (
     <section
-      aria-label="Onboarding checklist"
+      aria-label={t("dashboard.onboarding.title")}
       className="overflow-hidden rounded-xl border border-border bg-card"
     >
       <header className="border-b border-border px-5 py-5 sm:px-6">
-        <h2 className="text-lg font-semibold">Get started</h2>
+        <h2 className="text-lg font-semibold">{t("dashboard.onboarding.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Research competitors and keywords, audit your site, and connect your
-          tools.
+          {t("dashboard.onboarding.description")}
         </p>
       </header>
       <Accordion
@@ -83,6 +88,7 @@ export function DashboardOnboarding({
         }}
       >
         {remaining.map((item) => {
+          const { label, detail } = getTranslatedSetupStep(item, t);
           const Icon = item.icon;
           return (
             <AccordionItem key={item.id} value={item.id}>
@@ -91,9 +97,9 @@ export function DashboardOnboarding({
                   <Icon className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block">{item.label}</span>
+                  <span className="block">{label}</span>
                   <span className="mt-1 hidden text-xs font-normal text-muted-foreground sm:block">
-                    {item.detail}
+                    {detail}
                   </span>
                 </span>
               </AccordionTrigger>
@@ -114,8 +120,8 @@ export function DashboardOnboarding({
                     }
                   >
                     {item.id === "project"
-                      ? "I only need one project"
-                      : "Skip for now"}
+                      ? t("dashboard.onboarding.only_one_project")
+                      : t("dashboard.onboarding.skip")}
                   </Button>
                 </div>
               </AccordionContent>
@@ -127,28 +133,31 @@ export function DashboardOnboarding({
         <Collapsible className="border-t border-border">
           <CollapsibleTrigger className="group flex w-full items-center gap-2 px-5 py-4 text-left text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset sm:px-6">
             <ChevronRight className="size-4 transition-transform group-data-panel-open:rotate-90" />
-            {deferred.length} saved for later
+            {deferred.length} {t("dashboard.onboarding.saved_for_later")}
           </CollapsibleTrigger>
           <CollapsibleContent>
             <ul className="space-y-1 px-5 pb-4 sm:px-6">
-              {deferred.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-foreground/5 px-3 py-2"
-                >
-                  <span className="text-sm">{item.label}</span>
-                  <Button
-                    variant="ghost"
-                    aria-label={`Restore ${item.label}`}
-                    disabled={dismiss.isPending}
-                    onClick={() =>
-                      dismiss.mutate({ step: item.id, dismissed: false })
-                    }
+              {deferred.map((item) => {
+                const { label } = getTranslatedSetupStep(item, t);
+                return (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-lg bg-foreground/5 px-3 py-2"
                   >
-                    <RotateCcw data-icon="inline-start" /> Restore
-                  </Button>
-                </li>
-              ))}
+                    <span className="text-sm">{label}</span>
+                    <Button
+                      variant="ghost"
+                      aria-label={`${t("dashboard.onboarding.restore")} ${label}`}
+                      disabled={dismiss.isPending}
+                      onClick={() =>
+                        dismiss.mutate({ step: item.id, dismissed: false })
+                      }
+                    >
+                      <RotateCcw data-icon="inline-start" /> {t("dashboard.onboarding.restore")}
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           </CollapsibleContent>
         </Collapsible>
@@ -157,20 +166,23 @@ export function DashboardOnboarding({
         <Collapsible className="border-t border-border">
           <CollapsibleTrigger className="group flex w-full items-center gap-2 px-5 py-4 text-left text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset sm:px-6">
             <Check className="size-4 text-success" />
-            {completed.length} completed
+            {completed.length} {t("dashboard.onboarding.completed")}
             <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform group-data-panel-open:rotate-90" />
           </CollapsibleTrigger>
           <CollapsibleContent>
             <ul className="space-y-3 px-5 pb-5 sm:px-6">
-              {completed.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex items-center gap-3 text-sm text-muted-foreground"
-                >
-                  <Check className="size-4 shrink-0 text-success" />
-                  {item.label}
-                </li>
-              ))}
+              {completed.map((item) => {
+                const { label } = getTranslatedSetupStep(item, t);
+                return (
+                  <li
+                    key={item.id}
+                    className="flex items-center gap-3 text-sm text-muted-foreground"
+                  >
+                    <Check className="size-4 shrink-0 text-success" />
+                    {label}
+                  </li>
+                );
+              })}
             </ul>
           </CollapsibleContent>
         </Collapsible>

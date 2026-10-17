@@ -101,9 +101,116 @@ export const de = {
     add_keyword: "Keyword hinzufügen",
     no_keywords: "Noch keine Keywords hinterlegt.",
   },
+  settings: {
+    title: "Einstellungen",
+    appearance: "Erscheinungsbild",
+    theme: "Theme",
+    language: "Sprache",
+    about: "Über OpenSEO",
+    version: "Version",
+    analytics: "Produktanalyse",
+    analytics_desc: "Teile anonymisierte Nutzungsdaten, um OpenSEO zu verbessern.",
+    analytics_help: "Hilf mit, OpenSEO zu verbessern",
+    analytics_enabled: "Analyse aktiviert",
+    analytics_disabled: "Analyse deaktiviert",
+  },
   dashboard: {
     title: "Dashboard",
     welcome: "Willkommen zurück",
+    your_website: "Deine Website",
+    tagline: "Suchsichtbarkeit, Backlinks und Website-Zustand auf einen Blick.",
+    project_settings: "Projekteinstellungen",
+    tabs: {
+      overview: "Übersicht",
+      keywords: "Keywords",
+      backlinks: "Backlinks",
+    },
+    onboarding: {
+      title: "Erste Schritte",
+      description:
+        "Analysiere Mitbewerber und Keywords, prüfe deine Website und verbinde deine Tools.",
+      competitor_title: "Mitbewerber analysieren",
+      competitor_desc:
+        "Themen und Backlinks entdecken, von denen du lernen kannst.",
+      keywords_title: "Keyword-Ideen finden",
+      keywords_desc:
+        "Starte mit einem Keyword und erfahre, wonach Nutzer suchen.",
+      audit_title: "Website prüfen",
+      audit_desc:
+        "Prüfe auf defekte Links, fehlende Tags und Indexierungsprobleme.",
+      mcp_title: "KI-Agenten verbinden",
+      mcp_desc:
+        "Nutze OpenSEO direkt in Claude oder deinem bevorzugten Agenten.",
+      team_title: "Teammitglied einladen",
+      team_desc: "Teile Projekte und Analysen mit deinem Team.",
+      project_title: "Mehrere Websites verwalten?",
+      project_desc:
+        "Lege ein weiteres Projekt an oder lasse deinen Agenten Websites einrichten.",
+      skip: "Vorerst überspringen",
+      only_one_project: "Ich benötige nur ein Projekt",
+      saved_for_later: "für später gemerkt",
+      completed: "abgeschlossen",
+      restore: "Wiederherstellen",
+    },
+    cards: {
+      site_health: "Website-Zustand",
+      find_holding_back: "Finde heraus, was deine Website bremst",
+      scan_desc:
+        "Prüfe bis zu 50 Seiten auf defekte Links, fehlende Titel und Seiten, die Google nicht indexieren kann.",
+      scan_website: "Website scannen",
+      starting_scan: "Scan startet...",
+      add_website: "Website hinzufügen",
+      view_progress: "Fortschritt anzeigen",
+      review_issues: "Probleme prüfen",
+      no_issues_found:
+        "Keine Probleme gefunden – deine Website sieht gesund aus.",
+      run_again: "Audit erneut ausführen, um Probleme zu sehen.",
+      pages_checked: "Seiten geprüft",
+      scan_not_finished:
+        "Der letzte Scan wurde nicht abgeschlossen. Prüfe die Ergebnisse oder starte erneut.",
+      gsc_title: "Google Search Console Leistung",
+      gsc_view_insights: "GSC Insights ansehen →",
+      last_28_days: "Letzte 28 Tage",
+      metric: "Kennzahl",
+      value: "Wert",
+      change: "Veränderung",
+      clicks: "Klicks",
+      impressions: "Impressionen",
+      ctr: "Klickrate (CTR)",
+      avg_position: "Durchschnittliche Position",
+      gsc_error:
+        "Search-Console-Daten konnten nicht geladen werden. Bitte versuche es gleich erneut.",
+      new_keywords_title: "Neue Keywords",
+      new_keywords_about: "Über neue Keywords",
+      new_keywords_desc:
+        "Suchanfragen, bei denen deine Website kürzlich auf Google erschienen ist.",
+      new_keywords_detail:
+        "In der letzten Woche der Search Console Daten gefunden, aber nicht in den vier Wochen davor.",
+      view_all: "Alle ansehen →",
+      keyword: "Keyword",
+      no_new_keywords: "Keine neuen Keywords diese Woche",
+      no_search_data: "Noch keine Suchdaten vorhanden",
+      existing_queries_note:
+        "Bestehende Suchanfragen können weiterhin Klicks gewinnen. Sieh dir deren Leistung an.",
+      no_search_reported:
+        "Google hat noch keine Suchanfragen für deine Website gemeldet. Prüfe deine Property in Search Console.",
+      view_full_gsc: "Vollständige GSC Insights ansehen →",
+      new_backlinks_title: "Neue Backlinks",
+      new_backlinks_about: "Über neue Backlinks",
+      new_backlinks_desc:
+        "Links zu deiner Website, die in der letzten Woche gefunden wurden.",
+      referring_domain: "Verweisende Domain",
+      referring_page: "Verweisende Seite",
+      anchor: "Ankertext",
+      backlinks: "Backlinks",
+      no_new_links: "Keine neuen Backlinks diese Woche",
+      explore_existing_links:
+        "Entdecke die Websites, die bereits auf dich verlinken.",
+      view_backlinks: "Backlinks ansehen →",
+      see_who_links: "Erfahre, wer auf deine Website verlinkt",
+      add_website_backlinks_desc:
+        "Füge deine Website hinzu, um neue und verlorene Backlinks zu beobachten.",
+    },
     quick_stats: "Schnellübersicht",
     audit_score: "Audit-Gesundheit",
     tracked_keywords: "Beobachtete Keywords",

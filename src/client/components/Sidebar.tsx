@@ -144,13 +144,16 @@ export function Sidebar({
   return (
     <UiSidebar variant="inset" collapsible="offcanvas" className="md:!p-0">
       <SidebarHeader className="gap-0 px-3 pb-1 pt-3">
-        <Link
-          to="/"
-          onClick={() => setOpenMobile(false)}
-          className="px-1 pb-2 text-base font-semibold text-sidebar-foreground"
-        >
-          OpenSEO
-        </Link>
+        <div className="flex items-center justify-between pb-2">
+          <Link
+            to="/"
+            onClick={() => setOpenMobile(false)}
+            className="px-1 text-base font-semibold text-sidebar-foreground"
+          >
+            OpenSEO
+          </Link>
+          <LanguagePreferenceRadio />
+        </div>
         <ProjectSwitcher
           activeProjectId={projectId}
           ready={ready}
@@ -236,6 +239,12 @@ function AccountFooter({ ready }: { ready: boolean }) {
 
   return (
     <UiSidebarFooter className="gap-0 border-t border-sidebar-border pb-safe">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border/60">
+        <span className="text-xs font-medium text-sidebar-foreground/70">
+          {t("common.language")}
+        </span>
+        <LanguagePreferenceRadio />
+      </div>
       <SidebarMenu>
         <SidebarNavLink
           icon={CircleHelp}

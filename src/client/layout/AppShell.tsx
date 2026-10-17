@@ -17,6 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/client/components/ui/sidebar";
+import { LanguagePreferenceRadio } from "@/client/components/LanguagePreferenceMenuItems";
 
 export function AuthenticatedAppLayout({
   children,
@@ -139,11 +140,14 @@ export function AuthenticatedAppLayout({
 
 function MobileTopBar() {
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1.5 md:hidden">
-      <SidebarTrigger aria-label="Toggle sidebar" />
-      <Link to="/" className="ml-1 font-semibold text-foreground">
-        OpenSEO
-      </Link>
+    <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-2 py-1.5 md:hidden">
+      <div className="flex items-center gap-1">
+        <SidebarTrigger aria-label="Toggle sidebar" />
+        <Link to="/" className="ml-1 font-semibold text-foreground">
+          OpenSEO
+        </Link>
+      </div>
+      <LanguagePreferenceRadio />
     </div>
   );
 }

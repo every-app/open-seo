@@ -45,7 +45,10 @@ describe("dashboard onboarding visibility", () => {
       ...fresh,
       dismissedSteps: setupSteps.map((step) => step.id),
     });
-    expect(markup).toContain("saved for later");
+    expect(
+      markup.includes("saved for later") ||
+        markup.includes("für später gemerkt"),
+    ).toBe(true);
   });
 
   it("renders nothing once every step is complete", () => {
