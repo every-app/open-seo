@@ -5,7 +5,7 @@
  */
 import * as cheerio from "cheerio";
 import { describe, expect, it } from "vitest";
-import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
+import { analyzeHtml, countWords } from "@/server/lib/audit/page-analyzer";
 import { normalizeUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
 import type { PageAnalysis, PageLink } from "@/server/lib/audit/types";
 
@@ -45,7 +45,7 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   const bodyClone = $("body").clone();
   bodyClone.find("script, style, noscript, svg").remove();
   const bodyText = bodyClone.text().replace(/\s+/g, " ").trim();
-  const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
+  const wordCount = countWords(bodyText);
 
   const images: Array<{ src: string | null; alt: string | null }> = [];
   $("img").each((_, el) => {
@@ -287,3 +287,33 @@ describe("JavaScript app-shell detection", () => {
     },
   );
 });
+
+describe("countWords multilingual support", () => {
+  it("counts words in whitespace-delimited languages like English and German", () => {
+    expect(countWords("Hello world this is a test")).toBe(6);
+    expect(
+      countWords("Das ist ein deutscher Beispielsatz mit acht Wörtern."),
+    ).toBe(8);
+  });
+
+  it("counts words in non-whitespace CJK languages like Japanese", () => {
+    // In Japanese, whitespace is not used to separate words.
+    // "私たちは最新のテクノロジーを活用しています。" consists of ~11 words/tokens.
+    const textJa = "私たちは最新のテクノロジーを活用しています。";
+    const words = countWords(textJa);
+    expect(words).toBeGreaterThanOrEqual(8);
+    expect(words).toBeLessThanOrEqual(15);
+  });
+
+  it("handles mixed Latin and CJK text", () => {
+    const mixed = "visualfusion はデジタル製品と Web サイトを制作します。";
+    const words = countWords(mixed);
+    expect(words).toBeGreaterThanOrEqual(7);
+  });
+
+  it("returns 0 for empty or whitespace-only strings", () => {
+    expect(countWords("")).toBe(0);
+    expect(countWords("   \n\t  ")).toBe(0);
+  });
+});
+

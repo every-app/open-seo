@@ -35,6 +35,46 @@ const MAX_ANCHOR_CHARS = 200;
  */
 const MAX_EXTRACTED_LINKS = 1_000;
 const MAX_EXTRACTED_IMAGES = 1_000;
+
+const wordSegmenter =
+  typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+    ? new Intl.Segmenter(undefined, { granularity: "word" })
+    : null;
+
+/**
+ * Counts words in a string, supporting both whitespace-delimited languages
+ * (English, German, etc.) and non-whitespace languages such as Japanese and Chinese.
+ * Uses native Intl.Segmenter with a CJK character-based heuristic fallback.
+ */
+export function countWords(text: string): number {
+  if (!text) return 0;
+
+  if (wordSegmenter) {
+    let count = 0;
+    for (const segment of wordSegmenter.segment(text)) {
+      if (segment.isWordLike) count++;
+    }
+    return count;
+  }
+
+  // Fallback when Intl.Segmenter is unavailable:
+  // CJK characters carry significant semantic weight comparable to morphemes/words.
+  const cjkChars = text.match(
+    /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g,
+  );
+  const cjkCount = cjkChars ? cjkChars.length : 0;
+  const nonCjkText = text
+    .replace(
+      /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g,
+      " ",
+    )
+    .trim();
+  const nonCjkWords = nonCjkText
+    ? nonCjkText.split(/\s+/).filter(Boolean).length
+    : 0;
+
+  return nonCjkWords + Math.round(cjkCount * 0.6);
+}
 // Common app entry points. Scripts alone also appear on ordinary HTML pages.
 const APP_ROOT_IDS = new Set(["root", "app", "__next", "__nuxt"]);
 
@@ -250,7 +290,7 @@ export function analyzeHtml(
 
   const rawText = (sawBody ? bodyParts : fallbackParts).join("");
   const bodyText = rawText.replace(/\s+/g, " ").trim();
-  const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
+  const wordCount = countWords(bodyText);
 
   return {
     url: pageUrl,
