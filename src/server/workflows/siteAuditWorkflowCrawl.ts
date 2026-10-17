@@ -29,6 +29,7 @@ import type { RenderUsage } from "@/shared/audit-rendering";
 import type { CrawlerAccess } from "@/shared/crawler-access";
 import { pgStep } from "@/server/workflows/pgStep";
 import { CRAWL_CHUNK_STEP } from "@/server/workflows/auditStepConfigs";
+import { getContextFetch } from "@/server/lib/provider-access";
 
 /**
  * The crawl runs in chunks: each chunk is one durable step that leases up to
@@ -299,13 +300,14 @@ async function runCrawlChunk(
   // This attempt's rendering counts, returned in the step result. The audit's
   // credit lock is settled once, when the audit ends.
   const renderUsage: RenderUsage = { cloudflareAttempts: 0, contextCredits: 0 };
+  const contextFetch = input.renderJavaScript ? await getContextFetch() : null;
   const render = input.renderJavaScript
     ? async (url: string) => {
         const { RenderedPageService } =
           await import("@/server/lib/audit/rendered-page");
         return RenderedPageService.renderPage(url, {
           browser: env.BROWSER,
-          contextApiKey: env.CONTEXT_API_KEY,
+          contextFetch: contextFetch ?? undefined,
           auditId,
           usage: renderUsage,
         });

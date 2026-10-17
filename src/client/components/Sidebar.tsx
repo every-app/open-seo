@@ -27,6 +27,8 @@ import {
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
+import { getEveryAppAccount } from "@/serverFunctions/everyApp";
 import { BILLING_ROUTE } from "@/shared/billing";
 import {
   Sidebar as UiSidebar,
@@ -202,16 +204,30 @@ export function Sidebar({
   );
 }
 
+// Behind an Every App gateway, which owns sign-in, organizations, teams and
+// billing: the menu shows the person from the signed identity, no switcher
+// and no billing, and signing out happens on the gateway.
+const everyApp = isEveryAppClientAuthMode();
+
 function AccountFooter({ ready }: { ready: boolean }) {
   const { data: session } = useSession();
   const { setOpenMobile } = useSidebar();
-  const email = session?.user?.email;
+  const everyAppAccountQuery = useQuery({
+    queryKey: ["every-app-account"],
+    queryFn: () => getEveryAppAccount(),
+    enabled: everyApp,
+    staleTime: 5 * 60 * 1000,
+  });
+  const everyAppAccount = everyAppAccountQuery.data;
+  const email = everyApp ? everyAppAccount?.email : session?.user?.email;
   const [isSwitching, setIsSwitching] = useState(false);
   const orgContextQuery = useQuery({
     ...organizationContextQueryOptions(),
-    enabled: Boolean(email),
+    enabled: Boolean(email) && !everyApp,
   });
-  const organizations = orgContextQuery.data?.organizations ?? [];
+  const organizations = everyApp
+    ? []
+    : (orgContextQuery.data?.organizations ?? []);
   const activeOrganizationId = orgContextQuery.data?.organizationId;
 
   async function handleSwitchOrganization(organizationId: string) {
@@ -292,17 +308,19 @@ function AccountFooter({ ready }: { ready: boolean }) {
                   <Settings className="size-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  render={
-                    <Link
-                      to={BILLING_ROUTE}
-                      onClick={() => setOpenMobile(false)}
-                    />
-                  }
-                >
-                  <CreditCard className="size-4" />
-                  Billing
-                </DropdownMenuItem>
+                {everyApp ? null : (
+                  <DropdownMenuItem
+                    render={
+                      <Link
+                        to={BILLING_ROUTE}
+                        onClick={() => setOpenMobile(false)}
+                      />
+                    }
+                  >
+                    <CreditCard className="size-4" />
+                    Billing
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Theme</DropdownMenuLabel>
                   <div className="px-1 pb-1">
@@ -310,13 +328,25 @@ function AccountFooter({ ready }: { ready: boolean }) {
                   </div>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => signOutAndRedirect()}
-                >
-                  <LogOut className="size-4" />
-                  Sign out
-                </DropdownMenuItem>
+                {everyApp ? (
+                  everyAppAccount?.gatewayUrl ? (
+                    <DropdownMenuItem
+                      variant="destructive"
+                      render={<a href={everyAppAccount.gatewayUrl} />}
+                    >
+                      <LogOut className="size-4" />
+                      Sign out on Every App
+                    </DropdownMenuItem>
+                  ) : null
+                ) : (
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => signOutAndRedirect()}
+                  >
+                    <LogOut className="size-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

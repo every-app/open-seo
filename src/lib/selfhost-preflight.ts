@@ -58,6 +58,20 @@ function checkAuthMode(env: EnvRecord, items: PreflightItem[]): void {
     return;
   }
 
+  if (mode === "everyapp") {
+    const deployed =
+      get(env, "EVERYAPP_IDENTITY_PUBLIC_KEYS") && get(env, "EVERYAPP_APP_ID");
+    items.push({
+      key: "auth",
+      name: "AUTH_MODE",
+      level: deployed ? "ok" : "fail",
+      message: deployed
+        ? "everyapp — signed in through the Every App gateway"
+        : "everyapp needs the gateway's identity keys: deploy with `everyapp app deploy`, or run `pnpm dev:everyapp` locally.",
+    });
+    return;
+  }
+
   if (mode === "hosted") {
     const missing = [
       "BETTER_AUTH_URL",
@@ -121,6 +135,16 @@ function checkAuthMode(env: EnvRecord, items: PreflightItem[]): void {
 }
 
 function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
+  if (get(env, "AUTH_MODE") === "everyapp") {
+    items.push({
+      key: "dataforseo",
+      name: "DATAFORSEO_API_KEY",
+      level: "info",
+      message:
+        "Held by the Every App gateway. An admin sets it with `everyapp gateway secret set DATAFORSEO_API_KEY`.",
+    });
+    return;
+  }
   const key = get(env, "DATAFORSEO_API_KEY");
 
   if (!key) {
@@ -158,7 +182,15 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
   const clientSecret = get(env, "GOOGLE_CLIENT_SECRET");
   const betterAuthSecret = get(env, "BETTER_AUTH_SECRET");
 
-  if (clientId || clientSecret) {
+  if (get(env, "AUTH_MODE") === "everyapp") {
+    items.push({
+      key: "gsc",
+      name: "Search Console",
+      level: "info",
+      message:
+        "Held by the Every App gateway (coming). OpenSEO's own Google client and callbacks are off in this mode; Search Console and Analytics connect through the gateway once it offers Google.",
+    });
+  } else if (clientId || clientSecret) {
     if (!clientId || !clientSecret) {
       items.push({
         key: "gsc",
@@ -196,37 +228,53 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
   }
 
   items.push(
-    get(env, "OPENROUTER_API_KEY")
+    get(env, "AUTH_MODE") === "everyapp"
       ? {
-          key: "ai",
-          name: "AI features",
-          level: "ok",
-          message: "OPENROUTER_API_KEY set",
-        }
-      : {
           key: "ai",
           name: "AI features",
           level: "info",
           message:
-            "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
-        },
+            "OpenRouter comes from the Every App gateway. An admin sets it with `everyapp gateway secret set OPENROUTER_API_KEY`.",
+        }
+      : get(env, "OPENROUTER_API_KEY")
+        ? {
+            key: "ai",
+            name: "AI features",
+            level: "ok",
+            message: "OPENROUTER_API_KEY set",
+          }
+        : {
+            key: "ai",
+            name: "AI features",
+            level: "info",
+            message:
+              "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
+          },
   );
 
   items.push(
-    get(env, "CONTEXT_API_KEY")
+    get(env, "AUTH_MODE") === "everyapp"
       ? {
-          key: "rendering",
-          name: "JavaScript rendering",
-          level: "ok",
-          message: "CONTEXT_API_KEY set",
-        }
-      : {
           key: "rendering",
           name: "JavaScript rendering",
           level: "info",
           message:
-            'CONTEXT_API_KEY not set (optional) — on Docker the site audit "Render JavaScript" option is disabled; on Cloudflare, Browser Run renders without a fallback.',
-        },
+            "Context.dev comes from the Every App gateway. An admin sets it with `everyapp gateway secret set CONTEXT_API_KEY`.",
+        }
+      : get(env, "CONTEXT_API_KEY")
+        ? {
+            key: "rendering",
+            name: "JavaScript rendering",
+            level: "ok",
+            message: "CONTEXT_API_KEY set",
+          }
+        : {
+            key: "rendering",
+            name: "JavaScript rendering",
+            level: "info",
+            message:
+              'CONTEXT_API_KEY not set (optional) — on Docker the site audit "Render JavaScript" option is disabled; on Cloudflare, Browser Run renders without a fallback.',
+          },
   );
 }
 

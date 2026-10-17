@@ -1,6 +1,6 @@
 import { AppError } from "@/server/lib/errors";
-import { getRequiredEnvValue } from "@/server/lib/runtime-env";
 import type { ErrorCode } from "@/shared/error-codes";
+import { getDataforseoFetch } from "@/server/lib/provider-access";
 // No runtime cycle: envelope.ts imports only the DataforseoErrorClassifier
 // type from here.
 import {
@@ -56,6 +56,26 @@ function formatDataforseoRequestPath(url: RequestInfo): string {
   }
 }
 
+// Set by an Every App gateway when it refuses a call itself (the app doesn't
+// ask for DataForSEO, the gateway has no key), as opposed to passing on
+// DataForSEO's own answer.
+const GATEWAY_ERROR_HEADER = "x-everyapp-error";
+
+async function gatewayRefusal(response: Response, code: string) {
+  const body: unknown = await response.json().catch(() => null);
+  const message =
+    body && typeof body === "object" && "message" in body
+      ? String(body.message)
+      : `The Every App gateway refused the DataForSEO call (${code}).`;
+  return new AppError(
+    code === "integration_not_configured"
+      ? "DATAFORSEO_AUTH_FAILED"
+      : "AUTH_CONFIG_MISSING",
+    message,
+    { provider: "dataforseo", gatewayError: code },
+  );
+}
+
 /**
  * The single authenticated `fetch` used by every DataForSEO call. Throws on
  * non-2xx; task-level failures (which return HTTP 200) are handled downstream
@@ -67,9 +87,7 @@ function createAuthenticatedFetch(
   maxServerErrorRetries = DATAFORSEO_MAX_RETRIES,
 ) {
   return async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-    const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
-    const headers = new Headers(init?.headers);
-    headers.set("Authorization", `Basic ${apiKey}`);
+    const providerFetch = await getDataforseoFetch();
     // Resolve the signal once so retries share the overall request timeout
     // rather than restarting a fresh 60s budget on each attempt.
     const signal =
@@ -78,7 +96,7 @@ function createAuthenticatedFetch(
     for (let attempt = 0; ; attempt++) {
       let response: Response;
       try {
-        response = await fetch(url, { ...init, headers, signal });
+        response = await providerFetch(url, { ...init, signal });
       } catch (error) {
         // Both abort flavours mean "we ran out of time", and neither carries a
         // useful name of its own: the shared budget above rejects with
@@ -105,6 +123,10 @@ function createAuthenticatedFetch(
         throw error;
       }
       if (response.ok) return response;
+
+      // A gateway refusal is a setup problem: retrying can't fix it.
+      const gatewayError = response.headers.get(GATEWAY_ERROR_HEADER);
+      if (gatewayError) throw await gatewayRefusal(response, gatewayError);
 
       // Transient upstream 5xx on an idempotent read -> back off and retry.
       if (response.status >= 500 && attempt < maxServerErrorRetries) {

@@ -4,6 +4,9 @@ export const AUTH_MODES = [
   "cloudflare_access",
   "local_noauth",
   "hosted",
+  // Behind an Every App gateway, which signs each request's identity and
+  // holds the provider keys (docs/maintainers/every-app.md).
+  "everyapp",
 ] as const;
 
 type AuthMode = (typeof AUTH_MODES)[number];
@@ -33,6 +36,10 @@ export function isHostedAuthMode(value: string | null | undefined) {
   return getAuthMode(value) === "hosted";
 }
 
+export function isEveryAppAuthMode(value: string | null | undefined) {
+  return getAuthMode(value) === "everyapp";
+}
+
 export function isHostedClientAuthMode() {
   // This is an explicit deploy-time contract: the operator must keep the
   // client build-time AUTH_MODE aligned with the server runtime AUTH_MODE.
@@ -40,6 +47,11 @@ export function isHostedClientAuthMode() {
   // backend which auth UI to render. Hosted deployments must therefore set
   // AUTH_MODE=hosted in both the client build environment and the runtime.
   return isHostedAuthMode(import.meta.env.AUTH_MODE);
+}
+
+export function isEveryAppClientAuthMode() {
+  // Same build-time contract as isHostedClientAuthMode above.
+  return isEveryAppAuthMode(import.meta.env.AUTH_MODE);
 }
 
 export function isEmailVerificationBypassed() {

@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import { resolveCloudflareAccessContext } from "./cloudflareAccess";
 import { resolveLocalNoAuthContext } from "./delegated";
+import { resolveEveryAppContext } from "./everyApp";
 import { resolveHostedContext } from "./hosted";
 import type { EnsuredUserContext } from "./types";
 
@@ -17,6 +18,9 @@ export async function resolveUserContextFromHeaders(
   }
   if (isHostedAuthMode(authMode)) {
     return resolveHostedContext(headers);
+  }
+  if (authMode === "everyapp") {
+    return resolveEveryAppContext(headers);
   }
   return resolveCloudflareAccessContext(headers);
 }

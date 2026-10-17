@@ -12,6 +12,7 @@ import {
 } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { GscService } from "@/server/features/gsc/services/GscService";
 import {
@@ -66,6 +67,18 @@ async function missingSelfHostedGoogleClientResponse(
   projectId: string,
 ) {
   if (await hasGoogleOAuthConfig()) return null;
+
+  if ((await getGoogleAccessMode()) === "gateway") {
+    return mcpResponse({
+      text: "Search Console isn't available on Every App yet. It will connect through the Every App gateway, which holds Google for every app; until then OpenSEO can't read Search Console data.",
+      meta: buildProjectMeta(context, projectId),
+      structuredContent: {
+        ok: false,
+        connected: false,
+        reason: "gsc_oauth_not_configured",
+      },
+    });
+  }
 
   return mcpResponse({
     text: `This self-hosted OpenSEO deployment is not configured for Search Console yet. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET, then reconnect Search Console from the project's settings page. Setup docs: ${GSC_SELF_HOSTED_SETUP_DOCS_URL}`,

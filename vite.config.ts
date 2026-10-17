@@ -8,7 +8,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import { devtools } from "@tanstack/devtools-vite";
 import { leanWorkerBundle } from "./vite-plugin-lean-worker-bundle";
 
-export default defineConfig(({ mode, command }) => {
+export default defineConfig(async ({ mode, command }) => {
   // Vitest sets mode to "test". Return a config without the Cloudflare and
   // TanStack Start plugins so unit tests never boot workerd or the SSR dev
   // server; only the tsconfig path alias is needed.
@@ -44,6 +44,10 @@ export default defineConfig(({ mode, command }) => {
     env.BETTER_AUTH_URL ? new URL(env.BETTER_AUTH_URL).hostname : undefined,
   ].filter((host): host is string => Boolean(host));
   const emitSourcemaps = env.POSTHOG_SOURCEMAPS === "true";
+  // AUTH_MODE=everyapp builds OpenSEO for an Every App gateway, from
+  // cloudflare.config.ts rather than wrangler.jsonc (everyapp.config.ts).
+  // The client reads the same AUTH_MODE, so both sides agree.
+  const everyApp = env.AUTH_MODE === "everyapp";
 
   return {
     // Static files (favicons, manifest) live beside the app code instead of at
@@ -79,25 +83,30 @@ export default defineConfig(({ mode, command }) => {
             },
           })
         : null,
-      cloudflare({
-        inspectorPort: false,
-        viteEnvironment: { name: "ssr" },
-        // The site-audit aux worker builds to dist/open_seo_audit/ and runs
-        // beside the main worker in dev and preview, with the app's
-        // cross-script SITE_AUDIT_WORKFLOW / AUDIT_SCRATCHPAD bindings
-        // resolved against it.
-        // AUDIT_BROWSER_RENDERING=true attaches a remote Browser Run binding
-        // to it in dev, for rendered audits without a Context key.
-        auxiliaryWorkers: [
-          {
-            configPath: "./wrangler.audit.jsonc",
-            config:
-              command === "serve" && env.AUDIT_BROWSER_RENDERING === "true"
-                ? { browser: { binding: "BROWSER", remote: true } }
-                : {},
-          },
-        ],
-      }),
+      everyApp
+        ? (await import("./vite-plugin-every-app")).everyAppCloudflare({
+            mode,
+          })
+        : cloudflare({
+            inspectorPort: false,
+            viteEnvironment: { name: "ssr" },
+            // The site-audit aux worker builds to dist/open_seo_audit/ and
+            // runs beside the main worker in dev and preview, with the app's
+            // cross-script SITE_AUDIT_WORKFLOW / AUDIT_SCRATCHPAD bindings
+            // resolved against it.
+            // AUDIT_BROWSER_RENDERING=true attaches a remote Browser Run
+            // binding to it in dev, for rendered audits without a Context
+            // key.
+            auxiliaryWorkers: [
+              {
+                configPath: "./wrangler.audit.jsonc",
+                config:
+                  command === "serve" && env.AUDIT_BROWSER_RENDERING === "true"
+                    ? { browser: { binding: "BROWSER", remote: true } }
+                    : {},
+              },
+            ],
+          }),
       tsConfigPaths(),
       tanstackStart(),
       viteReact(),

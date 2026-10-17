@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/client/components/ui/card";
 import { Separator } from "@/client/components/ui/separator";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 
 export const helpLinkClassName =
   "font-medium text-primary underline underline-offset-4";
@@ -63,37 +64,63 @@ export function SecretHelpPage({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2>Cloudflare Workers (Dashboard UI)</h2>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <ol className="list-decimal space-y-2 pl-5">
-              <li>
-                In Cloudflare, go to <code>Compute</code> -&gt;{" "}
-                <code>Workers &amp; Pages</code> and open your OpenSEO Worker.
-              </li>
-              <li>
-                Open <code>Settings</code>.
-              </li>
-              <li>
-                Go to <code>Variables &amp; Secrets</code> and add a new secret
-                named <code>{secretName}</code>.
-              </li>
-              <li>{dashboardPasteStep}</li>
-            </ol>
+        {isEveryAppClientAuthMode() ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <h2>Every App gateway</h2>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p>
+                OpenSEO runs behind your Every App gateway, which holds this key
+                for it. An admin sets it once on the gateway, from a checkout of
+                Every App:
+              </p>
+              <CommandBlock
+                command={`pnpm everyapp gateway secret set ${secretName}`}
+              />
+              <p className="text-muted-foreground">
+                Nothing changes on OpenSEO itself: it uses the key on its next
+                request.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <h2>Cloudflare Workers (Dashboard UI)</h2>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <ol className="list-decimal space-y-2 pl-5">
+                <li>
+                  In Cloudflare, go to <code>Compute</code> -&gt;{" "}
+                  <code>Workers &amp; Pages</code> and open your OpenSEO Worker.
+                </li>
+                <li>
+                  Open <code>Settings</code>.
+                </li>
+                <li>
+                  Go to <code>Variables &amp; Secrets</code> and add a new
+                  secret named <code>{secretName}</code>.
+                </li>
+                <li>{dashboardPasteStep}</li>
+              </ol>
 
-            <Separator />
+              <Separator />
 
-            <div>
-              <p>Or set the same secret from your terminal with:</p>
-              <CommandBlock command={`npx wrangler secret put ${secretName}`} />
-            </div>
-            <p className="text-muted-foreground">{terminalPromptHint}</p>
-          </CardContent>
-        </Card>
+              <div>
+                <p>Or set the same secret from your terminal with:</p>
+                <CommandBlock
+                  command={`npx wrangler secret put ${secretName}`}
+                />
+              </div>
+              <p className="text-muted-foreground">{terminalPromptHint}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

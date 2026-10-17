@@ -31,12 +31,21 @@ import {
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { reconcileRunningAudit } from "@/server/features/audit/services/auditReconciler";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import {
+  getDeploymentTier,
+  isEveryAppTier,
+} from "@/server/lib/deployment-tier";
 
 // Free accounts keep bounded audit capacity; rendering reserves usage credits.
+// Off app.openseo.so the deployment tier picks the bounds (deployment-tier.ts).
 async function resolveAuditLimitTier(
   customer: BillingCustomerContext,
 ): Promise<AuditLimitTier> {
-  if (!(await isHostedServerAuthMode())) return "self_hosted";
+  if (!(await isHostedServerAuthMode())) {
+    return isEveryAppTier(await getDeploymentTier())
+      ? "every_app"
+      : "self_hosted";
+  }
   await getOrCreateOrganizationCustomer(customer);
   return (await customerHasPaidPlan(customer.organizationId)) ? "paid" : "free";
 }

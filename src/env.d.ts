@@ -28,8 +28,30 @@ declare namespace Cloudflare {
     // oxlint-disable-next-line typescript-eslint/consistent-type-imports
     AUDIT_ENGINE: Service<typeof import("./audit-worker").default>;
 
-    AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
+    AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted" | "everyapp";
     BYPASS_EMAIL_VERIFICATION?: string;
+
+    // AUTH_MODE=everyapp: OpenSEO behind an Every App gateway. The deploy
+    // (`everyapp app deploy`) sets the identity keys, the app id the tokens
+    // must name, and the binding through which the gateway calls DataForSEO
+    // and OpenRouter with keys only it holds. `everyapp dev` sets the dev
+    // keys; EVERYAPP_DEV accepts them, in local dev only.
+    EVERYAPP_APP_ID?: string;
+    EVERYAPP_IDENTITY_PUBLIC_KEYS?: string;
+    EVERYAPP_IDENTITY_ISSUER?: string;
+    EVERYAPP_DEV?: string;
+    EVERY_APP_GATEWAY?: Fetcher;
+    // Set: a fork pinned to that organization. Unset: first party, the
+    // organization comes from each request's identity.
+    EVERY_APP_ORG_ID?: string;
+    GATEWAY_URL?: string;
+    // AUTH_MODE=everyapp only (server/lib/deployment-tier.ts): first_party or
+    // fork, derived from EVERY_APP_ORG_ID when unset.
+    DEPLOYMENT_TIER?: string;
+    // "on" lets a first-party deployment's cron start scheduled rank checks
+    // and AI visibility runs; off until the gateway attributes background
+    // calls to an organization.
+    FIRST_PARTY_SCHEDULED_CHECKS?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
     POSTHOG_PUBLIC_KEY?: string;
@@ -93,7 +115,11 @@ declare namespace Cloudflare {
 }
 
 interface ImportMetaEnv {
-  readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
+  readonly AUTH_MODE?:
+    | "cloudflare_access"
+    | "local_noauth"
+    | "hosted"
+    | "everyapp";
   readonly DATABASE_PROVIDER?: "d1" | "postgres";
   readonly BYPASS_EMAIL_VERIFICATION?: string;
   readonly POSTHOG_PUBLIC_KEY?: string;

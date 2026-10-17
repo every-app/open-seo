@@ -33,10 +33,12 @@ function context(overrides: Record<string, unknown> = {}, status = 200) {
     { status },
   );
 }
+// Stands in for provider-access.ts, which puts the key (or the gateway) on.
+const contextFetch: typeof fetch = (input, init) => fetch(input, init);
 function render(
-  options: { browser?: typeof browser; contextApiKey?: string } = {
+  options: { browser?: typeof browser; contextFetch?: typeof fetch } = {
     browser,
-    contextApiKey: "context-test-key",
+    contextFetch,
   },
   target = url,
 ) {
@@ -101,9 +103,8 @@ describe("rendered page providers", () => {
         "timeoutOpts[behavior]": "fail",
         "pdf[shouldParse]": "false",
       });
-      expect(request?.headers).toEqual({
-        Authorization: "Bearer context-test-key",
-      });
+      // The key is the transport's: rendering never handles it.
+      expect(new Headers(request?.headers).has("authorization")).toBe(false);
     },
   );
 
@@ -147,7 +148,7 @@ describe("rendered page providers", () => {
 
   it("renders through Context alone where there is no browser", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(context());
-    const { page, usage } = render({ contextApiKey: "context-test-key" });
+    const { page, usage } = render({ contextFetch });
     expect(await page).toEqual({ html, status: null });
     expect(usage).toEqual({ cloudflareAttempts: 0, contextCredits: 1 });
   });
@@ -175,7 +176,7 @@ describe("rendered page providers", () => {
         { status: 408 },
       ),
     );
-    const { page, usage } = render({ contextApiKey: "context-test-key" });
+    const { page, usage } = render({ contextFetch });
     await expect(page).rejects.toThrow("Unable to render");
     expect(usage.contextCredits).toBe(1);
   });
@@ -204,7 +205,7 @@ describe("rendered page providers", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       context({ key_metadata: undefined }),
     );
-    const { page, usage } = render({ contextApiKey: "context-test-key" });
+    const { page, usage } = render({ contextFetch });
     await page;
     expect(usage.contextCredits).toBe(1);
   });

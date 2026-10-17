@@ -3,6 +3,8 @@ import {
   defaultStreamHandler,
 } from "@tanstack/react-start/server";
 import { routeAgentRequest } from "agents";
+import { everyApp } from "@every-app/sdk/server";
+import { withoutCookies } from "@/server/everyapp/cookies";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
@@ -11,6 +13,7 @@ import { reconcileStaleAudits } from "@/server/features/audit/services/auditReco
 import { sendFirstAuditEmails } from "@/server/features/audit/services/firstAuditEmails";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { scheduledChecksEnabled } from "@/server/lib/deployment-tier";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import {
   createOpenSeoOAuthProvider,
@@ -135,7 +138,39 @@ function fetch(
   return withPgClient(() => Promise.resolve(handleFetch(request, env, ctx)));
 }
 
+// AUTH_MODE=everyapp: OpenSEO is private behind an Every App gateway, which
+// signs the person's identity onto every request it forwards. Fail closed on
+// anything else before routing, then resolve users per request as the other
+// modes do. The gateway's tool calls (`/__everyapp/tools/*`) load the MCP
+// tools on first use only.
+async function handleEveryAppRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  if (new URL(request.url).pathname.startsWith("/__everyapp/")) {
+    const { everyAppTools } = await import("@/server/everyapp/tools");
+    return everyAppTools.fetch(request, env, ctx);
+  }
+  return withoutCookies(
+    await everyApp<Env>((verified) =>
+      handleAppRequest(verified, env, ctx),
+    ).fetch(request, env, ctx),
+  );
+}
+
 function handleFetch(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Response | Promise<Response> {
+  if (getAuthMode(env.AUTH_MODE) === "everyapp") {
+    return handleEveryAppRequest(request, env, ctx);
+  }
+  return handleAppRequest(request, env, ctx);
+}
+
+function handleAppRequest(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
@@ -251,13 +286,26 @@ export default {
       console.error("[cron] Stale-audit reconcile failed:", err);
     }
     // Scope a per-request Postgres client for the cron run (no-op in D1 mode).
+    // First-party Every App deployments hold scheduled checks until the
+    // gateway can attribute background calls to an organization
+    // (deployment-tier.ts).
+    const runChecks = scheduledChecksEnabled(env);
+    if (!runChecks) {
+      console.log(
+        "[cron] Scheduled rank checks and AI visibility are off for this first-party deployment (FIRST_PARTY_SCHEDULED_CHECKS).",
+      );
+    }
     const checks = await Promise.allSettled([
-      withPgClient(() => runScheduledRankChecks(env)),
-      withPgClient(async () => {
-        const { runScheduledAiVisibility } =
-          await import("@/server/features/ai-visibility/services/scheduledAiVisibility");
-        await runScheduledAiVisibility();
-      }),
+      ...(runChecks
+        ? [
+            withPgClient(() => runScheduledRankChecks(env)),
+            withPgClient(async () => {
+              const { runScheduledAiVisibility } =
+                await import("@/server/features/ai-visibility/services/scheduledAiVisibility");
+              await runScheduledAiVisibility();
+            }),
+          ]
+        : []),
       withPgClient(() => sendFirstAuditEmails()),
     ]);
     for (const result of checks)

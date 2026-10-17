@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getOpenRouterAccess } from "@/server/lib/openrouter";
 import {
-  getOptionalEnvValue,
+  getWorkersEnv,
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
@@ -27,7 +28,9 @@ export const getSamAccessSetupStatus = createServerFn({ method: "GET" })
       return { enabled: true, errorMessage: null };
     }
 
-    const enabled = Boolean(await getOptionalEnvValue("OPENROUTER_API_KEY"));
+    // Behind an Every App gateway this is the gateway's binding; the gateway
+    // answers 503 until an admin sets its OPENROUTER_API_KEY.
+    const enabled = Boolean(getOpenRouterAccess((await getWorkersEnv()) ?? {}));
     return {
       enabled,
       errorMessage: enabled ? null : OPENROUTER_KEY_MISSING_MESSAGE,

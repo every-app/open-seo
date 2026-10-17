@@ -16,11 +16,11 @@ import { fetchLiveSerp } from "@/server/lib/dataforseo/serp";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 import { AppError } from "@/server/lib/errors";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
 import {
-  getOptionalEnvValue,
-  getRequiredEnvValue,
-} from "@/server/lib/runtime-env";
+  buildChatAgentModel,
+  requireOpenRouterAccess,
+} from "@/server/lib/openrouter";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import { readSite } from "@/server/lib/scrape";
 import {
   CONTEXT_USD_PER_CREDIT,
@@ -165,7 +165,7 @@ export async function researchWebsite(
       sources.clear();
       return generateText({
         model: buildChatAgentModel(
-          await getRequiredEnvValue("OPENROUTER_API_KEY"),
+          await requireOpenRouterAccess(),
           await getOptionalEnvValue("OPENROUTER_MODEL"),
           "low",
         ),

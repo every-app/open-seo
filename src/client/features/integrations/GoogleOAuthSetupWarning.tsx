@@ -5,6 +5,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/client/components/ui/alert";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 
 export function GoogleOAuthSetupWarning({
   integrationName,
@@ -13,6 +14,24 @@ export function GoogleOAuthSetupWarning({
   integrationName: string;
   docsUrl: string;
 }) {
+  if (isEveryAppClientAuthMode()) {
+    // Google connects through the gateway's integrations, like DataForSEO,
+    // once the gateway offers it; OpenSEO holds no Google client here
+    // (server/features/google/googleAccess.ts).
+    return (
+      <Alert variant="warning">
+        <AlertTriangle className="size-4" />
+        <AlertTitle>Coming to Every App</AlertTitle>
+        <AlertDescription>
+          <p>
+            On Every App, the Every App gateway holds the Google connection for
+            every app. {integrationName} will connect there once the gateway
+            offers Google; until then OpenSEO can&apos;t read its data.
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
+  }
   return (
     <Alert variant="warning">
       <AlertTriangle className="size-4" />

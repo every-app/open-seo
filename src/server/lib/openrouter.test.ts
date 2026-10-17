@@ -24,7 +24,10 @@ async function requestedModel(trace: () => Promise<Response>) {
     .mockImplementationOnce(trace)
     .mockResolvedValueOnce(completion());
   const { buildChatAgentModel } = await import("./openrouter");
-  await generateText({ model: buildChatAgentModel("key"), prompt: "hi" });
+  await generateText({
+    model: buildChatAgentModel({ apiKey: "key" }),
+    prompt: "hi",
+  });
   const body = z
     .object({ model: z.string() })
     .parse(JSON.parse(z.string().parse(fetchMock.mock.calls[1]?.[1]?.body)));

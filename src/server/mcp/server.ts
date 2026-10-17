@@ -111,18 +111,18 @@ import {
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 import { explorePromptTool } from "@/server/mcp/tools/explore-prompt";
 
-type ToolSchema = z.ZodType | z.ZodRawShape;
+export type ToolSchema = z.ZodType | z.ZodRawShape;
 
 // Tools declare inputSchema as either a raw Zod shape (most tools) or a full
 // z.object (the GA4 tools); both normalize to one object schema at
 // registration.
-type ToolArgs<Input extends ToolSchema> = Input extends z.ZodType
+export type ToolArgs<Input extends ToolSchema> = Input extends z.ZodType
   ? z.infer<Input>
   : Input extends z.ZodRawShape
     ? z.infer<z.ZodObject<Input>>
     : never;
 
-type OpenSeoToolDefinition<Input extends ToolSchema> = {
+export type OpenSeoToolDefinition<Input extends ToolSchema> = {
   name: string;
   config: {
     title?: string;
@@ -169,39 +169,16 @@ function registerOpenSeoTool<Input extends ToolSchema>(
   );
 }
 
-export function createOpenSeoMcpServer(authProps: McpProps) {
-  const server = new McpServer(
-    {
-      name: "OpenSEO MCP",
-      title: "OpenSEO",
-      version: "0.0.12",
-      description:
-        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
-      websiteUrl: "https://openseo.so",
-      icons: [
-        {
-          src: "https://openseo.so/android-chrome-512x512.png",
-          mimeType: "image/png",
-          sizes: ["512x512"],
-        },
-      ],
-    },
-    {
-      // The tool list is fixed per request and no list_changed notification
-      // is ever published, so don't advertise the capability — modern clients
-      // use it to decide whether to open a subscriptions/listen stream.
-      // Without the pre-declaration, registerTool defaults it to true.
-      capabilities: { tools: { listChanged: false } },
-      instructions:
-        "Most tools need a projectId from list_projects. When the user has no projects, ask for their website and call create_project with its domain. " +
-        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits. OpenSEO cannot purchase credits or charge cards. Explain unsupported purchase requests without promoting subscriptions, upgrades or credit purchases. When a tool reports that the organization is out of credits, you may share the billing link from that error as a plain link.",
-    },
-  );
-
-  const register = <Input extends ToolSchema>(
+/**
+ * Every OpenSEO tool, in order. Each caller registers them its own way: the
+ * MCP server here, and the Every App gateway's tool catalog
+ * (src/server/everyapp/tools.ts), so a new tool reaches both.
+ */
+export function registerOpenSeoTools(
+  register: <Input extends ToolSchema>(
     tool: OpenSeoToolDefinition<Input>,
-  ) => registerOpenSeoTool(server, tool, authProps);
-
+  ) => void,
+) {
   register(whoamiTool);
   register(listProjectsTool);
   register(createProjectTool);
@@ -279,6 +256,38 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(listReportTemplatesTool);
   register(saveReportTemplateTool);
   register(deleteReportTemplateTool);
+}
+
+export function createOpenSeoMcpServer(authProps: McpProps) {
+  const server = new McpServer(
+    {
+      name: "OpenSEO MCP",
+      title: "OpenSEO",
+      version: "0.0.12",
+      description:
+        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
+      websiteUrl: "https://openseo.so",
+      icons: [
+        {
+          src: "https://openseo.so/android-chrome-512x512.png",
+          mimeType: "image/png",
+          sizes: ["512x512"],
+        },
+      ],
+    },
+    {
+      // The tool list is fixed per request and no list_changed notification
+      // is ever published, so don't advertise the capability — modern clients
+      // use it to decide whether to open a subscriptions/listen stream.
+      // Without the pre-declaration, registerTool defaults it to true.
+      capabilities: { tools: { listChanged: false } },
+      instructions:
+        "Most tools need a projectId from list_projects. When the user has no projects, ask for their website and call create_project with its domain. " +
+        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits. OpenSEO cannot purchase credits or charge cards. Explain unsupported purchase requests without promoting subscriptions, upgrades or credit purchases. When a tool reports that the organization is out of credits, you may share the billing link from that error as a plain link.",
+    },
+  );
+
+  registerOpenSeoTools((tool) => registerOpenSeoTool(server, tool, authProps));
 
   return server;
 }

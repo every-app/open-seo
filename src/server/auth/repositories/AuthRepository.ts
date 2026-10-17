@@ -48,6 +48,46 @@ async function upsertDelegatedOrganization(input: DelegatedOrganizationInput) {
     });
 }
 
+// AUTH_MODE=everyapp, first party: the gateway's organization, created the
+// first time one of its members opens OpenSEO. The name is set once; the
+// gateway owns the real one and OpenSEO shows no organization names here.
+async function ensureOrganization(input: DelegatedOrganizationInput) {
+  await db
+    .insert(organization)
+    .values({
+      id: input.id,
+      name: input.name,
+      slug: input.slug,
+      logo: null,
+      createdAt: new Date(),
+      metadata: null,
+    })
+    .onConflictDoNothing({ target: organization.id });
+}
+
+// The member row mirrors the gateway's membership for features that list who
+// belongs to an organization. It is never the authorization fact in this
+// mode: the signed identity on each request is (ensure-user/everyApp.ts).
+async function upsertMember(input: {
+  organizationId: string;
+  userId: string;
+  role: string;
+}) {
+  await db
+    .insert(member)
+    .values({
+      id: crypto.randomUUID(),
+      organizationId: input.organizationId,
+      userId: input.userId,
+      role: input.role,
+      createdAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [member.organizationId, member.userId],
+      set: { role: input.role },
+    });
+}
+
 async function findFirstOrganizationIdForUser(userId: string) {
   const [existingMembership] = await db
     .select({ organizationId: member.organizationId })
@@ -326,6 +366,8 @@ async function setProductUpdatesOptIn(
 
 export const AuthRepository = {
   upsertDelegatedOrganization,
+  ensureOrganization,
+  upsertMember,
   findFirstOrganizationIdForUser,
   findFirstFoundedOrganizationIdForUser,
   findNewestMembershipForUser,

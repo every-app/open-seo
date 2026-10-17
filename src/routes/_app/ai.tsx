@@ -27,6 +27,14 @@ import { CopyButton } from "@/client/components/CopyButton";
 import { AgentList } from "@/client/features/ai-mcp/AgentList";
 
 const DOCS_URL = "https://openseo.so/docs/agent-setup";
+
+// An Every App app lives one label below its gateway
+// (`openseo.apps.example.com` under `apps.example.com`).
+function gatewayMcpUrl(appOrigin: string) {
+  const url = new URL(appOrigin);
+  url.hostname = url.hostname.split(".").slice(1).join(".");
+  return `${url.origin}/mcp`;
+}
 const COACH_DOCS_URL = "https://openseo.so/docs/skills/seo-coach";
 const LINK_CLASS =
   "text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground";
@@ -184,6 +192,21 @@ function AiPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {getAuthMode(import.meta.env.AUTH_MODE) === "everyapp" ? (
+              <Alert className="mt-8">
+                <ShieldAlert />
+                <AlertDescription>
+                  This instance runs behind your Every App gateway. Connect your
+                  AI client to the gateway&apos;s MCP server,{" "}
+                  <code className="font-mono">{gatewayMcpUrl(origin)}</code>:
+                  OpenSEO&apos;s tools appear there as{" "}
+                  <code className="font-mono">openseo_*</code>, next to your
+                  other apps&apos; tools. The URL below takes a personal access
+                  token from the gateway.
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
             {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
               <Alert variant="warning" className="mt-8">

@@ -1,9 +1,72 @@
 import {
+  createGatewayFetch,
+  type GatewayFetchEnv,
+} from "@every-app/sdk/server";
+import {
   createOpenRouter,
   type LanguageModelV3,
   type OpenRouterProvider,
 } from "@openrouter/ai-sdk-provider";
 import { wrapLanguageModel } from "ai";
+import { isEveryAppAuthMode } from "@/lib/auth-mode";
+import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
+
+/**
+ * How a deployment reaches OpenRouter: with its own key, or behind an Every
+ * App gateway (AUTH_MODE=everyapp) through the gateway's AI proxy, which
+ * holds the key. The proxy's host is a placeholder the binding never
+ * resolves.
+ */
+export type OpenRouterAccess =
+  | { apiKey: string }
+  | { gatewayFetch: typeof fetch };
+
+const GATEWAY_BASE_URL =
+  "https://every-app-gateway.invalid/api/ai/openrouter/api/v1";
+
+/** This deployment's OpenRouter access, or null without one. Sync for SAM's getModel(). */
+export function getOpenRouterAccess(env: object): OpenRouterAccess | null {
+  if (isEveryAppAuthMode(getEnvValueSync(env, "AUTH_MODE"))) {
+    try {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- createGatewayFetch reads only the binding and dev keys, each checked before use
+      return {
+        gatewayFetch: createGatewayFetch({ env: env as GatewayFetchEnv }),
+      };
+    } catch {
+      // No gateway binding (and no local key in dev).
+      return null;
+    }
+  }
+  const apiKey = getEnvValueSync(env, "OPENROUTER_API_KEY");
+  return apiKey ? { apiKey } : null;
+}
+
+/** SAM's model, from its Durable Object env. Sync: Think's getModel() is. */
+export function buildSamChatModel(
+  env: object,
+  reasoningEffort: "max" | "low",
+): LanguageModelV3 {
+  const access = getOpenRouterAccess(env);
+  if (!access) {
+    throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
+  }
+  return buildChatAgentModel(
+    access,
+    getEnvValueSync(env, "OPENROUTER_MODEL"),
+    reasoningEffort,
+  );
+}
+
+/** For server code: the access, or the error a missing key always threw. */
+export async function requireOpenRouterAccess(): Promise<OpenRouterAccess> {
+  const access = getOpenRouterAccess((await getWorkersEnv()) ?? {});
+  if (!access) {
+    throw new Error(
+      "Missing required environment variable: OPENROUTER_API_KEY",
+    );
+  }
+  return access;
+}
 
 // OpenRouter model slug used for the SAM in-app chat agent. Override with
 // OPENROUTER_MODEL to swap models without a code change.
@@ -57,15 +120,22 @@ async function openAiBlockedHere(): Promise<boolean> {
  * accounting above captures.
  *
  * Sync on purpose: Think's `getModel()` hook is sync and runs on every turn,
- * so the SAM agent reads the key/model from its DO env and builds here.
+ * so the SAM agent reads its access/model from its DO env and builds here.
  */
 export function buildChatAgentModel(
-  apiKey: string,
+  access: OpenRouterAccess,
   modelId?: string,
   reasoningEffort: "max" | "low" = "max",
 ): LanguageModelV3 {
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
-  const openrouter = createOpenRouter({ apiKey });
+  const openrouter =
+    "apiKey" in access
+      ? createOpenRouter({ apiKey: access.apiKey })
+      : createOpenRouter({
+          apiKey: "gateway-managed",
+          baseURL: GATEWAY_BASE_URL,
+          fetch: access.gatewayFetch,
+        });
   const primary = openRouterModel(openrouter, model, reasoningEffort);
   if (!model.startsWith("openai/")) return primary;
   // Where OpenRouter would reject OpenAI, pick MiniMax M3 before the request.

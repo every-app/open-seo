@@ -7,7 +7,7 @@
 
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { RenderedPageService } from "@/server/lib/audit/rendered-page";
-import { getOptionalEnvValue } from "@/server/lib/runtime-env";
+import { getContextFetch } from "@/server/lib/provider-access";
 import type { RenderUsage } from "@/shared/audit-rendering";
 
 const MAX_PAGES = 5;
@@ -96,12 +96,12 @@ async function fetchText(
     // Timeouts, TLS and network errors fall through to Context.
   }
   if (!contextUsage) return null;
-  const contextApiKey = await getOptionalEnvValue("CONTEXT_API_KEY");
-  if (!contextApiKey) return null;
+  const contextFetch = await getContextFetch();
+  if (!contextFetch) return null;
   try {
     return (
       await RenderedPageService.renderPage(current, {
-        contextApiKey,
+        contextFetch,
         usage: contextUsage,
       })
     ).html;

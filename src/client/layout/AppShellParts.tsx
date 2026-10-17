@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 import { AppBanner } from "@/client/layout/AppBanner";
 import { dataforseoHelpLinkOptions } from "@/client/navigation/items";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import { Button } from "@/client/components/ui/button";
 import {
   Dialog,
@@ -32,8 +33,10 @@ function SeoApiStatusBanners({
     <>
       {shouldShowSeoApiWarning ? (
         <AppBanner variant="warning" icon={icon}>
-          Setup needed: add your DataForSEO API key to use OpenSEO features. See
-          the quick steps on the {helpLink}.
+          {isEveryAppClientAuthMode()
+            ? "Setup needed: an admin turns on DataForSEO for your Every App gateway to use OpenSEO features. See the steps on the "
+            : "Setup needed: add your DataForSEO API key to use OpenSEO features. See the quick steps on the "}
+          {helpLink}.
         </AppBanner>
       ) : null}
 
@@ -58,7 +61,9 @@ function MissingSeoSetupModal({ onClose }: { onClose: () => void }) {
           <div className="space-y-2">
             <DialogTitle>One quick setup step</DialogTitle>
             <DialogDescription>
-              Add your DataForSEO API key to start using OpenSEO.
+              {isEveryAppClientAuthMode()
+                ? "An admin turns on DataForSEO for your Every App gateway, once for every app that uses it."
+                : "Add your DataForSEO API key to start using OpenSEO."}
             </DialogDescription>
           </div>
         </DialogHeader>
