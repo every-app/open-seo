@@ -10,7 +10,7 @@ import manifest from "./everyapp.config.ts";
 // imported here: in dev the Cloudflare Vite plugin hides this file's
 // imports from the Workers.
 
-/** OpenSEO's own settings (`everyapp app secret set`), all optional. */
+/** OpenSEO's own settings (`everyapp secret set`), all optional. */
 export const OPENSEO_SECRETS = [
   // Encrypts the access signatures audits use to crawl protected sites.
   "CRAWLER_ACCESS_SECRET",

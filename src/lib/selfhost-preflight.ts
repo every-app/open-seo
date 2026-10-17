@@ -71,7 +71,7 @@ function checkAuthMode(env: EnvRecord, items: PreflightItem[]): void {
       level: deployed ? "ok" : "fail",
       message: deployed
         ? "everyapp — signed in through the Every App gateway"
-        : "everyapp needs the gateway's identity keys and the Worker's name as EVERYAPP_AUDIENCE: deploy with `everyapp app deploy`, or run `pnpm dev:everyapp` locally.",
+        : "everyapp needs the gateway's identity keys and the Worker's name as EVERYAPP_AUDIENCE: deploy with `everyapp deploy`, or run `pnpm dev:everyapp` locally.",
     });
     return;
   }

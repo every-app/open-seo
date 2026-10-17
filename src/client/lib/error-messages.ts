@@ -16,7 +16,7 @@ export const UNEXPECTED_ERROR_MESSAGE = isHostedClientAuthMode()
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   UNAUTHENTICATED: "Please sign in and try again.",
   AUTH_CONFIG_MISSING: isEveryAppClientAuthMode()
-    ? "OpenSEO isn't set up on your Every App gateway yet. Deploy it with `everyapp app deploy`."
+    ? "OpenSEO isn't set up on your Every App gateway yet. Deploy it with `everyapp deploy`."
     : "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
   PAYMENT_REQUIRED:
     "An active hosted subscription is required before you can use OpenSEO.",

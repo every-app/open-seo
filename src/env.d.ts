@@ -32,7 +32,7 @@ declare namespace Cloudflare {
     BYPASS_EMAIL_VERIFICATION?: string;
 
     // AUTH_MODE=everyapp: OpenSEO behind an Every App gateway. The deploy
-    // (`everyapp app deploy`) sets the identity keys, the app id the tokens
+    // (`everyapp deploy`) sets the identity keys, the app id the tokens
     // must name, and the binding through which the gateway calls DataForSEO
     // and OpenRouter with keys only it holds. `everyapp dev` sets the dev
     // keys; EVERYAPP_DEV accepts them, in local dev only.

@@ -77,10 +77,10 @@ pnpm dev:everyapp        # everyapp dev, with AUTH_MODE=everyapp
 **Fork shape**, to the gateway `everyapp login` points at:
 
 ```bash
-pnpm deploy:everyapp     # everyapp app deploy
+pnpm deploy:everyapp     # everyapp deploy
 ```
 
-`everyapp app deploy` always sends `EVERY_APP_ORG_ID` (the deploying organization), which is what makes it a fork. The deploy provisions the database and KV, builds both Workers, checks them against the gateway's app policy, applies migrations, and uploads the audit Worker before the app's. The gateway holds the provider keys for every app that uses them (`everyapp secret set DATAFORSEO_API_KEY --for gateway`, and `CONTEXT_API_KEY`, `OPENROUTER_API_KEY`). OpenSEO's one optional setting of its own is `CRAWLER_ACCESS_SECRET` (`everyapp app secret set`), which audits of protected sites need.
+`everyapp deploy` always sends `EVERY_APP_ORG_ID` (the deploying organization), which is what makes it a fork. The deploy provisions the database and KV, builds both Workers, checks them against the gateway's app policy, applies migrations, and uploads the audit Worker before the app's. The gateway holds the provider keys for every app that uses them (`everyapp secret set DATAFORSEO_API_KEY --for gateway`, and `CONTEXT_API_KEY`, `OPENROUTER_API_KEY`). OpenSEO's one optional setting of its own is `CRAWLER_ACCESS_SECRET` (`everyapp secret set`), which audits of protected sites need.
 
 **First-party shape.** Every App deploys it into its own account as a shared app (`scope = 'shared'`, owned by the platform organization, at `openseo.<gateway host>`, Workers `every-everyapp-openseo` and `every-everyapp-openseo--audit` as the gateway's registry names them), with `DATABASE_PROVIDER=postgres` and a `HYPERDRIVE` binding on both Workers, `EVERYAPP_SHARED=1` on both, and no `EVERY_APP_ORG_ID` (a deploy path that sends one would pin every organization out but one). The CLI doesn't provision Hyperdrive or run Postgres migrations yet, so until it does the Alchemy stage `everyapp` deploys it (`pnpm deploy:everyapp:first-party`, runbook in [docs/EVERY_APP_DEPLOYMENT.md](../EVERY_APP_DEPLOYMENT.md)); no provider, Autumn or Google secret goes on either Worker.
 
