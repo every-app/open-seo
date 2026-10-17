@@ -15,6 +15,7 @@ import {
   requireAllowedEmails,
   workerName,
 } from "./alchemy.access.ts";
+import { EVERYAPP_STAGE, readEveryAppStage } from "./alchemy.everyapp.ts";
 
 // Preview hostnames are `open-seo-<stage>.<WORKERS_SUBDOMAIN>` — the naming
 // lives in alchemy.access.ts, shared with the Access wildcard the security
@@ -31,6 +32,9 @@ import {
 // - Stage "hosted-prod": names the EXISTING openseo.so production resources
 //   so `--adopt` imports them. Deploy via `pnpm deploy:postgres` (--adopt and
 //   the stage baked in).
+// - Stage "everyapp": the first-party OpenSEO behind the hosted Every App
+//   gateway, on Postgres through Hyperdrive (alchemy.everyapp.ts,
+//   docs/EVERY_APP_DEPLOYMENT.md). Deploy via `pnpm deploy:everyapp:first-party`.
 //
 // Local dev and Docker self-host do NOT use this stack (wrangler.jsonc +
 // @cloudflare/vite-plugin). This stack deploys the PREBUILT `vite build`
@@ -84,8 +88,8 @@ const makeResources = (stage: string) => {
   const prod = stage === HOSTED_PROD_STAGE;
   // Prod adopts the LIVE resources; retain makes `alchemy destroy --stage
   // hosted-prod` (or an orphaning refactor) forget state instead of deleting
-  // them.
-  const keep = Alchemy.RemovalPolicy.retain(prod);
+  // them. The everyapp stage holds its customers' data too.
+  const keep = Alchemy.RemovalPolicy.retain(prod || stage === EVERYAPP_STAGE);
   return {
     DB: Cloudflare.D1.Database("DB", {
       name: prod ? PROD_NAMES.d1 : `open-seo-db-${stage}`,
@@ -122,13 +126,14 @@ const makeResources = (stage: string) => {
 };
 
 /**
- * Prod-only: the existing Hyperdrive config pooling connections to the
- * production Postgres. Origin credentials come from the env file — Cloudflare
- * never returns them, so alchemy must know them to manage the config.
+ * The Postgres stages' Hyperdrive config: prod's existing one pooling
+ * connections to the production Postgres, and the everyapp stage's own.
+ * Origin credentials come from the env file — Cloudflare never returns them,
+ * so alchemy must know them to manage the config.
  */
-const makeHyperdrive = () =>
+const makeHyperdrive = (name: string) =>
   Cloudflare.Hyperdrive.Connection("HYPERDRIVE", {
-    name: PROD_NAMES.hyperdrive,
+    name,
     origin: Config.all([
       Config.string("HYPERDRIVE_ORIGIN_HOST"),
       Config.string("HYPERDRIVE_ORIGIN_PORT").pipe(Config.withDefault("5432")),
@@ -321,14 +326,20 @@ export default Alchemy.Stack(
     const authMode = yield* Config.string("AUTH_MODE").pipe(
       Config.withDefault("cloudflare_access"),
     );
-    const databaseProvider = yield* optionalVar("DATABASE_PROVIDER");
+    // Undefined on every stage but everyapp, which is Postgres by definition.
+    const everyApp = yield* readEveryAppStage(stage, authMode);
+    const databaseProvider = everyApp
+      ? "postgres"
+      : yield* optionalVar("DATABASE_PROVIDER");
     const workersSubdomain = yield* readWorkersSubdomain({ required: false });
 
     // Auth needs an absolute BETTER_AUTH_URL. Prod sets it explicitly;
     // previews always derive it from the deterministic worker name — a wrong
     // WORKERS_SUBDOMAIN surfaces in CI's post-deploy Access verify step.
     let authUrl: string;
-    if (prod) {
+    if (everyApp) {
+      authUrl = everyApp.appUrl;
+    } else if (prod) {
       authUrl = yield* optionalVar("BETTER_AUTH_URL");
       if (!authUrl) {
         return yield* Effect.die(
@@ -367,9 +378,13 @@ export default Alchemy.Stack(
     );
 
     // Created once and bound into BOTH workers — they share the same
-    // D1/KV/R2 (and prod Hyperdrive). OAUTH_KV stays app-worker-only.
+    // D1/KV/R2 (and Hyperdrive on the Postgres stages). OAUTH_KV stays
+    // app-worker-only. The everyapp stage binds neither D1 (it runs on
+    // Postgres) nor OAUTH_KV (the gateway serves MCP), so neither is created.
     const resources = makeResources(stage);
-    const prodHyperdrive = prod ? makeHyperdrive() : undefined;
+    const hyperdrive = prod
+      ? makeHyperdrive(PROD_NAMES.hyperdrive)
+      : everyApp && makeHyperdrive(workerName(stage));
 
     // Aux worker: the site-audit engine (src/audit-worker.ts) — the
     // SiteAuditWorkflow orchestrator and the per-audit AuditScratchpad DO.
@@ -398,24 +413,29 @@ export default Alchemy.Stack(
         traces: { enabled: wrangler.observability?.traces?.enabled ?? false },
       },
       env: {
-        DB: resources.DB,
         KV: resources.KV,
         R2: resources.R2,
         // Deliberately NOT ...dataEnv: this worker crawls and parses
         // attacker-influenced HTML, so it gets only the secrets its code
         // path reads — DataForSEO (Lighthouse), Autumn (metering), PostHog
         // (capture), CRAWLER_ACCESS_SECRET (Shopify signatures). No
-        // auth/OAuth/Loops/Turnstile secrets.
+        // auth/OAuth/Loops/Turnstile secrets. Behind the Every App gateway
+        // it calls DataForSEO and Context through the gateway instead.
+        ...(everyApp
+          ? everyApp.auditEnv
+          : {
+              DB: resources.DB,
+              CRAWLER_ACCESS_SECRET: dataEnv.CRAWLER_ACCESS_SECRET,
+              CONTEXT_API_KEY: dataEnv.CONTEXT_API_KEY,
+              DATAFORSEO_API_KEY: dataEnv.DATAFORSEO_API_KEY,
+              AUTUMN_SECRET_KEY: dataEnv.AUTUMN_SECRET_KEY,
+              POSTHOG_PUBLIC_KEY: dataEnv.POSTHOG_PUBLIC_KEY,
+              POSTHOG_HOST: dataEnv.POSTHOG_HOST,
+            }),
         BROWSER: Cloudflare.Browser(),
-        CRAWLER_ACCESS_SECRET: dataEnv.CRAWLER_ACCESS_SECRET,
-        CONTEXT_API_KEY: dataEnv.CONTEXT_API_KEY,
-        DATAFORSEO_API_KEY: dataEnv.DATAFORSEO_API_KEY,
-        AUTUMN_SECRET_KEY: dataEnv.AUTUMN_SECRET_KEY,
-        POSTHOG_PUBLIC_KEY: dataEnv.POSTHOG_PUBLIC_KEY,
-        POSTHOG_HOST: dataEnv.POSTHOG_HOST,
         AUTH_MODE: authMode,
         DATABASE_PROVIDER: databaseProvider || "d1",
-        ...(prodHyperdrive ? { HYPERDRIVE: prodHyperdrive } : {}),
+        ...(hyperdrive ? { HYPERDRIVE: hyperdrive } : {}),
         // This worker is the code home of the scratchpad DO and the
         // site-audit workflow; the app worker binds to both cross-script.
         AUDIT_SCRATCHPAD: Cloudflare.DurableObject("AUDIT_SCRATCHPAD", {
@@ -430,12 +450,14 @@ export default Alchemy.Stack(
           { className: "SiteAuditWorkflow" },
         ),
       },
-    }).pipe(Alchemy.RemovalPolicy.retain(prod));
+    }).pipe(Alchemy.RemovalPolicy.retain(prod || !!everyApp));
 
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
       domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      // The everyapp stage: no workers.dev URL, only the gateway reaches it.
+      ...everyApp?.appWorker,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under
@@ -474,19 +496,28 @@ export default Alchemy.Stack(
       // Scheduled rank checks — src/server.ts `scheduled` handler.
       crons: wrangler.triggers.crons,
       env: {
-        ...resources,
-        ...dataEnv,
+        KV: resources.KV,
+        R2: resources.R2,
+        // The everyapp stage: the gateway identity in place of the env file's
+        // secrets (alchemy.everyapp.ts).
+        ...(everyApp
+          ? everyApp.appEnv
+          : {
+              DB: resources.DB,
+              OAUTH_KV: resources.OAUTH_KV,
+              ...dataEnv,
+              TEAM_DOMAIN: access.teamDomain,
+              POLICY_AUD: access.policyAud,
+            }),
         AUTH_MODE: authMode,
         DATABASE_PROVIDER: databaseProvider || "d1",
         BETTER_AUTH_URL: authUrl,
         // The audit worker above always binds BROWSER; the app worker checks
         // this before it offers "Render JavaScript".
         AUDIT_BROWSER_RENDERING: "true",
-        TEAM_DOMAIN: access.teamDomain,
-        POLICY_AUD: access.policyAud,
 
-        // Prod-only: pooled Postgres via the existing Hyperdrive config.
-        ...(prodHyperdrive ? { HYPERDRIVE: prodHyperdrive } : {}),
+        // Postgres stages: pooled Postgres via the stage's Hyperdrive config.
+        ...(hyperdrive ? { HYPERDRIVE: hyperdrive } : {}),
 
         // Service binding to the audit worker's AuditEngine entrypoint
         // (cancel + GDPR erasure of scratchpad state; env key = binding
@@ -539,10 +570,11 @@ export default Alchemy.Stack(
       },
     }).pipe(
       // Prod adopts the live worker serving app.openseo.so; never delete it
-      // on destroy. (Workflow registrations aren't individually retainable —
-      // they're created inside the worker provider — but re-registering them
-      // is a lossless upsert, unlike deleting the data-bearing resources.)
-      Alchemy.RemovalPolicy.retain(prod),
+      // on destroy, nor the everyapp stage's. (Workflow registrations aren't
+      // individually retainable — they're created inside the worker provider
+      // — but re-registering them is a lossless upsert, unlike deleting the
+      // data-bearing resources.)
+      Alchemy.RemovalPolicy.retain(prod || !!everyApp),
     );
 
     return { url: app.url.as<string>() };

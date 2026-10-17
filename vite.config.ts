@@ -17,7 +17,11 @@ export default defineConfig(async ({ mode, command }) => {
       plugins: [tsConfigPaths()],
       test: {
         environment: "node",
-        include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
+        include: [
+          "src/**/*.test.ts",
+          "scripts/**/*.test.ts",
+          "deploy/**/*.test.ts",
+        ],
         restoreMocks: true,
         clearMocks: true,
         server: {
@@ -46,8 +50,11 @@ export default defineConfig(async ({ mode, command }) => {
   const emitSourcemaps = env.POSTHOG_SOURCEMAPS === "true";
   // AUTH_MODE=everyapp builds OpenSEO for an Every App gateway, from
   // cloudflare.config.ts rather than wrangler.jsonc (everyapp.config.ts).
-  // The client reads the same AUTH_MODE, so both sides agree.
-  const everyApp = env.AUTH_MODE === "everyapp";
+  // The client reads the same AUTH_MODE, so both sides agree. The Alchemy
+  // stage `everyapp` (`vite build --mode everyapp`) is the exception: Alchemy
+  // supplies its bindings, so it builds from wrangler.jsonc like the other
+  // Alchemy stages, with the Every App client.
+  const everyApp = env.AUTH_MODE === "everyapp" && mode !== "everyapp";
 
   return {
     // Static files (favicons, manifest) live beside the app code instead of at

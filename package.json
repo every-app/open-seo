@@ -19,6 +19,8 @@
     "deploy:selfhost": "node scripts/selfhost-deploy-preflight.mjs && vite build --mode selfhost && tsc --noEmit && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.selfhost --stage selfhost",
     "deploy:postgres": "npm run db:migrate:pg && npm run build && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.production --stage hosted-prod --adopt",
     "deploy:preview": "vite build --mode preview && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.preview",
+    "deploy:everyapp:first-party": "vite build --mode everyapp && tsc --noEmit && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.everyapp --stage everyapp && pnpm everyapp:bind-gateway",
+    "everyapp:bind-gateway": "tsx --env-file=.env.everyapp scripts/everyapp-gateway-binding.ts",
     "preview:access": "pnpm alchemy deploy deploy/alchemy/alchemy.preview-access.run.ts --env-file .env.preview --stage preview-access --adopt",
     "alchemy": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-strip-types\" alchemy",
     "destroy:preview": "pnpm alchemy destroy deploy/alchemy/alchemy.run.ts --env-file .env.preview",

@@ -1,0 +1,1570 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`alchemy.run.ts stages > a preview runs hosted mode on stage-suffixed resources 1`] = `
+{
+  "output": {
+    "url": "open-seo-pr-123",
+  },
+  "resources": [
+    {
+      "id": "open-seo-audit",
+      "props": {
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "env": {
+          "AUDIT_SCRATCHPAD": {
+            "resource": {
+              "id": "AUDIT_SCRATCHPAD",
+              "props": {
+                "className": "AuditScratchpad",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "AUTH_MODE": "hosted",
+          "AUTUMN_SECRET_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "BROWSER": {
+            "resource": {
+              "id": undefined,
+              "props": undefined,
+              "removal": "destroy",
+              "type": "Cloudflare.Browser",
+            },
+          },
+          "CONTEXT_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "d1",
+          "DATAFORSEO_API_KEY": {
+            "config": {
+              "redacted": "dataforseo-key",
+            },
+          },
+          "DB": {
+            "resource": {
+              "id": "DB",
+              "props": {
+                "migrationsDir": "drizzle/sqlite",
+                "migrationsTable": "d1_migrations",
+                "name": "open-seo-db-pr-123",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.D1.Database",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "open-seo-kv-pr-123",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "POSTHOG_HOST": {
+            "config": "",
+          },
+          "POSTHOG_PUBLIC_KEY": {
+            "config": "",
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "lifecycleRules": [
+                  {
+                    "deleteObjectsTransition": {
+                      "condition": {
+                        "maxAge": 604800,
+                        "type": "Age",
+                      },
+                    },
+                    "id": "dataforseo-cache-expiry",
+                    "prefix": "dataforseo-cache/",
+                  },
+                ],
+                "name": "open-seo-r2-pr-123",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow-pr-123",
+              "props": {
+                "className": "SiteAuditWorkflow",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+        },
+        "limits": {
+          "cpuMs": 300000,
+        },
+        "main": "./dist/open_seo_audit/index.js",
+        "name": "open-seo-pr-123-audit",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "url": false,
+      },
+      "removal": "destroy",
+      "type": "Cloudflare.Worker",
+    },
+    {
+      "id": "open-seo",
+      "props": {
+        "assets": {
+          "directory": "./dist/client",
+        },
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "crons": [
+          "*/5 * * * *",
+          "17 3 * * *",
+        ],
+        "domain": undefined,
+        "env": {
+          "AI_VISIBILITY_WORKFLOW": {
+            "resource": {
+              "id": "ai-visibility-workflow-pr-123",
+              "props": {
+                "className": "AiVisibilityWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "AUDIT_BROWSER_RENDERING": "true",
+          "AUDIT_ENGINE": {
+            "ref": "Cloudflare.Worker:open-seo-audit",
+          },
+          "AUTH_MODE": "hosted",
+          "AUTUMN_SECRET_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "AUTUMN_WEBHOOK_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "BETTER_AUTH_SECRET": {
+            "config": {
+              "redacted": "auth-secret",
+            },
+          },
+          "BETTER_AUTH_URL": "https://open-seo-pr-123.example.workers.dev",
+          "BYPASS_EMAIL_VERIFICATION": {
+            "config": "",
+          },
+          "CONTEXT_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "d1",
+          "DATAFORSEO_API_KEY": {
+            "config": {
+              "redacted": "dataforseo-key",
+            },
+          },
+          "DB": {
+            "resource": {
+              "id": "DB",
+              "props": {
+                "migrationsDir": "drizzle/sqlite",
+                "migrationsTable": "d1_migrations",
+                "name": "open-seo-db-pr-123",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.D1.Database",
+            },
+          },
+          "DUB_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "GDPR_ERASURE_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "GOOGLE_CLIENT_ID": {
+            "config": "",
+          },
+          "GOOGLE_CLIENT_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "open-seo-kv-pr-123",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "LOOPS_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "LOOPS_PRODUCT_UPDATES_LIST_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_INVITATION_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID": {
+            "config": "",
+          },
+          "MCP_RATE_LIMIT": {
+            "resource": {
+              "id": "MCP_RATE_LIMIT",
+              "props": {
+                "namespaceId": 1001,
+                "simple": {
+                  "limit": 5000,
+                  "period": 60,
+                },
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.RateLimit",
+            },
+          },
+          "META_CONVERSIONS_API_TOKEN": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "META_PIXEL_ID": {
+            "config": "",
+          },
+          "OAUTH_KV": {
+            "resource": {
+              "id": "OAUTH_KV",
+              "props": {
+                "title": "open-seo-oauth-kv-pr-123",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "OPENROUTER_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "OPENROUTER_MODEL": {
+            "config": "",
+          },
+          "OPENSEO_TELEMETRY_DISABLED": {
+            "config": "",
+          },
+          "POLICY_AUD": "",
+          "POSTHOG_HOST": {
+            "config": "",
+          },
+          "POSTHOG_PUBLIC_KEY": {
+            "config": "",
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "lifecycleRules": [
+                  {
+                    "deleteObjectsTransition": {
+                      "condition": {
+                        "maxAge": 604800,
+                        "type": "Age",
+                      },
+                    },
+                    "id": "dataforseo-cache-expiry",
+                    "prefix": "dataforseo-cache/",
+                  },
+                ],
+                "name": "open-seo-r2-pr-123",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "RANK_CHECK_WORKFLOW": {
+            "resource": {
+              "id": "rank-check-workflow-pr-123",
+              "props": {
+                "className": "RankCheckWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "SAM_CHAT": {
+            "resource": {
+              "id": "SAM_CHAT",
+              "props": {
+                "className": "SamChatAgent",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow-pr-123",
+              "props": {
+                "className": "SiteAuditWorkflow",
+                "scriptName": "open-seo-pr-123-audit",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "TEAM_DOMAIN": "",
+          "TURNSTILE_SECRET_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "TURNSTILE_SITE_KEY": {
+            "config": "",
+          },
+        },
+        "limits": {
+          "cpuMs": 300000,
+        },
+        "main": "./dist/server/index.js",
+        "name": "open-seo-pr-123",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "placement": {
+          "mode": "smart",
+        },
+      },
+      "removal": "destroy",
+      "type": "Cloudflare.Worker",
+    },
+  ],
+}
+`;
+
+exports[`alchemy.run.ts stages > everyapp > deploys the first-party Workers behind the gateway 1`] = `
+{
+  "output": {
+    "url": undefined,
+  },
+  "resources": [
+    {
+      "id": "open-seo-audit",
+      "props": {
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "env": {
+          "AUDIT_SCRATCHPAD": {
+            "resource": {
+              "id": "AUDIT_SCRATCHPAD",
+              "props": {
+                "className": "AuditScratchpad",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "AUTH_MODE": "everyapp",
+          "BROWSER": {
+            "resource": {
+              "id": undefined,
+              "props": undefined,
+              "removal": "destroy",
+              "type": "Cloudflare.Browser",
+            },
+          },
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "postgres",
+          "DEPLOYMENT_TIER": "first_party",
+          "EVERYAPP_APP_ID": "openseo",
+          "HYPERDRIVE": {
+            "resource": {
+              "id": "HYPERDRIVE",
+              "props": {
+                "caching": {
+                  "disabled": true,
+                },
+                "name": "open-seo-everyapp",
+                "origin": {
+                  "config": {
+                    "database": "openseo",
+                    "host": "everyapp.pg.example.com",
+                    "password": {
+                      "redacted": "db-password",
+                    },
+                    "port": 5432,
+                    "scheme": "postgres",
+                    "user": "openseo",
+                  },
+                },
+                "originConnectionLimit": 30,
+              },
+              "removal": "retain",
+              "type": "Cloudflare.Hyperdrive.Connection",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "open-seo-kv-everyapp",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "lifecycleRules": [
+                  {
+                    "deleteObjectsTransition": {
+                      "condition": {
+                        "maxAge": 604800,
+                        "type": "Age",
+                      },
+                    },
+                    "id": "dataforseo-cache-expiry",
+                    "prefix": "dataforseo-cache/",
+                  },
+                ],
+                "name": "open-seo-r2-everyapp",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow-everyapp",
+              "props": {
+                "className": "SiteAuditWorkflow",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+        },
+        "limits": {
+          "cpuMs": 300000,
+        },
+        "main": "./dist/open_seo_audit/index.js",
+        "name": "open-seo-everyapp-audit",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "url": false,
+      },
+      "removal": "retain",
+      "type": "Cloudflare.Worker",
+    },
+    {
+      "id": "open-seo",
+      "props": {
+        "assets": {
+          "directory": "./dist/client",
+        },
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "crons": [
+          "*/5 * * * *",
+          "17 3 * * *",
+        ],
+        "domain": undefined,
+        "env": {
+          "AI_VISIBILITY_WORKFLOW": {
+            "resource": {
+              "id": "ai-visibility-workflow-everyapp",
+              "props": {
+                "className": "AiVisibilityWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "AUDIT_BROWSER_RENDERING": "true",
+          "AUDIT_ENGINE": {
+            "ref": "Cloudflare.Worker:open-seo-audit",
+          },
+          "AUTH_MODE": "everyapp",
+          "BETTER_AUTH_URL": "https://openseo.app.everyapp.com",
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "postgres",
+          "DEPLOYMENT_TIER": "first_party",
+          "EVERYAPP_APP_ID": "openseo",
+          "EVERYAPP_IDENTITY_ISSUER": "https://app.everyapp.com",
+          "EVERYAPP_IDENTITY_PUBLIC_KEYS": "["-----BEGIN PUBLIC KEY-----\\nMIIB\\n-----END PUBLIC KEY-----\\n"]",
+          "FIRST_PARTY_SCHEDULED_CHECKS": {
+            "config": "",
+          },
+          "GATEWAY_URL": "https://app.everyapp.com",
+          "HYPERDRIVE": {
+            "resource": {
+              "id": "HYPERDRIVE",
+              "props": {
+                "caching": {
+                  "disabled": true,
+                },
+                "name": "open-seo-everyapp",
+                "origin": {
+                  "config": {
+                    "database": "openseo",
+                    "host": "everyapp.pg.example.com",
+                    "password": {
+                      "redacted": "db-password",
+                    },
+                    "port": 5432,
+                    "scheme": "postgres",
+                    "user": "openseo",
+                  },
+                },
+                "originConnectionLimit": 30,
+              },
+              "removal": "retain",
+              "type": "Cloudflare.Hyperdrive.Connection",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "open-seo-kv-everyapp",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "MCP_RATE_LIMIT": {
+            "resource": {
+              "id": "MCP_RATE_LIMIT",
+              "props": {
+                "namespaceId": 1001,
+                "simple": {
+                  "limit": 5000,
+                  "period": 60,
+                },
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.RateLimit",
+            },
+          },
+          "OPENROUTER_MODEL": {
+            "config": "",
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "lifecycleRules": [
+                  {
+                    "deleteObjectsTransition": {
+                      "condition": {
+                        "maxAge": 604800,
+                        "type": "Age",
+                      },
+                    },
+                    "id": "dataforseo-cache-expiry",
+                    "prefix": "dataforseo-cache/",
+                  },
+                ],
+                "name": "open-seo-r2-everyapp",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "RANK_CHECK_WORKFLOW": {
+            "resource": {
+              "id": "rank-check-workflow-everyapp",
+              "props": {
+                "className": "RankCheckWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "SAM_CHAT": {
+            "resource": {
+              "id": "SAM_CHAT",
+              "props": {
+                "className": "SamChatAgent",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow-everyapp",
+              "props": {
+                "className": "SiteAuditWorkflow",
+                "scriptName": "open-seo-everyapp-audit",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+        },
+        "limits": {
+          "cpuMs": 300000,
+        },
+        "main": "./dist/server/index.js",
+        "name": "open-seo-everyapp",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "placement": {
+          "mode": "smart",
+        },
+        "url": false,
+      },
+      "removal": "retain",
+      "type": "Cloudflare.Worker",
+    },
+  ],
+}
+`;
+
+exports[`alchemy.run.ts stages > hosted-prod adopts the live openseo.so resources 1`] = `
+{
+  "output": {
+    "url": "open-seo",
+  },
+  "resources": [
+    {
+      "id": "open-seo-audit",
+      "props": {
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "env": {
+          "AUDIT_SCRATCHPAD": {
+            "resource": {
+              "id": "AUDIT_SCRATCHPAD",
+              "props": {
+                "className": "AuditScratchpad",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "AUTH_MODE": "hosted",
+          "AUTUMN_SECRET_KEY": {
+            "config": {
+              "redacted": "autumn-key",
+            },
+          },
+          "BROWSER": {
+            "resource": {
+              "id": undefined,
+              "props": undefined,
+              "removal": "destroy",
+              "type": "Cloudflare.Browser",
+            },
+          },
+          "CONTEXT_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "postgres",
+          "DATAFORSEO_API_KEY": {
+            "config": {
+              "redacted": "dataforseo-key",
+            },
+          },
+          "DB": {
+            "resource": {
+              "id": "DB",
+              "props": {
+                "migrationsDir": "drizzle/sqlite",
+                "migrationsTable": "d1_migrations",
+                "name": "open-seo",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.D1.Database",
+            },
+          },
+          "HYPERDRIVE": {
+            "resource": {
+              "id": "HYPERDRIVE",
+              "props": {
+                "caching": {
+                  "disabled": true,
+                },
+                "name": "openseo",
+                "origin": {
+                  "config": {
+                    "database": "openseo",
+                    "host": "db.example.com",
+                    "password": {
+                      "redacted": "db-password",
+                    },
+                    "port": 5432,
+                    "scheme": "postgres",
+                    "user": "openseo",
+                  },
+                },
+                "originConnectionLimit": 30,
+              },
+              "removal": "retain",
+              "type": "Cloudflare.Hyperdrive.Connection",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "every-super-seo",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "POSTHOG_HOST": {
+            "config": "",
+          },
+          "POSTHOG_PUBLIC_KEY": {
+            "config": "",
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "name": "open-seo",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow",
+              "props": {
+                "className": "SiteAuditWorkflow",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+        },
+        "limits": {
+          "cpuMs": 300000,
+        },
+        "main": "./dist/open_seo_audit/index.js",
+        "name": "open-seo-audit",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "url": false,
+      },
+      "removal": "retain",
+      "type": "Cloudflare.Worker",
+    },
+    {
+      "id": "open-seo",
+      "props": {
+        "assets": {
+          "directory": "./dist/client",
+        },
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "crons": [
+          "*/5 * * * *",
+          "17 3 * * *",
+        ],
+        "domain": [
+          "app.openseo.so",
+          "www.app.openseo.so",
+        ],
+        "env": {
+          "AI_VISIBILITY_WORKFLOW": {
+            "resource": {
+              "id": "ai-visibility-workflow",
+              "props": {
+                "className": "AiVisibilityWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "AUDIT_BROWSER_RENDERING": "true",
+          "AUDIT_ENGINE": {
+            "ref": "Cloudflare.Worker:open-seo-audit",
+          },
+          "AUTH_MODE": "hosted",
+          "AUTUMN_SECRET_KEY": {
+            "config": {
+              "redacted": "autumn-key",
+            },
+          },
+          "AUTUMN_WEBHOOK_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "BETTER_AUTH_SECRET": {
+            "config": {
+              "redacted": "auth-secret",
+            },
+          },
+          "BETTER_AUTH_URL": "https://app.openseo.so",
+          "BYPASS_EMAIL_VERIFICATION": {
+            "config": "",
+          },
+          "CONTEXT_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "postgres",
+          "DATAFORSEO_API_KEY": {
+            "config": {
+              "redacted": "dataforseo-key",
+            },
+          },
+          "DB": {
+            "resource": {
+              "id": "DB",
+              "props": {
+                "migrationsDir": "drizzle/sqlite",
+                "migrationsTable": "d1_migrations",
+                "name": "open-seo",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.D1.Database",
+            },
+          },
+          "DUB_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "GDPR_ERASURE_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "GOOGLE_CLIENT_ID": {
+            "config": "google-client",
+          },
+          "GOOGLE_CLIENT_SECRET": {
+            "config": {
+              "redacted": "google-secret",
+            },
+          },
+          "HYPERDRIVE": {
+            "resource": {
+              "id": "HYPERDRIVE",
+              "props": {
+                "caching": {
+                  "disabled": true,
+                },
+                "name": "openseo",
+                "origin": {
+                  "config": {
+                    "database": "openseo",
+                    "host": "db.example.com",
+                    "password": {
+                      "redacted": "db-password",
+                    },
+                    "port": 5432,
+                    "scheme": "postgres",
+                    "user": "openseo",
+                  },
+                },
+                "originConnectionLimit": 30,
+              },
+              "removal": "retain",
+              "type": "Cloudflare.Hyperdrive.Connection",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "every-super-seo",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "LOOPS_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "LOOPS_PRODUCT_UPDATES_LIST_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_INVITATION_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID": {
+            "config": "",
+          },
+          "MCP_RATE_LIMIT": {
+            "resource": {
+              "id": "MCP_RATE_LIMIT",
+              "props": {
+                "namespaceId": 1001,
+                "simple": {
+                  "limit": 5000,
+                  "period": 60,
+                },
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.RateLimit",
+            },
+          },
+          "META_CONVERSIONS_API_TOKEN": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "META_PIXEL_ID": {
+            "config": "",
+          },
+          "OAUTH_KV": {
+            "resource": {
+              "id": "OAUTH_KV",
+              "props": {
+                "title": "OAUTH_KV",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "OPENROUTER_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "OPENROUTER_MODEL": {
+            "config": "",
+          },
+          "OPENSEO_TELEMETRY_DISABLED": {
+            "config": "",
+          },
+          "POLICY_AUD": "",
+          "POSTHOG_HOST": {
+            "config": "",
+          },
+          "POSTHOG_PUBLIC_KEY": {
+            "config": "",
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "name": "open-seo",
+              },
+              "removal": "retain",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "RANK_CHECK_WORKFLOW": {
+            "resource": {
+              "id": "rank-check-workflow",
+              "props": {
+                "className": "RankCheckWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "SAM_CHAT": {
+            "resource": {
+              "id": "SAM_CHAT",
+              "props": {
+                "className": "SamChatAgent",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow",
+              "props": {
+                "className": "SiteAuditWorkflow",
+                "scriptName": "open-seo-audit",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "TEAM_DOMAIN": "",
+          "TURNSTILE_SECRET_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "TURNSTILE_SITE_KEY": {
+            "config": "",
+          },
+        },
+        "limits": {
+          "cpuMs": 300000,
+        },
+        "main": "./dist/server/index.js",
+        "name": "open-seo",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "placement": {
+          "mode": "targeted",
+          "region": "aws:us-east-1",
+        },
+      },
+      "removal": "retain",
+      "type": "Cloudflare.Worker",
+    },
+  ],
+}
+`;
+
+exports[`alchemy.run.ts stages > selfhost provisions its own Access gate 1`] = `
+{
+  "output": {
+    "url": "open-seo-selfhost",
+  },
+  "resources": [
+    {
+      "id": "SelfHostAllowUsers",
+      "props": {
+        "decision": "allow",
+        "include": [
+          {
+            "email": {
+              "email": "owner@example.com",
+            },
+          },
+          {
+            "email": {
+              "email": "teammate@example.com",
+            },
+          },
+        ],
+        "name": "open-seo selfhost self-host users",
+      },
+      "removal": "destroy",
+      "type": "Cloudflare.Access.Policy",
+    },
+    {
+      "id": "SelfHostAccess",
+      "props": {
+        "domain": "open-seo-selfhost.example.workers.dev",
+        "name": "open-seo selfhost",
+        "policies": [
+          "policy-SelfHostAllowUsers",
+        ],
+        "type": "self_hosted",
+      },
+      "removal": "destroy",
+      "type": "Cloudflare.Access.Application",
+    },
+    {
+      "id": "open-seo-audit",
+      "props": {
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "env": {
+          "AUDIT_SCRATCHPAD": {
+            "resource": {
+              "id": "AUDIT_SCRATCHPAD",
+              "props": {
+                "className": "AuditScratchpad",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "AUTH_MODE": "cloudflare_access",
+          "AUTUMN_SECRET_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "BROWSER": {
+            "resource": {
+              "id": undefined,
+              "props": undefined,
+              "removal": "destroy",
+              "type": "Cloudflare.Browser",
+            },
+          },
+          "CONTEXT_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "d1",
+          "DATAFORSEO_API_KEY": {
+            "config": {
+              "redacted": "dataforseo-key",
+            },
+          },
+          "DB": {
+            "resource": {
+              "id": "DB",
+              "props": {
+                "migrationsDir": "drizzle/sqlite",
+                "migrationsTable": "d1_migrations",
+                "name": "open-seo-db-selfhost",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.D1.Database",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "open-seo-kv-selfhost",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "POSTHOG_HOST": {
+            "config": "",
+          },
+          "POSTHOG_PUBLIC_KEY": {
+            "config": "",
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "lifecycleRules": [
+                  {
+                    "deleteObjectsTransition": {
+                      "condition": {
+                        "maxAge": 604800,
+                        "type": "Age",
+                      },
+                    },
+                    "id": "dataforseo-cache-expiry",
+                    "prefix": "dataforseo-cache/",
+                  },
+                ],
+                "name": "open-seo-r2-selfhost",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow-selfhost",
+              "props": {
+                "className": "SiteAuditWorkflow",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+        },
+        "main": "./dist/open_seo_audit/index.js",
+        "name": "open-seo-selfhost-audit",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "url": false,
+      },
+      "removal": "destroy",
+      "type": "Cloudflare.Worker",
+    },
+    {
+      "id": "open-seo",
+      "props": {
+        "assets": {
+          "directory": "./dist/client",
+        },
+        "bundle": false,
+        "compatibility": {
+          "date": "2025-09-02",
+          "flags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+          ],
+        },
+        "crons": [
+          "*/5 * * * *",
+          "17 3 * * *",
+        ],
+        "domain": undefined,
+        "env": {
+          "AI_VISIBILITY_WORKFLOW": {
+            "resource": {
+              "id": "ai-visibility-workflow-selfhost",
+              "props": {
+                "className": "AiVisibilityWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "AUDIT_BROWSER_RENDERING": "true",
+          "AUDIT_ENGINE": {
+            "ref": "Cloudflare.Worker:open-seo-audit",
+          },
+          "AUTH_MODE": "cloudflare_access",
+          "AUTUMN_SECRET_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "AUTUMN_WEBHOOK_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "BETTER_AUTH_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "BETTER_AUTH_URL": "https://open-seo-selfhost.example.workers.dev",
+          "BYPASS_EMAIL_VERIFICATION": {
+            "config": "",
+          },
+          "CONTEXT_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "CRAWLER_ACCESS_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "DATABASE_PROVIDER": "d1",
+          "DATAFORSEO_API_KEY": {
+            "config": {
+              "redacted": "dataforseo-key",
+            },
+          },
+          "DB": {
+            "resource": {
+              "id": "DB",
+              "props": {
+                "migrationsDir": "drizzle/sqlite",
+                "migrationsTable": "d1_migrations",
+                "name": "open-seo-db-selfhost",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.D1.Database",
+            },
+          },
+          "DUB_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "GDPR_ERASURE_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "GOOGLE_CLIENT_ID": {
+            "config": "",
+          },
+          "GOOGLE_CLIENT_SECRET": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "KV": {
+            "resource": {
+              "id": "KV",
+              "props": {
+                "title": "open-seo-kv-selfhost",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "LOOPS_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "LOOPS_PRODUCT_UPDATES_LIST_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_INVITATION_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID": {
+            "config": "",
+          },
+          "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID": {
+            "config": "",
+          },
+          "MCP_RATE_LIMIT": {
+            "resource": {
+              "id": "MCP_RATE_LIMIT",
+              "props": {
+                "namespaceId": 1001,
+                "simple": {
+                  "limit": 5000,
+                  "period": 60,
+                },
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.RateLimit",
+            },
+          },
+          "META_CONVERSIONS_API_TOKEN": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "META_PIXEL_ID": {
+            "config": "",
+          },
+          "OAUTH_KV": {
+            "resource": {
+              "id": "OAUTH_KV",
+              "props": {
+                "title": "open-seo-oauth-kv-selfhost",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.KV.Namespace",
+            },
+          },
+          "OPENROUTER_API_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "OPENROUTER_MODEL": {
+            "config": "",
+          },
+          "OPENSEO_TELEMETRY_DISABLED": {
+            "config": "",
+          },
+          "POLICY_AUD": "aud-SelfHostAccess",
+          "POSTHOG_HOST": {
+            "config": "",
+          },
+          "POSTHOG_PUBLIC_KEY": {
+            "config": "",
+          },
+          "R2": {
+            "resource": {
+              "id": "R2",
+              "props": {
+                "lifecycleRules": [
+                  {
+                    "deleteObjectsTransition": {
+                      "condition": {
+                        "maxAge": 604800,
+                        "type": "Age",
+                      },
+                    },
+                    "id": "dataforseo-cache-expiry",
+                    "prefix": "dataforseo-cache/",
+                  },
+                ],
+                "name": "open-seo-r2-selfhost",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.R2.Bucket",
+            },
+          },
+          "RANK_CHECK_WORKFLOW": {
+            "resource": {
+              "id": "rank-check-workflow-selfhost",
+              "props": {
+                "className": "RankCheckWorkflow",
+                "scriptName": undefined,
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "SAM_CHAT": {
+            "resource": {
+              "id": "SAM_CHAT",
+              "props": {
+                "className": "SamChatAgent",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.DurableObject",
+            },
+          },
+          "SITE_AUDIT_WORKFLOW": {
+            "resource": {
+              "id": "site-audit-workflow-selfhost",
+              "props": {
+                "className": "SiteAuditWorkflow",
+                "scriptName": "open-seo-selfhost-audit",
+              },
+              "removal": "destroy",
+              "type": "Cloudflare.Workflow",
+            },
+          },
+          "TEAM_DOMAIN": "https://team.cloudflareaccess.com",
+          "TURNSTILE_SECRET_KEY": {
+            "config": {
+              "redacted": "",
+            },
+          },
+          "TURNSTILE_SITE_KEY": {
+            "config": "",
+          },
+        },
+        "main": "./dist/server/index.js",
+        "name": "open-seo-selfhost",
+        "observability": {
+          "enabled": true,
+          "traces": {
+            "enabled": true,
+          },
+        },
+        "placement": {
+          "mode": "smart",
+        },
+      },
+      "removal": "destroy",
+      "type": "Cloudflare.Worker",
+    },
+  ],
+}
+`;

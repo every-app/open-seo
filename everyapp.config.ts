@@ -9,7 +9,8 @@
  * (EVERY_APP_ORG_ID, set by the deploy). The first-party deployment, one
  * Worker for every organization, uses the same manifest but runs on Postgres:
  * it sets DATABASE_PROVIDER=postgres and binds HYPERDRIVE on both Workers
- * outside this file until the CLI provisions Hyperdrive.
+ * outside this file until the CLI provisions Hyperdrive: the Alchemy stage
+ * `everyapp` (docs/EVERY_APP_DEPLOYMENT.md).
  *
  *   pnpm dev:everyapp       # local, behind a gateway-lite with a dev user
  *   pnpm deploy:everyapp    # to the gateway `everyapp login` points at
