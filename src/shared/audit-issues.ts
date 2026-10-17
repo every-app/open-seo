@@ -266,10 +266,45 @@ export const ISSUE_SEVERITY_ORDER: Record<IssueSeverity, number> = {
   info: 2,
 };
 
+import { AUDIT_ISSUE_DESCRIPTORS_DE } from "./audit-issues-de";
+
 const issueRegistry: Record<string, AuditIssueDescriptor> = AUDIT_ISSUE_TYPES;
 
 export function getIssueDescriptor(
   issueType: string,
+  locale?: string,
 ): AuditIssueDescriptor | null {
-  return issueRegistry[issueType] ?? null;
+  const base = issueRegistry[issueType];
+  if (!base) return null;
+  if (locale === "de") {
+    const de = AUDIT_ISSUE_DESCRIPTORS_DE[issueType as AuditIssueType];
+    if (de) {
+      return {
+        ...base,
+        title: de.title,
+        explanation: de.explanation,
+        howToFix: de.howToFix,
+      };
+    }
+  }
+  return base;
+}
+
+export function getLocalizedAuditIssueTypes(
+  locale?: string,
+): Record<string, AuditIssueDescriptor> {
+  if (locale !== "de") return AUDIT_ISSUE_TYPES;
+  const result: Record<string, AuditIssueDescriptor> = {};
+  for (const [key, base] of Object.entries(AUDIT_ISSUE_TYPES)) {
+    const de = AUDIT_ISSUE_DESCRIPTORS_DE[key as AuditIssueType];
+    result[key] = de
+      ? {
+          ...base,
+          title: de.title,
+          explanation: de.explanation,
+          howToFix: de.howToFix,
+        }
+      : base;
+  }
+  return result;
 }

@@ -14,6 +14,7 @@ The goal is to stay as close to upstream `main` as possible while maintaining im
 | **SERP & feature matching** | `fix/rank-tracking-serp-matching` | [#449](https://github.com/every-app/open-seo/pull/449) | 🟡 Open | Extracts domain from `item.url` and recognizes SERP features (e.g. Local Packs) during rank tracking checks. |
 | **Multilingual word counting (CJK)** | `fix/cjk-word-counting` | [#450](https://github.com/every-app/open-seo/pull/450) | 🟡 Open | Uses `Intl.Segmenter` with word granularity for non-whitespace languages (Japanese, Chinese) to prevent false-positive `thin-content` warnings. |
 | **Cloudflare email protection filter** | `fix/ignore-cloudflare-email-protection` | — *(Local)* | 🟢 Active | Skips Cloudflare-obfuscated email links (`/cdn-cgi/l/email-protection`, `__cf_email__`) and `/cdn-cgi/*` edge paths during link extraction to prevent false-positive `broken-internal-link` (404) issues. |
+| **German localization & client i18n** | `feat/i18n-german` | — *(Local)* | 🟢 Active | Lightweight reactive client i18n infrastructure with complete German localization for navigation, sidebar, dashboard, and all 30 site audit issue types. |
 
 ---
 

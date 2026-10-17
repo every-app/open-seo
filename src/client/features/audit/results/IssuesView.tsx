@@ -9,6 +9,7 @@ import {
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import { SeverityBadge } from "@/client/features/audit/shared";
 import { EmptyState } from "@/client/components/EmptyState";
+import { useLocale } from "@/client/lib/i18n";
 
 type AuditIssueRow = AuditResultsData["issues"][number];
 
@@ -18,12 +19,6 @@ const SEVERITY_RULE: Record<IssueSeverity, string> = {
   critical: "border-l-destructive/60",
   warning: "border-l-warning/60",
   info: "border-l-info/60",
-};
-
-const SEVERITY_LABEL: Record<IssueSeverity, string> = {
-  critical: "Critical",
-  warning: "Warning",
-  info: "Info",
 };
 
 interface IssueGroup {
@@ -46,12 +41,12 @@ export function resolveIssueSeverity(issue: {
     : "info";
 }
 
-function groupIssues(issues: AuditIssueRow[]): IssueGroup[] {
+function groupIssues(issues: AuditIssueRow[], locale?: string): IssueGroup[] {
   const groups = new Map<string, IssueGroup>();
   for (const issue of issues) {
     let group = groups.get(issue.issueType);
     if (!group) {
-      const descriptor = getIssueDescriptor(issue.issueType);
+      const descriptor = getIssueDescriptor(issue.issueType, locale);
       group = {
         issueType: issue.issueType,
         severity: resolveIssueSeverity(issue),
@@ -80,7 +75,8 @@ export function IssuesView({
   issues: AuditIssueRow[];
   tabs: ReactNode;
 }) {
-  const groups = useMemo(() => groupIssues(issues), [issues]);
+  const { locale, t } = useLocale();
+  const groups = useMemo(() => groupIssues(issues, locale), [issues, locale]);
 
   const sections = useMemo(
     () =>
@@ -99,13 +95,13 @@ export function IssuesView({
       {issues.length === 0 ? (
         <EmptyState
           variant="plain"
-          title="No issues recorded for this audit."
-          description="Either the site is in great shape, or this audit ran before issue checks existed — run a new audit to get the full report."
+          title={t("audit.no_issues_recorded")}
+          description={t("audit.no_issues_recorded_desc")}
         />
       ) : (
         <div>
           {sections.map((section) => (
-            <IssueSection key={section.severity} section={section} />
+            <IssueSection key={section.severity} section={section} t={t} />
           ))}
         </div>
       )}
@@ -115,32 +111,47 @@ export function IssuesView({
 
 function IssueSection({
   section,
+  t,
 }: {
   section: { severity: IssueSeverity; groups: IssueGroup[] };
+  t: (key: string) => string;
 }) {
   const issueCount = section.groups.reduce(
     (sum, group) => sum + group.issues.length,
     0,
   );
 
+  const severityLabel =
+    section.severity === "critical"
+      ? t("audit.critical")
+      : section.severity === "warning"
+        ? t("audit.warning")
+        : t("audit.info");
+
   return (
     <div className="border-t border-border first:border-t-0">
       <div className="flex items-center gap-2 bg-muted/50 px-4 py-1.5 border-b border-border">
         <SeverityBadge severity={section.severity}>
-          {SEVERITY_LABEL[section.severity]}
+          {severityLabel}
           <span className="tabular-nums">{issueCount}</span>
         </SeverityBadge>
       </div>
       <div className="divide-y divide-border">
         {section.groups.map((group) => (
-          <IssueRow key={group.issueType} group={group} />
+          <IssueRow key={group.issueType} group={group} t={t} />
         ))}
       </div>
     </div>
   );
 }
 
-function IssueRow({ group }: { group: IssueGroup }) {
+function IssueRow({
+  group,
+  t,
+}: {
+  group: IssueGroup;
+  t: (key: string) => string;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -161,7 +172,10 @@ function IssueRow({ group }: { group: IssueGroup }) {
           {group.title}
         </span>
         <span className="text-xs tabular-nums text-muted-foreground shrink-0">
-          {group.issues.length} {group.issues.length === 1 ? "page" : "pages"}
+          {group.issues.length}{" "}
+          {group.issues.length === 1
+            ? t("audit.page_singular")
+            : t("audit.page_plural")}
         </span>
         <ChevronRight
           className={`size-4 shrink-0 text-muted-foreground transition-transform ${
@@ -179,7 +193,7 @@ function IssueRow({ group }: { group: IssueGroup }) {
           )}
           {group.howToFix && (
             <p className="text-sm max-w-prose">
-              <span className="font-medium">How to fix: </span>
+              <span className="font-medium">{t("audit.how_to_fix")}: </span>
               <span className="text-foreground/80">{group.howToFix}</span>
             </p>
           )}

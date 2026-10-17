@@ -45,3 +45,6 @@ dist-sourcemaps/
 
 # Alchemy local state + bundle artifacts (SaaS deploys)
 .alchemy/
+
+# Local deployment scripts
+scripts/update-server.sh

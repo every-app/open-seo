@@ -163,3 +163,51 @@ export function getProjectNavGroups(projectId: string) {
 export const dataforseoHelpLinkOptions = linkOptions({
   to: "/help/dataforseo-api-key",
 });
+
+export function getTranslatedNavLabel(
+  label: string,
+  t: (key: string) => string,
+): string {
+  switch (label) {
+    case "Dashboard":
+      return t("nav.dashboard");
+    case "Keyword Research":
+      return t("nav.keywords");
+    case "Saved Keywords":
+      return t("nav.saved_keywords");
+    case "Rank Tracking":
+      return t("nav.rank_tracking");
+    case "GSC Insights":
+      return t("nav.search_performance");
+    case "Domain Overview":
+      return t("nav.domain");
+    case "Backlinks":
+      return t("nav.backlinks");
+    case "Site Audit":
+      return t("nav.audit");
+    case "Prompt Tracking":
+      return t("nav.prompt_tracking");
+    case "Prompt Research":
+      return t("nav.prompt_research");
+    case "Prompt Explorer":
+      return t("nav.prompt_explorer");
+    case "Reports":
+      return t("nav.reports");
+    case "Context":
+      return t("nav.context");
+    case "Agent setup":
+      return t("nav.agent_setup");
+    case "Overview":
+      return t("nav.overview");
+    case "Research":
+      return t("nav.research");
+    case "AI Visibility":
+      return t("nav.ai_visibility");
+    case "My Site":
+      return t("nav.my_site");
+    case "AI Tools":
+      return t("nav.ai_tools");
+    default:
+      return label;
+  }
+}

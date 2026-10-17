@@ -10,7 +10,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { SeverityBadge } from "@/client/features/audit/shared";
-import { AUDIT_ISSUE_TYPES } from "@/shared/audit-issues";
+import { AUDIT_ISSUE_TYPES, getIssueDescriptor } from "@/shared/audit-issues";
+import { useLocale } from "@/client/lib/i18n";
 
 import {
   formatCount,
@@ -161,6 +162,7 @@ export function AuditHealthCard({
   audit: DashboardAuditSummary | null;
   domain: string | null;
 }) {
+  const { locale, t } = useLocale();
   const queryClient = useQueryClient();
   const scan = useMutation({
     mutationFn: () =>
@@ -305,24 +307,28 @@ export function AuditHealthCard({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Issue</TableHead>
-              <TableHead>Severity</TableHead>
-              <TableHead className="text-right">Pages affected</TableHead>
+              <TableHead>{t("audit.issues")}</TableHead>
+              <TableHead>{t("common.status")}</TableHead>
+              <TableHead className="text-right">
+                {t("audit.affected_pages")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {audit.topIssues.map((issue) => (
               <TableRow key={issue.issueType}>
                 <TableCell>
-                  {issueTitles[issue.issueType] ?? issue.issueType}
+                  {getIssueDescriptor(issue.issueType, locale)?.title ??
+                    issueTitles[issue.issueType] ??
+                    issue.issueType}
                 </TableCell>
                 <TableCell>
                   <SeverityBadge severity={issue.severity}>
                     {issue.severity === "critical"
-                      ? "Critical"
+                      ? t("audit.critical")
                       : issue.severity === "warning"
-                        ? "Warning"
-                        : "Info"}
+                        ? t("audit.warning")
+                        : t("audit.info")}
                   </SeverityBadge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
