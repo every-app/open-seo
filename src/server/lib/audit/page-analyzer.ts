@@ -15,6 +15,27 @@ import { normalizeUrl, isSameOrigin } from "./url-utils";
 import type { PageAnalysis, PageLink } from "./types";
 
 const SKIPPED_LINK_PROTOCOLS = /^(javascript:|mailto:|tel:|#)/;
+
+/**
+ * Checks if a link target is an internal edge endpoint or obfuscated email
+ * that should not be crawled or treated as an internal page link (e.g. Cloudflare
+ * Email Protection or /cdn-cgi/* handler paths).
+ */
+function isIgnoredLinkTarget(
+  href: string,
+  resolvedUrl?: string | null,
+): boolean {
+  if (href.startsWith("/cdn-cgi/")) return true;
+  if (resolvedUrl) {
+    try {
+      const parsed = new URL(resolvedUrl);
+      if (parsed.pathname.startsWith("/cdn-cgi/")) return true;
+    } catch {
+      return true;
+    }
+  }
+  return false;
+}
 /** Subtrees whose text is not visible content. */
 const NON_CONTENT_TAGS = new Set(["script", "style", "noscript", "svg"]);
 const HEADING_LEVELS: Record<string, number> = {
@@ -160,7 +181,13 @@ export function analyzeHtml(
     openAnchor = null;
     if (linksByTarget.size >= MAX_EXTRACTED_LINKS) return;
     const resolved = normalizeUrl(href, pageUrl);
-    if (!resolved || linksByTarget.has(resolved)) return;
+    if (
+      !resolved ||
+      isIgnoredLinkTarget(href, resolved) ||
+      linksByTarget.has(resolved)
+    ) {
+      return;
+    }
     const anchor = text
       .join("")
       .replace(/\s+/g, " ")
@@ -230,7 +257,16 @@ export function analyzeHtml(
             // one, and the tokenizer has no tree correction, so mirror that.
             closeAnchor();
             const href = attribs["href"];
-            if (href && !SKIPPED_LINK_PROTOCOLS.test(href)) {
+            const isEmailObfuscation =
+              attribs["data-cfemail"] !== undefined ||
+              attribs["class"]?.split(/\s+/).includes("__cf_email__") ||
+              href?.startsWith("/cdn-cgi/l/email-protection");
+            if (
+              href &&
+              !isEmailObfuscation &&
+              !SKIPPED_LINK_PROTOCOLS.test(href) &&
+              !isIgnoredLinkTarget(href)
+            ) {
               openAnchor = {
                 href,
                 rel: attribs["rel"]?.toLowerCase() ?? "",

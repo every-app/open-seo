@@ -59,9 +59,22 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href");
     if (!href) return;
+    if (
+      $(el).attr("data-cfemail") !== undefined ||
+      $(el).attr("class")?.split(/\s+/).includes("__cf_email__") ||
+      href.startsWith("/cdn-cgi/l/email-protection") ||
+      href.startsWith("/cdn-cgi/")
+    ) {
+      return;
+    }
     if (/^(javascript:|mailto:|tel:|#)/.test(href)) return;
     const resolved = normalizeUrl(href, pageUrl);
     if (!resolved) return;
+    try {
+      if (new URL(resolved).pathname.startsWith("/cdn-cgi/")) return;
+    } catch {
+      return;
+    }
     if (linksByTarget.has(resolved)) return;
     const anchor = $(el).text().replace(/\s+/g, " ").trim().slice(0, 200);
     const rel = $(el).attr("rel")?.toLowerCase() ?? "";
@@ -314,6 +327,23 @@ describe("countWords multilingual support", () => {
   it("returns 0 for empty or whitespace-only strings", () => {
     expect(countWords("")).toBe(0);
     expect(countWords("   \n\t  ")).toBe(0);
+  });
+});
+
+describe("Cloudflare email protection and /cdn-cgi/ link skipping", () => {
+  it("skips Cloudflare obfuscated email links and /cdn-cgi/ edge paths", () => {
+    const html = `<!DOCTYPE html>
+      <html><body>
+        <p>Contact us at <a href="/cdn-cgi/l/email-protection#1234" class="__cf_email__" data-cfemail="1234">[email&#160;protected]</a></p>
+        <p>Or via <a href="/cdn-cgi/l/email-protection">Help</a></p>
+        <p>Or see <a href="/cdn-cgi/rum">RUM metrics</a></p>
+        <p>Visit our <a href="/contact">Contact Page</a></p>
+      </body></html>`;
+
+    const analysis = analyzeHtml(html, "https://example.com/page", 200, 50);
+    expect(analysis.links).toHaveLength(1);
+    expect(analysis.links[0].targetUrl).toBe("https://example.com/contact");
+    expect(analysis.links[0].anchor).toBe("Contact Page");
   });
 });
 
