@@ -145,7 +145,7 @@ function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
       name: "DATAFORSEO_API_KEY",
       level: "info",
       message:
-        "Held by the Every App gateway. An admin sets it with `everyapp gateway secret set DATAFORSEO_API_KEY`.",
+        "Held by the Every App gateway. An admin sets it with `everyapp secret set DATAFORSEO_API_KEY --for gateway`.",
     });
     return;
   }
@@ -238,7 +238,7 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
           name: "AI features",
           level: "info",
           message:
-            "OpenRouter comes from the Every App gateway. An admin sets it with `everyapp gateway secret set OPENROUTER_API_KEY`.",
+            "OpenRouter comes from the Every App gateway. An admin sets it with `everyapp secret set OPENROUTER_API_KEY --for gateway`.",
         }
       : get(env, "OPENROUTER_API_KEY")
         ? {
@@ -263,7 +263,7 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
           name: "JavaScript rendering",
           level: "info",
           message:
-            "Context.dev comes from the Every App gateway. An admin sets it with `everyapp gateway secret set CONTEXT_API_KEY`.",
+            "Context.dev comes from the Every App gateway. An admin sets it with `everyapp secret set CONTEXT_API_KEY --for gateway`.",
         }
       : get(env, "CONTEXT_API_KEY")
         ? {

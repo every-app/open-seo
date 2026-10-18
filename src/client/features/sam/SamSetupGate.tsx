@@ -26,7 +26,7 @@ export function SamSetupGate({
               SAM, OpenSEO&apos;s in-app AI agent, uses OpenRouter through your
               Every App gateway. An admin creates a key on OpenRouter and sets
               it on the gateway with{" "}
-              <code>everyapp gateway secret set OPENROUTER_API_KEY</code>, then
+              <code>everyapp secret set OPENROUTER_API_KEY --for gateway</code>, then
               confirm here.
             </p>
           ) : (

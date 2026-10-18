@@ -42,7 +42,7 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   AI_VISIBILITY_ERROR:
     "The AI visibility request could not be completed. Review the tracking settings and try again.",
   DATAFORSEO_AUTH_FAILED: isEveryAppClientAuthMode()
-    ? "DataForSEO isn't set up on your Every App gateway, or rejected its key. An admin sets it with `everyapp gateway secret set DATAFORSEO_API_KEY`."
+    ? "DataForSEO isn't set up on your Every App gateway, or rejected its key. An admin sets it with `everyapp secret set DATAFORSEO_API_KEY --for gateway`."
     : "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:
