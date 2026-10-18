@@ -47,6 +47,7 @@ export function mapResultsToSnapshotRows(
     url: r.url,
     serpFeatures:
       r.serpFeatures.length > 0 ? JSON.stringify(r.serpFeatures) : null,
+    topDomains: r.topDomains.length > 0 ? JSON.stringify(r.topDomains) : null,
   }));
 }
 

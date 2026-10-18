@@ -72,6 +72,7 @@ const SHIPPED_SQLITE_MIGRATIONS = [
   "0056_ai_visibility",
   "0057_chubby_tyger_tiger",
   "0058_crazy_blindfold",
+  "0059_rank_snapshot_top_domains",
 ];
 
 type Journal = { entries: { idx: number; when: number; tag: string }[] };

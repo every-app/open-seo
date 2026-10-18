@@ -414,6 +414,13 @@
       "when": 1791402062971,
       "tag": "0058_crazy_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1791901540371,
+      "tag": "0059_rank_snapshot_top_domains",
+      "breakpoints": true
     }
   ]
 }

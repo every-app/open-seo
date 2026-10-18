@@ -25,7 +25,7 @@ const inputSchema = {
     .boolean()
     .optional()
     .describe(
-      "Check every result against the Google page that produced it and against the keyword's own recent history, and hold readings that fail either check at their previous position instead of recording a false drop. Runs through DataForSEO's task queue, 5 to 25 minutes instead of seconds; approve the figure from estimate_rank_tracker_cost with validated: true (its four-crawl worst case). English-language, city- or region-level trackers only. Default false.",
+      "Check every result against the Google page that produced it and against the keyword's own recent history (its positions and the sites that usually share its page), and hold readings that fail either check at their previous position instead of recording a false drop. Runs through DataForSEO's task queue, 5 to 25 minutes instead of seconds; approve the figure from estimate_rank_tracker_cost with validated: true (its four-crawl worst case). English-language, city- or region-level trackers only. Default false.",
     ),
 } as const;
 

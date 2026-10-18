@@ -6,7 +6,6 @@ import {
   eq,
   gte,
   inArray,
-  isNotNull,
   lte,
   max,
   min,
@@ -283,12 +282,13 @@ export async function getEarliestSnapshotsForKeywords(
 }
 
 /**
- * Every ranked reading (position not null) a config's keywords got in its
- * last `runLimit` completed runs, newest first. The validated queue path
- * builds each keyword/device pair's recent-history baseline from it; runs
- * that held a pair wrote nothing for it, so they do not dilute the history.
+ * Every reading a config's keywords got in its last `runLimit` completed
+ * runs, newest first, with the page composition where it was stored. The
+ * validated queue path builds each keyword/device pair's recent-history
+ * baseline from it; runs that held a pair wrote nothing for it, so they do
+ * not dilute the history.
  */
-export async function getRankedHistoryForConfig(
+export async function getRecentSnapshotsForConfig(
   configId: string,
   runLimit = 12,
 ) {
@@ -310,14 +310,10 @@ export async function getRankedHistoryForConfig(
       device: rankSnapshots.device,
       position: rankSnapshots.position,
       url: rankSnapshots.url,
+      topDomains: rankSnapshots.topDomains,
       checkedAt: rankSnapshots.checkedAt,
     })
     .from(rankSnapshots)
-    .where(
-      and(
-        inArray(rankSnapshots.runId, recentRunIds),
-        isNotNull(rankSnapshots.position),
-      ),
-    )
+    .where(inArray(rankSnapshots.runId, recentRunIds))
     .orderBy(desc(rankSnapshots.checkedAt));
 }

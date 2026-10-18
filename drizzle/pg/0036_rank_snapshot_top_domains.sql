@@ -1,0 +1,1 @@
+ALTER TABLE "rank_snapshots" ADD COLUMN "top_domains" text;

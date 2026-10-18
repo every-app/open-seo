@@ -253,6 +253,13 @@
       "when": 1791402063378,
       "tag": "0035_stale_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791901540912,
+      "tag": "0036_rank_snapshot_top_domains",
+      "breakpoints": true
     }
   ]
 }

@@ -312,6 +312,7 @@ describe("rankCheckBatch", () => {
       position: 3,
       url: null,
       serpFeatures: [],
+      topDomains: [],
     },
     billing: {
       costUsd: 0.001,

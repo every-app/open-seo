@@ -208,8 +208,70 @@ describe("rank check task queue", () => {
         position: 3,
         url: "https://www.example.com/page",
         serpFeatures: ["organic"],
+        topDomains: ["example.com"],
       },
     });
+  });
+
+  it("keeps the composition to the first ten organic results when a domain repeats", async () => {
+    // Ten organic results with one domain twice, then an eleventh result.
+    const domains = [
+      "a.com",
+      "b.com",
+      "c.com",
+      "d.com",
+      "e.com",
+      "f.com",
+      "g.com",
+      "h.com",
+      "i.com",
+      "a.com",
+      "k.com",
+    ];
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        status_code: 20000,
+        tasks: [
+          {
+            id: "task-a",
+            status_code: 20000,
+            cost: 0,
+            result: [
+              {
+                items: domains.map((domain, index) => ({
+                  type: "organic",
+                  rank_group: index + 1,
+                  domain,
+                  url: `https://${domain}/`,
+                })),
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const outcome = await fetchRankCheckTaskResult({
+      taskId: "task-a",
+      keywordId: "kw-1",
+      keyword: "alpha",
+      targetDomain: "example.com",
+    });
+
+    expect(outcome.status === "completed" && outcome.result.topDomains).toEqual(
+      [
+        "a.com",
+        "b.com",
+        "c.com",
+        "d.com",
+        "e.com",
+        "f.com",
+        "g.com",
+        "h.com",
+        "i.com",
+      ],
+    );
   });
 });
 

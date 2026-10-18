@@ -338,6 +338,10 @@ export const rankSnapshots = pgTable(
     position: integer("position"), // null = not found in top 20
     url: text("url"),
     serpFeatures: text("serp_features"), // JSON array of feature type strings
+    // JSON array of the page's top organic domains in rank order (up to 10);
+    // null for snapshots written before this column existed. Lets a later
+    // check judge a page by the keyword's usual sites, not only by position.
+    topDomains: text("top_domains"),
     checkedAt: timestampColumn("checked_at").notNull().default(isoNow),
   },
   (table) => [

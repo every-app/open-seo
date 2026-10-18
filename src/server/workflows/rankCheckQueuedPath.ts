@@ -126,7 +126,7 @@ async function collectQueuedRound(
   // Built from completed runs only, so this run's own writes never feed it.
   const baselines = ctx.validateSerps
     ? buildBaselines(
-        await RankTrackingRepository.getRankedHistoryForConfig(ctx.configId),
+        await RankTrackingRepository.getRecentSnapshotsForConfig(ctx.configId),
       )
     : new Map<string, PairBaseline>();
 
