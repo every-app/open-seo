@@ -218,13 +218,11 @@ describe("pairs the live endpoint missed", () => {
 
     expect(mocks.rankCheckBatch).toHaveBeenCalledTimes(2);
     expect(missing).toEqual(
-      elevenKeywords
-        .slice(0, 10)
-        .map((kw) => ({
-          keyword: kw.keyword,
-          keywordId: kw.id,
-          device: "desktop",
-        })),
+      elevenKeywords.slice(0, 10).map((kw) => ({
+        keyword: kw.keyword,
+        keywordId: kw.id,
+        device: "desktop",
+      })),
     );
     // Live progress counted attempted keywords; it is reset to the real count.
     expect(mocks.updateRun).toHaveBeenLastCalledWith("run_1", {
