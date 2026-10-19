@@ -5,6 +5,7 @@ import {
   type AiObservationRow,
   type AiPrompt,
 } from "@/shared/ai-visibility";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { AnswerContent } from "./AnswerContent";
 
 export function PromptAnswers({
@@ -49,8 +50,9 @@ export function PromptAnswers({
             {aiObservationStatusLabel(observation.status)}
           </p>
           <p className="text-sm text-muted-foreground">
-            {observation.error ??
-              "An answer is not available for this collection yet."}
+            {observation.error
+              ? getStandardErrorMessage(new Error(observation.error))
+              : "An answer is not available for this collection yet."}
           </p>
           <p className="text-xs text-muted-foreground">
             This collection is excluded from visibility rates.

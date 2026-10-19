@@ -89,7 +89,7 @@
 }
 @media (max-width: 767px) {
   .itc-section {
-    padding: 64px 0;
+    padding: 48px 0 32px;
   }
 }
 
@@ -300,8 +300,8 @@
   transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
-  width: clamp(64px, 8vw, 96px);
-  height: clamp(64px, 8vw, 96px);
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: #ffffff;
   color: var(--ink);
@@ -312,9 +312,8 @@
 .itc-hero {
   align-items: center;
   display: flex;
-  min-height: calc(100svh - 150px);
-  padding-top: clamp(104px, 12vh, 176px);
-  padding-bottom: clamp(96px, 12vh, 144px);
+  min-height: calc(100svh - 76px - 160px);
+  padding: 40px 0;
   position: relative;
   text-align: center;
 }
@@ -326,18 +325,15 @@
   transition: background-color 0.18s ease;
 }
 .itc-hero .itc-container {
+  width: 100%;
   position: relative;
   z-index: 1;
 }
-/* Out of flow so the hero's vertical centering ignores the laurel and the
-   headline block sits exactly where it did without it. */
+/* Launch proof leads into the headline. */
 .itc-hero-ph-laurel {
   color: var(--ink);
   display: inline-flex;
-  position: absolute;
-  bottom: calc(100% + 28px);
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 0 auto 24px;
   opacity: 0.85;
   transition: opacity 0.18s ease;
 }
@@ -349,14 +345,14 @@
   width: auto;
 }
 @media (max-width: 767px) {
-  .itc-hero-ph-laurel {
-    bottom: calc(100% + 20px);
-  }
   .itc-hero-ph-laurel svg {
     height: 38px;
   }
 }
 .itc-hero-title {
+  font-size: clamp(36px, 4.5vw, 58px);
+  line-height: 1.1;
+  text-wrap: balance;
   color: var(--ink);
   transition: color 0.18s ease;
 }
@@ -368,9 +364,8 @@
 }
 @media (max-width: 767px) {
   .itc-hero {
-    min-height: calc(100svh - 120px);
-    padding-top: 72px;
-    padding-bottom: 88px;
+    min-height: calc(100svh - 64px - 140px);
+    padding: 32px 0;
   }
 }
 .itc-hero-ctas {
@@ -579,9 +574,6 @@
   border-top: 1px solid var(--hairline);
   padding: 84px 0 92px;
 }
-.itc-hero + .itc-mcp-section {
-  margin-top: 24px;
-}
 .itc-mcp-grid {
   display: grid;
   gap: 48px;
@@ -595,10 +587,7 @@
 }
 @media (max-width: 767px) {
   .itc-mcp-section {
-    padding: 64px 0;
-  }
-  .itc-hero + .itc-mcp-section {
-    margin-top: 28px;
+    padding: 48px 0 32px;
   }
 }
 .itc-terminal {
@@ -842,4 +831,224 @@
   .itc-discord {
     padding: 12px;
   }
+}
+
+/* The demo peeks below the centered hero. */
+.itc-hero-followup {
+  padding: 0 0 56px;
+  text-align: center;
+}
+.itc-hero-demo {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.itc-demo-video video {
+  height: auto;
+  aspect-ratio: 1440 / 900;
+}
+
+/* ── Campaign pages (/agencies, /agents) ──
+   Paid-traffic landers built from the homepage's pieces. The hero is shorter
+   than the homepage's full-viewport one so proof and the first action fit on
+   one phone screen. */
+html:has(.itc-campaign),
+body:has(.itc-campaign) {
+  background: var(--color-surface);
+}
+/* The landing reset above strips link color with an unlayered rule, which
+   beats Tailwind's layered utilities. Hand links back to Tailwind in the
+   regions that are styled with it: the nav and the free tool's results. */
+.itc-campaign-nav :where(a),
+.itc-hero-tool :where(a) {
+  color: revert-layer;
+  text-decoration: revert-layer;
+}
+.itc-campaign-hero {
+  padding: 56px 0 72px;
+  text-align: center;
+}
+@media (max-width: 767px) {
+  .itc-campaign-hero {
+    padding: 36px 0 56px;
+  }
+}
+.itc-campaign-hero .itc-subhead {
+  text-wrap: balance;
+}
+/* Echoes the ad creative's orange rule under the last word. */
+.itc-underline {
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.14em;
+  text-decoration-skip-ink: none;
+}
+/* One line on every phone: avatars, user count, stars. */
+.itc-proof {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.itc-proof strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.itc-proof-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--hairline);
+}
+@media (max-width: 379px) {
+  .itc-proof {
+    gap: 8px;
+    font-size: 13px;
+  }
+}
+.itc-proof-avatars {
+  display: flex;
+}
+.itc-proof-avatars img {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  border: 2px solid var(--canvas);
+  object-fit: cover;
+}
+.itc-proof-avatars img + img {
+  margin-left: -8px;
+}
+.itc-proof-star {
+  color: var(--orange);
+}
+/* Two equal-width calls to action side by side, stacked on phones. */
+.itc-cta-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 260px));
+  justify-content: center;
+  gap: 12px 16px;
+  margin-top: 32px;
+}
+.itc-cta-pair .itc-btn {
+  width: 100%;
+}
+.itc-section-ctas > .itc-cta-pair {
+  margin-top: 0;
+}
+@media (max-width: 559px) {
+  .itc-cta-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .itc-cta-pair .itc-hero-cta-group {
+    align-items: stretch;
+  }
+  .itc-cta-pair .itc-hero-cta-note {
+    text-align: center;
+  }
+}
+.itc-hero-tool {
+  max-width: 880px;
+  margin: 32px auto 0;
+  text-align: left;
+  scroll-margin-top: 24px;
+}
+.itc-quote-role {
+  color: var(--q-muted);
+  font-weight: 400;
+}
+.itc-section-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin-top: 40px;
+}
+.itc-price-compare {
+  display: grid;
+  gap: 16px;
+  margin-top: 40px;
+}
+@media (min-width: 768px) {
+  .itc-price-compare {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.itc-price-card {
+  padding: 28px;
+}
+.itc-price-card-muted {
+  background: transparent;
+}
+.itc-price {
+  margin: 12px 0 0;
+  font-size: clamp(36px, 4vw, 48px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.026em;
+  font-variant-numeric: tabular-nums;
+}
+.itc-price-card-muted .itc-price {
+  color: var(--ink-subtle);
+}
+.itc-price-unit {
+  font-size: 18px;
+  color: var(--ink-subtle);
+  letter-spacing: 0;
+}
+.itc-faq {
+  display: grid;
+  gap: 32px;
+}
+@media (min-width: 900px) {
+  .itc-faq {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    gap: 64px;
+  }
+}
+.itc-faq dl {
+  margin: 0;
+  border-top: 1px solid var(--hairline);
+}
+.itc-faq dl > div {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.itc-faq dt {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.itc-faq dd {
+  margin: 8px 0 0;
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+.itc-closing {
+  background: #eee8de;
+  border-top: 1px solid var(--hairline);
+  text-align: center;
+}
+.itc-closing .itc-section-ctas {
+  justify-content: center;
+}
+.itc-campaign-footer {
+  border-top: 1px solid var(--hairline);
+  padding: 28px 0 36px;
+}
+.itc-campaign-footer .itc-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  justify-content: space-between;
+}
+.itc-campaign-footer nav {
+  display: flex;
+  gap: 20px;
+}
+.itc-campaign-footer a:hover {
+  color: var(--ink);
 }

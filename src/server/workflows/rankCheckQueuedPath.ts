@@ -23,6 +23,7 @@ import {
 } from "@/server/workflows/rankCheckValidation";
 import {
   checkBatchLive,
+  COLLECT_STEP_CONFIG,
   expandToTaskInputs,
   LIVE_BATCH_STEP_CONFIG,
   mapResultsToSnapshotRows,
@@ -72,15 +73,6 @@ const VALIDATED_TASK_GETS_PER_COLLECT = 100;
 // inside the window QUEUED_POLL_INTERVALS leaves (see runQueuedCheck).
 const LAST_REPOST_ROUND = 3;
 
-// Collect steps may issue hundreds of task_get calls, so they get more room
-// than SINGLE_ATTEMPT_STEP_CONFIG's 2-minute timeout. Unlike the metered
-// steps, retrying is safe and free: task_get isn't charged and snapshot
-// inserts are onConflictDoNothing.
-const COLLECT_STEP_CONFIG = {
-  retries: { limit: 2, delay: "10 seconds" as const },
-  timeout: "5 minutes" as const,
-};
-
 interface CollectRoundOutcome {
   /** Snapshots written this round. */
   collected: number;
@@ -109,11 +101,13 @@ function pairList(tasks: RankCheckTaskInput[]): string {
  * Fetch results for queued tasks (one free task_get each), persist completed
  * snapshots, and update run progress. Transient task_get failures stay
  * pending for the next round. On a validated run each completed result is
- * checked against its own page first (validateCollected).
+ * checked against its own page first (validateCollected). With `saveNotFound`
+ * false, a plain result without the domain isn't saved.
  */
 async function collectQueuedRound(
   ctx: CheckContext,
   tasks: QueuedTask[],
+  saveNotFound: boolean,
 ): Promise<CollectRoundOutcome> {
   const completed: RankCheckResultWithDevice[] = [];
   const stillPending: QueuedTask[] = [];
@@ -122,7 +116,6 @@ async function collectQueuedRound(
   let validated = 0;
   let historySuspect = 0;
   let htmlUnavailable = 0;
-  let firstError: string | null = null;
   // Built from completed runs only, so this run's own writes never feed it.
   const baselines = ctx.validateSerps
     ? buildBaselines(
@@ -158,11 +151,13 @@ async function collectQueuedRound(
         console.warn(
           `[rank-check] ${ctx.runId} task ${task.taskId} failed: ${result.value.message}`,
         );
-        firstError ??= result.value.message;
+        // No run error here: a live call records it. That is the live
+        // fallback, or for a manual retry, the live attempt before the queue.
+        // A validated run reports what it held through its stats instead.
         failed.push(task);
       } else if (ctx.validateSerps) {
         toValidate.push({ task, result: result.value.result });
-      } else {
+      } else if (saveNotFound || result.value.result.position !== null) {
         completed.push({ ...result.value.result, device: task.device });
       }
     });
@@ -178,9 +173,6 @@ async function collectQueuedRound(
     }
   }
 
-  if (firstError) {
-    await RankTrackingRepository.setRunErrorIfEmpty(ctx.runId, firstError);
-  }
   if (completed.length > 0) {
     await RankTrackingRepository.insertSnapshots(
       mapResultsToSnapshotRows(ctx.runId, completed),
@@ -274,18 +266,28 @@ export interface QueuedCheckStats {
 
 /**
  * Check keywords via DataForSEO's standard task queue (~30% of live cost).
- * Posts every keyword/device pair as a queued task, then polls task_get for
- * ~15 minutes, writing snapshots incrementally as tasks complete. Anything
- * still unfinished after the polling window — plus tasks DataForSEO rejected
- * or failed — gets one shot at the live endpoint so a run never hangs on a
- * stuck queue. Billing happens at task_post (and per live-fallback batch).
+ * Posts every keyword/device pair (or just taskInputs) as a queued task, then
+ * polls task_get for ~15 minutes, writing snapshots incrementally as tasks
+ * complete. Anything still unfinished after the polling window — plus tasks
+ * DataForSEO rejected or failed — gets one shot at the live endpoint so a run
+ * never hangs on a stuck queue, unless `liveFallback` is false (a validated
+ * run holds those pairs instead). With `saveNotFound` false, a result without
+ * the domain isn't saved. Billing happens at task_post (and per live-fallback
+ * batch).
  */
 export async function runQueuedCheck(
   step: WorkflowStep,
   ctx: CheckContext,
+  {
+    taskInputs = expandToTaskInputs(ctx.keywords, ctx.devices),
+    liveFallback = true,
+    saveNotFound = true,
+  }: {
+    taskInputs?: RankCheckTaskInput[];
+    liveFallback?: boolean;
+    saveNotFound?: boolean;
+  } = {},
 ): Promise<QueuedCheckStats> {
-  const taskInputs = expandToTaskInputs(ctx.keywords, ctx.devices);
-
   // Post all tasks to the queue, <=100 per request, one metered step each.
   // A failed chunk must not abort the run — earlier chunks were already
   // charged at DataForSEO, so their results have to be collected. The failed
@@ -347,7 +349,7 @@ export async function runQueuedCheck(
         step,
         `collect-${round}`,
         COLLECT_STEP_CONFIG,
-        () => collectQueuedRound(ctx, batch),
+        () => collectQueuedRound(ctx, batch, saveNotFound),
       );
     } catch (error) {
       console.warn(`[rank-check] ${ctx.runId} collect-${round} failed:`, error);
@@ -420,8 +422,14 @@ export async function runQueuedCheck(
   // Progress isn't updated here; finalize recounts keywordsChecked from the
   // DB.
   const stragglers: RankCheckTaskInput[] = [...fallback, ...pending];
-  stats.fallbackTasks = stragglers.length;
   if (stragglers.length === 0) return stats;
+  if (!liveFallback) {
+    console.log(
+      `[rank-check] ${ctx.runId} ${stragglers.length} task(s) left unchecked, no live fallback`,
+    );
+    return stats;
+  }
+  stats.fallbackTasks = stragglers.length;
 
   console.log(
     `[rank-check] ${ctx.runId} live fallback for ${stragglers.length} task(s)`,

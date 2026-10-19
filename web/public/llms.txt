@@ -1,0 +1,66 @@
+# OpenSEO
+
+> OpenSEO is an open source SEO platform built to work through your AI agent. Connect Claude Code, Codex, Cursor, or another MCP client, and the agent can research keywords, SERPs, and backlinks, run site audits, track rankings and AI visibility, check local search, and read Google Search Console and Google Analytics. Its work is saved to an OpenSEO project, which the user can also open in the web app.
+
+**Setting up OpenSEO for your user:** if your user wants OpenSEO in this agent, fetch https://openseo.so/agent-setup.txt and follow it. If you only think they might want it, ask first. The user only needs to create an account at https://app.openseo.so/sign-up (or from the sign-in page that setup opens) and approve the sign-in in their browser. You handle the install, the connection, and the checks. Some agents also need the user to reload or add the connector themselves; the setup prompt tells you when. For a self-hosted instance, follow the same prompt with the instance's URL in place of https://app.openseo.so. There is no hosted account to create.
+
+Working with OpenSEO:
+
+- MCP gives you the data. Skills give you the workflow to follow. The Claude Code and Codex plugins install both.
+- Research tools spend credits (1,000 credits = $1). Do normal focused research, but ask the user before a planned batch over 2,000 credits. Search Console and Google Analytics reads, project context, saved keywords, reports, and site audits without Lighthouse or JavaScript rendering use no credits.
+- If the user isn't sure where to start, use SEO Coach. For a first concrete report, use SEO Audit.
+- Save finished work as a report in the project with `save_report`, so the user and their team can read it.
+- Search volumes and traffic are estimates. Prompt Research questions come mostly from Google "People also ask", not logged ChatGPT prompts. For the user's own site, Search Console has measured clicks and impressions.
+- Hosted OpenSEO is $10/month with $10 of usage included each month. New accounts get $0.50 of trial credits with no card. Self-hosted OpenSEO has no subscription; the user pays for their own hosting and DataForSEO usage.
+
+## Setup and usage
+
+- [Agent setup prompt](https://openseo.so/agent-setup.txt): Plain-text setup instructions for an agent to follow.
+- [Agent setup](https://openseo.so/docs/agent-setup): The same prompt, manual steps for Claude Code, Codex, Hermes, Grok Bot, and other agents, and how to update skills.
+- [Claude plugin](https://openseo.so/docs/claude-code-plugin): Installs MCP and all twelve skills in Claude Code or Claude Cowork. Skills run as `/openseo:<skill>`.
+- [Codex plugin](https://openseo.so/docs/codex-plugin): Installs MCP and all twelve skills in Codex CLI. Type `$` to pick a skill.
+- [MCP setup](https://openseo.so/docs/mcp): Connect `https://app.openseo.so/mcp` in Claude Desktop, Cursor, Codex, or another MCP client, or use an API key for headless agents.
+- [Install skills without a plugin](https://openseo.so/docs/skills/setup): Add the skills to agents that don't support the plugin.
+- [Run SEO from your AI assistant](https://openseo.so/library/ai-agent-seo/run-seo-from-your-ai-assistant): What to run first after connecting, five starter prompts, and which calls cost credits.
+
+## Why OpenSEO
+
+- [Why OpenSEO](https://openseo.so/why-openseo): Who it's for and what's different: your own agent, shared project context, skills, and saved reports.
+- [Open source SEO](https://openseo.so/open-source-seo): Why the code is open, where the data comes from, and why OpenSEO helps you work with your agent instead of automating SEO away.
+- [Pricing](https://openseo.so/pricing): One plan, what uses credits, and a cost estimator.
+- [OpenSEO vs DataForSEO](https://openseo.so/openseo-vs-dataforseo): What OpenSEO adds on top of the DataForSEO data it's built on, and what it costs.
+- [OpenSEO vs Semrush](https://openseo.so/semrush-alternative): Comparison with cost examples.
+- [OpenSEO vs Ahrefs](https://openseo.so/ahrefs-alternative): Comparison with cost examples and notes on backlink data.
+- [GitHub](https://github.com/every-app/open-seo): MIT-licensed source code.
+
+## Features
+
+- [Features](https://openseo.so/features): Keyword research, domain overview, backlinks, rank tracking, site audit, saved keywords, and AI visibility.
+- [MCP tools](https://openseo.so/docs/mcp#available-tools): What the agent can do through MCP, including local SEO, reports, and project context.
+- [Google Search Console MCP](https://openseo.so/google-search-console-mcp): Read-only Search Console performance and URL inspection that use no credits. Hosted OpenSEO needs no Google Cloud project.
+- [AI visibility](https://openseo.so/docs/ai-visibility): Prompt Research, Prompt Explorer, and Prompt Tracking. Tracking covers ChatGPT, Gemini, Google AI Overviews, Claude, and Perplexity.
+
+## Skills
+
+- [Skills overview](https://openseo.so/docs/skills): All twelve skills, grouped by job, and how they work with MCP.
+- [SEO Coach](https://openseo.so/docs/skills/seo-coach): The user is new to SEO or unsure what to run. Recommends one next workflow and spends no credits unless asked.
+- [SEO Project Setup](https://openseo.so/docs/skills/seo-project-setup): The user is starting SEO work on a site, or the goal changed. Saves goals, positioning, competitors, and key pages for every other skill.
+- [SEO Audit](https://openseo.so/docs/skills/seo-audit): The user wants to know what to fix or build first on a site. Reports one to three recommendations in plain language.
+- [Keyword Research](https://openseo.so/docs/skills/keyword-research): The user has a topic but doesn't know which searches are worth pursuing. Checks metrics and SERPs, then saves the keywords the user approves.
+- [Keyword Clustering](https://openseo.so/docs/skills/keyword-clustering): The user has keywords but no content plan. Groups them by intent and maps them to pages.
+- [Competitive Landscape](https://openseo.so/docs/skills/competitive-landscape): The market is new or unclear, or the user doesn't know which competitors matter. Maps the leaders, their winning content, and the gaps.
+- [Competitor Analysis](https://openseo.so/docs/skills/competitor-analysis): One competitor keeps showing up. Analyzes its keywords, content, backlinks, and gaps.
+- [Local SEO](https://openseo.so/docs/skills/local-seo): Rankings depend on a location. Audits the Google Business Profile and maps Google Maps rankings around it.
+- [Link Prospecting](https://openseo.so/docs/skills/link-prospecting): The user has a page worth linking to. Finds prospects and drafts outreach.
+- [AI Visibility Audit](https://openseo.so/docs/skills/ai-visibility-audit): The user asks why AI answers recommend competitors, or how to show up in them. Recommends one to three changes tied to the pages and answers AI cites.
+- [AI Prompt Research](https://openseo.so/docs/skills/ai-prompt-research): The user is choosing which AI prompts to track. Finds questions about their market, ChatGPT's answers, and the sites those answers cite.
+- [SEO Report](https://openseo.so/docs/skills/seo-report): A skill finished its research, or the user wants a report, check-in, or summary. Writes and saves one HTML report to the project.
+- [Skill source](https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills): The SKILL.md files behind each workflow.
+
+## Optional
+
+- [AI-agent SEO library](https://openseo.so/library/ai-agent-seo): Four guides on running SEO through an agent, each with a copy-paste prompt.
+- [Weekly SEO report](https://openseo.so/blogs/weekly-seo-report): Set up a scheduled weekly Search Console report that uses no credits.
+- [Example report](https://app.openseo.so/s/QEZZWxoLl4TpzhKxeiNRGuM_Hj15eUzY/raw): An SEO Audit report an agent saved in OpenSEO.
+- [Self-hosting](https://openseo.so/docs/self-hosting): Run OpenSEO with Docker or on Cloudflare.
+- [SEO strategy library](https://openseo.so/library): Strategies for keyword research, competitive analysis, site audits, rank tracking, and link building.

@@ -1,6 +1,6 @@
 ---
 name: openseo-review-web-content
-description: Write and review content for the OpenSEO website (web/): blog posts, guides, feature pages, FAQs. Makes sure each page delivers real value to its target reader. Use whenever adding or editing user-facing prose in web/content or web/src.
+description: Write and review content for the OpenSEO website (web/), including blog posts, guides, feature pages, FAQs. Makes sure each page delivers real value to its target reader. Use whenever adding or editing user-facing prose in web/content or web/src.
 metadata:
   internal: true
 ---

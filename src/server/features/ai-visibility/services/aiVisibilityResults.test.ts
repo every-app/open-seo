@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import type { RunRow } from "../repositories/AiVisibilityRepository";
+import { aiPageResultsSchema } from "@/types/schemas/ai-visibility";
 import {
   loadAiAnswer,
+  loadAiPageResults,
   loadAiResults,
   loadAiSources,
 } from "./aiVisibilityResults";
@@ -26,7 +28,8 @@ const own = { name: "OpenSEO", domain: "openseo.so", own: true };
 const rival = { name: "Ahrefs", domain: "ahrefs.com", own: false };
 type Answer = {
   markdown?: string | null;
-  failed?: boolean;
+  /** The stored error of a failed answer. */
+  failed?: string;
   mentioned?: string[];
   cited?: string[];
   sources?: string[];
@@ -76,7 +79,7 @@ async function seedRun(
     await repo.persistAnswer({
       observationId: id,
       values: answer.failed
-        ? { status: "failed", error: "Provider failed" }
+        ? { status: "failed", error: answer.failed }
         : { status: "completed", answerMarkdown: answer.markdown ?? null },
       sources: (answer.sources ?? []).map((url, position) => ({
         id: crypto.randomUUID(),
@@ -116,7 +119,7 @@ describe("AI visibility results", () => {
       { markdown: "OpenSEO and Ahrefs", mentioned: ["OpenSEO", "Ahrefs"] },
       { markdown: "Ahrefs", mentioned: ["Ahrefs"], cited: ["OpenSEO"] },
       { markdown: null },
-      { failed: true },
+      { failed: "UPSTREAM_UNAVAILABLE" },
     ]);
 
     const results = await loadAiResults({
@@ -146,6 +149,26 @@ describe("AI visibility results", () => {
     ]);
   });
 
+  it("never shows the raw text stored by an older answer", async () => {
+    await seedRun("baseline", [
+      { failed: "Internal SE Server Error." },
+      { failed: "DataForSEO returned an answer we could not read." },
+      { failed: "No answer arrived within the collection window." },
+    ]);
+
+    const results = await loadAiResults({
+      ...query,
+      includeHistory: false,
+      competitorGap: false,
+    });
+
+    expect(results.rows.map((row) => row.error)).toEqual([
+      "UPSTREAM_UNAVAILABLE",
+      "INTERNAL_ERROR",
+      "No answer arrived within the collection window.",
+    ]);
+  });
+
   it("reads the latest scheduled run by default, not a newer manual check", async () => {
     const baseline = await seedRun("baseline", [{ markdown: "x" }]);
     await seedRun("manual", [{ markdown: "y" }], "2026-09-06T12:00:00.000Z");
@@ -155,6 +178,20 @@ describe("AI visibility results", () => {
       competitorGap: false,
     });
     expect(results.runId).toBe(baseline);
+  });
+
+  it("gives the app a run's every answer in one read, past the MCP page size", async () => {
+    await seedRun(
+      "baseline",
+      Array.from({ length: 51 }, () => ({ markdown: "x" })),
+    );
+    // Parsed as the server function parses it, so a default page size shows.
+    const input = aiPageResultsSchema.parse({
+      projectId: crypto.randomUUID(),
+      branded: "all",
+    });
+    const results = await loadAiPageResults({ ...input, projectId });
+    expect(results.rows).toHaveLength(51);
   });
 
   it("finds competitor gaps: a competitor appears where the brand is neither named nor cited", async () => {

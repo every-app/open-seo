@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => ({
   customerHasPaidPlan: vi.fn(),
 }));
 
+// These tests cover normal scheduling, not the temporary pause.
+vi.mock("@/shared/rank-tracking-pause", () => ({
+  SCHEDULED_RANK_CHECKS_PAUSED: false,
+}));
 vi.mock("cloudflare:workers", () => ({
   env: { RANK_CHECK_WORKFLOW: { create: mocks.startWorkflow } },
 }));

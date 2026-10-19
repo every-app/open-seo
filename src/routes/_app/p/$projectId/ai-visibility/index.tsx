@@ -5,8 +5,8 @@ import { PROMPT_TRACKING_TABS } from "@/client/features/ai-visibility/PromptTrac
 import {
   aiRunResultsQueryOptions,
   aiTrackerQueryOptions,
+  aiTrendQueryOptions,
 } from "@/client/features/ai-visibility/shared";
-import { aiTrendQueryOptions } from "@/client/features/ai-visibility/VisibilityTrend";
 import { queryClient } from "@/client/tanstack-db/queryClient";
 
 const tabs = PROMPT_TRACKING_TABS.map((item) => item.value);
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_app/p/$projectId/ai-visibility/")({
     // The prompt table reads the latest run's answers, known from a fresh
     // tracker: a cached one can predate the latest run.
     void queryClient
-      .fetchQuery(aiTrackerQueryOptions(projectId))
+      .fetchQuery({ ...aiTrackerQueryOptions(projectId), staleTime: 0 })
       .then((state) => {
         const runId = state.recentRuns[0]?.id;
         if (runId)

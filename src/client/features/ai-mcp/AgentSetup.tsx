@@ -43,7 +43,7 @@ export function AgentSetup({
               className="h-8 gap-2 px-3 text-xs font-semibold"
               onClick={onNext}
             >
-              Continue <ArrowRight className="size-4" />
+              Finish <ArrowRight className="size-4" />
             </Button>
           }
         />

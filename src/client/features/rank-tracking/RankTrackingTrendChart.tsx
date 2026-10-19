@@ -20,14 +20,14 @@ export interface TrendSeries {
   dataKey: string;
   name: string;
   color: string;
-  /** dashed = device line where nulls are plotted in the bottom "not in top N" band */
+  /** dashed = device line where nulls are plotted in the bottom "not found" band */
   strokeDasharray?: string;
 }
 
 /**
  * Shared inverted-axis line chart for rank trends. Y-axis is reversed so #1 is
  * pinned at the top and an improving line moves up. The very bottom of the
- * plot (= serpDepth) is a muted "Not in top {serpDepth}" band; callers plot
+ * plot (= serpDepth) is a muted "Not found" band; callers plot
  * null positions at `serpDepth` so a drop reads as the line dipping into the
  * band rather than a silent gap.
  */
@@ -42,7 +42,7 @@ export function RankTrendChart({
   series: TrendSeries[];
   serpDepth: number;
   valueFormatter?: ComponentProps<typeof ChartTooltipContent>["valueFormatter"];
-  /** Show the muted "not in top {serpDepth}" band — only meaningful for a
+  /** Show the muted "not found" band — only meaningful for a
    * single keyword's position line, not for an averaged value. */
   showBottomBand?: boolean;
 }) {
@@ -64,7 +64,7 @@ export function RankTrendChart({
           margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
         >
           <ChartGrid />
-          {/* Muted bottom band: not in top {serpDepth} */}
+          {/* Muted bottom band: not found */}
           {showBottomBand && (
             <ReferenceArea
               y1={serpDepth - 0.5}

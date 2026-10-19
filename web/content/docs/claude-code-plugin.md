@@ -1,11 +1,11 @@
 ---
-title: "Install the OpenSEO plugin for Claude Code"
-description: "Add OpenSEO MCP and Agent Skills to Claude Code with one marketplace and one install command."
+title: "Install the OpenSEO plugin for Claude Code and Claude Cowork"
+description: "Add OpenSEO MCP and Agent Skills to Claude Code or Claude Cowork with one plugin install."
 ---
 
-The OpenSEO plugin bundles OpenSEO MCP and all twelve SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Claude Code.
+The OpenSEO plugin bundles OpenSEO MCP and all twelve SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Claude Code and in Claude Cowork.
 
-## Install
+## Install in Claude Code
 
 Run these two commands in Claude Code:
 
@@ -37,7 +37,7 @@ Claude Code should prompt you to log in to OpenSEO right after install. If it do
 
 ## Run a skill
 
-Plugin skills are namespaced by the plugin name:
+In Claude Code, plugin skills are namespaced by the plugin name:
 
 ```
 /openseo:seo-project-setup
@@ -51,11 +51,23 @@ Plugin skills are namespaced by the plugin name:
 /openseo:competitor-analysis
 /openseo:local-seo
 /openseo:link-prospecting
+/openseo:seo-report
 ```
 
-## Claude Desktop
+## Install in Claude Cowork
 
-Claude Desktop doesn't support this plugin format — plugins are a Claude Code feature. For Claude Desktop, [add OpenSEO as an MCP connector](/docs/mcp#claude-desktop) instead.
+Claude Cowork and the Claude desktop app install plugins through the Customize menu, not slash commands. An agent can't click these steps for you.
+
+1. Open **Customize** in the left sidebar. In Cowork, open the **Cowork** tab first.
+2. Open **Plugins**, click **+** or **Add**, and choose **Add marketplace**.
+3. Choose **Add from a repository** and enter `https://github.com/every-app/open-seo`.
+4. Find **OpenSEO** in the new marketplace and click **Install** or **Add**.
+5. Sign in to OpenSEO and approve the connection when Claude asks.
+6. Start a new task, type `/`, and check that the OpenSEO skills appear. Then try "Use OpenSEO to check my connection and list my projects." This check uses no OpenSEO credits.
+
+If Claude can list your projects but no OpenSEO skills appear under `/`, you have a connector, not the plugin. Install the plugin, then remove the old custom OpenSEO connector under **Customize → Connectors** so you keep one connection.
+
+Plugins need a paid Claude plan (Pro, Max, Team, or Enterprise). Your organization can limit which marketplaces you can add. On the Free plan or with a self-hosted instance, [add OpenSEO as a custom connector](/docs/mcp#claude-desktop) and upload skills under **Customize → Skills**. The plugin connects only to hosted OpenSEO. See [Anthropic's plugin guide](https://support.claude.com/en/articles/13837440-use-plugins-in-claude).
 
 ## Update
 
@@ -91,4 +103,4 @@ If the OpenSEO connection doesn't show as authenticated, run `/mcp`, select Open
 
 ## Other clients
 
-This plugin is for Claude Code. For Codex CLI, use the [OpenSEO plugin for Codex](/docs/codex-plugin) instead. For Cursor, Codex Desktop, Claude Desktop, or an API key setup, see [Set up OpenSEO MCP](/docs/mcp) and [Set up OpenSEO Agent Skills](/docs/skills/setup).
+This plugin is for Claude Code and Claude Cowork. For Codex CLI, use the [OpenSEO plugin for Codex](/docs/codex-plugin) instead. For Cursor, Codex Desktop, or an API key setup, see [Set up OpenSEO MCP](/docs/mcp) and [Set up OpenSEO Agent Skills](/docs/skills/setup).

@@ -155,13 +155,13 @@ export function TotalsTable({ report }: { report: Report }) {
     },
   ];
   return (
-    <div className="w-full max-w-xl rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Metric</TableHead>
-            <TableHead className="text-right">Value</TableHead>
-            <TableHead className="text-right" title={deltaTitle}>
+            <TableHead className="w-full">Metric</TableHead>
+            <TableHead className="min-w-32 text-right">Value</TableHead>
+            <TableHead className="min-w-32 text-right" title={deltaTitle}>
               Change
             </TableHead>
           </TableRow>

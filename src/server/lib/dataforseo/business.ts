@@ -10,6 +10,7 @@ import {
   type DataforseoItemsTask,
   type DataforseoResponseLike,
   type DataforseoTaskLike,
+  failedResponseError,
 } from "@/server/lib/dataforseo/envelope";
 import { AppError } from "@/server/lib/errors";
 
@@ -278,10 +279,7 @@ export async function fetchBusinessDataTaskResult(input: {
 
   const task = response?.tasks?.[0];
   if (!response || response.status_code !== 20000 || !task) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      response?.status_message || "DataForSEO task_get failed",
-    );
+    throw failedResponseError(response, "DataForSEO task_get failed");
   }
 
   if (isTaskInProgress(task)) return { status: "pending", result: null };

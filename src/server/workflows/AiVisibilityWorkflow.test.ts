@@ -73,7 +73,7 @@ beforeEach(() => {
     ],
   });
   mocks.post.mockResolvedValue([task]);
-  mocks.collect.mockResolvedValue([]);
+  mocks.collect.mockResolvedValue({ pending: [], retry: [] });
 });
 
 describe("AI visibility workflow", () => {
@@ -84,7 +84,11 @@ describe("AI visibility workflow", () => {
       retries: { limit: 0, delay: "1 second" },
       timeout: "2 minutes",
     });
-    expect(mocks.collect).toHaveBeenCalledExactlyOnceWith("run", [task, task]);
+    expect(mocks.collect).toHaveBeenCalledExactlyOnceWith(
+      "run",
+      [task, task],
+      true,
+    );
     expect(mocks.sleep).toHaveBeenCalledOnce();
     expect(mocks.finalize).toHaveBeenCalledExactlyOnceWith("run");
   });
@@ -98,7 +102,7 @@ describe("AI visibility workflow", () => {
     });
     await execute();
     expect(mocks.model).toHaveBeenCalledOnce();
-    expect(mocks.steps).toHaveBeenCalledWith("collect-model-0", {
+    expect(mocks.steps).toHaveBeenCalledWith("read-model-0", {
       retries: { limit: 2, delay: "10 seconds" },
       timeout: "5 minutes",
     });
@@ -121,18 +125,39 @@ describe("AI visibility workflow", () => {
   });
 
   it("stops polling when the collection window closes and finalizes what arrived", async () => {
-    mocks.collect.mockResolvedValue([task]);
+    mocks.collect.mockResolvedValue({ pending: [task], retry: [] });
     await execute();
     expect(mocks.sleep).toHaveBeenCalledTimes(9);
     expect(mocks.finalize).toHaveBeenCalledOnce();
   });
 
-  it("fails the run when preparation fails, such as when credits run out", async () => {
-    const error = new Error("Not enough credits");
+  it("posts failed answers again in a step that never retries, but not after the last round", async () => {
+    const batch = { engine: "chatgpt", tasks: [{ tag: "answer", prompt: "" }] };
+    mocks.collect.mockResolvedValue({ pending: [task], retry: [batch] });
+    await execute();
+    expect(mocks.post).toHaveBeenCalledWith(
+      "run",
+      customer,
+      expect.anything(),
+      batch,
+    );
+    expect(mocks.steps).toHaveBeenCalledWith("repost-0-0", {
+      retries: { limit: 0, delay: "1 second" },
+      timeout: "2 minutes",
+    });
+    expect(mocks.collect).toHaveBeenLastCalledWith(
+      "run",
+      expect.anything(),
+      false,
+    );
+  });
+
+  it("fails the run when preparation fails", async () => {
+    const error = new Error();
     mocks.prepare.mockRejectedValue(error);
     await expect(execute()).rejects.toThrow(error);
     expect(mocks.post).not.toHaveBeenCalled();
-    expect(mocks.markFailed).toHaveBeenCalledExactlyOnceWith("run", error);
+    expect(mocks.markFailed).toHaveBeenCalledExactlyOnceWith("run");
   });
 
   it("does not log a rejected poll sleep as a failure, but still marks the run failed", async () => {
@@ -141,6 +166,6 @@ describe("AI visibility workflow", () => {
     const consoleError = vi.spyOn(console, "error");
     await expect(execute()).rejects.toThrow(error);
     expect(consoleError).not.toHaveBeenCalled();
-    expect(mocks.markFailed).toHaveBeenCalledExactlyOnceWith("run", error);
+    expect(mocks.markFailed).toHaveBeenCalledExactlyOnceWith("run");
   });
 });

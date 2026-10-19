@@ -151,6 +151,13 @@ export const aiResultsSchema = aiProjectSchema.extend({
     ),
   limit: z.number().int().min(1).max(50).default(25),
 });
+/**
+ * App reads take the whole result set in one call: it is bounded by one run's
+ * prompts and engines, or one prompt's latest 50 runs. Omit limit for every row.
+ */
+export const aiPageResultsSchema = aiResultsSchema
+  .omit({ cursor: true })
+  .extend({ limit: z.number().int().min(1).optional() });
 export const aiSourcesSchema = aiResultsSchema.extend({
   groupBy: z.enum(["url", "domain"]).default("url"),
   ownership: z.enum(["all", "own", "competitor", "other"]).default("all"),
@@ -176,6 +183,7 @@ export type EstimateAiCostInput = z.infer<typeof estimateAiCostSchema>;
 export type SetAiScheduleInput = z.infer<typeof setAiScheduleSchema>;
 export type RunAiCheckInput = z.infer<typeof runAiCheckSchema>;
 export type AiResultsInput = z.infer<typeof aiResultsSchema>;
+export type AiPageResultsInput = z.infer<typeof aiPageResultsSchema>;
 export type AiSourcesInput = z.infer<typeof aiSourcesSchema>;
 export type AiExportInput = z.infer<typeof aiExportSchema>;
 export type AiTrendInput = z.infer<typeof aiTrendSchema>;

@@ -8,6 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/client/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
 import { formatNextCheck } from "./scheduleTime";
@@ -56,8 +61,26 @@ export function RankTrackingDetailHeader({
           {config.locationName
             ? formatLocationLabel(config.locationName, 2)
             : (LOCATIONS[config.locationCode] ?? "US")}{" "}
-          &middot; {devicesLabel(config.devices)} &middot;{" "}
-          {scheduleLabel(config.scheduleInterval)}
+          &middot;{" "}
+          {config.devices === "desktop" ? (
+            devicesLabel(config.devices)
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                delay={150}
+                render={
+                  <span className="cursor-help underline decoration-dotted underline-offset-2" />
+                }
+              >
+                {devicesLabel(config.devices)}
+              </TooltipTrigger>
+              <TooltipContent>
+                Mobile results often differ from desktop. Search Console
+                averages both, so its positions may not match.
+              </TooltipContent>
+            </Tooltip>
+          )}{" "}
+          &middot; {scheduleLabel(config.scheduleInterval)}
           {config.scheduleInterval !== "manual" && config.nextCheckAt && (
             <> &middot; Next: {formatNextCheck(config.nextCheckAt)}</>
           )}

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/client/components/ui/button";
@@ -11,6 +11,7 @@ export function WizardFooter({
   continueLabel = "Continue",
   continueDisabled = false,
   continueAction,
+  continueRef,
   className,
 }: {
   onBack?: () => void;
@@ -20,6 +21,7 @@ export function WizardFooter({
   continueLabel?: string;
   continueDisabled?: boolean;
   continueAction?: ReactNode;
+  continueRef?: Ref<HTMLButtonElement>;
   className?: string;
 }) {
   return (
@@ -54,15 +56,14 @@ export function WizardFooter({
         ) : null}
         {continueAction ?? (
           <Button
+            ref={continueRef}
             type="button"
-            // Without onContinue this is a placeholder for a step that has
-            // nothing to save yet, so it renders small, like the Skip beside it.
-            className={`font-semibold disabled:bg-foreground/10 disabled:text-foreground/20 disabled:opacity-100 ${onContinue ? "" : "h-8 px-3 text-xs"}`}
+            className="font-semibold disabled:bg-foreground/10 disabled:text-foreground/20 disabled:opacity-100"
             onClick={onContinue}
             disabled={continueDisabled || !onContinue}
           >
             {continueLabel}
-            {onContinue ? <ArrowRight className="size-4" /> : null}
+            <ArrowRight className="size-4" />
           </Button>
         )}
       </div>

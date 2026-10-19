@@ -1,6 +1,7 @@
 import { ExternalPage } from "./siteTabParts";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
+import type { ComponentProps } from "react";
 import { DashboardDataTable } from "./DashboardDataTable";
 
 type Keyword = {
@@ -49,11 +50,15 @@ export function DashboardKeywordTable({
   rows,
   showPages = false,
   sortBy = "impressions",
+  ...tableProps
 }: {
   rows: Keyword[];
   showPages?: boolean;
   sortBy?: "impressions" | "clicks";
-}) {
+} & Pick<
+  ComponentProps<typeof DashboardDataTable>,
+  "tabs" | "resetKey" | "isLoading" | "error" | "empty"
+>) {
   const pageColumn: ColumnDef<Keyword> = {
     accessorKey: "page",
     header: "Page",
@@ -62,6 +67,7 @@ export function DashboardKeywordTable({
   };
   return (
     <DashboardDataTable
+      {...tableProps}
       rows={rows}
       columns={
         showPages ? [columns[0], pageColumn, ...columns.slice(1)] : columns

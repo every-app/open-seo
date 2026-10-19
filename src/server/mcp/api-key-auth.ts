@@ -5,7 +5,6 @@ import { resolveExistingActiveHostedOrganization } from "@/server/auth/default-h
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { recordMcpAuthorized } from "@/server/features/activation/mcpActivation";
 import { createWorkersOAuthMcpProps, MCP_ROUTE } from "@/server/mcp/context";
-import { handleAuthenticatedOpenSeoMcpRequest } from "@/server/mcp/transport";
 
 function getApiKey(request: Request) {
   // Both branches require the oseo_ prefix: anything else (a Cloudflare OAuth
@@ -156,6 +155,8 @@ export async function handleMcpApiKeyRequest(
 
     await recordMcpAuthorized(organizationId);
 
+    const { handleAuthenticatedOpenSeoMcpRequest } =
+      await import("@/server/mcp/transport");
     return await handleAuthenticatedOpenSeoMcpRequest(request, props, env, ctx);
   } catch (error) {
     // Without this, a throw here surfaces as a bare platform 500 with no log

@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { revalidateLogic } from "@tanstack/react-form";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useAppForm } from "@/client/components/form/useAppForm";
 import { QueryError } from "@/client/components/QueryState";
 import { Spinner } from "@/client/components/Spinner";
 import { Button } from "@/client/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/client/components/ui/collapsible";
 import { WizardFooter } from "@/client/features/onboarding/WizardFooter";
 import { toastInitialAudit } from "@/client/features/projects/initialAuditToast";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
@@ -27,9 +32,11 @@ import { updateProject } from "@/serverFunctions/projects";
 export function WebsiteOnboardingStep({
   onNext,
   onSkip,
+  suggestedDomain,
 }: {
   onNext: () => void;
   onSkip: () => void;
+  suggestedDomain?: string;
 }) {
   const projectsQuery = useQuery(projectsQueryOptions());
   const project = projectsQuery.data?.[0];
@@ -48,6 +55,7 @@ export function WebsiteOnboardingStep({
         <WebsiteForm
           key={project.id}
           project={project}
+          suggestedDomain={suggestedDomain}
           onNext={onNext}
           onSkip={onSkip}
         />
@@ -72,10 +80,12 @@ const websiteSchema = z.object({
 
 function WebsiteForm({
   project,
+  suggestedDomain,
   onNext,
   onSkip,
 }: {
   project: ProjectSummary;
+  suggestedDomain?: string;
   onNext: () => void;
   onSkip: () => void;
 }) {
@@ -108,7 +118,7 @@ function WebsiteForm({
 
   const form = useAppForm({
     defaultValues: {
-      domain: project.domain ?? "",
+      domain: project.domain ?? suggestedDomain ?? "",
       // New projects default to the United States.
       market: {
         locationCode: project.locationCode,
@@ -144,14 +154,22 @@ function WebsiteForm({
             />
           )}
         </form.AppField>
-        <form.Field name="market">
-          {(field) => (
-            <ProjectMarketFields
-              value={field.state.value}
-              onChange={field.handleChange}
-            />
-          )}
-        </form.Field>
+        <Collapsible>
+          <CollapsibleTrigger className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <ChevronDown className="size-4 transition-transform group-data-panel-open:rotate-180" />
+            Choose default country &amp; language
+          </CollapsibleTrigger>
+          <CollapsibleContent keepMounted className="pt-4">
+            <form.Field name="market">
+              {(field) => (
+                <ProjectMarketFields
+                  value={field.state.value}
+                  onChange={field.handleChange}
+                />
+              )}
+            </form.Field>
+          </CollapsibleContent>
+        </Collapsible>
         <WizardFooter
           className="mt-4"
           onSkip={onSkip}

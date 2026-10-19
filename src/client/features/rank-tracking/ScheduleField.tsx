@@ -43,6 +43,8 @@ type Props = {
   onScheduleTimeChange: (scheduleTime: LocalScheduleTime) => void;
   /** AI visibility pauses tracking instead of offering a manual schedule. */
   allowManual?: boolean;
+  /** Only manual, or the schedule already saved, can be picked. */
+  scheduledChecksPaused?: boolean;
 };
 
 export function ScheduleField({
@@ -51,11 +53,19 @@ export function ScheduleField({
   scheduleTime,
   onScheduleTimeChange,
   allowManual = true,
+  scheduledChecksPaused = false,
 }: Props) {
   const id = useId();
-  const items = allowManual
-    ? SCHEDULE_ITEMS
-    : SCHEDULE_ITEMS.filter((item) => item.value !== "manual");
+  // Paused: offer manual plus whatever the config already uses, so an edit
+  // never silently drops a saved schedule.
+  const [pausedSchedule] = useState(schedule);
+  const items = scheduledChecksPaused
+    ? SCHEDULE_ITEMS.filter(
+        (item) => item.value === "manual" || item.value === pausedSchedule,
+      )
+    : allowManual
+      ? SCHEDULE_ITEMS
+      : SCHEDULE_ITEMS.filter((item) => item.value !== "manual");
   const [showScheduleTime, setShowScheduleTime] = useState(false);
 
   return (

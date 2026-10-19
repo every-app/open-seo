@@ -6,6 +6,7 @@ import {
   type DataforseoApiResponse,
   type DataforseoResponseLike,
   type DataforseoTaskLike,
+  warnIfUpstreamResponseFailed,
 } from "@/server/lib/dataforseo/envelope";
 import {
   parseDataforseoLighthousePayload,
@@ -63,6 +64,7 @@ export async function fetchLighthouseResult(input: {
   return withParseLock(async () => {
     const body =
       await response.json<DataforseoResponseLike<DataforseoTaskLike>>();
+    warnIfUpstreamResponseFailed(body, LIGHTHOUSE_PATH);
     // Build the metering envelope before parsing. The provider has already
     // charged a successful task, so a malformed payload must carry its
     // billing metadata out to the metered client instead of looking

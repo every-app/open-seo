@@ -329,7 +329,8 @@ export async function fetchLlmResponse(
   const response = await dataforseoPost(
     `/v3/ai_optimization/${input.modelSlug}/llm_responses/live`,
     [fields],
-    { classify: classifyAiSearchError },
+    // A billed live call must never be replayed on an ambiguous 5xx.
+    { classify: classifyAiSearchError, maxServerErrorRetries: 0 },
   );
 
   const task = assertOk(

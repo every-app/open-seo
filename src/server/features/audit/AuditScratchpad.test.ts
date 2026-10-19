@@ -8,6 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   BROKEN_LINKS_SQL,
+  FRONTIER_DISCOVER_SQL,
   ORPHAN_PAGES_SQL,
   SCRATCHPAD_SCHEMA_SQL,
 } from "@/server/features/audit/scratchpad-sql";
@@ -229,5 +230,26 @@ describe("query plans", () => {
     ).toBe(true);
     // page_mirror is scanned once as the outer loop, never per inbound row.
     expect(detail.filter((line) => /SCAN m\b/.test(line))).toHaveLength(1);
+  });
+});
+
+describe("frontier link discovery", () => {
+  // Seeding covers the whole sitemap, so most linked pages already have a
+  // sitemap row. A link must still give them a click depth and link-queue
+  // priority, or the deep-page check and breadth-first crawl order go blind.
+  it("gives a pending sitemap seed the link's depth and priority, keeping its sitemap flag", () => {
+    const url = "https://site.test/post";
+    db.prepare(
+      `INSERT INTO frontier (url, depth, source, in_sitemap) VALUES (?, NULL, 'sitemap', 1)`,
+    ).run(url);
+
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, 2);
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, 3);
+
+    expect(
+      db
+        .prepare(`SELECT depth, source, in_sitemap FROM frontier WHERE url = ?`)
+        .get(url),
+    ).toEqual({ depth: 2, source: "link", in_sitemap: 1 });
   });
 });

@@ -60,7 +60,7 @@ export function AiResearchSetupGate({
     const tracker = aiTrackerQueryOptions(projectId);
     const keywords = aiResearchKeywordsQueryOptions(projectId);
     await Promise.all([
-      queryClient.fetchQuery(tracker).then(
+      queryClient.fetchQuery({ ...tracker, staleTime: 0 }).then(
         ({ recentRuns }) => {
           const runId = recentRuns[0]?.id;
           if (runId)

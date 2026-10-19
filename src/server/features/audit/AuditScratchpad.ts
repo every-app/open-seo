@@ -22,6 +22,7 @@ import { DurableObject, env } from "cloudflare:workers";
 import type { CrawlThrottleState } from "@/server/lib/audit/crawl-throttle";
 import {
   BROKEN_LINKS_SQL,
+  FRONTIER_DISCOVER_SQL,
   ORPHAN_PAGES_SQL,
   SCRATCHPAD_SCHEMA_SQL,
 } from "@/server/features/audit/scratchpad-sql";
@@ -214,13 +215,7 @@ export class AuditScratchpad extends DurableObject {
       }
     }
     for (const found of input.discovered) {
-      // OR IGNORE: already-seen URLs (crawled, leased, or pending) keep
-      // their existing row — this is the global dedup.
-      this.ctx.storage.sql.exec(
-        `INSERT OR IGNORE INTO frontier (url, depth, source, in_sitemap) VALUES (?, ?, 'link', 0)`,
-        found.url,
-        found.depth,
-      );
+      this.ctx.storage.sql.exec(FRONTIER_DISCOVER_SQL, found.url, found.depth);
     }
     return this.stats();
   }

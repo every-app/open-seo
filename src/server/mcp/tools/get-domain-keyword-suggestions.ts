@@ -33,6 +33,10 @@ const SUGGESTION_COLUMNS: McpTableColumn<unknown>[] = [
   { header: "position", value: (row) => readPath(row, "position") },
   { header: "volume", value: (row) => readPath(row, "searchVolume") },
   { header: "KD", value: (row) => readPath(row, "keywordDifficulty") },
+  { header: "CPC", value: (row) => readPath(row, "cpc") },
+  // Rows come back ordered by estimated traffic, so it's the signal behind the
+  // order a text-only client is shown.
+  { header: "traffic", value: (row) => readPath(row, "traffic") },
 ];
 
 const inputSchema = {
@@ -98,7 +102,7 @@ export const getDomainKeywordSuggestionsTool = {
     const text =
       keywords.length === 0
         ? `No ranked keywords found for ${targetLabel}.`
-        : `Keywords for ${targetLabel} (${keywords.length}):\n${formatMcpTable(keywords, SUGGESTION_COLUMNS)}`;
+        : `Keywords for ${targetLabel} (${keywords.length}). Columns: KD = keyword difficulty (0-100), traffic = estimated monthly organic visits; "—" = unavailable.\n${formatMcpTable(keywords, SUGGESTION_COLUMNS)}`;
     return mcpResponse({
       text,
       meta: buildProjectMeta(

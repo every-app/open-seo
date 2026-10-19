@@ -1,3 +1,4 @@
+import { AppError } from "@/server/lib/errors";
 import { pruneAiVisibility } from "./aiVisibilityRetention";
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import { AiVisibilityError } from "./aiVisibilityErrors";
@@ -50,8 +51,9 @@ export async function runScheduledAiVisibility() {
         },
       });
       if (!claimed) continue;
-      const first = !(await repo.getLatestScheduledRun(tracker.projectId));
-      await startRun(config, first ? "baseline" : "scheduled", {
+      // Always queued: a baseline collects live only when a user starts it
+      // (onboarding or turning on the schedule) and waits for the answers.
+      await startRun(config, "scheduled", {
         organizationId,
         userId: "system",
         userEmail: "system@openseo.so",
@@ -60,6 +62,9 @@ export async function runScheduledAiVisibility() {
       started++;
       answersStarted += answers;
     } catch (error) {
+      // startRun records a credits skip on the tracker.
+      if (error instanceof AppError && error.code === "INSUFFICIENT_CREDITS")
+        continue;
       if (!(error instanceof AiVisibilityError))
         console.error("[ai-visibility] scheduled check failed to start", {
           trackerId: tracker.id,

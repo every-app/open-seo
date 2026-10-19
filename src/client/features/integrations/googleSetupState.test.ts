@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
+import type { GooglePickerAccount } from "./GooglePropertyPicker";
 import { SearchConsoleOnboardingStep } from "@/client/features/onboarding/SearchConsoleOnboardingStep";
 
 vi.mock("@/serverFunctions/gsc", () => ({
@@ -38,7 +39,13 @@ function renderSetup(
   hasGrant: boolean,
   connected = false,
   canManage = true,
-  connectionError?: "initial" | "refetch",
+  {
+    connectionError,
+    accounts,
+  }: {
+    connectionError?: "initial" | "refetch";
+    accounts?: GooglePickerAccount[];
+  } = {},
 ) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, retryOnMount: false } },
@@ -52,6 +59,12 @@ function renderSetup(
     googleOAuthConfigured: true,
     property: "https://example.com/",
   });
+  if (accounts) {
+    client.setQueryData(
+      [provider === "gsc" ? "gscSites" : "ga4Properties", "project-a"],
+      { accounts },
+    );
+  }
   if (connectionError) {
     client
       .getQueryCache()
@@ -105,7 +118,9 @@ it.each(["gsc", "ga4"] as const)(
 
 describe("onboarding connection actions", () => {
   it("keeps cached property setup and a single footer after a failed refetch", () => {
-    const html = renderSetup("onboarding", true, false, true, "refetch");
+    const html = renderSetup("onboarding", true, false, true, {
+      connectionError: "refetch",
+    });
     expect(html).toContain("Choose property");
     expect(html).not.toContain("check your Google connection.");
     expect(html.match(/Save and continue/g)).toHaveLength(1);
@@ -114,17 +129,65 @@ describe("onboarding connection actions", () => {
   });
 
   it("keeps a saved connection usable after a failed refetch", () => {
-    const html = renderSetup("onboarding", true, true, true, "refetch");
+    const html = renderSetup("onboarding", true, true, true, {
+      connectionError: "refetch",
+    });
     expect(html).toContain("https://example.com/");
     expect(html).toMatch(/>Continue[ <]/);
     expect(html).not.toContain("Save and continue");
   });
 
   it("offers retry and disables saving when the initial connection check fails", () => {
-    const html = renderSetup("onboarding", false, false, true, "initial");
+    const html = renderSetup("onboarding", false, false, true, {
+      connectionError: "initial",
+    });
     expect(html).toContain("Couldn&#x27;t check your Google connection.");
     expect(html).toContain("Try again");
     expect(html).not.toContain("Choose property");
     expect(html).toMatch(/disabled=""[^>]*>Save and continue/);
   });
+});
+
+describe("Search Console website setup guidance", () => {
+  const emptyAccount = {
+    accountId: "account-a",
+    email: "owner@example.com",
+    requiresReconnect: false,
+    properties: [],
+  };
+
+  it.each(["gsc", "onboarding"] as const)(
+    "explains empty accounts without opening the %s picker",
+    (surface) => {
+      const html = renderSetup(surface, true, false, true, {
+        accounts: [emptyAccount],
+      });
+      expect(html).toContain("We couldn’t find your website");
+      expect(html).toContain("owner@example.com");
+      expect(html).not.toContain("Select a property");
+      expect(html).toContain("/blogs/google-search-console-setup");
+      expect(html).toContain("Refresh");
+      expect(html).toContain("Use a different Google account");
+      if (surface === "onboarding") expect(html).toContain("Skip for now");
+    },
+  );
+
+  it.each([
+    { requiresReconnect: true },
+    { unavailable: true },
+    {
+      properties: [
+        { id: "https://example.com/", name: "example.com", selectable: true },
+      ],
+    },
+  ])(
+    "does not mistake expired, failed, or populated accounts for a new website",
+    (patch) => {
+      const html = renderSetup("gsc", true, false, true, {
+        accounts: [{ ...emptyAccount, ...patch }],
+      });
+      expect(html).toContain("Choose property");
+      expect(html).not.toContain("We couldn’t find your website");
+    },
+  );
 });

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { organizationContextQueryOptions } from "@/client/features/team/organizationQueries";
 import { switchOrganization } from "@/serverFunctions/organization";
+import { clearLastProjectId } from "@/client/lib/active-project";
 import {
   connectNavGroup,
   getProjectNavGroups,
@@ -218,6 +219,9 @@ function AccountFooter({ ready }: { ready: boolean }) {
     setIsSwitching(true);
     try {
       await switchOrganization({ data: { organizationId } });
+      // The remembered project belongs to the old workspace; without this,
+      // "/" would open it before the access check bounces back.
+      clearLastProjectId();
       window.location.assign("/");
     } catch (error) {
       toast.error(getStandardErrorMessage(error));

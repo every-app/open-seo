@@ -38,6 +38,16 @@ describe("brand mentions", () => {
     });
   });
 
+  it.each([
+    ["acmeride.com", true],
+    ["shop.acmeride.com", false],
+  ])("bare name mentions a brand named %s: %s", (domain, mentioned) => {
+    const text = "- [Acmeride](https://www.acmeride.com/): Connects directly.";
+    expect(matchAiBrand(answer(text), { name: domain, domain }).mentioned).toBe(
+      mentioned,
+    );
+  });
+
   it("returns original UTF-16 offsets through emoji and both Unicode accent forms", () => {
     const text = "🔎 Café and Café are the same spelling.";
     const spans = aiMentionSpans(text, ["Café"]);

@@ -37,6 +37,7 @@ describe("getOrganizationBillingAccount", () => {
         [AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID]: { remaining: 2500 },
       },
       subscriptions: [{ planId: "friends_and_family_2", pastDue: true }],
+      sendEmailReceipts: true,
     });
 
     await expect(getOrganizationBillingAccount(context)).resolves.toEqual({
@@ -48,6 +49,7 @@ describe("getOrganizationBillingAccount", () => {
       hasManagedAccess: true,
       isPastDue: true,
       monthlyRefillsAt: 1_790_000_000_000,
+      invoiceEmailsEnabled: true,
     });
     // The organization is the billing identity.
     expect(getOrCreateMock).toHaveBeenCalledWith({

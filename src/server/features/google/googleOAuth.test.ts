@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- fork Google Ads grant cases merged with upstream's */
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -194,6 +195,7 @@ describe("Google OAuth grants", () => {
         refresh_token: "refresh-token",
         expires_in: 3600,
         id_token: idToken,
+        scope: "openid https://www.googleapis.com/auth/analytics.readonly",
       }),
     );
 
@@ -365,6 +367,25 @@ describe("Google OAuth grants", () => {
       expect(await grants()).toEqual([]);
     },
   );
+
+  it("returns a consent without the data scope to the connect page without storing a grant", async () => {
+    const state = await authorizationState(oauth.GSC_INTEGRATION);
+    mocks.fetch.mockResolvedValue(
+      tokenResponse({
+        access_token: "access-token",
+        scope: "openid https://www.googleapis.com/auth/userinfo.email",
+      }),
+    );
+
+    const response = await callback(oauth.GSC_INTEGRATION, state, {
+      code: "code-1",
+    });
+
+    expect(response.headers.get("Location")).toBe(
+      "/p/project/settings?tab=integrations&google_link_error=gsc&error=scope_not_granted",
+    );
+    expect(await grants()).toEqual([]);
+  });
 
   it("returns a grant save failure to the connect page", async () => {
     const state = await authorizationState(oauth.GA4_INTEGRATION);

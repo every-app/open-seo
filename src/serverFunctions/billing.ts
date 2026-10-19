@@ -12,6 +12,10 @@ import {
   createPlanCheckoutUrl,
   createTopUpCheckoutUrl,
 } from "@/server/billing/checkout";
+import {
+  listOrganizationInvoices,
+  setOrganizationInvoiceEmails,
+} from "@/server/billing/invoices";
 import { AppError } from "@/server/lib/errors";
 import {
   getRequiredEnvValue,
@@ -60,6 +64,17 @@ export const createBillingPortalSession = createServerFn({ method: "POST" })
       ...data,
       origin: getPublicOrigin(getRequest()),
     }),
+  );
+
+export const listBillingInvoices = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .handler(({ context }) => listOrganizationInvoices(context));
+
+export const setInvoiceEmails = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(z.object({ enabled: z.boolean() }))
+  .handler(({ data, context }) =>
+    setOrganizationInvoiceEmails(context, data.enabled),
   );
 
 const AUTUMN_EVENTS_LIST_URL = "https://api.useautumn.com/v1/events.list";

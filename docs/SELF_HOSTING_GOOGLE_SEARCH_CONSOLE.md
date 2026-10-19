@@ -113,6 +113,10 @@ docker compose up -d --force-recreate open-seo
 user on the OAuth consent screen (while the app is in Testing mode). Add it under
 **OAuth consent screen → Test users**.
 
+**"Search Console API isn't enabled"** — the API isn't enabled in the Google
+Cloud project that owns your OAuth client. Enable it (step 1), wait a minute,
+then click **Try again**.
+
 **Connected, but no properties to pick** — the Google account you authorized
 doesn't have a verified property in Search Console. Verify the site in
 [Search Console](https://search.google.com/search-console) first, then reconnect.

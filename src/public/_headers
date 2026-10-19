@@ -1,0 +1,5 @@
+# Vite content-hashes every file under /assets/ and the HTML is never cached,
+# so a deploy ships new URLs instead of changing these files. Favicons and the
+# manifest keep stable names, so they keep the default revalidating policy.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

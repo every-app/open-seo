@@ -296,8 +296,11 @@ export function renderProjectContextMarkdown(context: ProjectContext): string {
           context.researchLog.length === 1 ? "entry" : "entries"
         })`,
     [
+      // Competitors render by domain and key pages by url — the keys their
+      // remove ops take. A log entry's only address is its id, so it is the
+      // key that has to appear here for removeResearchLog to be usable.
       ...context.researchLog.map(
-        (entry) => `- ${entry.entryDate}: ${entry.summary}`,
+        (entry) => `- ${entry.entryDate}: ${entry.summary} [id: ${entry.id}]`,
       ),
       ...(context.researchLog.length >= RESEARCH_LOG_LIMIT
         ? [

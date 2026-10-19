@@ -36,6 +36,9 @@ declare namespace Cloudflare {
     POSTHOG_HOST?: string;
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
+    // Encrypts saved Shopify crawler signatures. Kept separate from
+    // BETTER_AUTH_SECRET so the audit worker never holds the auth secret.
+    CRAWLER_ACCESS_SECRET?: string;
     DATABASE_PROVIDER?: "d1" | "postgres";
     HYPERDRIVE?: {
       connectionString: string;

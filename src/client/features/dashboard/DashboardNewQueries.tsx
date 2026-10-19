@@ -1,4 +1,3 @@
-import { DashboardKeywordTable } from "./DashboardKeywordTable";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
@@ -21,12 +20,10 @@ export function DashboardNewQueries({
   projectId,
   connected,
   siteUrl,
-  compact = false,
 }: {
   projectId: string;
   connected: boolean;
   siteUrl: string | null;
-  compact?: boolean;
 }) {
   const query = useQuery({
     queryKey: ["dashboardEmergingQueries", projectId, siteUrl],
@@ -35,10 +32,7 @@ export function DashboardNewQueries({
     staleTime: 10 * 60_000,
     retry: false,
   });
-  if (!connected)
-    return compact ? null : (
-      <GoogleConnectionCard provider="gsc" projectId={projectId} prominent />
-    );
+  if (!connected) return null;
   return (
     <QueryState query={query} errorFallback="Could not load new keywords">
       {(data) =>
@@ -61,46 +55,36 @@ export function DashboardNewQueries({
               </DashboardInfo>
             }
             action={
-              compact ? (
-                <Link
-                  to="/p/$projectId"
-                  params={{ projectId }}
-                  search={{ tab: "keywords" }}
-                  className={moreDetailsClass}
-                >
-                  View all →
-                </Link>
-              ) : undefined
+              <Link
+                to="/p/$projectId"
+                params={{ projectId }}
+                search={{ tab: "keywords" }}
+                className={moreDetailsClass}
+              >
+                View all →
+              </Link>
             }
           >
             <Freshness {...data} />
             {data.value.rows.length ? (
-              !compact ? (
-                <DashboardKeywordTable rows={data.value.rows} />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Keyword</TableHead>
-                      <TableHead>Impressions</TableHead>
-                      <TableHead>Clicks</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Keyword</TableHead>
+                    <TableHead>Impressions</TableHead>
+                    <TableHead>Clicks</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.value.rows.slice(0, 5).map((row) => (
+                    <TableRow key={row.query}>
+                      <TableCell className="font-medium">{row.query}</TableCell>
+                      <TableCell>{row.impressions.toLocaleString()}</TableCell>
+                      <TableCell>{row.clicks}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.value.rows.slice(0, compact ? 5 : 25).map((row) => (
-                      <TableRow key={row.query}>
-                        <TableCell className="font-medium">
-                          {row.query}
-                        </TableCell>
-                        <TableCell>
-                          {row.impressions.toLocaleString()}
-                        </TableCell>
-                        <TableCell>{row.clicks}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center">
                 <Search className="size-7 text-muted-foreground" />

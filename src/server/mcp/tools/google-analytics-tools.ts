@@ -5,6 +5,7 @@ import { Ga4MeasurementHealthService } from "@/server/features/ga4/services/Ga4M
 import { OVERVIEW_METRICS } from "@/server/features/ga4/services/Ga4ReportDefinitions";
 import { Ga4OrganicOverviewService } from "@/server/features/ga4/services/Ga4OrganicOverviewService";
 import {
+  GSC_API_DISABLED_MESSAGE,
   GscApiError,
   GscNotConnectedError,
   GscTokenError,
@@ -21,7 +22,15 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { looseObjectOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
-import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
+import {
+  formatMcpCell,
+  formatMcpTable,
+  percentCell,
+  positionCell,
+  readPath,
+  truncatedCell,
+  type McpTableColumn,
+} from "@/server/mcp/table";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 
 const dateSchema = z
@@ -190,6 +199,9 @@ function errorResponse(
   } else if (error instanceof GscNotConnectedError) {
     code = "gsc_not_connected";
     message = "Search Console is not connected for this project.";
+  } else if (error instanceof GscApiError && error.apiDisabled) {
+    code = "gsc_api_disabled";
+    message = GSC_API_DISABLED_MESSAGE;
   } else if (
     error instanceof GscTokenError ||
     (error instanceof GscApiError && [401, 403].includes(error.status))
@@ -219,9 +231,96 @@ function errorResponse(
 }
 
 type Ga4ReportRow = Ga4ReportResult["rows"][number];
+type Ga4ComparisonRow = NonNullable<
+  Ga4ReportResult["comparison"]
+>["rows"][number];
 type Ga4OverviewResult = Awaited<
   ReturnType<typeof Ga4OrganicOverviewService.getOrganicOverview>
 >;
+type Ga4TrendRow = Ga4OverviewResult["trend"][number];
+type Ga4MeasurementHealthResult = Awaited<
+  ReturnType<typeof Ga4MeasurementHealthService.getMeasurementHealth>
+>;
+type SearchOpportunityResult = Awaited<
+  ReturnType<typeof SearchOpportunityService.getOpportunities>
+>;
+type SearchOpportunityRow = SearchOpportunityResult["rows"][number];
+
+// Comparison rows come from a complete (unpaginated) report, so cap what the
+// text block renders. Rows arrive in current-report order, which GA4 sorts by
+// the report's order metric, so the first rows are the largest ones.
+const COMPARISON_ROW_LIMIT = 50;
+
+/** Leading newline so callers can concatenate sections directly. */
+function section<T>(
+  label: string,
+  rows: readonly T[],
+  columns: readonly McpTableColumn<T>[],
+): string {
+  if (rows.length === 0) return "";
+  return `\n${label}:\n${formatMcpTable(rows, columns)}`;
+}
+
+// Diagnostics are built per report kind, so their element type is a union of
+// record shapes; read the shared fields by path.
+function diagnosticsSection(diagnostics: readonly unknown[]): string {
+  return section("Diagnostics", diagnostics, [
+    { header: "severity", value: (row) => readPath(row, "severity") },
+    { header: "code", value: (row) => readPath(row, "code") },
+    { header: "message", value: (row) => readPath(row, "message") },
+    {
+      header: "evidence",
+      value: (row) => readPath(row, "evidence"),
+      format: truncatedCell(160),
+    },
+  ]);
+}
+
+function deltaCell(value: unknown): string {
+  const current = formatMcpCell(readPath(value, "current"));
+  const previous = formatMcpCell(readPath(value, "previous"));
+  const percent = readPath(value, "percentChange");
+  const change =
+    typeof percent === "number" && Number.isFinite(percent)
+      ? ` (${percent > 0 ? "+" : ""}${percentCell(percent)})`
+      : "";
+  return `${current} vs ${previous}${change}`;
+}
+
+function comparisonSection(comparison: Ga4ReportResult["comparison"]): string {
+  if (!comparison) return "";
+  // A requested comparison that came back empty must still be distinguishable
+  // from one that was never requested.
+  if (comparison.rows.length === 0) {
+    return "\nPrevious-period comparison returned no rows.";
+  }
+  const rows = comparison.rows.slice(0, COMPARISON_ROW_LIMIT);
+  const truncated =
+    comparison.rows.length > rows.length
+      ? `, top ${rows.length} of ${comparison.rows.length} rows`
+      : "";
+  const range = comparison.previousDateRange;
+  const columns: McpTableColumn<Ga4ComparisonRow>[] = [
+    ...comparison.dimensions.map(
+      (dimension): McpTableColumn<Ga4ComparisonRow> => ({
+        header: dimension,
+        value: (row) => row.dimensions[dimension],
+      }),
+    ),
+    ...comparison.metrics.map(
+      (metric): McpTableColumn<Ga4ComparisonRow> => ({
+        header: metric,
+        value: (row) => row.metrics[metric],
+        format: deltaCell,
+      }),
+    ),
+  ];
+  return section(
+    `Compared with ${range.startDate} through ${range.endDate} (current vs previous${truncated})`,
+    rows,
+    columns,
+  );
+}
 
 // These four MCP tools accept channel=all. landing_pages is Organic Search
 // only and has no channel argument.
@@ -268,22 +367,39 @@ function endDateClampNote(result: {
 
 function reportText(label: string, result: Ga4ReportResult) {
   const range = result.request.resolvedDateRange;
-  const comparison = result.comparison
-    ? ` Previous-period comparison returned ${result.comparison.rows.length} row(s).`
-    : "";
-  const diagnostics =
-    result.diagnostics.length > 0
-      ? ` ${result.diagnostics.length} diagnostic finding(s) are included.`
-      : "";
   const limited = result.reportMetadata.hasLimitedData
     ? " Google marked this report as limited; inspect reportMetadata."
     : "";
   const paginate = result.pageInfo.hasMore
     ? " More rows are available; call again with offset to page through them."
     : "";
-  const summary = `${label}: ${result.rowCount} of ${result.totalRowCount} rows for ${range.startDate} through ${range.endDate}.${endDateClampNote(result)}${comparison}${diagnostics}${limited}${emptyOrganicHint(result)}${paginate}`;
-  if (result.rows.length === 0) return summary;
-  return `${summary}\n${formatMcpTable(result.rows, reportTableColumns(result))}`;
+  const summary = `${label}: ${result.rowCount} of ${result.totalRowCount} rows for ${range.startDate} through ${range.endDate}.${endDateClampNote(result)}${limited}${emptyOrganicHint(result)}${paginate}`;
+  const rows =
+    result.rows.length === 0
+      ? ""
+      : `\n${formatMcpTable(result.rows, reportTableColumns(result))}`;
+  // Rows stay adjacent to the summary line that counts them; the labelled
+  // sections follow so neither table can be mistaken for the other.
+  return `${summary}${rows}${diagnosticsSection(result.diagnostics)}${comparisonSection(result.comparison)}`;
+}
+
+function trendSection(result: Ga4OverviewResult): string {
+  const weekly = result.request.trend === "weekly";
+  const dimension = weekly ? "yearWeek" : "date";
+  const columns: McpTableColumn<Ga4TrendRow>[] = [
+    { header: dimension, value: (row) => row[dimension] },
+    ...OVERVIEW_METRICS.map(
+      (metric): McpTableColumn<Ga4TrendRow> => ({
+        header: metric,
+        value: (row) => row[metric],
+      }),
+    ),
+  ];
+  return section(
+    weekly ? "Weekly trend" : "Daily trend",
+    result.trend,
+    columns,
+  );
 }
 
 function overviewText(result: Ga4OverviewResult) {
@@ -301,11 +417,76 @@ function overviewText(result: Ga4OverviewResult) {
     current: result.current[metric] ?? null,
     previous: result.previous?.[metric] ?? null,
   }));
-  return `${summary}\n${formatMcpTable(rows, [
+  const totals = formatMcpTable(rows, [
     { header: "metric", value: (row) => row.metric },
     { header: "current", value: (row) => row.current },
     { header: "previous", value: (row) => row.previous },
-  ])}`;
+  ]);
+  return `${summary}\n${totals}${diagnosticsSection(result.diagnostics)}${trendSection(result)}`;
+}
+
+const OPPORTUNITY_COLUMNS: McpTableColumn<SearchOpportunityRow>[] = [
+  { header: "score", value: (row) => row.score },
+  { header: "page", value: (row) => row.page },
+  { header: "position", value: (row) => row.position, format: positionCell },
+  { header: "impressions", value: (row) => row.impressions },
+  { header: "clicks", value: (row) => row.clicks },
+  { header: "CTR", value: (row) => row.ctr, format: percentCell },
+  { header: "sessions", value: (row) => row.ga4?.sessions },
+  { header: "keyEvents", value: (row) => row.ga4?.keyEvents },
+  { header: "engagementRate", value: (row) => row.ga4?.engagementRate },
+  { header: "match", value: (row) => row.joinStatus },
+];
+
+function opportunityText(result: SearchOpportunityResult) {
+  const range = result.request.dateRange;
+  const summary = `Search opportunities for ${range.startDate} through ${range.endDate}: ${result.rowCount} returned from ${result.totalCandidateRows} candidates. ${result.coverage.matchedRows} candidates matched GA4 landing pages.`;
+  if (result.rows.length === 0) return summary;
+  return `${summary}\n${formatMcpTable(result.rows, OPPORTUNITY_COLUMNS)}`;
+}
+
+function measurementHealthText(result: Ga4MeasurementHealthResult) {
+  const summary = `Measurement health: ${result.summary.webStreamCount} web stream(s), ${result.summary.keyEventCount} key event(s), and ${result.summary.issueCount} diagnostic issue(s).`;
+  const issues =
+    result.issues.length > 0 ? ` Issues: ${result.issues.join(", ")}.` : "";
+  return [
+    `${summary}${issues}`,
+    section("Web streams", result.webStreams, [
+      { header: "streamId", value: (row) => row.streamId },
+      { header: "displayName", value: (row) => row.displayName },
+      { header: "measurementId", value: (row) => row.measurementId },
+      { header: "defaultUri", value: (row) => row.defaultUri },
+      {
+        header: "enhancedMeasurement",
+        value: (row) => row.enhancedMeasurement.streamEnabled,
+      },
+      {
+        header: "siteSearch",
+        value: (row) => row.enhancedMeasurement.siteSearchEnabled,
+      },
+    ]),
+    section("Other streams", result.otherStreams, [
+      { header: "streamId", value: (row) => row.streamId },
+      { header: "type", value: (row) => row.type },
+      { header: "displayName", value: (row) => row.displayName },
+    ]),
+    section("Key events", result.keyEvents, [
+      { header: "eventName", value: (row) => row.eventName },
+      { header: "countingMethod", value: (row) => row.countingMethod },
+      { header: "custom", value: (row) => row.custom ?? false },
+    ]),
+    section("Custom dimensions", result.customDefinitions.dimensions, [
+      { header: "parameterName", value: (row) => row.parameterName },
+      { header: "displayName", value: (row) => row.displayName },
+      { header: "scope", value: (row) => row.scope },
+    ]),
+    section("Custom metrics", result.customDefinitions.metrics, [
+      { header: "parameterName", value: (row) => row.parameterName },
+      { header: "displayName", value: (row) => row.displayName },
+      { header: "scope", value: (row) => row.scope },
+      { header: "measurementUnit", value: (row) => row.measurementUnit },
+    ]),
+  ].join("");
 }
 
 function createAnalyticsReportHandler<TArgs extends ProjectArgs>(
@@ -449,7 +630,7 @@ export const getSearchOpportunitiesTool = {
     try {
       const result = await SearchOpportunityService.getOpportunities(args);
       return mcpResponse({
-        text: `Search opportunities: ${result.rowCount} returned from ${result.totalCandidateRows} candidates. ${result.coverage.matchedRows} candidates matched GA4 landing pages.`,
+        text: opportunityText(result),
         meta: buildProjectMeta(context, args.projectId),
         structuredContent: result,
       });
@@ -659,7 +840,7 @@ export const getGoogleAnalyticsMeasurementHealthTool = {
         args.projectId,
       );
       return mcpResponse({
-        text: `Measurement health: ${result.summary.webStreamCount} web stream(s), ${result.summary.keyEventCount} key event(s), and ${result.summary.issueCount} diagnostic issue(s).`,
+        text: measurementHealthText(result),
         meta: buildProjectMeta(context, args.projectId),
         structuredContent: result,
       });

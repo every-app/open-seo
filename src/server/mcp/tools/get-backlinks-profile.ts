@@ -7,7 +7,11 @@ import {
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
-import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
+import {
+  formatMcpCell,
+  formatMcpTable,
+  type McpTableColumn,
+} from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import {
   BACKLINKS_DEFAULT_SORT,
@@ -75,10 +79,6 @@ const inputSchema = {
 } as const;
 
 type Args = z.infer<z.ZodObject<typeof inputSchema>>;
-
-function formatMetric(value: unknown) {
-  return typeof value === "number" || typeof value === "string" ? value : "?";
-}
 
 function formatLinkType(value: boolean | null | undefined) {
   if (value === true) return "dofollow";
@@ -168,7 +168,7 @@ export const getBacklinksProfileTool = {
       `- page: ${backlinks.page}`,
       `- page size: ${backlinks.pageSize}`,
       `- rows returned: ${backlinks.rows.length}`,
-      `- total backlinks: ${formatMetric(backlinks.totalCount)}`,
+      `- total backlinks: ${formatMcpCell(backlinks.totalCount)}`,
       `- has more: ${backlinks.hasMore ? "yes" : "no"}`,
       "",
       backlinks.rows.length === 0

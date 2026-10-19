@@ -13,6 +13,7 @@ import {
   type DataforseoApiResponse,
   type DataforseoItemsTask,
   type DataforseoTaskLike,
+  failedResponseError,
 } from "@/server/lib/dataforseo/envelope";
 import { AppError } from "@/server/lib/errors";
 
@@ -93,7 +94,9 @@ export async function fetchLiveSerp(input: {
   depth?: number;
   /** Canonical DataForSEO name of a city, county, or region for a local SERP. */
   locationName?: string;
+  device?: "desktop" | "mobile";
 }): Promise<DataforseoApiResponse<SerpLiveItem[]>> {
+  const device = input.device ?? "desktop";
   const locationParams = input.locationName
     ? { location_name: input.locationName }
     : { location_code: input.locationCode };
@@ -104,8 +107,8 @@ export async function fetchLiveSerp(input: {
         keyword: input.keyword,
         ...locationParams,
         language_code: input.languageCode,
-        device: "desktop",
-        os: "windows",
+        device,
+        os: device === "desktop" ? "windows" : "android",
         depth: clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
       },
     ],
@@ -278,10 +281,7 @@ export async function postRankCheckTasks(input: {
   );
 
   if (!response || response.status_code !== 20000) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      response?.status_message || "DataForSEO task_post failed",
-    );
+    throw failedResponseError(response, "DataForSEO task_post failed");
   }
 
   // One response entry per submitted task; accepted entries have status 20100
@@ -339,10 +339,7 @@ export async function fetchRankCheckTaskResult(input: {
   );
   const task = response?.tasks?.[0];
   if (!response || response.status_code !== 20000 || !task) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      response?.status_message || "DataForSEO task_get failed",
-    );
+    throw failedResponseError(response, "DataForSEO task_get failed");
   }
 
   if (isTaskInProgress(task)) {
@@ -514,10 +511,7 @@ export async function postLocalSerpTasks(input: {
     { maxServerErrorRetries: 0 },
   );
   if (!response || response.status_code !== 20000) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      response?.status_message || "DataForSEO task_post failed",
-    );
+    throw failedResponseError(response, "DataForSEO task_post failed");
   }
 
   // Cost is summed over every entry, accepted or not, so anything DataForSEO
@@ -572,10 +566,7 @@ export async function fetchLocalSerpTaskResult(
   >(`/v3/serp/google/maps/task_get/advanced/${encodeURIComponent(taskId)}`);
   const task = response?.tasks?.[0];
   if (!response || response.status_code !== 20000 || !task) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      response?.status_message || "DataForSEO task_get failed",
-    );
+    throw failedResponseError(response, "DataForSEO task_get failed");
   }
 
   if (isTaskInProgress(task)) return { status: "pending" };

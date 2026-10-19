@@ -5,11 +5,15 @@ description: "Add OpenSEO skill files to your AI agent after connecting OpenSEO 
 
 OpenSEO Agent Skills are separate files from OpenSEO MCP.
 
-On Claude Code, skip the steps below and use the [OpenSEO plugin](/docs/claude-code-plugin) instead — it installs MCP and every skill in one step. On Codex CLI, use the [OpenSEO plugin](/docs/codex-plugin) the same way.
+On Claude Code or Claude Cowork, skip the steps below and use the [OpenSEO plugin](/docs/claude-code-plugin) instead — it installs MCP and every skill in one step. On Codex CLI, use the [OpenSEO plugin](/docs/codex-plugin) the same way.
 
 First, [set up OpenSEO MCP](/docs/mcp). MCP gives your agent access to OpenSEO data.
 
 Then add the OpenSEO `SKILL.md` files you want your agent to use. Each skill gives your agent one SEO workflow.
+
+## ChatGPT
+
+Use the [ChatGPT setup guide](/docs/chatgpt). A directory plugin can include skills; a custom MCP connection provides tools only. You can ask for SEO research in plain language with those tools. The terminal commands below apply to agents with a local skills installer, such as Codex or Claude Code.
 
 ## Choose an installation option
 
@@ -75,17 +79,17 @@ Use the [update prompt or commands for your installation method](/docs/agent-set
 
 ## Run a skill
 
-After the skill files are available to your agent, run the matching slash command:
+Use your agent's skill picker or ask for a workflow by name. In Codex, type `$`; Claude Code plugin skills use `/openseo:skill-name`. Other clients have their own invocation syntax. The available workflows include:
 
-- `/seo-project-setup`
-- `/seo-coach`
-- `/keyword-research`
-- `/keyword-clustering`
-- `/competitive-landscape`
-- `/competitor-analysis`
-- `/link-prospecting`
-- `/local-seo`
-- `/seo-audit`
+- `seo-project-setup`
+- `seo-coach`
+- `keyword-research`
+- `keyword-clustering`
+- `competitive-landscape`
+- `competitor-analysis`
+- `link-prospecting`
+- `local-seo`
+- `seo-audit`
 
 ## Next step
 

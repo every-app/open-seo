@@ -4,13 +4,18 @@ import {
   type ConfigurationRows,
   type RunRow,
 } from "../repositories/AiVisibilityRepository";
-import { AiVisibilityError } from "./aiVisibilityErrors";
+import { AI_ANSWER_FAILURES, AiVisibilityError } from "./aiVisibilityErrors";
 import { aiScope } from "./aiVisibilityConfiguration";
 import {
   getOptionalEnvValue,
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
-import type { BillingCustomerContext } from "@/server/billing/subscription";
+import {
+  getOrCreateOrganizationCustomer,
+  getUsageCreditsRemaining,
+  type BillingCustomerContext,
+} from "@/server/billing/subscription";
+import { AppError } from "@/server/lib/errors";
 import type { AiRun } from "@/shared/ai-visibility";
 import type { RunAiCheckInput } from "@/types/schemas/ai-visibility";
 import { requireConfiguration } from "./aiVisibilityMutation";
@@ -38,9 +43,9 @@ async function staleRunReason(run: RunRow): Promise<string | null> {
     .catch(() => null);
   if (status && ACTIVE_WORKFLOW_STATUSES.has(status.status)) return null;
   if (Date.now() - Date.parse(run.createdAt) < STARTUP_GRACE_MS) return null;
-  return status
-    ? `Collection stopped (${status.status}).`
-    : "Collection stopped before it started.";
+  if (!status) return AI_ANSWER_FAILURES.stoppedBeforeStart;
+  console.warn(`[ai-visibility] ${run.id} workflow stopped (${status.status})`);
+  return AI_ANSWER_FAILURES.stopped;
 }
 
 /** Fails a run and its unfinished answers. Safe on a finished run. */
@@ -89,6 +94,32 @@ export async function startRun(
       "NO_ACTIVE_PROMPTS",
       "Add or unpause prompts before starting a check.",
     );
+  // Hosted checks need credits for every answer before they start, like rank
+  // checks. The tracker says why no check ran, whichever path started it.
+  if (await isHostedServerAuthMode()) {
+    const required = aiCostForAnswers(
+      scope.prompts.flatMap(() => scope.engines),
+      true,
+      trigger === "scheduled" ? "queued" : "live",
+    ).costCredits;
+    // getOrCreate: an org's first check can come before its Autumn customer.
+    const { id } = await getOrCreateOrganizationCustomer(billing);
+    const credits = await getUsageCreditsRemaining(id);
+    // Clamp at 0: research setup can overdraw monthly credits, and top-up
+    // credits still pay for the check.
+    const available =
+      Math.max(credits.monthlyRemaining, 0) +
+      Math.max(credits.topupRemaining, 0);
+    if (available < required) {
+      await repo.updateTracker(config.tracker.id, {
+        lastSkipReason: "INSUFFICIENT_CREDITS",
+      });
+      throw new AppError(
+        "INSUFFICIENT_CREDITS",
+        "Not enough credits for this AI visibility check.",
+      );
+    }
+  }
   const own = { name: project.name, domain: project.domain };
   // Two attempts: once normally, once after failing a stale blocker.
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -143,7 +174,7 @@ export async function startRun(
         },
       });
     } catch (error) {
-      await failAiRun(id, "Collection could not start.");
+      await failAiRun(id, AI_ANSWER_FAILURES.notStarted);
       throw error;
     }
     return getRun({ projectId: project.id, runId: id });

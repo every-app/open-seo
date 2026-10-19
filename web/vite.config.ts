@@ -93,6 +93,9 @@ export default defineConfig(async ({ mode }) => {
           filter: ({ path }: { path: string }) =>
             !/\.pdf(?:[?#]|$)/i.test(path),
         },
+        // Paid-ad landing pages aren't linked from the site, so the prerender
+        // crawler can't discover them on its own.
+        pages: [{ path: "/agencies" }, { path: "/agents" }],
       }),
       react(),
     ],

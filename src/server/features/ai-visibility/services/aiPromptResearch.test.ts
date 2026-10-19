@@ -39,6 +39,7 @@ vi.mock("../repositories/AiVisibilityRepository", () => ({
   AiVisibilityRepository: { listResearchKeywords },
 }));
 
+import { AppError } from "@/server/lib/errors";
 import { listAiResearchKeywords, researchAiPrompts } from "./aiPromptResearch";
 import { customer } from "./aiVisibilityTestFixtures";
 
@@ -115,6 +116,18 @@ describe("researchAiPrompts", () => {
       },
       { text: "Is moz a good seo tool?", tracked: true, sources: [] },
       { text: "Which tool do seo agencies trust?" },
+    ]);
+  });
+
+  it("still returns prompts that ask the keyword when the SERP is down", async () => {
+    serpLive.mockRejectedValue(new AppError("UPSTREAM_UNAVAILABLE"));
+
+    const result = await researchAiPrompts(input, customer);
+
+    // Only the SERP put ahrefs.com on topic, so that prompt drops out.
+    expect(result.prompts.map((prompt) => prompt.text)).toEqual([
+      "What is the most accurate SEO tool in 2026?",
+      "Is moz a good seo tool?",
     ]);
   });
 

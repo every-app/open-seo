@@ -25,7 +25,6 @@ import { z } from "zod";
 
 const signUpSchema = z
   .object({
-    name: z.string().trim(),
     email: z.string().trim().email("Enter a valid email address."),
     password: passwordSchema,
     confirmPassword: z.string(),
@@ -36,7 +35,11 @@ const signUpSchema = z
   });
 
 export const Route = createFileRoute("/_auth/sign-up")({
-  validateSearch: authRedirectSearchSchema,
+  validateSearch: authRedirectSearchSchema.extend({
+    // A site checked with the marketing site's free tool; onboarding
+    // prefills it, and the website step validates it on save.
+    domain: z.string().optional().catch(undefined),
+  }),
   component: SignUpPage,
 });
 
@@ -44,7 +47,12 @@ function SignUpPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { redirectTo, isHostedMode } = useAuthPageState(search.redirect);
-  const postSignupRedirect = redirectTo === "/" ? "/onboarding" : redirectTo;
+  const postSignupRedirect =
+    redirectTo !== "/"
+      ? redirectTo
+      : search.domain
+        ? `/onboarding?${new URLSearchParams({ domain: search.domain }).toString()}`
+        : "/onboarding";
   const [showEmailForm, setShowEmailForm] = useState(false);
   const google = useGoogleAuth({ redirectTo, postSignupRedirect });
 
@@ -54,7 +62,6 @@ function SignUpPage() {
 
   const form = useAppForm({
     defaultValues: {
-      name: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -69,8 +76,6 @@ function SignUpPage() {
         captureClientEvent("auth:sign_up_submit", {
           redirect_to: redirectTo,
         });
-        const resolvedName =
-          value.name.trim() || email.split("@")[0] || "OpenSEO User";
         const verificationCallbackURL = new URL(
           "/verify-email",
           window.location.origin,
@@ -86,7 +91,7 @@ function SignUpPage() {
           );
         }
         const result = await authClient.signUp.email({
-          name: resolvedName,
+          name: email.split("@")[0] || "OpenSEO User",
           email,
           password: value.password,
           callbackURL: verificationCallbackURL.toString(),
@@ -207,17 +212,6 @@ function SignUpPage() {
       ) : (
         <form.AppForm>
           <form.Form className="space-y-4">
-            <form.AppField name="name">
-              {(field) => (
-                <field.TextField
-                  label="Name (optional)"
-                  hideLabel
-                  className={authInputClassName}
-                  placeholder="Name (optional)..."
-                  autoComplete="name"
-                />
-              )}
-            </form.AppField>
             <form.AppField name="email">
               {(field) => (
                 <field.TextField

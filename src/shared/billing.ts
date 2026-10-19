@@ -1,6 +1,15 @@
 export const BILLING_ROUTE = "/billing";
 export const SUBSCRIBE_ROUTE = "/subscribe";
 
+// Billing page tabs. Here rather than in BillingTabs.tsx because the route's
+// validateSearch reads them, and route options aren't code-split: importing
+// the component would pull its chart into the entry chunk.
+export const BILLING_TABS = [
+  { value: "usage", label: "Usage" },
+  { value: "invoices", label: "Invoices" },
+] as const;
+export type BillingTab = (typeof BILLING_TABS)[number]["value"];
+
 export type PlanStatus = "free" | "paid";
 
 export const AUTUMN_PAID_PLAN_ID = "base-plan";

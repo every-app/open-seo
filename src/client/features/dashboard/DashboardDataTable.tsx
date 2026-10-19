@@ -3,7 +3,12 @@ import {
   type SortingState,
   type ColumnDef,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
 import { DataTable, useDataTable } from "@/client/components/table/DataTable";
 import {
   DataTableToolbar,
@@ -28,11 +33,23 @@ export function DashboardDataTable<T>({
   columns,
   filters,
   initialSorting,
+  tabs,
+  resetKey,
+  isLoading,
+  error,
+  empty = { title: "No results yet" },
 }: {
   rows: T[];
   columns: ColumnDef<T>[];
   filters: Filter[];
   initialSorting?: SortingState;
+  /** A `DataTableTabs` row that switches what the table shows. */
+  tabs?: ReactNode;
+  /** Changing it restores the initial sorting, filters and page, e.g. on a tab switch. */
+  resetKey?: string;
+  isLoading?: boolean;
+  error?: ReactNode;
+  empty?: ComponentProps<typeof DataTable>["empty"];
 }) {
   const [open, setOpen] = useState(false);
   const table = useDataTable({
@@ -46,6 +63,14 @@ export function DashboardDataTable<T>({
       sorting: initialSorting,
     },
   });
+  // Reset in place rather than remounting with `key`, which would drop
+  // keyboard focus from the tabs rendered inside the table card.
+  useEffect(() => {
+    table.setSorting(initialSorting ?? []);
+    table.resetColumnFilters();
+    table.setPageIndex(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when the key changes
+  }, [resetKey]);
   const count = table.getState().columnFilters.length;
   const clear = () => table.resetColumnFilters();
   return (
@@ -53,9 +78,12 @@ export function DashboardDataTable<T>({
       table={table}
       isFiltered={count > 0}
       onClearFilters={clear}
-      empty={{ title: "No results yet" }}
+      isLoading={isLoading}
+      error={error}
+      empty={empty}
       toolbar={
         <>
+          {tabs}
           <DataTableToolbar>
             <DataTableFilterToggle
               open={open}

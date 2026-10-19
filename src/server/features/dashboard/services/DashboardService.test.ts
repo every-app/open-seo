@@ -60,6 +60,30 @@ it("shows the newest audit matching the saved website instead of a newer competi
   expect(result.audit?.id).toBe("own-site");
 });
 
+it("includes the active performance-check phase after the page crawl finishes", async () => {
+  repository.audits.mockResolvedValue([
+    {
+      ...ownAudit,
+      status: "running",
+      pagesTotal: 50,
+      currentPhase: "lighthouse",
+      lighthouseCompleted: 9,
+      lighthouseFailed: 1,
+      lighthouseTotal: 20,
+    },
+  ]);
+  const result = await DashboardService.getOverview({
+    projectId: "project",
+    domain: "example.com",
+  });
+  expect(result.audit).toMatchObject({
+    currentPhase: "lighthouse",
+    lighthouseCompleted: 9,
+    lighthouseFailed: 1,
+    lighthouseTotal: 20,
+  });
+});
+
 it.each([null, "other.example.com", "example.net"])(
   "shows no audit when the saved website is %s",
   async (domain) => {

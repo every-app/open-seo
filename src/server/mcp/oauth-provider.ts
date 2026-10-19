@@ -25,7 +25,6 @@ import {
 } from "@/server/mcp/context";
 import { normalizeClientRegistrationRequest } from "@/server/mcp/oauth-registration";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
-import { handleAuthenticatedOpenSeoMcpRequest } from "@/server/mcp/transport";
 import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
 import { handleMcpApiKeyRequest } from "@/server/mcp/api-key-auth";
 
@@ -395,6 +394,8 @@ function createDefaultHandler(
 
 const mcpApiHandler: ExportedHandlerWithFetch<OpenSeoOAuthEnv> = {
   async fetch(request, env, ctx) {
+    const { handleAuthenticatedOpenSeoMcpRequest } =
+      await import("@/server/mcp/transport");
     return handleAuthenticatedOpenSeoMcpRequest(request, ctx.props, env, ctx);
   },
 };
