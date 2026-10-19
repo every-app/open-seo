@@ -223,9 +223,12 @@ describe("get_business_reviews", () => {
       taskId: "extended:task-9",
     });
     const out = textContent(result);
-    expect(out).toContain("# | when | rating | author | source | review");
+    expect(out).toContain(
+      "# | when | rating | author | source | review | owner reply",
+    );
     expect(out).toContain("Rare bottles and great staff.");
-    expect(out).toContain("| yes");
+    // The owner's own words, not a yes/no — answering reviews reads them.
+    expect(out).toContain("| Thanks!");
 
     await expect(
       getBusinessReviewsTool.handler(
@@ -324,7 +327,11 @@ describe("get_local_rank_grid", () => {
       },
       matchedBusiness: { title: "Acme Cafe", cid: "123", placeId: "p1" },
     });
-    expect(textContent(result)).toContain(" 2  2  2");
+    const out = textContent(result);
+    expect(out).toContain(" 2  2  2");
+    expect(out).toContain(
+      "Matched business: Acme Cafe (cid 123, place_id p1).",
+    );
   });
 
   it("records each point's result count and top business so nulls are interpretable", async () => {
@@ -340,6 +347,15 @@ describe("get_local_rank_grid", () => {
         resultsCount: 1,
         topResult: { title: "Other Cafe", cid: "999" },
       }),
+    );
+    // A text-only client reads the same context: the ASCII grid alone can't
+    // tell "outranked" from "nobody ranked here".
+    const out = textContent(result);
+    expect(out).toContain(
+      "row | col | lat | lon | rank | results | top result",
+    );
+    expect(out).toContain(
+      "0 | 0 | 40.0180874 | -74.0234532 | — | 1 | Other Cafe | 999",
     );
   });
 

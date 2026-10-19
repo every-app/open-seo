@@ -23,14 +23,13 @@ import {
   reconcileActiveRankCheckRun,
 } from "./rankCheckRunGuards";
 import {
-  computeNextCheckAt,
   estimateRankCheckCredits,
-  isScheduledRankTrackingInterval,
   MAX_CONFIGS_PER_PROJECT,
   rankCheckCostApprovalError,
   rankCheckMethod,
   VALIDATED_CRAWLS_PER_PAIR,
 } from "@/shared/rank-tracking";
+import { resolveNextCheckAt } from "./configSchedule";
 import {
   getIsoCountryCode,
   resolveKeywordDataLanguage,
@@ -63,7 +62,10 @@ async function createConfig(input: {
     input.projectMarket,
   );
   const scheduleInterval = input.scheduleInterval ?? "weekly";
-  const nextCheckAt = resolveNextCheckAt(scheduleInterval, input.scheduleTime);
+  const nextCheckAt = await resolveNextCheckAt(
+    scheduleInterval,
+    input.scheduleTime,
+  );
 
   const locationName = input.locationName ?? null;
   // Before the duplicate/limit checks so an unusable location name is the
@@ -211,7 +213,10 @@ async function updateConfig(
     (scheduleInterval !== "manual" && !existing.nextCheckAt)
   ) {
     updates.scheduleInterval = scheduleInterval;
-    updates.nextCheckAt = resolveNextCheckAt(scheduleInterval, scheduleTime);
+    updates.nextCheckAt = await resolveNextCheckAt(
+      scheduleInterval,
+      scheduleTime,
+    );
   }
 
   await RankTrackingRepository.updateConfig(configId, projectId, updates);
@@ -239,33 +244,6 @@ async function deleteTracker(configId: string, projectId: string) {
   const keywordCount = keywordCounts.get(configId) ?? 0;
   await deleteConfigCascade(configId);
   return { config, keywordCount };
-}
-
-function resolveNextCheckAt(
-  scheduleInterval: RankTrackingConfig["scheduleInterval"],
-  scheduleTime: RankCheckScheduleTime | undefined,
-): string | null {
-  if (isScheduledRankTrackingInterval(scheduleInterval)) {
-    // Without one the check would quietly repeat on whatever day today is.
-    if (
-      scheduleInterval === "weekly" &&
-      scheduleTime &&
-      scheduleTime.weekday === undefined
-    ) {
-      throw new AppError(
-        "VALIDATION_ERROR",
-        "A weekly schedule time needs a weekday",
-      );
-    }
-    return computeNextCheckAt(scheduleInterval, null, scheduleTime);
-  }
-  if (scheduleTime) {
-    throw new AppError(
-      "VALIDATION_ERROR",
-      "A schedule time needs a daily, weekly, or monthly schedule",
-    );
-  }
-  return null;
 }
 
 // ---------------------------------------------------------------------------

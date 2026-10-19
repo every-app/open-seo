@@ -2,11 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { getLastProjectId } from "@/client/lib/active-project";
 import {
-  clearLastProjectId,
-  getLastProjectId,
-} from "@/client/lib/active-project";
-import { getErrorCode } from "@/client/lib/error-messages";
+  getErrorCode,
+  UNEXPECTED_ERROR_MESSAGE,
+} from "@/client/lib/error-messages";
 import { AuthErrorCard } from "@/client/components/AuthErrorCard";
 import { QueryError } from "@/client/components/QueryState";
 import { SkeletonPage } from "@/client/components/SkeletonPresets";
@@ -20,6 +20,11 @@ export const Route = createFileRoute("/_app/")({
 function IndexRedirect() {
   const navigate = useNavigate();
 
+  // Open the remembered project at once instead of waiting on the project
+  // list. localStorage is untrusted, but the project layout checks access and,
+  // if the id isn't one of the org's projects, clears it and sends the user
+  // back here to fall back to the list.
+  const lastProjectId = getLastProjectId();
   const { data, error, isError, isFetching, refetch } = useQuery({
     ...projectsQueryOptions(),
     retry: false,
@@ -27,22 +32,10 @@ function IndexRedirect() {
 
   useEffect(() => {
     // getProjects always returns at least one project.
-    if (!data) return;
-
-    // localStorage is untrusted — only honor the remembered project if it's
-    // actually in the org's list; otherwise fall back to the most recent and
-    // clear the stale id.
-    const lastProjectId = getLastProjectId();
-    const target = data.find((project) => project.id === lastProjectId);
-    if (lastProjectId && !target) {
-      clearLastProjectId();
-    }
-
-    void navigate({
-      to: "/p/$projectId",
-      params: { projectId: (target ?? data[0]).id },
-    });
-  }, [data, navigate]);
+    const projectId = lastProjectId ?? data?.[0]?.id;
+    if (!projectId) return;
+    void navigate({ to: "/p/$projectId", params: { projectId } });
+  }, [lastProjectId, data, navigate]);
 
   useEffect(() => {
     if (getErrorCode(error) !== "PAYMENT_REQUIRED") {
@@ -72,7 +65,7 @@ function IndexRedirect() {
           <StatusScreen>
             <QueryError
               error={error}
-              fallback="An unexpected error occurred. Please check server logs."
+              fallback={UNEXPECTED_ERROR_MESSAGE}
               onRetry={() => void refetch()}
               isRetrying={isFetching}
             />

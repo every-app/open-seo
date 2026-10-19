@@ -4,11 +4,12 @@ import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepo
 import { runScheduledAiVisibility } from "./scheduledAiVisibility";
 import { configuration } from "./aiVisibilityTestFixtures";
 
-const { testDb, workflow } = await vi.hoisted(async () => {
+const { testDb, workflow, hosted } = await vi.hoisted(async () => {
   const { createAiVisibilityTestDb } = await import("../aiVisibilityTestDb");
   return {
     testDb: await createAiVisibilityTestDb(),
     workflow: { create: vi.fn(), get: vi.fn() },
+    hosted: vi.fn(),
   };
 });
 vi.mock("cloudflare:workers", () => ({
@@ -18,7 +19,14 @@ vi.mock("@/db", () => ({ db: testDb.db }));
 vi.mock("@/db/runBatch", () => ({ runBatch: testDb.runBatch }));
 vi.mock("@/server/lib/runtime-env", () => ({
   getOptionalEnvValue: async () => "dataforseo-key",
-  isHostedServerAuthMode: async () => false,
+  isHostedServerAuthMode: hosted,
+}));
+vi.mock("@/server/billing/subscription", () => ({
+  getOrCreateOrganizationCustomer: async () => ({ id: "organization" }),
+  getUsageCreditsRemaining: async () => ({
+    monthlyRemaining: 0,
+    topupRemaining: 0,
+  }),
 }));
 vi.mock("./aiVisibilityRetention", () => ({ pruneAiVisibility: vi.fn() }));
 
@@ -36,6 +44,7 @@ async function dueTracker(projectId: string, paused: boolean) {
 }
 
 beforeEach(async () => {
+  hosted.mockResolvedValue(false);
   await testDb.seedProject();
   await testDb.db.insert(projects).values({
     id: "paused-project",
@@ -56,6 +65,18 @@ it("moves every due tracker on, including one whose check cannot start", async (
   expect(skipped?.lastSkipReason).toMatch(/unpause prompts/);
   expect((await repo.getTracker("project"))?.nextCheckAt).not.toBe(due);
   expect(await repo.listRuns("project")).toMatchObject([
-    { trigger: "baseline", status: "queued" },
+    { trigger: "scheduled", status: "queued" },
   ]);
+});
+
+it("records a skipped check for credits on the tracker without starting it", async () => {
+  hosted.mockResolvedValue(true);
+  await dueTracker("project", false);
+
+  await runScheduledAiVisibility();
+
+  expect((await repo.getTracker("project"))?.lastSkipReason).toBe(
+    "INSUFFICIENT_CREDITS",
+  );
+  expect(await repo.listRuns("project")).toEqual([]);
 });

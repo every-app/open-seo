@@ -38,8 +38,9 @@ const COLLECT_STEP = {
   timeout: "5 minutes" as const,
 };
 // Live answers are billed per call, so a live step runs once too. It waits for
-// up to 6 answers, each up to 120 seconds.
-const LIVE_STEP = { ...SINGLE_ATTEMPT, timeout: "5 minutes" as const };
+// up to 6 answers, each up to 120 seconds, and asks a failed answer up to 3
+// times.
+const LIVE_STEP = { ...SINGLE_ATTEMPT, timeout: "10 minutes" as const };
 // Standard-queue answers usually arrive within minutes. Cumulative waits are
 // 2 / 4 / 7 / 10 / 14 / 18 / 22 / 26 / 30 minutes; anything still missing then
 // fails as not collected. Each sleep stays under 5 minutes, like rank check's:
@@ -78,7 +79,7 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
     const { runId, customer } = payload;
     const markFailed = async (error: unknown) => {
       await pgStep(step, "mark-failed", SINGLE_ATTEMPT, () =>
-        markAiRunFailed(runId, error),
+        markAiRunFailed(runId),
       );
       throw error;
     };
@@ -88,9 +89,42 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
     };
     let pending: AiPendingTask[] = [];
     let plan: Awaited<ReturnType<typeof prepareAiRun>>;
+    // Reads the pending answers once, then posts each answer that DataForSEO's
+    // backend failed again in its own step, since a post is billed. The read
+    // steps are `read-*`, not the older `collect-*`: a run in flight across a
+    // deploy must not replay a `collect-*` output, which had another shape.
+    const collect = async (name: string, canRetry: boolean) => {
+      const remaining = pending;
+      let round: Awaited<ReturnType<typeof collectAiRound>>;
+      try {
+        round = await pgStep(step, `read-${name}`, COLLECT_STEP, () =>
+          collectAiRound(runId, remaining, canRetry),
+        );
+      } catch (error) {
+        // Posted tasks are already paid for; keep polling them next round.
+        console.warn(`[ai-visibility] ${runId} read-${name}:`, error);
+        return;
+      }
+      pending = round.pending;
+      for (const [index, batch] of round.retry.entries()) {
+        try {
+          pending.push(
+            ...(await pgStep(
+              step,
+              `repost-${name}-${index}`,
+              SINGLE_ATTEMPT,
+              () => postAiBatch(runId, customer, plan.market, batch),
+            )),
+          );
+        } catch (error) {
+          // Its answers fail at finalize.
+          console.warn(`[ai-visibility] ${runId} repost-${name}:`, error);
+        }
+      }
+    };
     try {
       plan = await pgStep(step, "prepare", SINGLE_ATTEMPT, () =>
-        prepareAiRun(runId, customer),
+        prepareAiRun(runId),
       );
       // Live runs save each live batch as it returns, so nothing is left
       // pending to poll.
@@ -121,18 +155,7 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
         // Its unsaved answers fail at finalize; the other batches continue.
         console.warn(`[ai-visibility] ${runId} model-${index}:`, error);
       }
-      if (!pending.length) continue;
-      const remaining = pending;
-      try {
-        pending = await pgStep(
-          step,
-          `collect-model-${index}`,
-          COLLECT_STEP,
-          () => collectAiRound(runId, remaining),
-        );
-      } catch (error) {
-        console.warn(`[ai-visibility] ${runId} collect-model-${index}:`, error);
-      }
+      if (pending.length) await collect(`model-${index}`, true);
     }
     for (
       let round = 0;
@@ -148,15 +171,8 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
         // log it as one.
         return markFailed(error);
       }
-      const remaining = pending;
-      try {
-        pending = await pgStep(step, `collect-${round}`, COLLECT_STEP, () =>
-          collectAiRound(runId, remaining),
-        );
-      } catch (error) {
-        // Posted tasks are already paid for; keep polling them next round.
-        console.warn(`[ai-visibility] ${runId} collect-${round}:`, error);
-      }
+      // A task posted after the last round would never be read.
+      await collect(`${round}`, round < POLL_INTERVALS.length - 1);
     }
     try {
       await pgStep(step, "finalize", SINGLE_ATTEMPT, () =>

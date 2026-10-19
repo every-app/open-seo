@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, max-lines-per-function -- every DataForSEO research tool is covered in this one spec, matching dataforseo-research-tools.ts */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@/server/lib/dataforseo/keyword-metrics";
@@ -167,6 +168,29 @@ describe("DataForSEO research MCP tools", () => {
     expect(textContent(result)).toContain("Acme Cafe");
   });
 
+  // EVE-67: a coordinate with no zoom lets DataForSEO pick one, and its guess
+  // returned 1 row for "bookkeeping services" at this exact coordinate — the
+  // agent then told the customer they had no competitors.
+  it("falls back to a city-sized zoom when the caller gives no zoom", async () => {
+    const local = vi.fn().mockResolvedValue([]);
+    mocks.createDataforseoClient.mockReturnValue({ serp: { local } });
+
+    await researchTools.getLocalSerpResultsTool.handler(
+      {
+        projectId: "project_1",
+        keyword: "bookkeeping services",
+        near: { latitude: 37.3079, longitude: -121.8917 },
+      },
+      toolContext,
+    );
+
+    expect(local).toHaveBeenCalledWith(
+      expect.objectContaining({
+        locationCoordinate: "37.3079,-121.8917,12z",
+      }),
+    );
+  });
+
   it("fetches Google Business Q&A as an explicit tool", async () => {
     const questionsAnswers = vi
       .fn()
@@ -304,7 +328,9 @@ describe("DataForSEO research MCP tools", () => {
       main_intent: "commercial",
     });
     const out = textContent(result);
-    expect(out).toContain("keyword | volume | KD | CPC | competition | intent");
+    expect(out).toContain(
+      "keyword | volume | trend | KD | CPC | competition | intent",
+    );
     expect(out).toContain("seo automation");
   });
 

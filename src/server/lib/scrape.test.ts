@@ -44,3 +44,58 @@ describe("readPages SSRF guard", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 });
+
+describe("readSite", () => {
+  // Unlisted URLs (sitemaps, DoH lookups) 404; a missing route value throws
+  // like a failed TLS handshake.
+  function stubSite(routes: Record<string, string | null>) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (!(url in routes)) return new Response(null, { status: 404 });
+        const target = routes[url];
+        if (target === null) throw new TypeError("fetch failed");
+        return target.startsWith("http")
+          ? new Response(null, { status: 302, headers: { location: target } })
+          : new Response(target);
+      }),
+    );
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("follows a multi-hop redirect chain to the homepage", async () => {
+    stubSite({
+      "https://example.com/": "http://www.example.com/",
+      "http://www.example.com/": "https://www.example.com/",
+      "https://www.example.com/": "Example homepage",
+    });
+
+    const result = await readSite("example.com");
+
+    expect(result.pages.map((page) => page.text)).toEqual(["Example homepage"]);
+  });
+
+  it("falls back to www when the bare domain can't be read", async () => {
+    stubSite({
+      "https://example.com/": null,
+      "https://www.example.com/": "Example homepage",
+    });
+
+    const result = await readSite("example.com");
+
+    expect(result.pages.map((page) => page.url)).toEqual([
+      "https://www.example.com/",
+    ]);
+  });
+
+  it("does not retry an unreadable IP address on www", async () => {
+    stubSite({ "https://93.184.216.34/": null });
+
+    const result = await readSite("93.184.216.34");
+
+    expect(result.blocked).toBe(true);
+  });
+});

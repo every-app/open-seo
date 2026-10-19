@@ -297,7 +297,12 @@ const getInputSchema = {
 } as const;
 
 const getOutputSchema = z.looseObject({
-  report: z.looseObject({ shareUrl: z.string().nullable() }),
+  // `html` is declared so clients see it in the tool's output schema; it is
+  // present only when includeHtml was set.
+  report: z.looseObject({
+    shareUrl: z.string().nullable(),
+    html: z.string().optional(),
+  }),
   ...optionalMetaOutputSchema,
 });
 
@@ -334,9 +339,11 @@ export const getReportTool = {
       const shareUrl = await reportShareUrl(report, context.baseUrl);
 
       return mcpResponse({
-        // The document goes in `text` only. It is what the agent actually
-        // reads, and repeating it in structuredContent would double a payload
-        // that is already the largest thing these tools return.
+        // The document rides in both blocks because clients read one or the
+        // other: Claude Code and other structuredContent-aware clients render
+        // structuredContent and never see the text block, while text-only
+        // clients see nothing else. Sending it once would silently drop the
+        // report for half of them.
         text: [
           `${report.title} (${report.id})`,
           metaLine(report),
@@ -359,6 +366,7 @@ export const getReportTool = {
             htmlBytes: report.sizeBytes,
             url,
             shareUrl,
+            ...(html ? { html } : {}),
           },
         },
       });

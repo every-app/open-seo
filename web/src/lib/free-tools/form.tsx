@@ -101,6 +101,7 @@ export function ToolForm({
   status,
   errorMessage,
   cacheDuration = "24 hours",
+  notes = true,
   children,
 }: {
   onSubmit: (input: Record<string, unknown>, token: string) => Promise<void>;
@@ -108,6 +109,8 @@ export function ToolForm({
   status: ToolStatus;
   errorMessage: string;
   cacheDuration?: string;
+  /** The small print under the form. Errors always show. */
+  notes?: boolean;
   children: ReactNode;
 }) {
   const token = useRef("");
@@ -153,10 +156,12 @@ export function ToolForm({
         {children}
       </VerificationContext.Provider>
       {SITE_KEY ? <div ref={widget.container} /> : null}
-      <p className="mt-2.5 text-xs text-[var(--color-brand-muted)]">
-        Free &middot; No signup
-      </p>
-      {verification === "loading" && status !== "loading" ? (
+      {notes ? (
+        <p className="mt-2.5 text-xs text-[var(--color-brand-muted)]">
+          Free &middot; No signup
+        </p>
+      ) : null}
+      {notes && verification === "loading" && status !== "loading" ? (
         <p
           role="status"
           className="mt-2 text-xs text-[var(--color-brand-muted)]"
@@ -180,7 +185,7 @@ export function ToolForm({
           {errorMessage}
         </p>
       ) : null}
-      {status === "done" ? (
+      {notes && status === "done" ? (
         <p
           role="status"
           className="mt-2 text-xs text-[var(--color-brand-muted)]"

@@ -12,6 +12,7 @@ import type {
   AiSources,
 } from "@/shared/ai-visibility";
 import type {
+  AiPageResultsInput,
   AiResultsInput,
   AiSourcesInput,
 } from "@/types/schemas/ai-visibility";
@@ -22,8 +23,12 @@ import {
 } from "../repositories/AiVisibilityRepository";
 import type { ObservationWithPrompt } from "../repositories/AiVisibilityRepository";
 import { markdownToText } from "../providers/dataforseoEvidence";
-import { AiVisibilityError } from "./aiVisibilityErrors";
-import { aiMentionSpans, ownedAiDomain } from "./aiVisibilityMatching";
+import { AiVisibilityError, publicAiAnswerError } from "./aiVisibilityErrors";
+import {
+  aiBrandNames,
+  aiMentionSpans,
+  ownedAiDomain,
+} from "./aiVisibilityMatching";
 
 export function aiRunView(
   run: RunRow,
@@ -70,7 +75,7 @@ function rowsFor(
           ? "answered"
           : "no_answer",
     collectedAt: o.collectedAt,
-    error: o.error,
+    error: publicAiAnswerError(o.error),
     citationCount: sources[o.id]?.length ?? 0,
     brands: (matches[o.id] ?? []).map((m) => ({
       name: m.name,
@@ -83,7 +88,9 @@ function rowsFor(
   }));
 }
 
-async function loadAiResultSet(rawInput: AiResultsInput) {
+async function loadAiResultSet(
+  rawInput: Omit<AiResultsInput, "cursor" | "limit">,
+) {
   const input = {
     ...rawInput,
     runId: rawInput.runId ?? undefined,
@@ -180,15 +187,18 @@ export async function loadAiResults(input: AiResultsInput): Promise<AiResults> {
   return resultPage(result, input);
 }
 
-/** App-only history metadata; the MCP results contract remains unchanged. */
-export async function loadAiPageResults(input: AiResultsInput) {
+/**
+ * App reads: up to limit rows of the bounded set in one call, with history
+ * metadata. The MCP results contract remains paged.
+ */
+export async function loadAiPageResults(input: AiPageResultsInput) {
   const { result, runs } = await loadAiResultSet(input);
   return {
-    ...resultPage(result, input),
-    historyRuns:
-      input.includeHistory && !input.cursor
-        ? runs.map(({ id, createdAt, trigger }) => ({ id, createdAt, trigger }))
-        : [],
+    ...result,
+    rows: result.rows.slice(0, input.limit),
+    historyRuns: input.includeHistory
+      ? runs.map(({ id, createdAt, trigger }) => ({ id, createdAt, trigger }))
+      : [],
   };
 }
 
@@ -266,7 +276,7 @@ function answerView(
           .filter((b) => b.mentioned)
           .map((b) => ({
             domain: b.domain,
-            spans: aiMentionSpans(answerText, [b.name, b.domain]).filter(
+            spans: aiMentionSpans(answerText, aiBrandNames(b)).filter(
               (span) => span.end <= limit,
             ),
           }))

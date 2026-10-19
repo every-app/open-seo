@@ -7,7 +7,7 @@ import {
 import type { BillingUsageEvent } from "@/serverFunctions/billing";
 import { QueryState } from "@/client/components/QueryState";
 import { Skeleton } from "@/client/components/ui/skeleton";
-import { BillingUsageCard } from "@/client/features/billing/BillingUsageCard";
+import { BillingUsageSection } from "@/client/features/billing/BillingUsageSection";
 import { useBillingUsageEvents } from "@/client/features/billing/useBillingUsageEvents";
 
 type BillingUsageEventProperties = {
@@ -116,7 +116,7 @@ export function BillingFeatureBreakdown() {
   const eventsQuery = useBillingUsageEvents();
 
   return (
-    <BillingUsageCard title="Usage by feature">
+    <BillingUsageSection title="Usage by feature">
       <QueryState
         query={eventsQuery}
         errorFallback="Failed to load usage"
@@ -130,7 +130,7 @@ export function BillingFeatureBreakdown() {
       >
         {(events) => <BreakdownRows events={events} />}
       </QueryState>
-    </BillingUsageCard>
+    </BillingUsageSection>
   );
 }
 

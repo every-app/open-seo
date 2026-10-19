@@ -1,7 +1,7 @@
 // Remembers the last project the user was looking at so the app can return them
 // there on the next visit. Browser-local only (per-device); the server never
-// trusts it — landing and the route guard always re-validate the id against the
-// org's project list.
+// trusts it — the project route's access check re-validates the id and clears
+// it when it isn't one of the org's projects.
 const LAST_PROJECT_KEY = "openseo:lastProjectId";
 
 export function getLastProjectId(): string | null {

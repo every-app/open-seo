@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -11,42 +11,49 @@ import {
   getAiResearchSetup,
   getAiVisibilityRun,
   getAiVisibilityTracker,
+  getAiVisibilityTrend,
   getAiVisibilityResults,
   listAiResearchKeywords,
 } from "@/serverFunctions/ai-visibility";
-import type { AiRun } from "@/shared/ai-visibility";
+import type { AiRun, AiTrackerState } from "@/shared/ai-visibility";
 
 export const aiVisibilityKey = (projectId: string) => [
   "aiVisibility",
   projectId,
 ];
 
-/** Read the full bounded result set for prompt inventory and history. */
-async function fetchAllAiVisibilityResults(
-  input: Omit<
-    Parameters<typeof getAiVisibilityResults>[0]["data"],
-    "cursor" | "limit" | "branded"
-  >,
-) {
-  const first = await getAiVisibilityResults({
-    data: { ...input, branded: "all", limit: 50 },
-  });
-  const rows = [...first.rows];
-  for (let cursor = first.nextCursor; cursor; ) {
-    const page = await getAiVisibilityResults({
-      data: { ...input, branded: "all", limit: 50, cursor },
-    });
-    rows.push(...page.rows);
-    cursor = page.nextCursor;
-  }
-  return { ...first, rows };
-}
+const isRunPending = (run: AiRun | null | undefined) =>
+  run?.status === "running" || run?.status === "queued";
 
 export const aiTrackerQueryOptions = (projectId: string) =>
   queryOptions({
     queryKey: [...aiVisibilityKey(projectId), "tracker"],
-    queryFn: () => getAiVisibilityTracker({ data: { projectId } }),
-    staleTime: 0,
+    queryFn: async ({ client, queryKey }) => {
+      const before = client.getQueryData<AiTrackerState>(queryKey);
+      const state = await getAiVisibilityTracker({ data: { projectId } });
+      // Answers, trend and sources read while a run was collecting are
+      // incomplete, wherever they were read (a hover preload, another tab), so
+      // the read that first sees the run finish refreshes them.
+      const finished = state.recentRuns.some(
+        (run) =>
+          !isRunPending(run) &&
+          before?.recentRuns.some(
+            (prior) => prior.id === run.id && isRunPending(prior),
+          ),
+      );
+      if (finished) {
+        void client.invalidateQueries({
+          queryKey: [...aiVisibilityKey(projectId), "results"],
+        });
+        void client.invalidateQueries({
+          queryKey: [...aiVisibilityKey(projectId), "sources"],
+        });
+      }
+      return state;
+    },
+    // Fresh enough that a page mounting right after its loader read it, or
+    // after a hover preload, does not read it again.
+    staleTime: 10_000,
   });
 
 export const aiResearchSetupQueryOptions = (projectId: string) =>
@@ -63,6 +70,14 @@ export const aiResearchKeywordsQueryOptions = (projectId: string) =>
     queryFn: () => listAiResearchKeywords({ data: { projectId } }),
   });
 
+export type AiTrendDays = 7 | 28 | 90;
+
+export const aiTrendQueryOptions = (projectId: string, days: AiTrendDays) =>
+  queryOptions({
+    queryKey: [...aiVisibilityKey(projectId), "results", "trend", days],
+    queryFn: () => getAiVisibilityTrend({ data: { projectId, days } }),
+  });
+
 /** Every answer in a run, so each prompt can show its per-engine result. */
 export const aiRunResultsQueryOptions = (
   projectId: string,
@@ -71,7 +86,9 @@ export const aiRunResultsQueryOptions = (
   queryOptions({
     queryKey: [...aiVisibilityKey(projectId), "results", "all", runId],
     queryFn: async () => {
-      const result = await fetchAllAiVisibilityResults({ projectId, runId });
+      const result = await getAiVisibilityResults({
+        data: { projectId, runId, branded: "all" },
+      });
       return result.rows;
     },
     enabled: Boolean(runId),
@@ -83,13 +100,11 @@ export const aiPromptHistoryQueryOptions = (
 ) =>
   queryOptions({
     queryKey: [...aiVisibilityKey(projectId), "results", "history", promptId],
-    // Read all pages of the latest 50 runs so engine ordering cannot hide
+    // Read every answer of the latest 50 runs so engine ordering cannot hide
     // a newer execution from the selector.
     queryFn: () =>
-      fetchAllAiVisibilityResults({
-        projectId,
-        promptId,
-        includeHistory: true,
+      getAiVisibilityResults({
+        data: { projectId, promptId, includeHistory: true, branded: "all" },
       }),
   });
 
@@ -105,28 +120,39 @@ export function useAiRunProgress(projectId: string, initialRun: AiRun | null) {
     queryFn: () => getAiVisibilityRun({ data: { projectId, runId: runId! } }),
     enabled: Boolean(runId),
     initialData: initialRun ?? undefined,
-    staleTime: 0,
+    // A finished run never changes, so only an unfinished one is read again.
+    staleTime: (current) => (isRunPending(current.state.data) ? 0 : Infinity),
     refetchInterval: (current) => {
       const run = current.state.data;
-      return run && (run.status === "running" || run.status === "queued")
+      return run && isRunPending(run)
         ? Math.max(4, run.pollAfterSeconds) * 1000
         : false;
     },
   });
   const run = query.data ?? initialRun;
+  const previous = useRef(run);
+  // Refresh what an unfinished run writes as its answers arrive. Once it
+  // finishes, re-read the tracker, which sees the finish and refreshes the
+  // answers itself. Polls that bring nothing new keep the same run object, and
+  // a run that was already finished when the page opened changes nothing, so
+  // neither reads anything again.
   useEffect(() => {
-    if (!run) return;
+    const before = previous.current;
+    previous.current = run;
+    if (run === before || run?.id !== before?.id || !isRunPending(before))
+      return;
+    if (!isRunPending(run)) {
+      void queryClient.invalidateQueries({
+        queryKey: [...aiVisibilityKey(projectId), "tracker"],
+      });
+      return;
+    }
     void queryClient.invalidateQueries({
       queryKey: [...aiVisibilityKey(projectId), "results"],
     });
     void queryClient.invalidateQueries({
       queryKey: [...aiVisibilityKey(projectId), "sources"],
     });
-    if (run.status !== "running" && run.status !== "queued") {
-      void queryClient.invalidateQueries({
-        queryKey: [...aiVisibilityKey(projectId), "tracker"],
-      });
-    }
   }, [projectId, queryClient, run]);
   return { run, error: query.error };
 }

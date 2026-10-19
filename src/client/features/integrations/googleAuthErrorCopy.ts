@@ -27,6 +27,11 @@ export function googleAuthErrorCopy(
         description:
           "Google's permission screen was closed or declined. Try again whenever you're ready.",
       };
+    case "scope_not_granted":
+      return {
+        title: `${what} is missing a permission`,
+        description: `OpenSEO didn't get access to your ${providerLabel ?? "Google"} data because a box on Google's permission screen wasn't checked. Try again and check every box before you continue.`,
+      };
     case "connection_save_failed":
       return {
         title: `${what} didn't finish`,

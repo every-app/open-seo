@@ -2,6 +2,7 @@ import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { DefaultCatchBoundary } from "./client/components/DefaultCatchBoundary";
 import { NotFound } from "./client/components/NotFound";
+import { stopClientErrorCapture } from "./client/lib/posthog";
 
 const PRELOAD_ERROR_RELOAD_KEY = "vite-preload-error-reloaded-at";
 
@@ -12,6 +13,10 @@ const PRELOAD_ERROR_RELOAD_KEY = "vite-preload-error-reloaded-at";
 // scope, not in a component, so it also catches chunks that fail while
 // hydration is still in progress. Vite only emits this event in builds —
 // exercise it via `vite preview` or a deploy, never `vite dev`.
+//
+// preventDefault() makes the failed import resolve to undefined, so the lazy
+// route throws "reading 'component'" before the reload lands. Error capture is
+// stopped first so that side effect isn't reported.
 if (typeof window !== "undefined") {
   window.addEventListener("vite:preloadError", (event) => {
     try {
@@ -28,6 +33,7 @@ if (typeof window !== "undefined") {
       // error surface instead of risking a reload loop.
       return;
     }
+    stopClientErrorCapture();
     event.preventDefault();
     window.location.reload();
   });

@@ -174,11 +174,51 @@ const UPSTREAM_FAILURE_STATUS_CODES = new Set([
   50402, // Target page took too long to respond.
 ]);
 
-function isUpstreamServerErrorTask(task: DataforseoTaskLike): boolean {
+export function isUpstreamFailureStatus(
+  statusCode: number | undefined,
+): boolean {
   return (
-    task.status_code !== undefined &&
-    UPSTREAM_FAILURE_STATUS_CODES.has(task.status_code)
+    statusCode !== undefined && UPSTREAM_FAILURE_STATUS_CODES.has(statusCode)
   );
+}
+
+/**
+ * Error for a response whose top-level status isn't a success. DataForSEO
+ * reports whole-request outages there too (a top-level 50000 "Internal Server
+ * Error."), so those classify as UPSTREAM_UNAVAILABLE exactly like a failed
+ * task does.
+ */
+export function failedResponseError<T extends DataforseoTaskLike>(
+  response: DataforseoResponseLike<T> | null,
+  fallbackMessage: string,
+): AppError {
+  const message = response?.status_message || fallbackMessage;
+  return new AppError(
+    isUpstreamFailureStatus(response?.status_code)
+      ? "UPSTREAM_UNAVAILABLE"
+      : "INTERNAL_ERROR",
+    message,
+  );
+}
+
+/**
+ * Warns when DataForSEO's own backend failed the whole request, for the same
+ * reason as the task-level branch in assertOk. Called where the response is
+ * parsed, since only the request knows its endpoint: a failed response carries
+ * no task path. Observability shows the object's `message` in place of the
+ * label, so the label is repeated as `event`.
+ */
+export function warnIfUpstreamResponseFailed(
+  response: DataforseoResponseLike<DataforseoTaskLike> | null,
+  path: string,
+): void {
+  if (!isUpstreamFailureStatus(response?.status_code)) return;
+  console.warn("dataforseo.upstream-response-failed", {
+    event: "dataforseo.upstream-response-failed",
+    path,
+    status: response?.status_code,
+    message: response?.status_message,
+  });
 }
 
 /** Task lifecycle codes meaning "not done yet": Task Created / Task Handed /
@@ -209,7 +249,8 @@ type AssertOkOptions = {
  * returns that (SDK-typed) task. The single status / billing ladder shared by
  * every endpoint:
  *  - access / balance failure -> classified AppError
- *  - DataForSEO's own backend erring (5xxxx) -> UPSTREAM_UNAVAILABLE
+ *  - DataForSEO's own backend erring, on the response or the task ->
+ *    UPSTREAM_UNAVAILABLE
  *  - charged-but-failed task (cost present) -> DataforseoChargedTaskError
  */
 export function assertOk<T extends DataforseoTaskLike>(
@@ -229,7 +270,7 @@ export function assertOk<T extends DataforseoTaskLike>(
     const message = response.status_message || "DataForSEO request failed";
     throw (
       classify?.(response.status_code, message, classifyPath ?? "") ??
-      new AppError("INTERNAL_ERROR", message)
+      failedResponseError(response, message)
     );
   }
 
@@ -247,13 +288,16 @@ export function assertOk<T extends DataforseoTaskLike>(
     if (classified) throw classified;
 
     const detailedMessage = describeInvalidField(message, task);
-    const isUpstreamFailure = isUpstreamServerErrorTask(task);
+    const isUpstreamFailure = isUpstreamFailureStatus(task.status_code);
     // UPSTREAM_UNAVAILABLE is non-reportable, and the error handlers only log
     // what they capture, so warn here to keep the provider's failure rate — and
     // the only remaining record of the message — visible in Workers
     // Observability. Warn, not error: there is nothing in the app to fix.
+    // Observability shows the object's `message` in place of the label, so the
+    // label is repeated as `event`.
     if (isUpstreamFailure)
       console.warn("dataforseo.upstream-task-failed", {
+        event: "dataforseo.upstream-task-failed",
         path,
         status: task.status_code,
         message: task.status_message,

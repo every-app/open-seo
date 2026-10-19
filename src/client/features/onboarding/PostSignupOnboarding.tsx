@@ -1,250 +1,61 @@
-import { OnboardingCard } from "./OnboardingCard";
-import { Check } from "lucide-react";
 import type { ReactNode } from "react";
-import { Fragment } from "react";
-import {
-  CLIENT_WEBSITE_COUNT_OPTIONS,
-  CLIENT_WORK_FOR,
-  INTEREST_OPTIONS,
-  ONBOARDING_LAST_STEP,
-  ONBOARDING_OPTION_LABELS,
-  ONBOARDING_STEPS,
-  type OnboardingAnswers,
-  SOURCE_OPTIONS,
-  WORK_FOR_OPTIONS,
-} from "@/client/features/onboarding/onboardingModel";
+import { OnboardingCard } from "./OnboardingCard";
+import { ONBOARDING_STEPS } from "./onboardingModel";
+import { WebsiteOnboardingStep } from "./WebsiteOnboardingStep";
 import { AgentSetup } from "@/client/features/ai-mcp/AgentSetup";
-import { WebsiteOnboardingStep } from "@/client/features/onboarding/WebsiteOnboardingStep";
-import { SearchConsoleOnboardingStep } from "@/client/features/onboarding/SearchConsoleOnboardingStep";
-import { WizardFooter } from "@/client/features/onboarding/WizardFooter";
-import { Input } from "@/client/components/ui/input";
-import { Toggle } from "@/client/components/ui/toggle";
+import { SearchConsoleOnboardingStep } from "./SearchConsoleOnboardingStep";
 
 type PostSignupOnboardingProps = {
   step: number;
-  answers: OnboardingAnswers;
-  onAnswersChange: (answers: OnboardingAnswers) => void;
   onNext: () => void;
   onBack: () => void;
+  onStepChange: (step: number) => void;
   onSkip: () => void;
   onFinish: () => void;
   isSaving: boolean;
   accountMenu: ReactNode;
+  /** Prefill for the website step, from the marketing site's free check. */
+  suggestedDomain?: string;
 };
 
 export function PostSignupOnboarding({
   step,
-  answers,
-  onAnswersChange,
   onNext,
   onBack,
+  onStepChange,
   onSkip,
   onFinish,
   isSaving,
   accountMenu,
+  suggestedDomain,
 }: PostSignupOnboardingProps) {
-  const stepName = ONBOARDING_STEPS[step];
-  const isLastStep = step === ONBOARDING_LAST_STEP;
-  const canContinue =
-    stepName === "interests"
-      ? answers.selectedInterests.length > 0
-      : stepName === "work_for"
-        ? Boolean(answers.workFor)
-        : Boolean(answers.source);
-
-  const updateAnswers = (patch: Partial<OnboardingAnswers>) =>
-    onAnswersChange({ ...answers, ...patch });
-
   return (
     <>
       {accountMenu}
-      <OnboardingCard step={step + 1} total={ONBOARDING_LAST_STEP + 1}>
+      <OnboardingCard
+        step={step + 1}
+        steps={["Website", "Google Search Console", "Agent setup"]}
+        onStepChange={onStepChange}
+        disabled={isSaving}
+      >
         <fieldset disabled={isSaving} className="min-w-0">
-          {stepName === "website" ? (
-            <WebsiteOnboardingStep onNext={onNext} onSkip={onSkip} />
-          ) : stepName === "search_console" ? (
+          {ONBOARDING_STEPS[step] === "website" ? (
+            <WebsiteOnboardingStep
+              onNext={onNext}
+              onSkip={onSkip}
+              suggestedDomain={suggestedDomain}
+            />
+          ) : ONBOARDING_STEPS[step] === "search_console" ? (
             <SearchConsoleOnboardingStep
               onNext={onNext}
               onBack={onBack}
               onSkip={onSkip}
             />
-          ) : stepName === "agent_setup" ? (
-            <AgentSetup onNext={onNext} onBack={onBack} disabled={isSaving} />
-          ) : stepName === "interests" ? (
-            <OnboardingChoiceGroup
-              title="What brings you here?"
-              description="Pick up to three things you want to work on."
-              maxSelections={3}
-              options={[...INTEREST_OPTIONS]}
-              selectedValues={answers.selectedInterests}
-              onToggle={(value) => {
-                updateAnswers({
-                  selectedInterests: answers.selectedInterests.includes(value)
-                    ? answers.selectedInterests.filter((item) => item !== value)
-                    : [...answers.selectedInterests, value],
-                });
-              }}
-              otherValue={answers.interestOther}
-              onOtherChange={(interestOther) =>
-                updateAnswers({ interestOther })
-              }
-              multiple
-            />
-          ) : stepName === "work_for" ? (
-            <OnboardingChoiceGroup
-              title="Who are you doing SEO for?"
-              options={[...WORK_FOR_OPTIONS]}
-              selectedValues={answers.workFor ? [answers.workFor] : []}
-              onToggle={(workFor) => updateAnswers({ workFor })}
-              otherValue={answers.workForOther}
-              onOtherChange={(workForOther) => updateAnswers({ workForOther })}
-              followUp={
-                <ClientWebsiteCountPicker
-                  value={answers.clientWebsiteCount}
-                  onChange={(clientWebsiteCount) =>
-                    updateAnswers({ clientWebsiteCount })
-                  }
-                />
-              }
-            />
           ) : (
-            <OnboardingChoiceGroup
-              title="How did you find OpenSEO?"
-              options={[...SOURCE_OPTIONS]}
-              selectedValues={answers.source ? [answers.source] : []}
-              onToggle={(source) => updateAnswers({ source })}
-              otherValue={answers.sourceOther}
-              onOtherChange={(sourceOther) => updateAnswers({ sourceOther })}
-            />
-          )}
-
-          {step > ONBOARDING_STEPS.indexOf("agent_setup") && (
-            <WizardFooter
-              onBack={onBack}
-              onSkip={isLastStep ? onFinish : onSkip}
-              onContinue={isLastStep ? onFinish : onNext}
-              continueLabel={isLastStep ? "Finish" : "Continue"}
-              continueDisabled={!canContinue || isSaving}
-            />
+            <AgentSetup onNext={onFinish} onBack={onBack} disabled={isSaving} />
           )}
         </fieldset>
       </OnboardingCard>
     </>
-  );
-}
-
-function OnboardingChoiceGroup({
-  title,
-  description,
-  options,
-  selectedValues,
-  onToggle,
-  otherValue,
-  onOtherChange,
-  multiple = false,
-  maxSelections,
-  followUp,
-}: {
-  title: string;
-  description?: string;
-  options: string[];
-  selectedValues: string[];
-  onToggle: (value: string) => void;
-  otherValue: string;
-  onOtherChange: (value: string) => void;
-  multiple?: boolean;
-  maxSelections?: number;
-  /** Shown under the "My clients" option while it is selected. */
-  followUp?: ReactNode;
-}) {
-  const isOtherSelected = selectedValues.includes("Other");
-  const atLimit =
-    maxSelections !== undefined && selectedValues.length >= maxSelections;
-
-  return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description ? (
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => {
-          const selected = selectedValues.includes(option);
-          const disabled = atLimit && !selected;
-
-          return (
-            <Fragment key={option}>
-              <Toggle
-                variant="outline"
-                pressed={selected}
-                className={`h-auto min-h-11 gap-3 rounded-full px-4 py-2.5 text-left font-normal disabled:opacity-35 ${selected ? "border-primary bg-primary/5 text-primary aria-pressed:bg-primary/5" : "border-border hover:bg-background"}`}
-                disabled={disabled}
-                onPressedChange={() => onToggle(option)}
-              >
-                <span
-                  className={`flex size-4 shrink-0 items-center justify-center border ${multiple ? "rounded" : "rounded-full"} ${selected ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30"}`}
-                >
-                  {selected && <Check className="size-3" />}
-                </span>
-                <span className="capitalize">
-                  {ONBOARDING_OPTION_LABELS[option] ?? option}
-                </span>
-              </Toggle>
-
-              {selected && option === CLIENT_WORK_FOR ? followUp : null}
-            </Fragment>
-          );
-        })}
-      </div>
-
-      {isOtherSelected ? (
-        <Input
-          type="text"
-          className="mt-4 border-foreground/20 bg-card text-base md:text-base"
-          aria-label={multiple ? "Other tasks" : "Other answer"}
-          placeholder={multiple ? "Tell us what else..." : "Tell us more..."}
-          value={otherValue}
-          onChange={(event) => onOtherChange(event.target.value)}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function ClientWebsiteCountPicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="w-full rounded-lg border border-border bg-background/40 p-4">
-      <p className="text-sm text-foreground/70">
-        About how many client sites do you work on?
-      </p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {CLIENT_WEBSITE_COUNT_OPTIONS.map((option) => {
-          const selected = value === option;
-
-          return (
-            <Toggle
-              key={option}
-              variant="outline"
-              pressed={selected}
-              className={`h-auto rounded-md px-3 py-1.5 font-normal ${selected ? "border-foreground aria-pressed:bg-background" : "border-border text-foreground/75 hover:border-foreground/40 hover:bg-background/60"}`}
-              onPressedChange={() => onChange(selected ? "" : option)}
-            >
-              {option}
-            </Toggle>
-          );
-        })}
-      </div>
-    </div>
   );
 }

@@ -70,6 +70,15 @@ describe("assertOk", () => {
     },
   );
 
+  it("classifies a top-level 50000 'Internal Server Error.' as UPSTREAM_UNAVAILABLE", () => {
+    expect(() =>
+      assertOk({
+        status_code: 50000,
+        status_message: "Internal Server Error.",
+      }),
+    ).toThrow(expect.objectContaining({ code: "UPSTREAM_UNAVAILABLE" }));
+  });
+
   it("uses the classifier for account failures before charging billed task metadata", () => {
     const classify = vi.fn(
       () =>

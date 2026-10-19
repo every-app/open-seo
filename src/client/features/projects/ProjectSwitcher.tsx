@@ -99,7 +99,7 @@ export function ProjectSwitcher({
         value={activeProject}
         itemToStringLabel={(project) => project.name}
         isItemEqualToValue={(project, value) => project.id === value.id}
-        filter={matchesProject}
+        filter={projects.length >= SEARCH_THRESHOLD ? matchesProject : null}
         autoHighlight
         open={open}
         onOpenChange={setOpen}

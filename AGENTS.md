@@ -3,6 +3,7 @@
 ## Engineering principles
 
 - Prefer simple, readable, flat code with minimal indirection.
+- Work on bugs a real user hit or would plausibly hit. Don't open a ticket or PR for an edge case found only by reading the code; flag it instead. Security holes and significant billing abuse are the exception.
 - Search for existing implementations and installed libraries before creating new helpers or abstractions.
 - Abstract when it prevents meaningful drift and makes the result simpler to maintain. Avoid speculative or one-use abstraction layers.
 - Keep product data normalized and relationships explicit. Do not encode relational data in JSON or text merely to avoid joins.
@@ -43,7 +44,7 @@
 - `docs/` (except `docs/maintainers/`) and `web/content/docs/` are public, user-facing documentation. Write only material that helps users understand, use, or self-host the product.
 - Do not put internal working notes, content briefs, drafts, asset-sourcing notes, implementation logs, or agent handoffs in those directories.
 - Use `docs/maintainers/` for engineering decisions, development workflows, and maintenance notes that should be shared and versioned. This directory is tracked in Git but is not part of the user-facing documentation site. Create notes only when requested or useful for future maintenance; never include secrets.
-- Keep PR review and validation details in the PR description. Continue using the dedicated papercut log for repository friction.
+- Write PR descriptions in the `simple-issue-description` format, with no validation logs or per-file changelog. Continue using the dedicated papercut log for repository friction.
 
 ## Log papercuts
 

@@ -43,7 +43,7 @@ async function start(
       startUrl: `https://${domain}`,
       maxPages: 50,
       renderJavaScript: true,
-      lighthouseStrategy: "auto",
+      lighthouseStrategy: "none",
       limitTier,
     });
     auditStarted = true;

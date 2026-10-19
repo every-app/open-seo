@@ -29,6 +29,15 @@ export const LIVE_BATCH_STEP_CONFIG = {
   timeout: "5 minutes" as const,
 };
 
+// Collect steps may issue hundreds of task_get calls, so they get more room
+// than SINGLE_ATTEMPT_STEP_CONFIG's 2-minute timeout. Unlike the metered
+// steps, retrying is safe and free: task_get isn't charged and snapshot
+// inserts are onConflictDoNothing. The live path's bookkeeping step shares it.
+export const COLLECT_STEP_CONFIG = {
+  retries: { limit: 2, delay: "10 seconds" as const },
+  timeout: "5 minutes" as const,
+};
+
 type KeywordEntry = { id: string; keyword: string };
 export type RankCheckResultWithDevice = RankCheckResult & {
   device: "desktop" | "mobile";
@@ -167,7 +176,10 @@ export async function checkBatchLive(
       }
       const code = reason instanceof AppError ? reason.code : "UNKNOWN";
       const message = reason instanceof Error ? reason.message : String(reason);
-      firstError ??= message;
+      // Store the bare code so the app shows its provider-unavailable copy;
+      // DataForSEO's raw outage text ("Internal Server Error.") reads like our
+      // server broke.
+      firstError ??= code === "UPSTREAM_UNAVAILABLE" ? code : message;
       // DataForSEO erring on its own side is a provider flake, not our bug: the
       // keyword just misses this run and finalize reports it to the user. Every
       // other rejection (no credits, bad API key) is ours and stays at error.
@@ -198,29 +210,70 @@ export async function checkBatchLive(
  * survive batch failures. ~6s per keyword batch, longer when calls are retried.
  * Each round of a batch's calls is billed with one credit hold and one settle
  * (checkBatchLive).
+ * A failed batch step doesn't stop the run. Afterwards, every keyword/device
+ * pair still without a snapshot is returned so the workflow can send it
+ * through the task queue (runQueuedCheck), which retries timeouts and in-band
+ * task errors at queue price. Failed live calls aren't billed, so the retry
+ * stays within the live estimate the user approved. Exception: a step that
+ * died after its calls were metered gets billed again at queue price.
  */
 export async function runLiveCheck(
   step: WorkflowStep,
   ctx: CheckContext,
-): Promise<void> {
+): Promise<RankCheckTaskInput[]> {
   for (let i = 0; i < ctx.keywords.length; i += KEYWORDS_PER_BATCH) {
     const keywordBatch = ctx.keywords.slice(i, i + KEYWORDS_PER_BATCH);
     const batchTasks = expandToTaskInputs(keywordBatch, ctx.devices);
     const batchIndex = Math.floor(i / KEYWORDS_PER_BATCH);
     const keywordsChecked = i + keywordBatch.length;
 
-    await pgStep(
-      step,
-      `live-batch-${batchIndex}`,
-      LIVE_BATCH_STEP_CONFIG,
-      async () => {
-        const written = await checkBatchLive(ctx, batchTasks);
-        // Progress for the UI; finalize recounts from the DB anyway.
-        await RankTrackingRepository.updateRun(ctx.runId, {
-          keywordsChecked,
-        });
-        return written;
-      },
-    );
+    try {
+      await pgStep(
+        step,
+        `live-batch-${batchIndex}`,
+        LIVE_BATCH_STEP_CONFIG,
+        async () => {
+          const written = await checkBatchLive(ctx, batchTasks);
+          // Progress for the UI; finalize recounts from the DB anyway.
+          await RankTrackingRepository.updateRun(ctx.runId, {
+            keywordsChecked,
+          });
+          return written;
+        },
+      );
+    } catch (error) {
+      // Earlier batches are already saved; this batch's pairs come back as
+      // missing for the workflow to queue.
+      console.warn(
+        `[rank-check] ${ctx.runId} live-batch-${batchIndex} failed:`,
+        error,
+      );
+    }
   }
+
+  // Diff against the DB rather than batch return values, so pairs from a
+  // batch step that threw are included too.
+  const missing = await pgStep(
+    step,
+    "find-missing",
+    COLLECT_STEP_CONFIG,
+    async () => {
+      const snapshots = await RankTrackingRepository.getSnapshotsForRun(
+        ctx.runId,
+      );
+      const checked = new Set(
+        snapshots.map((s) => `${s.trackingKeywordId}:${s.device}`),
+      );
+      // Live progress counts attempted keywords; reset it to the real count
+      // while the queue runs.
+      await RankTrackingRepository.updateRun(ctx.runId, {
+        keywordsChecked: new Set(snapshots.map((s) => s.trackingKeywordId))
+          .size,
+      });
+      return expandToTaskInputs(ctx.keywords, ctx.devices).filter(
+        (t) => !checked.has(`${t.keywordId}:${t.device}`),
+      );
+    },
+  );
+  return missing;
 }

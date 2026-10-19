@@ -167,6 +167,7 @@ async function finalizeRankCheckRun(input: {
   projectId: string;
   billingCustomer: BillingCustomerContext;
   trigger: RankCheckParams["trigger"];
+  devices: RankCheckParams["devices"];
   batchError: string | null;
   queueStats: QueuedCheckStats | null;
 }) {
@@ -183,16 +184,27 @@ async function finalizeRankCheckRun(input: {
 
   const nowIso = new Date().toISOString();
 
-  // Snapshots were written incrementally by each batch step.
-  // Count from DB to get the authoritative keyword count.
+  // Snapshots were written incrementally by each batch step. Count from the
+  // DB: a keyword is checked when any device has a snapshot, but the run is
+  // partial when any device is missing one, so a lost device still shows.
   const snapshots = await RankTrackingRepository.getSnapshotsForRun(
     input.runId,
   );
   const keywordsChecked = new Set(snapshots.map((s) => s.trackingKeywordId))
     .size;
+  const devices: Array<"desktop" | "mobile"> =
+    input.devices === "both" ? ["desktop", "mobile"] : [input.devices];
+  const checkedByDevice = devices.map((device) => ({
+    device,
+    count: new Set(
+      snapshots
+        .filter((s) => s.device === device)
+        .map((s) => s.trackingKeywordId),
+    ).size,
+  }));
 
   const keywordsTotal = run.keywordsTotal || keywordsChecked;
-  const incompleteCount = keywordsTotal - keywordsChecked;
+  const isPartial = checkedByDevice.some((d) => d.count < keywordsTotal);
 
   // Batch steps record the first per-keyword rejection on the run as it
   // happens, so a failed run shows the vendor's reason rather than a count.
@@ -204,10 +216,15 @@ async function finalizeRankCheckRun(input: {
     keywordsChecked === 0 && keywordsTotal > 0 && held === null
       ? "failed"
       : "completed";
-  const progress =
-    incompleteCount > 0
-      ? `Checked ${keywordsChecked} of ${keywordsTotal} keyword(s)${keywordError ? `: ${keywordError}` : ""}`
-      : null;
+  const checkedSummary =
+    checkedByDevice.length > 1
+      ? checkedByDevice
+          .map(({ device, count }) => `${count} of ${keywordsTotal} ${device}`)
+          .join(" and ")
+      : `${keywordsChecked} of ${keywordsTotal}`;
+  const progress = isPartial
+    ? `Checked ${checkedSummary} keyword(s)${keywordError ? `: ${keywordError}` : ""}`
+    : null;
   const errorMessage =
     status === "failed"
       ? (keywordError ?? "No keywords could be checked.")
@@ -408,7 +425,25 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         if (method === "queued") {
           queueStats = await runQueuedCheck(step, checkContext);
         } else {
-          await runLiveCheck(step, checkContext);
+          // Manual checks stay on the live endpoint for instant results, and
+          // only the pairs the live endpoint missed go to the queue. No live
+          // fallback there: those pairs already had their live attempt, and a
+          // second one could take the run past the credits the user approved.
+          // A "not found" from the queue isn't saved either: queued SERPs
+          // often miss a domain the live endpoint finds, so the pair stays
+          // "Not checked" and keeps its previous position instead of reading
+          // as lost.
+          const missing = await runLiveCheck(step, checkContext);
+          if (missing.length > 0) {
+            console.log(
+              `[rank-check] ${runId} queue fallback for ${missing.length} task(s)`,
+            );
+            queueStats = await runQueuedCheck(step, checkContext, {
+              taskInputs: missing,
+              liveFallback: false,
+              saveNotFound: false,
+            });
+          }
         }
       } catch (error) {
         // Batch failure — snapshots for completed batches are already
@@ -424,6 +459,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           projectId,
           billingCustomer,
           trigger,
+          devices,
           batchError,
           queueStats,
         }),

@@ -4,6 +4,7 @@ import {
   fetchRankCheckTaskHtml,
   fetchRankCheckTaskResult,
 } from "@/server/lib/dataforseo";
+import type { RankCheckTaskInput } from "@/server/lib/dataforseo";
 import { AppError } from "@/server/lib/errors";
 import { runLiveCheck } from "./rankCheckPaths";
 import { runQueuedCheck } from "./rankCheckQueuedPath";
@@ -93,7 +94,7 @@ async function runLive(devices: CheckContext["devices"] = "mobile") {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- steps are executed directly by the pgStep mock
     const run = runLiveCheck({} as WorkflowStep, ctx);
     await vi.runAllTimersAsync();
-    await run;
+    return await run;
   } finally {
     vi.useRealTimers();
   }
@@ -102,6 +103,7 @@ async function runLive(devices: CheckContext["devices"] = "mobile") {
 describe("live rank check retries", () => {
   beforeEach(() => {
     mocks.rankCheckBatch.mockResolvedValue([]);
+    mocks.getSnapshotsForRun.mockResolvedValue([]);
     vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -133,9 +135,10 @@ describe("live rank check retries", () => {
 
     expect(mocks.rankCheckBatch).toHaveBeenCalledTimes(3);
     expect(mocks.insertSnapshots).not.toHaveBeenCalled();
+    // The bare code, so the app shows its provider-unavailable copy.
     expect(mocks.setRunErrorIfEmpty).toHaveBeenCalledWith(
       "run_1",
-      "Internal SE Server Error.",
+      "UPSTREAM_UNAVAILABLE",
     );
   });
 
@@ -164,6 +167,126 @@ describe("live rank check retries", () => {
 
     expect(mocks.rankCheckBatch).toHaveBeenCalledOnce();
     expect(mocks.setRunErrorIfEmpty).toHaveBeenCalledOnce();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pairs the live endpoint missed: the live path reports them and the workflow
+// sends them through the queue with no live fallback and no not-found saves.
+// ---------------------------------------------------------------------------
+
+const elevenKeywords = Array.from({ length: 11 }, (_, index) => ({
+  id: `kw_${index}`,
+  keyword: `keyword ${index}`,
+}));
+
+describe("pairs the live endpoint missed", () => {
+  beforeEach(() => {
+    mocks.rankCheckBatch.mockImplementation(
+      async (inputs: RankCheckTaskInput[]) =>
+        inputs.map((input) => ({
+          status: "fulfilled",
+          value: {
+            ...input,
+            position: 3,
+            url: null,
+            serpFeatures: [],
+            topDomains: [],
+          },
+        })),
+    );
+    mocks.rankCheckTaskPost.mockImplementation(
+      async ({ tasks }: { tasks: RankCheckTaskInput[] }) =>
+        tasks.map((task) => ({ ...task, taskId: `task_${task.keywordId}` })),
+    );
+    mocks.getSnapshotsForRun.mockResolvedValue([]);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  it("keeps going after a failed live batch and returns only the missing pairs", async () => {
+    // The first batch step dies after its calls; the second batch saves kw_10.
+    mocks.insertSnapshots.mockRejectedValueOnce(new Error("step timed out"));
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      { trackingKeywordId: "kw_10", device: "desktop" },
+    ]);
+
+    const missing = await runLiveCheck(
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- steps are executed directly by the pgStep mock
+      {} as WorkflowStep,
+      checkContext({ keywords: elevenKeywords, devices: "desktop" }),
+    );
+
+    expect(mocks.rankCheckBatch).toHaveBeenCalledTimes(2);
+    expect(missing).toEqual(
+      elevenKeywords
+        .slice(0, 10)
+        .map((kw) => ({
+          keyword: kw.keyword,
+          keywordId: kw.id,
+          device: "desktop",
+        })),
+    );
+    // Live progress counted attempted keywords; it is reset to the real count.
+    expect(mocks.updateRun).toHaveBeenLastCalledWith("run_1", {
+      keywordsChecked: 1,
+    });
+  });
+
+  it("returns no pairs when the live endpoint checked every one", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      { trackingKeywordId: "kw_0", device: "mobile" },
+    ]);
+
+    expect(await runLive()).toEqual([]);
+  });
+
+  const pairs: RankCheckTaskInput[] = [
+    { keyword: "kw_0", keywordId: "kw_0", device: "desktop" },
+    { keyword: "kw_1", keywordId: "kw_1", device: "desktop" },
+  ];
+
+  function retryQueued() {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- steps run directly through the pgStep mock; only sleep is called
+    const step = { sleep: vi.fn() } as unknown as WorkflowStep;
+    return runQueuedCheck(step, checkContext({ devices: "desktop" }), {
+      taskInputs: pairs,
+      liveFallback: false,
+      saveNotFound: false,
+    });
+  }
+
+  // The live attempt before the queue already recorded the run's error, and a
+  // second live call could pass the credits the user approved.
+  it("makes no live call and records no error when a queued retry fails", async () => {
+    vi.mocked(fetchRankCheckTaskResult).mockResolvedValue({
+      status: "failed",
+      message: "Internal SE Server Error.",
+    });
+
+    const stats = await retryQueued();
+
+    expect(mocks.rankCheckBatch).not.toHaveBeenCalled();
+    expect(mocks.setRunErrorIfEmpty).not.toHaveBeenCalled();
+    expect(stats).toMatchObject({ queueTasks: 2, fallbackTasks: 0 });
+  });
+
+  it("leaves a pair unchecked when its queued retry doesn't find the domain", async () => {
+    vi.mocked(fetchRankCheckTaskResult).mockImplementation(
+      async ({ keywordId }) => ({
+        status: "completed",
+        result: {
+          ...rankResult(keywordId === "kw_0" ? null : 5),
+          keywordId,
+          keyword: keywordId,
+        },
+      }),
+    );
+
+    await retryQueued();
+
+    expect(mocks.insertSnapshots).toHaveBeenCalledWith([
+      expect.objectContaining({ trackingKeywordId: "kw_1", position: 5 }),
+    ]);
   });
 });
 

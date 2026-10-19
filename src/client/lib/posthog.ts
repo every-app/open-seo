@@ -13,6 +13,7 @@ let browserPostHogClientPromise: Promise<BrowserPostHogClient | null> | null =
   null;
 let browserPostHogInitialized = false;
 let analyticsCaptureEnabled = true;
+let clientErrorCaptureStopped = false;
 
 type ExceptionEntry = {
   value?: unknown;
@@ -197,11 +198,17 @@ export function startAnalyticsCapture() {
   });
 }
 
+// Called right before reloading a stale tab onto a new build. Errors thrown
+// while that reload is pending are side effects of the missing chunks, not bugs.
+export function stopClientErrorCapture() {
+  clientErrorCaptureStopped = true;
+}
+
 export function captureClientError(
   error: unknown,
   properties: Record<string, string | null | undefined> = {},
 ) {
-  if (!analyticsCaptureEnabled) return;
+  if (!analyticsCaptureEnabled || clientErrorCaptureStopped) return;
   withPostHogClient((client) =>
     client.captureException(error, {
       source: "client",

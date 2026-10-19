@@ -87,4 +87,23 @@ describe("get_serp_results", () => {
     expect(live).toHaveBeenCalledTimes(1);
     expect(repeat.structuredContent).toEqual(first.structuredContent);
   });
+
+  it("fetches a mobile SERP separately from a saved desktop one", async () => {
+    const live = mockLiveSerp(20);
+    const query = { projectId: "project_1" };
+
+    await getSerpResultsTool.handler(
+      { ...query, queries: [{ keyword: "seo tools" }] },
+      toolContext,
+    );
+    await getSerpResultsTool.handler(
+      { ...query, queries: [{ keyword: "seo tools", device: "mobile" }] },
+      toolContext,
+    );
+
+    expect(live).toHaveBeenCalledTimes(2);
+    expect(live).toHaveBeenLastCalledWith(
+      expect.objectContaining({ device: "mobile" }),
+    );
+  });
 });

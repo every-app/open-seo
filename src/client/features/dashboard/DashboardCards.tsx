@@ -212,7 +212,13 @@ export function AuditHealthCard({
       </CardShell>
     );
 
-  if (audit.status === "running")
+  if (audit.status === "running") {
+    const isLighthouse = audit.currentPhase === "lighthouse";
+    const isFinalizing = audit.currentPhase === "finalizing";
+    const checked = isLighthouse
+      ? audit.lighthouseCompleted + audit.lighthouseFailed
+      : audit.pagesCrawled;
+    const total = isLighthouse ? audit.lighthouseTotal : audit.pagesTotal;
     // A running crawl has at most a partial issue list, and an empty one is
     // not the same as a healthy site, so show progress instead.
     return (
@@ -231,19 +237,34 @@ export function AuditHealthCard({
       >
         <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6 text-center">
           <LoaderCircle className="size-7 animate-spin text-muted-foreground" />
-          <h3 className="font-medium">Scanning your website</h3>
-          <Progress
-            className="w-full max-w-xs"
-            value={audit.pagesCrawled}
-            max={audit.pagesTotal || 1}
-            aria-label="Pages checked"
-          />
+          <h3 className="font-medium">
+            {isLighthouse
+              ? "Running Lighthouse checks"
+              : isFinalizing
+                ? "Preparing your results"
+                : audit.currentPhase === "discovery"
+                  ? "Finding pages to scan"
+                  : "Scanning your website"}
+          </h3>
+          {!isFinalizing && (
+            <Progress
+              className="w-full max-w-xs"
+              value={checked}
+              max={total || 1}
+              aria-label={isLighthouse ? "Lighthouse checks" : "Pages crawled"}
+            />
+          )}
           <p className="text-sm text-muted-foreground tabular-nums">
-            {audit.pagesCrawled} of up to {audit.pagesTotal} pages checked
+            {isLighthouse
+              ? `${checked} of ${total} checks${audit.lighthouseFailed > 0 ? ` (${audit.lighthouseFailed} failed)` : ""}`
+              : isFinalizing
+                ? `${audit.pagesCrawled} pages crawled. Finishing your report.`
+                : `${checked} of up to ${total} pages crawled`}
           </p>
         </div>
       </CardShell>
     );
+  }
 
   return (
     <CardShell

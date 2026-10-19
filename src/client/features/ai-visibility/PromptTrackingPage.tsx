@@ -41,6 +41,7 @@ import {
 import type { ProjectMarket } from "@/client/features/projects/types";
 import { DEFAULT_LOCATION_CODE } from "@/shared/keyword-locations";
 import { scheduleLabel } from "@/shared/rank-tracking";
+import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 
 export function PromptTrackingPage({
   projectId,
@@ -228,10 +229,14 @@ function PromptTrackingContent({
                 </div>
               </div>
               <RunStatusLine run={progress.run} tracker={tracker} />
-              {tracker?.lastSkipReason && (
-                <p className="text-xs text-warning">
-                  Most recent scheduling notice: {tracker.lastSkipReason}
-                </p>
+              {tracker?.lastSkipReason === "INSUFFICIENT_CREDITS" ? (
+                <InsufficientCreditsError variant="inline" />
+              ) : (
+                tracker?.lastSkipReason && (
+                  <p className="text-xs text-warning">
+                    Most recent scheduling notice: {tracker.lastSkipReason}
+                  </p>
+                )
               )}
             </div>
             <VisibilityTrend projectId={projectId} collecting={busy} />

@@ -83,7 +83,7 @@ const payload = {
   domain: "example.com",
   locationCode: 2840,
   languageCode: "en",
-  devices: "desktop" as "both" | "desktop" | "mobile",
+  devices: "desktop" as "desktop" | "mobile" | "both",
   serpDepth: 10,
   trigger: "manual" as const,
 };
@@ -117,6 +117,7 @@ function runWorkflow(
 describe("rank check workflow credit ceiling", () => {
   beforeEach(() => {
     mocks.getConfigById.mockResolvedValue({ isActive: true });
+    mocks.runLiveCheck.mockResolvedValue([]);
     mocks.getRunById.mockResolvedValue(activeRun);
     mocks.getSnapshotsForRun.mockResolvedValue([]);
     mocks.updateRun.mockResolvedValue(undefined);
@@ -160,6 +161,7 @@ describe("rank check workflow credit ceiling", () => {
 describe("rank check finalization", () => {
   beforeEach(() => {
     mocks.getConfigById.mockResolvedValue({ isActive: true });
+    mocks.runLiveCheck.mockResolvedValue([]);
     mocks.getRunById.mockResolvedValue({
       ...activeRun,
       keywordsTotal: 3,
@@ -186,16 +188,19 @@ describe("rank check finalization", () => {
     expect(mocks.updateConfig).not.toHaveBeenCalled();
   });
 
-  // Every keyword has a snapshot here (the other device's), which is exactly
-  // the case a snapshot count would read as a clean run.
+  // Two pairs have no snapshot because the run held them, so the message
+  // carries the partial count and why those readings were held.
   it("records held readings on a completed validated run", async () => {
     mocks.getRunById.mockResolvedValue({ ...activeRun, keywordsTotal: 3 });
-    mocks.getSnapshotsForRun.mockResolvedValue(
-      keywords(3).map((kw) => ({ trackingKeywordId: kw.id })),
-    );
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      { trackingKeywordId: "kw_0", device: "mobile" },
+      { trackingKeywordId: "kw_1", device: "desktop" },
+      { trackingKeywordId: "kw_1", device: "mobile" },
+      { trackingKeywordId: "kw_2", device: "desktop" },
+    ]);
     mocks.runQueuedCheck.mockResolvedValue({
       queueTasks: 6,
-      queueCollected: 5,
+      queueCollected: 4,
       fallbackTasks: 0,
       fallbackChecked: 0,
       validated: 4,
@@ -215,9 +220,67 @@ describe("rank check finalization", () => {
       expect.objectContaining({
         status: "completed",
         errorMessage:
-          "Held 2 reading(s) at their previous position: 1 judged a bad page on every crawl, 1 not delivered or not checkable by the queue in time.",
+          "Checked 2 of 3 desktop and 2 of 3 mobile keyword(s) Held 2 reading(s) at their previous position: 1 judged a bad page on every crawl, 1 not delivered or not checkable by the queue in time.",
       }),
     );
     expect(mocks.updateConfig).toHaveBeenCalled();
+  });
+
+  it("reports a run that missed a whole device as partial", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue(
+      keywords(3).map((kw) => ({
+        trackingKeywordId: kw.id,
+        device: "desktop",
+      })),
+    );
+
+    await runWorkflow({ devices: "both" });
+
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({
+        status: "completed",
+        keywordsChecked: 3,
+        errorMessage:
+          "Checked 3 of 3 desktop and 0 of 3 mobile keyword(s): Invalid Field: 'location_name'.",
+      }),
+    );
+  });
+});
+
+describe("manual run queue fallback", () => {
+  beforeEach(() => {
+    mocks.getConfigById.mockResolvedValue({ isActive: true });
+    mocks.runQueuedCheck.mockResolvedValue(null);
+    mocks.getRunById.mockResolvedValue(activeRun);
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(2));
+    mocks.getSnapshotsForRun.mockResolvedValue([]);
+    mocks.isHostedServerAuthMode.mockResolvedValue(true);
+    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
+  });
+
+  // The options are the contract: a second live call could pass the credits
+  // the user approved, and a queued not-found must not overwrite a position.
+  it("queues only the pairs the live endpoint missed, without a live fallback", async () => {
+    const missed = [
+      { keyword: "keyword 1", keywordId: "kw_1", device: "desktop" },
+    ];
+    mocks.runLiveCheck.mockResolvedValue(missed);
+
+    await runWorkflow({});
+
+    expect(mocks.runQueuedCheck).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ runId: "run_1" }),
+      { taskInputs: missed, liveFallback: false, saveNotFound: false },
+    );
+  });
+
+  it("skips the queue when the live endpoint checked every pair", async () => {
+    mocks.runLiveCheck.mockResolvedValue([]);
+
+    await runWorkflow({});
+
+    expect(mocks.runQueuedCheck).not.toHaveBeenCalled();
   });
 });

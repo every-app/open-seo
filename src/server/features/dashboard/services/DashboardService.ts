@@ -39,6 +39,10 @@ export type DashboardAuditSummary = {
   pagesCrawled: number;
   // The crawl's page limit; small sites finish below it.
   pagesTotal: number;
+  currentPhase: string | null;
+  lighthouseCompleted: number;
+  lighthouseFailed: number;
+  lighthouseTotal: number;
   startedAt: string;
   // Top issue types by severity then affected-page count, for the card's list.
   topIssues: {
@@ -142,6 +146,10 @@ async function getAuditSummary(
     status: audit.status,
     pagesCrawled: audit.pagesCrawled,
     pagesTotal: audit.pagesTotal,
+    currentPhase: audit.currentPhase,
+    lighthouseCompleted: audit.lighthouseCompleted,
+    lighthouseFailed: audit.lighthouseFailed,
+    lighthouseTotal: audit.lighthouseTotal,
     startedAt: audit.startedAt,
     topIssues: sorted.slice(0, 3),
   };

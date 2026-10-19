@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { CircleSlash } from "lucide-react";
 import { sort } from "remeda";
 import type { RankPositionMatrixCell } from "@/serverFunctions/rank-tracking";
 import { EmptyState } from "@/client/components/EmptyState";
@@ -12,6 +13,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
 
 /**
  * "By date" view: keyword rows × recent check columns, each cell the position
@@ -72,12 +78,22 @@ export function RankTrackingHistoryMatrix({
                   {kw.keyword}
                 </TableCell>
                 {runs.map((r, i) => {
+                  // No row for a run after the keyword's first result means
+                  // that check failed. Before the first result, the keyword
+                  // was not tracked yet.
+                  const notChecked =
+                    !byRun?.has(r.runId) &&
+                    runs.slice(0, i).some((prev) => byRun?.has(prev.runId));
                   const position = byRun?.get(r.runId) ?? null;
                   const previous =
                     i > 0 ? (byRun?.get(runs[i - 1].runId) ?? null) : undefined;
                   return (
                     <TableCell key={r.runId} className="text-right">
-                      <MatrixCell position={position} previous={previous} />
+                      {notChecked ? (
+                        <NotCheckedCell />
+                      ) : (
+                        <MatrixCell position={position} previous={previous} />
+                      )}
                     </TableCell>
                   );
                 })}
@@ -87,6 +103,27 @@ export function RankTrackingHistoryMatrix({
         </TableBody>
       </Table>
     </TableCard>
+  );
+}
+
+function NotCheckedCell() {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          // An icon fits the numeric column.
+          <span
+            aria-label="Not checked"
+            className="inline-flex cursor-help align-middle text-muted-foreground"
+          />
+        }
+      >
+        <CircleSlash className="size-3.5" aria-hidden />
+      </TooltipTrigger>
+      <TooltipContent>
+        Not checked: check failed, no position recorded.
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

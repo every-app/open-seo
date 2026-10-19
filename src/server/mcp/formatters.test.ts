@@ -1,7 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { mcpResponse } from "./formatters";
+import { mcpResponse, MCP_TEXT_CHAR_BUDGET } from "./formatters";
+import { formatMcpTable } from "./table";
 
 describe("mcpResponse", () => {
+  it("caps a single oversized row including the notice and preserves its data", () => {
+    const rows = [{ value: "x".repeat(MCP_TEXT_CHAR_BUDGET * 2) }];
+    const result = mcpResponse({
+      text: formatMcpTable(rows, [
+        { header: "value", value: (row) => row.value },
+      ]),
+      structuredContent: { rows },
+    });
+    const text = result.content[0];
+    expect(text.type).toBe("text");
+    if (text.type !== "text") throw new Error("Expected text");
+    expect(text.text).toHaveLength(MCP_TEXT_CHAR_BUDGET);
+    expect(text.text).toContain("Text truncated");
+    expect(text.text).toContain("structuredContent payload is unchanged");
+    expect(result.structuredContent.rows).toBe(rows);
+  });
+
+  it("does not promise structured data when truncating a text-only result", () => {
+    const result = mcpResponse({ text: "x".repeat(MCP_TEXT_CHAR_BUDGET + 1) });
+    const text = result.content[0];
+    if (text.type !== "text") throw new Error("Expected text");
+    expect(text.text).toHaveLength(MCP_TEXT_CHAR_BUDGET);
+    expect(text.text).not.toContain("structuredContent");
+    expect(result.structuredContent).toBeUndefined();
+  });
+
   it("drops undefined meta keys and omits _meta when nothing is left", () => {
     const result = mcpResponse({
       text: "hi",

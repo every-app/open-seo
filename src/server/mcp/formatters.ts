@@ -1,5 +1,9 @@
 import type { CallToolResult } from "@modelcontextprotocol/server";
 
+// This limits the combined human/model-readable text, not structured data,
+// serialized response bytes, or model tokens.
+export const MCP_TEXT_CHAR_BUDGET = 40_000;
+
 type McpResponseMeta = {
   url?: string;
   projectId?: string;
@@ -29,8 +33,19 @@ export function mcpResponse(opts: {
   meta?: McpResponseMeta;
   structuredContent?: Record<string, unknown>;
 }): CallToolResult {
+  const truncationNotice =
+    `\n\n[Text truncated at ${MCP_TEXT_CHAR_BUDGET.toLocaleString("en-US")} characters; this is partial text output. ` +
+    (opts.structuredContent
+      ? "The structuredContent payload is unchanged. "
+      : "") +
+    "Use pagination or a narrower request where supported; another call may charge credits.]";
+  const text =
+    opts.text.length > MCP_TEXT_CHAR_BUDGET
+      ? opts.text.slice(0, MCP_TEXT_CHAR_BUDGET - truncationNotice.length) +
+        truncationNotice
+      : opts.text;
   const result: CallToolResult = {
-    content: [{ type: "text", text: opts.text }],
+    content: [{ type: "text", text }],
   };
   let meta: Record<string, unknown> | undefined;
   if (opts.meta) {

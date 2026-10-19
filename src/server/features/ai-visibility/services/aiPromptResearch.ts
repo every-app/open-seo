@@ -9,6 +9,7 @@ import {
   CHATGPT_LOCATION_CODE,
   createDataforseoClient,
 } from "@/server/lib/dataforseo";
+import { AppError } from "@/server/lib/errors";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
 import {
@@ -23,6 +24,8 @@ import { getTracker } from "./aiVisibilityState";
 
 /** The provider refreshes prompt data monthly; one paid call per day is enough. */
 const RESEARCH_TTL_SECONDS = 24 * 60 * 60;
+/** Research filtered without the SERP is weaker; buy the full set again soon. */
+const RESEARCH_WITHOUT_SERP_TTL_SECONDS = 60 * 60;
 const RESEARCH_LIMIT = 100;
 // Results for niche keywords shift between calls; at 20 the on-topic sites
 // left after generic ones could swing from a dozen to none. 50 holds steady.
@@ -183,12 +186,24 @@ async function loadPrompts(
       limit: RESEARCH_LIMIT,
       orderBy: ["ai_search_volume,desc"],
     }),
-    client.serp.live({
-      keyword: request.topic,
-      locationCode: request.locationCode,
-      languageCode: request.languageCode,
-      depth: RESEARCH_SERP_DEPTH,
-    }),
+    // The SERP only sharpens the on-topic filter. When DataForSEO's search is
+    // down, keep the paid prompt data and filter by phrase and brand domains.
+    client.serp
+      .live({
+        keyword: request.topic,
+        locationCode: request.locationCode,
+        languageCode: request.languageCode,
+        depth: RESEARCH_SERP_DEPTH,
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof AppError &&
+          error.code === "UPSTREAM_UNAVAILABLE"
+        ) {
+          return null;
+        }
+        throw error;
+      }),
   ]);
   const prompts = data.flatMap((item): CachedPrompt[] =>
     item.question?.trim()
@@ -224,14 +239,18 @@ async function loadPrompts(
     prompts,
     serpDomains: [
       ...new Set(
-        serp.flatMap((item) =>
+        (serp ?? []).flatMap((item) =>
           item.type === "organic" ? (registrableDomain(item.domain) ?? []) : [],
         ),
       ),
     ].filter((domain) => !GENERIC_DOMAINS.has(domain)),
   };
   waitUntil(
-    setCached(cacheKey, research, RESEARCH_TTL_SECONDS).catch((error) => {
+    setCached(
+      cacheKey,
+      research,
+      serp ? RESEARCH_TTL_SECONDS : RESEARCH_WITHOUT_SERP_TTL_SECONDS,
+    ).catch((error) => {
       console.error("ai-visibility.prompt-research.cache-write-failed", error);
     }),
   );

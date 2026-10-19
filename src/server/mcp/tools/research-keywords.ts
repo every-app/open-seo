@@ -9,7 +9,11 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { resolveMarket } from "@/shared/keyword-locations";
-import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
+import {
+  formatMcpTable,
+  sectionTableBudget,
+  type McpTableColumn,
+} from "@/server/mcp/table";
 import { assertLanguageForLocation } from "@/server/lib/market";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
 import {
@@ -188,6 +192,8 @@ export const researchKeywordsTool = {
 
     const okCount = results.filter((r) => r.ok).length;
     const failCount = results.length - okCount;
+    // One text budget for the whole response, split across the seeds.
+    const budget = sectionTableBudget(results.length);
     const text =
       results
         .map((r) => {
@@ -201,7 +207,7 @@ export const researchKeywordsTool = {
           if (r.rowCount === 0) {
             return `${header}\n(no keywords returned)`;
           }
-          return `${header}\n${formatMcpTable(r.rows, RESEARCH_COLUMNS)}`;
+          return `${header}\n${formatMcpTable(r.rows, RESEARCH_COLUMNS, budget)}`;
         })
         .join("\n\n") +
       `\n\nResearched ${okCount} of ${results.length} seeds${failCount > 0 ? ` (${failCount} failed)` : ""}. Columns: volume = monthly searches, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable. Google Ads close variants may share search volumes; do not add their volumes together.`;

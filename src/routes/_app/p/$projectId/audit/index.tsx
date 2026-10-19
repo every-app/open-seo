@@ -4,9 +4,7 @@ import { auditSearchSchema } from "@/types/schemas/audit";
 import { LaunchView } from "@/client/features/audit/launch/LaunchView";
 import { AuditDetail } from "@/client/features/audit/AuditDetail";
 
-export const Route = createFileRoute<"/_app/p/$projectId/audit/">(
-  "/_app/p/$projectId/audit/",
-)({
+export const Route = createFileRoute("/_app/p/$projectId/audit/")({
   validateSearch: auditSearchSchema,
   component: SiteAuditPage,
 });

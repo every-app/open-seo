@@ -35,6 +35,7 @@ import {
   businessIdentifierInputSchema,
   businessIdentifierKeyword,
   formatBusinessDataCoordinate,
+  formatCoordinate,
   formatLocalSerpCoordinate,
   pickRowFields,
   resolveBusinessIdentifier,
@@ -220,7 +221,7 @@ export const getBusinessProfileTool = {
   config: {
     title: "Get business profile",
     description:
-      "Reads one Google Business Profile: categories, rating and review count, rating breakdown, address, phone, website, claimed status, opening hours, and photo count. Use it to audit your own profile or to compare a competitor's. Charges credits.",
+      "Reads one Google Business Profile by name, cid, or placeId: categories, rating and review count, rating breakdown, address, phone, website, claimed status, opening hours, and photo count. Use it to audit your own profile, to compare a named competitor's, or to check whether a business has a Google Business Profile at all — it is the cheapest tool for that question, less than half the credits of search_local_businesses. For identity or existence checks, reuse a business already present in your search results. Fetch the full profile when you need missing details such as opening hours or rating breakdown. Charges credits.",
     inputSchema: getBusinessProfileInputSchema,
     outputSchema: z.looseObject({
       profile: looseObjectOutputSchema.nullable(),
@@ -350,14 +351,17 @@ const REVIEW_COLUMNS: McpTableColumn<unknown>[] = [
     header: "source",
     value: (row) => readPath(row, "source", "title") ?? "Google",
   },
+  // Review-gap analysis reads the prose, and answering reviews reads what the
+  // owner already said — both need the text itself, not a length-safe stub.
   {
     header: "review",
     value: (row) => readPath(row, "review_text"),
-    format: truncatedCell(120),
+    format: truncatedCell(300),
   },
   {
-    header: "owner replied",
-    value: (row) => readPath(row, "owner_answer") != null,
+    header: "owner reply",
+    value: (row) => readPath(row, "owner_answer"),
+    format: truncatedCell(200),
   },
 ];
 
@@ -366,7 +370,7 @@ export const getBusinessReviewsTool = {
   config: {
     title: "Get business reviews",
     description:
-      "Collects Google reviews for a business, with rating, author, text, and whether the owner replied. Use it for review-gap analysis against competitors and to spot unanswered reviews. Usually completes within this call; if the queued job is still running you get status 'processing' plus a taskId — call again with that taskId in 30-60 seconds to collect the result at no extra cost. Charges credits.",
+      "Collects Google reviews for a business, with rating, author, text, and the owner's reply. Use it for review-gap analysis against competitors and to spot unanswered reviews. Usually completes within this call; if the queued job is still running you get status 'processing' plus a taskId — call again with that taskId in 30-60 seconds to collect the result at no extra cost. Charges credits.",
     inputSchema: getBusinessReviewsInputSchema,
     outputSchema: z.looseObject({
       status: z.enum(["completed", "processing"]),
@@ -435,7 +439,7 @@ export const getBusinessReviewsTool = {
       text:
         reviews.length === 0
           ? `${header} This profile has no reviews matching the request.`
-          : `${header} Review text is truncated in this table; full text is in the structured result.\n${formatMcpTable(reviews, REVIEW_COLUMNS)}`,
+          : `${header} Reviews longer than 300 characters and owner replies longer than 200 end in "…" (full text in structuredContent).\n${formatMcpTable(reviews, REVIEW_COLUMNS)}`,
       meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
       structuredContent: {
         status: "completed",
@@ -488,18 +492,33 @@ const BUSINESS_UPDATE_ROW_FIELDS = [
   "links",
 ] as const;
 
+/** Post CTA links as "title → url"; the raw array would land in the cell as
+ *  JSON, and the CTA target is the point of auditing offers and events. */
+function formatPostLinks(links: unknown): string {
+  if (!Array.isArray(links) || links.length === 0) return "—";
+  const rendered = links.map((link) => {
+    const url = readString(link, "url");
+    const title = readString(link, "title") ?? readString(link, "type");
+    if (url == null) return title ?? "";
+    return title == null ? url : `${title} → ${url}`;
+  });
+  return rendered.filter((entry) => entry !== "").join("; ") || "—";
+}
+
 const BUSINESS_UPDATE_COLUMNS: McpTableColumn<unknown>[] = [
   { header: "#", value: (row) => readPath(row, "rank_absolute") },
   {
     header: "posted",
     value: (row) => readPath(row, "post_date") ?? readPath(row, "timestamp"),
   },
+  { header: "author", value: (row) => readPath(row, "author") },
   {
     header: "post",
     value: (row) => readPath(row, "post_text") ?? readPath(row, "snippet"),
-    format: truncatedCell(120),
+    format: truncatedCell(300),
   },
   { header: "url", value: (row) => readPath(row, "url") },
+  { header: "links", value: (row) => formatPostLinks(readPath(row, "links")) },
 ];
 
 export const getBusinessUpdatesTool = {
@@ -561,7 +580,7 @@ export const getBusinessUpdatesTool = {
       text:
         updates.length === 0
           ? `${header} This profile has published no posts.`
-          : `${header}\n${formatMcpTable(updates, BUSINESS_UPDATE_COLUMNS)}`,
+          : `${header} Posts longer than 300 characters end in "…" (full text in structuredContent).\n${formatMcpTable(updates, BUSINESS_UPDATE_COLUMNS)}`,
       meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
       structuredContent: { status: "completed", taskId, updates },
     });
@@ -795,6 +814,12 @@ type GridPoint = {
   longitude: number;
 };
 
+type MatchedBusiness = {
+  title: string | null;
+  cid: string | null;
+  placeId: string | null;
+};
+
 type GridPointResult = GridPoint & {
   rank: number | null;
   // How many businesses the SERP returned there, and who ranked first: a null
@@ -895,6 +920,34 @@ function renderGrid(results: GridPointResult[], gridSize: number): string {
     lines.push(cells.join(" "));
   }
   return lines.join("\n");
+}
+
+// The map above is only ranks, so every cell's context — where the point is,
+// how contested it was, who won it — lives here. Coordinates are pre-formatted
+// because formatMcpCell's 2-decimal rounding would move a point by kilometres.
+const GRID_POINT_COLUMNS: McpTableColumn<GridPointResult>[] = [
+  { header: "row", value: (point) => point.row },
+  { header: "col", value: (point) => point.col },
+  { header: "lat", value: (point) => formatCoordinate(point.latitude) },
+  { header: "lon", value: (point) => formatCoordinate(point.longitude) },
+  {
+    header: "rank",
+    value: (point) => (point.error ? "search failed" : point.rank),
+  },
+  { header: "results", value: (point) => point.resultsCount },
+  {
+    header: "top result",
+    value: (point) => point.topResult?.title,
+    format: truncatedCell(60),
+  },
+  { header: "top cid", value: (point) => point.topResult?.cid },
+];
+
+function formatMatchedBusiness(business: MatchedBusiness | null): string {
+  if (!business) {
+    return "Matched business: none — the target was not found at any point, so no point has a rank.";
+  }
+  return `Matched business: ${formatMcpCell(business.title)} (cid ${formatMcpCell(business.cid)}, place_id ${formatMcpCell(business.placeId)}).`;
 }
 
 export const getLocalRankGridTool = {
@@ -1053,11 +1106,7 @@ export const getLocalRankGridTool = {
       );
     }
 
-    let matchedBusiness: {
-      title: string | null;
-      cid: string | null;
-      placeId: string | null;
-    } | null = null;
+    let matchedBusiness: MatchedBusiness | null = null;
     const grid = points.map((point, index): GridPointResult => {
       const outcome = outcomes[index];
       if (outcome.status !== "completed") {
@@ -1107,11 +1156,14 @@ export const getLocalRankGridTool = {
 
     const text = [
       `Local rank grid for "${args.keyword}" (${gridSize}x${gridSize}, ${spacingKm} km spacing, zoom ${zoom}, top ${RANK_GRID_DEPTH} checked).`,
-      `Rank per point, north at the top ("–" = not among the results returned there; check that point's resultsCount and topResult before reading it as outranked, "x" = search failed but may still be charged):`,
+      formatMatchedBusiness(matchedBusiness),
+      `Rank per point, north at the top ("–" = not among the results returned there, "x" = search failed but may still be charged):`,
       renderGrid(grid, gridSize),
       `- ranked at ${summary.pointsFound} of ${summary.pointsSearched} points`,
       `- average rank where found: ${summary.averageRank ?? "—"}`,
       `- top 3 at ${summary.top3Count} points, top 10 at ${summary.top10Count} points`,
+      `Every point (row 0 = north edge, col 0 = west edge). An empty rank next to a full results count means outranked there; next to a small count it means the SERP was sparse:`,
+      formatMcpTable(grid, GRID_POINT_COLUMNS),
     ].join("\n");
 
     return mcpResponse({

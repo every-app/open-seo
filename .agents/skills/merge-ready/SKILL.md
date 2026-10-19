@@ -1,6 +1,6 @@
 ---
 name: merge-ready
-description: Get a branch ready for the maintainer's final review: review it for security, simplicity, and billing abuse, fix what's real, get checks passing, and open or update the PR. Use whenever the user says a feature, fix, or branch should be "merge ready", asks to get changes ready for review, or appends this to a build request ("build X and make it merge-ready").
+description: Get a branch ready for the maintainer's final review. Review it for security, simplicity, and billing abuse, fix what's real, get checks passing, and open or update the PR. Use whenever the user says a feature, fix, or branch should be "merge ready", asks to get changes ready for review, or appends this to a build request ("build X and make it merge-ready").
 metadata:
   internal: true
 ---
@@ -21,6 +21,6 @@ Beyond that, review it however you think best. Work out which parts could do the
 
 Fix what's real. Commit as you go. Get `pnpm ci:check` and `pnpm test` passing locally, then push. Those local runs stand in for CI, so don't wait for GitHub CI to finish.
 
-Open or update the PR against `main` with a high-level description: what changed and why, what to look at first, and anything you left for the maintainer's judgment. No per-file changelog.
+Open or update the PR against `main`. Write the description in the `simple-issue-description` format, and put anything you left for the maintainer's judgment under Extra context.
 
 Never merge. The maintainer reviews last.

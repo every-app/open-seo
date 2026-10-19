@@ -6,7 +6,11 @@ import {
 } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { setLastProjectId } from "@/client/lib/active-project";
+import {
+  clearLastProjectId,
+  getLastProjectId,
+  setLastProjectId,
+} from "@/client/lib/active-project";
 import { getErrorCode } from "@/client/lib/error-messages";
 import {
   getCurrentAuthRedirectFromHref,
@@ -50,15 +54,20 @@ function useProjectAccessRedirect(projectId: string) {
       });
       return;
     }
+    // Forget it if it's the remembered project, or the landing redirect
+    // would bring the user straight back here.
+    if (getLastProjectId() === projectId) clearLastProjectId();
     void navigate({ to: "/", replace: true });
-  }, [error, navigate]);
+  }, [error, navigate, projectId]);
+  return access.isSuccess;
 }
 
 function ProjectLayout() {
   const { projectId } = Route.useParams();
-  useProjectAccessRedirect(projectId);
+  const hasAccess = useProjectAccessRedirect(projectId);
 
-  // Remember this as the last-visited project for the landing redirect.
+  // Remember this as the last-visited project for the landing redirect, once
+  // the access check confirms it's one of the org's projects.
   // Settings and its sub-pages are excluded: editing another project's
   // settings is administration, not a context switch, so it shouldn't change
   // which project the app opens next time. (An explicit choice still counts:
@@ -70,9 +79,9 @@ function ProjectLayout() {
       select: () => true,
     }) ?? false;
   useEffect(() => {
-    if (isSettingsPage) return;
+    if (!hasAccess || isSettingsPage) return;
     setLastProjectId(projectId);
-  }, [projectId, isSettingsPage]);
+  }, [projectId, hasAccess, isSettingsPage]);
 
   return <Outlet />;
 }

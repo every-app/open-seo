@@ -26,6 +26,8 @@ type BillingAccount = {
    *  one-time credits and for a paid plan canceled at period end, which ends
    *  then instead of refilling. */
   monthlyRefillsAt: number | null;
+  /** Stripe emails a receipt for each paid invoice. */
+  invoiceEmailsEnabled: boolean;
 };
 
 export async function getOrganizationBillingAccount(
@@ -70,5 +72,6 @@ export async function getOrganizationBillingAccount(
     monthlyRefillsAt: paidSubscription?.canceledAt
       ? null
       : (monthly?.nextResetAt ?? null),
+    invoiceEmailsEnabled: customer.sendEmailReceipts,
   };
 }

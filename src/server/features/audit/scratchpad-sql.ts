@@ -50,6 +50,21 @@ export const SCRATCHPAD_SCHEMA_SQL = `
 `;
 
 /**
+ * Queue one link-discovered URL. Already-seen URLs keep their row (the
+ * global dedup), except that a pending row with no click depth yet — almost
+ * always a sitemap seed — takes the link's depth and link-queue priority
+ * while keeping its in-sitemap flag. Sitemap seeding covers the whole
+ * sitemap, so without this every linked sitemap page would crawl in sitemap
+ * order with no depth. Takes (url, depth).
+ */
+export const FRONTIER_DISCOVER_SQL = `
+  INSERT INTO frontier (url, depth, source, in_sitemap) VALUES (?, ?, 'link', 0)
+  ON CONFLICT(url) DO UPDATE SET source = 'link', depth = excluded.depth
+  WHERE frontier.state = 'pending' AND frontier.depth IS NULL
+    AND excluded.depth IS NOT NULL
+`;
+
+/**
  * Every internal link whose target we crawled and saw fail. `json_each`
  * expands a page's target array into one row per edge; the join is on
  * page_mirror's UNIQUE url, so it stays an index seek per link. CROSS JOIN

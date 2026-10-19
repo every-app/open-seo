@@ -367,10 +367,15 @@ export async function discoverUrls(
     );
   }
 
-  // Cap at the crawl's page budget: these are seeds, the crawl can never use
-  // more — and an uncapped list can blow the ~1MiB Workflow step-state limit.
+  // Every discovered URL is returned, not just the first maxPages. Seeding is
+  // also what records each page's in-sitemap flag on the frontier, so
+  // truncating here made every sitemap URL past the budget report
+  // inSitemap: false once the crawl reached it through a link. The set is
+  // already bounded by maxDiscoveredUrls, seeds go straight into the
+  // scratchpad DO rather than through durable step state, and the crawl still
+  // stops at maxPages.
   return {
-    urls: Array.from(allUrls).slice(0, maxPages),
+    urls: Array.from(allUrls),
     robotsText,
   };
 }

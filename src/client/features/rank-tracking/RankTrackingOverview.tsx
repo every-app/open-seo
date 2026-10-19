@@ -5,6 +5,11 @@ import { getRankConfigTrend } from "@/serverFunctions/rank-tracking";
 import { QueryState } from "@/client/components/QueryState";
 import { Skeleton } from "@/client/components/ui/skeleton";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
+import {
   ChartGrid,
   ChartXAxis,
   ChartYAxis,
@@ -27,6 +32,14 @@ const BUCKETS = [
   { key: "top4to10", label: "4–10", color: "#2563eb" },
   { key: "top11to20", label: "11–20", color: "#f59e0b" },
   { key: "notRanking", label: "Not in top 20", color: "#6b7280" },
+  // Missing data, not a ranking: lighter fill so it doesn't read as lost
+  // positions.
+  {
+    key: "notChecked",
+    label: "Not checked",
+    color: "#d1d5db",
+    hint: "Check failed, no position recorded.",
+  },
 ] as const;
 
 const chartConfig: ChartConfig = Object.fromEntries(
@@ -61,6 +74,7 @@ export function RankTrackingOverview({
         top4to10: p.top4to10,
         top11to20: p.top11to20,
         notRanking: p.notRanking,
+        notChecked: p.notChecked,
       })),
     [trend],
   );
@@ -74,18 +88,34 @@ export function RankTrackingOverview({
         </div>
 
         <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {BUCKETS.map((b) => (
-            <span
-              key={b.key}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
-            >
+          {BUCKETS.map((b) => {
+            const className =
+              "inline-flex items-center gap-1 text-[11px] text-muted-foreground";
+            const swatch = (
               <span
                 className="size-2 rounded-sm"
                 style={{ backgroundColor: b.color }}
               />
-              {b.label}
-            </span>
-          ))}
+            );
+            return "hint" in b ? (
+              <Tooltip key={b.key}>
+                <TooltipTrigger
+                  render={<span className={`${className} cursor-help`} />}
+                >
+                  {swatch}
+                  <span className="underline decoration-dotted underline-offset-2">
+                    {b.label}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{b.hint}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <span key={b.key} className={className}>
+                {swatch}
+                {b.label}
+              </span>
+            );
+          })}
         </div>
 
         <QueryState

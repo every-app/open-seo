@@ -1,28 +1,23 @@
-/**
- * The countries the free tools offer. Codes are DataForSEO location codes;
- * the language is the one DataForSEO expects for that market. The client only
- * ever sends a location code — the server derives the language from this list,
- * so an unknown code is rejected rather than passed through.
- */
-export const TOOL_COUNTRIES = [
-  { code: 2840, label: "United States", language: "en" },
-  { code: 2826, label: "United Kingdom", language: "en" },
-  { code: 2124, label: "Canada", language: "en" },
-  { code: 2036, label: "Australia", language: "en" },
-  { code: 2276, label: "Germany", language: "de" },
-  { code: 2250, label: "France", language: "fr" },
-  { code: 2724, label: "Spain", language: "es" },
-  { code: 2356, label: "India", language: "en" },
-  { code: 2528, label: "Netherlands", language: "nl" },
-  { code: 2076, label: "Brazil", language: "pt" },
-] as const;
+import {
+  DEFAULT_LOCATION_CODE,
+  LABS_LOCATION_OPTIONS,
+  getLanguageCode,
+  isLabsLocationCode,
+} from "../../../../src/shared/keyword-locations";
 
-export const DEFAULT_COUNTRY_CODE = 2840;
+/**
+ * The countries the free tools offer: every country the app serves through
+ * DataForSEO Labs, which backs all the free tools. Google-Ads-only countries
+ * are left out because Labs rejects them. The client only ever sends a
+ * location code — the server derives the language from the app's list, so an
+ * unknown code is rejected rather than passed through.
+ */
+export const TOOL_COUNTRIES = LABS_LOCATION_OPTIONS;
+
+export const DEFAULT_COUNTRY_CODE = DEFAULT_LOCATION_CODE;
 
 export function countryLanguage(code: number): string | null {
-  return (
-    TOOL_COUNTRIES.find((country) => country.code === code)?.language ?? null
-  );
+  return isLabsLocationCode(code) ? getLanguageCode(code) : null;
 }
 
 export function countryLabel(code: number): string {

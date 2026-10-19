@@ -148,6 +148,8 @@ const makeHyperdrive = () =>
     // Prod runs with Hyperdrive caching OFF (no write invalidation for a SaaS
     // with per-user reads-after-writes).
     caching: { disabled: true },
+    // Raise Postgres max_connections to 100 before deploying this pool limit.
+    originConnectionLimit: 30,
   }).pipe(Alchemy.RemovalPolicy.retain());
 
 const optionalVar = (name: string) =>
@@ -269,6 +271,7 @@ const dataEnv = {
   DATAFORSEO_API_KEY: Config.redacted("DATAFORSEO_API_KEY"),
   BYPASS_EMAIL_VERIFICATION: optionalVar("BYPASS_EMAIL_VERIFICATION"),
   BETTER_AUTH_SECRET: optionalSecret("BETTER_AUTH_SECRET"),
+  CRAWLER_ACCESS_SECRET: optionalSecret("CRAWLER_ACCESS_SECRET"),
   GOOGLE_CLIENT_ID: optionalVar("GOOGLE_CLIENT_ID"),
   GOOGLE_CLIENT_SECRET: optionalSecret("GOOGLE_CLIENT_SECRET"),
   GOOGLE_ADS_DEVELOPER_TOKEN: optionalSecret("GOOGLE_ADS_DEVELOPER_TOKEN"),
@@ -399,8 +402,10 @@ export default Alchemy.Stack(
         // Deliberately NOT ...dataEnv: this worker crawls and parses
         // attacker-influenced HTML, so it gets only the secrets its code
         // path reads — DataForSEO (Lighthouse), Autumn (metering), PostHog
-        // (capture). No auth/OAuth/Loops/Turnstile secrets.
+        // (capture), CRAWLER_ACCESS_SECRET (Shopify signatures). No
+        // auth/OAuth/Loops/Turnstile secrets.
         BROWSER: Cloudflare.Browser(),
+        CRAWLER_ACCESS_SECRET: dataEnv.CRAWLER_ACCESS_SECRET,
         CONTEXT_API_KEY: dataEnv.CONTEXT_API_KEY,
         DATAFORSEO_API_KEY: dataEnv.DATAFORSEO_API_KEY,
         AUTUMN_SECRET_KEY: dataEnv.AUTUMN_SECRET_KEY,

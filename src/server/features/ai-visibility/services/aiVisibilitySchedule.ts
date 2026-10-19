@@ -1,3 +1,4 @@
+import { AppError } from "@/server/lib/errors";
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import { AiVisibilityError } from "./aiVisibilityErrors";
 import { activeAiPrompts } from "./aiVisibilityConfiguration";
@@ -56,12 +57,14 @@ export async function setSchedule(
     try {
       run = await startRun(config, "baseline", billing);
     } catch (error) {
-      // A check already running stands in for the baseline.
-      if (
-        !(error instanceof AiVisibilityError) ||
-        error.reason !== "RUN_IN_PROGRESS"
-      )
-        throw error;
+      // A check already running stands in for the baseline. Without credits
+      // the schedule still saves, and the tracker says why no check ran.
+      const runInProgress =
+        error instanceof AiVisibilityError &&
+        error.reason === "RUN_IN_PROGRESS";
+      const noCredits =
+        error instanceof AppError && error.code === "INSUFFICIENT_CREDITS";
+      if (!runInProgress && !noCredits) throw error;
     }
   }
   return { state: await getTracker(input), run };

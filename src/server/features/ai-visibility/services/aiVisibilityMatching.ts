@@ -1,4 +1,5 @@
 import { sort } from "remeda";
+import { parse } from "tldts";
 import type { AiBrand } from "@/shared/ai-visibility";
 import type { ParsedAiAnswer } from "../providers/dataforseoEvidence";
 
@@ -61,6 +62,22 @@ export function aiMentionSpans(
   );
 }
 
+/** "www.acme.com" → "acme"; subdomains and non-domains → null. */
+function rootDomainName(value: string) {
+  const { hostname, domain, domainWithoutSuffix } = parse(value);
+  return hostname?.replace(/^www\./, "") === domain
+    ? domainWithoutSuffix
+    : null;
+}
+
+/** Answer text naming the brand. A brand named "acme.com" is written "Acme". */
+export function aiBrandNames(brand: Pick<AiBrand, "name" | "domain">) {
+  const stem = rootDomainName(brand.name);
+  return stem && stem === rootDomainName(brand.domain)
+    ? [brand.name, brand.domain, stem]
+    : [brand.name, brand.domain];
+}
+
 /**
  * A brand is mentioned when its name or domain appears in the answer prose,
  * and cited when the answer cites a page on its domain. A generic brand name
@@ -70,7 +87,7 @@ export function matchAiBrand(
   answer: ParsedAiAnswer,
   brand: Pick<AiBrand, "name" | "domain">,
 ) {
-  const spans = aiMentionSpans(answer.answerText, [brand.name, brand.domain]);
+  const spans = aiMentionSpans(answer.answerText, aiBrandNames(brand));
   return {
     mentioned: spans.length > 0,
     cited: answer.citations.some((citation) =>

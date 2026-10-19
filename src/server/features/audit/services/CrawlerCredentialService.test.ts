@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 
 const { upsertMock, listMock } = vi.hoisted(() => ({
   upsertMock: vi.fn(),
@@ -120,5 +121,20 @@ describe("saveCrawlerCredential", () => {
     );
 
     expect(result).toMatchObject({ credential: { host: "store.example.com" } });
+  });
+});
+
+describe("openCrawlerAccess", () => {
+  it("fails instead of crawling unsigned when the worker has no key", async () => {
+    vi.mocked(getOptionalEnvValue).mockResolvedValueOnce(undefined);
+
+    await expect(
+      CrawlerCredentialService.openCrawlerAccess({
+        host: "store.example.com",
+        signatureInput: "sealed",
+        signature: "sealed",
+        expiresAt: null,
+      }),
+    ).rejects.toMatchObject({ code: "AUTH_CONFIG_MISSING" });
   });
 });

@@ -33,6 +33,8 @@ import {
   type SaveConfigInput,
 } from "./useSaveConfigMutations";
 import { ScheduleField } from "./ScheduleField";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { SCHEDULED_RANK_CHECKS_PAUSED } from "@/shared/rank-tracking-pause";
 import {
   localScheduleTimeFrom,
   randomScheduleDate,
@@ -150,6 +152,8 @@ function RankTrackingConfigModalContent({
 }: Props & { initialMarket: ProjectMarket }) {
   const countryId = useId();
   const isEdit = !!existingConfig;
+  const scheduledChecksPaused =
+    SCHEDULED_RANK_CHECKS_PAUSED && isHostedClientAuthMode();
   const [createdConfigId, setCreatedConfigId] = useState<string>();
   // An untouched edit leaves the stored run time alone; anything that changes
   // the schedule sends the time on screen so it is the one that gets saved.
@@ -174,7 +178,9 @@ function RankTrackingConfigModalContent({
     targetingMode: existingConfig?.locationName ? "local" : "national",
     locationName: existingConfig?.locationName ?? undefined,
     devices: existingConfig?.devices ?? "mobile",
-    schedule: existingConfig?.scheduleInterval ?? "weekly",
+    schedule:
+      existingConfig?.scheduleInterval ??
+      (scheduledChecksPaused ? "manual" : "weekly"),
     // Shown and edited in the browser's timezone; the server converts it to UTC.
     scheduleTime: localScheduleTimeFrom(
       existingConfig?.nextCheckAt
@@ -336,6 +342,7 @@ function RankTrackingConfigModalContent({
                   form.setFieldValue("scheduleTime", time);
                   setScheduleTimeEdited(true);
                 }}
+                scheduledChecksPaused={scheduledChecksPaused}
               />
 
               <form.AppField name="serpDepth">
