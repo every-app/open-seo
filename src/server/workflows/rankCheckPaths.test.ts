@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- fork retry and validated-run cases merged with upstream's queue fallback */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowStep } from "cloudflare:workers";
 import {

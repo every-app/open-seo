@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- fork Google Ads integration merged with upstream's GSC and GA4 ones */
 import { symmetricDecrypt, symmetricEncrypt } from "better-auth/crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -14,6 +15,7 @@ import {
   GA4_OAUTH_SCOPES,
 } from "@/shared/ga4";
 import {
+  GOOGLE_ADS_DATA_SCOPE,
   GOOGLE_ADS_OAUTH_PROVIDER_ID,
   GOOGLE_ADS_OAUTH_SCOPES,
 } from "@/shared/google-ads";
@@ -91,6 +93,7 @@ export const GOOGLE_ADS_INTEGRATION: GoogleOAuthIntegration = {
   displayName: "Google Ads",
   callbackPath: "/api/gads/oauth/callback",
   scopes: GOOGLE_ADS_OAUTH_SCOPES,
+  requiredScope: GOOGLE_ADS_DATA_SCOPE,
 };
 
 const googleTokenResponseSchema = z.object({

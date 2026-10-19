@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- fork validated runs merged with upstream's live and queued paths */
 import {
   WorkflowEntrypoint,
   type WorkflowEvent,
