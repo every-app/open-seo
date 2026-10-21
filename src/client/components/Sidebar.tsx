@@ -5,6 +5,7 @@ import { useState, type ComponentType } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeftRight,
+  ArrowUpRight,
   Check,
   CircleHelp,
   CreditCard,
@@ -205,8 +206,7 @@ export function Sidebar({
 }
 
 // Behind an Every App gateway, which owns sign-in, organizations, teams and
-// billing: the menu shows the person from the signed identity, no switcher
-// and no billing, and signing out happens on the gateway.
+// billing: the footer links back to the gateway, then to OpenSEO settings.
 const everyApp = isEveryAppClientAuthMode();
 
 function AccountFooter({ ready }: { ready: boolean }) {
@@ -253,7 +253,30 @@ function AccountFooter({ ready }: { ready: boolean }) {
           label="Help & Community"
           linkProps={{ to: "/support" }}
         />
-        {email ? (
+        {everyApp ? (
+          <>
+            {everyAppAccountQuery.isPending ? (
+              <SidebarMenuItem>
+                <SidebarMenuSkeleton showIcon />
+              </SidebarMenuItem>
+            ) : everyAppAccount?.gatewayUrl ? (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  render={<a href={everyAppAccount.gatewayUrl} />}
+                  className={navButtonClass}
+                >
+                  <ArrowUpRight className="size-4" />
+                  <span>Back to Every App</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ) : null}
+            <SidebarNavLink
+              icon={Settings}
+              label="Settings"
+              linkProps={{ to: "/settings" }}
+            />
+          </>
+        ) : email ? (
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -308,19 +331,17 @@ function AccountFooter({ ready }: { ready: boolean }) {
                   <Settings className="size-4" />
                   Settings
                 </DropdownMenuItem>
-                {everyApp ? null : (
-                  <DropdownMenuItem
-                    render={
-                      <Link
-                        to={BILLING_ROUTE}
-                        onClick={() => setOpenMobile(false)}
-                      />
-                    }
-                  >
-                    <CreditCard className="size-4" />
-                    Billing
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem
+                  render={
+                    <Link
+                      to={BILLING_ROUTE}
+                      onClick={() => setOpenMobile(false)}
+                    />
+                  }
+                >
+                  <CreditCard className="size-4" />
+                  Billing
+                </DropdownMenuItem>
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Theme</DropdownMenuLabel>
                   <div className="px-1 pb-1">
@@ -328,25 +349,13 @@ function AccountFooter({ ready }: { ready: boolean }) {
                   </div>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                {everyApp ? (
-                  everyAppAccount?.gatewayUrl ? (
-                    <DropdownMenuItem
-                      variant="destructive"
-                      render={<a href={everyAppAccount.gatewayUrl} />}
-                    >
-                      <LogOut className="size-4" />
-                      Sign out on Every App
-                    </DropdownMenuItem>
-                  ) : null
-                ) : (
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => signOutAndRedirect()}
-                  >
-                    <LogOut className="size-4" />
-                    Sign out
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => signOutAndRedirect()}
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
