@@ -172,6 +172,7 @@ function createEmptyDeviceResult(
     previousPosition,
     rankingUrl: null,
     serpFeatures: [],
+    checkedAt: null,
   };
 }
 
@@ -184,5 +185,6 @@ function toDeviceResult(
     previousPosition,
     rankingUrl: snapshot.url,
     serpFeatures: parseSerpFeatures(snapshot.serpFeatures),
+    checkedAt: snapshot.checkedAt,
   };
 }

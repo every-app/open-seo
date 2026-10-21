@@ -34,6 +34,16 @@ const RANK_RESULT_COLUMNS: McpTableColumn<unknown>[] = [
     header: "prev (mobile)",
     value: (row) => readPath(row, "mobile", "previousPosition"),
   },
+  // Fork: a reading older than the latest run is one that run did not
+  // refresh, so it must not read as this run's position.
+  {
+    header: "checked (desktop)",
+    value: (row) => readPath(row, "desktop", "checkedAt"),
+  },
+  {
+    header: "checked (mobile)",
+    value: (row) => readPath(row, "mobile", "checkedAt"),
+  },
   {
     header: "pinned",
     value: (row) => (readPath(row, "pinned") === true ? "yes" : "no"),
@@ -131,7 +141,7 @@ export const getRankTrackerTool = {
   config: {
     title: "Get rank tracker",
     description:
-      "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + a page of latest snapshots (pinned keywords first), including `trackingKeywordId` for removals and pins, `pinned`, and `googleSerpUrl`, a live Google search for the tracked keyword, language, country, and city. Use offset/limit to read additional keywords. Without it, lists all trackers in the project. Uses no credits. Use create_rank_tracker when no tracker exists; then use add_rank_tracking_keywords, remove_rank_tracking_keywords, pin_rank_tracking_keywords, estimate_rank_tracker_cost, or run_rank_tracker to manage it. `lastCheckedAt` shows position freshness. A null position means the domain was not found in the results the check returned, which can be fewer than `serpDepth`, so it does not prove the domain ranks below `serpDepth`.",
+      "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + a page of latest snapshots (pinned keywords first), including `trackingKeywordId` for removals and pins, `pinned`, and `googleSerpUrl`, a live Google search for the tracked keyword, language, country, and city. Use offset/limit to read additional keywords. Without it, lists all trackers in the project. Uses no credits. Use create_rank_tracker when no tracker exists; then use add_rank_tracking_keywords, remove_rank_tracking_keywords, pin_rank_tracking_keywords, estimate_rank_tracker_cost, or run_rank_tracker to manage it. `lastCheckedAt` shows position freshness, and each device's `checkedAt` shows when that keyword's reading was taken: a reading older than the latest run was not refreshed by it (its check failed, or a validated run held it). A null position means the domain was not found in the results the check returned, which can be fewer than `serpDepth`, so it does not prove the domain ranks below `serpDepth`.",
     inputSchema,
     outputSchema: z
       .object({

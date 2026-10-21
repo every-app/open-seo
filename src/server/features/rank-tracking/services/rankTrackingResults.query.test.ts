@@ -68,6 +68,9 @@ const snapshots = [
 describe.each(["d1", "postgres"])(
   "rank results with %s timestamps",
   (provider) => {
+    const stored = (iso: string) =>
+      provider === "postgres" ? iso : iso.slice(0, 19).replace("T", " ");
+
     beforeEach(async () => {
       runtime.env.DATABASE_PROVIDER = provider;
       vi.spyOn(Date, "now").mockReturnValue(
@@ -77,10 +80,7 @@ describe.each(["d1", "postgres"])(
         "DELETE FROM rank_snapshots; DELETE FROM rank_check_runs;",
       );
       for (const snapshot of snapshots) {
-        const checkedAt =
-          provider === "postgres"
-            ? snapshot.checkedAt
-            : snapshot.checkedAt.slice(0, 19).replace("T", " ");
+        const checkedAt = stored(snapshot.checkedAt);
         await runtime.client!.execute({
           sql: `INSERT INTO rank_check_runs
           (id, config_id, project_id, status, is_subset_run, started_at)
@@ -103,6 +103,24 @@ describe.each(["d1", "postgres"])(
         position: null,
         previousPosition: 1,
       });
+    });
+
+    // A run that held the keyword wrote no reading for it, so the row still
+    // shows the older reading, dated by when that reading was taken.
+    it("dates a reading the latest run did not refresh by its own check", async () => {
+      await runtime.client!.execute({
+        sql: `INSERT INTO rank_check_runs
+        (id, config_id, project_id, status, is_subset_run, started_at)
+        VALUES ('held', 'config', 'project', 'completed', 0, ?)`,
+        args: [stored("2026-10-05T03:50:00.000Z")],
+      });
+
+      const result = await getLatestResults("config", "project", "7d");
+
+      expect(result.run?.id).toBe("held");
+      expect(result.rows[0].mobile.checkedAt).toBe(
+        stored("2026-10-05T03:36:21.058Z"),
+      );
     });
 
     it("drops same-day history snapshots taken before the cutoff", async () => {

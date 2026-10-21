@@ -511,8 +511,36 @@ describe("validated queued rank checks", () => {
     expect(stats).toMatchObject({ historySuspect: 0, validated: 1 });
   });
 
+  // The first page arrives in the last round that can still repost (~15
+  // minutes in), and the new crawl takes three more rounds; the window still
+  // collects it instead of holding the pair.
+  it("recrawls a dropped page that arrives late in the window", async () => {
+    vi.mocked(fetchRankCheckTaskResult)
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce(completedAt(18))
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" });
+    vi.mocked(fetchRankCheckTaskHtml).mockResolvedValueOnce(
+      ready(DROPPED_PAGE),
+    );
+
+    const stats = await runQueued();
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
+    expect(mocks.insertSnapshots).toHaveBeenCalledExactlyOnceWith([
+      expect.objectContaining({ position: 1 }),
+    ]);
+    expect(stats).toMatchObject({ reposted: 1, withheld: 0 });
+  });
+
   it("stops reposting once the window can no longer collect a new crawl", async () => {
     vi.mocked(fetchRankCheckTaskResult)
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockResolvedValueOnce({ status: "pending" })
       .mockResolvedValueOnce({ status: "pending" })
       .mockResolvedValueOnce({ status: "pending" })
       .mockResolvedValueOnce({ status: "pending" })

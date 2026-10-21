@@ -50,10 +50,15 @@ const QUEUED_POLL_INTERVALS = [
   "3 minutes",
 ] as const;
 
-// A validated run reposts dropped pairs through round 3 (~10 minutes in), so
-// it polls two rounds longer to collect those crawls instead of holding them.
+// A validated run reposts dropped pairs through round 5 (~15 minutes in), so
+// it polls four rounds longer to collect those crawls instead of holding them.
+// Fork: a queued crawl takes 2-6 minutes, so reposting only through ~10
+// minutes held most dropped pairs after two or three crawls instead of
+// VALIDATED_CRAWLS_PER_PAIR.
 const VALIDATED_POLL_INTERVALS = [
   ...QUEUED_POLL_INTERVALS,
+  "3 minutes",
+  "3 minutes",
   "3 minutes",
   "3 minutes",
 ] as const;
@@ -70,8 +75,8 @@ const TASK_GETS_PER_COLLECT = 500;
 const VALIDATED_TASK_GETS_PER_COLLECT = 100;
 
 // Reposts stop after this poll round so the new crawl can still be collected
-// inside the window QUEUED_POLL_INTERVALS leaves (see runQueuedCheck).
-const LAST_REPOST_ROUND = 3;
+// inside the window VALIDATED_POLL_INTERVALS leaves (see runQueuedCheck).
+const LAST_REPOST_ROUND = 5;
 
 interface CollectRoundOutcome {
   /** Snapshots written this round. */
