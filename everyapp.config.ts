@@ -20,6 +20,7 @@ export default {
   name: "OpenSEO",
   description:
     "SEO research, rank tracking, site audits and AI visibility for your sites.",
+  icon: "/everyapp-icon.svg",
   // wrangler.jsonc's, so every build of OpenSEO runs on the same runtime.
   compatibilityDate: "2025-09-02",
   resources: {
