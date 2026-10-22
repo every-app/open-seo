@@ -39,7 +39,7 @@ async function getBacklinks(
   billingCustomer: BillingCustomerContext,
 ) {
   const result = await DashboardCacheService.readThrough({
-    namespace: "dashboard:links",
+    namespace: "dashboard:links:v2",
     organizationId: billingCustomer.organizationId,
     params: input,
     schema: z.array(backlinksItemSchema),
@@ -59,7 +59,6 @@ async function getBacklinks(
         limit: 25,
         mode: "one_per_domain",
         status: input.kind === "lost" ? "lost" : "live",
-        hideSpam: false,
         orderBy: [input.kind === "lost" ? "last_seen,desc" : "first_seen,desc"],
         filters:
           input.kind === "all"
@@ -91,7 +90,7 @@ async function getKeywords(projectId: string, organizationId: string) {
       refreshError: null,
     };
   return DashboardCacheService.readThrough({
-    namespace: "dashboard:gsc-keywords-v2",
+    namespace: DashboardCacheService.gscNamespace(projectId, "keywords"),
     organizationId,
     params: {
       projectId,
@@ -169,7 +168,10 @@ async function getEmergingQueries(projectId: string, organizationId: string) {
     };
   }
   return DashboardCacheService.readThrough({
-    namespace: "dashboard:emerging-queries",
+    namespace: DashboardCacheService.gscNamespace(
+      projectId,
+      "emerging-queries",
+    ),
     organizationId,
     params: {
       projectId,
@@ -286,7 +288,7 @@ async function getLinkActivity(
     scope: "subdomains",
   }).apiTarget;
   const domains = await DashboardCacheService.readThrough({
-    namespace: "dashboard:new-domains",
+    namespace: "dashboard:new-domains:v2",
     organizationId: billingCustomer.organizationId,
     params: { target },
     schema: z.array(referringDomainItemSchema),
@@ -301,7 +303,6 @@ async function getLinkActivity(
         target,
         includeSubdomains: true,
         limit: 25,
-        hideSpam: false,
         orderBy: ["first_seen,desc"],
         filters: [["first_seen", ">=", `${from} 00:00:00 +00:00`]],
       });

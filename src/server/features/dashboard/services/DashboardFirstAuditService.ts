@@ -1,9 +1,11 @@
+import { waitUntil } from "cloudflare:workers";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
 import { AuditService } from "@/server/features/audit/services/AuditService";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { DataRefreshClaimRepository } from "../repositories/DataRefreshClaimRepository";
 import { buildCacheKey } from "@/server/lib/r2-cache";
 import { asAppError } from "@/server/lib/errors";
+import { captureServerEvent } from "@/server/lib/posthog";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 
 async function start(
@@ -48,6 +50,20 @@ async function start(
     });
     auditStarted = true;
     await DataRefreshClaimRepository.finish(key, token, 100 * 365 * 86400_000);
+    waitUntil(
+      captureServerEvent({
+        distinctId: customer.userId,
+        event: "site_audit:start",
+        organizationId: customer.organizationId,
+        properties: {
+          project_id: projectId,
+          max_pages: 50,
+          run_lighthouse: false,
+          plan_tier: limitTier,
+          source: "first_audit",
+        },
+      }),
+    );
     return { status: "started" as const };
   } catch (error) {
     if (key && token)

@@ -1,0 +1,18 @@
+/* The widget uses the app's components and theme, with document scrolling
+   instead of the app shell's fixed-height viewport. */
+html,
+body {
+  height: auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+body {
+  touch-action: auto;
+}
+
+button,
+input,
+select {
+  touch-action: manipulation;
+}

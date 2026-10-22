@@ -455,7 +455,7 @@ export class SamChatAgent extends Think {
     this.ctx.waitUntil(
       this.telemetry.report(
         result.status,
-        { request_id: result.requestId, error_message: result.error },
+        { request_id: result.requestId },
         this.messages,
         { billing: this.billing },
       ),

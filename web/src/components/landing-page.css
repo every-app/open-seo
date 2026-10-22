@@ -967,6 +967,17 @@ body:has(.itc-campaign) {
   gap: 16px 24px;
   margin-top: 40px;
 }
+/* On phones the trial buttons span the content, like the hero's. */
+@media (max-width: 559px) {
+  .itc-section-ctas > .itc-cta-pair,
+  .itc-section-ctas > .itc-hero-cta-group {
+    flex: 1 1 100%;
+  }
+  .itc-section-ctas > .itc-hero-cta-group {
+    align-items: stretch;
+    text-align: center;
+  }
+}
 .itc-price-compare {
   display: grid;
   gap: 16px;
@@ -1049,6 +1060,7 @@ body:has(.itc-campaign) {
   display: flex;
   gap: 20px;
 }
-.itc-campaign-footer a:hover {
+.itc-campaign-footer a:hover,
+.itc-campaign-footer button:hover {
   color: var(--ink);
 }

@@ -1,3 +1,4 @@
+import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
 import {
   lockRenderingCredits,
@@ -19,6 +20,7 @@ import {
   type AuditLimitTier,
 } from "@/server/features/audit/services/audit-capacity";
 import { AppError } from "@/server/lib/errors";
+import { deleteR2Prefix } from "@/server/lib/r2";
 import { RENDERED_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import {
@@ -26,10 +28,7 @@ import {
   type AuditConfig,
   type LighthouseStrategy,
 } from "@/server/lib/audit/types";
-import {
-  normalizeAndValidateStartUrl,
-  resolveStartUrlRedirects,
-} from "@/server/lib/audit/url-policy";
+import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { reconcileRunningAudit } from "@/server/features/audit/services/auditReconciler";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
@@ -79,39 +78,19 @@ async function startAudit(input: {
 
   const auditId = crypto.randomUUID();
   const organizationId = input.billingCustomer.organizationId;
-  const requestedUrl = await normalizeAndValidateStartUrl(input.startUrl);
-  // The probe itself can be rate limited, so it carries the credential too.
-  let credential = await CrawlerCredentialService.resolveCrawlerAccess(
+  // The site itself is first contacted by the workflow's first step
+  // (resolveAuditStart), so starting an audit never waits on a slow site.
+  const startUrl = await normalizeAndValidateStartUrl(input.startUrl);
+  const credential = await CrawlerCredentialService.resolveCrawlerAccess(
     organizationId,
     input.projectId,
-    new URL(requestedUrl).hostname,
+    new URL(startUrl).hostname,
   );
-  // Anchor the audit to the site's real origin: a start domain that 301s
-  // elsewhere (…net -> …com, apex -> www) would otherwise dead-end after
-  // one page at the same-origin crawl boundary.
-  const probe = await resolveStartUrlRedirects(
-    requestedUrl,
-    await CrawlerCredentialService.openCrawlerAccess(credential?.sealed),
-  );
-  const startUrl = probe.url;
-  const startHost = new URL(startUrl).hostname;
-  if (startHost !== new URL(requestedUrl).hostname) {
-    credential = await CrawlerCredentialService.resolveCrawlerAccess(
-      organizationId,
-      input.projectId,
-      startHost,
-    );
-  }
 
   const config: AuditConfig = {
     maxPages,
     lighthouseStrategy,
     renderJavaScript,
-    // Shopify storefronts answer with `powered-by: Shopify`; knowing this is
-    // what lets the report explain a throttled crawl instead of shrugging.
-    sitePlatform: probe.poweredBy?.toLowerCase().includes("shopify")
-      ? "shopify"
-      : undefined,
     crawlerCredentialId: credential?.id,
   };
 
@@ -184,6 +163,7 @@ async function startAudit(input: {
     throw error;
   }
 
+  await markOnboardingMilestone(input.billingCustomer, "auditStarted");
   return { auditId };
 }
 
@@ -324,6 +304,13 @@ async function remove(auditId: string, projectId: string) {
     await env.AUDIT_ENGINE.destroyScratchpad(auditId);
   } catch (error) {
     console.warn(`Failed to destroy audit scratchpad ${auditId}:`, error);
+  }
+  // Best-effort: the stored Lighthouse reports. A miss is swept when the
+  // account is erased (storage-erasure.ts).
+  try {
+    await deleteR2Prefix(env.R2, `site-audit/${projectId}/${auditId}/`);
+  } catch (error) {
+    console.warn(`Failed to delete audit files ${auditId}:`, error);
   }
 }
 

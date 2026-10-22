@@ -19,7 +19,7 @@ import {
   McpServer,
   type ToolAnnotations,
 } from "@modelcontextprotocol/server";
-import type { z } from "zod";
+import { z } from "zod";
 import {
   createMcpToolContext,
   type McpProps,
@@ -27,6 +27,7 @@ import {
 } from "@/server/mcp/context";
 import { objectSchema } from "@/server/mcp/output-schemas";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
+import { submitIndexNowUrlsTool } from "@/server/mcp/tools/submit-indexnow-urls";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
@@ -109,6 +110,13 @@ import {
 } from "@/server/mcp/tools/site-audit-cleanup-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 import { explorePromptTool } from "@/server/mcp/tools/explore-prompt";
+import { registerWidgetResource } from "@/server/mcp/widget-resource";
+import { rememberWidgetResult } from "@/server/mcp/widget-results";
+import { WidgetTool } from "@/shared/mcp-contracts";
+import {
+  showSearchConsolePerformanceTool,
+  showSerpResultsTool,
+} from "@/server/mcp/tools/widget-tools";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
 
@@ -129,6 +137,7 @@ type OpenSeoToolDefinition<Input extends ToolSchema> = {
     inputSchema: Input;
     outputSchema?: ToolSchema;
     annotations?: ToolAnnotations;
+    _meta?: Record<string, unknown>;
   };
   handler: (
     args: ToolArgs<Input>,
@@ -140,17 +149,22 @@ function registerOpenSeoTool<Input extends ToolSchema>(
   server: McpServer,
   tool: OpenSeoToolDefinition<Input>,
   authProps: McpProps,
+  supportsApps: boolean,
 ) {
   // Output objects must allow added fields, including nested objects. The
   // tools/list contract test checks every registered tool for cached-client
   // compatibility; input schemas keep their existing validation rules.
-  const outputSchema = objectSchema(tool.config.outputSchema);
+  const widgetSource = z.enum(WidgetTool).safeParse(tool.name);
+  const schema = objectSchema(tool.config.outputSchema);
+  const outputSchema =
+    !supportsApps && widgetSource.success && schema instanceof z.ZodObject
+      ? schema.omit({ resultId: true })
+      : schema;
   const handler = instrumentMcpToolHandler(
     tool.name,
     outputSchema,
     tool.handler,
   );
-
   server.registerTool(
     tool.name,
     {
@@ -158,17 +172,28 @@ function registerOpenSeoTool<Input extends ToolSchema>(
       inputSchema: objectSchema(tool.config.inputSchema),
       outputSchema,
     },
-    (args, context) => {
-      return handler(
+    async (args, context) => {
+      const toolContext = createMcpToolContext(context, authProps);
+      const result = await handler(
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- args were validated against the tool's own inputSchema just above
         args as ToolArgs<Input>,
-        createMcpToolContext(context, authProps),
+        toolContext,
+      );
+      if (!supportsApps || !widgetSource.success) return result;
+      return rememberWidgetResult(
+        widgetSource.data,
+        args,
+        result,
+        toolContext.auth,
       );
     },
   );
 }
 
-export function createOpenSeoMcpServer(authProps: McpProps) {
+export function createOpenSeoMcpServer(
+  authProps: McpProps,
+  supportsApps = false,
+) {
   const server = new McpServer(
     {
       name: "OpenSEO MCP",
@@ -192,13 +217,23 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
       // Without the pre-declaration, registerTool defaults it to true.
       capabilities: { tools: { listChanged: false } },
       instructions:
-        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits. OpenSEO cannot purchase credits or charge cards. Explain unsupported purchase requests without promoting subscriptions, upgrades or credit purchases, or directing users to checkout.",
+        "Most tools need a projectId from list_projects. When the user has no projects, ask for their website and call create_project with its domain. " +
+        (supportsApps
+          ? "Research tools return data without opening UI. When an interactive view would help the user inspect Search Console or SERP results, optionally call show_search_console_performance or show_serp_results with the resultId already returned. Do not copy result rows or fetch them again just to display them. Use show_search_console_performance for the Google connection prompt when needed. Do not show a widget for every intermediate research call. "
+          : "") +
+        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits. OpenSEO cannot purchase credits or charge cards. Explain unsupported purchase requests without promoting subscriptions, upgrades or credit purchases. When a tool reports that the organization is out of credits, you may share the billing link from that error as a plain link.",
     },
   );
 
   const register = <Input extends ToolSchema>(
     tool: OpenSeoToolDefinition<Input>,
-  ) => registerOpenSeoTool(server, tool, authProps);
+  ) => registerOpenSeoTool(server, tool, authProps, supportsApps);
+
+  if (supportsApps) {
+    registerWidgetResource(server);
+    register(showSerpResultsTool);
+    register(showSearchConsolePerformanceTool);
+  }
 
   register(whoamiTool);
   register(listProjectsTool);
@@ -252,6 +287,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getKeywordMetricsTool);
   register(getSearchConsolePerformanceTool);
   register(inspectUrlsTool);
+  register(submitIndexNowUrlsTool);
   register(getGoogleAnalyticsOrganicLandingPagesTool);
   register(getGoogleAnalyticsPagePerformanceTool);
   register(getGoogleAnalyticsKeyEventsTool);

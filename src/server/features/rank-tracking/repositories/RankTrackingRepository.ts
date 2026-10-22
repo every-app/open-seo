@@ -21,6 +21,7 @@ import { DB_BATCH_SIZE, executeInBatches } from "@/db/runBatch";
 import type { RankTrackingSkipReason } from "@/shared/rank-tracking";
 import {
   getLatestSnapshotsForKeywords,
+  getBestPositionsForKeywords,
   getSnapshotsBeforeDate,
   getEarliestSnapshotsForKeywords,
   getKeywordHistory,
@@ -35,6 +36,8 @@ import {
   getLatestRunForConfig,
   getActiveRunForConfig,
   insertSnapshots,
+  upsertSnapshots,
+  deleteNotFoundSnapshots,
   getSnapshotsForRun,
 } from "./runQueries";
 
@@ -75,10 +78,11 @@ async function getConfigById({
   return rows[0] ?? null;
 }
 
-async function getConfigByProjectDomainLocation(
+async function getConfigByProjectDomainMarket(
   projectId: string,
   domain: string,
   locationCode: number,
+  languageCode: string,
   locationName: string | null,
 ) {
   const rows = await db
@@ -89,6 +93,7 @@ async function getConfigByProjectDomainLocation(
         eq(rankTrackingConfigs.projectId, projectId),
         eq(rankTrackingConfigs.domain, domain),
         eq(rankTrackingConfigs.locationCode, locationCode),
+        eq(rankTrackingConfigs.languageCode, languageCode),
         // National (NULL) and per-city configs are distinct rows — mirrors
         // the partial unique indexes, so a national config and any number of
         // city configs can coexist for the same domain.
@@ -390,7 +395,7 @@ async function getKeywordCountsForConfigs(configIds: string[]) {
 export const RankTrackingRepository = {
   getConfigsForProject,
   getConfigById,
-  getConfigByProjectDomainLocation,
+  getConfigByProjectDomainMarket,
   createConfig,
   updateConfig,
   getDueConfigsWithOrganization,
@@ -402,6 +407,8 @@ export const RankTrackingRepository = {
   getLatestRunForConfig,
   getActiveRunForConfig,
   insertSnapshots,
+  upsertSnapshots,
+  deleteNotFoundSnapshots,
   getSnapshotsForRun,
   getKeywordsForConfig,
   addKeywordsToConfig,
@@ -411,6 +418,7 @@ export const RankTrackingRepository = {
   getKeywordCountsForConfigs,
   getConfigSummaries,
   getLatestSnapshotsForKeywords,
+  getBestPositionsForKeywords,
   getSnapshotsBeforeDate,
   getEarliestSnapshotsForKeywords,
   getKeywordHistory,

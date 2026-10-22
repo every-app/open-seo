@@ -28,7 +28,7 @@ https://YOUR_WORKER_HOSTNAME/mcp
 
 ## AI visibility tracking
 
-AI Visibility uses your `DATAFORSEO_API_KEY`; tracked questions are sent to DataForSEO and billed directly by the provider. Set `OPENROUTER_API_KEY` for setup research and generated prompt suggestions. Deployment configures background collection and a five-minute cron that dispatches due daily, weekly, or monthly checks. The app shows the collection cost before a check or schedule starts. See the [AI Visibility guide](https://openseo.so/docs/ai-visibility).
+AI Visibility uses your `DATAFORSEO_API_KEY`; tracked questions are sent to DataForSEO and billed directly by the provider. Set `OPENROUTER_API_KEY` for setup research, Prompt Research, and generated prompt suggestions. Deployment configures background collection and a five-minute cron that dispatches due daily, weekly, or monthly checks. The app shows the collection cost before a check or schedule starts. See the [AI Visibility guide](https://openseo.so/docs/ai-visibility).
 
 ## Render JavaScript in site audits
 
@@ -36,7 +36,7 @@ Site Audit can load pages in a browser before analyzing them. Turn on **Render J
 
 Rendering uses [Cloudflare Browser Run](https://developers.cloudflare.com/browser-run/) on your own Cloudflare account. The deploy binds a browser to the audit Worker, so the toggle works with no extra setup. **Rendering needs a paid Workers plan.** The free plan allows one browser action every ten seconds, which is too slow for a crawl. The paid plan includes 10 browser hours a month, then bills $0.09 per browser hour.
 
-Some sites block Cloudflare's browser. To render those pages through [Context.dev](https://www.context.dev) instead, create a Context account, set `CONTEXT_API_KEY` in `.env.selfhost`, and redeploy. OpenSEO calls Context only for pages that Browser Run could not render, and each of those pages uses one Context credit on your Context account.
+Some sites block Cloudflare's browser. To render those pages through [Context.dev](https://www.context.dev) instead, create a Context account, set `CONTEXT_API_KEY` in `.env.selfhost`, and redeploy. OpenSEO calls Context only for pages that Browser Run could not render, and for Shopify store pages that Shopify rate limits while project setup or AI Visibility setup reads your site. Each of those pages uses one Context credit on your Context account.
 
 Docker deployments have no browser. On Docker, set `CONTEXT_API_KEY` in `.env.local` to render every page through Context. Until the key is set, the **Render JavaScript** toggle stays disabled with a setup note.
 

@@ -393,6 +393,34 @@
       "when": 1791953918935,
       "tag": "0055_chief_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1791964657242,
+      "tag": "0056_flowery_misty_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1791966822916,
+      "tag": "0057_heavy_johnny_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1792011398968,
+      "tag": "0058_flaky_devos",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1792089546917,
+      "tag": "0059_thankful_aaron_stack",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,6 @@
+import { waitUntil } from "cloudflare:workers";
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
+import { captureServerEvent } from "@/server/lib/posthog";
 
 // Orgs whose activation milestones are already recorded (or in flight) in
 // this isolate. Only *first* timestamps matter, so after one successful write
@@ -39,4 +41,31 @@ export async function recordExternalMcpToolCall(
     recordedToolCallOrgs.delete(organizationId);
     console.error("activation: recordExternalMcpToolCall failed", error);
   }
+}
+
+/**
+ * An agent's first connection or first project finishes the user's
+ * onboarding. Reports the completion only from the call that made it.
+ * Best-effort like the milestones above: the agent's action already worked.
+ */
+export async function completeOnboardingFromAgent(
+  user: { userId: string; organizationId: string },
+  via: "agent_connect" | "agent_project",
+): Promise<void> {
+  const completed = await ActivationRepository.markOnboardingCompleted(
+    user.userId,
+    user.organizationId,
+  ).catch((error: unknown) => {
+    console.error(`activation: onboarding completion (${via}) failed`, error);
+    return false;
+  });
+  if (!completed) return;
+  waitUntil(
+    captureServerEvent({
+      distinctId: user.userId,
+      event: "onboarding:completed",
+      organizationId: user.organizationId,
+      properties: { via },
+    }),
+  );
 }

@@ -5,29 +5,49 @@ vi.mock("cloudflare:workers", () => ({ waitUntil: vi.fn() }));
 const {
   assertPaidPlan,
   mentionsSearch,
-  serpLive,
+  generateText,
+  billResearchSpend,
+  isHosted,
+  creditsDepleted,
   getCached,
   getTracker,
   listResearchKeywords,
 } = vi.hoisted(() => ({
   assertPaidPlan: vi.fn(),
   mentionsSearch: vi.fn(),
-  serpLive: vi.fn(),
+  generateText: vi.fn(),
+  billResearchSpend: vi.fn(),
+  isHosted: vi.fn(),
+  creditsDepleted: vi.fn(),
   getCached: vi.fn(),
   getTracker: vi.fn(),
   listResearchKeywords: vi.fn(),
 }));
 
+vi.mock("ai", () => ({
+  generateText,
+  Output: { object: (value: unknown) => value },
+}));
+vi.mock("@/server/lib/openrouter", () => ({ buildChatAgentModel: vi.fn() }));
+vi.mock("@/server/lib/chatAgent", () => ({
+  requireOpenRouterCostUsd: () => 0.003,
+}));
+vi.mock("@/server/lib/runtime-env", () => ({
+  getRequiredEnvValue: async () => "key",
+  getOptionalEnvValue: vi.fn(),
+  isHostedServerAuthMode: isHosted,
+}));
+vi.mock("@/server/billing/researchSpend", () => ({ billResearchSpend }));
+vi.mock("@/server/billing/subscription", () => ({
+  checkUsageCreditsDepleted: creditsDepleted,
+}));
 vi.mock("@/server/lib/dataforseo", () => ({
   CHATGPT_LANGUAGE_CODE: "en",
   CHATGPT_LOCATION_CODE: 2840,
-  createDataforseoClient: () => ({
-    aiSearch: { mentionsSearch },
-    serp: { live: serpLive },
-  }),
+  createDataforseoClient: () => ({ aiSearch: { mentionsSearch } }),
 }));
 vi.mock("@/server/lib/r2-cache", () => ({
-  buildCacheKey: async () => "key",
+  buildCacheKey: async (prefix: string) => prefix,
   getCached,
   setCached: async () => undefined,
 }));
@@ -38,8 +58,14 @@ vi.mock("@/server/features/ai-search/services/access", () => ({
 vi.mock("../repositories/AiVisibilityRepository", () => ({
   AiVisibilityRepository: { listResearchKeywords },
 }));
+vi.mock("@/server/features/projects/repositories/ProjectRepository", () => ({
+  ProjectRepository: { getProjectForOrganization: async () => null },
+}));
+vi.mock(
+  "@/server/features/project-context/repositories/ProjectContextRepository",
+  () => ({ ProjectContextRepository: { listSections: async () => [] } }),
+);
 
-import { AppError } from "@/server/lib/errors";
 import { listAiResearchKeywords, researchAiPrompts } from "./aiPromptResearch";
 import { customer } from "./aiVisibilityTestFixtures";
 
@@ -48,14 +74,10 @@ const input = { projectId: "project", keyword: "seo tool" } as const;
 describe("researchAiPrompts", () => {
   beforeEach(() => {
     assertPaidPlan.mockResolvedValue(undefined);
+    isHosted.mockResolvedValue(true);
+    creditsDepleted.mockResolvedValue({ depleted: false });
     getCached.mockResolvedValue(null);
     getTracker.mockResolvedValue({
-      tracker: { locationCode: 2826, languageCode: "en" },
-      topics: [
-        { key: "seo", name: "SEO tool", archived: false },
-        { key: "old", name: "Old topic", archived: true },
-        { key: "general", name: "General", archived: false },
-      ],
       brands: [
         { own: true, name: "OpenSEO", domain: "openseo.so", aliases: [] },
       ],
@@ -76,25 +98,22 @@ describe("researchAiPrompts", () => {
         sources: [{ domain: "forbes.com", url: "https://forbes.com/b" }],
       },
       { question: "is moz a good seo tool?", ai_search_volume: 71 },
-      { question: "is seo tooling worth it?", ai_search_volume: 90 },
       {
-        question: "which tool do seo agencies trust?",
-        ai_search_volume: 30,
-        search_results: [{ domain: "ahrefs.com" }],
-      },
-      {
-        question: "which tool do seo agencies hate?",
-        ai_search_volume: 25,
-        sources: [{ domain: "www.reddit.com", url: "https://reddit.com/c" }],
+        question: "what does the seo tool and die company make?",
+        ai_search_volume: 90,
       },
     ]);
-    serpLive.mockResolvedValue([
-      { type: "organic", domain: "www.ahrefs.com" },
-      { type: "organic", domain: "www.reddit.com" },
-    ]);
+    // Ids follow provider order. The tool-and-die company asks the keyword
+    // phrase but means something else, so the model leaves it out.
+    generateText.mockImplementation(
+      async ({ onStepFinish }: { onStepFinish: (step: object) => unknown }) => {
+        await onStepFinish({});
+        return { output: { relevant: [0, 1, 2] } };
+      },
+    );
   });
 
-  it("reads US English ChatGPT prompts, merges near-duplicates, keeps prompts that ask the keyword or cite on-topic sites, and flags the project", async () => {
+  it("reads US English ChatGPT prompts, keeps the ones the model finds on topic, merges near-duplicates, and flags the project", async () => {
     const result = await researchAiPrompts(input, customer);
 
     // ChatGPT data exists only in US English, whatever the tracker market.
@@ -105,7 +124,6 @@ describe("researchAiPrompts", () => {
         languageCode: "en",
       }),
     );
-    // Reddit ranks for the keyword too, but citing it says nothing about topic.
     expect(result.prompts).toMatchObject([
       {
         text: "What is the most accurate SEO tool in 2026?",
@@ -115,20 +133,21 @@ describe("researchAiPrompts", () => {
         tracked: false,
       },
       { text: "Is moz a good seo tool?", tracked: true, sources: [] },
-      { text: "Which tool do seo agencies trust?" },
     ]);
+    expect(billResearchSpend).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: "project" }),
+      [expect.objectContaining({ provider: "openrouter", costUsd: 0.003 })],
+    );
   });
 
-  it("still returns prompts that ask the keyword when the SERP is down", async () => {
-    serpLive.mockRejectedValue(new AppError("UPSTREAM_UNAVAILABLE"));
+  it("refuses research when hosted credits are used up before buying any data", async () => {
+    creditsDepleted.mockResolvedValue({ depleted: true });
 
-    const result = await researchAiPrompts(input, customer);
-
-    // Only the SERP put ahrefs.com on topic, so that prompt drops out.
-    expect(result.prompts.map((prompt) => prompt.text)).toEqual([
-      "What is the most accurate SEO tool in 2026?",
-      "Is moz a good seo tool?",
-    ]);
+    await expect(researchAiPrompts(input, customer)).rejects.toMatchObject({
+      code: "INSUFFICIENT_CREDITS",
+    });
+    expect(mentionsSearch).not.toHaveBeenCalled();
+    expect(generateText).not.toHaveBeenCalled();
   });
 
   it("refuses research without the paid plan before buying any data", async () => {
@@ -138,27 +157,29 @@ describe("researchAiPrompts", () => {
       "PAYMENT_REQUIRED",
     );
     expect(mentionsSearch).not.toHaveBeenCalled();
-    expect(serpLive).not.toHaveBeenCalled();
+    expect(generateText).not.toHaveBeenCalled();
   });
 
-  it("does not buy the same research twice within the cache window", async () => {
-    getCached.mockResolvedValue({
-      prompts: [
-        {
-          question: "which seo tool is free?",
-          answer: "",
-          volume: 45,
-          sources: [],
-          domains: [],
-        },
-      ],
-      serpDomains: [],
-    });
+  it("does not buy the same research or relevance check twice within the cache window", async () => {
+    getCached.mockImplementation(async (key: string) =>
+      key === "ai-visibility:prompt-research"
+        ? {
+            prompts: [
+              {
+                question: "which seo tool is free?",
+                answer: "",
+                volume: 45,
+                sources: [],
+              },
+            ],
+          }
+        : ["which seo tool is free?"],
+    );
 
     const result = await researchAiPrompts(input, customer);
 
     expect(mentionsSearch).not.toHaveBeenCalled();
-    expect(serpLive).not.toHaveBeenCalled();
+    expect(generateText).not.toHaveBeenCalled();
     expect(result.prompts[0].text).toBe("Which seo tool is free?");
   });
 });

@@ -34,6 +34,7 @@ vi.mock("@/server/features/rank-tracking/services/rankCheckRunGuards", () => ({
 vi.mock("@/server/workflows/rankCheckPaths", () => ({
   runLiveCheck: mocks.runLiveCheck,
   runQueuedCheck: vi.fn(),
+  retryRankChecks: vi.fn(),
 }));
 vi.mock("@/server/workflows/pgStep", () => ({
   pgStep: (
@@ -117,7 +118,7 @@ describe("rank check workflow credit ceiling", () => {
   it("rejects a keyword-list race before balance or DataForSEO calls", async () => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(5));
 
-    await expect(runWorkflow({ maxCostCredits: 12 })).rejects.toMatchObject({
+    await expect(runWorkflow({ maxCostCredits: 20 })).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
 
@@ -130,7 +131,7 @@ describe("rank check workflow credit ceiling", () => {
   // callers without a ceiling — every scheduled check — must not be treated
   // as approving zero credits.
   it.each([
-    ["at the approved ceiling", 12, 4],
+    ["at the approved ceiling", 20, 4],
     ["without a ceiling", undefined, 5],
   ])("checks the reloaded list %s", async (_label, maxCostCredits, count) => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(count));

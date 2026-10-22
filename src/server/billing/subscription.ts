@@ -11,6 +11,7 @@ import {
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { autumn, AUTUMN_TRACK_RETRY_OPTIONS } from "@/server/billing/autumn";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
 import { AppError } from "@/server/lib/errors";
 
 export type BillingCustomerContext = Pick<
@@ -201,6 +202,7 @@ export async function checkUsageCreditsDepleted(
       topup_remaining: confirmed.topupRemaining,
     },
   });
+  await sendCreditsExhaustedEvent(customer);
   return { depleted: true, monthlyRemaining: check.monthlyRemaining };
 }
 
@@ -303,7 +305,8 @@ export async function holdCredits(args: {
  * the common case (monthly covers the batch) is a single Autumn request.
  *
  * Throws INSUFFICIENT_CREDITS when no call fits; `refusedCalls` lists the
- * ones that did not when some did. Either way the refusal event is emitted.
+ * ones that did not when some did. Either way the refusal event and the
+ * credits-exhausted email event are sent.
  * The caller must settle every returned hold with `settleUsageCredits` once
  * its calls' real cost is known.
  */
@@ -408,6 +411,9 @@ export async function reserveUsageCredits(args: {
         topup_remaining: topupRemaining,
       },
     });
+    // Most users are refused while they still have a few credits left, so
+    // this, not the zero-balance gate, is where most of them run out.
+    await sendCreditsExhaustedEvent(args.customer);
   }
   if (holds.length === 0) throw new AppError("INSUFFICIENT_CREDITS");
   return { holds, refusedCalls };

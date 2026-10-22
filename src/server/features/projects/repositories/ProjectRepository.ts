@@ -148,6 +148,25 @@ async function updateProjectWebsite(
   return row;
 }
 
+// Saves the key only if the project has none, so concurrent first uses can't
+// leave the site's key file pointing at a key that was overwritten.
+async function setIndexNowKeyIfMissing(
+  projectId: string,
+  organizationId: string,
+  key: string,
+) {
+  await db
+    .update(projects)
+    .set({ indexnowKey: key })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNull(projects.indexnowKey),
+      ),
+    );
+}
+
 async function tryCreateDefaultProject(organizationId: string) {
   const id = crypto.randomUUID();
   const inserted = await db
@@ -219,6 +238,7 @@ export const ProjectRepository = {
   createProject,
   updateProject,
   updateProjectWebsite,
+  setIndexNowKeyIfMissing,
   tryCreateDefaultProject,
   archiveProject,
   restoreProject,

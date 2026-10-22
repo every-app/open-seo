@@ -50,6 +50,7 @@ import {
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 // Refresh when the stored access token is within this many ms of expiry.
 const ACCESS_TOKEN_SKEW_MS = 5_000;
 
@@ -400,6 +401,25 @@ export async function getGoogleAccessToken(input: {
     })
     .where(eq(account.id, grant.id));
   return tokens.access_token;
+}
+
+/**
+ * Revokes a Google access or refresh token. Google revokes the whole grant
+ * the token belongs to (every scope this OAuth client holds for that Google
+ * account), so callers must make sure no other stored grant still needs it.
+ */
+export async function revokeGoogleToken(token: string): Promise<void> {
+  const response = await fetch(GOOGLE_REVOKE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ token }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  // Google answers 400 invalid_token for an already-revoked or expired token,
+  // which leaves no live grant either way.
+  if (!response.ok && response.status !== 400) {
+    throw new Error(`Google token revocation failed: ${response.status}`);
+  }
 }
 
 export async function handleGoogleOAuthCallbackRequest(

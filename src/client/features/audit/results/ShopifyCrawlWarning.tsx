@@ -12,6 +12,7 @@ import {
   AlertTitle,
 } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import { ShopifyRateLimitAlert } from "@/client/features/audit/results/ShopifyRateLimitAlert";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import { extractHostname } from "@/client/features/audit/shared";
 import { startAudit } from "@/serverFunctions/audit";
@@ -24,17 +25,22 @@ import {
 /**
  * Shown instead of the generic crawl warnings when a Shopify storefront
  * throttled or refused the crawl. Shopify's own fix is a crawler-access
- * signature the merchant creates in admin, so the report asks for it here.
+ * signature the merchant creates in admin, so the report asks for it first.
  *
  * The setup steps only show while the domain has no usable signature. Once
- * one is saved they collapse to a single line with the re-run button.
+ * one is saved they collapse to a single line with the re-run button. An
+ * unrendered crawl Shopify still rate limited with the signature asks for
+ * rendering instead.
  */
 export function ShopifyCrawlWarning({
   projectId,
   audit,
+  throttled,
 }: {
   projectId: string;
   audit: AuditResultsData["audit"];
+  /** Shopify answered with 429s, not only refusals. */
+  throttled: boolean;
 }) {
   const navigate = useNavigate();
   const host = extractHostname(audit.startUrl);
@@ -106,6 +112,14 @@ export function ShopifyCrawlWarning({
 
   if (liveCredential) {
     const signedAndStillLimited = liveCredential.id === usedCredentialId;
+    if (signedAndStillLimited && throttled && !audit.config.renderJavaScript) {
+      return (
+        <ShopifyRateLimitAlert
+          projectId={projectId}
+          startUrl={audit.startUrl}
+        />
+      );
+    }
     return (
       <Alert variant={signedAndStillLimited ? "warning" : "success"}>
         {signedAndStillLimited ? <ShieldAlert /> : <ShieldCheck />}

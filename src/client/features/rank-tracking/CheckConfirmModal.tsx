@@ -43,7 +43,7 @@ export function CheckConfirmModal({
       {costUsd != null ? (
         <>
           {" "}
-          Costs about{" "}
+          Costs up to{" "}
           <span className="font-mono font-semibold text-foreground">
             ${costUsd.toFixed(2)}
           </span>

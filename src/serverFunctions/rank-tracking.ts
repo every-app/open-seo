@@ -6,6 +6,7 @@ import { RankTrackingKeywordService } from "@/server/features/rank-tracking/serv
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
 import { AppError, asAppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   getConfigsSchema,
@@ -97,6 +98,7 @@ export const createRankTrackingConfig = createServerFn({ method: "POST" })
       billingCustomer: context,
     });
 
+    await markOnboardingMilestone(context, "rankTrackingSetUp");
     waitUntil(
       captureServerEvent({
         distinctId: context.userId,
@@ -104,7 +106,6 @@ export const createRankTrackingConfig = createServerFn({ method: "POST" })
         organizationId: context.organizationId,
         properties: {
           project_id: context.projectId,
-          domain: data.domain,
           devices: data.devices ?? "both",
           schedule: data.scheduleInterval ?? "weekly",
         },

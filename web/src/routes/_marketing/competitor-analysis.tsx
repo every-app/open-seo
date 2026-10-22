@@ -14,7 +14,6 @@ export const Route = createFileRoute("/_marketing/competitor-analysis")({
         "See a competitor's top organic keywords and pages, compare their traffic to yours, and find the keywords they rank for that you don't. No signup, no email.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free SEO competitor analysis tool",
     }),
   component: CompetitorAnalysisPage,
 });

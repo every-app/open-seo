@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { PlanPageAccountMenu } from "@/client/features/billing/PlanPageAccountMenu";
@@ -11,6 +12,7 @@ import {
 import { captureClientEvent } from "@/client/lib/posthog";
 import { queryClient } from "@/client/tanstack-db";
 import { useSession } from "@/lib/auth-client";
+import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { saveOnboardingAnswers } from "@/serverFunctions/onboarding";
 
 const clampStep = (step: number) =>
@@ -23,14 +25,19 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
   ssr: false,
   // Step lives in the URL so it survives refresh and works with back/forward.
   // `domain` arrives from sign-up when the visitor checked a site with the
-  // marketing site's free keyword tool.
+  // marketing site's free keyword tool. `redirect` is the app page the user
+  // asked for before useOnboardingRedirect sent them here.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { step: number; domain?: string } => {
+  ): { step: number; domain?: string; redirect?: string } => {
     const raw = Number(search.step);
     return {
       step: Number.isFinite(raw) ? clampStep(raw) : 0,
       domain: typeof search.domain === "string" ? search.domain : undefined,
+      redirect:
+        typeof search.redirect === "string"
+          ? normalizeAuthRedirect(search.redirect)
+          : undefined,
     };
   },
   // Send users who already finished onboarding home before rendering. Running
@@ -50,7 +57,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/")({
 function OnboardingPage() {
   const { data: session } = useSession();
   const navigate = useNavigate();
-  const { step, domain } = Route.useSearch();
+  const { step, domain, redirect: returnTo } = Route.useSearch();
 
   const saveMutation = useMutation({
     mutationFn: (extra: { completed?: boolean }) =>
@@ -59,10 +66,19 @@ function OnboardingPage() {
       }),
   });
 
+  // Pageviews drop the query string, `?step=` included, so each step reports
+  // itself.
+  useEffect(() => {
+    captureClientEvent("onboarding:step_viewed", {
+      step,
+      step_name: ONBOARDING_STEPS[step],
+    });
+  }, [step]);
+
   const goToStep = (next: number) =>
     void navigate({
       to: "/onboarding",
-      search: { step: clampStep(next), domain },
+      search: { step: clampStep(next), domain, redirect: returnTo },
     });
 
   const handleNext = () => goToStep(step + 1);
@@ -76,6 +92,9 @@ function OnboardingPage() {
   };
 
   const handleFinish = async () => {
+    // Agent setup also finishes on its own once the agent connects, so this
+    // can run again while a click's save is still pending.
+    if (saveMutation.isPending) return;
     try {
       await saveMutation.mutateAsync({ completed: true });
       // The route guard fetched this query without a mounted observer. Refetch
@@ -91,9 +110,6 @@ function OnboardingPage() {
       // Keep the user here to retry; an unsaved completion would redirect back.
       return;
     }
-    captureClientEvent("onboarding:completed", {
-      from_free_check: Boolean(domain),
-    });
     // Visitors who signed up from the free keyword check came to see the rest
     // of its results, so land them on the saved website's keywords ranking
     // #4-20 instead of the dashboard.
@@ -116,7 +132,7 @@ function OnboardingPage() {
         return;
       }
     }
-    void navigate({ to: "/", replace: true });
+    void navigate({ href: returnTo ?? "/", replace: true });
   };
 
   return (

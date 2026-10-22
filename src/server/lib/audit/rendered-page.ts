@@ -17,7 +17,8 @@ type RenderOptions = {
   // Context key is optional on self-hosted Cloudflare deployments.
   browser?: Pick<BrowserRun, "quickAction">;
   contextApiKey?: string;
-  auditId: string;
+  /** Logged with each attempt; reads outside an audit have none. */
+  auditId?: string;
   // Counts every provider attempt, including rejected ones: both providers
   // bill a request whether or not the HTML turned out to be usable.
   usage: RenderUsage;

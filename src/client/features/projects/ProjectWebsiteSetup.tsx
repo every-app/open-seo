@@ -8,6 +8,8 @@ import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
 import { Field, FieldLabel } from "@/client/components/ui/field";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
+import { getErrorCode } from "@/client/lib/error-messages";
 import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
 import { projectContextQueryKey } from "@/client/features/projects/project-context/shared";
 import { getProjectContext } from "@/serverFunctions/projectContext";
@@ -114,13 +116,17 @@ export function ProjectWebsiteSetup({ projectId }: { projectId: string }) {
               required
             />
           </Field>
-          {researchMutation.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                We couldn’t research this website. Check the URL, provider
-                settings, and available usage credits, then try again.
-              </AlertDescription>
-            </Alert>
+          {getErrorCode(researchMutation.error) === "INSUFFICIENT_CREDITS" ? (
+            <InsufficientCreditsError title="We couldn’t research this website" />
+          ) : (
+            researchMutation.isError && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  We couldn’t research this website. Check the URL and provider
+                  settings, then try again.
+                </AlertDescription>
+              </Alert>
+            )
           )}
           <div className="space-y-3">
             <Button

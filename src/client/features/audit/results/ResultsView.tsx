@@ -64,8 +64,7 @@ export function ResultsView({
     [pages],
   );
 
-  // Shopify's own crawler-access signature is a real fix for a throttled or
-  // refused crawl, so it replaces the generic advice for those stores.
+  // Shopify stores get their own notice instead of the generic advice.
   const shopifyLimited =
     audit.config.sitePlatform === "shopify" &&
     (blockedCount > 0 || rateLimitedCount > 0 || crawlStopped);
@@ -95,7 +94,11 @@ export function ResultsView({
   return (
     <>
       {shopifyLimited && (
-        <ShopifyCrawlWarning projectId={projectId} audit={audit} />
+        <ShopifyCrawlWarning
+          projectId={projectId}
+          audit={audit}
+          throttled={rateLimitedCount > 0 || crawlStopped}
+        />
       )}
 
       {!shopifyLimited && !siteBlocked && blockedCount > 0 && (

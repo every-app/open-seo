@@ -23,7 +23,7 @@ The project-context tools are free and shared with the app and other agents.
 
 ## OpenSEO MCP tools
 
-- `research_ai_visibility_prompts`: questions about one keyword, matched in questions and answers and kept only when they ask the keyword phrase or cite sites that rank on Google for it or belong to the project or its competitors, with near-duplicates merged and the most common first. Each prompt has cited `sources` (with `own` marked), `ownDomainCited`, `brandMentioned` and `tracked`. One prompt search and one Google results lookup per keyword, cached for 24 hours. US English only. Requires a paid plan in hosted mode.
+- `research_ai_visibility_prompts`: questions about one keyword, matched in questions and answers and kept only when a model judges they use the keyword in the business's sense (from the project's business overview), with near-duplicates merged and the most common first. Niche keywords may return few prompts. Each prompt has cited `sources` (with `own` marked), `ownDomainCited`, `brandMentioned` and `tracked`. One prompt search and one relevance check per keyword, cached for 24 hours. US English only. Requires a paid plan in hosted mode.
 - `explore_prompt`: optional. Asks ChatGPT one prompt through its API and returns today's answer, citations, a `brandMentioned` flag for `highlightBrand`, and `fanOutQueries`, the web searches the model ran before answering. Charged at actual usage per uncached answer; cached answers are free for seven days. Requires a paid plan in hosted mode.
 - `list_saved_keywords` and, when connected, a bounded `get_search_console_performance` read: free sources of head terms the business already cares about.
 

@@ -11,6 +11,7 @@ import {
 import { hasOrgPermission } from "@/lib/org-permissions";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import {
   requireAuthenticatedContext,
@@ -107,12 +108,13 @@ export const setGscSite = createServerFn({ method: "POST" })
       siteUrl: data.siteUrl,
       userId: context.userId,
     });
+    await markOnboardingMilestone(context, "gscConnected");
     waitUntil(
       captureServerEvent({
         distinctId: context.userId,
         event: "gsc:property_select",
         organizationId: context.organizationId,
-        properties: { project_id: context.projectId, site_url: data.siteUrl },
+        properties: { project_id: context.projectId },
       }),
     );
     return {

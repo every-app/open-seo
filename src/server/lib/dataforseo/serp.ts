@@ -206,8 +206,8 @@ export async function fetchRankCheckSerp(input: {
 // ---------------------------------------------------------------------------
 // Task-queue rank checks (scheduled runs). DataForSEO's standard queue costs
 // ~30% of the live endpoint; tasks complete in ~5 minutes on average. The flow
-// is task_post (charged) -> poll task_get (free) -> live fallback for
-// stragglers, orchestrated by the rank check workflow.
+// is task_post (charged) -> poll task_get (free), orchestrated by the rank
+// check workflow, which retries stragglers through the queue.
 // ---------------------------------------------------------------------------
 
 export interface RankCheckTaskInput {

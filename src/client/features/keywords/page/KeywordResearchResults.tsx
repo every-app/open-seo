@@ -295,6 +295,7 @@ function SerpPanel({ controller }: Props) {
         loadingMore={controller.serpLoadingMore}
         canLoadMore={controller.canLoadMoreSerp}
         error={controller.serpError}
+        outOfCredits={controller.serpOutOfCredits}
         onRetry={controller.retrySerp}
         retrying={controller.serpRetrying}
         deepFetchFailed={controller.deepFetchFailed}

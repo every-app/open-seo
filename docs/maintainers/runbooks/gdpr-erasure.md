@@ -73,8 +73,8 @@ The execution order is designed for safe retries:
    Autumn plus its linked Stripe customer.
 2. Call the Worker endpoint, which terminates active site-audit and rank-check
    Workflow instances, revokes Google grants, and erases chat/scratchpad
-   Durable Objects, R2 audit payloads, KV progress entries, and MCP OAuth
-   grants/tokens.
+   Durable Objects, R2 audit payloads, the projects' cached Search Console
+   rows, KV progress entries, and MCP OAuth grants/tokens.
 3. Delete the organizations and user in one Postgres transaction, relying on
    foreign-key cascades for project data, then verify the root rows are gone.
 

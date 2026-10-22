@@ -3,19 +3,24 @@ import {
   AuthorizationError,
   OAuthError,
   OAuthProvider,
+  authorizationErrorRedirect,
   type AuthRequest,
   type OAuthHelpers,
-  type OAuthProviderOptions,
 } from "@cloudflare/workers-oauth-provider";
 import { z } from "zod";
 import { getHostedBaseUrl } from "@/lib/auth";
+import { OAUTH_AUTHORIZE_PATH } from "@/lib/auth-redirect";
 import {
   getMcpResource,
   MCP_OAUTH_SCOPES,
   MCP_SCOPE,
 } from "@/lib/oauth-resource";
 import { asAppError } from "@/server/lib/errors";
-import { recordMcpAuthorized } from "@/server/features/activation/mcpActivation";
+import {
+  completeOnboardingFromAgent,
+  recordMcpAuthorized,
+} from "@/server/features/activation/mcpActivation";
+import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import { captureServerEvent } from "@/server/lib/posthog";
 import {
   createWorkersOAuthMcpProps,
@@ -28,9 +33,9 @@ import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
 import { handleMcpApiKeyRequest } from "@/server/mcp/api-key-auth";
 
-const OAUTH_AUTHORIZE_PATH = "/api/auth/oauth2/authorize";
 const OAUTH_TOKEN_PATH = "/api/auth/oauth2/token";
 const OAUTH_REGISTER_PATH = "/api/auth/oauth2/register";
+const OAUTH_PURGE_CURSOR_KEY = "purge-cursor";
 
 const OAUTH_CONSENT_RESPONSE_PATH = "/api/oauth/consent";
 const OAUTH_AUTHORIZATION_PARAM_NAMES = [
@@ -47,10 +52,6 @@ const OAUTH_AUTHORIZATION_PARAM_NAMES = [
 // preserve MCP sessions across normal usage.
 const MCP_ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 24;
 const MCP_REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
-// DCR client records expire on a fixed clock from registration (the provider
-// defaults to 90 days), and an actively refreshing client breaks with
-// invalid_client the moment its record lapses. A year keeps that cliff rare;
-// rolling 30-day refresh tokens already reap inactive clients' sessions.
 const MCP_CLIENT_REGISTRATION_TTL_SECONDS = 60 * 60 * 24 * 365;
 
 export type OpenSeoOAuthEnv = Env & {
@@ -88,36 +89,12 @@ function redirectToSignIn(request: Request) {
   return Response.redirect(signInUrl.toString(), 302);
 }
 
-function oauthErrorRedirect(input: {
-  redirectUri: string;
-  code: string;
-  description: string;
-  state?: string;
-  issuer?: string;
-}) {
-  const redirectUrl = new URL(input.redirectUri);
-  redirectUrl.searchParams.set("error", input.code);
-  redirectUrl.searchParams.set("error_description", input.description);
-  if (input.state) redirectUrl.searchParams.set("state", input.state);
-  if (input.issuer) redirectUrl.searchParams.set("iss", input.issuer);
-  return redirectUrl.toString();
-}
-
 function authorizationErrorResponse(error: AuthorizationError) {
-  if (!error.redirectUri) {
+  if (!error.redirectTo) {
     return new Response(error.description, { status: 400 });
   }
 
-  return Response.redirect(
-    oauthErrorRedirect({
-      redirectUri: error.redirectUri,
-      code: error.code,
-      description: error.description,
-      state: error.state,
-      issuer: error.issuer,
-    }),
-    302,
-  );
+  return Response.redirect(error.redirectTo, 302);
 }
 
 function jsonResponse(body: unknown, init?: ResponseInit) {
@@ -237,16 +214,6 @@ function getGrantedMcpScopes(requestedScopes: string[]) {
   return granted;
 }
 
-function deniedRedirect(authRequest: AuthRequest) {
-  return oauthErrorRedirect({
-    redirectUri: authRequest.redirectUri,
-    code: "access_denied",
-    description: "The user denied access",
-    state: authRequest.state,
-    issuer: authRequest.issuer,
-  });
-}
-
 async function handleOAuthAuthorizeRequest(
   request: Request,
   env: OpenSeoOAuthEnv,
@@ -312,7 +279,13 @@ async function handleOAuthConsentResponse(
   }
 
   if (!body.data.accept) {
-    return jsonResponse({ redirectTo: deniedRedirect(authRequest) });
+    return jsonResponse({
+      redirectTo: authorizationErrorRedirect(
+        authRequest,
+        "access_denied",
+        "The user denied access",
+      ),
+    });
   }
 
   const context = await resolveContextForConsent(request);
@@ -356,6 +329,11 @@ async function handleOAuthConsentResponse(
   });
 
   await recordMcpAuthorized(context.organizationId);
+  // Connecting an agent is the last onboarding step, so this finishes
+  // onboarding for people who paste the setup prompt and never return to the
+  // wizard.
+  await completeOnboardingFromAgent(context, "agent_connect");
+  await markOnboardingMilestone(context, "mcpConnected");
 
   waitUntil(
     captureServerEvent({
@@ -401,7 +379,7 @@ const mcpApiHandler: ExportedHandlerWithFetch<OpenSeoOAuthEnv> = {
 };
 
 function createProvider(appFetch: AppFetch, resource: string) {
-  const options: OAuthProviderOptions<OpenSeoOAuthEnv> = {
+  return new OAuthProvider<OpenSeoOAuthEnv>({
     apiRoute: MCP_ROUTE,
     apiHandler: mcpApiHandler,
     defaultHandler: createDefaultHandler(appFetch),
@@ -411,7 +389,9 @@ function createProvider(appFetch: AppFetch, resource: string) {
     scopesSupported: [...MCP_OAUTH_SCOPES],
     accessTokenTTL: MCP_ACCESS_TOKEN_TTL_SECONDS,
     refreshTokenTTL: MCP_REFRESH_TOKEN_TTL_SECONDS,
+    refreshTokenIdleTTL: MCP_REFRESH_TOKEN_TTL_SECONDS,
     clientRegistrationTTL: MCP_CLIENT_REGISTRATION_TTL_SECONDS,
+    allowPrivateUseRedirectUris: true,
     resourceMetadata: {
       resource,
       scopes_supported: [MCP_SCOPE],
@@ -434,9 +414,7 @@ function createProvider(appFetch: AppFetch, resource: string) {
       };
     },
     onError: logOAuthError,
-  };
-
-  return new OAuthProvider(options);
+  });
 }
 
 export function createOpenSeoOAuthProvider(appFetch: AppFetch) {
@@ -465,13 +443,20 @@ export function createOpenSeoOAuthProvider(appFetch: AppFetch) {
       return getProvider().fetch(request, env, ctx);
     },
 
-    // Cron GC for OAUTH_KV: sweeps orphaned grants/tokens (e.g. from expired
-    // client registrations) that KV TTLs alone don't reclaim. The sweep only
-    // advances past live records by deleting dead ones, so give it a batch
-    // large enough to cover the whole keyspace in one pass while staying
-    // within the invocation's subrequest budget.
-    purgeExpiredData(env: OpenSeoOAuthEnv) {
-      return getProvider().purgeExpiredData(env, { batchSize: 200 });
+    // Resume the bounded sweep across cron runs, including past live records.
+    async purgeExpiredData(env: OpenSeoOAuthEnv) {
+      const cursor =
+        (await env.OAUTH_KV.get(OAUTH_PURGE_CURSOR_KEY)) ?? undefined;
+      const result = await getProvider().purgeExpiredData(env, {
+        batchSize: 200,
+        cursor,
+      });
+      if (result.cursor) {
+        await env.OAUTH_KV.put(OAUTH_PURGE_CURSOR_KEY, result.cursor);
+      } else {
+        await env.OAUTH_KV.delete(OAUTH_PURGE_CURSOR_KEY);
+      }
+      return result;
     },
   };
 }

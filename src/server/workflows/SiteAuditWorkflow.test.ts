@@ -26,11 +26,16 @@ vi.mock("@/server/lib/audit/rendering-billing", () => ({
 }));
 vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
   AuditRepository: {
-    getAuditForWorkflow: vi
-      .fn()
-      .mockResolvedValue({ projectId: "project", currentPhase: "crawling" }),
+    getAuditForWorkflow: vi.fn().mockResolvedValue({
+      projectId: "project",
+      status: "running",
+      currentPhase: "crawling",
+    }),
     failAudit: mocks.failAudit,
   },
+}));
+vi.mock("@/server/workflows/siteAuditStart", () => ({
+  resolveAuditStart: async (input: object) => ({ ...input, access: null }),
 }));
 vi.mock("@/server/features/audit/services/CrawlerCredentialService", () => ({
   CrawlerCredentialService: { openCrawlerAccess: vi.fn() },

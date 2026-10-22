@@ -6,6 +6,8 @@
     "deploy/alchemy/alchemy.preview-access.run.ts",
     // Site-audit aux worker entry (wrangler.audit.jsonc)
     "src/audit-worker.ts",
+    // Separately bundled MCP App, served as an inline HTML resource.
+    "src/client/mcp-widgets/main.tsx",
     // Detect Tanstack Start Routes
     "src/start.ts",
     "src/router.tsx",

@@ -5,6 +5,7 @@ import {
   getOAuthSignedQuery,
 } from "@/lib/auth-redirect";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { PRIVACY_URL, TERMS_URL } from "@/shared/terms";
 
 export const authRedirectSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -30,6 +31,37 @@ export function useAuthPageState(redirect: string | undefined) {
     oauthQuery,
     isHostedMode,
   };
+}
+
+const termsLinkClassName =
+  "text-foreground underline underline-offset-2 hover:text-foreground/80 transition-colors";
+
+// Clickwrap: shown next to every button that can create an account, so
+// clicking it is the affirmative acceptance the signup hook records.
+export function TermsAgreementNotice({ action }: { action: string }) {
+  return (
+    <p className="text-center text-sm leading-relaxed text-muted-foreground">
+      {action}, you agree to our{" "}
+      <a
+        href={TERMS_URL}
+        target="_blank"
+        rel="noreferrer"
+        className={termsLinkClassName}
+      >
+        Terms
+      </a>{" "}
+      and{" "}
+      <a
+        href={PRIVACY_URL}
+        target="_blank"
+        rel="noreferrer"
+        className={termsLinkClassName}
+      >
+        Privacy Policy
+      </a>
+      .
+    </p>
+  );
 }
 
 export function AuthMethodChooser({

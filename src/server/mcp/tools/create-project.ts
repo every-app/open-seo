@@ -1,5 +1,6 @@
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
+import { completeOnboardingFromAgent } from "@/server/features/activation/mcpActivation";
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { AppError } from "@/server/lib/errors";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -151,6 +152,15 @@ export const createProjectTool = {
       target.organizationId,
       input,
     );
+    // Hosted users only: self-host and SAM never run the onboarding wizard.
+    // Best-effort: the project already exists, and an error here would make
+    // the agent retry and create a duplicate.
+    if (auth.orgScope === "user") {
+      await completeOnboardingFromAgent(
+        { userId: auth.userId, organizationId: target.organizationId },
+        "agent_project",
+      );
+    }
     return mcpResponse({
       text: `Created project ${project.id}  ${project.name}${
         project.domain ? ` (${project.domain})` : ""

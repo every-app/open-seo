@@ -49,11 +49,18 @@ declare namespace Cloudflare {
     LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
     LOOPS_TRANSACTIONAL_INVITATION_ID?: string;
+    // Loops mailing list for product-update emails (hosted only). Unset skips
+    // the list sync with a warning.
+    LOOPS_PRODUCT_UPDATES_LIST_ID?: string;
     AUTUMN_SECRET_KEY?: string;
     AUTUMN_WEBHOOK_SECRET?: string;
     // Dub referral conversion tracking (hosted only); all Dub code no-ops
     // when unset.
     DUB_API_KEY?: string;
+    // Meta ad signup attribution via the Conversions API (hosted only); no-ops
+    // unless both are set.
+    META_PIXEL_ID?: string;
+    META_CONVERSIONS_API_TOKEN?: string;
     // HMAC secret for the operator-only GDPR storage-erasure endpoint.
     GDPR_ERASURE_SECRET?: string;
 

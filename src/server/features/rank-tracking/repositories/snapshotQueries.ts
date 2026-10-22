@@ -33,6 +33,18 @@ function cutoffTimestamp(sinceDays: number): string {
   );
 }
 
+/** Best position each keyword has had on any device across completed runs. */
+export async function getBestPositionsForKeywords(configId: string) {
+  return db
+    .select({
+      trackingKeywordId: rankSnapshots.trackingKeywordId,
+      position: min(rankSnapshots.position),
+    })
+    .from(rankSnapshots)
+    .where(inArray(rankSnapshots.runId, completedRunIdsForConfig(configId)))
+    .groupBy(rankSnapshots.trackingKeywordId);
+}
+
 /**
  * Flat per-keyword position series across completed runs, ordered oldest first.
  * `null` position = checked but not found within serpDepth (a real event, not a

@@ -146,12 +146,12 @@ describe("runPageReporters", () => {
     expect(issueTypes(makePage(overrides))).not.toContain(issueType);
   });
 
-  it("reports the measured length with a short meta description", () => {
+  it("reports the offending meta description with its length and the guideline", () => {
     expect(
       runPageReporters(makePage({ metaDescription: "x".repeat(69) })).find(
         (issue) => issue.issueType === "meta-description-too-short",
       )?.details,
-    ).toEqual({ length: 69 });
+    ).toEqual({ length: 69, min: 70, description: "x".repeat(69) });
   });
 
   // The same empty shell: a PDF gets no content checks, an HTML page all of them.

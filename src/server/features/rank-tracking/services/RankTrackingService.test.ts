@@ -3,7 +3,7 @@ import { MAX_CONFIGS_PER_PROJECT } from "@/shared/rank-tracking";
 import { RankTrackingService } from "./RankTrackingService";
 
 const mocks = vi.hoisted(() => ({
-  getConfigByProjectDomainLocation: vi.fn(),
+  getConfigByProjectDomainMarket: vi.fn(),
   getConfigById: vi.fn(),
   getConfigsForProject: vi.fn(),
   createConfig: vi.fn(),
@@ -16,10 +16,6 @@ const mocks = vi.hoisted(() => ({
   customerHasPaidPlan: vi.fn(),
 }));
 
-// These tests cover normal scheduling, not the temporary pause.
-vi.mock("@/shared/rank-tracking-pause", () => ({
-  SCHEDULED_RANK_CHECKS_PAUSED: false,
-}));
 vi.mock("cloudflare:workers", () => ({
   env: { RANK_CHECK_WORKFLOW: { create: mocks.startWorkflow } },
 }));
@@ -41,7 +37,7 @@ const archivedConfig = {
   projectId: "project_1",
   domain: "acme.com",
   locationCode: 2840,
-  languageCode: "en",
+  languageCode: "es",
   devices: "both" as const,
   serpDepth: 20,
   scheduleInterval: "weekly" as const,
@@ -81,12 +77,11 @@ describe("RankTrackingService.createConfig", () => {
   });
 
   it("reactivates an archived config instead of throwing, applying the new settings", async () => {
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);
+    mocks.getConfigByProjectDomainMarket.mockResolvedValue(archivedConfig);
     mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.updateConfig.mockResolvedValue(undefined);
     mocks.getConfigById.mockResolvedValue({
       ...archivedConfig,
-      languageCode: "es",
       devices: "desktop",
       serpDepth: 40,
       scheduleInterval: "daily",
@@ -109,7 +104,6 @@ describe("RankTrackingService.createConfig", () => {
       "project_1",
       expect.objectContaining({
         isActive: true,
-        languageCode: "es",
         devices: "desktop",
         serpDepth: 40,
         scheduleInterval: "daily",
@@ -120,8 +114,8 @@ describe("RankTrackingService.createConfig", () => {
     expect(mocks.createConfig).not.toHaveBeenCalled();
   });
 
-  it("throws when an active config already tracks the same domain + location", async () => {
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue({
+  it("throws when an active config already tracks the same domain + location + language", async () => {
+    mocks.getConfigByProjectDomainMarket.mockResolvedValue({
       ...archivedConfig,
       isActive: true,
     });
@@ -133,8 +127,8 @@ describe("RankTrackingService.createConfig", () => {
     expect(mocks.createConfig).not.toHaveBeenCalled();
   });
 
-  it("keys the duplicate check on locationName so national and city configs coexist", async () => {
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+  it("keys the duplicate check on language and locationName so those configs coexist", async () => {
+    mocks.getConfigByProjectDomainMarket.mockResolvedValue(null);
     mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.createConfig.mockResolvedValue(undefined);
 
@@ -144,25 +138,27 @@ describe("RankTrackingService.createConfig", () => {
       ...baseInput,
       locationName: "Enid,Oklahoma,United States",
     });
-    expect(mocks.getConfigByProjectDomainLocation).toHaveBeenCalledWith(
+    expect(mocks.getConfigByProjectDomainMarket).toHaveBeenCalledWith(
       "project_1",
       "acme.com",
       2840,
+      "es",
       "Enid,Oklahoma,United States",
     );
 
     // National config: the lookup is scoped to NULL locationName.
     await RankTrackingService.createConfig(baseInput);
-    expect(mocks.getConfigByProjectDomainLocation).toHaveBeenLastCalledWith(
+    expect(mocks.getConfigByProjectDomainMarket).toHaveBeenLastCalledWith(
       "project_1",
       "acme.com",
       2840,
+      "es",
       null,
     );
   });
 
   it("rejects reactivating an archived config when the project is at the active-config cap", async () => {
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);
+    mocks.getConfigByProjectDomainMarket.mockResolvedValue(archivedConfig);
     mocks.getConfigsForProject.mockResolvedValue(
       Array.from({ length: MAX_CONFIGS_PER_PROJECT }, (_, i) => ({
         ...archivedConfig,
@@ -190,7 +186,7 @@ describe("RankTrackingService.createConfig", () => {
   ])(
     "resolves an omitted language to %s",
     async (_case, overrides, expected) => {
-      mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+      mocks.getConfigByProjectDomainMarket.mockResolvedValue(null);
       mocks.getConfigsForProject.mockResolvedValue([]);
       mocks.createConfig.mockResolvedValue(undefined);
 
@@ -210,7 +206,7 @@ describe("RankTrackingService.createConfig", () => {
 
   it("rejects a locationName the sandbox refuses, pointing at search_serp_locations", async () => {
     stubSandbox(40501, "Invalid Field: 'location_name'.");
-    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+    mocks.getConfigByProjectDomainMarket.mockResolvedValue(null);
     mocks.getConfigsForProject.mockResolvedValue([]);
 
     const error = await RankTrackingService.createConfig({

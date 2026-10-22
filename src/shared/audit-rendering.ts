@@ -11,7 +11,7 @@ const CLOUDFLARE_USD_PER_BROWSER_HOUR = 0.09;
 const CLOUDFLARE_USD_PER_ATTEMPT =
   (CLOUDFLARE_RENDER_TIMEOUT_MS / 3_600_000) * CLOUDFLARE_USD_PER_BROWSER_HOUR;
 // Context.dev list price on the Developer plan. One scrape is one credit.
-const CONTEXT_USD_PER_CREDIT = 0.0025;
+export const CONTEXT_USD_PER_CREDIT = 0.0025;
 
 /** Provider units a rendered audit used, counted per crawl chunk. */
 export type RenderUsage = {

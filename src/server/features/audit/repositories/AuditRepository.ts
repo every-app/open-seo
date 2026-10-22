@@ -48,6 +48,18 @@ async function createAudit(data: {
   });
 }
 
+/** Records where the crawl really starts, once the workflow has probed the site. */
+async function updateAuditStart(
+  auditId: string,
+  startUrl: string,
+  config: AuditConfig,
+) {
+  await db
+    .update(audits)
+    .set({ startUrl, config: JSON.stringify(config) })
+    .where(eq(audits.id, auditId));
+}
+
 async function updateAuditProgress(
   auditId: string,
   workflowInstanceId: string,
@@ -407,6 +419,7 @@ async function deleteAuditForProject(auditId: string, projectId: string) {
 
 export const AuditRepository = {
   createAudit,
+  updateAuditStart,
   updateAuditProgress,
   completeAudit,
   failAudit,

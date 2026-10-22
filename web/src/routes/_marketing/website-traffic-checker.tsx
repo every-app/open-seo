@@ -15,7 +15,6 @@ export const Route = createFileRoute("/_marketing/website-traffic-checker")({
         "Estimate any website's organic traffic, keyword count, and traffic value, with its top keywords and pages. Compare two domains. No signup, no email.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free website traffic checker",
     }),
   component: WebsiteTrafficCheckerPage,
 });

@@ -5,12 +5,31 @@ import { makeToolContext } from "./tool-test-support";
 const mocks = vi.hoisted(() => ({
   createProject: vi.fn(),
   listMembershipsForUser: vi.fn(),
+  markOnboardingCompleted: vi.fn(),
+  captureServerEvent: vi.fn(),
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
     createProject: mocks.createProject,
   },
+}));
+
+vi.mock(
+  "@/server/features/activation/repositories/ActivationRepository",
+  () => ({
+    ActivationRepository: {
+      markOnboardingCompleted: mocks.markOnboardingCompleted,
+    },
+  }),
+);
+
+vi.mock("cloudflare:workers", () => ({
+  waitUntil: (promise: Promise<unknown>) => promise,
+}));
+
+vi.mock("@/server/lib/posthog", () => ({
+  captureServerEvent: mocks.captureServerEvent,
 }));
 
 vi.mock("@/server/auth/repositories/AuthRepository", () => ({
@@ -51,6 +70,8 @@ describe("create_project MCP tool", () => {
       languageCode: "en",
       url: "https://open-seo.test/p/project_new",
     });
+    // Self-host and SAM connections have no onboarding wizard to finish.
+    expect(mocks.markOnboardingCompleted).not.toHaveBeenCalled();
     const first = result.content?.[0];
     expect(first?.type).toBe("text");
     if (first?.type === "text") {
@@ -113,6 +134,7 @@ describe("create_project with a user-scoped credential", () => {
       languageCode: "en",
     });
     mocks.listMembershipsForUser.mockResolvedValue(memberships);
+    mocks.markOnboardingCompleted.mockResolvedValue(false);
   });
 
   it("errors with the organization list when no organizationId is given and the user has several", async () => {
@@ -139,6 +161,22 @@ describe("create_project with a user-scoped credential", () => {
     });
   });
 
+  it("still returns the project when marking onboarding complete fails", async () => {
+    mocks.listMembershipsForUser.mockResolvedValue([memberships[0]]);
+    mocks.markOnboardingCompleted.mockRejectedValue(new Error("db down"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await createProjectTool.handler(
+      { name: "Acme" },
+      userScopedContext,
+    );
+
+    // A failed tool call would make the agent retry and duplicate the project.
+    expect(result.structuredContent?.project).toMatchObject({
+      id: "project_new",
+    });
+  });
+
   it("rejects a organizationId the user is not a member of", async () => {
     await expect(
       createProjectTool.handler(
@@ -156,6 +194,27 @@ describe("create_project with a user-scoped credential", () => {
 
     expect(mocks.createProject).toHaveBeenCalledWith("org_a", {
       name: "Acme",
+    });
+    // The agent did the wizard's main job, so the app skips onboarding.
+    expect(mocks.markOnboardingCompleted).toHaveBeenCalledWith(
+      "user_123",
+      "org_a",
+    );
+  });
+
+  it("reports onboarding completion only from the call that completed it", async () => {
+    mocks.listMembershipsForUser.mockResolvedValue([memberships[0]]);
+    mocks.markOnboardingCompleted.mockResolvedValueOnce(true);
+
+    await createProjectTool.handler({ name: "Acme" }, userScopedContext);
+    await createProjectTool.handler({ name: "Acme" }, userScopedContext);
+
+    expect(mocks.captureServerEvent).toHaveBeenCalledTimes(1);
+    expect(mocks.captureServerEvent).toHaveBeenCalledWith({
+      distinctId: "user_123",
+      event: "onboarding:completed",
+      organizationId: "org_a",
+      properties: { via: "agent_project" },
     });
   });
 });

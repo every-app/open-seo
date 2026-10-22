@@ -1,10 +1,11 @@
-import type { ReactElement } from "react";
+import { useEffect, type ReactElement } from "react";
 import { Link } from "@tanstack/react-router";
 import { ErrorState } from "@/client/components/ErrorState";
 import { Button } from "@/client/components/ui/button";
 import { BASE_PLAN_OFFER } from "@/client/features/billing/plan-offers";
 import { useCreditBalance } from "@/client/features/billing/useCreditBalance";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { BILLING_ROUTE, SUBSCRIBE_ROUTE } from "@/shared/billing";
 
 /**
@@ -23,7 +24,28 @@ export function InsufficientCreditsError({
   variant?: "inline" | "card" | "page";
   title?: string;
 }) {
+  const { message, action } = useCreditsOffer("card");
+  return (
+    <ErrorState
+      variant={variant}
+      title={title}
+      message={message}
+      action={action}
+    />
+  );
+}
+
+/** The card's button alone, for a spot too small for the card. */
+export function GetCreditsButton() {
+  return useCreditsOffer("button").action;
+}
+
+function useCreditsOffer(surface: "card" | "button") {
   const { accountQuery, isFreePlan, refillDate } = useCreditBalance();
+
+  useEffect(() => {
+    captureClientEvent("billing:out_of_credits_shown", { surface });
+  }, [surface]);
 
   let message: string;
   let action: ReactElement;
@@ -49,19 +71,19 @@ export function InsufficientCreditsError({
     );
   }
 
-  return (
-    <ErrorState
-      variant={variant}
-      title={title}
-      message={message}
-      action={action}
-    />
-  );
+  return { message, action };
 }
 
 function CreditsButton({ link, label }: { link: ReactElement; label: string }) {
   return (
-    <Button variant="outline" size="sm" nativeButton={false} render={link}>
+    // Its own text color: a red error around it would otherwise tint it.
+    <Button
+      variant="outline"
+      size="sm"
+      className="text-foreground"
+      nativeButton={false}
+      render={link}
+    >
       {label}
     </Button>
   );
