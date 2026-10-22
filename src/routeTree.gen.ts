@@ -62,6 +62,7 @@ import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/
 import { Route as AppPProjectIdAiVisibilityIndexRouteImport } from './routes/_app/p/$projectId/ai-visibility/index'
 import { Route as AppPProjectIdAiVisibilityResearchRouteImport } from './routes/_app/p/$projectId/ai-visibility/research'
 import { Route as AppPProjectIdAuditIndexRouteImport } from './routes/_app/p/$projectId/audit/index'
+import { Route as AppPProjectIdAuditCompareRouteImport } from './routes/_app/p/$projectId/audit/compare'
 import { Route as AppPProjectIdRankTrackingIndexRouteImport } from './routes/_app/p/$projectId/rank-tracking/index'
 import { Route as AppPProjectIdRankTrackingConfigIdRouteImport } from './routes/_app/p/$projectId/rank-tracking/$configId'
 import { Route as AppPProjectIdReportsIndexRouteImport } from './routes/_app/p/$projectId/reports/index'
@@ -345,6 +346,12 @@ const AppPProjectIdAuditIndexRoute = AppPProjectIdAuditIndexRouteImport.update({
   path: '/audit/',
   getParentRoute: () => AppPProjectIdRouteRoute,
 } as any)
+const AppPProjectIdAuditCompareRoute =
+  AppPProjectIdAuditCompareRouteImport.update({
+    id: '/audit/compare',
+    path: '/audit/compare',
+    getParentRoute: () => AppPProjectIdRouteRoute,
+  } as any)
 const AppPProjectIdRankTrackingIndexRoute =
   AppPProjectIdRankTrackingIndexRouteImport.update({
     id: '/',
@@ -455,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof AppPProjectIdIndexRoute
   '/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
+  '/p/$projectId/audit/compare': typeof AppPProjectIdAuditCompareRoute
   '/p/$projectId/rank-tracking/$configId': typeof AppPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/reports/$reportId': typeof AppPProjectIdReportsReportIdRoute
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
@@ -512,6 +520,7 @@ export interface FileRoutesByTo {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId': typeof AppPProjectIdIndexRoute
   '/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
+  '/p/$projectId/audit/compare': typeof AppPProjectIdAuditCompareRoute
   '/p/$projectId/rank-tracking/$configId': typeof AppPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/reports/$reportId': typeof AppPProjectIdReportsReportIdRoute
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
@@ -578,6 +587,7 @@ export interface FileRoutesById {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_app/p/$projectId/': typeof AppPProjectIdIndexRoute
   '/_app/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
+  '/_app/p/$projectId/audit/compare': typeof AppPProjectIdAuditCompareRoute
   '/_app/p/$projectId/rank-tracking/$configId': typeof AppPProjectIdRankTrackingConfigIdRoute
   '/_app/p/$projectId/reports/$reportId': typeof AppPProjectIdReportsReportIdRoute
   '/_app/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
@@ -642,6 +652,7 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
     | '/p/$projectId/ai-visibility/research'
+    | '/p/$projectId/audit/compare'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/reports/$reportId'
     | '/p/$projectId/reports/templates'
@@ -699,6 +710,7 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/p/$projectId'
     | '/p/$projectId/ai-visibility/research'
+    | '/p/$projectId/audit/compare'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/reports/$reportId'
     | '/p/$projectId/reports/templates'
@@ -764,6 +776,7 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/_app/p/$projectId/'
     | '/_app/p/$projectId/ai-visibility/research'
+    | '/_app/p/$projectId/audit/compare'
     | '/_app/p/$projectId/rank-tracking/$configId'
     | '/_app/p/$projectId/reports/$reportId'
     | '/_app/p/$projectId/reports/templates'
@@ -1173,6 +1186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdAuditIndexRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
+    '/_app/p/$projectId/audit/compare': {
+      id: '/_app/p/$projectId/audit/compare'
+      path: '/audit/compare'
+      fullPath: '/p/$projectId/audit/compare'
+      preLoaderRoute: typeof AppPProjectIdAuditCompareRouteImport
+      parentRoute: typeof AppPProjectIdRouteRoute
+    }
     '/_app/p/$projectId/rank-tracking/': {
       id: '/_app/p/$projectId/rank-tracking/'
       path: '/'
@@ -1329,6 +1349,7 @@ interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdSearchPerformanceRoute: typeof AppPProjectIdSearchPerformanceRoute
   AppPProjectIdSettingsRoute: typeof AppPProjectIdSettingsRouteWithChildren
   AppPProjectIdIndexRoute: typeof AppPProjectIdIndexRoute
+  AppPProjectIdAuditCompareRoute: typeof AppPProjectIdAuditCompareRoute
   AppPProjectIdReportsReportIdRoute: typeof AppPProjectIdReportsReportIdRoute
   AppPProjectIdReportsTemplatesRoute: typeof AppPProjectIdReportsTemplatesRoute
   AppPProjectIdAuditIndexRoute: typeof AppPProjectIdAuditIndexRoute
@@ -1350,6 +1371,7 @@ const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdSearchPerformanceRoute: AppPProjectIdSearchPerformanceRoute,
   AppPProjectIdSettingsRoute: AppPProjectIdSettingsRouteWithChildren,
   AppPProjectIdIndexRoute: AppPProjectIdIndexRoute,
+  AppPProjectIdAuditCompareRoute: AppPProjectIdAuditCompareRoute,
   AppPProjectIdReportsReportIdRoute: AppPProjectIdReportsReportIdRoute,
   AppPProjectIdReportsTemplatesRoute: AppPProjectIdReportsTemplatesRoute,
   AppPProjectIdAuditIndexRoute: AppPProjectIdAuditIndexRoute,
