@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { UseQueryResult } from "@tanstack/react-query";
-import { ScanSearch, Trash2 } from "lucide-react";
+import { Diff, ScanSearch, Trash2 } from "lucide-react";
 import type { getAuditHistory } from "@/serverFunctions/audit";
 import { EmptyState } from "@/client/components/EmptyState";
 import { QueryState } from "@/client/components/QueryState";
@@ -60,9 +60,33 @@ function AuditHistoryTable({
     return <EmptyState icon={ScanSearch} title="No audits yet" />;
   }
 
+  const completedCount = history.filter(
+    (audit) => audit.status === "completed",
+  ).length;
+  const canCompare = completedCount >= 2;
+
   return (
     <TableCard>
-      <DataTableToolbar>
+      <DataTableToolbar
+        actions={
+          canCompare ? (
+            <Button
+              variant="outline"
+              size="xs"
+              nativeButton={false}
+              render={
+                <Link
+                  to="/p/$projectId/audit/compare"
+                  params={{ projectId }}
+                />
+              }
+            >
+              <Diff />
+              Compare latest
+            </Button>
+          ) : null
+        }
+      >
         <h2 className="text-sm font-semibold">Previous Audits</h2>
       </DataTableToolbar>
       <Table>
