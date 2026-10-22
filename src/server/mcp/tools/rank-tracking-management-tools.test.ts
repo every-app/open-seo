@@ -88,7 +88,6 @@ describe("rank tracking management MCP tools", () => {
       organizationId: "org_123",
       properties: {
         project_id: projectId,
-        domain: "openseo.so",
         devices: "mobile",
         schedule: "manual",
         source: "mcp",

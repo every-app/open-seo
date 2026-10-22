@@ -188,6 +188,20 @@ async function hostnameResolvesToBlockedAddress(
 }
 
 /**
+ * Shopify storefronts, custom domains included, resolve into Shopify's
+ * 23.227.38.0/24. This identifies a store even when its edge answers with a
+ * bare 429 that carries no `powered-by` header.
+ */
+export async function isShopifyHost(hostname: string): Promise<boolean> {
+  try {
+    const addresses = await resolveAddressRecords(normalizeHost(hostname), "A");
+    return addresses.some((address) => address.startsWith("23.227.38."));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Synchronous SSRF check for URLs discovered mid-crawl (links, redirect
  * targets, sitemap entries). Blocks non-http(s) schemes, private/loopback IP
  * literals, and internal hostnames. DNS resolution is only performed for the

@@ -228,9 +228,10 @@ function Hero() {
           </a>
           <h1
             className="itc-display-xl itc-hero-title"
-            style={{ maxWidth: 1180, margin: "0 auto" }}
+            style={{ maxWidth: 600, margin: "0 auto" }}
           >
-            Grow your business with SEO
+            <span style={{ display: "inline-block" }}>Grow your business</span>{" "}
+            with SEO
           </h1>
           <p
             className="itc-subhead itc-muted itc-hero-subtitle"

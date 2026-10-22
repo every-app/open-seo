@@ -30,7 +30,7 @@ import {
 } from "@/client/features/billing/checkout";
 import { BillingTabs } from "@/client/features/billing/BillingTabs";
 import { parseTopUpAmount } from "@/client/features/billing/HostedBillingContentUtils";
-import { billingUsageEventsQueryOptions } from "@/client/features/billing/useBillingUsageEvents";
+import { billingUsageQueryOptions } from "@/client/features/billing/useBillingUsage";
 import { useCreditBalance } from "@/client/features/billing/useCreditBalance";
 import {
   BASE_PLAN_OFFER,
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/_app/billing")({
   // a full load alongside the session check, without holding up navigation.
   loader: () => {
     prefetchBillingAccount();
-    void queryClient.prefetchQuery(billingUsageEventsQueryOptions());
+    void queryClient.prefetchQuery(billingUsageQueryOptions());
     prefetchUpgradeCheckout();
   },
   component: BillingPage,

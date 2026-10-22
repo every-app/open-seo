@@ -16,6 +16,7 @@ import {
   type BillingCustomerContext,
 } from "@/server/billing/subscription";
 import { AppError } from "@/server/lib/errors";
+import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
 import type { AiRun } from "@/shared/ai-visibility";
 import type { RunAiCheckInput } from "@/types/schemas/ai-visibility";
 import { requireConfiguration } from "./aiVisibilityMutation";
@@ -114,6 +115,7 @@ export async function startRun(
       await repo.updateTracker(config.tracker.id, {
         lastSkipReason: "INSUFFICIENT_CREDITS",
       });
+      await sendCreditsExhaustedEvent(billing);
       throw new AppError(
         "INSUFFICIENT_CREDITS",
         "Not enough credits for this AI visibility check.",

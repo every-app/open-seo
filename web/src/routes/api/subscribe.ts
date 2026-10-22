@@ -30,6 +30,17 @@ export const Route = createFileRoute("/api/subscribe")({
           );
         }
 
+        // Newsletter signups join the same Product updates list as the app's
+        // email switch, so product-update campaigns have one audience.
+        const listId: unknown = Reflect.get(
+          env,
+          "LOOPS_PRODUCT_UPDATES_LIST_ID",
+        );
+        const mailingLists =
+          typeof listId === "string" && listId.trim()
+            ? { [listId.trim()]: true }
+            : null;
+
         try {
           const loopsResponse = await fetch(
             "https://app.loops.so/api/v1/contacts/create",
@@ -42,11 +53,37 @@ export const Route = createFileRoute("/api/subscribe")({
               body: JSON.stringify({
                 email: parsed.data.email,
                 source: "openseo-waitlist",
+                ...(mailingLists ? { mailingLists } : {}),
               }),
             },
           );
 
           if (loopsResponse.status === 409) {
+            // Already a contact: asking for updates again puts them on the
+            // list and resubscribes them.
+            if (mailingLists) {
+              const updateResponse = await fetch(
+                "https://app.loops.so/api/v1/contacts/update",
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${loopsApiKey}`,
+                  },
+                  body: JSON.stringify({
+                    email: parsed.data.email,
+                    subscribed: true,
+                    mailingLists,
+                  }),
+                },
+              );
+              if (!updateResponse.ok) {
+                console.error(
+                  "Loops contact update error:",
+                  await updateResponse.json().catch(() => null),
+                );
+              }
+            }
             return new Response(JSON.stringify({ success: true }), {
               status: 200,
               headers: { "Content-Type": "application/json" },

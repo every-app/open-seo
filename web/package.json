@@ -5,7 +5,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node scripts/generate-sitemap.js",
+    "build": "vite build && node scripts/generate-sitemap.js && node scripts/generate-social-cards.js",
     "build:app": "vite build",
     "sitemap": "node scripts/generate-sitemap.js",
     "start": "wrangler dev",
@@ -43,6 +43,7 @@
     "prettier": "^3.6.2",
     "srvx": "^0.11.22",
     "tailwindcss": "^4.1.18",
+    "takumi-js": "2.13.7",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.0.5",
     "vitest": "^4.1.11",

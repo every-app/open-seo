@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { sortBy } from "remeda";
 import { z } from "zod";
 import { createOpenSeoOAuthProvider } from "./oauth-provider";
 
@@ -40,6 +41,7 @@ vi.mock("@/middleware/ensure-user/hosted", () => ({
 
 vi.mock("@/server/features/activation/mcpActivation", () => ({
   recordMcpAuthorized: () => Promise.resolve(),
+  completeOnboardingFromAgent: () => Promise.resolve(),
 }));
 
 vi.mock("@/server/lib/posthog", () => ({
@@ -102,21 +104,28 @@ function createKvFake() {
       return Promise.resolve();
     },
     list(options?: { prefix?: string; cursor?: string; limit?: number }) {
-      const keys = [...store.keys()]
-        .filter((key) => live(key))
-        .filter((key) => !options?.prefix || key.startsWith(options.prefix))
-        .slice(0, options?.limit ?? 1000)
-        .map((name) => {
-          const entry = store.get(name);
-          return {
-            name,
-            metadata: entry?.metadata,
-            expiration: entry?.expiresAt
-              ? Math.floor(entry.expiresAt / 1000)
-              : undefined,
-          };
-        });
-      return Promise.resolve({ keys, list_complete: true, cursor: "" });
+      const remaining = sortBy(
+        [...store.keys()]
+          .filter((key) => live(key))
+          .filter((key) => !options?.prefix || key.startsWith(options.prefix))
+          .filter((key) => !options?.cursor || key > options.cursor),
+        (key) => key,
+      );
+      const keys = remaining.slice(0, options?.limit ?? 1000).map((name) => {
+        const entry = store.get(name);
+        return {
+          name,
+          metadata: entry?.metadata,
+          expiration: entry?.expiresAt
+            ? Math.floor(entry.expiresAt / 1000)
+            : undefined,
+        };
+      });
+      return Promise.resolve({
+        keys,
+        list_complete: keys.length === remaining.length,
+        cursor: keys.at(-1)?.name ?? "",
+      });
     },
   };
 }
@@ -134,11 +143,12 @@ let provider: Provider;
 let env: Env;
 
 beforeEach(() => {
-  vi.useRealTimers();
   provider = createOpenSeoOAuthProvider(() => new Response("app"));
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the provider touches only OAUTH_KV
   env = { OAUTH_KV: createKvFake() } as unknown as Env;
 });
+
+afterEach(() => vi.useRealTimers());
 
 const registrationSchema = z.looseObject({
   client_id: z.string(),
@@ -299,8 +309,12 @@ describe("Codex-style OAuth token refresh (real workers-oauth-provider)", () => 
     expect(auth.scopes).toContain("mcp");
   });
 
-  it("refreshes with client_id only and the new token still carries the mcp scope", async () => {
+  it("keeps an active session beyond its original expiry, then expires after inactivity", async () => {
     const { client, tokens } = await setupSession();
+    const day = 24 * 60 * 60 * 1000;
+    const startedAt = Date.now();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(startedAt + 29 * day);
 
     const response = await refresh(client.client_id, tokens.refresh_token);
     expect(response.status).toBe(200);
@@ -311,9 +325,61 @@ describe("Codex-style OAuth token refresh (real workers-oauth-provider)", () => 
     expect(auth.scopes).toContain("mcp");
     expect(auth.clientId).toBe(client.client_id);
 
-    // And the rotated refresh token keeps working for the next cycle.
+    vi.setSystemTime(startedAt + 31 * day);
     const second = await refresh(client.client_id, refreshed.refresh_token);
     expect(second.status).toBe(200);
+    const rotated = tokenResponseSchema.parse(await second.json());
+    expect((await callMcp(rotated.access_token)).scopes).toContain("mcp");
+
+    vi.setSystemTime(startedAt + 62 * day);
+    const expired = await refresh(client.client_id, rotated.refresh_token);
+    expect(expired.status).toBe(400);
+    expect(tokenErrorSchema.parse(await expired.json()).error).toBe(
+      "invalid_grant",
+    );
+  });
+
+  it("resumes OAuth cleanup across grant and token pages, then resets the cursor", async () => {
+    const client = await registerCodexStyleClient();
+    for (let index = 0; index < 200; index++) {
+      const id = String(index).padStart(3, "0");
+      await env.OAUTH_KV.put(
+        `grant:user-1:${id}`,
+        JSON.stringify({ id, userId: "user-1", clientId: client.client_id }),
+      );
+      await env.OAUTH_KV.put(
+        `token:${id}`,
+        JSON.stringify({ userId: "user-1", grantId: id }),
+      );
+    }
+    const orphanedGrant = "grant:user-1:zzz";
+    const orphanedToken = "token:zzz";
+    await env.OAUTH_KV.put(
+      orphanedGrant,
+      JSON.stringify({
+        id: "zzz",
+        userId: "user-1",
+        clientId: "missing-client",
+      }),
+    );
+    await env.OAUTH_KV.put(
+      orphanedToken,
+      JSON.stringify({ userId: "missing-user", grantId: "missing-grant" }),
+    );
+
+    expect((await provider.purgeExpiredData(env)).done).toBe(false);
+    expect(await env.OAUTH_KV.get("purge-cursor")).not.toBeNull();
+    expect(await env.OAUTH_KV.get(orphanedGrant)).not.toBeNull();
+
+    const nextRun = createOpenSeoOAuthProvider(() => new Response("app"));
+    expect((await nextRun.purgeExpiredData(env)).done).toBe(false);
+    expect(await env.OAUTH_KV.get(orphanedGrant)).toBeNull();
+    expect(await env.OAUTH_KV.get(orphanedToken)).not.toBeNull();
+
+    expect((await nextRun.purgeExpiredData(env)).done).toBe(true);
+    expect(await env.OAUTH_KV.get(orphanedToken)).toBeNull();
+    expect(await env.OAUTH_KV.get("purge-cursor")).toBeNull();
+    expect(await env.OAUTH_KV.get("grant:user-1:000")).not.toBeNull();
   });
 
   it("accepts a refresh carrying the canonical RFC 8707 resource and rejects a mismatched one", async () => {

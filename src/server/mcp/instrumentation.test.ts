@@ -98,13 +98,13 @@ describe("instrumentMcpToolHandler", () => {
     expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
   });
 
-  it("explains an out-of-credits call to the agent instead of the bare code", async () => {
+  it("explains an out-of-credits call to the agent with a billing link instead of the bare code", async () => {
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () => {
       throw new AppError("INSUFFICIENT_CREDITS");
     });
 
     await expect(wrapped({}, toolContext)).rejects.toThrow(
-      "doesn't have enough credits for this request",
+      "The organization owner can add credits at https://app.openseo.so/billing",
     );
   });
 

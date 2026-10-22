@@ -1,7 +1,6 @@
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
-  POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS,
-  sanitizePostHogProperties,
+  sanitizePostHogEvent,
   sanitizePostHogUrl,
 } from "@/client/lib/posthog-sanitize";
 
@@ -11,8 +10,15 @@ type BrowserPostHogClient = typeof import("posthog-js").default;
 
 let browserPostHogClientPromise: Promise<BrowserPostHogClient | null> | null =
   null;
-let browserPostHogInitialized = false;
-let analyticsCaptureEnabled = true;
+// Off until PrivacyBootstrap applies the visitor's choices, so nothing is
+// captured before we know whether analytics is allowed.
+let analyticsCaptureEnabled = false;
+// Events reported before then, such as a page's first view: the choices can
+// resolve after the page mounts. Sent if analytics starts, dropped if it
+// doesn't. Null once the choices are known.
+let eventsBeforeChoices:
+  | [string, Record<string, unknown> | undefined][]
+  | null = [];
 let clientErrorCaptureStopped = false;
 
 type ExceptionEntry = {
@@ -78,42 +84,61 @@ function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
         return null;
       }
 
-      if (!browserPostHogInitialized) {
-        client.init(apiKey, {
-          api_host: host,
-          defaults: "2026-01-30",
-          capture_exceptions: true,
-          before_send(event) {
-            if (
-              event?.event === "$exception" &&
-              isIgnorableException(event.properties)
-            ) {
-              return null;
-            }
-            return event;
+      client.init(apiKey, {
+        api_host: host,
+        defaults: "2026-01-30",
+        capture_exceptions: true,
+        before_send(event) {
+          if (!event) return null;
+          if (
+            event.event === "$exception" &&
+            isIgnorableException(event.properties)
+          ) {
+            return null;
+          }
+          return sanitizePostHogEvent(event);
+        },
+        capture_pageview: "history_change",
+        // Autocaptured clicks carry no on-screen text or element attributes.
+        mask_all_text: true,
+        mask_all_element_attributes: true,
+        mask_personal_data_properties: true,
+        respect_dnt: true,
+        // Opting out also clears PostHog's cookie and stored identifiers.
+        opt_out_persistence_by_default: true,
+        // Recording starts in startAnalyticsCapture, once replay is allowed.
+        disable_session_recording: true,
+        // Console output can quote page content and full error messages,
+        // and the project setting would otherwise record it in replays.
+        enable_recording_console_log: false,
+        // Recordings mask all text and inputs: app screens show customer
+        // content (keywords, domains, GSC/GA data, reports, chat messages).
+        session_recording: {
+          maskAllInputs: true,
+          maskTextSelector: "*",
+          // Text masking doesn't cover attributes, and the recorder has no
+          // attribute masker. These elements carry content in attributes
+          // (keyword links, customer URLs, favicons, prompt and URL titles
+          // and labels), so they are recorded as blank boxes.
+          blockSelector:
+            'a[href^="http"], a[href*="?"], img, [title], [aria-label]',
+          recordHeaders: false,
+          recordBody: false,
+          // Runs on page URLs and network entries. Project settings can turn
+          // payload capture on remotely, so headers and bodies are dropped
+          // here too.
+          maskCapturedNetworkRequestFn(request) {
+            return {
+              ...request,
+              name: sanitizePostHogUrl(request.name),
+              requestHeaders: undefined,
+              requestBody: undefined,
+              responseHeaders: undefined,
+              responseBody: undefined,
+            };
           },
-          capture_pageview: "history_change",
-          mask_personal_data_properties: true,
-          custom_personal_data_properties: [
-            ...POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS,
-          ],
-          respect_dnt: true,
-          session_recording: {
-            maskAllInputs: true,
-            maskTextSelector: "[data-ph-mask], .ph-mask",
-            maskCapturedNetworkRequestFn(request) {
-              return {
-                ...request,
-                name: sanitizePostHogUrl(request.name),
-              };
-            },
-          },
-          sanitize_properties(properties) {
-            return sanitizePostHogProperties(properties);
-          },
-        });
-        browserPostHogInitialized = true;
-      }
+        },
+      });
 
       return client;
     })
@@ -152,7 +177,11 @@ export function captureClientEvent(
   event: string,
   properties?: Record<string, unknown>,
 ) {
-  if (!analyticsCaptureEnabled) return;
+  if (!analyticsCaptureEnabled) {
+    if (eventsBeforeChoices && eventsBeforeChoices.length < 50)
+      eventsBeforeChoices.push([event, properties]);
+    return;
+  }
   withPostHogClient((client) => client.capture(event, properties));
 }
 
@@ -178,23 +207,26 @@ export function resetAnalyticsUser() {
 
 export function stopAnalyticsCapture() {
   analyticsCaptureEnabled = false;
-  if (!browserPostHogInitialized || !browserPostHogClientPromise) return;
-  void browserPostHogClientPromise.then((client) => {
-    if (!client) return;
-    try {
-      client.stopSessionRecording();
-      client.opt_out_capturing();
-    } catch (e) {
-      console.error("posthog opt-out failed", e);
-    }
+  eventsBeforeChoices = null;
+  // Chained even while PostHog is still loading, so this runs after a pending
+  // start and the stop wins.
+  withExistingPostHogClient((client) => {
+    client.stopSessionRecording();
+    client.opt_out_capturing();
   });
 }
 
-export function startAnalyticsCapture() {
+export function startAnalyticsCapture({ replay }: { replay: boolean }) {
   analyticsCaptureEnabled = true;
+  const pending = eventsBeforeChoices ?? [];
+  eventsBeforeChoices = null;
   withPostHogClient((client) => {
-    client.opt_in_capturing();
-    client.startSessionRecording();
+    if (!analyticsCaptureEnabled) return;
+    client.opt_in_capturing({ captureEventName: false });
+    if (replay) client.startSessionRecording();
+    else client.stopSessionRecording();
+    for (const [event, properties] of pending)
+      client.capture(event, properties);
   });
 }
 

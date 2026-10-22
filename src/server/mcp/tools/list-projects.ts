@@ -71,7 +71,9 @@ export const listProjectsTool = {
     const projects = await listVisibleProjects(auth);
     const lines =
       projects.length === 0
-        ? ["No projects yet. Create one in the dashboard."]
+        ? [
+            "No projects yet. Ask the user for their website, then call create_project with its domain. Creating a project uses no credits.",
+          ]
         : projects.map(
             (p) =>
               `- ${p.id}  ${p.name}${p.domain ? ` (${p.domain})` : ""}${p.organization ? `  organization:${p.organization} [${p.organizationId}]` : ""}  market:${p.locationCode}/${p.languageCode}`,

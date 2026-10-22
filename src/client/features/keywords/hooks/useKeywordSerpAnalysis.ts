@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import {
+  getErrorCode,
+  getStandardErrorMessage,
+} from "@/client/lib/error-messages";
 import { getSerpAnalysis } from "@/serverFunctions/keywords";
 
 const SERP_PAGE_SIZE = 10;
@@ -84,6 +87,8 @@ export function useKeywordSerpAnalysis(
   // expensive call. The card offers the shallow snapshot back instead.
   const deepFetchFailed =
     serpQuery.isError && requestedDepth === SERP_DEEP_DEPTH;
+  const serpOutOfCredits =
+    getErrorCode(serpQuery.error) === "INSUFFICIENT_CREDITS";
 
   // Retrying a failed deep crawl re-buys the expensive call that just timed
   // out. Drop back to the shallow snapshot instead: it's still cached, so the
@@ -141,6 +146,7 @@ export function useKeywordSerpAnalysis(
     canLoadMoreSerp,
     deepFetchFailed,
     serpError,
+    serpOutOfCredits,
     // `isLoading` stays false while a failed query refetches.
     serpRetrying: serpQuery.isFetching,
   };

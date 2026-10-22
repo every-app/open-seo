@@ -1,5 +1,12 @@
+import { env } from "cloudflare:workers";
 import { z } from "zod";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import {
+  buildCacheKey,
+  cacheObjectPrefix,
+  getCached,
+  setCached,
+} from "@/server/lib/r2-cache";
+import { deleteR2Prefix } from "@/server/lib/r2";
 import { DataRefreshClaimRepository } from "@/server/features/dashboard/repositories/DataRefreshClaimRepository";
 import { AppError, asAppError } from "@/server/lib/errors";
 
@@ -66,4 +73,22 @@ async function readThrough<T>(input: {
   }
 }
 
-export const DashboardCacheService = { readThrough };
+// Search Console rows are Google data the privacy policy lets users remove, so
+// every cached copy for a project sits under one prefix that disconnect,
+// project deletion, and account erasure can drop.
+function gscNamespace(projectId: string, name: string) {
+  return `dashboard:gsc:${projectId}:${name}`;
+}
+
+async function deleteGscCache(projectId: string) {
+  return deleteR2Prefix(
+    env.R2,
+    cacheObjectPrefix(`dashboard:gsc:${projectId}`),
+  );
+}
+
+export const DashboardCacheService = {
+  readThrough,
+  gscNamespace,
+  deleteGscCache,
+};

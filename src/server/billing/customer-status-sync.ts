@@ -2,6 +2,8 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { billingCustomerStatus } from "@/db/schema";
 import { autumn } from "@/server/billing/autumn";
+import { captureMetaPurchase } from "@/server/referrals/meta";
+import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
 import {
   deriveBillingCustomerStatusSnapshot,
   type BillingCustomerStatusSnapshot,
@@ -25,13 +27,27 @@ export async function syncAutumnCustomerStatus(customerId: string) {
   // pay), so a missing row is a customer from before the table existed, whose
   // next renewal or top-up must not read as a new subscription.
   const previous = await getPreviousSnapshot(customerId);
+  const events = previous
+    ? deriveBillingLifecycleEvents(previous, snapshot)
+    : [];
   await syncBillingStatusToLoops({
     snapshot,
-    events: previous ? deriveBillingLifecycleEvents(previous, snapshot) : [],
+    events,
     previousSyncedAt: previous?.syncedAt ?? null,
   });
 
   await upsertBillingCustomerStatus(snapshot);
+  // After the write, so a retried webhook (which sees no change) can't
+  // report the subscription twice. YC Plan subscriptions aren't reported.
+  if (
+    events.some(
+      (event) =>
+        event.name === "subscription_started" &&
+        event.planId === AUTUMN_PAID_PLAN_ID,
+    )
+  ) {
+    await captureMetaPurchase(customerId);
+  }
   return snapshot;
 }
 

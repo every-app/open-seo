@@ -119,6 +119,16 @@ export const en: TranslationDict = {
     analytics_help: "Help improve OpenSEO",
     analytics_enabled: "Analytics enabled",
     analytics_disabled: "Analytics disabled",
+    privacy_title: "Privacy and emails",
+    privacy_analytics: "Usage analytics",
+    privacy_analytics_desc:
+      "Share usage analytics and session replays to help improve OpenSEO.",
+    privacy_analytics_label: "Share usage analytics",
+    privacy_updates: "Product updates",
+    privacy_updates_desc:
+      "Occasional emails about new features and tips. Unsubscribe anytime.",
+    privacy_updates_label: "Get product update emails",
+    privacy_updates_error: "We couldn't save your email choice.",
   },
   project_settings: {
     title: "Project settings",
@@ -224,6 +234,7 @@ export const en: TranslationDict = {
     },
     onboarding: {
       finish: "Finish",
+      go_to_dashboard: "Go to dashboard",
     },
   },
   dashboard: {

@@ -1,10 +1,11 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SIGNUP_URL } from "@/components/landing-page";
+import { PrivacyChoicesLink } from "@/components/privacy-choices";
 
 /**
- * Layout for paid-traffic landing pages. No site navigation: the only ways
- * out are the logo and the page's own calls to action.
+ * Layout for paid-traffic landing pages. No site navigation: the only way out
+ * is the page's own calls to action.
  */
 export const Route = createFileRoute("/_campaign")({
   head: () => ({
@@ -32,12 +33,7 @@ function CampaignLayout() {
     <div className="itc itc-campaign">
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 md:pt-8">
         <nav className="itc-campaign-nav mx-auto flex min-h-14 max-w-5xl items-center justify-between gap-3 rounded-full border border-[var(--color-border-subtle)] bg-white/90 py-2 pl-5 pr-2 shadow-sm shadow-neutral-900/5">
-          <Link
-            to="/"
-            className="text-sm font-semibold transition-opacity hover:opacity-80"
-          >
-            OpenSEO
-          </Link>
+          <span className="text-sm font-semibold">OpenSEO</span>
           <a
             href={SIGNUP_URL}
             className="inline-flex h-9 items-center rounded-full bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
@@ -55,6 +51,9 @@ function CampaignLayout() {
           <nav aria-label="Legal">
             <a href="/privacy">Privacy</a>
             <a href="/terms-and-conditions">Terms</a>
+            {/* Ads land here, and the pixel can load here, so the opt-out
+                must be reachable without the site footer. */}
+            <PrivacyChoicesLink />
           </nav>
         </div>
       </footer>

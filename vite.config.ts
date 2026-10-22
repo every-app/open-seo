@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { devtools } from "@tanstack/devtools-vite";
 import { leanWorkerBundle } from "./vite-plugin-lean-worker-bundle";
+import { mcpWidgets } from "./vite-plugin-mcp-widgets";
 
 export default defineConfig(({ mode, command }) => {
   // Vitest sets mode to "test". Return a config without the Cloudflare and
@@ -14,7 +15,7 @@ export default defineConfig(({ mode, command }) => {
   // server; only the tsconfig path alias is needed.
   if (mode === "test") {
     return {
-      plugins: [tsConfigPaths()],
+      plugins: [tsConfigPaths(), mcpWidgets()],
       test: {
         environment: "node",
         include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
@@ -70,6 +71,7 @@ export default defineConfig(({ mode, command }) => {
       outDir: emitSourcemaps ? "dist-sourcemaps" : "dist",
     },
     plugins: [
+      mcpWidgets(),
       leanWorkerBundle(),
       showDevtools
         ? devtools({

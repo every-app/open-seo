@@ -239,6 +239,34 @@
       "when": 1791953919444,
       "tag": "0033_lively_killer_shrike",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791964657692,
+      "tag": "0034_nosy_thunderbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791966823358,
+      "tag": "0035_tranquil_doctor_octopus",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792011399831,
+      "tag": "0036_right_praxagora",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792089547475,
+      "tag": "0037_smooth_lady_ursula",
+      "breakpoints": true
     }
   ]
 }

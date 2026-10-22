@@ -44,6 +44,7 @@ import { Route as ApiCompetitorKeywordFinderRouteImport } from './routes/api/com
 import { Route as ApiDomainAgeCheckerRouteImport } from './routes/api/domain-age-checker'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as ApiKeywordGeneratorRouteImport } from './routes/api/keyword-generator'
+import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
 import { Route as ApiSpamScoreCheckerRouteImport } from './routes/api/spam-score-checker'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiWebsiteTrafficCheckerRouteImport } from './routes/api/website-traffic-checker'
@@ -54,6 +55,7 @@ import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as DocsLlmsDottxtRouteImport } from './routes/docs/llms[.]txt'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as GuidesSplatRouteImport } from './routes/guides/$'
+import { Route as JsMetaDotjsRouteImport } from './routes/js/meta[.]js'
 import { Route as JsScriptDotjsRouteImport } from './routes/js/script[.]js'
 import { Route as MarketingFeaturesIndexRouteImport } from './routes/_marketing/features/index'
 import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes/_marketing/features/ai-brand-visibility'
@@ -286,6 +288,11 @@ const ApiKeywordGeneratorRoute = ApiKeywordGeneratorRouteImport.update({
   path: '/api/keyword-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
+  id: '/api/privacy-region',
+  path: '/api/privacy-region',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSpamScoreCheckerRoute = ApiSpamScoreCheckerRouteImport.update({
   id: '/api/spam-score-checker',
   path: '/api/spam-score-checker',
@@ -335,6 +342,11 @@ const GuidesIndexRoute = GuidesIndexRouteImport.update({
 const GuidesSplatRoute = GuidesSplatRouteImport.update({
   id: '/guides/$',
   path: '/guides/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JsMetaDotjsRoute = JsMetaDotjsRouteImport.update({
+  id: '/js/meta.js',
+  path: '/js/meta.js',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JsScriptDotjsRoute = JsScriptDotjsRouteImport.update({
@@ -642,6 +654,7 @@ export interface FileRoutesByFullPath {
   '/api/domain-age-checker': typeof ApiDomainAgeCheckerRoute
   '/api/event': typeof ApiEventRoute
   '/api/keyword-generator': typeof ApiKeywordGeneratorRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/spam-score-checker': typeof ApiSpamScoreCheckerRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/website-traffic-checker': typeof ApiWebsiteTrafficCheckerRoute
@@ -649,6 +662,7 @@ export interface FileRoutesByFullPath {
   '/docs/$': typeof DocsSplatRoute
   '/docs/llms.txt': typeof DocsLlmsDottxtRoute
   '/guides/$': typeof GuidesSplatRoute
+  '/js/meta.js': typeof JsMetaDotjsRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/blogs/': typeof BlogsIndexRoute
   '/docs/': typeof DocsIndexRoute
@@ -732,6 +746,7 @@ export interface FileRoutesByTo {
   '/api/domain-age-checker': typeof ApiDomainAgeCheckerRoute
   '/api/event': typeof ApiEventRoute
   '/api/keyword-generator': typeof ApiKeywordGeneratorRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/spam-score-checker': typeof ApiSpamScoreCheckerRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/website-traffic-checker': typeof ApiWebsiteTrafficCheckerRoute
@@ -739,6 +754,7 @@ export interface FileRoutesByTo {
   '/docs/$': typeof DocsSplatRoute
   '/docs/llms.txt': typeof DocsLlmsDottxtRoute
   '/guides/$': typeof GuidesSplatRoute
+  '/js/meta.js': typeof JsMetaDotjsRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/blogs': typeof BlogsIndexRoute
   '/docs': typeof DocsIndexRoute
@@ -824,6 +840,7 @@ export interface FileRoutesById {
   '/api/domain-age-checker': typeof ApiDomainAgeCheckerRoute
   '/api/event': typeof ApiEventRoute
   '/api/keyword-generator': typeof ApiKeywordGeneratorRoute
+  '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/spam-score-checker': typeof ApiSpamScoreCheckerRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/api/website-traffic-checker': typeof ApiWebsiteTrafficCheckerRoute
@@ -831,6 +848,7 @@ export interface FileRoutesById {
   '/docs/$': typeof DocsSplatRoute
   '/docs/llms.txt': typeof DocsLlmsDottxtRoute
   '/guides/$': typeof GuidesSplatRoute
+  '/js/meta.js': typeof JsMetaDotjsRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/_marketing/': typeof MarketingIndexRoute
   '/blogs/': typeof BlogsIndexRoute
@@ -917,6 +935,7 @@ export interface FileRouteTypes {
     | '/api/domain-age-checker'
     | '/api/event'
     | '/api/keyword-generator'
+    | '/api/privacy-region'
     | '/api/spam-score-checker'
     | '/api/subscribe'
     | '/api/website-traffic-checker'
@@ -924,6 +943,7 @@ export interface FileRouteTypes {
     | '/docs/$'
     | '/docs/llms.txt'
     | '/guides/$'
+    | '/js/meta.js'
     | '/js/script.js'
     | '/blogs/'
     | '/docs/'
@@ -1007,6 +1027,7 @@ export interface FileRouteTypes {
     | '/api/domain-age-checker'
     | '/api/event'
     | '/api/keyword-generator'
+    | '/api/privacy-region'
     | '/api/spam-score-checker'
     | '/api/subscribe'
     | '/api/website-traffic-checker'
@@ -1014,6 +1035,7 @@ export interface FileRouteTypes {
     | '/docs/$'
     | '/docs/llms.txt'
     | '/guides/$'
+    | '/js/meta.js'
     | '/js/script.js'
     | '/blogs'
     | '/docs'
@@ -1098,6 +1120,7 @@ export interface FileRouteTypes {
     | '/api/domain-age-checker'
     | '/api/event'
     | '/api/keyword-generator'
+    | '/api/privacy-region'
     | '/api/spam-score-checker'
     | '/api/subscribe'
     | '/api/website-traffic-checker'
@@ -1105,6 +1128,7 @@ export interface FileRouteTypes {
     | '/docs/$'
     | '/docs/llms.txt'
     | '/guides/$'
+    | '/js/meta.js'
     | '/js/script.js'
     | '/_marketing/'
     | '/blogs/'
@@ -1166,6 +1190,7 @@ export interface RootRouteChildren {
   ApiDomainAgeCheckerRoute: typeof ApiDomainAgeCheckerRoute
   ApiEventRoute: typeof ApiEventRoute
   ApiKeywordGeneratorRoute: typeof ApiKeywordGeneratorRoute
+  ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
   ApiSpamScoreCheckerRoute: typeof ApiSpamScoreCheckerRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
   ApiWebsiteTrafficCheckerRoute: typeof ApiWebsiteTrafficCheckerRoute
@@ -1173,6 +1198,7 @@ export interface RootRouteChildren {
   DocsSplatRoute: typeof DocsSplatRoute
   DocsLlmsDottxtRoute: typeof DocsLlmsDottxtRoute
   GuidesSplatRoute: typeof GuidesSplatRoute
+  JsMetaDotjsRoute: typeof JsMetaDotjsRoute
   JsScriptDotjsRoute: typeof JsScriptDotjsRoute
   BlogsIndexRoute: typeof BlogsIndexRoute
   DocsIndexRoute: typeof DocsIndexRoute
@@ -1426,6 +1452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiKeywordGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/privacy-region': {
+      id: '/api/privacy-region'
+      path: '/api/privacy-region'
+      fullPath: '/api/privacy-region'
+      preLoaderRoute: typeof ApiPrivacyRegionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/spam-score-checker': {
       id: '/api/spam-score-checker'
       path: '/api/spam-score-checker'
@@ -1494,6 +1527,13 @@ declare module '@tanstack/react-router' {
       path: '/guides/$'
       fullPath: '/guides/$'
       preLoaderRoute: typeof GuidesSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/js/meta.js': {
+      id: '/js/meta.js'
+      path: '/js/meta.js'
+      fullPath: '/js/meta.js'
+      preLoaderRoute: typeof JsMetaDotjsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/js/script.js': {
@@ -2015,6 +2055,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDomainAgeCheckerRoute: ApiDomainAgeCheckerRoute,
   ApiEventRoute: ApiEventRoute,
   ApiKeywordGeneratorRoute: ApiKeywordGeneratorRoute,
+  ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
   ApiSpamScoreCheckerRoute: ApiSpamScoreCheckerRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
   ApiWebsiteTrafficCheckerRoute: ApiWebsiteTrafficCheckerRoute,
@@ -2022,6 +2063,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsSplatRoute: DocsSplatRoute,
   DocsLlmsDottxtRoute: DocsLlmsDottxtRoute,
   GuidesSplatRoute: GuidesSplatRoute,
+  JsMetaDotjsRoute: JsMetaDotjsRoute,
   JsScriptDotjsRoute: JsScriptDotjsRoute,
   BlogsIndexRoute: BlogsIndexRoute,
   DocsIndexRoute: DocsIndexRoute,

@@ -4,6 +4,7 @@ import { buildPageSeo } from "@/lib/seo";
 import { SocialLinks } from "@/components/social-links";
 
 const SUPPORT_EMAIL = "support@openseo.so";
+const PRIVACY_EMAIL = "privacy@openseo.so";
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 const GITHUB_ISSUES_URL = "https://github.com/every-app/open-seo/issues";
 
@@ -82,6 +83,22 @@ function SupportPage() {
           linkText="Open an issue"
         />
       </div>
+
+      <section className="mt-10 border-t border-[var(--color-border-subtle)] pt-8">
+        <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
+          Privacy and account deletion
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--color-brand-muted)]">
+          To delete your account, or for any privacy request, email{" "}
+          <a
+            href={`mailto:${PRIVACY_EMAIL}`}
+            className="font-medium text-neutral-950 underline"
+          >
+            {PRIVACY_EMAIL}
+          </a>{" "}
+          from the email address on your account.
+        </p>
+      </section>
 
       <section className="mt-10 border-t border-[var(--color-border-subtle)] pt-8">
         <h2 className="text-xl font-semibold tracking-tight text-neutral-950">

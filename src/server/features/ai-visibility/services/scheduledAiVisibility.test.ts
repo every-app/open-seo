@@ -28,6 +28,9 @@ vi.mock("@/server/billing/subscription", () => ({
     topupRemaining: 0,
   }),
 }));
+vi.mock("@/server/email/onboarding-drip", () => ({
+  sendCreditsExhaustedEvent: vi.fn(),
+}));
 vi.mock("./aiVisibilityRetention", () => ({ pruneAiVisibility: vi.fn() }));
 
 const due = "2026-09-01T06:00:00.000Z";

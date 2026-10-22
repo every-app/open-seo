@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getUsageCreditsRemaining: vi.fn(),
   holdCredits: vi.fn<typeof holdCredits>(),
   finalizeHold: vi.fn<typeof finalizeHold>(),
+  sendCreditsExhaustedEvent: vi.fn(),
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHosted,
@@ -17,6 +18,9 @@ vi.mock("@/server/billing/subscription", () => ({
   finalizeHold: mocks.finalizeHold,
 }));
 vi.mock("@/server/lib/posthog", () => ({ captureServerEvent: vi.fn() }));
+vi.mock("@/server/email/onboarding-drip", () => ({
+  sendCreditsExhaustedEvent: mocks.sendCreditsExhaustedEvent,
+}));
 
 import {
   lockRenderingCredits,
@@ -96,6 +100,7 @@ describe("rendering credit lock", () => {
     expect(error).toMatchObject({ code: "INSUFFICIENT_CREDITS" });
     expect(String(error)).toContain("needs $0.39 of credits");
     expect(mocks.holdCredits).not.toHaveBeenCalled();
+    expect(mocks.sendCreditsExhaustedEvent).toHaveBeenCalledWith(customer);
   });
 
   it("releases the monthly hold when the top-up hold is refused", async () => {
@@ -113,6 +118,7 @@ describe("rendering credit lock", () => {
     await expect(lockFor100Pages()).rejects.toMatchObject({
       code: "INSUFFICIENT_CREDITS",
     });
+    expect(mocks.sendCreditsExhaustedEvent).toHaveBeenCalledWith(customer);
     expect(mocks.finalizeHold).toHaveBeenCalledTimes(1);
     expect(mocks.finalizeHold).toHaveBeenCalledWith(
       monthlyLock,

@@ -6,6 +6,7 @@ import {
   type BillingCustomerContext,
   type UsageCreditHold,
 } from "@/server/billing/subscription";
+import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -54,7 +55,6 @@ export async function lockRenderingCredits(input: {
   // Clamp at 0: a balance can read negative after an overdraft.
   const monthly = Math.min(Math.max(balances.monthlyRemaining, 0), required);
   const topup = required - monthly;
-  if (topup > Math.max(balances.topupRemaining, 0)) throw insufficient;
 
   const properties = {
     creditFeature: "site_audit",
@@ -63,6 +63,7 @@ export async function lockRenderingCredits(input: {
   };
   const locks: RenderingLock[] = [];
   try {
+    if (topup > Math.max(balances.topupRemaining, 0)) throw insufficient;
     for (const [featureId, credits] of [
       [AUTUMN_SEO_DATA_BALANCE_FEATURE_ID, monthly],
       [AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID, topup],
@@ -84,6 +85,7 @@ export async function lockRenderingCredits(input: {
     }
   } catch (error) {
     await releaseRenderingLocks(locks);
+    if (error === insufficient) await sendCreditsExhaustedEvent(input.customer);
     throw error;
   }
   return locks;

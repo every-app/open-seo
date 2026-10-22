@@ -117,6 +117,16 @@ export const de = {
     analytics_help: "Hilf mit, OpenSEO zu verbessern",
     analytics_enabled: "Analyse aktiviert",
     analytics_disabled: "Analyse deaktiviert",
+    privacy_title: "Datenschutz und E-Mails",
+    privacy_analytics: "Nutzungsanalyse",
+    privacy_analytics_desc:
+      "Teile Nutzungsdaten und Sitzungsaufzeichnungen, um OpenSEO zu verbessern.",
+    privacy_analytics_label: "Nutzungsanalyse teilen",
+    privacy_updates: "Produkt-Updates",
+    privacy_updates_desc:
+      "Gelegentliche E-Mails zu neuen Funktionen und Tipps. Jederzeit abbestellbar.",
+    privacy_updates_label: "Produkt-Update-E-Mails erhalten",
+    privacy_updates_error: "Wir konnten deine E-Mail-Auswahl nicht speichern.",
   },
   project_settings: {
     title: "Projekteinstellungen",
@@ -222,6 +232,7 @@ export const de = {
     },
     onboarding: {
       finish: "Fertigstellen",
+      go_to_dashboard: "Zum Dashboard",
     },
   },
   dashboard: {

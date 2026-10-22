@@ -1,21 +1,11 @@
+import { deleteR2Prefix } from "@/server/lib/r2";
+
 /** Generated exports are private project data. */
 export async function deleteProjectAiObjects(
   bucket: R2Bucket,
   projectId: string,
 ) {
-  let cursor: string | undefined;
-  let deleted = 0;
-  do {
-    const page = await bucket.list({
-      prefix: `ai-visibility/${projectId}/`,
-      cursor,
-    });
-    const keys = page.objects.map((object) => object.key);
-    if (keys.length) await bucket.delete(keys);
-    deleted += keys.length;
-    cursor = page.truncated ? page.cursor : undefined;
-  } while (cursor);
-  return deleted;
+  return deleteR2Prefix(bucket, `ai-visibility/${projectId}/`);
 }
 
 /** Exports carry their expiry; anything without one is stale. */

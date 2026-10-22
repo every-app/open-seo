@@ -15,6 +15,7 @@ import {
   FieldLabel,
 } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
+import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 import { Switch } from "@/client/components/ui/switch";
 import {
   clampMaxPagesInput,
@@ -33,6 +34,7 @@ type Props = {
   maxPagesLimit: number;
   paidMaxPagesLimit: number;
   canRenderJavaScript?: boolean;
+  outOfCredits?: boolean;
 };
 
 export function LaunchFormCard({
@@ -41,6 +43,7 @@ export function LaunchFormCard({
   maxPagesLimit,
   paidMaxPagesLimit,
   canRenderJavaScript,
+  outOfCredits,
 }: Props) {
   return (
     <Card>
@@ -110,7 +113,7 @@ export function LaunchFormCard({
           </div>
         </form>
 
-        <LaunchErrors launchForm={launchForm} />
+        <LaunchErrors launchForm={launchForm} outOfCredits={outOfCredits} />
       </CardContent>
     </Card>
   );
@@ -264,7 +267,10 @@ function RenderingOptions({
   );
 }
 
-function LaunchErrors({ launchForm }: Pick<Props, "launchForm">) {
+function LaunchErrors({
+  launchForm,
+  outOfCredits,
+}: Pick<Props, "launchForm" | "outOfCredits">) {
   return (
     <div className="space-y-2">
       <launchForm.Field name="url">
@@ -279,6 +285,8 @@ function LaunchErrors({ launchForm }: Pick<Props, "launchForm">) {
         {(submitError) => {
           const errorMessage = getFormError(submitError);
 
+          if (errorMessage && outOfCredits)
+            return <InsufficientCreditsError title={errorMessage} />;
           return errorMessage ? (
             <Alert variant="destructive">
               <AlertCircle />

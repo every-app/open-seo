@@ -26,7 +26,7 @@ Tracking collects ChatGPT and Gemini answers from their consumer sites. Claude a
 
 On hosted OpenSEO, Prompt Research and Prompt Explorer require the paid plan; prompt tracking only needs credits. Setup research uses available credits and is billed after completion.
 
-Self-hosted users pay providers directly: set `DATAFORSEO_API_KEY` for research and answer collection, and `OPENROUTER_API_KEY` for setup research and generated prompt suggestions. See the [self-hosting guides](/docs/self-hosting).
+Self-hosted users pay providers directly: set `DATAFORSEO_API_KEY` for research and answer collection, and `OPENROUTER_API_KEY` for setup research, Prompt Research, and generated prompt suggestions. See the [self-hosting guides](/docs/self-hosting).
 
 ## Use your assistant
 

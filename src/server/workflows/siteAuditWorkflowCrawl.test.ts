@@ -104,7 +104,11 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function crawl(maxPages = 100, renderJavaScript = false) {
+function crawl(
+  maxPages = 100,
+  renderJavaScript = false,
+  sitePlatform?: "shopify",
+) {
   urls = Array.from({ length: maxPages }, (_, i) => `${ORIGIN}/${i}`);
   return runCrawlPhase(
     {
@@ -120,6 +124,7 @@ function crawl(maxPages = 100, renderJavaScript = false) {
       maxPages,
       seededCount: maxPages,
       renderJavaScript,
+      sitePlatform,
       robots: parseRobotsTxt(ORIGIN, ""),
       renderUsage,
     },
@@ -315,5 +320,26 @@ describe("rendering usage", () => {
       cloudflareAttempts: 250,
       contextCredits: 250,
     });
+  });
+});
+
+describe("throttled Shopify pages", () => {
+  it("are rendered instead of waiting when the audit renders JavaScript", async () => {
+    serve(() => 429);
+    mocks.renderPage.mockResolvedValue({ html: HTML, status: null });
+    const run = crawl(10, true, "shopify");
+    await vi.runAllTimersAsync();
+    expect(await run).toEqual({ pagesCrawled: 10, completed: true });
+    expect(saved.every((page) => page.fetchClass === "ok")).toBe(true);
+    // The first backoff would have waited 30 seconds.
+    expect(Date.now()).toBeLessThan(30_000);
+  });
+
+  it("stop the crawl like any 429 when no renderer reads them", async () => {
+    serve(() => 429);
+    mocks.renderPage.mockRejectedValue(new Error("Unable to render this page"));
+    const run = crawl(100, true, "shopify");
+    await vi.runAllTimersAsync();
+    expect(await run).toMatchObject({ completed: false, rateLimited: true });
   });
 });

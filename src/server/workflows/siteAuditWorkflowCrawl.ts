@@ -1,7 +1,7 @@
 import { env, type WorkflowStep } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import type { RobotsResult } from "@/server/lib/audit/discovery";
-import type { CrawledPageResult } from "@/server/lib/audit/types";
+import type { AuditConfig, CrawledPageResult } from "@/server/lib/audit/types";
 import { isSameOrigin } from "@/server/lib/audit/url-utils";
 import { isCrawlableUrl } from "@/server/lib/audit/url-policy";
 import { deterministicAuditRowId } from "@/server/lib/audit/ids";
@@ -94,6 +94,7 @@ type CrawlPhaseParams = {
   /** Frontier size after discovery seeding (from the discover-urls step). */
   seededCount: number;
   renderJavaScript?: boolean;
+  sitePlatform?: AuditConfig["sitePlatform"];
   /**
    * Rendering totals across chunks. Mutated as each chunk step returns, so a
    * failed audit can still settle what its completed chunks rendered.
@@ -317,7 +318,11 @@ async function runCrawlChunk(
       entry.depth,
       entry.inSitemap,
       throttle,
-      { access: input.access, render },
+      {
+        access: input.access,
+        render,
+        renderThrottled: input.sitePlatform === "shopify",
+      },
     )
       .then((page) => {
         if (!page) {

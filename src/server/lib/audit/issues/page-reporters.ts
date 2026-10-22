@@ -31,6 +31,14 @@ const META_DESCRIPTION_MIN_CHARS = 70;
 const THIN_CONTENT_WORDS = 150;
 const SLOW_RESPONSE_MS = 1500;
 const DEEP_PAGE_DEPTH = 5;
+// Meta tags are uncapped in the HTML, so bound the copy stored on each issue.
+const MAX_FLAGGED_TEXT_CHARS = 100;
+
+function truncateFlaggedText(text: string): string {
+  return text.length > MAX_FLAGGED_TEXT_CHARS
+    ? `${text.slice(0, MAX_FLAGGED_TEXT_CHARS)}…`
+    : text;
+}
 
 function hasHeadingLevelSkip(headingOrder: number[]): boolean {
   for (let i = 1; i < headingOrder.length; i++) {
@@ -118,9 +126,17 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
   if (!page.title) {
     report("missing-title");
   } else if (page.title.length > TITLE_MAX_CHARS) {
-    report("title-too-long", { length: page.title.length });
+    report("title-too-long", {
+      length: page.title.length,
+      max: TITLE_MAX_CHARS,
+      title: truncateFlaggedText(page.title),
+    });
   } else if (page.title.length < TITLE_MIN_CHARS) {
-    report("title-too-short", { length: page.title.length });
+    report("title-too-short", {
+      length: page.title.length,
+      min: TITLE_MIN_CHARS,
+      title: page.title,
+    });
   }
 
   // Meta description
@@ -129,10 +145,14 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
   } else if (page.metaDescription.length > META_DESCRIPTION_MAX_CHARS) {
     report("meta-description-too-long", {
       length: page.metaDescription.length,
+      max: META_DESCRIPTION_MAX_CHARS,
+      description: truncateFlaggedText(page.metaDescription),
     });
   } else if (page.metaDescription.length < META_DESCRIPTION_MIN_CHARS) {
     report("meta-description-too-short", {
       length: page.metaDescription.length,
+      min: META_DESCRIPTION_MIN_CHARS,
+      description: page.metaDescription,
     });
   }
 
