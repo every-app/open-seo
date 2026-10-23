@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
 import type { ConfigurationRows } from "../repositories/AiVisibilityRepository";
-import { aiScope, projectAiConfiguration } from "./aiVisibilityConfiguration";
+import {
+  aiBrands,
+  aiScope,
+  projectAiConfiguration,
+} from "./aiVisibilityConfiguration";
 
 function project(
   patch: AiTrackerPatch = {},
@@ -157,5 +161,14 @@ describe("AI check scope", () => {
       engines: ["chatgpt", "gemini"],
     });
     expect(() => aiScope(rows, [paused.id])).toThrow(/active prompt IDs/);
+  });
+});
+
+describe("aiBrands", () => {
+  it("names a competitor saved with a blank name by its domain", () => {
+    const [, competitor] = aiBrands({ name: "Acme", domain: "acme.com" }, [
+      { name: "", domain: "rival.com" },
+    ]);
+    expect(competitor.name).toBe("rival.com");
   });
 });
