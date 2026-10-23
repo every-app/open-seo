@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readPages, readSite } from "@/server/lib/scrape";
+import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 
 vi.mock("@/server/lib/runtime-env", () => ({
   getOptionalEnvValue: async () => "context-test-key",
@@ -171,5 +171,72 @@ describe("readSite with Context usage", () => {
     await readPages(["https://store.example.com/internal"], 1, usage);
 
     expect(usage.contextCredits).toBe(0);
+  });
+});
+
+const sitemap = (...locs: string[]) =>
+  `<?xml version="1.0"?><urlset>${locs.map((loc) => `<loc>${loc}</loc>`).join("")}</urlset>`;
+
+describe("discoverSiteUrls sitemap origin check", () => {
+  const serveSitemap = (xml: string) =>
+    vi.fn(
+      async () =>
+        new Response(xml, {
+          status: 200,
+          headers: { "content-type": "application/xml" },
+        }),
+    );
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("drops <loc> entries that only share a prefix with the origin", async () => {
+    vi.stubGlobal(
+      "fetch",
+      serveSitemap(
+        sitemap(
+          "https://example.com/keep",
+          "https://example.com.attacker.test/steal",
+          "https://example.combo.test/steal",
+          "https://example.com:8443/steal",
+        ),
+      ),
+    );
+
+    const { urls } = await discoverSiteUrls("example.com", 10);
+
+    expect(urls).toEqual(["https://example.com/", "https://example.com/keep"]);
+  });
+
+  it("keeps relative and absolute same-origin entries", async () => {
+    vi.stubGlobal(
+      "fetch",
+      serveSitemap(sitemap("/about", "https://example.com/pricing")),
+    );
+
+    const { urls } = await discoverSiteUrls("example.com", 10);
+
+    expect(urls).toEqual([
+      "https://example.com/",
+      "https://example.com/about",
+      "https://example.com/pricing",
+    ]);
+  });
+
+  it("still skips nested sitemap files", async () => {
+    vi.stubGlobal(
+      "fetch",
+      serveSitemap(
+        sitemap(
+          "https://example.com/sitemap-posts.xml",
+          "https://example.com/a",
+        ),
+      ),
+    );
+
+    const { urls } = await discoverSiteUrls("example.com", 10);
+
+    expect(urls).toEqual(["https://example.com/", "https://example.com/a"]);
   });
 });
