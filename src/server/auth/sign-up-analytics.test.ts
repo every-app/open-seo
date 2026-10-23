@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { captureSignUpCompleted } from "./sign-up-analytics";
+import {
+  captureSignUpCompleted,
+  saveSignUpCampaign,
+} from "./sign-up-analytics";
 
 const mocks = vi.hoisted(() => ({
   captureServerEvent: vi.fn(),
   getOAuthState: vi.fn(),
+  saveSignupCampaign: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({
@@ -12,6 +16,9 @@ vi.mock("cloudflare:workers", () => ({
 vi.mock("better-auth/api", () => ({ getOAuthState: mocks.getOAuthState }));
 vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: mocks.captureServerEvent,
+}));
+vi.mock("@/server/auth/repositories/AuthRepository", () => ({
+  AuthRepository: { saveSignupCampaign: mocks.saveSignupCampaign },
 }));
 
 const user = { id: "user_1", analyticsOptedOut: false };
@@ -59,5 +66,35 @@ describe("captureSignUpCompleted", () => {
     );
 
     expect(mocks.captureServerEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("saveSignUpCampaign", () => {
+  it("saves an ad's campaign tags from behind email verification", async () => {
+    const onboarding =
+      "/onboarding?utm_source=ig&utm_medium=paid_social&utm_campaign=Sales&fbclid=abc";
+
+    await saveSignUpCampaign("user_1", {
+      path: "/sign-up/email",
+      body: {
+        callbackURL: `https://openseo.so/verify-email?redirect=${encodeURIComponent(onboarding)}`,
+      },
+    });
+
+    expect(mocks.saveSignupCampaign).toHaveBeenCalledWith("user_1", {
+      utmSource: "ig",
+      utmCampaign: "Sales",
+      utmContent: null,
+    });
+  });
+
+  it("saves nothing for a tagged link that isn't a paid-social ad", async () => {
+    mocks.getOAuthState.mockResolvedValue({
+      newUserURL: "https://openseo.so/onboarding?utm_source=shared_report",
+    });
+
+    await saveSignUpCampaign("user_1", { path: "/callback/google" });
+
+    expect(mocks.saveSignupCampaign).not.toHaveBeenCalled();
   });
 });

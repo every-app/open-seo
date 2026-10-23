@@ -1,7 +1,6 @@
 import { build, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 const moduleId = "virtual:openseo-mcp-widget";
 const resolvedId = `\0${moduleId}`;
@@ -29,10 +28,11 @@ async function buildWidget() {
     configFile: false,
     publicDir: false,
     logLevel: "warn",
-    plugins: [tsconfigPaths(), react(), tailwindcss()],
+    resolve: { tsconfigPaths: true },
+    plugins: [react(), tailwindcss()],
     // The enclosing dev server sets NODE_ENV=development. Keep this inline
     // build's JSX runtime consistent with its bundled production React.
-    esbuild: { jsxDev: false },
+    oxc: { jsx: { development: false } },
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     build: {
       write: false,

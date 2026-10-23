@@ -10,6 +10,8 @@ data, or sensitive paths.
 
 ## Open
 
+- [ ] `2026-10-19T19:28:32Z` — `codex` — `pnpm cf-typegen` regenerates thousands of unrelated runtime types and changes `Env` inheritance, breaking existing Workflow fixtures and ambient bindings. Split binding generation from runtime updates so a new binding can be generated without an unrelated type migration; meanwhile declare new bindings in `src/env.d.ts`.
+
 - [ ] `2026-10-06T04:32:17Z` — `claude` — `npm --prefix web run types:check` (the web-content skill's final check) fails on a fresh worktree with only `web/` deps installed: `web/tsconfig.json` includes `**/*.ts`, so it type-checks `web/tests/free-tool-verification.spec.ts`, which imports the root-only `@playwright/test` and reports TS2307 plus a dozen implicit-any errors unrelated to the change. Add `@playwright/test` to `web` devDependencies or exclude that spec from `web/tsconfig.json`.
 - [ ] `2026-09-30T23:24:29Z` — `claude` — An `ENV_PREVIEW` secret without `AUTH_MODE=local_noauth` makes the PR preview deploy fall back to `cloudflare_access`, which provisions a self-host Access app. The deploy then fails with "Could not read the Zero Trust organization: Unauthorized", because the CI token has no Access permissions. The error suggests `pnpm alchemy login --configure`, which cannot fix CI. Check `AUTH_MODE` in the workflow's "Derive preview URL" step, beside the existing `WORKERS_SUBDOMAIN` check.
 - [ ] `2026-09-30T22:10:17Z` — `claude` — Since #784 moved `@tanstack/react-start` to 1.168.60, `pnpm vite build` rewrites the committed `src/routeTree.gen.ts` with a new import order (about 1,000 changed lines, identical routes), which leaves every local build with a dirty tree. Commit the regenerated file on main once.

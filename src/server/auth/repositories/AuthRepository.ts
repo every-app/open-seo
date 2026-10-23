@@ -20,6 +20,7 @@ import {
   member,
   organization,
   user as authUser,
+  userSignupCampaigns,
 } from "@/db/schema";
 
 type DelegatedOrganizationInput = {
@@ -302,6 +303,17 @@ async function isAnalyticsOptedOut(userId: string) {
   return record?.analyticsOptedOut === true;
 }
 
+async function saveSignupCampaign(
+  userId: string,
+  campaign: {
+    utmSource: string | null;
+    utmCampaign: string | null;
+    utmContent: string | null;
+  },
+) {
+  await db.insert(userSignupCampaigns).values({ userId, ...campaign });
+}
+
 async function setTermsAcceptance(
   userId: string,
   version: string,
@@ -342,4 +354,5 @@ export const AuthRepository = {
   getOrganizationOwner,
   hasPendingInvitationForEmail,
   isAnalyticsOptedOut,
+  saveSignupCampaign,
 } as const;

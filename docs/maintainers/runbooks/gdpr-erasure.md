@@ -16,8 +16,9 @@ and in the operator environment as `GDPR_ERASURE_SECRET`. The secret enables a
 single HMAC-authenticated endpoint at `/api/internal/gdpr-erasure/storage`; the
 endpoint returns 404 when the secret is unset.
 
-Add `GDPR_ERASURE_SECRET` to `.env.production`, then deploy the Worker before
-using the command. Keep the secret out of shell history and logs.
+Add `GDPR_ERASURE_SECRET` to the GitHub `production` environment secrets, then
+deploy through the manual production workflow before using the command. Keep
+the secret out of shell history and logs.
 
 Verify the production R2 bucket has a lifecycle rule expiring the
 `dataforseo-cache/` prefix (prod lifecycle rules are dashboard-managed). The

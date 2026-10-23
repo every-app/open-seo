@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createCrawlThrottle } from "@/server/lib/audit/crawl-throttle";
 import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
 
+// Resolves the request-signing env lookup instantly, so it can't race the
+// fake timers below.
+vi.mock("cloudflare:workers", () => ({ env: {} }));
+
 const PAGE_URL = "https://example.com/page";
 const PAGE_HTML =
   "<html><head><title>A page</title></head><body><h1>A page</h1></body></html>";

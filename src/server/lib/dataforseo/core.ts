@@ -119,12 +119,13 @@ function createAuthenticatedFetch(
       const classified = classify?.(response.status, rawText, path);
       if (classified) throw classified;
 
+      // An unverified account (status_code 40104) answers with 403, not 401.
       const code: ErrorCode =
         response.status >= 500
           ? "UPSTREAM_UNAVAILABLE"
           : response.status === 429
             ? "RATE_LIMITED"
-            : response.status === 401
+            : response.status === 401 || response.status === 403
               ? "DATAFORSEO_AUTH_FAILED"
               : "INTERNAL_ERROR";
       const error = new AppError(

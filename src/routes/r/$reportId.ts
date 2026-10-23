@@ -5,6 +5,7 @@ import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve"
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { ReportRepository } from "@/server/features/reports/repositories/ReportRepository";
 import { asAppError } from "@/server/lib/errors";
+import { createReportMapGrants } from "@/server/features/reports/reportMapGrant";
 import { reportDocumentResponse, textResponse } from "@/shared/report-sandbox";
 
 // The report viewer: the stored document, served byte for byte from the app's
@@ -85,6 +86,7 @@ async function handleReportRequest(
   return reportDocumentResponse(html, {
     print,
     cacheControl: "private, no-store",
+    mapGrants: await createReportMapGrants(html),
   });
 }
 

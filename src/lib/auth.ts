@@ -24,7 +24,10 @@ import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
 import { captureMetaSignup } from "@/server/referrals/meta";
-import { captureSignUpCompleted } from "@/server/auth/sign-up-analytics";
+import {
+  captureSignUpCompleted,
+  saveSignUpCampaign,
+} from "@/server/auth/sign-up-analytics";
 import {
   productUpdatesOnByDefault,
   requestPrivacyChoices,
@@ -281,6 +284,9 @@ function createAuth() {
               }
               // Sent only if the separate advertising (Meta) choice allows it.
               captureMetaSignup(ctx?.request);
+              await saveSignUpCampaign(user.id, ctx).catch((error) =>
+                console.error("sign-up campaign save failed", error),
+              );
               await captureSignUpCompleted(user, ctx).catch((error) =>
                 console.error("sign-up analytics failed", error),
               );

@@ -90,8 +90,10 @@ the Google Analytics Admin API and Google Analytics Data API, and registers
 
 Property discovery paginates Admin API v1beta `accountSummaries.list` and then
 calls `properties.get` for the selected property's time zone and currency.
-Only the Integrations UI can select a property. MCP tools accept a `projectId`;
-they cannot list, select, or change properties.
+The Integrations UI and the `list_google_analytics_properties` /
+`set_google_analytics_property` MCP tools select a property through the same
+service checks; only the UI can connect a Google account. Reporting tools accept
+a `projectId` and read the property bound to it.
 
 The `ga4_connections` row belongs to the OpenSEO project and organization, not
 to the connecting user. Any current member who can access the project can read

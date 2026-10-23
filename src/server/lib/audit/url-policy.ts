@@ -1,5 +1,6 @@
 import { AppError } from "@/server/lib/errors";
-import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
+import type { CrawlerAccess } from "@/shared/crawler-access";
+import { auditRequestHeaders } from "@/server/lib/audit/web-bot-auth";
 
 const BLOCKED_HOSTS = new Set([
   "localhost",
@@ -282,10 +283,7 @@ export async function resolveStartUrlRedirects(
       response = await fetch(current, {
         method: "HEAD",
         redirect: "manual",
-        headers: {
-          "User-Agent": "OpenSEO-Audit/1.0",
-          ...crawlerHeadersFor(current, access),
-        },
+        headers: await auditRequestHeaders(current, access),
         signal: AbortSignal.timeout(START_URL_PROBE_TIMEOUT_MS),
       });
     } catch {

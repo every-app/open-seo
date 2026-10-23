@@ -1,6 +1,11 @@
 /* eslint-disable max-lines */
 import { z } from "zod";
 import {
+  buildLocalGrid,
+  localGridZoom,
+  LOCAL_RANK_DEPTH,
+} from "@/shared/local-seo";
+import {
   createDataforseoClient,
   fetchBusinessDataTaskResult,
   fetchBusinessListingsCategories,
@@ -692,12 +697,6 @@ export const listBusinessCategoriesTool = {
 // get_local_rank_grid
 // ---------------------------------------------------------------------------
 
-// Degrees per kilometre. Longitude degrees shrink with latitude; the cosine is
-// floored so a near-polar center can't blow the spacing up.
-const KM_PER_DEGREE_LATITUDE = 110.574;
-const KM_PER_DEGREE_LONGITUDE = 111.32;
-const MIN_LONGITUDE_COSINE = 0.01;
-const RANK_GRID_DEPTH = 20;
 // The grid's searches run as queued Maps tasks (~5-40 s each, in parallel at
 // DataForSEO). Polling stops 40 s into the call so it answers inside the 60 s
 // many MCP clients wait; tasks still running are collected by the next call.
@@ -708,29 +707,6 @@ const RANK_GRID_POLL_INTERVAL_MS = 5000;
 // that lost the response, or got "processing", can simply call again.
 const RANK_GRID_RECEIPT_TTL_SECONDS = 60 * 60;
 const rankGridReceiptSchema = z.array(z.string().nullable());
-// Without an explicit zoom DataForSEO infers one per coordinate, which yields
-// "No Search Results" for some points and makes ranks incomparable across the
-// grid. A fixed zoom fails the other way: a mobile viewport at zoom 14 spans
-// only ~±1.5 km east-west at mid latitudes, so a business one 2-3 km grid step
-// to the side falls outside the viewport and reads as "not ranked" (verified
-// live: a rank-3 business vanished at zoom 14 and reappeared at zoom 12).
-// Derive the zoom from the spacing instead: a world tile is 40075·cos(lat)/2^z
-// km wide and a portrait viewport ~1.5 tiles, so the largest zoom whose
-// viewport still spans ~1.25× the spacing is log2(24045·cos(lat)/spacing).
-const RANK_GRID_ZOOM_NUMERATOR_KM = 24045;
-const MIN_RANK_GRID_ZOOM = 4;
-const MAX_RANK_GRID_ZOOM = 18;
-
-function rankGridZoom(spacingKm: number, latitude: number): number {
-  const cosine = Math.max(
-    Math.abs(Math.cos((latitude * Math.PI) / 180)),
-    MIN_LONGITUDE_COSINE,
-  );
-  const zoom = Math.floor(
-    Math.log2((RANK_GRID_ZOOM_NUMERATOR_KM * cosine) / spacingKm),
-  );
-  return Math.min(MAX_RANK_GRID_ZOOM, Math.max(MIN_RANK_GRID_ZOOM, zoom));
-}
 
 const getLocalRankGridInputSchema = {
   projectId: projectIdSchema,
@@ -830,40 +806,6 @@ type GridPointResult = GridPoint & {
   error?: boolean;
 };
 
-function buildRankGridPoints(
-  center: { latitude: number; longitude: number },
-  gridSize: number,
-  spacingKm: number,
-): GridPoint[] {
-  const middle = (gridSize - 1) / 2;
-  const latitudeStep = spacingKm / KM_PER_DEGREE_LATITUDE;
-  const longitudeStep =
-    spacingKm /
-    (KM_PER_DEGREE_LONGITUDE *
-      Math.max(
-        Math.abs(Math.cos((center.latitude * Math.PI) / 180)),
-        MIN_LONGITUDE_COSINE,
-      ));
-
-  const points: GridPoint[] = [];
-  for (let row = 0; row < gridSize; row++) {
-    for (let col = 0; col < gridSize; col++) {
-      points.push({
-        row,
-        col,
-        // Row 0 is the northernmost line so the rendered grid reads like a map.
-        latitude: Number(
-          (center.latitude + (middle - row) * latitudeStep).toFixed(7),
-        ),
-        longitude: Number(
-          (center.longitude + (col - middle) * longitudeStep).toFixed(7),
-        ),
-      });
-    }
-  }
-  return points;
-}
-
 function matchGridItem(
   items: unknown[],
   target: { cid?: string; placeId?: string; name?: string },
@@ -911,7 +853,7 @@ async function collectRankGridTask(
 function renderGrid(results: GridPointResult[], gridSize: number): string {
   const lines: string[] = [];
   for (let row = 0; row < gridSize; row++) {
-    // buildRankGridPoints emits row-major order and results keep it.
+    // buildLocalGrid emits row-major order and results keep it.
     const cells = results
       .slice(row * gridSize, (row + 1) * gridSize)
       .map((point) =>
@@ -1022,10 +964,10 @@ export const getLocalRankGridTool = {
     const deadline = Date.now() + RANK_GRID_COLLECT_MS;
     const gridSize = args.gridSize ?? 3;
     const spacingKm = args.spacingKm ?? 2;
-    const zoom = args.zoom ?? rankGridZoom(spacingKm, args.center.latitude);
+    const zoom = args.zoom ?? localGridZoom(spacingKm, args.center.latitude);
     const device = args.device ?? "mobile";
     const languageCode = args.languageCode ?? context.project.languageCode;
-    const points = buildRankGridPoints(args.center, gridSize, spacingKm);
+    const points = buildLocalGrid(args.center, gridSize, spacingKm);
 
     // The target is not part of the key: it only filters the collected rows.
     const receiptKey = await buildCacheKey("mcp:local-rank-grid", {
@@ -1057,7 +999,7 @@ export const getLocalRankGridTool = {
         ),
         languageCode,
         device,
-        depth: RANK_GRID_DEPTH,
+        depth: LOCAL_RANK_DEPTH,
       });
       // The searches are already paid for, so a failed receipt write must not
       // fail this call; it only means a repeat would buy them again.
@@ -1155,7 +1097,7 @@ export const getLocalRankGridTool = {
     };
 
     const text = [
-      `Local rank grid for "${args.keyword}" (${gridSize}x${gridSize}, ${spacingKm} km spacing, zoom ${zoom}, top ${RANK_GRID_DEPTH} checked).`,
+      `Local rank grid for "${args.keyword}" (${gridSize}x${gridSize}, ${spacingKm} km spacing, zoom ${zoom}, top ${LOCAL_RANK_DEPTH} checked).`,
       formatMatchedBusiness(matchedBusiness),
       `Rank per point, north at the top ("–" = not among the results returned there, "x" = search failed but may still be charged):`,
       renderGrid(grid, gridSize),

@@ -93,6 +93,12 @@ const CLIENT_ENTRY_DENYLIST: Array<{ pattern: RegExp; expected: string }> = [
  *    reachable — turning "we verified the chunk by grepping a sourcemap once"
  *    into a permanent regression test. The client build gets the same check
  *    against CLIENT_ENTRY_DENYLIST.
+ * 4. An ASCII-only guarantee for the worker chunks. V8 keeps each module's
+ *    source text alive for the life of the isolate, and one character outside
+ *    Latin-1 makes it store the whole file at two bytes per character (the
+ *    7.8 MB main chunk occupied 15.5 MB of the 128 MB heap). Rolldown escapes
+ *    code (`output.charset` in vite.config.ts) but keeps JSDoc comments
+ *    verbatim, so `generateBundle` escapes what is left in them.
  */
 export function leanWorkerBundle(): Plugin {
   return {
@@ -151,6 +157,20 @@ export function leanWorkerBundle(): Plugin {
         const output = bundle[fileName];
         return output?.type === "chunk" ? output : undefined;
       };
+
+      if (environment !== "client") {
+        for (const output of Object.values(bundle)) {
+          if (output.type !== "chunk") continue;
+          // Code is already escaped by Rolldown; only comment text remains, and
+          // a \uXXXX sequence reads the same there (and stays valid in a
+          // string should one slip through). Per UTF-16 unit on purpose, so an
+          // astral character becomes its surrogate pair.
+          output.code = output.code.replace(
+            /[\u0080-\uffff]/g,
+            (unit) => `\\u${unit.charCodeAt(0).toString(16).padStart(4, "0")}`,
+          );
+        }
+      }
 
       // Static-import closure from the entry chunks: everything here is
       // evaluated at isolate startup. Dynamic imports are excluded — landing

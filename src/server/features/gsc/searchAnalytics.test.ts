@@ -7,14 +7,18 @@ import {
 const TODAY = new Date("2026-05-28T00:00:00Z");
 
 describe("resolveDateRange", () => {
-  it("computes a 28-day window from the lagged end", () => {
-    const { startDate, endDate } = resolveDateRange(
-      { dateRange: "last_28_days" },
-      TODAY,
-    );
-    expect(startDate).toBe("2026-04-27");
-    expect(endDate).toBe("2026-05-25");
-  });
+  it.each([
+    { dateRange: "last_7_days" as const, startDate: "2026-05-19" },
+    { dateRange: "last_28_days" as const, startDate: "2026-04-28" },
+  ])(
+    "computes an inclusive $dateRange window from the lagged end",
+    ({ dateRange, startDate }) => {
+      expect(resolveDateRange({ dateRange }, TODAY)).toEqual({
+        startDate,
+        endDate: "2026-05-25",
+      });
+    },
+  );
 
   it("clamps the start to the 16-month floor", () => {
     const { startDate } = resolveDateRange(

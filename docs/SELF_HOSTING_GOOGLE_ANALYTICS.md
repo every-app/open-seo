@@ -28,6 +28,12 @@ read-only reports added in later GA4 milestones.
 Under **APIs & Services → OAuth consent screen**, configure the app. While the
 app is in Testing, add every Google account that will connect as a test user.
 
+Then click **Publish app** to move it from **Testing** to **In production**:
+Google expires refresh tokens for External apps in Testing after 7 days, so a
+Testing app asks you to reconnect every week. See the
+[Search Console guide](./SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md#2-configure-the-oauth-consent-screen)
+for details.
+
 ## 3) Register the callback URL
 
 Open **APIs & Services → Credentials**, edit the Web application OAuth client,
@@ -75,5 +81,6 @@ scheme, host, port, and `/api/ga4/oauth/callback` path used by the deployment.
 **No properties appear** — confirm that the Analytics Admin API is enabled and
 the connected Google account has access to the property.
 
-**Connection expired** — reconnect the Google account. OAuth apps left in
-Google's Testing status can receive short-lived refresh grants.
+**Analytics disconnects every week** — your OAuth app is still in Testing,
+where Google expires refresh tokens after 7 days. Publish it under **OAuth
+consent screen → Publish app**, then reconnect once.

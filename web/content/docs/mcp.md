@@ -149,6 +149,7 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Research questions about a keyword with ChatGPT's answers and cited sources (uses credits).
 - Configure AI prompt tracking, preview cost, and start or pause scheduled checks.
 - Read and export saved AI answers, trends, citations, and competitor appearances without using credits.
+- List the Search Console sites and Google Analytics properties your connected Google accounts can see, and bind one to a project (free, no credits). Connecting a Google account itself still happens in Settings > Integrations.
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
 - Tell Bing and other IndexNow search engines which pages on your site were added, changed, or removed (free, no credits). Your site hosts the project's key file, shown in Settings > Integrations. Google doesn't use IndexNow.

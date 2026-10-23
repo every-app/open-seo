@@ -49,6 +49,10 @@ pnpm dev:agents
 
 When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
 
+Local SEO maps need a Google Maps server key. Follow
+[Google Maps setup](./GOOGLE_MAPS_SETUP.md) to enable the Map Tiles API and set
+`GOOGLE_MAPS_API_KEY`. The Points view works without a map key.
+
 ## Report share images
 
 To test a real report end to end, run the app with `AUTH_MODE=hosted`, share a

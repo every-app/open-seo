@@ -1,21 +1,25 @@
-import {
-  GscPropertySetupHelp,
-  hasNoGscWebsites,
-  EmptyAccountMessage,
-} from "./GscPropertySetupHelp";
+import { GscPropertySetupHelp, hasNoGscWebsites } from "./GscPropertySetupHelp";
 import { GoogleAccountRemovalDialog } from "@/client/features/integrations/GoogleAccountRemovalDialog";
 import { QueryError } from "@/client/components/QueryState";
 import { Spinner } from "@/client/components/Spinner";
 import { Button } from "@/client/components/ui/button";
-import { Input } from "@/client/components/ui/input";
 import {
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
-import { Check, ChevronDown, Plus, Search } from "lucide-react";
+  Combobox,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxGroup,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxLabel,
+  ComboboxList,
+} from "@/client/components/ui/combobox";
+import { GSC_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/gsc";
+import { useState, type ReactNode } from "react";
+import { Plus } from "lucide-react";
+
+const GSC_SETUP_GUIDE_URL =
+  "https://openseo.so/blogs/google-search-console-setup";
 
 export type GooglePickerSelection = { accountId: string; propertyId: string };
 type Property = {
@@ -39,8 +43,36 @@ type SecondaryAction = {
   disabled?: boolean;
 };
 
+/** One property in the combobox, tagged with the account it belongs to. */
+type PropertyOption = GooglePickerSelection & Property;
+/** One account's properties: the combobox groups options by account. */
+type PropertyGroup = {
+  accountId: string;
+  label: string;
+  items: PropertyOption[];
+};
+
 function accountLabel(account: GooglePickerAccount) {
   return account.email ?? `Google account · ${account.accountId.slice(-6)}`;
+}
+
+function accountStatus(account: GooglePickerAccount, provider: "gsc" | "ga4") {
+  if (account.requiresReconnect) return "Connection expired";
+  if (account.unavailable) {
+    return account.apiDisabled
+      ? "Search Console API isn't enabled"
+      : "Couldn't load properties";
+  }
+  if (account.properties.length === 0) {
+    return provider === "gsc" ? "No websites found" : "No properties found";
+  }
+  return null;
+}
+
+function matchesProperty(option: PropertyOption, query: string) {
+  return `${option.name} ${option.detail ?? ""} ${option.id}`
+    .toLowerCase()
+    .includes(query.trim().toLowerCase());
 }
 
 export function GooglePropertyPicker({
@@ -76,51 +108,30 @@ export function GooglePropertyPicker({
   secondaryAction?: SecondaryAction;
   renderActions?: (disabled: boolean) => ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   const [removing, setRemoving] = useState<GooglePickerAccount | null>(null);
-  const [search, setSearch] = useState("");
-  const panelId = useId();
-  const trigger = useRef<HTMLButtonElement>(null);
-  const selectedAccount = accounts.find(
-    (a) => a.accountId === selection?.accountId,
-  );
-  const selected = selectedAccount?.properties.find(
-    (p) => p.id === selection?.propertyId,
-  );
-  const canSave =
-    selected?.selectable &&
-    !selectedAccount?.requiresReconnect &&
-    !selectedAccount?.unavailable &&
-    !loading &&
-    !error;
+  // Expired and unreachable accounts have no properties, so they only appear
+  // in the accounts list below, where their reconnect and retry actions live.
+  const groups: PropertyGroup[] = accounts
+    .filter((account) => account.properties.length > 0)
+    .map((account) => ({
+      accountId: account.accountId,
+      label: accountLabel(account),
+      items: account.properties.map((property) => ({
+        ...property,
+        accountId: account.accountId,
+        propertyId: property.id,
+      })),
+    }));
+  const options = groups.flatMap((group) => group.items);
+  const selected =
+    options.find(
+      (option) =>
+        option.accountId === selection?.accountId &&
+        option.propertyId === selection?.propertyId,
+    ) ?? null;
+  const canSave = Boolean(selected?.selectable) && !loading && !error;
   const emptyGsc =
     provider === "gsc" && hasNoGscWebsites(accounts, loading, error);
-  const query = search.trim().toLowerCase();
-  const filtered = accounts
-    .map((account) => ({
-      ...account,
-      properties: account.properties.filter((property) =>
-        `${account.email ?? ""} ${property.name} ${property.detail ?? ""} ${property.id}`
-          .toLowerCase()
-          .includes(query),
-      ),
-    }))
-    .filter(
-      (account) =>
-        !query ||
-        account.properties.length > 0 ||
-        accountLabel(account).toLowerCase().includes(query),
-    );
-  const close = () => {
-    setOpen(false);
-    setSearch("");
-    trigger.current?.focus();
-  };
-  const saveButton = readOnly ? null : (
-    <Button size="sm" onClick={onSave} disabled={!canSave || saving}>
-      {saving ? "Saving…" : saveLabel}
-    </Button>
-  );
   return (
     <div className="space-y-4">
       {removing ? (
@@ -135,12 +146,10 @@ export function GooglePropertyPicker({
           }}
         />
       ) : null}
-      {provider === "gsc" ? (
+      {emptyGsc ? (
         <GscPropertySetupHelp
           accounts={accounts}
-          emptyGsc={emptyGsc}
           loading={loading}
-          error={error}
           busy={saving || linking}
           linking={linking}
           onRetry={onRetry}
@@ -148,158 +157,77 @@ export function GooglePropertyPicker({
         />
       ) : null}
       {!emptyGsc || readOnly ? (
-        <div>
-          <p className="mb-2 text-sm font-medium">
-            {readOnly ? "Manage Google accounts" : "Choose property"}
-          </p>
-          <Button
-            ref={trigger}
-            variant="outline"
-            aria-expanded={open}
-            aria-controls={panelId}
-            disabled={saving}
-            className="h-auto w-full justify-between gap-3 px-3.5 py-3 text-left font-normal"
-            onClick={() => {
-              setOpen(!open);
-              setSearch("");
-            }}
-          >
-            <span className="min-w-0">
-              <span className="block truncate">
-                {selected?.name ?? "Select a property…"}
-              </span>
-              {selectedAccount ? (
-                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                  {accountLabel(selectedAccount)}
-                </span>
-              ) : null}
-            </span>
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-          </Button>
-          {open ? (
-            <div
-              id={panelId}
-              role="region"
-              aria-label="Google properties"
-              className="mt-2 overflow-hidden rounded-lg border border-border bg-popover shadow-sm"
-              onKeyDown={(event) => handlePropertyKeyDown(event, close)}
-            >
-              <label className="flex items-center gap-2 border-b border-border px-3.5 py-3">
-                <Search className="size-4 shrink-0 text-muted-foreground" />
-                <Input
-                  autoFocus
-                  type="search"
-                  aria-label="Search properties or accounts"
-                  placeholder="Search properties or accounts…"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  className="h-auto min-w-0 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+        <div className="space-y-4">
+          {readOnly ? (
+            <p className="text-sm font-medium">Manage Google accounts</p>
+          ) : (
+            <div>
+              <p className="mb-2 text-sm font-medium">Choose property</p>
+              {loading ? (
+                <Spinner size="sm" label="Loading properties…" />
+              ) : error ? (
+                <QueryError
+                  fallback="Couldn't load properties."
+                  onRetry={onRetry}
                 />
-              </label>
-              <div className="max-h-72 overflow-y-auto overscroll-contain p-1.5">
-                {loading ? (
-                  <Spinner
-                    size="sm"
-                    label="Loading properties…"
-                    className="p-3"
+              ) : (
+                <Combobox
+                  items={groups}
+                  value={selected}
+                  itemToStringLabel={(option) => option.name}
+                  isItemEqualToValue={(option, value) =>
+                    option.accountId === value.accountId &&
+                    option.propertyId === value.propertyId
+                  }
+                  filter={matchesProperty}
+                  autoHighlight
+                  onValueChange={(option) => {
+                    if (option) {
+                      onSelect({
+                        accountId: option.accountId,
+                        propertyId: option.propertyId,
+                      });
+                    }
+                  }}
+                >
+                  <ComboboxInput
+                    className="w-full"
+                    placeholder="Select a property…"
+                    aria-label="Search properties"
+                    disabled={saving}
                   />
-                ) : error ? (
-                  <QueryError
-                    fallback="Couldn't load properties."
-                    onRetry={onRetry}
-                  />
-                ) : (
-                  <>
-                    {filtered.map((account) => (
-                      <div
-                        key={account.accountId}
-                        className="py-1"
-                        role="group"
-                        aria-label={accountLabel(account)}
-                      >
-                        <div className="flex items-center justify-between gap-2 px-2 py-2 text-xs font-medium text-muted-foreground">
-                          <span className="min-w-0 break-all">
-                            {accountLabel(account)}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            className="shrink-0 text-destructive"
-                            disabled={saving}
-                            onClick={() => setRemoving(account)}
-                            aria-label={`Remove ${accountLabel(account)}`}
-                          >
-                            Remove account
-                          </Button>
-                        </div>
-                        {account.requiresReconnect ? (
-                          <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 text-sm">
-                            <span className="text-muted-foreground">
-                              Connection expired
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              onClick={onReconnect}
-                              aria-label={`Reconnect ${accountLabel(account)}`}
-                              disabled={linking}
-                              aria-busy={linking}
-                            >
-                              {linking ? "Opening Google…" : "Reconnect"}
-                            </Button>
-                          </div>
-                        ) : account.unavailable ? (
-                          <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-2 text-sm">
-                            <span className="text-muted-foreground">
-                              {account.apiDisabled
-                                ? "Search Console API isn't enabled"
-                                : "Couldn't load properties"}
-                            </span>
-                            <Button variant="ghost" size="xs" onClick={onRetry}>
-                              Try again
-                            </Button>
-                          </div>
-                        ) : account.properties.length === 0 ? (
-                          <p className="px-2 pb-3 text-sm text-muted-foreground">
-                            <EmptyAccountMessage
-                              provider={provider}
-                              filtered={Boolean(query)}
-                            />
-                          </p>
-                        ) : (
-                          account.properties.map((property) => {
-                            const chosen =
-                              selection?.accountId === account.accountId &&
-                              selection?.propertyId === property.id;
-                            return (
-                              <Button
-                                key={property.id}
-                                data-property
-                                type="button"
-                                variant="ghost"
-                                aria-pressed={chosen}
-                                disabled={
-                                  readOnly || !property.selectable || saving
-                                }
-                                className={`h-auto w-full justify-between gap-3 rounded-md px-2 py-2.5 text-left font-normal hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-40 ${chosen ? "bg-accent" : ""}`}
-                                onClick={() => {
-                                  onSelect({
-                                    accountId: account.accountId,
-                                    propertyId: property.id,
-                                  });
-                                  close();
-                                }}
+                  <ComboboxContent>
+                    <ComboboxEmpty>
+                      {options.length > 0
+                        ? "No matching properties."
+                        : "No properties available. Check the Google accounts below."}
+                    </ComboboxEmpty>
+                    <ComboboxList>
+                      {(group: PropertyGroup) => (
+                        <ComboboxGroup
+                          key={group.accountId}
+                          items={group.items}
+                        >
+                          <ComboboxLabel className="break-all">
+                            {group.label}
+                          </ComboboxLabel>
+                          <ComboboxCollection>
+                            {(option: PropertyOption) => (
+                              <ComboboxItem
+                                key={`${option.accountId} ${option.id}`}
+                                value={option}
+                                disabled={!option.selectable}
                               >
                                 <span className="min-w-0">
                                   <span className="block break-words">
-                                    {property.name}
+                                    {option.name}
                                   </span>
-                                  {property.detail ? (
-                                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                                      {property.detail}
+                                  {option.detail ? (
+                                    <span className="block text-xs text-muted-foreground">
+                                      {option.detail}
                                     </span>
                                   ) : null}
-                                  {!property.selectable ? (
+                                  {!option.selectable ? (
                                     <span className="block text-xs">
                                       {provider === "gsc"
                                         ? "Ask the property owner for Full access, or verify ownership in Search Console."
@@ -307,46 +235,125 @@ export function GooglePropertyPicker({
                                     </span>
                                   ) : null}
                                 </span>
-                                {chosen ? (
-                                  <Check className="size-4 shrink-0" />
-                                ) : null}
-                              </Button>
-                            );
-                          })
-                        )}
-                      </div>
-                    ))}
-                    {filtered.length === 0 ? (
-                      <p className="p-3 text-sm text-muted-foreground">
-                        {query
-                          ? "No matching properties or accounts"
-                          : "Add a Google account to find properties."}
-                      </p>
-                    ) : null}
-                  </>
-                )}
-              </div>
-              <div className="border-t border-border p-1.5">
-                <Button
-                  variant="ghost"
-                  className="h-auto w-full justify-start px-2 py-2.5"
-                  onClick={onReconnect}
-                  disabled={saving || linking}
-                  pending={linking}
-                >
-                  {linking ? null : <Plus className="size-4" />}
-                  {linking ? "Opening Google…" : "Add Google account"}
-                </Button>
-              </div>
+                              </ComboboxItem>
+                            )}
+                          </ComboboxCollection>
+                        </ComboboxGroup>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              )}
             </div>
-          ) : null}
+          )}
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">
+              Google accounts
+            </p>
+            {accounts.map((account) => {
+              const label = accountLabel(account);
+              const status = loading ? null : accountStatus(account, provider);
+              return (
+                <div
+                  key={account.accountId}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm"
+                >
+                  <span className="min-w-0 break-all">
+                    {label}
+                    {status ? (
+                      <span className="text-muted-foreground"> · {status}</span>
+                    ) : null}
+                    {account.apiDisabled ? (
+                      <>
+                        {" "}
+                        <a
+                          href={`${GSC_SELF_HOSTED_SETUP_DOCS_URL}#troubleshooting`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline underline-offset-4"
+                        >
+                          How to enable it ↗
+                        </a>
+                      </>
+                    ) : null}
+                  </span>
+                  <span className="flex shrink-0 items-center">
+                    {account.requiresReconnect ? (
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={onReconnect}
+                        aria-label={`Reconnect ${label}`}
+                        disabled={linking}
+                        aria-busy={linking}
+                      >
+                        {linking ? "Opening Google…" : "Reconnect"}
+                      </Button>
+                    ) : account.unavailable ? (
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={onRetry}
+                        aria-label={`Retry ${label}`}
+                      >
+                        Try again
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className="text-destructive"
+                      disabled={saving}
+                      onClick={() => setRemoving(account)}
+                      aria-label={`Remove ${label}`}
+                    >
+                      Remove
+                    </Button>
+                  </span>
+                </div>
+              );
+            })}
+            <Button
+              variant="ghost"
+              size="xs"
+              className="-ml-2"
+              onClick={onReconnect}
+              disabled={saving || linking}
+              pending={linking}
+            >
+              {linking ? null : <Plus className="size-4" />}
+              {linking ? "Opening Google…" : "Add Google account"}
+            </Button>
+            {provider === "gsc" &&
+            !loading &&
+            !emptyGsc &&
+            accounts.some(
+              (account) => accountStatus(account, provider) !== null,
+            ) ? (
+              <p className="text-xs text-muted-foreground">
+                Having trouble?{" "}
+                <a
+                  href={GSC_SETUP_GUIDE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4"
+                >
+                  Setup guide ↗
+                </a>
+              </p>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {renderActions ? (
         renderActions(!canSave || saving)
       ) : (
         <div className="flex flex-wrap items-center gap-1">
-          {saveButton}
+          {readOnly ? null : (
+            <Button size="sm" onClick={onSave} disabled={!canSave || saving}>
+              {saving ? "Saving…" : saveLabel}
+            </Button>
+          )}
           {secondaryAction ? (
             <Button
               variant="ghost"
@@ -361,33 +368,4 @@ export function GooglePropertyPicker({
       )}
     </div>
   );
-}
-
-function handlePropertyKeyDown(
-  event: KeyboardEvent<HTMLDivElement>,
-  close: () => void,
-) {
-  if (event.key === "Escape") {
-    event.preventDefault();
-    close();
-  }
-  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-  const buttons = Array.from(
-    event.currentTarget.querySelectorAll<HTMLButtonElement>(
-      "button[data-property]:not(:disabled)",
-    ),
-  );
-  if (!buttons.length) return;
-  event.preventDefault();
-  const index = buttons.findIndex(
-    (button) => button === document.activeElement,
-  );
-  const nextIndex =
-    index < 0
-      ? event.key === "ArrowDown"
-        ? 0
-        : buttons.length - 1
-      : (index + (event.key === "ArrowDown" ? 1 : buttons.length - 1)) %
-        buttons.length;
-  buttons[nextIndex]?.focus();
 }

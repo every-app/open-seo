@@ -6,17 +6,21 @@
   "type": "module",
   "packageManager": "pnpm@10.30.1",
   "scripts": {
+    "predev": "pnpm build:report-widgets",
     "dev": "vite dev",
+    "predev:agents": "pnpm build:report-widgets",
     "dev:agents": "mkdir -p .logs && portless run vite dev 2>&1 | tee .logs/dev-server.log",
     "dev:agents:force": "mkdir -p .logs && portless --force run vite dev 2>&1 | tee .logs/dev-server.log",
-    "build": "vite build && tsc --noEmit",
+    "build": "pnpm build:report-widgets && vite build && tsc --noEmit",
+    "build:report-widgets": "tsc --noEmit -p tsconfig.report-widgets.json && vite build -c vite.report-widgets.config.ts",
     "lint": "oxlint . --type-aware",
     "lint:fix": "oxlint . --type-aware --fix",
     "preview": "npm run build && vite preview --port 3001",
     "deploy": "npm run db:migrate:prod && npm run build && wrangler deploy -c dist/open_seo_audit/wrangler.json && wrangler deploy",
-    "deploy:selfhost": "node scripts/selfhost-deploy-preflight.mjs && vite build --mode selfhost && tsc --noEmit && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.selfhost --stage selfhost",
-    "deploy:postgres": "npm run db:migrate:pg && npm run build && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.production --stage hosted-prod --adopt",
-    "deploy:preview": "vite build --mode preview && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.preview",
+    "deploy:selfhost": "node scripts/selfhost-deploy-preflight.mjs && pnpm build:report-widgets && vite build --mode selfhost && tsc --noEmit && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.selfhost --stage selfhost",
+    "deploy:prod": "gh workflow run deploy-production.yml --repo bensenescu/open-seo --ref main",
+    "deploy:web": "gh workflow run deploy-website.yml --repo bensenescu/open-seo --ref main",
+    "deploy:preview": "pnpm build:report-widgets && vite build --mode preview && pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --env-file .env.preview",
     "preview:access": "pnpm alchemy deploy deploy/alchemy/alchemy.preview-access.run.ts --env-file .env.preview --stage preview-access --adopt",
     "alchemy": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-strip-types\" alchemy",
     "destroy:preview": "pnpm alchemy destroy deploy/alchemy/alchemy.run.ts --env-file .env.preview",
@@ -54,7 +58,7 @@
     "repair:rank-locations": "tsx scripts/repair-rank-tracking-locations.ts",
     "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
     "seed:projects": "tsx scripts/seed-projects.ts",
-    "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p tests/badseo/tsconfig.json && oxlint . --type-aware && pnpm sync-plugin-skills && test -z \"$(git status --porcelain -- plugins/openseo/skills)\""
+    "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p tests/badseo/tsconfig.json && tsc --noEmit -p tsconfig.report-widgets.json && oxlint . --type-aware && pnpm sync-plugin-skills && test -z \"$(git status --porcelain -- plugins/openseo/skills)\""
   },
   "cloudflare": {
     "bindings": {
@@ -104,7 +108,9 @@
     "drizzle-orm": "^0.45.2",
     "fast-xml-parser": "^5.4.1",
     "htmlparser2": "^10.1.0",
+    "http-message-sig": "0.3.0",
     "jose": "^6.0.12",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.542.0",
     "papaparse": "^5.5.3",
     "postgres": "^3.4.9",
@@ -112,6 +118,7 @@
     "posthog-node": "^5.38.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0",
     "react-markdown": "^10.1.0",
     "recharts": "^3.8.0",
     "remark-gfm": "^4.0.1",
@@ -122,24 +129,26 @@
     "takumi-js": "2.13.7",
     "tldts": "^7.0.25",
     "tw-animate-css": "^1.4.0",
+    "web-bot-auth": "0.2.0",
     "yaml": "^2.9.1",
-    "zod": "^4.1.12"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.42.3",
+    "@cloudflare/vite-plugin": "^1.63.1",
     "@cloudflare/workers-types": "^4.20260702.1",
     "@distilled.cloud/cloudflare": "0.28.2",
     "@effect/platform-node": "4.0.0-beta.93",
     "@libsql/client": "^0.15.15",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.1.11",
-    "@tanstack/devtools-vite": "^0.6.1",
+    "@tanstack/devtools-vite": "^0.8.5",
     "@tanstack/react-devtools": "^0.10.12",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22.18.13",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "alchemy": "2.0.0-beta.61",
     "chalk": "^5.6.2",
     "cheerio": "^1.2.0",
@@ -153,9 +162,13 @@
     "shadcn": "^4.21.0",
     "tsx": "^4.22.4",
     "typescript": "^5.9.3",
-    "vite": "^7.3.6",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.1.11",
-    "wrangler": "^4.105.0"
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4",
+    "wrangler": "^4.149.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "zod@4": "4.6.7"
+    }
   }
 }

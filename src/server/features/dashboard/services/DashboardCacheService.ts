@@ -19,6 +19,9 @@ async function readThrough<T>(input: {
   schema: z.ZodType<T>;
   maxAgeMs: number;
   load: () => Promise<T>;
+  // Results that should not outlive the request, such as a dead Google grant:
+  // a reconnect only rewrites the account row, so the cache key would not change.
+  shouldCache?: (value: T) => boolean;
 }) {
   const key = await buildCacheKey(input.namespace, {
     ...input.params,
@@ -59,7 +62,8 @@ async function readThrough<T>(input: {
     }
     const value = input.schema.parse(await input.load());
     const result = { value, fetchedAt: new Date().toISOString() };
-    await setCached(key, result, 90 * 86400);
+    if (input.shouldCache?.(value) ?? true)
+      await setCached(key, result, 90 * 86400);
     await DataRefreshClaimRepository.finish(key, token, 0);
     return { ...result, stale: false, refreshError: null };
   } catch (error) {

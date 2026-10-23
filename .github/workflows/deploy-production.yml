@@ -1,0 +1,153 @@
+name: Deploy production
+
+# Maintainer setup and the optional team CLI alias:
+# docs/maintainers/production-deployment.md
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel a deployment while migrations or resource updates are running.
+concurrency:
+  group: deploy-hosted-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # The public mirror must not deploy production. Only dispatches on main
+    # may use the production environment's credentials.
+    if: >-
+      (github.repository == 'bensenescu/open-seo' ||
+      github.repository == 'every-app/private-open-seo') &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://app.openseo.so
+    env:
+      # Shared by Vite's client build and Alchemy's runtime configuration.
+      AUTH_MODE: hosted
+      DATABASE_PROVIDER: postgres
+      BETTER_AUTH_URL: https://app.openseo.so
+      BYPASS_EMAIL_VERIFICATION: "false"
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      HYPERDRIVE_ID: ${{ vars.HYPERDRIVE_ID }}
+      GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+      TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+      LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID: ${{ vars.LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID }}
+      LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID: ${{ vars.LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID }}
+      LOOPS_TRANSACTIONAL_INVITATION_ID: ${{ vars.LOOPS_TRANSACTIONAL_INVITATION_ID }}
+      LOOPS_PRODUCT_UPDATES_LIST_ID: ${{ vars.LOOPS_PRODUCT_UPDATES_LIST_ID }}
+      META_PIXEL_ID: ${{ vars.META_PIXEL_ID }}
+      POSTHOG_PUBLIC_KEY: ${{ vars.POSTHOG_PUBLIC_KEY }}
+      POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+      OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+      OPENSEO_TELEMETRY_DISABLED: ${{ vars.OPENSEO_TELEMETRY_DISABLED }}
+
+    steps:
+      - name: Checkout dispatched commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validate production configuration
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          POSTGRES_DATABASE_URL: ${{ secrets.POSTGRES_DATABASE_URL }}
+          DATAFORSEO_API_KEY: ${{ secrets.DATAFORSEO_API_KEY }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          CRAWLER_ACCESS_SECRET: ${{ secrets.CRAWLER_ACCESS_SECRET }}
+          WEB_BOT_AUTH_JWK: ${{ secrets.WEB_BOT_AUTH_JWK }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          LOOPS_API_KEY: ${{ secrets.LOOPS_API_KEY }}
+          AUTUMN_SECRET_KEY: ${{ secrets.AUTUMN_SECRET_KEY }}
+          AUTUMN_WEBHOOK_SECRET: ${{ secrets.AUTUMN_WEBHOOK_SECRET }}
+          CONTEXT_API_KEY: ${{ secrets.CONTEXT_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DUB_API_KEY: ${{ secrets.DUB_API_KEY }}
+          META_CONVERSIONS_API_TOKEN: ${{ secrets.META_CONVERSIONS_API_TOKEN }}
+          GDPR_ERASURE_SECRET: ${{ secrets.GDPR_ERASURE_SECRET }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          # Alchemy replaces the worker's complete var/secret set on every
+          # deploy, and most values are optional-with-empty-default in the
+          # stack. A missing one would deploy cleanly and silently disable
+          # that integration, so require everything production depends on.
+          required=(CLOUDFLARE_API_TOKEN POSTGRES_DATABASE_URL
+            CLOUDFLARE_ACCOUNT_ID HYPERDRIVE_ID
+            DATAFORSEO_API_KEY BETTER_AUTH_SECRET CRAWLER_ACCESS_SECRET
+            GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET
+            TURNSTILE_SITE_KEY TURNSTILE_SECRET_KEY
+            LOOPS_API_KEY LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID
+            LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID
+            LOOPS_TRANSACTIONAL_INVITATION_ID
+            AUTUMN_SECRET_KEY AUTUMN_WEBHOOK_SECRET)
+          optional=(CONTEXT_API_KEY OPENROUTER_API_KEY DUB_API_KEY
+            META_CONVERSIONS_API_TOKEN GDPR_ERASURE_SECRET GOOGLE_MAPS_API_KEY
+            WEB_BOT_AUTH_JWK
+            LOOPS_PRODUCT_UPDATES_LIST_ID META_PIXEL_ID
+            POSTHOG_PUBLIC_KEY POSTHOG_HOST OPENROUTER_MODEL
+            OPENSEO_TELEMETRY_DISABLED)
+          failed=0
+          for name in "${required[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing production secret or variable: $name"
+              failed=1
+            fi
+          done
+          # Values pasted into GitHub's settings UI can keep a trailing line
+          # break, which would change signing keys and break API auth.
+          for name in "${required[@]}" "${optional[@]}"; do
+            if [[ "${!name}" =~ [[:space:]] ]]; then
+              echo "::error::$name contains whitespace or a line break; re-enter it"
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Migrate production Postgres
+        run: pnpm db:migrate:pg
+        env:
+          POSTGRES_DATABASE_URL: ${{ secrets.POSTGRES_DATABASE_URL }}
+
+      - name: Deploy production Workers
+        # Alchemy reads secrets from the process environment (no --env-file).
+        # They are scoped to this step only.
+        run: pnpm alchemy deploy deploy/alchemy/alchemy.run.ts --stage hosted-prod --adopt --yes
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DATAFORSEO_API_KEY: ${{ secrets.DATAFORSEO_API_KEY }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          CRAWLER_ACCESS_SECRET: ${{ secrets.CRAWLER_ACCESS_SECRET }}
+          WEB_BOT_AUTH_JWK: ${{ secrets.WEB_BOT_AUTH_JWK }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          LOOPS_API_KEY: ${{ secrets.LOOPS_API_KEY }}
+          AUTUMN_SECRET_KEY: ${{ secrets.AUTUMN_SECRET_KEY }}
+          AUTUMN_WEBHOOK_SECRET: ${{ secrets.AUTUMN_WEBHOOK_SECRET }}
+          CONTEXT_API_KEY: ${{ secrets.CONTEXT_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DUB_API_KEY: ${{ secrets.DUB_API_KEY }}
+          META_CONVERSIONS_API_TOKEN: ${{ secrets.META_CONVERSIONS_API_TOKEN }}
+          GDPR_ERASURE_SECRET: ${{ secrets.GDPR_ERASURE_SECRET }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}

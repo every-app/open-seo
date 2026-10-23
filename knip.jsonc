@@ -40,6 +40,8 @@
     "!.claude/**",
   ],
   "ignore": ["drizzle/remote-d1.config.ts"],
+  // GitHub CLI, used by deploy:prod; installed system-wide, not via npm
+  "ignoreBinaries": ["gh"],
   // Disable Drizzle plugin - it tries to load drizzle/sqlite.config.ts which imports cloudflare:workers
   "drizzle": false,
   "ignoreDependencies": [
