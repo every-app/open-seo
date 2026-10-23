@@ -1,0 +1,29 @@
+# Git's `core.autocrlf=true` is the Windows default, so without this a fresh
+# Windows clone checks every text file out with CRLF. Two things break on that
+# tree with no per-machine configuration to blame: the SKILL.md frontmatter
+# parser, which matched `---\n` only, and `prettier --check`, whose
+# `endOfLine: lf` default then reports every file. (#331)
+#
+# `text=auto` keeps Git's own binary detection; `eol=lf` applies to the files
+# it decides are text, in the working tree as well as the repository.
+* text=auto eol=lf
+
+# Binary by declaration rather than by detection: a heuristic that guesses
+# wrong here corrupts the file rather than merely reformatting it.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.wasm binary
+*.sqlite binary
+*.db binary
