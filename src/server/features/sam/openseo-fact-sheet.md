@@ -33,7 +33,7 @@ The paid plan includes:
 - Keyword research, backlinks, rank tracking, and site audits.
 - AI visibility, prompt research, model comparisons, and prompt tracking.
 - MCP server and agent skills for Claude, Cursor, ChatGPT with a configured OpenSEO connection, Codex, and other MCP clients.
-- Google Search Console integration that does not use credits.
+- Google Search Console, Google Analytics, and Umami integrations that do not use credits.
 - $10.00 of usage credits each billing cycle.
 - A 30-day money-back guarantee for the first charge.
 

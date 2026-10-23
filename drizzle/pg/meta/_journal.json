@@ -281,6 +281,13 @@
       "when": 1792647301349,
       "tag": "0039_silly_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792796257558,
+      "tag": "0040_umami_connections",
+      "breakpoints": true
     }
   ]
 }

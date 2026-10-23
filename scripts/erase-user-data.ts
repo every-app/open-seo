@@ -348,6 +348,24 @@ async function buildInventory(db: Db, user: UserRow) {
       schema.ga4Connections,
       eq(schema.ga4Connections.connectedByUserId, user.id),
     ),
+    // Includes connections that cascade away with the user's Umami logins.
+    umami_connections: await db.$count(
+      schema.umamiConnections,
+      or(
+        eq(schema.umamiConnections.connectedByUserId, user.id),
+        inArray(
+          schema.umamiConnections.instanceId,
+          db
+            .select({ id: schema.umamiInstances.id })
+            .from(schema.umamiInstances)
+            .where(eq(schema.umamiInstances.savedByUserId, user.id)),
+        ),
+      ),
+    ),
+    umami_instances: await db.$count(
+      schema.umamiInstances,
+      eq(schema.umamiInstances.savedByUserId, user.id),
+    ),
     api_keys: await db.$count(
       schema.apikey,
       eq(schema.apikey.referenceId, user.id),
@@ -537,6 +555,14 @@ async function erasePostgres(db: Db, user: UserRow, organizationIds: string[]) {
     await tx
       .delete(schema.ga4Connections)
       .where(eq(schema.ga4Connections.connectedByUserId, user.id));
+    // An Umami login holds the credentials its saver last entered, so it goes
+    // with them, along with every project connection that reads through it.
+    await tx
+      .delete(schema.umamiConnections)
+      .where(eq(schema.umamiConnections.connectedByUserId, user.id));
+    await tx
+      .delete(schema.umamiInstances)
+      .where(eq(schema.umamiInstances.savedByUserId, user.id));
     // apikey.reference_id mirrors the plugin's polymorphic schema and has no
     // user FK, so keys don't cascade with the user row.
     await tx
