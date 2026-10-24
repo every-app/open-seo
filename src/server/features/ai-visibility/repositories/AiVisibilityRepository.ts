@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, isNull, lte, ne } from "drizzle-orm";
+import { chunk } from "remeda";
 import { db } from "@/db";
 import { runBatch } from "@/db/runBatch";
 import {
@@ -210,16 +211,19 @@ async function failPendingObservations(
   error: string,
   ids?: string[],
 ) {
-  await db
-    .update(aiObservations)
-    .set({ status: "failed", error })
-    .where(
-      and(
-        eq(aiObservations.runId, runId),
-        eq(aiObservations.status, "pending"),
-        ids ? inArray(aiObservations.id, ids) : undefined,
-      ),
-    );
+  // A task_post carries up to 100 answers; keep each IN list under D1's bind limit.
+  for (const idChunk of ids ? chunk(ids, 80) : [undefined]) {
+    await db
+      .update(aiObservations)
+      .set({ status: "failed", error })
+      .where(
+        and(
+          eq(aiObservations.runId, runId),
+          eq(aiObservations.status, "pending"),
+          idChunk ? inArray(aiObservations.id, idChunk) : undefined,
+        ),
+      );
+  }
 }
 
 /** Advances a due tracker only if no one else has since, like claimDueConfig. */
