@@ -14,6 +14,15 @@ set -e
 # commit message does. A failed build here is a container that never starts,
 # so drop the variable. Nothing reads it.
 unset RAILWAY_GIT_COMMIT_MESSAGE
+# Fork: this deployment's keys live in Doppler (owner decision, 2026-10-23, after
+# the Railway breach). Railway keeps only DOPPLER_TOKEN, a read-only service token,
+# and DOPPLER_ONLY, the names this service needs. Load them before the preflight
+# checks them. Without DOPPLER_TOKEN nothing changes; with it and Doppler
+# unreadable, the container stops rather than start without its keys. The token
+# itself is dropped after: the build below writes process env to dist/.dev.vars.
+exports="$(node scripts/doppler-env.mjs --export)" || exit 1
+eval "$exports"
+unset exports DOPPLER_TOKEN DOPPLER_ONLY
 
 echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER.md#telemetry'
 
