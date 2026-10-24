@@ -68,7 +68,13 @@ import { ProjectWebsiteService } from "./ProjectWebsiteService";
 import { customer } from "@/server/features/ai-visibility/services/aiVisibilityTestFixtures";
 
 const client = createClient({ url: "file::memory:" });
-const testDb = drizzle(client);
+// libsql allows 500 compound-SELECT terms, workerd's SQLite only 5, so the
+// limit is checked against the logged statements rather than enforced here.
+const WORKERD_MAX_COMPOUND_SELECT_TERMS = 5;
+const loggedQueries: string[] = [];
+const testDb = drizzle(client, {
+  logger: { logQuery: (query) => loggedQueries.push(query) },
+});
 let beforeWrite: (() => Promise<void>) | null;
 const projectId = "4a5b6c7d-0000-4000-8000-000000000000";
 const project = {
@@ -120,6 +126,7 @@ beforeAll(async () => {
 afterAll(() => client.close());
 beforeEach(async () => {
   beforeWrite = null;
+  loggedQueries.length = 0;
   getProject.mockResolvedValue(project);
   listCompetitors.mockResolvedValue([]);
   await client.executeMultiple(
@@ -169,6 +176,18 @@ describe("ProjectWebsiteService.save", () => {
       (await client.execute("SELECT content FROM project_context_sections"))
         .rows[0]?.content,
     ).toBe(accepted.overview);
+  });
+
+  it("keeps each competitor insert within workerd's compound SELECT limit", async () => {
+    await ProjectWebsiteService.save(accepted, customer, "user");
+    const competitorInserts = loggedQueries.filter((query) =>
+      query.startsWith('insert into "project_competitors"'),
+    );
+    expect(competitorInserts.length).toBeGreaterThan(1);
+    for (const query of competitorInserts)
+      expect(query.split(" union all ").length).toBeLessThanOrEqual(
+        WORKERD_MAX_COMPOUND_SELECT_TERMS,
+      );
   });
 
   it.each(["before review", "during save"])(
