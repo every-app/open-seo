@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { isLabsLocationCode } from "@/client/features/keywords/locations";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { Spinner } from "@/client/components/Spinner";
 import {
   DataTable,
@@ -260,8 +261,8 @@ export function KeywordSuggestionStep({
     return (
       <>
         <StepHeader
-          title="Couldn't fetch keywords"
-          description="You can skip this step and add keywords manually later."
+          title="Couldn't fetch keyword suggestions"
+          description={`${getStandardErrorMessage(suggestionsQuery.error, "We couldn't load the keywords this domain ranks for.")} You can skip this step and add keywords by hand later.`}
         />
         <DialogFooter>
           <Button onClick={onClose}>Skip</Button>

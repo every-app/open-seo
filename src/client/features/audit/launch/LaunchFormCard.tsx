@@ -254,8 +254,8 @@ function RenderingOptions({
       )}
       {canRenderJavaScript === false && isEveryAppClientAuthMode() && (
         <FieldDescription>
-          JavaScript rendering isn't set up on this gateway. An admin sets{" "}
-          <code>CONTEXT_API_KEY</code> with{" "}
+          JavaScript rendering isn't set up on your Every App gateway yet. An
+          owner or admin sets it with{" "}
           <code>pnpm everyapp secret set CONTEXT_API_KEY</code>.
         </FieldDescription>
       )}

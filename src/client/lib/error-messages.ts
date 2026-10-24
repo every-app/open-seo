@@ -17,7 +17,7 @@ export const UNEXPECTED_ERROR_MESSAGE = isHostedClientAuthMode()
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   UNAUTHENTICATED: "Please sign in and try again.",
   AUTH_CONFIG_MISSING: isEveryAppClientAuthMode()
-    ? "OpenSEO isn't set up on your Every App gateway yet. Deploy it with `everyapp deploy`."
+    ? "OpenSEO can't reach your Every App gateway for this right now. An owner or admin can check its setup with pnpm everyapp status."
     : "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
   PAYMENT_REQUIRED:
     "An active hosted subscription is required before you can use OpenSEO.",
@@ -44,7 +44,7 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   AI_VISIBILITY_ERROR:
     "The AI visibility request could not be completed. Review the tracking settings and try again.",
   DATAFORSEO_AUTH_FAILED: isEveryAppClientAuthMode()
-    ? "DataForSEO isn't set up on your Every App gateway, or rejected its key. An admin sets it with `pnpm everyapp secret set DATAFORSEO_API_KEY`."
+    ? "DataForSEO isn't set up on your Every App gateway yet, or rejected the key it holds. An owner or admin sets it with pnpm everyapp secret set DATAFORSEO_API_KEY."
     : "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:

@@ -31,27 +31,40 @@ export function CommandBlock({ command }: { command: string }) {
   );
 }
 
-/** Self-hosting instructions for setting one secret. */
+/**
+ * Instructions for setting one secret: the self-hosting steps, or on Every
+ * App the steps for the gateway, which holds the key for every app.
+ */
 export function SecretHelpPage({
   title,
   intro,
+  everyAppIntro,
   secretName,
   steps,
+  everyAppSteps,
   dashboardPasteStep,
   terminalPromptHint,
 }: {
   title: string;
   intro: ReactNode;
+  /** The intro on Every App, where the gateway holds the key. */
+  everyAppIntro: ReactNode;
   secretName: string;
   /** The `<li>` items of the "Steps" card. */
   steps: ReactNode;
+  /** The `<li>` items of the "Steps" card on Every App. */
+  everyAppSteps: ReactNode;
   dashboardPasteStep: ReactNode;
   terminalPromptHint: ReactNode;
 }) {
+  const everyApp = isEveryAppClientAuthMode();
   return (
     <div className="h-full overflow-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
-        <PageHeader title={title} description={intro} />
+        <PageHeader
+          title={title}
+          description={everyApp ? everyAppIntro : intro}
+        />
 
         <Card>
           <CardHeader>
@@ -60,32 +73,16 @@ export function SecretHelpPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ol className="list-decimal space-y-3 pl-5">{steps}</ol>
+            <ol className="list-decimal space-y-3 pl-5">
+              {everyApp ? everyAppSteps : steps}
+            </ol>
           </CardContent>
         </Card>
 
-        {isEveryAppClientAuthMode() ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <h2>Every App gateway</h2>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p>
-                OpenSEO runs behind your Every App gateway, which holds this key
-                for it. An admin sets it once on the gateway, from a checkout of
-                Every App:
-              </p>
-              <CommandBlock
-                command={`pnpm everyapp secret set ${secretName}`}
-              />
-              <p className="text-muted-foreground">
-                Nothing changes on OpenSEO itself: it uses the key on its next
-                request.
-              </p>
-            </CardContent>
-          </Card>
+        {everyApp ? (
+          <p className="text-sm text-muted-foreground">
+            Not an owner or admin? Send this page to one.
+          </p>
         ) : (
           <Card>
             <CardHeader>

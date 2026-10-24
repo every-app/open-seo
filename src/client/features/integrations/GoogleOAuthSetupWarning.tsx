@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   Alert,
@@ -19,14 +19,13 @@ export function GoogleOAuthSetupWarning({
     // once the gateway offers it; OpenSEO holds no Google client here
     // (server/features/google/googleAccess.ts).
     return (
-      <Alert variant="warning">
-        <AlertTriangle className="size-4" />
+      <Alert variant="info">
+        <Info className="size-4" />
         <AlertTitle>Coming to Every App</AlertTitle>
         <AlertDescription>
           <p>
-            On Every App, the Every App gateway holds the Google connection for
-            every app. {integrationName} will connect there once the gateway
-            offers Google; until then OpenSEO can&apos;t read its data.
+            {integrationName} will connect through Every App once it offers
+            Google. Nothing to set up on your side yet.
           </p>
         </AlertDescription>
       </Alert>

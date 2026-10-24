@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { dismissDashboardGa4Card } from "@/serverFunctions/dashboard";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 
 export function Ga4ConnectCard({
   projectId,
@@ -15,7 +16,9 @@ export function Ga4ConnectCard({
   connected: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [usesGa4, setUsesGa4] = useState(false);
+  // On Every App "Yes, connect GA4" leads nowhere yet (Google is not on the
+  // gateway), so skip the question and show the notice with Dismiss.
+  const [usesGa4, setUsesGa4] = useState(isEveryAppClientAuthMode());
   const dismissMutation = useMutation({
     mutationFn: () => dismissDashboardGa4Card({ data: { projectId } }),
     onSuccess: () => {

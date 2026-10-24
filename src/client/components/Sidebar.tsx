@@ -29,7 +29,7 @@ import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuIte
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
-import { getEveryAppAccount } from "@/serverFunctions/everyApp";
+import { everyAppAccountQueryOptions } from "@/client/features/every-app/everyAppAccountQueries";
 import { BILLING_ROUTE } from "@/shared/billing";
 import {
   Sidebar as UiSidebar,
@@ -213,10 +213,8 @@ function AccountFooter({ ready }: { ready: boolean }) {
   const { data: session } = useSession();
   const { setOpenMobile } = useSidebar();
   const everyAppAccountQuery = useQuery({
-    queryKey: ["every-app-account"],
-    queryFn: () => getEveryAppAccount(),
+    ...everyAppAccountQueryOptions(),
     enabled: everyApp,
-    staleTime: 5 * 60 * 1000,
   });
   const everyAppAccount = everyAppAccountQuery.data;
   const email = everyApp ? everyAppAccount?.email : session?.user?.email;

@@ -1,6 +1,7 @@
 import { gatewayRefusal } from "@every-app/sdk/server";
 import { AppError } from "@/server/lib/errors";
 import type { ErrorCode } from "@/shared/error-codes";
+import { DATAFORSEO_NOT_SET_UP_MESSAGE } from "@/shared/gateway-setup-messages";
 import { getDataforseoFetch } from "@/server/lib/provider-access";
 // No runtime cycle: envelope.ts imports only the DataforseoErrorClassifier
 // type from here.
@@ -62,17 +63,27 @@ function formatDataforseoRequestPath(url: RequestInfo): string {
  * DataForSEO, the gateway has no key, the call names no organization), as
  * opposed to DataForSEO's own answer
  * passed through, as OpenSEO's error; null for DataForSEO's answer.
+ *
+ * A missing key gets OpenSEO's own sentence as the message: rank checks store
+ * error.message and the MCP tools answer with it, and the gateway's wording
+ * is its operator's. The gateway's text stays in the details.
  */
 async function gatewayRefusalError(response: Response) {
   const refusal = await gatewayRefusal(response);
   if (!refusal) return null;
-  return new AppError(
-    refusal.code === "integration_not_configured"
-      ? "DATAFORSEO_AUTH_FAILED"
-      : "AUTH_CONFIG_MISSING",
-    refusal.message,
-    { provider: "dataforseo", gatewayError: refusal.code },
-  );
+  const details = {
+    provider: "dataforseo",
+    gatewayError: refusal.code,
+    gatewayMessage: refusal.message,
+  };
+  if (refusal.code === "integration_not_configured") {
+    return new AppError(
+      "DATAFORSEO_AUTH_FAILED",
+      DATAFORSEO_NOT_SET_UP_MESSAGE,
+      details,
+    );
+  }
+  return new AppError("AUTH_CONFIG_MISSING", refusal.message, details);
 }
 
 /**

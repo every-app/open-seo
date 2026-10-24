@@ -7,6 +7,7 @@ import {
 import { isEveryAppAuthMode } from "@/lib/auth-mode";
 import { AppError } from "@/server/lib/errors";
 import { gatewayCallFor } from "@/server/lib/gateway-attribution";
+import { DATAFORSEO_NOT_SET_UP_MESSAGE } from "@/shared/gateway-setup-messages";
 import {
   getOptionalEnvValue,
   getRequiredEnvValue,
@@ -63,9 +64,15 @@ export async function getDataforseoFetch(): Promise<typeof fetch> {
   if (await isBehindEveryAppGateway()) {
     const providerFetch = await gatewayFetch("dataforseo");
     if (!providerFetch) {
+      // Only local dev gets here (production always has the binding). The
+      // thrown message is what a rank check stores and a tool answers with,
+      // so it is the member's sentence; the developer's hint goes to the log.
+      console.warn(
+        "[openseo] no DataForSEO key: set DATAFORSEO_API_KEY in .dev.vars for local development",
+      );
       throw new AppError(
         "DATAFORSEO_AUTH_FAILED",
-        "DataForSEO is unavailable: deploy with the EVERY_APP_GATEWAY binding, or set DATAFORSEO_API_KEY in .dev.vars for local development.",
+        DATAFORSEO_NOT_SET_UP_MESSAGE,
       );
     }
     return providerFetch;

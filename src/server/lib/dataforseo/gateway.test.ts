@@ -14,6 +14,7 @@ vi.mock("cloudflare:workers", () => ({ env: workerEnv, waitUntil: vi.fn() }));
 import { createDataforseoClient } from "./client";
 import { dataforseoGet } from "./core";
 import { serveEveryAppRequest } from "@/server/lib/gateway-attribution";
+import { DATAFORSEO_NOT_SET_UP_MESSAGE } from "@/shared/gateway-setup-messages";
 
 const customer = {
   userId: "system",
@@ -148,8 +149,12 @@ describe("DataForSEO through a first-party Every App gateway", () => {
       "integration_not_configured",
       "The gateway holds no DataForSEO key.",
     );
+    // Stored by rank checks and answered by the tools, so it is OpenSEO's
+    // sentence, with the gateway's own kept in the details.
     await expect(live()).rejects.toMatchObject({
       code: "DATAFORSEO_AUTH_FAILED",
+      message: DATAFORSEO_NOT_SET_UP_MESSAGE,
+      details: { gatewayMessage: "The gateway holds no DataForSEO key." },
     });
     // A refusal is never retried like DataForSEO's own 5xx.
     expect(sent).toHaveLength(2);

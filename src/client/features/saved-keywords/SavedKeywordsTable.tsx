@@ -6,6 +6,8 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useMemo, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/client/components/ui/button";
 import {
   DataTable,
   makeSelectionColumn,
@@ -25,6 +27,7 @@ import {
 const columnHelper = createColumnHelper<SavedKeywordRow>();
 
 export function SavedKeywordsTable({
+  projectId,
   rows,
   rowSelection,
   sorting,
@@ -36,6 +39,7 @@ export function SavedKeywordsTable({
   toolbar,
   footer,
 }: {
+  projectId: string;
   rows: SavedKeywordRow[];
   rowSelection: RowSelectionState;
   sorting: SortingState;
@@ -145,7 +149,18 @@ export function SavedKeywordsTable({
       onClearFilters={onClearFilters}
       empty={{
         title: "No saved keywords yet",
-        description: "Use the Keyword Research page to find and save keywords.",
+        description:
+          "Find keywords in Keyword Research and save the ones you want to keep.",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link to="/p/$projectId/keywords" params={{ projectId }} />}
+          >
+            Open Keyword Research
+          </Button>
+        ),
       }}
       toolbar={toolbar}
       footer={footer}

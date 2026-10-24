@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ExternalLink } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { AppBanner } from "@/client/layout/AppBanner";
 import { dataforseoHelpLinkOptions } from "@/client/navigation/items";
 import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
@@ -33,10 +33,19 @@ function SeoApiStatusBanners({
     <>
       {shouldShowSeoApiWarning ? (
         <AppBanner variant="warning" icon={icon}>
-          {isEveryAppClientAuthMode()
-            ? "Setup needed: an admin turns on DataForSEO for your Every App gateway to use OpenSEO features. See the steps on the "
-            : "Setup needed: add your DataForSEO API key to use OpenSEO features. See the quick steps on the "}
-          {helpLink}.
+          {isEveryAppClientAuthMode() ? (
+            <>
+              DataForSEO isn&apos;t set up on your Every App gateway yet. An
+              owner or admin sets it with{" "}
+              <code>pnpm everyapp secret set DATAFORSEO_API_KEY</code>. Steps on
+              the {helpLink}.
+            </>
+          ) : (
+            <>
+              Setup needed: add your DataForSEO API key to use OpenSEO features.
+              See the quick steps on the {helpLink}.
+            </>
+          )}
         </AppBanner>
       ) : null}
 
@@ -51,6 +60,7 @@ function SeoApiStatusBanners({
 }
 
 function MissingSeoSetupModal({ onClose }: { onClose: () => void }) {
+  const everyApp = isEveryAppClientAuthMode();
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
@@ -59,11 +69,23 @@ function MissingSeoSetupModal({ onClose }: { onClose: () => void }) {
             <AlertTriangle className="size-5" />
           </div>
           <div className="space-y-2">
-            <DialogTitle>One quick setup step</DialogTitle>
+            <DialogTitle>
+              {everyApp
+                ? "DataForSEO isn't set up yet"
+                : "One quick setup step"}
+            </DialogTitle>
             <DialogDescription>
-              {isEveryAppClientAuthMode()
-                ? "An admin turns on DataForSEO for your Every App gateway, once for every app that uses it."
-                : "Add your DataForSEO API key to start using OpenSEO."}
+              {everyApp ? (
+                <>
+                  Keyword, domain, backlink and rank data comes from DataForSEO
+                  through your Every App gateway. An owner or admin sets it once
+                  for every app with{" "}
+                  <code>pnpm everyapp secret set DATAFORSEO_API_KEY</code>; the
+                  setup guide has the steps.
+                </>
+              ) : (
+                "Add your DataForSEO API key to start using OpenSEO."
+              )}
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -76,7 +98,6 @@ function MissingSeoSetupModal({ onClose }: { onClose: () => void }) {
             render={<Link {...dataforseoHelpLinkOptions} onClick={onClose} />}
           >
             Open setup guide
-            <ExternalLink className="size-4" />
           </Button>
         </DialogFooter>
       </DialogContent>
