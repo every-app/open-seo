@@ -1,0 +1,118 @@
+name: Release
+# Builds the app as `pnpm everyapp release` does and publishes
+# everyapp-release.tar.gz on a GitHub release: the asset
+# `pnpm everyapp install https://github.com/<owner>/<repo>` fetches from the
+# repository's latest release. Installed by `pnpm pack-for-app --workflow`
+# from an Every App checkout (docs/runbooks/app-releases.md there).
+#
+#   pull_request        builds; the tarball is a run artifact, no release
+#   push to main        publishes a release tagged v<package.json version>,
+#                       or v<version>-<date>-<sha> when that tag exists
+#   push of a tag v*    publishes a release with that tag
+#   workflow_dispatch   publishes a draft release from the chosen ref
+#
+# The build needs no Cloudflare account and no secret: `everyapp release`
+# packs a tenant-neutral Build Output; the Gateway that installs it fills in
+# the account. The CLI and the SDK come from vendor/ (file: dependencies), so
+# nothing here depends on a checkout of the Every App repository.
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: everyapp release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Vite's SSR build of a large app wants more than Node's default heap.
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The tags, so a version that was released already gets a suffix.
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        # The version is package.json's packageManager.
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "^22.18.0"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pack the release
+        run: pnpm exec everyapp release --json --out everyapp-release.tar.gz | tee release.ndjson
+
+      - name: Read the release
+        id: release
+        run: |
+          done=$(jq -c 'select(.type == "done")' release.ndjson | tail -n 1)
+          test -n "$done"
+          echo "version=$(jq -r '.data.version' <<<"$done")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(jq -r '.data.sha256' <<<"$done")" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the tarball with the run
+        uses: actions/upload-artifact@v4
+        with:
+          name: everyapp-release
+          path: everyapp-release.tar.gz
+          if-no-files-found: error
+
+      - name: Choose the tag
+        if: github.event_name != 'pull_request'
+        id: tag
+        run: |
+          version="${{ steps.release.outputs.version }}"
+          stamp="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
+          if [ "${{ github.ref_type }}" = tag ]; then
+            tag="${{ github.ref_name }}"
+          elif [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            tag="v$version-$stamp"
+          elif git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            tag="v$version-$stamp"
+          else
+            tag="v$version"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        # A push to the default branch, a v* tag, or a dispatch (as a draft).
+        if: >-
+          github.event_name == 'workflow_dispatch'
+          || github.ref_type == 'tag'
+          || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          DRAFT: ${{ github.event_name == 'workflow_dispatch' && '--draft' || '' }}
+          SHA256: ${{ steps.release.outputs.sha256 }}
+        run: |
+          {
+            echo "Built from ${GITHUB_SHA} by the Release workflow."
+            echo
+            echo "Install it on your Gateway, or update it, from your Every App checkout:"
+            echo
+            echo '```'
+            echo "pnpm everyapp install https://github.com/${GITHUB_REPOSITORY}"
+            echo '```'
+            echo
+            echo "everyapp-release.tar.gz SHA-256: ${SHA256}"
+          } > notes.md
+          gh release create "$TAG" everyapp-release.tar.gz --title "$TAG" --notes-file notes.md --target "$GITHUB_SHA" $DRAFT

@@ -85,7 +85,7 @@ Without `CONTEXT_API_KEY`, audits run unrendered: the "Render JavaScript" option
 
 ## Run it locally
 
-From a checkout with the Every App repository beside it (`../private-every-app`, linked in `package.json` as `link:` dependencies until the SDK and CLI are published; build the SDK there with `pnpm -C packages/sdk build`):
+The Every App SDK and CLI it builds with are vendored in [`vendor/`](vendor/README.md) (`file:` dependencies in `package.json`), so a clone of this repository installs and builds on its own: no checkout of the Every App repository beside it. To put it on your Gateway, run `pnpm everyapp install https://github.com/every-app/open-seo` from your [Every App](https://github.com/every-app/every-app) checkout: it installs the latest release, which the Release workflow publishes on every push to the default branch, and the same command updates it later. To deploy your own changes instead, run that checkout's CLI from this directory: `node ../every-app/packages/cli/bin/everyapp.js deploy` (the vendored CLI runs `dev`, `db migrate` and `release`; a deploy also updates the Gateway, which only a checkout can build).
 
 ```bash
 pnpm install

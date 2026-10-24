@@ -2,7 +2,6 @@ import {
   ConfigurationError,
   integrationFetch,
   integrationStatus,
-  type CapabilityId,
 } from "@every-app/sdk/server";
 import { isEveryAppAuthMode } from "@/lib/auth-mode";
 import { AppError } from "@/server/lib/errors";
@@ -38,12 +37,15 @@ function withAuthorization(authorization: string): typeof fetch {
   };
 }
 
+/** The gateway capabilities OpenSEO calls through its fetch: its two API-key providers. */
+type OpenSeoProvider = "dataforseo" | "context";
+
 /**
  * The gateway's fetch for a capability, its calls for the forOrganization
  * scope's organization or the request being served, or null without its
  * binding.
  */
-async function gatewayFetch(provider: CapabilityId) {
+async function gatewayFetch(provider: OpenSeoProvider) {
   const env = await gatewayEnv();
   try {
     return integrationFetch({ env, provider, for: gatewayCallFor(env) });
@@ -92,7 +94,7 @@ export async function getContextFetch(): Promise<typeof fetch | null> {
   return apiKey ? withAuthorization(`Bearer ${apiKey}`) : null;
 }
 
-const KEY_ENV: Record<CapabilityId, string> = {
+const KEY_ENV: Record<OpenSeoProvider, string> = {
   dataforseo: "DATAFORSEO_API_KEY",
   context: "CONTEXT_API_KEY",
 };
@@ -102,7 +104,7 @@ const KEY_ENV: Record<CapabilityId, string> = {
  * gateway answers this for no organization in particular, so it needs none.
  */
 export async function hasProviderAccess(
-  provider: CapabilityId,
+  provider: OpenSeoProvider,
 ): Promise<boolean> {
   if (await isBehindEveryAppGateway()) {
     const status = await integrationStatus({

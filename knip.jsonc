@@ -51,7 +51,5 @@
     "tw-animate-css",
     "shadcn",
     // Linked from an Every App checkout until the SDK is published: Knip
-    // follows the source imports but doesn't credit them as package usage.
-    "@every-app/sdk",
   ],
 }
