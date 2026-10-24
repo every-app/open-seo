@@ -139,22 +139,37 @@ function buildRankCheckResult(
   items: SerpLiveItem[],
 ): RankCheckResult {
   const target = input.targetDomain.toLowerCase();
-  const organicMatch = items.find((item) => {
-    if (item.type !== "organic" || item.domain == null) return false;
-    const domain = item.domain.toLowerCase();
+
+  const getItemDomain = (item: SerpLiveItem): string | null => {
+    if (item.domain) return item.domain.toLowerCase();
+    if (item.url) {
+      try {
+        return new URL(item.url).hostname.toLowerCase();
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const isTargetMatch = (item: SerpLiveItem) => {
+    const domain = getItemDomain(item);
+    if (!domain) return false;
     return domain === target || domain.endsWith(`.${target}`);
-  });
+  };
+
+  const organicMatch = items.find(
+    (item) => item.type === "organic" && isTargetMatch(item),
+  );
+  const fallbackMatch = organicMatch || items.find((item) => isTargetMatch(item));
 
   return {
     keywordId: input.keywordId,
     keyword: input.keyword,
-    // rank_group = position among organic results only (what users count as
-    // "my ranking"). rank_absolute would also count SERP features (local
-    // pack, PAA, AI overviews) and reads as worse than what users see.
-    position: organicMatch
-      ? (organicMatch.rank_group ?? organicMatch.rank_absolute ?? null)
+    position: fallbackMatch
+      ? (fallbackMatch.rank_group ?? fallbackMatch.rank_absolute ?? null)
       : null,
-    url: organicMatch?.url ?? null,
+    url: fallbackMatch?.url ?? null,
     serpFeatures: [...new Set(items.map((item) => item.type).filter(Boolean))],
   };
 }

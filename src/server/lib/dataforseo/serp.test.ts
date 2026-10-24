@@ -211,6 +211,108 @@ describe("rank check task queue", () => {
       },
     });
   });
+
+  it("matches target domain from url when domain field is omitted", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        status_code: 20000,
+        tasks: [
+          {
+            id: "task-a",
+            status_code: 20000,
+            cost: 0,
+            path: ["v3", "serp", "google", "organic", "task_get", "advanced"],
+            result: [
+              {
+                items: [
+                  {
+                    type: "organic",
+                    rank_group: 2,
+                    rank_absolute: 2,
+                    url: "https://sub.example.com/page",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const outcome = await fetchRankCheckTaskResult({
+      taskId: "task-a",
+      keywordId: "kw-1",
+      keyword: "alpha",
+      targetDomain: "example.com",
+    });
+
+    expect(outcome).toEqual({
+      status: "completed",
+      result: {
+        keywordId: "kw-1",
+        keyword: "alpha",
+        position: 2,
+        url: "https://sub.example.com/page",
+        serpFeatures: ["organic"],
+      },
+    });
+  });
+
+  it("falls back to SERP feature item when no pure organic item matches", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        status_code: 20000,
+        tasks: [
+          {
+            id: "task-a",
+            status_code: 20000,
+            cost: 0,
+            path: ["v3", "serp", "google", "organic", "task_get", "advanced"],
+            result: [
+              {
+                items: [
+                  {
+                    type: "local_pack",
+                    rank_group: 1,
+                    rank_absolute: 1,
+                    domain: "example.com",
+                    url: "https://example.com/",
+                  },
+                  {
+                    type: "organic",
+                    rank_group: 1,
+                    rank_absolute: 2,
+                    domain: "other.com",
+                    url: "https://other.com/",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const outcome = await fetchRankCheckTaskResult({
+      taskId: "task-a",
+      keywordId: "kw-1",
+      keyword: "alpha",
+      targetDomain: "example.com",
+    });
+
+    expect(outcome).toEqual({
+      status: "completed",
+      result: {
+        keywordId: "kw-1",
+        keyword: "alpha",
+        position: 1,
+        url: "https://example.com/",
+        serpFeatures: ["local_pack", "organic"],
+      },
+    });
+  });
 });
 
 describe("Maps task queue", () => {
