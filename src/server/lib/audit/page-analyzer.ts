@@ -15,6 +15,7 @@ import { normalizeUrl, isSameOrigin } from "./url-utils";
 import type { PageAnalysis, PageLink } from "./types";
 
 const SKIPPED_LINK_PROTOCOLS = /^(javascript:|mailto:|tel:|#)/;
+const CLOUDFLARE_EMAIL_PROTECTION_PATH = "/cdn-cgi/l/email-protection";
 /** Subtrees whose text is not visible content. */
 const NON_CONTENT_TAGS = new Set(["script", "style", "noscript", "svg"]);
 const HEADING_LEVELS: Record<string, number> = {
@@ -42,6 +43,20 @@ interface OpenAnchor {
   href: string;
   rel: string;
   text: string[];
+}
+
+/**
+ * Cloudflare Email Address Obfuscation replaces mailto links at the edge with
+ * this synthetic route. It is not a crawlable site page and commonly returns
+ * 404 to non-browser clients, so retaining it creates a false broken-link
+ * issue on every page whose footer contains an email address.
+ */
+function isSyntheticCloudflareEmailLink(url: string): boolean {
+  try {
+    return new URL(url).pathname === CLOUDFLARE_EMAIL_PROTECTION_PATH;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -120,7 +135,13 @@ export function analyzeHtml(
     openAnchor = null;
     if (linksByTarget.size >= MAX_EXTRACTED_LINKS) return;
     const resolved = normalizeUrl(href, pageUrl);
-    if (!resolved || linksByTarget.has(resolved)) return;
+    if (
+      !resolved ||
+      isSyntheticCloudflareEmailLink(resolved) ||
+      linksByTarget.has(resolved)
+    ) {
+      return;
+    }
     const anchor = text
       .join("")
       .replace(/\s+/g, " ")

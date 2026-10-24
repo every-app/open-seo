@@ -287,3 +287,22 @@ describe("JavaScript app-shell detection", () => {
     },
   );
 });
+
+describe("Cloudflare email-protection links", () => {
+  it("skips the synthetic /cdn-cgi/l/email-protection route", () => {
+    const analysis = analyzeHtml(
+      `<body>
+        <a href="/cdn-cgi/l/email-protection#abc123">Protected email</a>
+        <a href="https://example.com/cdn-cgi/l/email-protection?source=footer">Protected email query</a>
+        <a href="/about">About page</a>
+      </body>`,
+      PAGE_URL,
+      200,
+      0,
+    );
+
+    expect(analysis.links.map((link) => link.targetUrl)).toEqual([
+      "https://example.com/about",
+    ]);
+  });
+});
