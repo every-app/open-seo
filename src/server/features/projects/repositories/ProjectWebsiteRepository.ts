@@ -53,7 +53,8 @@ export async function saveWebsiteSetup(
         updatedAt,
       })
       .onConflictDoNothing(),
-    ...chunk(competitors, 10).map((rows) =>
+    // D1 limits compound SELECTs to five terms, even below its parameter limit.
+    ...chunk(competitors, 5).map((rows) =>
       tx
         .insert(projectCompetitors)
         .select(
