@@ -142,9 +142,9 @@ function extractTitle(html: string): string | null {
 /** Strips scripts/styles/tags and collapses whitespace into readable text. */
 function htmlToText(html: string): string {
   const withoutBlocks = html
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
-    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, " ")
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript\b[^>]*>/gi, " ")
     .replace(/<!--[\s\S]*?-->/g, " ");
   const text = withoutBlocks
     .replace(/<[^>]+>/g, " ")
@@ -154,13 +154,14 @@ function htmlToText(html: string): string {
 }
 
 function decodeEntities(value: string): string {
+  // &amp; last, so "&amp;lt;" decodes to the literal "&lt;", not "<".
   return value
-    .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ");
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
 }
 
 /** Fetches one (already-validated) URL and shapes it as a page, or null if it
