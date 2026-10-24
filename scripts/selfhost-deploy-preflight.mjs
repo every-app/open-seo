@@ -73,7 +73,7 @@ if (!process.env.CLOUDFLARE_API_TOKEN) {
   }
   if (!cloudflare) {
     fail(
-      `No Cloudflare login found (alchemy profile "${profileName}") — run ${cmd("pnpm alchemy login")}`,
+      `No Cloudflare login found (alchemy profile "${profileName}") — run ${cmd("pnpm alchemy login deploy/alchemy/alchemy.run.ts")}`,
       `first (answer yes to "Customize OAuth scopes?" and enable ${em("access:write")}).`,
     );
   }
@@ -87,7 +87,7 @@ if (!process.env.CLOUDFLARE_API_TOKEN) {
       `Your Cloudflare login is missing the ${em("access:write")} scope, which the deploy needs`,
       "to provision the Cloudflare Access login gate. Log in again with the scope enabled:",
       "",
-      `  ${cmd("pnpm alchemy login --configure")}`,
+      `  ${cmd("pnpm alchemy login deploy/alchemy/alchemy.run.ts --configure")}`,
       "",
       `When asked "Customize OAuth scopes?", answer yes, then select ${em("access:write")}`,
       "(space to toggle, enter to confirm — keep the preselected defaults).",
