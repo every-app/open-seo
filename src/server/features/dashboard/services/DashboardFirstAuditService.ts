@@ -1,5 +1,6 @@
 import { waitUntil } from "cloudflare:workers";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
+import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
 import { AuditService } from "@/server/features/audit/services/AuditService";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { DataRefreshClaimRepository } from "../repositories/DataRefreshClaimRepository";
@@ -44,7 +45,7 @@ async function start(
       projectId,
       startUrl: `https://${domain}`,
       maxPages: 50,
-      renderJavaScript: true,
+      renderJavaScript: await isAuditRenderingAllowed(),
       lighthouseStrategy: "none",
       limitTier,
     });

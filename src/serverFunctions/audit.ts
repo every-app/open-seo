@@ -19,6 +19,8 @@ export const startAudit = createServerFn({ method: "POST" })
   .validator(startAuditSchema)
   .handler(async ({ data, context }) => {
     const limitTier = await AuditService.resolveAuditLimitTier(context);
+    const renderJavaScript =
+      data.renderJavaScript && (await isAuditRenderingAllowed());
 
     const result = await AuditService.startAudit({
       actorUserId: context.userId,
@@ -28,7 +30,7 @@ export const startAudit = createServerFn({ method: "POST" })
       maxPages: data.maxPages,
       lighthouseStrategy: data.lighthouseStrategy,
       limitTier,
-      renderJavaScript: data.renderJavaScript,
+      renderJavaScript,
     });
 
     waitUntil(
