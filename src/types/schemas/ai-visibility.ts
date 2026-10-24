@@ -8,7 +8,7 @@ export const aiEngineSchema = z.enum([
   "claude",
   "perplexity",
 ]);
-export const aiProjectSchema = z.object({ projectId: z.string().uuid() });
+export const aiProjectSchema = z.object({ projectId: z.string().min(1) });
 const topicSchema = z.string().trim().min(1).max(100);
 const scheduleIntervalSchema = z
   .enum(["daily", "weekly", "monthly"])
