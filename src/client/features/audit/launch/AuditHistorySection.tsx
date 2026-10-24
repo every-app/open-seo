@@ -78,7 +78,7 @@ function AuditHistoryTable({
         </TableHeader>
         <TableBody>
           {history.map((audit) => (
-            <TableRow key={audit.id} className="group">
+            <TableRow key={audit.id}>
               <TableCell className="text-xs text-muted-foreground">
                 {formatDate(audit.startedAt)}
               </TableCell>
@@ -121,7 +121,7 @@ function HistoryActions({
   onDelete: (auditId: string) => void;
 }) {
   return (
-    <div className="flex items-center justify-end gap-2 reveal-on-hover">
+    <div className="flex items-center justify-end gap-2">
       <Button
         size="xs"
         nativeButton={false}
