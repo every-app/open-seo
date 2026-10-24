@@ -78,7 +78,7 @@ export function SecretHelpPage({
                 Every App:
               </p>
               <CommandBlock
-                command={`pnpm everyapp secret set ${secretName} --for gateway`}
+                command={`pnpm everyapp secret set ${secretName}`}
               />
               <p className="text-muted-foreground">
                 Nothing changes on OpenSEO itself: it uses the key on its next

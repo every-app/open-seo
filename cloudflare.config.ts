@@ -10,12 +10,6 @@ import manifest from "./everyapp.config.ts";
 // imported here: in dev the Cloudflare Vite plugin hides this file's
 // imports from the Workers.
 
-/** OpenSEO's own settings (`everyapp secret set`), all optional. */
-export const OPENSEO_SECRETS = [
-  // Encrypts the access signatures audits use to crawl protected sites.
-  "CRAWLER_ACCESS_SECRET",
-] as const;
-
 /** What both of OpenSEO's Workers add to the SDK's definitions. */
 export function withOpenSeoRuntime<
   W extends { compatibilityFlags: string[]; env: object },
@@ -43,7 +37,6 @@ export default defineConfig((ctx) => {
     ctx,
     // Due rank checks, AI visibility runs and the stale-audit reconcile.
     crons: ["*/5 * * * *"],
-    secrets: OPENSEO_SECRETS,
   });
   return { worker: withOpenSeoRuntime(worker, worker.name) };
 });

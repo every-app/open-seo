@@ -1,5 +1,8 @@
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
-import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
+import {
+  auditRenderingUnavailableMessage,
+  isAuditRenderingAllowed,
+} from "@/server/lib/audit/rendering-policy";
 import {
   lockRenderingCredits,
   releaseRenderingLocks,
@@ -64,7 +67,7 @@ async function startAudit(input: {
   if (renderJavaScript && !(await isAuditRenderingAllowed())) {
     throw new AppError(
       "AUDIT_RENDERING_UNAVAILABLE",
-      "JavaScript rendering is not available on this deployment. It needs a Cloudflare deployment with Browser Run, or CONTEXT_API_KEY. Run the audit without rendering instead.",
+      await auditRenderingUnavailableMessage(),
     );
   }
   const limits = AUDIT_LIMITS[input.limitTier];

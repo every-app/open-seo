@@ -13,6 +13,14 @@ const CLOUDFLARE_USD_PER_ATTEMPT =
 // Context.dev list price on the Developer plan. One scrape is one credit.
 export const CONTEXT_USD_PER_CREDIT = 0.0025;
 
+/**
+ * Why a rendered audit can't start behind an Every App gateway: the Context
+ * key is the gateway's, and optional in the manifest, so audits run
+ * unrendered until an admin sets it once for every app.
+ */
+export const GATEWAY_RENDERING_NOT_SET_UP_MESSAGE =
+  "JavaScript rendering isn't set up on this gateway. An admin sets CONTEXT_API_KEY with `pnpm everyapp secret set CONTEXT_API_KEY`.";
+
 /** Provider units a rendered audit used, counted per crawl chunk. */
 export type RenderUsage = {
   cloudflareAttempts: number;

@@ -12,7 +12,7 @@ This is the first deploy of OpenSEO as Every App's own first-party app: one pair
 | Mode                   | `AUTH_MODE=everyapp`, `DEPLOYMENT_TIER=first_party`, `EVERYAPP_SHARED=1` on both Workers, `EVERYAPP_AUDIENCE=every-everyapp-openseo` on the app's, no `EVERY_APP_ORG_ID`                        |
 | Database               | Postgres (PlanetScale) through the Hyperdrive config `open-seo-everyapp`, on both Workers                                                                                                       |
 | Other resources        | KV `open-seo-kv-everyapp`, R2 `open-seo-r2-everyapp`, the Durable Objects and Workflows suffixed `-everyapp`                                                                                    |
-| Secrets on the Workers | None of DataForSEO, Context, OpenRouter, Autumn, Google or Better Auth. Only the optional `CRAWLER_ACCESS_SECRET`                                                                               |
+| Secrets on the Workers | None of DataForSEO, Context, OpenRouter, Autumn, Google or Better Auth. Only the optional `CRAWLER_ACCESS_SECRET`, and the optional `OPENROUTER_MODEL` var                                      |
 | Gateway binding        | `EVERY_APP_GATEWAY` → `every-app-gateway`, entrypoint `AppGateway`, props `{ organizationId: <platform organization>, appId: "openseo", workerName: "every-everyapp-openseo" }` on both Workers |
 
 ## Before you start
@@ -43,10 +43,12 @@ There is nothing to create by hand: the deploy creates the Hyperdrive config `op
 OpenSEO holds no provider keys here. The gateway does, for every app that uses them, and proxies DataForSEO and Context through `/api/integrations/...` and OpenRouter through its AI proxy. From the private-every-app checkout, with the hosted gateway selected:
 
 ```bash
-pnpm everyapp secret set DATAFORSEO_API_KEY --for gateway
-pnpm everyapp secret set CONTEXT_API_KEY --for gateway
-pnpm everyapp secret set OPENROUTER_API_KEY --for gateway
+pnpm everyapp secret set OPENROUTER_API_KEY
+pnpm everyapp secret set DATAFORSEO_API_KEY
+pnpm everyapp secret set CONTEXT_API_KEY # optional
 ```
+
+The first two are required: the gateway shows OpenSEO as needing setup and doesn't open it until they are set. `CONTEXT_API_KEY` is optional: without it audits run unrendered, and the audit form says an admin sets it (the settings table in [docs/maintainers/every-app.md](maintainers/every-app.md)).
 
 Don't set them in `.env.everyapp`. The stage never passes them to OpenSEO's Workers, even when the file has them.
 

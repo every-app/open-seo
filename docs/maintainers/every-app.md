@@ -9,7 +9,7 @@
 | Teams, invitations, ownership      | None                                                              | The gateway's; OpenSEO's team UI and server functions are off                                                                |
 | MCP                                | `/mcp` behind Access Managed OAuth                                | The gateway's one MCP connector lists OpenSEO's tools as `openseo_<tool>`; OpenSEO's own `/mcp` and `oseo_` API keys are off |
 | DataForSEO                         | `DATAFORSEO_API_KEY` on the deployment                            | The gateway holds it; calls go over the gateway binding                                                                      |
-| Context.dev (rendered audits)      | `CONTEXT_API_KEY` on the deployment                               | The gateway holds it, as for DataForSEO                                                                                      |
+| Context.dev (rendered audits)      | `CONTEXT_API_KEY` on the deployment                               | The gateway holds it, as for DataForSEO; optional, audits run unrendered without it                                          |
 | OpenRouter                         | `OPENROUTER_API_KEY` on the deployment                            | The gateway's AI proxy holds it                                                                                              |
 | Search Console and Analytics       | OpenSEO's own Google client                                       | The gateway will hold Google (designed, not built); until then they show as coming and OpenSEO's own callbacks answer 404    |
 | Site-audit engine                  | The `open-seo-audit` Worker                                       | The app's helper Worker, `<app worker>--audit`                                                                               |
@@ -57,7 +57,31 @@ Limits read the deployment tier (`src/server/lib/deployment-tier.ts`), not `AUTH
 - **MCP tools** (`src/server/everyapp/tools.ts`). One list, `registerOpenSeoTools`, feeds both OpenSEO's own MCP server and the gateway's catalog, so a new tool reaches both. Read-only tools are `read`; deleting saved work is `destructive`, which the gateway hides from AI clients until it has approvals; everything else is `write`. Tools return OpenSEO's text for the model and their structured result for clients. `whoami` reports the mode as `Every App (first party)` or `Every App (fork)`.
 - **Account menu.** Shows the person from the identity, no organization switcher and no billing; "Sign out on Every App" opens the gateway (`GATEWAY_URL`, or the identity issuer in local dev), where sign-out happens.
 - **Build** (`cloudflare.config.ts`, `vite-plugin-every-app.ts`). With `AUTH_MODE=everyapp`, `vite.config.ts` swaps the Cloudflare Vite plugin 1.x and `wrangler.jsonc` for plugin 2.x and `cloudflare.config.ts`: the app's Worker from `everyAppWorker()`, and the site-audit engine (`src/audit-worker.ts`) as its helper Worker from `everyAppAuxiliaryWorker()`. The client build reads the same `AUTH_MODE`, so it shows the Every App copy. Every other build still uses `wrangler.jsonc`.
-- **Manifest** (`everyapp.config.ts`). One manifest for both shapes: resources (D1 and KV for the fork shape, which classes the audit Worker defines), the helper Worker, the provider and capability requests, migrations, and the build and dev commands. `public` is empty: report sharing and OpenSEO's other unauthenticated routes are hosted-only, and the gateway's tool calls carry their own tokens.
+- **Manifest** (`everyapp.config.ts`). One manifest for both shapes: resources (D1 and KV for the fork shape, which classes the audit Worker defines), the helper Worker, the provider and capability requests with each one's need (the settings below), migrations, and the build and dev commands. `public` is empty: report sharing and OpenSEO's other unauthenticated routes are hosted-only, and the gateway's tool calls carry their own tokens.
+
+## Settings
+
+`everyapp.config.ts` declares what OpenSEO needs set, with a `why` for whoever sets it, and whether OpenSEO opens without it. The provider keys are the gateway's, set once for every app from the private-every-app checkout with the hosted gateway selected; `CRAWLER_ACCESS_SECRET` and `OPENROUTER_MODEL` are OpenSEO's own, on its Workers. The gateway's app list shows OpenSEO as needing setup, with the command, until the required ones are set, and `pnpm everyapp status` shows each setting's state.
+
+| Setting                 | Held by | Need     | Used for                                                                                                 |
+| ----------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`    | gateway | required | SAM, prompt suggestions and website research, through the gateway's AI proxy                             |
+| `DATAFORSEO_API_KEY`    | gateway | required | Keyword, SERP, backlink, local business and AI answer data, including scheduled rank checks              |
+| `CONTEXT_API_KEY`       | gateway | optional | Rendering JavaScript-heavy pages when a site audit asks for it                                           |
+| `CRAWLER_ACCESS_SECRET` | OpenSEO | optional | Encrypting the Shopify crawler-access signatures audits of protected stores send (32+ chars)             |
+| `OPENROUTER_MODEL`      | OpenSEO | optional | The OpenRouter model SAM, prompt suggestions and website research run on (default `openai/gpt-5.6-luna`) |
+
+```bash
+pnpm everyapp secret set OPENROUTER_API_KEY
+pnpm everyapp secret set DATAFORSEO_API_KEY
+pnpm everyapp secret set CONTEXT_API_KEY # optional
+pnpm everyapp secret set CRAWLER_ACCESS_SECRET --app openseo # optional
+pnpm everyapp secret set OPENROUTER_MODEL --app openseo      # optional
+```
+
+The `--app openseo` form is for the fork deployment, the one `everyapp deploy` registers with its gateway: it sets the value on the fork's Workers. It does not apply to the first-party deployment on everyapp.team, which the Alchemy stage `everyapp` deploys outside the CLI; there, `CRAWLER_ACCESS_SECRET` and `OPENROUTER_MODEL` come from `.env.everyapp` and go onto both Workers with the deploy ([docs/EVERY_APP_DEPLOYMENT.md](../EVERY_APP_DEPLOYMENT.md)).
+
+Without `CONTEXT_API_KEY`, audits run unrendered: the "Render JavaScript" option is off and says an admin sets it (`src/server/lib/audit/rendering-policy.ts`), and a rendered audit asked for through MCP is refused with the same sentence. Without `CRAWLER_ACCESS_SECRET`, the crawler-access form (Settings → Shopify, and the bot-protection advice on an audit) says an admin sets it instead of offering to save a signature; audits of unprotected sites are unaffected. Without `OPENROUTER_MODEL`, the AI features run on the default model in `src/server/lib/openrouter.ts`.
 
 ## Run it locally
 
@@ -80,7 +104,7 @@ pnpm dev:everyapp        # everyapp dev, with AUTH_MODE=everyapp
 pnpm deploy:everyapp     # everyapp deploy
 ```
 
-`everyapp deploy` always sends `EVERY_APP_ORG_ID` (the deploying organization), which is what makes it a fork. The deploy provisions the database and KV, builds both Workers, checks them against the gateway's app policy, applies migrations, and uploads the audit Worker before the app's. The gateway holds the provider keys for every app that uses them (`everyapp secret set DATAFORSEO_API_KEY --for gateway`, and `CONTEXT_API_KEY`, `OPENROUTER_API_KEY`). OpenSEO's one optional setting of its own is `CRAWLER_ACCESS_SECRET` (`everyapp secret set`), which audits of protected sites need.
+`everyapp deploy` always sends `EVERY_APP_ORG_ID` (the deploying organization), which is what makes it a fork. The deploy provisions the database and KV, builds both Workers, checks them against the gateway's app policy, applies migrations, and uploads the audit Worker before the app's. The gateway holds the provider keys for every app that uses them, and OpenSEO's own settings are the optional `CRAWLER_ACCESS_SECRET` and `OPENROUTER_MODEL` (the settings above).
 
 **First-party shape.** Every App deploys it into its own account as a shared app (`scope = 'shared'`, owned by the platform organization, at `openseo.<gateway host>`, Workers `every-everyapp-openseo` and `every-everyapp-openseo--audit` as the gateway's registry names them), with `DATABASE_PROVIDER=postgres` and a `HYPERDRIVE` binding on both Workers, `EVERYAPP_SHARED=1` on both, and no `EVERY_APP_ORG_ID` (a deploy path that sends one would pin every organization out but one). The CLI doesn't provision Hyperdrive or run Postgres migrations yet, so until it does the Alchemy stage `everyapp` deploys it (`pnpm deploy:everyapp:first-party`, runbook in [docs/EVERY_APP_DEPLOYMENT.md](../EVERY_APP_DEPLOYMENT.md)); no provider, Autumn or Google secret goes on either Worker.
 

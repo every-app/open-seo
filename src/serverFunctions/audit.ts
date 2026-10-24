@@ -1,4 +1,5 @@
 import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
+import { CrawlerCredentialService } from "@/server/features/audit/services/CrawlerCredentialService";
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { requireOrgPermission } from "@/server/auth/org-gate";
@@ -92,4 +93,7 @@ export const getAuditCapabilities = createServerFn({ method: "POST" })
   .validator(getAuditHistorySchema)
   .handler(async () => ({
     canRenderJavaScript: await isAuditRenderingAllowed(),
+    // Saving and replaying Shopify crawler access needs the optional
+    // CRAWLER_ACCESS_SECRET.
+    canStoreCrawlerAccess: await CrawlerCredentialService.hasEncryptionKey(),
   }));

@@ -1,6 +1,6 @@
 import { cloudflare } from "@cloudflare/vite-plugin-cf";
 import { everyAppAuxiliaryWorker } from "@every-app/sdk/cloudflare";
-import { OPENSEO_SECRETS, withOpenSeoRuntime } from "./cloudflare.config.ts";
+import { withOpenSeoRuntime } from "./cloudflare.config.ts";
 import manifest from "./everyapp.config.ts";
 
 /**
@@ -29,7 +29,6 @@ export function everyAppCloudflare({ mode }: { mode: string }) {
               worker: "audit",
               entrypoint: "./src/audit-worker.ts",
               ctx: { mode },
-              secrets: OPENSEO_SECRETS,
             }),
             entryWorkerConfig.name,
           ),

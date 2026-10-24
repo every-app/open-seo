@@ -1,4 +1,5 @@
 import { FREE_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
+import { GATEWAY_RENDERING_NOT_SET_UP_MESSAGE } from "@/shared/audit-rendering";
 import { isErrorCode, type ErrorCode } from "@/shared/error-codes";
 import {
   isEveryAppClientAuthMode,
@@ -22,8 +23,9 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "An active hosted subscription is required before you can use OpenSEO.",
   INSUFFICIENT_CREDITS:
     "You don't have enough credits for this. Upgrade your plan or buy more credits to keep going.",
-  AUDIT_RENDERING_UNAVAILABLE:
-    "JavaScript rendering is not configured on this deployment. Ask your administrator to enable a renderer.",
+  AUDIT_RENDERING_UNAVAILABLE: isEveryAppClientAuthMode()
+    ? GATEWAY_RENDERING_NOT_SET_UP_MESSAGE
+    : "JavaScript rendering is not configured on this deployment. Ask your administrator to enable a renderer.",
   FORBIDDEN: "You do not have access to this resource.",
   NOT_FOUND: "The requested resource was not found.",
   AUDIT_CAPACITY_REACHED:
@@ -42,7 +44,7 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   AI_VISIBILITY_ERROR:
     "The AI visibility request could not be completed. Review the tracking settings and try again.",
   DATAFORSEO_AUTH_FAILED: isEveryAppClientAuthMode()
-    ? "DataForSEO isn't set up on your Every App gateway, or rejected its key. An admin sets it with `everyapp secret set DATAFORSEO_API_KEY --for gateway`."
+    ? "DataForSEO isn't set up on your Every App gateway, or rejected its key. An admin sets it with `pnpm everyapp secret set DATAFORSEO_API_KEY`."
     : "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:
