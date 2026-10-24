@@ -28,6 +28,7 @@ describe("DataForSEO transport", () => {
     expect(new Headers(init?.headers).get("Authorization")).toBe(
       "Basic encoded-credentials",
     );
+    expect(new Headers(init?.headers).get("Accept-Encoding")).toBe("gzip");
   });
 
   // An unverified account answers with HTTP 403 (status_code 40104). Left as
