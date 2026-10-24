@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { aiObservations, projectCompetitors } from "@/db/schema";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { AppError } from "@/server/lib/errors";
@@ -320,6 +321,19 @@ describe("AI answer collection", () => {
     expect(await repo.getObservation("answer-1")).toMatchObject({
       status: "failed",
       error: "UPSTREAM_UNAVAILABLE",
+    });
+  });
+
+  it("does not submit completed answers again when a run resumes", async () => {
+    await testDb.db
+      .update(aiObservations)
+      .set({ status: "completed" })
+      .where(eq(aiObservations.id, "answer-0"));
+
+    expect(await prepareAiRun(runId)).toMatchObject({
+      live: true,
+      batches: [[{ tag: "answer-1" }]],
+      modelBatches: [],
     });
   });
 

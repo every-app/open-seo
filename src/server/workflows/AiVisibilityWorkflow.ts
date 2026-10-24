@@ -128,12 +128,19 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
       );
       // Live runs save each live batch as it returns, so nothing is left
       // pending to poll.
-      if (plan.live)
-        for (const [index, tasks] of plan.batches.entries())
-          await pgStep(step, `live-${index}`, LIVE_STEP, () =>
-            collectAiLiveBatch(runId, customer, plan.market, tasks),
-          );
-      else
+      if (plan.live) {
+        for (const [index, tasks] of plan.batches.entries()) {
+          try {
+            await pgStep(step, `live-${index}`, LIVE_STEP, () =>
+              collectAiLiveBatch(runId, customer, plan.market, tasks),
+            );
+          } catch (error) {
+            // Paid steps cannot safely rerun. Keep saved answers and let the
+            // other batches and model engines collect before finalizing.
+            console.warn(`[ai-visibility] ${runId} live-${index}:`, error);
+          }
+        }
+      } else
         for (const [index, batch] of plan.batches.entries())
           pending.push(
             ...(await pgStep(step, `post-${index}`, SINGLE_ATTEMPT, () =>

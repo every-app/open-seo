@@ -124,6 +124,31 @@ describe("AI visibility workflow", () => {
     expect(mocks.finalize).toHaveBeenCalledExactlyOnceWith("run");
   });
 
+  it("continues with later live batches and model engines after a paid step fails", async () => {
+    mocks.prepare.mockResolvedValue({
+      market: { locationCode: 2840, languageCode: "en" },
+      live: true,
+      batches: [[task], [task]],
+      modelBatches: [
+        { engine: "claude", tasks: [] },
+        { engine: "perplexity", tasks: [] },
+      ],
+    });
+    mocks.live.mockRejectedValueOnce(
+      new Error(
+        "WorkflowInternalError: Attempt failed due to internal workflows error",
+      ),
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await execute();
+
+    expect(mocks.live).toHaveBeenCalledTimes(2);
+    expect(mocks.model).toHaveBeenCalledTimes(2);
+    expect(mocks.finalize).toHaveBeenCalledExactlyOnceWith("run");
+    expect(mocks.markFailed).not.toHaveBeenCalled();
+  });
+
   it("stops polling when the collection window closes and finalizes what arrived", async () => {
     mocks.collect.mockResolvedValue({ pending: [task], retry: [] });
     await execute();
