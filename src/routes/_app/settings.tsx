@@ -24,17 +24,19 @@ function SettingsLayout() {
       <div className="mx-auto max-w-7xl space-y-8">
         <div className="space-y-4">
           <PageHeader title="Settings" />
-          <NavTabs label="Settings sections">
-            {tabs.map((tab) => (
-              <NavTab
-                key={tab.to}
-                to={tab.to}
-                activeOptions={{ exact: tab.exact ?? false }}
-              >
-                {tab.label}
-              </NavTab>
-            ))}
-          </NavTabs>
+          {tabs.length > 1 ? (
+            <NavTabs label="Settings sections">
+              {tabs.map((tab) => (
+                <NavTab
+                  key={tab.to}
+                  to={tab.to}
+                  activeOptions={{ exact: tab.exact ?? false }}
+                >
+                  {tab.label}
+                </NavTab>
+              ))}
+            </NavTabs>
+          ) : null}
         </div>
 
         <Outlet />

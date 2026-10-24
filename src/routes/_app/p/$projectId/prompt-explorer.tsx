@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PromptExplorerPage } from "@/client/features/ai-search/PromptExplorerPage";
+import { PageHeader } from "@/client/components/PageHeader";
+import {
+  PROMPT_EXPLORER_DESCRIPTION,
+  PromptExplorerPage,
+} from "@/client/features/ai-search/PromptExplorerPage";
 import { AiResearchSetupGate } from "@/client/features/ai-visibility/AiResearchSetupGate";
 import { aiResearchSetupQueryOptions } from "@/client/features/ai-visibility/shared";
 import { ProjectWebsiteGate } from "@/client/features/projects/ProjectWebsiteGate";
@@ -40,11 +44,19 @@ function PromptExplorerRoute() {
     [search],
   );
 
+  // The setup screens keep this page's title, so it reads apart from the
+  // other AI visibility pages before setup is done.
+  const header = (
+    <PageHeader
+      title="Prompt Explorer"
+      description={PROMPT_EXPLORER_DESCRIPTION}
+    />
+  );
   return (
     <div className="overflow-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-5" key={projectId}>
-        <ProjectWebsiteGate projectId={projectId}>
-          <AiResearchSetupGate projectId={projectId}>
+        <ProjectWebsiteGate projectId={projectId} header={header}>
+          <AiResearchSetupGate projectId={projectId} header={header}>
             <PromptExplorerPage
               projectId={projectId}
               urlState={urlState}

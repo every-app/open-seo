@@ -17,7 +17,6 @@ import {
 } from "@/serverFunctions/rank-tracking";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
 import { formatNextCheck } from "./scheduleTime";
-import { RankTrackingChangesAlert } from "./RankTrackingChangesAlert";
 import {
   formatLocationLabel,
   SERP_LANGUAGE_OPTIONS,
@@ -139,8 +138,6 @@ export function RankTrackingDomainList({
 
   return (
     <>
-      {/* News about results, so only once there is a tracker to have any. */}
-      {allSummaries.length > 0 && <RankTrackingChangesAlert />}
       <Card className="gap-0 py-0">
         <CardHeader className="px-5 pt-4 pb-3">
           <CardTitle>

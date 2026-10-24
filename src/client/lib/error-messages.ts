@@ -11,11 +11,11 @@ import {
  * they get support; a self-hoster runs the server and can.
  */
 export const UNEXPECTED_ERROR_MESSAGE = isHostedClientAuthMode()
-  ? "Something went wrong on our end. Please try again, and contact support if it keeps happening."
-  : "Something went wrong. Please try again, or check the server logs for details.";
+  ? "Something went wrong on our end. Try again, and contact support if it keeps happening."
+  : "Something went wrong. Try again, or check the server logs for details.";
 
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
-  UNAUTHENTICATED: "Please sign in and try again.",
+  UNAUTHENTICATED: "Sign in and try again.",
   AUTH_CONFIG_MISSING: isEveryAppClientAuthMode()
     ? "OpenSEO can't reach your Every App gateway for this right now. An owner or admin can check its setup with pnpm everyapp status."
     : "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
@@ -33,7 +33,7 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   AUDIT_PAGE_LIMIT_EXCEEDED: `Free plan audits are limited to ${FREE_MAX_AUDIT_PAGES} pages. Upgrade to run larger audits.`,
   AUDIT_ALREADY_RUNNING:
     "You've reached the limit of audits running at once. Wait for one to finish or delete it before starting another.",
-  VALIDATION_ERROR: "Please check your input and try again.",
+  VALIDATION_ERROR: "Check your input and try again.",
   UNKNOWN_LOCATION:
     "We couldn't find that city, county, or region. Pick a location from the list, or clear the field to search the whole country.",
   CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
@@ -46,9 +46,9 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   DATAFORSEO_AUTH_FAILED: isEveryAppClientAuthMode()
     ? "DataForSEO isn't set up on your Every App gateway yet, or rejected the key it holds. An owner or admin sets it with pnpm everyapp secret set DATAFORSEO_API_KEY."
     : "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
-  RATE_LIMITED: "Too many requests. Please wait and try again.",
+  RATE_LIMITED: "Too many requests. Try again in a moment.",
   UPSTREAM_UNAVAILABLE:
-    "The data provider is temporarily unavailable. Please retry in a moment.",
+    "The data provider is temporarily unavailable. Try again in a moment.",
   CONFLICT: "This request conflicts with existing data.",
   INTERNAL_ERROR: UNEXPECTED_ERROR_MESSAGE,
 };

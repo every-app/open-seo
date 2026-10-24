@@ -92,7 +92,7 @@ function AiPage() {
       <div className="mx-auto max-w-7xl">
         <PageHeader
           title="Agent setup"
-          description="The most powerful way to use OpenSEO is through the AI agent you already use. Set it up once, then ask it anything."
+          description="Connect the AI agent you already use. Set it up once, then ask it anything."
         />
 
         <Tabs
@@ -106,7 +106,7 @@ function AiPage() {
           className="mt-8"
         >
           <TabsList variant="line">
-            <TabsTrigger value="setup">Set up your agent</TabsTrigger>
+            <TabsTrigger value="setup">Setup</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
           </TabsList>
           <TabsContent value="setup">
@@ -197,13 +197,10 @@ function AiPage() {
               <Alert className="mt-8">
                 <ShieldAlert />
                 <AlertDescription>
-                  This instance runs behind your Every App gateway. Connect your
-                  AI client to the gateway&apos;s MCP server,{" "}
-                  <code className="font-mono">{gatewayMcpUrl(origin)}</code>:
-                  OpenSEO&apos;s tools appear there as{" "}
-                  <code className="font-mono">openseo_*</code>, next to your
-                  other apps&apos; tools. The URL below takes a personal access
-                  token from the gateway.
+                  Every App has one address for your agent, and it covers
+                  OpenSEO:{" "}
+                  <code className="font-mono">{gatewayMcpUrl(origin)}</code>.
+                  Connect it once.
                 </AlertDescription>
               </Alert>
             ) : null}

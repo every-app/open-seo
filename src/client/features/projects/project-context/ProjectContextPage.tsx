@@ -64,9 +64,9 @@ export function ProjectContextPage({ projectId }: { projectId: string }) {
         // draft, open form, or edit state can carry over to another project.
         <div key={projectId} className="space-y-8">
           <p className="text-sm text-muted-foreground">
-            What Claude Code and any other connected MCP client know about this
-            project. They read it before they work and write back what they
-            learn, so correct anything that looks wrong.
+            What your agent knows about this project. It reads this before
+            working and writes back what it learns, so correct anything that
+            looks wrong.
           </p>
 
           <ProseSections
@@ -209,7 +209,7 @@ function ProseSections({
           size="sm"
           disabled={update.isPending || changed.length === 0}
         >
-          Save changes
+          Save
         </Button>
       </div>
     </form>

@@ -40,6 +40,9 @@ type Props = {
   onClear: () => void;
 };
 
+export const PROMPT_EXPLORER_DESCRIPTION =
+  "Ask any prompt across ChatGPT, Claude, Gemini, and Perplexity side-by-side.";
+
 const PROMPT_EXPLORER_BULLETS = [
   {
     icon: Columns3,
@@ -182,7 +185,7 @@ export function PromptExplorerPage({
     <ResearchPageShell
       contained
       title="Prompt Explorer"
-      description="Ask any prompt across ChatGPT, Claude, Gemini, and Perplexity side-by-side."
+      description={PROMPT_EXPLORER_DESCRIPTION}
       gate={{
         feature: "Prompt Explorer",
         description:

@@ -188,7 +188,7 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
           htmlFor="audit-run-lighthouse"
           title="Lighthouse measures the performance of your pages and identifies issues."
         >
-          Include Lighthouse
+          Include Lighthouse scores
         </FieldLabel>
       </div>
 

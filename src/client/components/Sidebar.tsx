@@ -3,10 +3,11 @@ import type { LinkOptions } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ComponentType } from "react";
 import { toast } from "sonner";
+import { cn } from "cn";
 import {
   ArrowLeftRight,
-  ArrowUpRight,
   Check,
+  ChevronLeft,
   CircleHelp,
   CreditCard,
   LogOut,
@@ -142,7 +143,10 @@ export function Sidebar({
 
   return (
     <UiSidebar variant="inset" collapsible="offcanvas" className="md:!p-0">
-      <SidebarHeader className="gap-0 px-3 pb-1 pt-3">
+      <SidebarHeader
+        className={cn("gap-0 px-3 pb-1", everyApp ? "pt-2" : "pt-3")}
+      >
+        {everyApp ? <EveryAppLink /> : null}
         <Link
           to="/"
           onClick={() => setOpenMobile(false)}
@@ -175,10 +179,12 @@ export function Sidebar({
             aria-busy={navPlaceholder || undefined}
           >
             {navGroups.map((group) => (
-              <SidebarGroup key={group.label} className="py-1">
-                <SidebarGroupLabel className="h-7 uppercase tracking-wider text-sidebar-foreground/40">
-                  {group.label}
-                </SidebarGroupLabel>
+              <SidebarGroup key={group.items[0].to} className="py-1">
+                {group.label ? (
+                  <SidebarGroupLabel className="h-7 uppercase tracking-wider text-sidebar-foreground/40">
+                    {group.label}
+                  </SidebarGroupLabel>
+                ) : null}
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {group.items.map((item) => {
@@ -206,8 +212,32 @@ export function Sidebar({
 }
 
 // Behind an Every App gateway, which owns sign-in, organizations, teams and
-// billing: the footer links back to the gateway, then to OpenSEO settings.
+// billing: the sidebar's first row links back to the gateway, and the footer
+// holds help and OpenSEO settings.
 const everyApp = isEveryAppClientAuthMode();
+
+/**
+ * The way back up, first in the sidebar as in every Every App app. The row
+ * keeps its height while the gateway's URL loads so the header doesn't jump.
+ */
+function EveryAppLink() {
+  const accountQuery = useQuery(everyAppAccountQueryOptions());
+  const gatewayUrl = accountQuery.data?.gatewayUrl;
+  if (!accountQuery.isPending && !gatewayUrl) return null;
+  return (
+    <a
+      href={gatewayUrl ?? undefined}
+      aria-label="Back to Every App"
+      className={cn(
+        "mb-1 inline-flex h-7 w-fit items-center gap-0.5 rounded-md pl-0.5 pr-2 text-sm text-sidebar-foreground/60 transition-colors hover:text-sidebar-foreground",
+        accountQuery.isPending && "invisible",
+      )}
+    >
+      <ChevronLeft className="size-4" aria-hidden />
+      <span>Every App</span>
+    </a>
+  );
+}
 
 function AccountFooter({ ready }: { ready: boolean }) {
   const { data: session } = useSession();
@@ -216,8 +246,9 @@ function AccountFooter({ ready }: { ready: boolean }) {
     ...everyAppAccountQueryOptions(),
     enabled: everyApp,
   });
-  const everyAppAccount = everyAppAccountQuery.data;
-  const email = everyApp ? everyAppAccount?.email : session?.user?.email;
+  const email = everyApp
+    ? everyAppAccountQuery.data?.email
+    : session?.user?.email;
   const [isSwitching, setIsSwitching] = useState(false);
   const orgContextQuery = useQuery({
     ...organizationContextQueryOptions(),
@@ -248,32 +279,15 @@ function AccountFooter({ ready }: { ready: boolean }) {
       <SidebarMenu>
         <SidebarNavLink
           icon={CircleHelp}
-          label="Help & Community"
+          label="Help"
           linkProps={{ to: "/support" }}
         />
         {everyApp ? (
-          <>
-            {everyAppAccountQuery.isPending ? (
-              <SidebarMenuItem>
-                <SidebarMenuSkeleton showIcon />
-              </SidebarMenuItem>
-            ) : everyAppAccount?.gatewayUrl ? (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  render={<a href={everyAppAccount.gatewayUrl} />}
-                  className={navButtonClass}
-                >
-                  <ArrowUpRight className="size-4" />
-                  <span>Back to Every App</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ) : null}
-            <SidebarNavLink
-              icon={Settings}
-              label="Settings"
-              linkProps={{ to: "/settings" }}
-            />
-          </>
+          <SidebarNavLink
+            icon={Settings}
+            label="Settings"
+            linkProps={{ to: "/settings" }}
+          />
         ) : email ? (
           <SidebarMenuItem>
             <DropdownMenu>

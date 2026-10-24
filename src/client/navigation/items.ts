@@ -18,10 +18,10 @@ import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
 const projectNavItems = [
   {
     to: "/p/$projectId" as const,
-    label: "Dashboard",
+    label: "Overview",
     icon: LayoutDashboard,
     // Without exact matching, the index path is a prefix of every project
-    // route and the Dashboard item would render active everywhere.
+    // route and the Overview item would render active everywhere.
     activeOptions: { exact: true, includeSearch: false },
   },
   {
@@ -41,7 +41,7 @@ const projectNavItems = [
   },
   {
     to: "/p/$projectId/search-performance" as const,
-    label: "GSC Insights",
+    label: "Search Performance",
     icon: GoogleGlyphMuted,
   },
   {
@@ -87,18 +87,18 @@ const projectNavItems = [
   },
 ] as const;
 
-// Project-independent. Rendered inside the project "AI Tools" group when a project
-// is selected, and on its own (connectNavGroup) when none is.
+// Project-independent. Rendered inside the project "Agent" group when a
+// project is selected, and on its own (connectNavGroup) when none is.
 const aiNavItem = linkOptions({
   to: "/ai" as const,
-  label: "Agent setup",
+  label: "Setup",
   icon: Bot,
 });
 
-// Shown only when no project is selected; with a project, Agent setup lives in
-// the "AI Tools" group below.
+// Shown only when no project is selected; with a project, Setup lives in the
+// "Agent" group below.
 export const connectNavGroup = {
-  label: "AI Tools",
+  label: "Agent",
   items: [aiNavItem],
 };
 
@@ -121,7 +121,7 @@ export function getProjectNavGroups(projectId: string) {
 
   return [
     {
-      label: "Overview",
+      // The home row stands alone, without a heading.
       items: [byPath("/p/$projectId")],
     },
     {
@@ -150,7 +150,7 @@ export function getProjectNavGroups(projectId: string) {
       ],
     },
     {
-      label: "AI Tools",
+      label: "Agent",
       items: [
         byPath("/p/$projectId/reports"),
         byPath("/p/$projectId/context"),

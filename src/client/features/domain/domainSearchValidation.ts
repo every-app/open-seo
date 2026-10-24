@@ -6,7 +6,7 @@ export function getDomainSearchValidationErrors(value: DomainControlsValues) {
   if (!value.domain.trim()) {
     return createFormValidationErrors({
       fields: {
-        domain: "Please enter a domain",
+        domain: "Enter a domain.",
       },
     });
   }
@@ -35,7 +35,7 @@ export function getDomainSearchChangeValidationErrors(
 
     return createFormValidationErrors({
       fields: {
-        domain: "Please enter a domain",
+        domain: "Enter a domain.",
       },
     });
   }

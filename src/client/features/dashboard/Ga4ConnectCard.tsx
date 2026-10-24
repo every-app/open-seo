@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { toast } from "sonner";
 import { CardShell } from "@/client/components/CardShell";
 import { Button } from "@/client/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,11 +21,6 @@ export function Ga4ConnectCard({
   const dismissMutation = useMutation({
     mutationFn: () => dismissDashboardGa4Card({ data: { projectId } }),
     onSuccess: () => {
-      toast.success("Use another analytics provider?", {
-        description:
-          "Connect its MCP server to your AI agent to work with your analytics data.",
-        duration: 10000,
-      });
       void queryClient.invalidateQueries({
         queryKey: ["dashboardActivation", projectId],
       });

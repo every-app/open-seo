@@ -155,9 +155,7 @@ export function DashboardSetupAction({
     );
   if (!canManage)
     return org.isPending ? (
-      <p className="text-sm text-muted-foreground">
-        Checking workspace permissions…
-      </p>
+      <p className="text-sm text-muted-foreground">Checking permissions…</p>
     ) : org.isError ? (
       <p className="text-sm text-muted-foreground">
         {getStandardErrorMessage(org.error)}
@@ -208,8 +206,7 @@ export function DashboardSetupAction({
   return (
     <div className="space-y-4">
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Bring a teammate into your workspace to share projects, research, and
-        results.
+        Teammates share your projects, research, and results.
       </p>
       <Button onClick={() => setShowModal(true)}>Invite a teammate</Button>
       {showModal && (

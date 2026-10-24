@@ -167,7 +167,7 @@ export function AiQueryError({
   return (
     <QueryError
       error={error}
-      fallback="Could not load AI visibility. Please try again."
+      fallback="Could not load AI visibility. Try again."
       onRetry={retry}
     />
   );

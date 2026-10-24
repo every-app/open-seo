@@ -25,6 +25,9 @@ import {
   useAiVisibilityTracker,
 } from "./shared";
 
+export const PROMPT_RESEARCH_DESCRIPTION =
+  "Find the questions people ask AI about your market, and the sites the answers cite.";
+
 export function PromptResearchPage({
   projectId,
   keyword,
@@ -48,7 +51,7 @@ export function PromptResearchPage({
     <div className="space-y-4">
       <PageHeader
         title="Prompt Research"
-        description="Find the questions people ask AI about your market, and the sites the answers cite."
+        description={PROMPT_RESEARCH_DESCRIPTION}
         backLink={
           keyword && state?.configured ? (
             <BackLink

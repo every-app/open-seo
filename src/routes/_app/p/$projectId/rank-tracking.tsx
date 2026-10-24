@@ -14,7 +14,7 @@ function RankTrackingLayout() {
       <div className="mx-auto max-w-7xl space-y-4">
         <PageHeader
           title="Rank Tracking"
-          description="Track keyword positions across domains"
+          description="Track keyword positions across domains."
           backLink={
             projectId && configId ? (
               <BackLink to="/p/$projectId/rank-tracking" params={{ projectId }}>

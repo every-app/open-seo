@@ -41,7 +41,7 @@ function ReportsPage() {
       <div className="mx-auto max-w-7xl space-y-4">
         <PageHeader
           title="Reports"
-          description="HTML reports your agents saved to this project."
+          description="Reports your agent saved to this project."
           actions={
             <Button
               variant="ghost"
