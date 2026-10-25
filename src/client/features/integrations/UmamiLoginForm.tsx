@@ -9,6 +9,7 @@ import {
   umamiHeaderSchema,
   type UmamiHeader,
 } from "@/shared/umami";
+import { useLocale } from "@/client/lib/i18n";
 
 type SavedLogin = Extract<
   Awaited<ReturnType<typeof saveUmamiInstance>>,
@@ -62,11 +63,6 @@ const loginSchema = z
     { path: ["username"], message: "Enter the Umami username." },
   );
 
-const AUTH_TYPES = [
-  { value: "password", label: "Username and password (self-hosted)" },
-  { value: "api_key", label: "API key (Umami Cloud)" },
-] as const;
-
 /**
  * Adds an Umami login for the organization. The server signs in and lists
  * the websites before saving, so a wrong URL, password, or proxy header shows
@@ -79,6 +75,7 @@ export function UmamiLoginForm({
   projectId: string;
   onSaved: (result: SavedLogin) => void;
 }) {
+  const { t } = useLocale();
   const saveMutation = useMutation({
     mutationFn: (values: z.infer<typeof loginSchema>) => {
       const headers = parseHeaderLines(values.headers);
@@ -95,6 +92,11 @@ export function UmamiLoginForm({
       });
     },
   });
+
+  const authTypes = [
+    { value: "password", label: t("umami.auth_password") },
+    { value: "api_key", label: t("umami.auth_api_key") },
+  ] as const;
 
   const form = useAppForm({
     defaultValues: {
@@ -129,7 +131,7 @@ export function UmamiLoginForm({
         <form.AppField name="baseUrl">
           {(field) => (
             <field.TextField
-              label="Umami URL"
+              label={t("umami.url_label")}
               description="The address you open Umami at. For Umami Cloud, use https://cloud.umami.is."
               placeholder="https://analytics.example.com"
               autoComplete="off"
@@ -139,7 +141,10 @@ export function UmamiLoginForm({
         </form.AppField>
         <form.AppField name="authType">
           {(field) => (
-            <field.SelectField label="Sign in with" items={AUTH_TYPES} />
+            <field.SelectField
+              label={t("umami.auth_type_label")}
+              items={authTypes}
+            />
           )}
         </form.AppField>
         <form.Subscribe selector={(state) => state.values.authType}>
@@ -148,7 +153,7 @@ export function UmamiLoginForm({
               <form.AppField name="username">
                 {(field) => (
                   <field.TextField
-                    label="Username"
+                    label={t("umami.username_label")}
                     description="A view-only Umami user is enough. Two-factor sign-in isn't supported."
                     autoComplete="off"
                     required
@@ -163,7 +168,11 @@ export function UmamiLoginForm({
             <form.AppField name="secret">
               {(field) => (
                 <field.TextField
-                  label={authType === "password" ? "Password" : "API key"}
+                  label={
+                    authType === "password"
+                      ? t("umami.password_label")
+                      : t("umami.api_key_label")
+                  }
                   type="password"
                   autoComplete="off"
                   data-ph-mask
@@ -176,9 +185,9 @@ export function UmamiLoginForm({
         <form.AppField name="headers">
           {(field) => (
             <field.TextareaField
-              label="Custom request headers (optional)"
-              description="For an auth proxy in front of Umami, such as a Cloudflare Access service token. One Name: value per line. Stored encrypted."
-              placeholder={"CF-Access-Client-Id: …\nCF-Access-Client-Secret: …"}
+              label={t("umami.headers_label")}
+              description={t("umami.headers_help")}
+              placeholder={t("umami.headers_placeholder")}
               className="font-mono"
               autoComplete="off"
               data-ph-mask
@@ -186,7 +195,7 @@ export function UmamiLoginForm({
             />
           )}
         </form.AppField>
-        <form.SubmitButton>Sign in and list websites</form.SubmitButton>
+        <form.SubmitButton>{t("umami.submit")}</form.SubmitButton>
       </form.Form>
     </form.AppForm>
   );

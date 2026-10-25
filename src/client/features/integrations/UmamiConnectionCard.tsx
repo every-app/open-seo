@@ -31,6 +31,7 @@ import {
   setUmamiWebsite,
 } from "@/serverFunctions/umami";
 import { UMAMI_SETUP_DOCS_URL } from "@/shared/umami";
+import { useLocale } from "@/client/lib/i18n";
 
 const umamiConnectionQueryKey = (projectId: string) => [
   "umamiConnection",
@@ -51,6 +52,7 @@ function browserTimeZone(): string {
  * saved for the organization, pick a website, change it, or disconnect.
  */
 export function UmamiConnectionCard({ projectId }: { projectId: string }) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const queryKey = umamiConnectionQueryKey(projectId);
   const connectionQuery = useQuery({
@@ -146,13 +148,15 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
 
   return (
     <CardShell
-      title="Umami"
+      title={t("umami.card_title")}
       icon={<BarChart3 className="size-5" />}
       action={
         connection ? (
           <Badge variant={connection.connected ? "success" : "outline"}>
             <span className="size-1.5 rounded-full bg-current" />
-            {connection.connected ? "Connected" : "Not connected"}
+            {connection.connected
+              ? t("umami.status_connected")
+              : t("umami.status_not_connected")}
           </Badge>
         ) : undefined
       }
@@ -176,15 +180,14 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
       ) : !connection.encryptionConfigured ? (
         <Alert variant="warning">
           <AlertTriangle className="size-4" />
-          <AlertTitle>Credential encryption not configured</AlertTitle>
+          <AlertTitle>
+            {t("umami.credential_encryption_not_configured")}
+          </AlertTitle>
           <AlertDescription>
-            <p>
-              Set BETTER_AUTH_SECRET (32+ characters) on this OpenSEO
-              deployment. It encrypts the Umami login.
-            </p>
+            <p>{t("umami.credential_encryption_desc")}</p>
             <SafeExternalLink
               url={UMAMI_SETUP_DOCS_URL}
-              label="Open setup guide"
+              label={t("umami.open_setup_guide")}
               className="inline-flex items-center gap-1 font-medium underline underline-offset-2"
             />
           </AlertDescription>
@@ -218,7 +221,7 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
                       startPicking(connection.instanceId)
                     }
                   >
-                    Change website
+                    {t("umami.change_website")}
                   </Button>
                   <Button
                     variant="destructive"
@@ -226,8 +229,8 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
                     onClick={() => disconnectMutation.mutate()}
                   >
                     {disconnectMutation.isPending
-                      ? "Disconnecting…"
-                      : "Disconnect project"}
+                      ? t("umami.disconnecting")
+                      : t("umami.disconnect_project")}
                   </Button>
                 </div>
               ) : null}
@@ -254,8 +257,8 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
                   }
                 >
                   {setWebsiteMutation.isPending
-                    ? "Saving…"
-                    : "Use this website"}
+                    ? t("umami.saving")
+                    : t("umami.use_this_website")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -265,7 +268,7 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
                     setStep({ kind: "idle" });
                   }}
                 >
-                  Cancel
+                  {t("umami.cancel")}
                 </Button>
               </div>
             </div>
@@ -274,9 +277,7 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
           {showLoginForm ? (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Read visits, entry pages, and referrers from a self-hosted Umami
-                server or Umami Cloud. The login is saved for your organization,
-                so other projects can pick their own website from it.
+                {t("umami.description")}
               </p>
               <UmamiLoginForm
                 projectId={projectId}
@@ -297,7 +298,7 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
                   size="sm"
                   onClick={() => setStep({ kind: "idle" })}
                 >
-                  Cancel
+                  {t("umami.cancel")}
                 </Button>
               ) : null}
             </div>
@@ -305,7 +306,7 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
 
           {canManage && step.kind === "idle" && instances.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-sm font-medium">Saved Umami logins</p>
+              <p className="text-sm font-medium">{t("umami.saved_logins")}</p>
               <SavedUmamiLogins
                 instances={instances}
                 onChoose={startPicking}
@@ -318,7 +319,7 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
                 size="sm"
                 onClick={() => setStep({ kind: "add-login" })}
               >
-                Add another Umami login
+                {t("umami.add_another_login")}
               </Button>
             </div>
           ) : null}
@@ -335,15 +336,14 @@ export function UmamiConnectionCard({ projectId }: { projectId: string }) {
       ) : null}
       {removing ? (
         <ConfirmDialog
-          title={`Remove ${removing.label}?`}
-          confirmLabel="Remove login"
+          title={t("umami.remove_login_title", { label: removing.label })}
+          confirmLabel={t("umami.remove_login_confirm")}
           destructive
           pending={deleteLoginMutation.isPending}
           onClose={() => setRemoving(null)}
           onConfirm={() => deleteLoginMutation.mutate(removing.id)}
         >
-          Every project that reads its Umami data through this login is
-          disconnected.
+          {t("umami.remove_login_warning")}
         </ConfirmDialog>
       ) : null}
       {connection && !canManage ? (

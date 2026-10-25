@@ -1,3 +1,5 @@
+import { umamiDe } from "./umami.de";
+
 export const de = {
   nav: {
     overview: "Übersicht",
@@ -356,6 +358,7 @@ export const de = {
     top_rankings: "Top-10 Platzierungen",
     recent_issues: "Dringende Audit-Probleme",
   },
+  umami: umamiDe,
 };
 
 type DeepStringRecord<T> = {

@@ -1,4 +1,5 @@
 import type { TranslationDict } from "./de";
+import { umamiEn } from "./umami.en";
 
 export const en: TranslationDict = {
   nav: {
@@ -343,4 +344,5 @@ export const en: TranslationDict = {
     top_rankings: "Top 10 Rankings",
     recent_issues: "Top Audit Issues",
   },
+  umami: umamiEn,
 };

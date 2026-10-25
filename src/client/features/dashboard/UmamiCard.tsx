@@ -17,6 +17,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/client/components/ui/chart";
+import { useLocale } from "@/client/lib/i18n";
 
 const visitorsChartConfig = {
   visitors: { label: "Visitors", color: "var(--color-primary)" },
@@ -52,6 +53,7 @@ function changeCell(change: number | null) {
 /** Organic traffic from the project's Umami website: search-engine visits
  *  over the last 28 complete days against the 28 before. */
 export function UmamiCard({ projectId }: { projectId: string }) {
+  const { t } = useLocale();
   const reportQuery = useQuery({
     queryKey: ["dashboardUmamiReport", projectId],
     queryFn: () => getUmamiDashboardReport({ data: { projectId } }),
@@ -60,7 +62,7 @@ export function UmamiCard({ projectId }: { projectId: string }) {
 
   return (
     <CardShell
-      title="Organic traffic"
+      title={t("umami.organic_traffic")}
       action={
         <Link
           to="/p/$projectId/settings/integrations"
@@ -68,18 +70,18 @@ export function UmamiCard({ projectId }: { projectId: string }) {
           hash="umami"
           className={moreDetailsClass}
         >
-          Manage
+          {t("umami.manage")}
         </Link>
       }
     >
       <p className="mb-4 text-sm text-muted-foreground">
         Umami
-        {report?.status === "ok" ? ` · ${report.websiteName}` : ""} · Last 28
-        days
+        {report?.status === "ok" ? ` · ${report.websiteName}` : ""} ·{" "}
+        {t("umami.last_28_days")}
       </p>
       {reportQuery.isError ? (
         <p className="text-sm text-muted-foreground">
-          Couldn&rsquo;t load Umami data. Try again shortly.
+          {t("umami.could_not_load")}
         </p>
       ) : !report ? (
         <div className="space-y-3" aria-busy>
@@ -88,28 +90,26 @@ export function UmamiCard({ projectId }: { projectId: string }) {
         </div>
       ) : report.status === "not_connected" ? (
         <p className="text-sm text-muted-foreground">
-          Umami is no longer connected for this project.
+          {t("umami.not_connected_desc")}
         </p>
       ) : report.status === "error" ? (
         <p className="text-sm text-muted-foreground">{report.error.message}</p>
       ) : !report.totals.visits ? (
-        <p className="text-sm text-muted-foreground">
-          No visits from search engines recorded in the last 28 days yet.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("umami.no_data")}</p>
       ) : (
         <div className="space-y-4">
           <MetricsTable
             showChange
             rows={[
               {
-                label: "Visits",
+                label: t("umami.visits"),
                 value: formatCount(report.totals.visits),
                 change: changeCell(
                   percentChange(report.totals.visits, report.prevTotals.visits),
                 ),
               },
               {
-                label: "Visitors",
+                label: t("umami.visitors"),
                 value: formatCount(report.totals.visitors),
                 change: changeCell(
                   percentChange(
@@ -119,7 +119,7 @@ export function UmamiCard({ projectId }: { projectId: string }) {
                 ),
               },
               {
-                label: "Pageviews",
+                label: t("umami.pageviews"),
                 value: formatCount(report.totals.pageviews),
                 change: changeCell(
                   percentChange(
@@ -129,7 +129,7 @@ export function UmamiCard({ projectId }: { projectId: string }) {
                 ),
               },
               {
-                label: "Bounce rate",
+                label: t("umami.bounce_rate"),
                 value:
                   report.totals.bounceRate === null
                     ? "—"

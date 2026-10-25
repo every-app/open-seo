@@ -1,0 +1,51 @@
+export const umamiDe = {
+  card_title: "Umami",
+  organic_traffic: "Organischer Traffic",
+  last_28_days: "Letzte 28 Tage",
+  manage: "Verwalten",
+  status_connected: "Verbunden",
+  status_not_connected: "Nicht verbunden",
+  could_not_load:
+    "Umami-Daten konnten nicht geladen werden. Bitte versuche es gleich erneut.",
+  not_connected_desc:
+    "Verbinde Umami unter Einstellungen → Integrationen, um den organischen Suchtraffic zu sehen.",
+  no_data: "Keine Daten für diesen Zeitraum vorhanden.",
+  visits: "Besuche",
+  visitors: "Besucher",
+  pageviews: "Seitenaufrufe",
+  bounce_rate: "Absprungrate",
+  visitors_trend: "Besuchertrend",
+  credential_encryption_not_configured:
+    "Anmeldedaten-Verschlüsselung nicht konfiguriert",
+  credential_encryption_desc:
+    "Setze BETTER_AUTH_SECRET (mind. 32 Zeichen) in diesem OpenSEO-Deployment, um Umami-Zugangsdaten zu verschlüsseln.",
+  open_setup_guide: "Einrichtungsanleitung öffnen",
+  change_website: "Website ändern",
+  disconnect_project: "Projekt trennen",
+  disconnecting: "Wird getrennt…",
+  use_this_website: "Diese Website verwenden",
+  saving: "Wird gespeichert…",
+  cancel: "Abbrechen",
+  description:
+    "Lese Besuche, Einstiegsseiten und Referrer von einer selbst gehosteten Umami-Instanz oder Umami Cloud aus. Der Login wird für deine Organisation gespeichert, sodass andere Projekte direkt ihre eigene Website auswählen können.",
+  saved_logins: "Gespeicherte Umami-Logins",
+  add_another_login: "Weitere Umami-Verbindung hinzufügen",
+  remove_login_title: "Login {label} entfernen?",
+  remove_login_confirm: "Login entfernen",
+  remove_login_warning:
+    "Jedes Projekt, das seine Umami-Daten über diesen Login bezieht, wird getrennt.",
+  url_label: "Umami-URL",
+  auth_type_label: "Authentifizierung",
+  auth_password: "Benutzername und Passwort (Self-Hosted)",
+  auth_api_key: "API-Schlüssel (Umami Cloud)",
+  username_label: "Benutzername",
+  password_label: "Passwort",
+  api_key_label: "API-Schlüssel",
+  headers_label: "Benutzerdefinierte Request-Header (optional)",
+  headers_placeholder: "CF-Access-Client-Id: xxx\nCF-Access-Client-Secret: yyy",
+  headers_help:
+    "Für Auth-Proxies wie Cloudflare Access. Ein Header pro Zeile im Format Name: Wert.",
+  submit: "Anmelden und Websites laden",
+  signing_in: "Anmeldung läuft…",
+  select_website_placeholder: "Website auswählen…",
+};
