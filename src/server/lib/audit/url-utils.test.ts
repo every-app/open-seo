@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canonicalUrlKey,
   detectUrlTemplate,
+  isAuditablePageUrl,
   isSameOrigin,
   normalizeUrl,
 } from "@/server/lib/audit/url-utils";
@@ -55,5 +56,29 @@ describe("detectUrlTemplate", () => {
     expect(detectUrlTemplate("/blog/2026-03-01/my-great-post")).toBe(
       "/blog/:date/:slug",
     );
+  });
+});
+
+describe("isAuditablePageUrl", () => {
+  it.each([
+    ["https://example.com/products/hat", undefined, true],
+    [
+      "https://example.com/cdn/shop/files/hat.jpg?v=1&width=1000",
+      undefined,
+      false,
+    ],
+    ["https://example.com/products/hat.json", undefined, false],
+    ["https://example.com/report.pdf", undefined, true],
+    [
+      "https://example.com/en/customer_authentication/redirect?locale=en",
+      "shopify",
+      false,
+    ],
+    ["https://example.com/discount/SAVE10?redirect=%2F", "shopify", false],
+    ["https://example.com/discount/SAVE10", undefined, true],
+    ["https://example.com/en/collections/all?page=2", "shopify", true],
+    ["https://example.com/cdn-cgi/l/email-protection", undefined, false],
+  ] as const)("isAuditablePageUrl(%s, %s) is %s", (url, platform, expected) => {
+    expect(isAuditablePageUrl(url, platform)).toBe(expected);
   });
 });

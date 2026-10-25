@@ -178,7 +178,7 @@ describe("crawl pacing and cooldowns", () => {
     expect(peak).toBe(2);
   });
 
-  it("retains slower pacing across chunks after recovering from the first 429", async () => {
+  it("slows down after a 429 and speeds back up once the site keeps serving", async () => {
     const starts: number[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
       starts.push(Date.now());
@@ -191,9 +191,9 @@ describe("crawl pacing and cooldowns", () => {
     await vi.runAllTimersAsync();
     expect(await result).toEqual({ pagesCrawled: 100, completed: true });
     expect(starts[1]).toBe(30_000);
-    expect(starts.slice(2).every((at, i) => at - starts[i + 1] >= 2_000)).toBe(
-      true,
-    );
+    const gaps = starts.slice(1).map((at, i) => at - starts[i]);
+    expect(gaps.slice(1, 15).every((gap) => gap >= 2_000)).toBe(true);
+    expect(gaps.slice(-20).every((gap) => gap < 2_000)).toBe(true);
     expect(saved.every((page) => page.fetchClass === "ok")).toBe(true);
     expect(mocks.claimChunk.mock.calls.length).toBeGreaterThan(1);
   });
@@ -277,20 +277,44 @@ describe("crawl pacing and cooldowns", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("stops a permanently limited site after four refusals across chunks", async () => {
+  it("gives up on one refused URL and crawls the rest", async () => {
+    const refused = `${ORIGIN}/0`;
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (input) => {
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        return new Response(HTML, {
+          status: input === refused ? 429 : 200,
+          headers: { "content-type": "text/html", "retry-after": "60" },
+        });
+      });
+    const result = crawl(50);
+    await vi.runAllTimersAsync();
+    expect(await result).toEqual({ pagesCrawled: 50, completed: true });
+    expect(
+      fetchMock.mock.calls.filter(([input]) => input === refused),
+    ).toHaveLength(2);
+    expect(saved.filter((page) => page.fetchClass === "rate_limited")).toEqual([
+      expect.objectContaining({ url: refused, statusCode: 429 }),
+    ]);
+  });
+
+  it("stops a permanently limited site after three URLs are refused across chunks", async () => {
     const fetchMock = serve(() => 429);
     const result = crawl();
     await vi.runAllTimersAsync();
     expect(await result).toMatchObject({ completed: false, rateLimited: true });
-    expect(fetchMock).toHaveBeenCalledTimes(4);
-    expect(saved).toHaveLength(1);
-    expect(saved[0].fetchClass).toBe("rate_limited");
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(saved).toHaveLength(3);
+    expect(saved.every((page) => page.fetchClass === "rate_limited")).toBe(
+      true,
+    );
     expect(mocks.sleepUntil.mock.calls.length).toBeGreaterThan(0);
     expect(mocks.releaseUrls).toHaveBeenCalled();
   });
 
   it("stops without sleeping or retrying early when Retry-After exceeds the cooldown budget", async () => {
-    const fetchMock = serve(() => 429, "3600");
+    const fetchMock = serve(() => 429, "8000");
     const result = crawl();
     await vi.runAllTimersAsync();
     expect(await result).toEqual({

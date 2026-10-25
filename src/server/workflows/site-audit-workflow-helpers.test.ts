@@ -64,25 +64,13 @@ describe("crawlPage", () => {
     expect(page?.rateLimited).toBe(true);
   });
 
-  it("records a page the site keeps rate limiting, without calling it blocked", async () => {
-    vi.useFakeTimers();
-    const fetchMock = stubFetch({ status: 429, retryAfter: "1" });
-
-    const crawled = crawl();
-    await vi.advanceTimersByTimeAsync(30_000);
-    const page = await crawled;
-
-    expect(fetchMock).toHaveBeenCalledTimes(4);
-    expect(page?.fetchClass).toBe("rate_limited");
-  });
-
   // A long Retry-After is deferred to a later chunk; one past the audit's
   // whole cooldown budget is recorded as the page's final answer.
   it.each([
     ["defers the URL when its cooldown outlasts the chunk", "600", null, false],
     [
       "records a final 429 when the wait exceeds the cooldown budget",
-      "3600",
+      "8000",
       "rate_limited",
       true,
     ],

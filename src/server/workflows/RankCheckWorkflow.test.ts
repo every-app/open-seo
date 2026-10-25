@@ -37,12 +37,22 @@ vi.mock("@/server/workflows/rankCheckPaths", () => ({
   retryRankChecks: vi.fn(),
 }));
 vi.mock("@/server/workflows/pgStep", () => ({
-  pgStep: (
+  // Like the engine, run() gets a rebuilt Error, never the thrown object.
+  pgStep: async (
     _step: unknown,
     _name: string,
     _config: unknown,
     fn: () => unknown,
-  ) => fn(),
+  ) => {
+    try {
+      return await fn();
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? `${error.name}: ${error.message}` : "",
+        { cause: error },
+      );
+    }
+  },
 }));
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
@@ -55,6 +65,9 @@ vi.mock("@/server/billing/autumn", () => ({
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
+}));
+vi.mock("@/server/email/onboarding-drip", () => ({
+  sendCreditsExhaustedEvent: vi.fn(),
 }));
 
 const billingCustomer = {
@@ -118,13 +131,26 @@ describe("rank check workflow credit ceiling", () => {
   it("rejects a keyword-list race before balance or DataForSEO calls", async () => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(5));
 
-    await expect(runWorkflow({ maxCostCredits: 20 })).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-    });
+    await expect(runWorkflow({ maxCostCredits: 20 })).rejects.toThrow();
 
     expect(mocks.autumnCheck).not.toHaveBeenCalled();
     expect(mocks.createDataforseoClient).not.toHaveBeenCalled();
     expect(mocks.runLiveCheck).not.toHaveBeenCalled();
+  });
+
+  it("keeps a credits refusal as the bare code, so the credits card shows", async () => {
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(5));
+    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 0 } });
+
+    await expect(runWorkflow({})).rejects.toThrow("INSUFFICIENT_CREDITS");
+
+    expect(mocks.failRunIfActive).toHaveBeenCalledWith(
+      "run_1",
+      "INSUFFICIENT_CREDITS",
+    );
+    expect(mocks.updateConfig).toHaveBeenCalledWith("config_1", "project_1", {
+      lastSkipReason: "insufficient_credits",
+    });
   });
 
   // Exactly at the ceiling is approved (the guard is strictly greater), and

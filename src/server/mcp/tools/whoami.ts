@@ -33,12 +33,14 @@ export const whoamiTool = {
     const auth = context.auth;
     const isHosted = await isHostedServerAuthMode();
     let creditsRemaining: number | null = null;
+    let budgetReached = false;
     if (isHosted) {
       try {
         const customer = await getOrCreateOrganizationCustomer(auth);
-        const { monthlyRemaining, topupRemaining } =
+        const { monthlyRemaining, topupRemaining, topupBudgetReached } =
           await getUsageCreditsRemaining(customer.id);
         creditsRemaining = monthlyRemaining + topupRemaining;
+        budgetReached = topupBudgetReached;
       } catch {
         // Account identity is still available when billing is unavailable.
       }
@@ -52,6 +54,11 @@ export const whoamiTool = {
       lines.push(
         `Credits remaining: ${creditsRemaining != null ? creditsRemaining.toLocaleString() : "unknown"}`,
       );
+      if (budgetReached) {
+        lines.push(
+          "Top-up credits: paused until the owner raises the monthly auto-reload budget on the Billing page.",
+        );
+      }
     }
     return mcpResponse({
       text: lines.join("\n"),

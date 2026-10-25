@@ -53,7 +53,8 @@ export async function saveWebsiteSetup(
         updatedAt,
       })
       .onConflictDoNothing(),
-    ...chunk(competitors, 10).map((rows) =>
+    // D1 rejects a compound SELECT with more than 5 terms.
+    ...chunk(competitors, 5).map((rows) =>
       tx
         .insert(projectCompetitors)
         .select(

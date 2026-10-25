@@ -73,9 +73,9 @@ export const de = {
     affected_pages: "Betroffene Seiten",
     page_singular: "Seite",
     page_plural: "Seiten",
-    no_issues_recorded: "Keine Probleme für dieses Audit verzeichnet.",
+    no_issues_recorded: "Keine Probleme gefunden.",
     no_issues_recorded_desc:
-      "Die Website ist entweder in hervorragendem Zustand oder es liegen keine Beanstandungen vor.",
+      "Jede gecrawlte Seite hat alle Prüfungen bestanden.",
     render_javascript: "JavaScript rendern",
     max_pages: "Seitenlimit",
     lighthouse: "Lighthouse Performance",

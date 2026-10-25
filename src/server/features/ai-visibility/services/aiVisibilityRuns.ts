@@ -23,6 +23,7 @@ import { requireConfiguration } from "./aiVisibilityMutation";
 import { aiPromptIsBranded } from "./aiVisibilityMatching";
 import { aiRunView } from "./aiVisibilityResults";
 import { aiCostForAnswers } from "./aiVisibilityCost";
+import { startWorkflow } from "@/server/lib/startWorkflow";
 
 const ACTIVE_WORKFLOW_STATUSES = new Set([
   "queued",
@@ -162,19 +163,23 @@ export async function startRun(
       );
     }
     try {
-      await env.AI_VISIBILITY_WORKFLOW.create({
-        id,
-        // Only the billing fields: the request context is not serializable.
-        params: {
-          runId: id,
-          customer: {
-            organizationId: billing.organizationId,
-            userId: billing.userId,
-            userEmail: billing.userEmail,
-            projectId: project.id,
+      await startWorkflow(
+        env.AI_VISIBILITY_WORKFLOW,
+        {
+          id,
+          // Only the billing fields: the request context is not serializable.
+          params: {
+            runId: id,
+            customer: {
+              organizationId: billing.organizationId,
+              userId: billing.userId,
+              userEmail: billing.userEmail,
+              projectId: project.id,
+            },
           },
         },
-      });
+        "AI visibility check",
+      );
     } catch (error) {
       await failAiRun(id, AI_ANSWER_FAILURES.notStarted);
       throw error;

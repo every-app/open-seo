@@ -74,9 +74,9 @@ export const en: TranslationDict = {
     affected_pages: "Affected pages",
     page_singular: "page",
     page_plural: "pages",
-    no_issues_recorded: "No issues recorded for this audit.",
+    no_issues_recorded: "No issues found.",
     no_issues_recorded_desc:
-      "Either the site is in great shape, or this audit ran before issue checks existed — run a new audit to get the full report.",
+      "Every crawled page passed the issue checks.",
     render_javascript: "Render JavaScript",
     max_pages: "Max pages",
     lighthouse: "Lighthouse Performance",

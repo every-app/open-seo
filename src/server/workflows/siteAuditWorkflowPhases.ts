@@ -9,6 +9,7 @@ import {
 } from "@/server/lib/audit/lighthouse";
 import {
   getOrigin,
+  isAuditablePageUrl,
   isSameOrigin,
   normalizeUrl,
 } from "@/server/lib/audit/url-utils";
@@ -158,6 +159,7 @@ async function runDiscoveryPhase(
       seen.add(normalized);
       if (!isSameOrigin(normalized, origin)) continue;
       if (!isCrawlableUrl(normalized)) continue;
+      if (!isAuditablePageUrl(normalized)) continue;
       if (!robots.isAllowed(normalized)) continue;
       seeds.push(normalized);
     }

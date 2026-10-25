@@ -31,6 +31,7 @@ import {
   type LocalTrackerRow,
 } from "../repositories/LocalSeoRepository";
 import { finalizeLocalCheck, localPointSearch } from "./localSeoCollection";
+import { startWorkflow } from "@/server/lib/startWorkflow";
 
 const profileSchema = z.object({
   title: z.string(),
@@ -294,13 +295,13 @@ async function startCheck(
     throw error;
   }
   try {
-    await env.LOCAL_RANK_WORKFLOW.create({
-      id: check.id,
-      params: { checkId: check.id, customer },
-    });
+    await startWorkflow(
+      env.LOCAL_RANK_WORKFLOW,
+      { id: check.id, params: { checkId: check.id, customer } },
+      "local rank check",
+    );
   } catch (error) {
-    // A lost create response is ambiguous. Do not start another workflow or
-    // post paid tasks here; reconciliation checks the same instance later.
+    // Nothing paid is posted here; reconciliation fails the check later.
     console.error("[local-seo] workflow start failed:", error);
   }
   return check;

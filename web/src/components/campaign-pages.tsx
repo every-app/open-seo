@@ -187,7 +187,7 @@ const SELF_HOST_ANSWER = (
 );
 
 const BILLING_ANSWER =
-  "One plan at $10/mo includes $10 of usage every month. Buy extra usage when you need it; top-ups never expire. Cancel anytime from your billing portal.";
+  "One plan at $10/mo includes $10 of usage every month. Buy extra usage when you need it, or let auto-reload buy it for you up to a monthly limit; top-ups never expire. Cancel anytime from your billing portal.";
 
 // ─── /agencies ───────────────────────────────────────────────────────
 

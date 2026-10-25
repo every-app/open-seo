@@ -33,7 +33,9 @@ vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
   AuditRepository: { getLatestAuditForProject: state.latestAudit },
 }));
 vi.mock("@/db", () => ({ db: state.db }));
-vi.mock("cloudflare:workers", () => ({ env: { DATABASE_PROVIDER: "d1" } }));
+vi.mock("cloudflare:workers", () => ({
+  env: { DATABASE_PROVIDER: "d1", AUDIT_BROWSER_RENDERING: "true" },
+}));
 vi.mock("@/server/lib/r2-cache", async (importOriginal) => ({
   ...(await importOriginal<typeof R2Cache>()),
   getCached: async (key: string) => state.cache.get(key) ?? null,
@@ -192,7 +194,7 @@ it("starts only one rendered 50-page audit for simultaneous website saves", asyn
     expect.objectContaining({
       projectId: "project",
       maxPages: 50,
-      renderJavaScript: false,
+      renderJavaScript: true,
       billingCustomer: customer,
     }),
   );

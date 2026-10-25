@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { billingCustomerStatus } from "@/db/schema";
 import { autumn } from "@/server/billing/autumn";
+import { disableAutoReloadIfUnpaid } from "@/server/billing/auto-reload";
 import { captureMetaPurchase } from "@/server/referrals/meta";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
 import {
@@ -16,6 +17,8 @@ export async function syncAutumnCustomerStatus(customerId: string) {
   // references an existing Autumn customer. The SDK returns the camelCase shape.
   const customer = await autumn.customers.getOrCreate({ customerId });
   const snapshot = deriveBillingCustomerStatusSnapshot(customer);
+  // Auto-reload charges the saved card; a plan that ended must not keep it.
+  await disableAutoReloadIfUnpaid(customerId);
 
   // Lifecycle emails are the diff between the last stored customer and this
   // one. Loops is called before the row is written: an outage fails the

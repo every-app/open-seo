@@ -7,6 +7,11 @@ import {
   type PlanStatus,
 } from "@/shared/billing";
 import { autumn } from "@/server/billing/autumn";
+import {
+  primesAutoReloadOnEnable,
+  readAutoReload,
+  type AutoReloadStatus,
+} from "@/server/billing/auto-reload-status";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AppError } from "@/server/lib/errors";
 
@@ -28,12 +33,18 @@ type BillingAccount = {
   monthlyRefillsAt: number | null;
   /** Stripe emails a receipt for each paid invoice. */
   invoiceEmailsEnabled: boolean;
+  /** Automatic top-up purchases. Null when never set up. */
+  autoReload: AutoReloadStatus | null;
+  /** Whether turning auto-reload on charges the card for the first reload
+   *  at once; the page says so on the button. */
+  autoReloadPrimesOnEnable: boolean;
 };
 
 export async function getOrganizationBillingAccount(
   context: BillingCustomerContext,
 ): Promise<BillingAccount> {
-  // No expand: every field read below is on the bare customer.
+  // No expand: every field read below, the auto-reload controls and the
+  // budget's spend included, is on the bare customer.
   const customer = await autumn.customers.getOrCreate({
     customerId: context.organizationId,
     email: context.userEmail,
@@ -73,5 +84,7 @@ export async function getOrganizationBillingAccount(
       ? null
       : (monthly?.nextResetAt ?? null),
     invoiceEmailsEnabled: customer.sendEmailReceipts,
+    autoReload: readAutoReload(customer),
+    autoReloadPrimesOnEnable: primesAutoReloadOnEnable(customer),
   };
 }

@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { CHECKOUT_PLAN_IDS } from "@/shared/billing";
+import {
+  autoReloadSettingsSchema,
+  CHECKOUT_PLAN_IDS,
+  TOP_UP_MAX_USD,
+  TOP_UP_MIN_USD,
+} from "@/shared/billing";
+import { setOrganizationAutoReload } from "@/server/billing/auto-reload";
 import { getOrganizationBillingAccount } from "@/server/billing/billing-account";
 import {
   createBillingPortalUrl,
@@ -47,13 +53,31 @@ export const createPlanCheckout = createServerFn({ method: "POST" })
 
 export const createTopUpCheckout = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .validator(z.object({ amountUsd: z.number().int().min(10).max(99) }))
+  .validator(
+    z.object({
+      amountUsd: z.number().int().min(TOP_UP_MIN_USD).max(TOP_UP_MAX_USD),
+    }),
+  )
   .handler(({ data, context }) =>
     createTopUpCheckoutUrl(context, {
       ...data,
       origin: getPublicOrigin(getRequest()),
     }),
   );
+
+// Turning auto-reload on may charge the saved card for the first reload at
+// once (see setOrganizationAutoReload); the page says so before the click.
+// The threshold is fixed server-side, so the client chooses only the amount
+// and the monthly limit.
+export const setAutoReload = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(
+    z.union([
+      z.object({ enabled: z.literal(false) }),
+      z.object({ enabled: z.literal(true) }).and(autoReloadSettingsSchema),
+    ]),
+  )
+  .handler(({ data, context }) => setOrganizationAutoReload(context, data));
 
 export const createBillingPortalSession = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)

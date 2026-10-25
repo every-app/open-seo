@@ -127,7 +127,7 @@ export function ResultsView({
           </AlertTitle>
           <AlertDescription>
             {crawlStopped
-              ? "The requested cooldown exceeded the audit time limit, so some URLs were left unvisited. This report is incomplete. "
+              ? "The site kept refusing pages, so some URLs were left unvisited. This report is incomplete. "
               : "Pages that returned 429 Too Many Requests could not be audited. "}
             Re-run the audit after the rate limit resets, or ask the site owner
             to allow the{" "}

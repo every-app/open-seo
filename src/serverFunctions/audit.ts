@@ -19,6 +19,11 @@ export const startAudit = createServerFn({ method: "POST" })
   .validator(startAuditSchema)
   .handler(async ({ data, context }) => {
     const limitTier = await AuditService.resolveAuditLimitTier(context);
+    // The dashboard's scan button always asks for rendering; installs with no
+    // renderer (Docker without a Context key) crawl without it instead of
+    // failing. The launch form only offers rendering where it's available.
+    const renderJavaScript =
+      data.renderJavaScript && (await isAuditRenderingAllowed());
 
     const result = await AuditService.startAudit({
       actorUserId: context.userId,
@@ -28,7 +33,7 @@ export const startAudit = createServerFn({ method: "POST" })
       maxPages: data.maxPages,
       lighthouseStrategy: data.lighthouseStrategy,
       limitTier,
-      renderJavaScript: data.renderJavaScript,
+      renderJavaScript,
     });
 
     waitUntil(

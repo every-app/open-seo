@@ -32,6 +32,7 @@ import {
   START_URL_STEP,
 } from "@/server/workflows/auditStepConfigs";
 import type { RenderUsage } from "@/shared/audit-rendering";
+import { describeError } from "@/server/lib/errors";
 
 interface AuditParams {
   auditId: string;
@@ -117,7 +118,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
         renderUsage,
       });
     } catch (error) {
-      console.error(`Audit ${auditId} failed:`, error);
+      console.error(`Audit ${auditId} failed: ${describeError(error)}`, error);
       // Deploy-time resets are expected churn, not actionable errors.
       const isDeployReset =
         error instanceof Error &&

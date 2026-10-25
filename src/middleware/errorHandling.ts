@@ -3,7 +3,12 @@ import { getRequest } from "@tanstack/react-start/server";
 import { waitUntil } from "cloudflare:workers";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
 import { getAuth } from "@/lib/auth";
-import { AppError, asAppError, toClientError } from "@/server/lib/errors";
+import {
+  AppError,
+  asAppError,
+  toClientError,
+  describeError,
+} from "@/server/lib/errors";
 import { captureServerError } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
@@ -71,7 +76,11 @@ export const errorHandlingMiddleware = createMiddleware({
 
       // Details can quote customer content (a DataForSEO response body), so
       // they stay in this log line and never reach error tracking.
-      console.error("server.function error:", error, appError?.details ?? "");
+      console.error(
+        `server.function error: ${describeError(error)}`,
+        error,
+        appError?.details ?? "",
+      );
       const properties = {
         errorCode: appError?.code ?? "INTERNAL_ERROR",
         method: request.method,

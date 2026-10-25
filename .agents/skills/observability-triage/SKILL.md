@@ -56,6 +56,13 @@ Query Cloudflare Workers Observability for prod errors, count them correctly, an
 - **Message prefixes fragment groups.** Logs with leading timestamps (better-auth's format) split one error into N single-count groups; grouped-by-message counts badly understate them. Sample events and merge client-side.
 - **Prod deploys are manual** — main being fixed doesn't mean prod runs the fix. Check `$workers.scriptVersion` and the scripts' `modified_on` before concluding a fix didn't work.
 
+## Workflow failures
+
+- **An Error logged as an argument loses its message.** `console.error("x failed:", error)` lands in Workers Logs as `x failed:     at async …` (frames only, no `Error: message` line), and an Error inside a logged object serializes to `{remote: true}` or `{}`. Grep the stack for the call site, then read the real message from `describeError(error)` in the newer log lines (`src/server/lib/errors.ts`) or from the Workflows instance below.
+- **The engine records why a step attempt failed.** `GET /accounts/{account_id}/workflows/{workflow_name}/instances?status=errored&date_start=<iso>` lists errored instances (workflow names are in `wrangler.jsonc`: `ai-visibility-workflow`, `rank-check-workflow`, `site-audit-workflow` on the audit worker, `local-rank-workflow`); `GET …/instances/{id}` returns `error` plus every step with its attempts and each attempt's `error.name`/`error.message`. This is the only place the message of a step failure survives.
+- **`WorkflowInternalError: Attempt failed due to internal workflows error`** on an attempt is the engine's own failure, not app code: the invocation running the step is reported `canceled` about 30 s later. It comes in bursts that line up with Cloudflare status incidents (Workflows, Durable Objects, or a network incident in the Ashburn region that hosts prod). The same bursts make the binding's `create()` reject (`at async WorkflowImpl.create (cloudflare-internal:workflows-api…)`). Check `cloudflarestatus.com/history` for the window before reading code.
+- **`canceled` is normal for workflow invocations.** The engine cancels an invocation after its steps finished or while it sleeps (hundreds a day per workflow with no errored instance behind them), so count errored *instances*, not canceled invocations.
+
 ## Profiling (CPU and heap flamegraphs)
 
 Cloudflare captures an on-demand CPU or allocation profile from a live production isolate (shipped 2026-10-09). Reach for it only when the question is "where does the CPU or memory go", which logs and invocation metrics cannot answer; routine error triage never needs it. A capture only samples one already-running isolate for the requested window; keep windows at 10 to 15 s.

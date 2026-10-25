@@ -5,11 +5,14 @@
  */
 import * as cheerio from "cheerio";
 import { describe, expect, it } from "vitest";
-import { analyzeHtml, countWords } from "@/server/lib/audit/page-analyzer";
+import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
 import { normalizeUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
 import type { PageAnalysis, PageLink } from "@/server/lib/audit/types";
 
-/** The previous cheerio implementation, verbatim (minus passthrough fields). */
+/**
+ * The previous cheerio implementation (minus passthrough fields), plus
+ * separators around block elements so minified markup keeps word boundaries.
+ */
 function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   const $ = cheerio.load(html);
 
@@ -44,8 +47,14 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
 
   const bodyClone = $("body").clone();
   bodyClone.find("script, style, noscript, svg").remove();
+  bodyClone
+    .find(
+      "address,article,aside,blockquote,br,caption,dd,details,dialog,div,dl,dt,fieldset,figcaption,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hgroup,hr,li,main,nav,ol,p,pre,section,summary,table,td,th,tr,ul",
+    )
+    .before(" ")
+    .after(" ");
   const bodyText = bodyClone.text().replace(/\s+/g, " ").trim();
-  const wordCount = countWords(bodyText);
+  const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
 
   const images: Array<{ src: string | null; alt: string | null }> = [];
   $("img").each((_, el) => {
@@ -59,22 +68,9 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href");
     if (!href) return;
-    if (
-      $(el).attr("data-cfemail") !== undefined ||
-      $(el).attr("class")?.split(/\s+/).includes("__cf_email__") ||
-      href.startsWith("/cdn-cgi/l/email-protection") ||
-      href.startsWith("/cdn-cgi/")
-    ) {
-      return;
-    }
     if (/^(javascript:|mailto:|tel:|#)/.test(href)) return;
     const resolved = normalizeUrl(href, pageUrl);
     if (!resolved) return;
-    try {
-      if (new URL(resolved).pathname.startsWith("/cdn-cgi/")) return;
-    } catch {
-      return;
-    }
     if (linksByTarget.has(resolved)) return;
     const anchor = $(el).text().replace(/\s+/g, " ").trim().slice(0, 200);
     const rel = $(el).attr("rel")?.toLowerCase() ?? "";
@@ -221,6 +217,31 @@ describe("analyzeHtml parity with the DOM reference", () => {
   });
 });
 
+describe("analyzeHtml word count", () => {
+  const analyzeBody = (body: string) =>
+    analyzeHtml(`<body>${body}</body>`, PAGE_URL, 200, 0);
+
+  it.each([
+    ["paragraphs", "<p>one</p><p>two</p>"],
+    ["table cells", "<table><tr><td>one</td><td>two</td></tr></table>"],
+    ["line breaks", "one<br>two"],
+  ])("keeps word boundaries between %s in minified HTML", (_label, body) => {
+    expect(analyzeBody(body).bodyText).toBe("one two");
+  });
+
+  it("does not split words across inline markup", () => {
+    expect(analyzeBody("<p>Open<strong>SEO</strong></p>").wordCount).toBe(1);
+  });
+
+  it("counts words in scripts written without spaces", () => {
+    expect(
+      analyzeBody("<p>吉隆坡市中心永久地契公寓投资指南</p>").wordCount,
+    ).toBe(8);
+    expect(analyzeBody("<p>東京の不動産投資ガイド</p>").wordCount).toBe(5);
+    expect(analyzeBody("<p>KLCC 公寓指南 2026</p>").wordCount).toBe(4);
+  });
+});
+
 describe("analyzeHtml meta names are case-insensitive", () => {
   const analyzeHead = (head: string) =>
     analyzeHtml(`<head>${head}</head>`, PAGE_URL, 200, 0);
@@ -299,50 +320,4 @@ describe("JavaScript app-shell detection", () => {
       expect(analyzeHtml(html, PAGE_URL, 200, 0).javascriptShell).toBe(false);
     },
   );
-});
-
-describe("countWords multilingual support", () => {
-  it("counts words in whitespace-delimited languages like English and German", () => {
-    expect(countWords("Hello world this is a test")).toBe(6);
-    expect(
-      countWords("Das ist ein deutscher Beispielsatz mit acht Wörtern."),
-    ).toBe(8);
-  });
-
-  it("counts words in non-whitespace CJK languages like Japanese", () => {
-    // In Japanese, whitespace is not used to separate words.
-    // "私たちは最新のテクノロジーを活用しています。" consists of ~11 words/tokens.
-    const textJa = "私たちは最新のテクノロジーを活用しています。";
-    const words = countWords(textJa);
-    expect(words).toBeGreaterThanOrEqual(8);
-    expect(words).toBeLessThanOrEqual(15);
-  });
-
-  it("handles mixed Latin and CJK text", () => {
-    const mixed = "visualfusion はデジタル製品と Web サイトを制作します。";
-    const words = countWords(mixed);
-    expect(words).toBeGreaterThanOrEqual(7);
-  });
-
-  it("returns 0 for empty or whitespace-only strings", () => {
-    expect(countWords("")).toBe(0);
-    expect(countWords("   \n\t  ")).toBe(0);
-  });
-});
-
-describe("Cloudflare email protection and /cdn-cgi/ link skipping", () => {
-  it("skips Cloudflare obfuscated email links and /cdn-cgi/ edge paths", () => {
-    const html = `<!DOCTYPE html>
-      <html><body>
-        <p>Contact us at <a href="/cdn-cgi/l/email-protection#1234" class="__cf_email__" data-cfemail="1234">[email&#160;protected]</a></p>
-        <p>Or via <a href="/cdn-cgi/l/email-protection">Help</a></p>
-        <p>Or see <a href="/cdn-cgi/rum">RUM metrics</a></p>
-        <p>Visit our <a href="/contact">Contact Page</a></p>
-      </body></html>`;
-
-    const analysis = analyzeHtml(html, "https://example.com/page", 200, 50);
-    expect(analysis.links).toHaveLength(1);
-    expect(analysis.links[0].targetUrl).toBe("https://example.com/contact");
-    expect(analysis.links[0].anchor).toBe("Contact Page");
-  });
 });

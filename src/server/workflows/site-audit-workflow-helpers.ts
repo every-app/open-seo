@@ -6,7 +6,7 @@ import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
-import type { CrawlerAccess } from "@/shared/crawler-access";
+import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
 import { auditRequestHeaders } from "@/server/lib/audit/web-bot-auth";
 
 /** Parse `Link: <url>; rel="canonical"` response headers. */
@@ -26,9 +26,45 @@ function parseLinkHeaderCanonical(
 }
 
 /**
- * Fetch one URL, pausing the whole chunk and retrying while the site 429s
- * (see crawl-throttle.ts). `responseTimeMs` is measured from the last attempt
- * so backoff waiting never looks like a slow server.
+ * One warning per 429 so production shows what the edge answers: the
+ * Retry-After, how fast it came back (Shopify refuses at its edge within
+ * milliseconds), whether the request carried a crawler signature, and the
+ * body's first words (Shopify writes `local_rate_limited`).
+ */
+async function logRateLimited(input: {
+  url: string;
+  response: Response;
+  responseTimeMs: number;
+  attempt: number;
+  signed: boolean;
+}) {
+  const { url, response, responseTimeMs, attempt, signed } = input;
+  let body = "";
+  try {
+    body = (await readTextUpTo(response.clone(), 80)).trim();
+  } catch {
+    // The snippet is only context for the log line.
+  }
+  console.warn("site_audit:rate_limited", {
+    url,
+    attempt,
+    signed,
+    responseTimeMs,
+    retryAfter: response.headers.get("retry-after"),
+    // Shopify's edge answers warm pages from Cloudflare's cache without
+    // consulting its limiter; a HIT here would mean the 429 was cached.
+    cfCacheStatus: response.headers.get("cf-cache-status"),
+    // The two ids Shopify support asks for before it looks into a refusal.
+    xRequestId: response.headers.get("x-request-id"),
+    cfRay: response.headers.get("cf-ray"),
+    body,
+  });
+}
+
+/**
+ * Fetch one URL, pausing the whole chunk and retrying once while the site
+ * 429s (see crawl-throttle.ts). `responseTimeMs` is measured from the last
+ * attempt so backoff waiting never looks like a slow server.
  */
 async function fetchPage(
   url: string,
@@ -62,13 +98,20 @@ async function fetchPage(
       rateLimited: attempt > 1,
     };
     if (response.status !== 429) {
-      await throttle.recovered();
+      await throttle.recovered(url);
       return result;
     }
+    await logRateLimited({
+      url,
+      response,
+      responseTimeMs: result.responseTimeMs,
+      attempt,
+      signed: Object.keys(crawlerHeadersFor(url, access)).length > 0,
+    });
     if (skipBackoff) return result;
 
     const retry = await throttle.backoff(
-      attempt,
+      url,
       response.headers.get("retry-after"),
     );
     // The shared cooldown applies even when this URL has no retries left.
@@ -162,10 +205,11 @@ export async function crawlPage(
       } catch (error) {
         // A challenge that neither renderer passed stays blocked.
         if (!challenged && !throttled) throw error;
-        // A throttled page neither renderer read stays rate limited, and
-        // pauses or stops the crawl like any other 429.
-        if (throttled)
-          await throttle.backoff(1, response.headers.get("retry-after"));
+        // A throttled page neither renderer read is given up on as rate
+        // limited, which pauses or stops the crawl like any other refusal.
+        if (throttled) {
+          await throttle.refuse(url, response.headers.get("retry-after"));
+        }
       }
     }
 

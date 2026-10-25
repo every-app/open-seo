@@ -58,18 +58,21 @@ calls are never retried automatically.
 
 ## Throttled Shopify storefronts
 
-Shopify's edge rate limits requests from Cloudflare Workers with a 429, often
-even when they carry a crawler signature, and backing off rarely helps. When the
-audited site is a Shopify store (its `powered-by` header, a saved crawler
-signature, or a host in Shopify's address range) and the audit renders
-JavaScript, a page whose direct fetch returns 429 goes straight to the
-renderers instead of the shared backoff. Browser Run is usually throttled too;
-Context fetches from outside Cloudflare and reads the page. A page neither
-renderer reads stays `rate_limited` and enters the shared backoff, so a store
-that stays unreadable pauses and then stops the crawl as before.
+Shopify's edge refuses some requests from crawlers with a 429 served within
+milliseconds, signed or not, and the refusals are per URL more often than per
+site (see `shopify-crawling.md`). When the audited site is a Shopify store (its
+`powered-by` header, a saved crawler signature, or a host in Shopify's address
+range) and the audit renders JavaScript, a page whose direct fetch returns 429
+goes straight to the renderers instead of the shared backoff. Browser Run is
+usually throttled too; Context fetches from outside Cloudflare and reads the
+page. A page neither renderer reads is given up on as `rate_limited`, which
+pauses the crawl like any other refusal; a store that refuses several pages in
+a row stops the crawl.
 
-An unrendered audit of a Shopify store backs off as before. Its report asks for
-a crawler signature first, since Shopify sometimes lets a signed crawl through.
+An unrendered audit of a Shopify store backs off as described in
+`crawl-throttle.ts`: a refused page gets one retry after the Retry-After and is
+then recorded as rate limited while the crawl continues. Its report asks for a
+crawler signature first, since Shopify sometimes lets a signed crawl through.
 Once a signed, unrendered crawl is still rate limited, the report asks for a
 new audit with Render JavaScript turned on instead.
 

@@ -1,7 +1,7 @@
 import { waitUntil } from "cloudflare:workers";
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import type { z } from "zod";
-import { AppError, asAppError } from "@/server/lib/errors";
+import { AppError, asAppError, describeError } from "@/server/lib/errors";
 import { recordExternalMcpToolCall } from "@/server/features/activation/mcpActivation";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
@@ -186,7 +186,10 @@ export function instrumentMcpToolHandler<TArgs>(
         durationMs: Math.round(performance.now() - startedAt),
       });
       if (shouldCaptureAppErrorCode(appError?.code)) {
-        console.error(`mcp.tool error (${toolName}):`, error);
+        console.error(
+          `mcp.tool error (${toolName}): ${describeError(error)}`,
+          error,
+        );
         waitUntil(
           captureServerError(
             error,

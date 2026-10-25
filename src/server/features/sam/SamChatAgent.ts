@@ -332,19 +332,20 @@ export class SamChatAgent extends Think {
       const { organizationId } = ctx.project;
       const hosted = await isHostedServerAuthMode();
       if (hosted) {
-        const { depleted, monthlyRemaining } = await checkUsageCreditsDepleted({
+        const gate = await checkUsageCreditsDepleted({
           userId: ctx.row.userId,
           userEmail: ctx.userEmail,
           organizationId,
           projectId: ctx.project.id,
         });
-        if (depleted) {
+        if (gate.depleted) {
           turn.refusal = "credits";
+          // A spent budget holds credits back; buying more would not help.
           return this.refusalTurn(
-            "You're out of credits. Upgrade your plan or buy more credits on the Billing page to keep using SAM.",
+            `${gate.budgetReached ? "You've hit your monthly auto-reload budget. Raise it" : "You're out of credits. Upgrade your plan or buy more credits"} on the Billing page to keep using SAM.`,
           );
         }
-        this.turnMonthlyRemaining = monthlyRemaining;
+        this.turnMonthlyRemaining = gate.monthlyRemaining;
       }
 
       const baseUrl =

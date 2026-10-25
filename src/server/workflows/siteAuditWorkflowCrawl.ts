@@ -2,7 +2,7 @@ import { env, type WorkflowStep } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import type { RobotsResult } from "@/server/lib/audit/discovery";
 import type { AuditConfig, CrawledPageResult } from "@/server/lib/audit/types";
-import { isSameOrigin } from "@/server/lib/audit/url-utils";
+import { isAuditablePageUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
 import { isCrawlableUrl } from "@/server/lib/audit/url-policy";
 import { deterministicAuditRowId } from "@/server/lib/audit/ids";
 import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
@@ -79,9 +79,13 @@ function shouldQueueCrawlLink(
   link: string,
   origin: string,
   robots: RobotsResult,
+  sitePlatform: AuditConfig["sitePlatform"],
 ): boolean {
   return (
-    isSameOrigin(link, origin) && isCrawlableUrl(link) && robots.isAllowed(link)
+    isSameOrigin(link, origin) &&
+    isCrawlableUrl(link) &&
+    isAuditablePageUrl(link, sitePlatform) &&
+    robots.isAllowed(link)
   );
 }
 
@@ -285,6 +289,7 @@ async function runCrawlChunk(
           workflowInstanceId,
           origin,
           robots,
+          sitePlatform: input.sitePlatform,
           scratchpad,
           pages,
           depthByUrl,
@@ -409,12 +414,21 @@ async function persistCrawledPages(input: {
   workflowInstanceId: string;
   origin: string;
   robots: RobotsResult;
+  sitePlatform: AuditConfig["sitePlatform"];
   scratchpad: ReturnType<typeof getAuditScratchpad>;
   pages: CrawledPageResult[];
   depthByUrl: Map<string, number | null>;
   maxPages: number;
 }): Promise<FrontierStats> {
-  const { auditId, origin, robots, scratchpad, pages, depthByUrl } = input;
+  const {
+    auditId,
+    origin,
+    robots,
+    sitePlatform,
+    scratchpad,
+    pages,
+    depthByUrl,
+  } = input;
 
   // Deterministic ids keep every write idempotent across step retries.
   for (const page of pages) {
@@ -438,7 +452,7 @@ async function persistCrawledPages(input: {
       if (
         discovered.size < MAX_DISCOVERED_PER_BATCH &&
         !discovered.has(link.targetUrl) &&
-        shouldQueueCrawlLink(link.targetUrl, origin, robots)
+        shouldQueueCrawlLink(link.targetUrl, origin, robots, sitePlatform)
       ) {
         discovered.set(link.targetUrl, childDepth);
       }
@@ -451,7 +465,7 @@ async function persistCrawledPages(input: {
     if (
       page.redirectUrl &&
       !discovered.has(page.redirectUrl) &&
-      shouldQueueCrawlLink(page.redirectUrl, origin, robots)
+      shouldQueueCrawlLink(page.redirectUrl, origin, robots, sitePlatform)
     ) {
       discovered.set(page.redirectUrl, pageDepth);
     }

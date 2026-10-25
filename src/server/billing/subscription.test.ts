@@ -127,6 +127,7 @@ describe("subscription billing", () => {
     await expect(result).resolves.toEqual({
       depleted: false,
       monthlyRemaining: 250,
+      budgetReached: false,
     });
     expect(monthlyChecks).toBe(2);
   });

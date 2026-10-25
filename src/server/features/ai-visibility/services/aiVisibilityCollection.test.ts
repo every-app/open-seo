@@ -26,6 +26,9 @@ const { testDb, dataforseo } = await vi.hoisted(async () => {
   };
 });
 vi.mock("cloudflare:workers", () => ({ env: { DATABASE_PROVIDER: "d1" } }));
+vi.mock("cloudflare:workflows", () => ({
+  NonRetryableError: class extends Error {},
+}));
 vi.mock("@/db", () => ({ db: testDb.db }));
 vi.mock("@/db/runBatch", () => ({ runBatch: testDb.runBatch }));
 vi.mock("@/server/lib/runtime-env", () => ({
@@ -424,5 +427,16 @@ describe("AI answer collection", () => {
       status: "failed",
       error: "No answer arrived within the collection window.",
     });
+  });
+
+  it("tells the tracker the check could not collect answers when none arrived", async () => {
+    await finalizeAiRun(runId);
+
+    expect(await repo.getRunInternal(runId)).toMatchObject({
+      status: "failed",
+    });
+    expect((await repo.getTracker("project"))?.lastSkipReason).toBe(
+      "The last check could not collect answers.",
+    );
   });
 });

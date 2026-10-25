@@ -18,6 +18,10 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "An active hosted subscription is required before you can use OpenSEO.",
   INSUFFICIENT_CREDITS:
     "You don't have enough credits for this. Upgrade your plan or buy more credits to keep going.",
+  PAYMENT_METHOD_REQUIRED:
+    "We couldn't charge a card on file. Add or update your card in the billing portal, then try again.",
+  PAYMENT_ACTION_REQUIRED:
+    "Your bank needs more time or a confirmation for this charge. Check your balance in a minute; if nothing arrived, buy your first top-up with the Buy credits button, then turn on auto-reload.",
   AUDIT_RENDERING_UNAVAILABLE:
     "JavaScript rendering is not configured on this deployment. Ask your administrator to enable a renderer.",
   FORBIDDEN: "You do not have access to this resource.",
