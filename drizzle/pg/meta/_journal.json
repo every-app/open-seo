@@ -288,6 +288,13 @@
       "when": 1792713961615,
       "tag": "0040_bind_api_keys_to_organization",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792796257558,
+      "tag": "0041_umami_connections",
+      "breakpoints": true
     }
   ]
 }

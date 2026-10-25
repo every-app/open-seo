@@ -59,7 +59,8 @@ const errorDetailSchema = z
 // discriminated union normalizes to undefined, which drops the schema from
 // tools/list and crashes output validation. So the ok/error branches share
 // one object, with the per-status required fields enforced by a refinement.
-function analyticsEnvelopeSchema(okShape: Record<string, z.ZodType>) {
+// The Umami tools return the same envelope.
+export function analyticsEnvelopeSchema(okShape: Record<string, z.ZodType>) {
   const requiredOkFields = Object.entries(okShape)
     .filter(([, field]) => !field.safeParse(undefined).success)
     .map(([key]) => key);
