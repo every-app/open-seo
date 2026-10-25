@@ -1,4 +1,5 @@
 import { isEveryAppAuthMode } from "@/lib/auth-mode";
+import { getGatewayGoogleStatus } from "@/server/features/google/gatewayGoogle";
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 
 /**
@@ -6,12 +7,10 @@ import { getOptionalEnvValue } from "@/server/lib/runtime-env";
  *
  * - `own_client`: OpenSEO's own (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET),
  *   on app.openseo.so and every self-host mode.
- * - `gateway`: the Every App gateway (AUTH_MODE=everyapp). Google is an
- *   integration the gateway holds for every app, like DataForSEO; OpenSEO
- *   keeps no Google client, secret or token. Designed in the Every App
- *   repository (docs/design/2026-10-google-integration.md, PRs 8a to 9), not
- *   built: until it is, this mode reports Google as not available, its own
- *   connect flow and callbacks are off, and nothing calls Google.
+ * - `gateway`: the Every App gateway (AUTH_MODE=everyapp). The gateway
+ *   holds the Google client and each member's connection (gatewayGoogle.ts);
+ *   OpenSEO keeps no Google client, secret or token, its own connect flow
+ *   and callbacks are off, and every Google call goes through the gateway.
  */
 type GoogleAccessMode = "own_client" | "gateway";
 
@@ -22,13 +21,12 @@ export async function getGoogleAccessMode(): Promise<GoogleAccessMode> {
 }
 
 /**
- * Whether the gateway offers Google to this app. Never yet: this becomes
- * `integrationStatus({ env, provider: "google" })` from `@every-app/sdk`, and
- * calls go through `integrationFetch({ env, provider: "google", … })`, once
- * the gateway's Google integration exists.
+ * Whether the gateway offers Google to this app: OpenSEO lists
+ * `google-workspace` and the gateway holds a Google client. Whether this
+ * member has connected is `getGatewayGoogleStatus().connected`.
  */
 export async function isGatewayGoogleAvailable(): Promise<boolean> {
-  return false;
+  return (await getGatewayGoogleStatus()).available;
 }
 
 /** OpenSEO's own OAuth callback routes: absent where the gateway holds Google. */

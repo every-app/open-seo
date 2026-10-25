@@ -1,6 +1,8 @@
 minimumReleaseAge: 11520
 minimumReleaseAgeExclude:
   - "@every-app/*"
+  # The Every App CLI ships beside the SDK on the `next` dist-tag.
+  - "everyapp"
   # TEMPORARY (remove after 2026-10-17): the Every App build
   # (vite.everyapp.config.ts) uses the Cloudflare CLI and its Vite plugin's
   # 2.0 beta, published 2026-10-09.

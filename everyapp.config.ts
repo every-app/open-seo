@@ -86,6 +86,19 @@ export default {
       optional: true,
       why: "Renders JavaScript-heavy pages when a site audit asks for it.",
     },
+    // The gateway holds the Google client and each member's connection
+    // (Every App → Settings → Connected accounts); Search Console and GA4
+    // reads go through it with the member's token (src/server/features/
+    // google/gatewayGoogle.ts). Without it the Google cards say so.
+    "google-workspace": {
+      // "read" is what OpenSEO needs (the three sets below are read-only and
+      // the gateway holds every call to them); the published CLI (0.3.0-rc.3)
+      // still lists the Google client as write-only, so "write" until rc.4.
+      access: "write",
+      optional: true,
+      scopes: ["identity", "search-console.read", "analytics.read"],
+      why: "Search Console and GA4 reads for your sites, with the Google account you connect in Every App.",
+    },
   },
   // OpenSEO's own, on its Workers (`pnpm everyapp secret set <NAME> --app
   // openseo`). Without CRAWLER_ACCESS_SECRET the crawler-access form says so

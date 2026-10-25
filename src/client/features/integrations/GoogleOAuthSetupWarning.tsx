@@ -15,17 +15,17 @@ export function GoogleOAuthSetupWarning({
   docsUrl: string;
 }) {
   if (isEveryAppClientAuthMode()) {
-    // Google connects through the gateway's integrations, like DataForSEO,
-    // once the gateway offers it; OpenSEO holds no Google client here
+    // Google connects through the gateway, which holds the Google client
+    // (Every App → Manage workspace → Providers); OpenSEO holds none here
     // (server/features/google/googleAccess.ts).
     return (
       <Alert variant="info">
         <Info className="size-4" />
-        <AlertTitle>Coming to Every App</AlertTitle>
+        <AlertTitle>Google isn't set up in Every App yet</AlertTitle>
         <AlertDescription>
           <p>
-            {integrationName} will connect through Every App once it offers
-            Google. Nothing to set up on your side yet.
+            {integrationName} connects through Every App once an admin adds
+            Google under Manage workspace → Providers. Nothing to paste here.
           </p>
         </AlertDescription>
       </Alert>

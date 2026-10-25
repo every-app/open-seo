@@ -3,6 +3,11 @@ import { db } from "@/db";
 import { account } from "@/db/schema";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 import { AppError } from "@/server/lib/errors";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
+import {
+  GATEWAY_GOOGLE_ACCOUNT_ID,
+  getGatewayGoogleStatus,
+} from "@/server/features/google/gatewayGoogle";
 import {
   createGscClient,
   type GscSite,
@@ -56,6 +61,9 @@ async function getConnection(projectId: string): Promise<GscConnection | null> {
 /** Whether this user has linked a google-search-console grant (regardless of
  *  whether they've picked a property yet). Drives the connect-vs-pick UI. */
 async function userHasGrant(userId: string): Promise<boolean> {
+  if ((await getGoogleAccessMode()) === "gateway") {
+    return (await getGatewayGoogleStatus()).connected;
+  }
   const rows = await db
     .select({ id: account.id })
     .from(account)
@@ -69,7 +77,22 @@ async function userHasGrant(userId: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+/**
+ * The Google accounts a member may pick a property from. Behind the gateway
+ * there is one, their gateway connection (gatewayGoogle.ts), and only while
+ * it is connected.
+ */
 async function listGrantsForUser(userId: string) {
+  if ((await getGoogleAccessMode()) === "gateway") {
+    return (await getGatewayGoogleStatus()).connected
+      ? [
+          {
+            id: GATEWAY_GOOGLE_ACCOUNT_ID,
+            accountId: GATEWAY_GOOGLE_ACCOUNT_ID,
+          },
+        ]
+      : [];
+  }
   return db
     .select({ id: account.id, accountId: account.accountId })
     .from(account)
