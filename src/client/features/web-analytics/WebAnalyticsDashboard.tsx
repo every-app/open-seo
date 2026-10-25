@@ -12,9 +12,10 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/client/components/ui/chart";
-import { TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import { formatCount } from "@/client/features/search-performance/SearchPerformanceColumns";
 import {
+  isWebAnalyticsPeriod,
   WEB_ANALYTICS_PERIODS,
   type WebAnalyticsPeriod,
 } from "@/types/schemas/web-analytics";
@@ -123,17 +124,20 @@ export function WebAnalyticsDashboard({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <TabsList>
-                  {WEB_ANALYTICS_PERIODS.map((value) => (
-                    <TabsTrigger
-                      key={value}
-                      value={value}
-                      onClick={() => onPeriodChange(value)}
-                    >
-                      {PERIOD_LABELS[value]}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+                <Tabs
+                  value={period}
+                  onValueChange={(value) => {
+                    if (isWebAnalyticsPeriod(value)) onPeriodChange(value);
+                  }}
+                >
+                  <TabsList>
+                    {WEB_ANALYTICS_PERIODS.map((value) => (
+                      <TabsTrigger key={value} value={value}>
+                        {PERIOD_LABELS[value]}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
                 <Button
                   variant="outline"
                   size="sm"
