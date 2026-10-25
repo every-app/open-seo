@@ -42,6 +42,19 @@ export const userOnboardingAnswers = sqliteTable(
   ],
 );
 
+// The paid-social ad (utm_medium=paid_social) a hosted signup came from, read
+// from the UTM tags the marketing site carries onto the sign-up link.
+// Campaign-level tags only: no click ids or other per-person ad identifiers.
+// No row = not from a paid-social ad.
+export const userSignupCampaigns = sqliteTable("user_signup_campaigns", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  utmSource: text("utm_source"),
+  utmCampaign: text("utm_campaign"),
+  utmContent: text("utm_content"),
+});
+
 // Projects for keyword research
 export const projects = sqliteTable(
   "projects",

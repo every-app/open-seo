@@ -1,6 +1,10 @@
 import { env } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from "better-auth/api";
 import { captcha } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
@@ -14,6 +18,7 @@ import { z } from "zod";
 import { CURRENT_TERMS_VERSION } from "@/shared/terms";
 import { isHostedAuthMode } from "@/lib/auth-mode";
 import { createApiKeyPlugin } from "@/lib/auth-api-key";
+import { getActiveOrganizationId } from "@/lib/auth-session";
 import { createBaseAuthConfig } from "@/lib/auth-config";
 import {
   getHostedTurnstileSecretKey,
@@ -24,7 +29,10 @@ import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
 import { captureMetaSignup } from "@/server/referrals/meta";
-import { captureSignUpCompleted } from "@/server/auth/sign-up-analytics";
+import {
+  captureSignUpCompleted,
+  saveSignUpCampaign,
+} from "@/server/auth/sign-up-analytics";
 import {
   productUpdatesOnByDefault,
   requestPrivacyChoices,
@@ -218,6 +226,37 @@ function createAuth() {
       tanstackStartCookies(),
     ],
     hooks: {
+      // Binds a new MCP API key to the organization the session is working
+      // in, server-side: the /mcp handler reads metadata.organizationId and
+      // bills/authorizes that org for the key's lifetime. The session's
+      // active org is only a hint; the member row is the authorization fact.
+      // Throwing here means an unbound key can never be minted through the
+      // HTTP endpoint. Better Auth merges the returned body over the
+      // request's, so an organizationId the client sends loses to this one.
+      // The owner can still rewrite metadata through /api-key/update, which
+      // gains nothing: a key pointed at an org they are not in fails the
+      // membership check on its next /mcp call, and one pointed at an org
+      // they are in is no different from a key created there.
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/api-key/create") return;
+        // Minting a credential must see the stored session, not the cookie
+        // cache: a cookie from a session revoked minutes ago must not mint a
+        // key that outlives the revocation. The plugin reuses this lookup.
+        const session = await getSessionFromCtx(ctx, {
+          disableCookieCache: true,
+        });
+        if (!session) throw new APIError("UNAUTHORIZED");
+        const organizationId = getActiveOrganizationId(session);
+        const membership = organizationId
+          ? await AuthRepository.getMembership(session.user.id, organizationId)
+          : null;
+        if (!organizationId || !membership) {
+          throw new APIError("FORBIDDEN", {
+            message: "Select an organization before creating an API key.",
+          });
+        }
+        return { context: { body: { metadata: { organizationId } } } };
+      }),
       // Marked when the user creates an MCP API key, the API-key counterpart
       // of OAuth's authorize step. Not on each /mcp request: isolates share no
       // memory, so every one would re-send it and hit Loops' team-wide rate
@@ -281,6 +320,9 @@ function createAuth() {
               }
               // Sent only if the separate advertising (Meta) choice allows it.
               captureMetaSignup(ctx?.request);
+              await saveSignUpCampaign(user.id, ctx).catch((error) =>
+                console.error("sign-up campaign save failed", error),
+              );
               await captureSignUpCompleted(user, ctx).catch((error) =>
                 console.error("sign-up analytics failed", error),
               );

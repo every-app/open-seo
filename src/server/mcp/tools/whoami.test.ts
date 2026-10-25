@@ -28,7 +28,7 @@ vi.mock("@/server/lib/runtime-env", () => ({
 }));
 vi.mock("@/server/lib/posthog", () => ({ captureServerEvent: vi.fn() }));
 
-const context = makeToolContext({ orgScope: "user" });
+const context = makeToolContext();
 
 beforeEach(() => {
   mocks.isHosted.mockResolvedValue(true);

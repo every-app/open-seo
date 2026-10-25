@@ -5,7 +5,11 @@ import robotsParser from "robots-parser";
 import { XMLParser } from "fast-xml-parser";
 import { isSameOrigin, normalizeUrl } from "./url-utils";
 import { isCrawlableUrl } from "./url-policy";
-import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
+import type { CrawlerAccess } from "@/shared/crawler-access";
+import {
+  auditRequestHeaders,
+  CRAWL_USER_AGENT,
+} from "@/server/lib/audit/web-bot-auth";
 
 const SITEMAP_FETCH_TIMEOUT_MS = 15_000;
 // robots.txt is checkpointed as durable Workflow step state (~1MiB cap, shared
@@ -74,10 +78,7 @@ async function fetchFollowingRedirects(
   let current = url;
   for (let hop = 0; hop <= MAX_DISCOVERY_REDIRECT_HOPS; hop++) {
     const response = await fetch(current, {
-      headers: {
-        "User-Agent": "OpenSEO-Audit/1.0",
-        ...crawlerHeadersFor(current, access),
-      },
+      headers: await auditRequestHeaders(current, access),
       redirect: "manual",
       signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
     });
@@ -113,7 +114,8 @@ export function parseRobotsTxt(
 
   const robots = robotsParser(`${origin}/robots.txt`, text);
   return {
-    isAllowed: (url: string) => robots.isAllowed(url) ?? true,
+    // Our UA so an `OpenSEO-Audit` group wins over `*`.
+    isAllowed: (url: string) => robots.isAllowed(url, CRAWL_USER_AGENT) ?? true,
     sitemapUrls: robots.getSitemaps(),
   };
 }

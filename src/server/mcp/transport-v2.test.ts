@@ -17,10 +17,6 @@ vi.mock("@/server/auth/repositories/AuthRepository", () => ({
   },
 }));
 
-vi.mock("@/server/auth/default-hosted-organization", () => ({
-  resolveExistingActiveHostedOrganization: vi.fn(),
-}));
-
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({
   resolveCloudflareAccessContext: vi.fn(),
 }));

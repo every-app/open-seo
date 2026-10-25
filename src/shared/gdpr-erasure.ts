@@ -17,6 +17,7 @@ export const gdprStorageErasurePayloadSchema = z
     activeAuditWorkflowIds: boundedIds,
     activeRankWorkflowIds: boundedIds,
     activeAiVisibilityWorkflowIds: boundedIds.default([]),
+    activeLocalRankWorkflowIds: boundedIds.default([]),
     aiVisibilityProjectIds: boundedIds.default([]),
     r2Keys: boundedIds,
     googleAccounts: z

@@ -11,12 +11,12 @@ import {
 const OPEN_PRIVACY_CHOICES_EVENT = "openseo:open-privacy-choices";
 const PLAUSIBLE_IGNORE = "plausible_ignore";
 
-// Plausible counts visits without cookies for everyone (the dialog offers its
-// opt-out). The consent-based tracking here is the Meta Pixel and Dub's
-// referral cookie on partner links. Each loads where the visitor's choice or
-// region allows it; where opt-in is required, visitors from a partner link or
-// one of our Meta ads are asked. The footer's dialog also holds the app's
-// analytics choice (one shared cookie).
+// Plausible and OpenAnalytics count visits without cookies for everyone (the
+// dialog offers one opt-out for both). The consent-based tracking here is the
+// Meta Pixel and Dub's referral cookie on partner links. Each loads where the
+// visitor's choice or region allows it; where opt-in is required, visitors
+// from a partner link or one of our Meta ads are asked. The footer's dialog
+// also holds the app's analytics choice (one shared cookie).
 export function PrivacyChoices() {
   const [saved, setSaved] =
     React.useState<ReturnType<typeof readPrivacyCookie>>(null);
@@ -86,7 +86,9 @@ export function PrivacyChoices() {
       (!next.referrals &&
         document.querySelector("script[data-openseo-dub]") !== null) ||
       (!next.advertising &&
-        document.querySelector("script[data-openseo-meta]") !== null);
+        document.querySelector("script[data-openseo-meta]") !== null) ||
+      (localStorage.getItem(PLAUSIBLE_IGNORE) === "true" &&
+        document.querySelector("script[data-openseo-openanalytics]") !== null);
     savePrivacyChoices(next);
     setSaved(next);
     setView("none");
@@ -145,7 +147,8 @@ function ChoicesForm({
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        // Plausible's own opt-out: its script skips tracking while this is set.
+        // Plausible's own opt-out: its script skips tracking while this is set,
+        // and the root loader skips OpenAnalytics.
         if (countVisits) localStorage.removeItem(PLAUSIBLE_IGNORE);
         else localStorage.setItem(PLAUSIBLE_IGNORE, "true");
         onSave(draft);
@@ -155,7 +158,7 @@ function ChoicesForm({
       <div className="mt-3 space-y-3">
         <ChoiceRow
           label="Visit counts"
-          description="Anonymous, without cookies (Plausible)."
+          description="No cookies or IDs saved in your browser (Plausible and OpenAnalytics)."
           checked={countVisits}
           onChange={setCountVisits}
         />

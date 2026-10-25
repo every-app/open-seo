@@ -370,9 +370,6 @@ export class SamChatAgent extends Think {
         userEmail: ctx.userEmail,
         organizationId,
         role: membership?.role ?? "owner",
-        // SAM sessions belong to one project's workspace; org context is
-        // fixed for the session, like an OAuth token's.
-        orgScope: "pinned",
         baseUrl,
         clientId: null,
         scopes: [MCP_SCOPE],

@@ -1,10 +1,9 @@
 import { requireOrgPermission } from "@/server/auth/org-gate";
-import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { completeOnboardingFromAgent } from "@/server/features/activation/mcpActivation";
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { AppError } from "@/server/lib/errors";
 import { mcpResponse } from "@/server/mcp/formatters";
-import { type ToolContext } from "@/server/mcp/context";
+import { isHostedMcpClient, type ToolContext } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { languageCodeSchema, locationCodeSchema } from "@/server/mcp/schemas";
@@ -36,68 +35,9 @@ const inputSchema = {
     .describe(
       'Optional language code (e.g. "en", "fr"). Requires locationCode; derived from the location when omitted.',
     ),
-  organizationId: z
-    .string()
-    .trim()
-    .min(1)
-    .optional()
-    .describe(
-      "Organization id to create the project in. Required when the user belongs to more than one organization — omitting it returns the list; confirm the choice with the user before retrying.",
-    ),
 } as const;
 
 type Args = z.infer<z.ZodObject<typeof inputSchema>>;
-
-// Which organization gets the project. Pinned credentials (self-host, SAM)
-// are bound to one org. User-scoped credentials (hosted OAuth tokens and API
-// keys) span organizations, so an ambiguous target is an error listing the
-// options — the agent must confirm the choice with the user rather than
-// guessing.
-async function resolveTargetOrganization(
-  auth: Omit<ToolContext["auth"], "baseUrl">,
-  organizationId: string | undefined,
-) {
-  if (auth.orgScope !== "user") {
-    if (organizationId && organizationId !== auth.organizationId) {
-      throw new AppError(
-        "FORBIDDEN",
-        "This connection is bound to a single organization — omit organizationId.",
-      );
-    }
-    return { organizationId: auth.organizationId, role: auth.role };
-  }
-
-  const memberships = await AuthRepository.listMembershipsForUser(auth.userId);
-  if (organizationId) {
-    const membership = memberships.find(
-      (candidate) => candidate.organizationId === organizationId,
-    );
-    if (!membership) {
-      throw new AppError(
-        "FORBIDDEN",
-        "The user is not a member of that organization.",
-      );
-    }
-    return { organizationId, role: membership.role };
-  }
-  if (memberships.length === 1) {
-    const only = memberships[0];
-    return { organizationId: only.organizationId, role: only.role };
-  }
-  if (memberships.length === 0) {
-    throw new AppError("FORBIDDEN");
-  }
-  const organizationList = memberships
-    .map(
-      (membership) =>
-        `- ${membership.organizationId}  ${membership.organizationName}`,
-    )
-    .join("\n");
-  throw new AppError(
-    "VALIDATION_ERROR",
-    `The user belongs to ${memberships.length} organizations. Ask the user which organization this project should be created in, then retry with organizationId set:\n${organizationList}`,
-  );
-}
 
 export const createProjectTool = {
   name: "create_project",
@@ -127,19 +67,13 @@ export const createProjectTool = {
   },
   handler: async (args: Args, context: ToolContext) => {
     const { baseUrl, ...auth } = context.auth;
-    const target = await resolveTargetOrganization(auth, args.organizationId);
-    // Same as withMcpProjectAuth: instrumentation reads context.auth after
-    // the handler, so telemetry credits the target org.
-    context.auth = { ...context.auth, ...target };
     // Same gate as the createProject server function — MCP and the dashboard
-    // must agree on who can create projects. The role is the caller's role
-    // in the TARGET organization, not the request-level one.
-    requireOrgPermission(target, { project: ["create"] });
+    // must agree on who can create projects.
+    requireOrgPermission(auth, { project: ["create"] });
     // Reuse the app's create schema so the market pair rule (a languageCode
     // requires a locationCode) and domain normalization match the dashboard.
     // A rejection is bad caller input, not a fault: VALIDATION_ERROR keeps it
-    // out of error reporting while still naming the bad field. organizationId
-    // is stripped here — it was consumed above.
+    // out of error reporting while still naming the bad field.
     const parsedInput = createProjectSchema.safeParse(args);
     if (!parsedInput.success) {
       throw new AppError(
@@ -149,17 +83,14 @@ export const createProjectTool = {
     }
     const input = parsedInput.data;
     const project = await ProjectService.createProject(
-      target.organizationId,
+      auth.organizationId,
       input,
     );
     // Hosted users only: self-host and SAM never run the onboarding wizard.
     // Best-effort: the project already exists, and an error here would make
     // the agent retry and create a duplicate.
-    if (auth.orgScope === "user") {
-      await completeOnboardingFromAgent(
-        { userId: auth.userId, organizationId: target.organizationId },
-        "agent_project",
-      );
+    if (isHostedMcpClient(auth)) {
+      await completeOnboardingFromAgent(auth, "agent_project");
     }
     return mcpResponse({
       text: `Created project ${project.id}  ${project.name}${

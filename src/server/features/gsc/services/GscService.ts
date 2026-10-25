@@ -243,9 +243,12 @@ type GscInspectUrlsResult = {
 };
 
 /** Inspect 1–N URLs against a project's connected property. Resolves the
- *  connection once, then inspects each URL; per-URL failures are captured
- *  inline so one bad URL doesn't fail the batch. Token/grant failures
- *  propagate so the caller can prompt a reconnect. */
+ *  connection once, then inspects every URL at once: Google answers each
+ *  inspection in ~6 s, so a serial batch of ten held the request open for a
+ *  minute and made it the usual casualty whenever its isolate ran out of
+ *  memory. Per-URL failures are captured inline so one bad URL doesn't fail
+ *  the batch. Token/grant failures propagate so the caller can prompt a
+ *  reconnect. */
 async function inspectUrls(input: {
   projectId: string;
   urls: string[];
@@ -261,24 +264,25 @@ async function inspectUrls(input: {
     userId: connection.connectedByUserId,
     gscAccountId: connection.gscAccountId ?? undefined,
   });
-  const results: GscUrlInspection[] = [];
-  for (const url of input.urls) {
-    try {
-      const result = await client.inspectUrl(
-        connection.siteUrl,
-        url,
-        input.languageCode,
-      );
-      results.push({ url, result });
-    } catch (error) {
-      if (error instanceof GscTokenError) throw error;
-      results.push({
-        url,
-        result: null,
-        error: error instanceof Error ? error.message : "Inspection failed",
-      });
-    }
-  }
+  const results = await Promise.all(
+    input.urls.map(async (url): Promise<GscUrlInspection> => {
+      try {
+        const result = await client.inspectUrl(
+          connection.siteUrl,
+          url,
+          input.languageCode,
+        );
+        return { url, result };
+      } catch (error) {
+        if (error instanceof GscTokenError) throw error;
+        return {
+          url,
+          result: null,
+          error: error instanceof Error ? error.message : "Inspection failed",
+        };
+      }
+    }),
+  );
   return {
     siteUrl: connection.siteUrl,
     connectedBy: connection.connectedAccountEmail,

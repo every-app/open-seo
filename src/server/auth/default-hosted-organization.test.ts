@@ -50,6 +50,29 @@ describe("resolveSignInHostedOrganization", () => {
     ).resolves.toMatchObject({ organizationId: "org-new" });
   });
 
+  // Billing invariant: each default org is a new billing customer with a
+  // free-plan grant, and the unique slug is what stops a second one. A user
+  // who left their org and renamed themselves must still collide.
+  it("keys the default organization slug on the user, not their name", async () => {
+    mocks.hasPendingInvitationForEmail.mockResolvedValue(false);
+    const createOrganization = vi.fn(async (_input: { slug: string }) => ({
+      id: "org-new",
+    }));
+
+    await resolveSignInHostedOrganization("user-1", createOrganization);
+    mocks.getHostedUser.mockResolvedValue({
+      id: "user-1",
+      email: "invitee@example.com",
+      name: "Renamed",
+    });
+    await resolveSignInHostedOrganization("user-1", createOrganization);
+
+    const [first, second] = createOrganization.mock.calls.map(
+      ([input]) => input.slug,
+    );
+    expect(second).toBe(first);
+  });
+
   // An existing membership always wins — the pending-invite check only
   // applies to membership-less users, so inviting an existing user never
   // hides their current organization.

@@ -39,12 +39,16 @@ declare namespace Cloudflare {
     // Encrypts saved Shopify crawler signatures. Kept separate from
     // BETTER_AUTH_SECRET so the audit worker never holds the auth secret.
     CRAWLER_ACCESS_SECRET?: string;
+    // Private Ed25519 JWK that signs site audit requests (Web Bot Auth). Hosted
+    // only; unset sends unsigned requests.
+    WEB_BOT_AUTH_JWK?: string;
     DATABASE_PROVIDER?: "d1" | "postgres";
     HYPERDRIVE?: {
       connectionString: string;
     };
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
+    GOOGLE_MAPS_API_KEY?: string;
     LOOPS_API_KEY?: string;
     LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
@@ -71,6 +75,12 @@ declare namespace Cloudflare {
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
+    LOCAL_RANK_WORKFLOW: Workflow<
+      Parameters<
+        // oxlint-disable-next-line typescript-eslint/consistent-type-imports -- preserve ambient Env augmentation
+        import("./server").LocalRankWorkflow["run"]
+      >[0]["payload"]
+    >;
     AI_VISIBILITY_WORKFLOW: Workflow<
       (
         | { runId: string }

@@ -44,16 +44,14 @@ sessions or tokens.
 ## Authorization
 
 - Every request re-validates the member row; removing a member revokes access
-  on their next request, including MCP OAuth tokens (per-request membership
-  401 in the transport, role stamped per request).
-- **MCP API keys are user-scoped credentials** (`orgScope: "user"`), not
-  key→org bindings: project-scoped tools derive the org from the project row
-  and authorize via the caller's membership in that org, then bill that org.
-  One key works across all the user's organizations. `list_projects` spans
-  memberships; `create_project` requires an explicit `organizationId` when the
-  user belongs to more than one (the error lists the options and instructs
-  the agent to confirm with the user). OAuth tokens stay pinned to the org
-  stamped at consent until re-auth.
+  on their next request, including MCP credentials (per-request membership
+  check in the transport, role stamped per request).
+- **MCP credentials are bound to one organization.** An OAuth grant is bound
+  to the org active at consent and an API key to the org active when it was
+  created; project-scoped tools authorize the project against that org and
+  bill it. Losing that membership kills the credential; it is never rebound
+  to another org the user belongs to. See
+  [0017 — MCP credential scope](./0017-mcp-credential-scope.md).
 - Chat (SAM) re-checks membership every turn and fails closed in hosted mode
   when the member row is gone — WebSockets authorize at connect time only,
   so the per-turn check is what revokes a removed member's open socket.

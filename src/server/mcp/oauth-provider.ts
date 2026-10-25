@@ -28,6 +28,7 @@ import {
   MCP_ROUTE,
   workersOAuthMcpPropsSchema,
 } from "@/server/mcp/context";
+import { handleOAuthError } from "@/server/mcp/oauth-errors";
 import { normalizeClientRegistrationRequest } from "@/server/mcp/oauth-registration";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
@@ -105,30 +106,6 @@ function jsonResponse(body: unknown, init?: ResponseInit) {
     ...init,
     headers,
   });
-}
-
-function logOAuthError(error: {
-  code: string;
-  description: string;
-  status: number;
-}) {
-  // 401s here are the standard OAuth discovery handshake, not failures: an
-  // unauthenticated /mcp hit returns `invalid_token` (which triggers the
-  // client's .well-known discovery), and stale client registrations draw
-  // `invalid_client` until the client re-registers. Log those at debug so
-  // they stop masquerading as errors; keep 5xx at error and everything else
-  // (bad client metadata, etc.) at warn.
-  const line = `[oauth] ${error.status} ${error.code}: ${error.description}`;
-  if (error.status === 401) {
-    console.debug(line);
-  } else if (error.status >= 500) {
-    console.error(line);
-  } else {
-    console.warn(line);
-  }
-
-  // Returning void delegates the standards-compliant body, bearer challenge,
-  // and CORS headers to workers-oauth-provider.
 }
 
 function csrfProtected(request: Request) {
@@ -305,9 +282,10 @@ async function handleOAuthConsentResponse(
     );
   }
 
-  // organizationId is only the fallback context for tools with no project
-  // argument; the hosted transport re-resolves it and stamps orgScope per
-  // request, so one authorization follows the user across every organization.
+  // The grant is bound to the organization active at consent: every /mcp
+  // request re-checks the user's membership in exactly this org and 401s once
+  // it is gone (transport.ts). The same id goes into the grant metadata below,
+  // which the Settings "Connected agents" list reads to name the workspace.
   const props = createWorkersOAuthMcpProps({
     userId: context.userId,
     userEmail: context.userEmail,
@@ -350,11 +328,26 @@ async function handleOAuthConsentResponse(
   return jsonResponse({ redirectTo });
 }
 
+// The provider sets OAUTH_PROVIDER on the env it hands the default handler,
+// but `import { env } from "cloudflare:workers"` is a different object, so
+// server functions (which run inside appFetch) cannot read it there. The
+// helpers are stateless wrappers over the OAUTH_KV binding, so one module-level
+// reference serves every request.
+let oauthHelpers: OAuthHelpers | undefined;
+
+export function getCapturedOAuthHelpers() {
+  if (!oauthHelpers) {
+    throw new Error("OAuth provider helpers are unavailable");
+  }
+  return oauthHelpers;
+}
+
 function createDefaultHandler(
   appFetch: AppFetch,
 ): ExportedHandlerWithFetch<OpenSeoOAuthEnv> {
   return {
     async fetch(request, env) {
+      oauthHelpers = env.OAUTH_PROVIDER;
       const url = new URL(request.url);
 
       if (url.pathname === OAUTH_AUTHORIZE_PATH) {
@@ -413,7 +406,7 @@ function createProvider(appFetch: AppFetch, resource: string) {
         }),
       };
     },
-    onError: logOAuthError,
+    onError: handleOAuthError,
   });
 }
 

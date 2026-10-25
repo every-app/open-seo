@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_campaign")({
 });
 
 function CampaignLayout() {
-  usePassCampaignParamsToSignup();
+  useTrackSignupClicks();
 
   return (
     <div className="itc itc-campaign">
@@ -62,16 +62,17 @@ function CampaignLayout() {
 }
 
 /**
- * Carry the ad's UTM tags onto app sign-up links so a completed signup can be
- * tied back to the campaign that sent it. Rewrites the link at click time, so
- * it also covers links that render later, like the free tool's upsell.
+ * Count sign-up clicks as a Plausible goal, which Plausible attributes to the
+ * visit's campaign, and carry the ad's UTM tags onto the sign-up link so a
+ * completed signup can be tied back to the campaign that sent it. Rewrites the
+ * link at click time, so it also covers links that render later, like the free
+ * tool's upsell.
  */
-function usePassCampaignParamsToSignup() {
+function useTrackSignupClicks() {
   useEffect(() => {
     const utm = [...new URLSearchParams(window.location.search)].filter(
       ([key]) => key.startsWith("utm_"),
     );
-    if (utm.length === 0) return;
 
     const onClick = (event: MouseEvent) => {
       if (!(event.target instanceof Element)) return;
@@ -79,6 +80,10 @@ function usePassCampaignParamsToSignup() {
         `a[href^="${SIGNUP_URL}"]`,
       );
       if (!link) return;
+      // Cookieless, like the rest of the site's visit statistics.
+      const plausible: unknown = Reflect.get(window, "plausible");
+      if (typeof plausible === "function") plausible("Start trial click");
+      if (utm.length === 0) return;
       const url = new URL(link.href);
       for (const [key, value] of utm) url.searchParams.set(key, value);
       link.href = url.toString();

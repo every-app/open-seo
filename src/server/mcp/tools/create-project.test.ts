@@ -4,7 +4,6 @@ import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   createProject: vi.fn(),
-  listMembershipsForUser: vi.fn(),
   markOnboardingCompleted: vi.fn(),
   captureServerEvent: vi.fn(),
 }));
@@ -32,16 +31,12 @@ vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: mocks.captureServerEvent,
 }));
 
-vi.mock("@/server/auth/repositories/AuthRepository", () => ({
-  AuthRepository: {
-    listMembershipsForUser: mocks.listMembershipsForUser,
-  },
-}));
-
+// makeToolContext's default clientId makes this a hosted (OAuth / API key)
+// caller; clientId null is self-host or SAM.
 const toolContext = makeToolContext();
 
 describe("create_project MCP tool", () => {
-  it("creates a project scoped to the caller's organization and returns it", async () => {
+  beforeEach(() => {
     mocks.createProject.mockResolvedValue({
       id: "project_new",
       name: "Acme",
@@ -49,7 +44,10 @@ describe("create_project MCP tool", () => {
       locationCode: 2840,
       languageCode: "en",
     });
+    mocks.markOnboardingCompleted.mockResolvedValue(false);
+  });
 
+  it("creates a project in the credential's organization and returns it", async () => {
     const result = await createProjectTool.handler(
       { name: "Acme", domain: "acme.com", locationCode: 2840 },
       toolContext,
@@ -70,8 +68,11 @@ describe("create_project MCP tool", () => {
       languageCode: "en",
       url: "https://open-seo.test/p/project_new",
     });
-    // Self-host and SAM connections have no onboarding wizard to finish.
-    expect(mocks.markOnboardingCompleted).not.toHaveBeenCalled();
+    // The agent did the wizard's main job, so the app skips onboarding.
+    expect(mocks.markOnboardingCompleted).toHaveBeenCalledWith(
+      "user_123",
+      "org_123",
+    );
     const first = result.content?.[0];
     expect(first?.type).toBe("text");
     if (first?.type === "text") {
@@ -95,16 +96,6 @@ describe("create_project MCP tool", () => {
     expect(mocks.createProject).not.toHaveBeenCalled();
   });
 
-  it("rejects a foreign organizationId on a organization-bound (pinned) connection", async () => {
-    await expect(
-      createProjectTool.handler(
-        { name: "Acme", organizationId: "org_other" },
-        toolContext,
-      ),
-    ).rejects.toThrow("bound to a single organization");
-    expect(mocks.createProject).not.toHaveBeenCalled();
-  });
-
   it("rejects a member role from creating projects", async () => {
     const memberContext = makeToolContext({ role: "member" });
 
@@ -113,62 +104,26 @@ describe("create_project MCP tool", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(mocks.createProject).not.toHaveBeenCalled();
   });
-});
 
-// User-scoped credentials (API keys): the target organization must be
-// unambiguous — a single membership resolves implicitly, multiple require an
-// explicit, membership-checked organizationId confirmed with the user.
-describe("create_project with a user-scoped credential", () => {
-  const userScopedContext = makeToolContext({ orgScope: "user" });
-  const memberships = [
-    { organizationId: "org_a", organizationName: "Alpha", role: "owner" },
-    { organizationId: "org_b", organizationName: "Beta", role: "admin" },
-  ];
-
-  beforeEach(() => {
-    mocks.createProject.mockResolvedValue({
-      id: "project_new",
-      name: "Acme",
-      domain: null,
-      locationCode: 2840,
-      languageCode: "en",
-    });
-    mocks.listMembershipsForUser.mockResolvedValue(memberships);
-    mocks.markOnboardingCompleted.mockResolvedValue(false);
-  });
-
-  it("errors with the organization list when no organizationId is given and the user has several", async () => {
-    await expect(
-      createProjectTool.handler({ name: "Acme" }, userScopedContext),
-    ).rejects.toThrow(/org_a {2}Alpha[\s\S]*org_b {2}Beta/);
-    expect(mocks.createProject).not.toHaveBeenCalled();
-  });
-
-  it("creates in the named organization when the user is a member of it", async () => {
-    const userContext = makeToolContext({ orgScope: "user" });
+  it("skips onboarding completion for self-host and SAM callers", async () => {
     await createProjectTool.handler(
-      { name: "Acme", organizationId: "org_b" },
-      userContext,
+      { name: "Acme" },
+      makeToolContext({ clientId: null }),
     );
 
-    expect(mocks.createProject).toHaveBeenCalledWith("org_b", {
+    expect(mocks.createProject).toHaveBeenCalledWith("org_123", {
       name: "Acme",
     });
-    // Written back so instrumentation credits the target org.
-    expect(userContext.auth).toMatchObject({
-      organizationId: "org_b",
-      role: "admin",
-    });
+    expect(mocks.markOnboardingCompleted).not.toHaveBeenCalled();
   });
 
   it("still returns the project when marking onboarding complete fails", async () => {
-    mocks.listMembershipsForUser.mockResolvedValue([memberships[0]]);
     mocks.markOnboardingCompleted.mockRejectedValue(new Error("db down"));
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     const result = await createProjectTool.handler(
       { name: "Acme" },
-      userScopedContext,
+      toolContext,
     );
 
     // A failed tool call would make the agent retry and duplicate the project.
@@ -177,43 +132,17 @@ describe("create_project with a user-scoped credential", () => {
     });
   });
 
-  it("rejects a organizationId the user is not a member of", async () => {
-    await expect(
-      createProjectTool.handler(
-        { name: "Acme", organizationId: "org_stranger" },
-        userScopedContext,
-      ),
-    ).rejects.toThrow("not a member");
-    expect(mocks.createProject).not.toHaveBeenCalled();
-  });
-
-  it("resolves implicitly when the user belongs to exactly one organization", async () => {
-    mocks.listMembershipsForUser.mockResolvedValue([memberships[0]]);
-
-    await createProjectTool.handler({ name: "Acme" }, userScopedContext);
-
-    expect(mocks.createProject).toHaveBeenCalledWith("org_a", {
-      name: "Acme",
-    });
-    // The agent did the wizard's main job, so the app skips onboarding.
-    expect(mocks.markOnboardingCompleted).toHaveBeenCalledWith(
-      "user_123",
-      "org_a",
-    );
-  });
-
   it("reports onboarding completion only from the call that completed it", async () => {
-    mocks.listMembershipsForUser.mockResolvedValue([memberships[0]]);
     mocks.markOnboardingCompleted.mockResolvedValueOnce(true);
 
-    await createProjectTool.handler({ name: "Acme" }, userScopedContext);
-    await createProjectTool.handler({ name: "Acme" }, userScopedContext);
+    await createProjectTool.handler({ name: "Acme" }, toolContext);
+    await createProjectTool.handler({ name: "Acme" }, toolContext);
 
     expect(mocks.captureServerEvent).toHaveBeenCalledTimes(1);
     expect(mocks.captureServerEvent).toHaveBeenCalledWith({
       distinctId: "user_123",
       event: "onboarding:completed",
-      organizationId: "org_a",
+      organizationId: "org_123",
       properties: { via: "agent_project" },
     });
   });

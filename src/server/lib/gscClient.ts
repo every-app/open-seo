@@ -84,19 +84,22 @@ export function createGscClient(opts: {
   userId: string;
   gscAccountId?: string;
 }) {
-  async function getToken(): Promise<string> {
-    try {
-      return await getGoogleAccessToken({
-        providerId: GSC_OAUTH_PROVIDER_ID,
-        userId: opts.userId,
-        accountId: opts.gscAccountId,
-      });
-    } catch (error) {
+  // One mint per client: a client lives for a single service call, and
+  // concurrent requests (inspectUrls fans out) must not race the refresh.
+  let tokenPromise: Promise<string> | undefined;
+  function getToken(): Promise<string> {
+    tokenPromise ??= getGoogleAccessToken({
+      providerId: GSC_OAUTH_PROVIDER_ID,
+      userId: opts.userId,
+      accountId: opts.gscAccountId,
+    }).catch((error: unknown) => {
+      tokenPromise = undefined;
       throw new GscTokenError(
         "Could not mint a Search Console access token (grant revoked or expired).",
         error,
       );
-    }
+    });
+    return tokenPromise;
   }
 
   async function request<T>(

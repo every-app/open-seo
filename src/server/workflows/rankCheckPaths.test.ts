@@ -114,7 +114,12 @@ describe("retryRankChecks", () => {
     mocks.getSnapshotsForRun.mockResolvedValue([]);
     queuedResults(null);
 
-    await retryRankChecks(step, checkContext(["kw_never"]), "config_1");
+    await retryRankChecks(
+      step,
+      checkContext(["kw_never"]),
+      "config_1",
+      "scheduled",
+    );
 
     expect(mocks.rankCheckBatch).not.toHaveBeenCalled();
     expect(mocks.rankCheckTaskPost).toHaveBeenCalledOnce();
@@ -134,7 +139,12 @@ describe("retryRankChecks", () => {
     ]);
     queuedResults(15, 20);
 
-    await retryRankChecks(step, checkContext(["kw_0", "kw_never"]), "config_1");
+    await retryRankChecks(
+      step,
+      checkContext(["kw_0", "kw_never"]),
+      "config_1",
+      "scheduled",
+    );
 
     // 15 is still far below #1, so it gets the second retry too.
     expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
@@ -159,6 +169,7 @@ describe("retryRankChecks", () => {
       step,
       { ...checkContext(["kw_never"]), devices: "both" },
       "config_1",
+      "scheduled",
     );
 
     expect(mocks.rankCheckTaskPost).toHaveBeenLastCalledWith(
@@ -175,7 +186,12 @@ describe("retryRankChecks", () => {
     mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_new", null)]);
     queuedResults(null, 3);
 
-    await retryRankChecks(step, checkContext(["kw_new"]), "config_1");
+    await retryRankChecks(
+      step,
+      checkContext(["kw_new"]),
+      "config_1",
+      "scheduled",
+    );
 
     expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
     expect(mocks.upsertSnapshots).toHaveBeenCalledWith([
@@ -184,11 +200,33 @@ describe("retryRankChecks", () => {
     expect(mocks.deleteNotFoundSnapshots).not.toHaveBeenCalled();
   });
 
+  it("rechecks a miss on a keyword that never ranked when the check is manual", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_never", null)]);
+    queuedResults(null, 4);
+
+    await retryRankChecks(
+      step,
+      checkContext(["kw_never"]),
+      "config_1",
+      "manual",
+    );
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
+    expect(mocks.upsertSnapshots).toHaveBeenCalledWith([
+      expect.objectContaining({ trackingKeywordId: "kw_never", position: 4 }),
+    ]);
+  });
+
   it("never saves a not found for a keyword that ranked before", async () => {
     mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_0", null)]);
     queuedResults(null, null);
 
-    await retryRankChecks(step, checkContext(["kw_0"]), "config_1");
+    await retryRankChecks(
+      step,
+      checkContext(["kw_0"]),
+      "config_1",
+      "scheduled",
+    );
 
     expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
     expect(mocks.upsertSnapshots).not.toHaveBeenCalled();

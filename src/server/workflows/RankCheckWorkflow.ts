@@ -373,7 +373,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         } else {
           await runLiveCheck(step, checkContext);
         }
-        await retryRankChecks(step, checkContext, configId);
+        await retryRankChecks(step, checkContext, configId, trigger);
       } catch (error) {
         // Batch failure — snapshots for completed batches are already
         // persisted incrementally. Continue to finalization.

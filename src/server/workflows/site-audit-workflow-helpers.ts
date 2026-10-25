@@ -6,9 +6,8 @@ import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
-import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
-
-const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
+import type { CrawlerAccess } from "@/shared/crawler-access";
+import { auditRequestHeaders } from "@/server/lib/audit/web-bot-auth";
 
 /** Parse `Link: <url>; rel="canonical"` response headers. */
 function parseLinkHeaderCanonical(
@@ -49,9 +48,8 @@ async function fetchPage(
     // to its canonical target instead of cycling back to its own source.
     const response = await fetch(url, {
       headers: {
-        "User-Agent": CRAWL_USER_AGENT,
         Accept: "text/html,application/xhtml+xml",
-        ...crawlerHeadersFor(url, access),
+        ...(await auditRequestHeaders(url, access)),
       },
       redirect: "manual",
       signal: AbortSignal.timeout(15_000),

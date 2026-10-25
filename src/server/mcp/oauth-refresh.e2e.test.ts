@@ -57,8 +57,8 @@ vi.mock("@/server/mcp/transport", () => ({
   ): Promise<Response> => Promise.resolve(Response.json({ props })),
 }));
 
-// Minimal in-memory KVNamespace honoring expirationTtl against Date.now(), so
-// vi.setSystemTime drives token/grant expiry.
+// Minimal in-memory KVNamespace honoring expiration/expirationTtl against
+// Date.now(), so vi.setSystemTime drives token/grant expiry.
 function createKvFake() {
   const store = new Map<
     string,
@@ -87,15 +87,21 @@ function createKvFake() {
     put(
       key: string,
       value: string,
-      options?: { expirationTtl?: number; metadata?: unknown },
+      options?: {
+        expiration?: number;
+        expirationTtl?: number;
+        metadata?: unknown;
+      },
     ) {
       store.set(key, {
         value,
         metadata: options?.metadata,
         expiresAt:
-          options?.expirationTtl !== undefined
-            ? Date.now() + options.expirationTtl * 1000
-            : undefined,
+          options?.expiration !== undefined
+            ? options.expiration * 1000
+            : options?.expirationTtl !== undefined
+              ? Date.now() + options.expirationTtl * 1000
+              : undefined,
       });
       return Promise.resolve();
     },
@@ -334,8 +340,12 @@ describe("Codex-style OAuth token refresh (real workers-oauth-provider)", () => 
     vi.setSystemTime(startedAt + 62 * day);
     const expired = await refresh(client.client_id, rotated.refresh_token);
     expect(expired.status).toBe(400);
-    expect(tokenErrorSchema.parse(await expired.json()).error).toBe(
-      "invalid_grant",
+    const body = tokenErrorSchema
+      .extend({ error_description: z.string() })
+      .parse(await expired.json());
+    expect(body.error).toBe("invalid_grant");
+    expect(body.error_description).toContain(
+      "https://openseo.so/docs/agent-setup",
     );
   });
 

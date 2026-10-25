@@ -35,9 +35,10 @@ export function requestWithPublicOrigin(request: Request) {
     return request;
   }
 
-  const publicUrl = new URL(
-    `${url.pathname}${url.search}${url.hash}`,
-    publicOrigin,
+  // Concatenate rather than resolve the path against the origin: a path like
+  // `//evil.example/mcp` would otherwise replace the host.
+  return new Request(
+    `${publicOrigin}${url.pathname}${url.search}${url.hash}`,
+    request,
   );
-  return new Request(publicUrl, request);
 }

@@ -23,6 +23,7 @@ declare namespace Cloudflare {
 		// Hand-patched: hosted-prod-only binding declared in deploy/alchemy/alchemy.run.ts,
 		// absent in the wrangler.jsonc surfaces (local dev, Docker self-host).
 		MCP_RATE_LIMIT?: RateLimit;
+		AUTH_RATE_LIMIT?: RateLimit;
 		// Hand-patched: the class moved to src/audit-worker.ts and a full regen pulls
 		// unrelated runtime-type drift (see cf-typegen); keep this in sync until then.
 		SITE_AUDIT_WORKFLOW: Workflow<Parameters<import("./audit-worker").SiteAuditWorkflow['run']>[0]['payload']>;

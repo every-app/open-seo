@@ -1,0 +1,36 @@
+.leaflet-tooltip.local-rank-label {
+  border: 0;
+  background: transparent;
+  color: white;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+.leaflet-tooltip.local-rank-label::before {
+  display: none;
+}
+
+.leaflet-control.local-google-maps-logo {
+  margin: 0;
+  padding: 10px 10px 5px;
+  background: white;
+}
+.local-google-maps-logo img {
+  height: 16px;
+  width: auto;
+  max-width: none;
+}
+.local-google-maps-attribution {
+  max-width: calc(100% - 130px);
+}
+.leaflet-control.local-google-maps-copyright {
+  margin: 0;
+  max-width: 100%;
+  padding: 2px 5px;
+  background: white;
+  color: #333;
+  font:
+    11px/1.5 Arial,
+    sans-serif;
+  overflow-wrap: anywhere;
+}

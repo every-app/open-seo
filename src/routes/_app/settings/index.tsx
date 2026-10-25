@@ -4,6 +4,7 @@ import { SectionHeader } from "@/client/components/PageHeader";
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
 import { LanguagePreferenceRadio } from "@/client/components/LanguagePreferenceMenuItems";
 import { useLocale } from "@/client/lib/i18n";
+import { McpConnectionsSettings } from "@/client/features/settings/McpConnectionsSettings";
 import { PrivacySettings } from "@/client/features/settings/PrivacySettings";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { version } from "../../../../package.json";
@@ -37,6 +38,8 @@ function PersonalSettings() {
 
       {isHosted ? (
         <>
+          <McpConnectionsSettings />
+
           <ApiKeySettings />
 
           <PrivacySettings />

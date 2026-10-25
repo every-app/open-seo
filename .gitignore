@@ -17,7 +17,6 @@ dist-sourcemaps/
 .env.*
 !.env.example
 !.env.preview.example
-!.env.production.example
 !.env.selfhost.example
 .vercel
 .output
@@ -48,3 +47,6 @@ dist-sourcemaps/
 
 # Local deployment scripts
 scripts/update-server.sh
+
+# built by `pnpm build:report-widgets` (predev/build)
+/src/public/report-widgets/

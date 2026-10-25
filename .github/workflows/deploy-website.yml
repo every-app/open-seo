@@ -1,0 +1,87 @@
+name: Deploy website
+
+# Deploys web/ (the openseo.so marketing site, worker `open-seo-landing`).
+# Maintainer setup: docs/maintainers/production-deployment.md
+on:
+  push:
+    branches: [main]
+    paths:
+      - web/**
+      - .github/workflows/deploy-website.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never interrupt a wrangler upload; a newer push queues behind it.
+concurrency:
+  group: deploy-website
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # The public mirror must not deploy. Only main may use the production
+    # environment's credentials.
+    if: >-
+      (github.repository == 'bensenescu/open-seo' ||
+      github.repository == 'every-app/private-open-seo') &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://openseo.so
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validate website configuration
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.WEBSITE_TURNSTILE_SITE_KEY }}
+        run: |
+          # The site key is inlined by vite build; the worker's runtime secrets
+          # (TURNSTILE_SECRET_KEY, DATAFORSEO_API_KEY, ...) are set once with
+          # `wrangler secret put` and survive deploys, so they are not needed here.
+          failed=0
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID VITE_TURNSTILE_SITE_KEY; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing production secret or variable: $name"
+              failed=1
+            elif [[ "${!name}" =~ [[:space:]] ]]; then
+              echo "::error::$name contains whitespace or a line break; re-enter it"
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # web/package.json's deploy:prod: the build refuses to run without a real
+      # site key, then wrangler uploads the bundle, DO migration, and bindings.
+      - name: Build and deploy
+        run: pnpm run deploy:prod
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.WEBSITE_TURNSTILE_SITE_KEY }}

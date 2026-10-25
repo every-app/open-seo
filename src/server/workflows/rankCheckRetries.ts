@@ -16,13 +16,16 @@ import {
 // Retries. A check that errors gets retried, and so does one that reads far
 // worse than the keyword's known position: Google serves some scraped searches
 // a fake results page that looks normal but leaves out sites that really rank.
-// A keyword with no earlier check has no known position, so its miss is
-// rechecked up to RETRY_ROUNDS times. Retries are billed like any other check,
-// and the best position found wins.
+// A keyword that never ranked has no known position, so its miss is rechecked
+// up to RETRY_ROUNDS times on its first check, and on any manual check: a user
+// running a check by hand wants another look at keywords stuck on not found.
+// Retries are billed like any other check, and the best position found wins.
 // ---------------------------------------------------------------------------
 
 /** A result this many positions below the keyword's known rank is retried. */
 const RETRY_DROP_POSITIONS = 10;
+
+type RankCheckTrigger = "manual" | "scheduled";
 
 interface RetryPair extends RankCheckTaskInput {
   /** Best position saved for this run; null if not found or never answered. */
@@ -34,7 +37,10 @@ interface RetryPair extends RankCheckTaskInput {
    * or on its other device in this run. Null if it never ranked.
    */
   knownPosition: number | null;
-  /** No earlier check, so a miss gets rechecked through all retry rounds. */
+  /**
+   * No earlier check, or a manual check of a keyword that never ranked, so a
+   * miss gets rechecked through all retry rounds.
+   */
   recheckMiss: boolean;
 }
 
@@ -60,12 +66,14 @@ function otherDevice(device: "desktop" | "mobile") {
 /**
  * Find the keywords to retry: ones with a device the first check got no answer
  * for, that misses or falls far below the keyword's known position, or that
- * misses with no earlier check. Both devices of each are returned, so a
- * position a retry finds on one can make the other's miss suspect.
+ * misses with no earlier check (or, on a manual check, after never ranking).
+ * Both devices of each are returned, so a position a retry finds on one can
+ * make the other's miss suspect.
  */
 async function findRetryPairs(
   ctx: CheckContext,
   configId: string,
+  trigger: RankCheckTrigger,
 ): Promise<RetryPair[]> {
   // The run is still active, so completed runs are all earlier checks.
   const [current, previous] = await Promise.all([
@@ -89,7 +97,8 @@ async function findRetryPairs(
       position: currentPositions.get(key(task.keywordId, task.device)) ?? null,
       answered: currentPositions.has(key(task.keywordId, task.device)),
       knownPosition: known.length > 0 ? Math.min(...known) : null,
-      recheckMiss: !previousPositions.has(task.keywordId),
+      recheckMiss:
+        trigger === "manual" || !previousPositions.has(task.keywordId),
     };
   });
   const retryKeywords = new Set(
@@ -152,19 +161,21 @@ function withOtherDevicePositions(pairs: RetryPair[]): RetryPair[] {
 
 /**
  * Retry each keyword/device pair whose check errored, reads far worse than
- * its known position, or missed on its first check ever, up to RETRY_ROUNDS
- * more times through the task queue (queue price, for manual runs too),
- * stopping once a retry settles it. A keyword that ranked before is never
- * saved as not found: if no try found it, its miss is removed, so it reads as
- * not checked and keeps its previous position.
+ * its known position, or missed on its first check ever or on a manual check
+ * after never ranking, up to RETRY_ROUNDS more times through the task queue
+ * (queue price, for manual runs too), stopping once a retry settles it. A
+ * keyword that ranked before is never saved as not found: if no try found it,
+ * its miss is removed, so it reads as not checked and keeps its previous
+ * position.
  */
 export async function retryRankChecks(
   step: WorkflowStep,
   ctx: CheckContext,
   configId: string,
+  trigger: RankCheckTrigger,
 ): Promise<void> {
   let pairs = await pgStep(step, "find-retries", COLLECT_STEP_CONFIG, () =>
-    findRetryPairs(ctx, configId),
+    findRetryPairs(ctx, configId, trigger),
   );
 
   for (let round = 0; round < RETRY_ROUNDS; round++) {

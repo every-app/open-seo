@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { discoverUrls } from "@/server/lib/audit/discovery";
+import { discoverUrls, parseRobotsTxt } from "@/server/lib/audit/discovery";
 
 function sitemapXml(urls: string[]): string {
   const entries = urls.map((url) => `<url><loc>${url}</loc></url>`).join("");
@@ -32,5 +32,17 @@ describe("discoverUrls", () => {
     const { urls } = await discoverUrls("https://example.com", 2);
 
     expect(urls).toContain("https://example.com/");
+  });
+});
+
+describe("parseRobotsTxt", () => {
+  it("applies an OpenSEO-Audit group over the wildcard group", () => {
+    const robots = parseRobotsTxt(
+      "https://example.com",
+      "User-agent: *\nAllow: /\n\nUser-agent: OpenSEO-Audit\nDisallow: /private/",
+    );
+
+    expect(robots.isAllowed("https://example.com/private/page")).toBe(false);
+    expect(robots.isAllowed("https://example.com/public")).toBe(true);
   });
 });

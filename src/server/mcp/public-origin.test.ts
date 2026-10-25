@@ -49,4 +49,17 @@ describe("requestWithPublicOrigin", () => {
       method: "initialize",
     });
   });
+
+  it("keeps the public host when the path starts with //", () => {
+    const request = new Request("http://localhost:3102//evil.example/mcp", {
+      headers: {
+        "x-forwarded-proto": "https",
+        "x-forwarded-host": "seo.example.com",
+      },
+    });
+
+    expect(requestWithPublicOrigin(request).url).toBe(
+      "https://seo.example.com//evil.example/mcp",
+    );
+  });
 });

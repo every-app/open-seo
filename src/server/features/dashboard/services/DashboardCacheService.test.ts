@@ -99,6 +99,23 @@ it("caches empty results rather than billing again on every visit", async () => 
   expect(load).toHaveBeenCalledTimes(1);
 });
 
+it("does not cache a lost Google grant, so a reconnect shows data on the next visit", async () => {
+  const load = vi
+    .fn()
+    .mockResolvedValueOnce({ connected: false })
+    .mockResolvedValueOnce({ connected: true });
+  const read = () =>
+    DashboardCacheService.readThrough({
+      ...input(),
+      schema: z.object({ connected: z.boolean() }),
+      shouldCache: (value) => value.connected,
+      load,
+    });
+  expect((await read()).value).toEqual({ connected: false });
+  expect((await read()).value).toEqual({ connected: true });
+  expect(load).toHaveBeenCalledTimes(2);
+});
+
 it("keeps stale results and backs off after a failed paid refresh", async () => {
   const load = vi.fn(async () => ["saved"]);
   await DashboardCacheService.readThrough(input(load));

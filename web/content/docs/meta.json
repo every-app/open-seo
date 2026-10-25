@@ -7,6 +7,7 @@
     "claude-code-plugin",
     "codex-plugin",
     "skills",
+    "crawler",
     "self-hosting"
   ]
 }

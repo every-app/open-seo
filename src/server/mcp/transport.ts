@@ -22,7 +22,6 @@ import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
 import { supportsMcpApps } from "@/server/mcp/ui-capabilities";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
-import { resolveExistingActiveHostedOrganization } from "@/server/auth/default-hosted-organization";
 
 // Mirrors the agents SDK's DEFAULT_CORS_OPTIONS so legacy responses carry the
 // same CORS surface as the modern handler's.
@@ -163,19 +162,6 @@ function createRequestHandler(
   };
 }
 
-// Hosted credentials (OAuth grants and API keys) are user-scoped: the
-// organizationId they carry is only the fallback context for tools with no
-// project argument, so keep it while the membership holds, else rebind to the
-// user's current active org. Null only when they belong to no org at all.
-async function resolveRequestOrganization(
-  userId: string,
-  organizationId: string,
-) {
-  const membership = await AuthRepository.getMembership(userId, organizationId);
-  if (membership) return { organizationId, role: membership.role };
-  return resolveExistingActiveHostedOrganization(userId);
-}
-
 export async function handleAuthenticatedOpenSeoMcpRequest(
   request: Request,
   props: unknown,
@@ -200,16 +186,19 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
     return withMcpCors(new Response("Invalid Origin", { status: 403 }));
   }
 
-  // Tokens snapshot organizationId at consent and refresh copies it verbatim,
-  // so the grant can outlive the membership (member removed, org changed).
-  // Re-resolve per request; 401 invalid_token only once the user belongs to
-  // no organization, pushing compliant clients back through OAuth.
+  // A hosted credential is bound to the organization that was active when it
+  // was created (OAuth: at consent; API key: at creation) and stays bound for
+  // its lifetime. The grant can outlive the membership (member removed), so
+  // require a live member row in exactly that org on every request: once it
+  // is gone the credential is dead, with no fallback to another org. The 401
+  // pushes compliant clients back through OAuth, and the new grant binds to
+  // whichever org is active at that consent.
   const authContext = result.data[MCP_AUTH_CONTEXT_PROP];
-  const organization = await resolveRequestOrganization(
+  const membership = await AuthRepository.getMembership(
     authContext.userId,
     authContext.organizationId,
   );
-  if (!organization) {
+  if (!membership) {
     return new Response("Organization access revoked", {
       status: 401,
       headers: { "WWW-Authenticate": 'Bearer error="invalid_token"' },
@@ -220,15 +209,10 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
   // own; passing authContext explicitly hands it the schema-validated copy
   // (with the per-request role stamped in — roles are never baked into
   // tokens) and keeps this path symmetrical with self-hosted, which has no
-  // ctx.props. orgScope is stamped here rather than read from the token so
-  // grants minted before it existed are user-scoped too: project-scoped tools
-  // authorize per call via membership in the project's org, so one
-  // authorization follows the user across every organization they belong to.
+  // ctx.props.
   const requestProps = createWorkersOAuthMcpProps({
     ...authContext,
-    organizationId: organization.organizationId,
-    role: organization.role,
-    orgScope: "user",
+    role: membership.role,
     // The only per-request client signal that reaches a tools/call: initialize's
     // clientInfo is long gone by then and this transport never populates
     // ServerContext.http.req. Display only (report attribution).

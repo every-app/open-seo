@@ -59,12 +59,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        {/* Plausible counts visits without cookies, so it runs for everyone.
-            Deferred to idle so it never competes with the page's own work. */}
+        {/* Plausible and OpenAnalytics count visits without cookies, so they run
+            for everyone; the Visit counts opt-out (plausible_ignore) skips both.
+            Deferred to idle so they never compete with the page's own work. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){function loadAnalytics(){if(window.__openSeoAnalyticsLoaded)return;window.__openSeoAnalyticsLoaded=true;window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init({endpoint:'/api/event'});var script=document.createElement('script');script.defer=true;script.src='/js/script.js';document.head.appendChild(script)}function schedule(){if('requestIdleCallback'in window){window.requestIdleCallback(loadAnalytics,{timeout:2000});return}window.setTimeout(loadAnalytics,2000)}if(document.readyState==='complete'){schedule();return}window.addEventListener('load',schedule,{once:true})})();",
+              "(function(){function loadAnalytics(){if(window.__openSeoAnalyticsLoaded)return;window.__openSeoAnalyticsLoaded=true;window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init({endpoint:'/api/event'});var script=document.createElement('script');script.defer=true;script.src='/js/script.js';document.head.appendChild(script);try{if(localStorage.getItem('plausible_ignore')==='true')return}catch(e){}var openAnalytics=document.createElement('script');openAnalytics.defer=true;openAnalytics.src='https://analytics.everyapp.team/script.js?siteId=72114522-d4bd-4f7e-b73b-62ccdaeae482';openAnalytics.setAttribute('data-openseo-openanalytics','');document.head.appendChild(openAnalytics)}function schedule(){if('requestIdleCallback'in window){window.requestIdleCallback(loadAnalytics,{timeout:2000});return}window.setTimeout(loadAnalytics,2000)}if(document.readyState==='complete'){schedule();return}window.addEventListener('load',schedule,{once:true})})();",
           }}
         />
       </head>

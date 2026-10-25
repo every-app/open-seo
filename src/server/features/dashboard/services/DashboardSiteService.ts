@@ -105,6 +105,7 @@ async function getKeywords(projectId: string, organizationId: string) {
       endDate: z.string(),
     }),
     maxAgeMs: 86400_000,
+    shouldCache: (value) => value.connected,
     load: async () => {
       try {
         const result = await GscService.getPerformance({
@@ -141,10 +142,7 @@ async function getKeywords(projectId: string, organizationId: string) {
 }
 
 async function getEmergingQueries(projectId: string, organizationId: string) {
-  const { endDate } = resolveDateRange({ dateRange: "last_7_days" });
-  const startDate = new Date(Date.parse(endDate) - 6 * 86400_000)
-    .toISOString()
-    .slice(0, 10);
+  const { startDate, endDate } = resolveDateRange({ dateRange: "last_7_days" });
   const baselineEndDate = new Date(Date.parse(startDate) - 86400_000)
     .toISOString()
     .slice(0, 10);
@@ -182,6 +180,7 @@ async function getEmergingQueries(projectId: string, organizationId: string) {
     },
     schema: queriesSchema,
     maxAgeMs: 86400_000,
+    shouldCache: (value) => value.connected,
     load: async () => {
       try {
         const [recent, baseline] = await Promise.all([

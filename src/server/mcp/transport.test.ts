@@ -21,17 +21,8 @@ const authRepositoryMocks = vi.hoisted(() => ({
   getMembership: vi.fn(),
 }));
 
-const hostedOrganizationMocks = vi.hoisted(() => ({
-  resolveExistingActiveHostedOrganization: vi.fn(),
-}));
-
 vi.mock("@/server/auth/repositories/AuthRepository", () => ({
   AuthRepository: authRepositoryMocks,
-}));
-
-vi.mock("@/server/auth/default-hosted-organization", () => ({
-  resolveExistingActiveHostedOrganization:
-    hostedOrganizationMocks.resolveExistingActiveHostedOrganization,
 }));
 
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({
@@ -244,13 +235,17 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
         legacy: "reject",
       }),
     );
-    // The transport stamps the per-request role and user scope into the props
-    // it hands the server; neither is baked into tokens.
+    // The transport checks membership in the token's org and stamps the
+    // member row's role into the props it hands the server; roles are never
+    // baked into tokens.
+    expect(authRepositoryMocks.getMembership).toHaveBeenCalledWith(
+      "user-1",
+      "org-1",
+    );
     expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
       [MCP_AUTH_CONTEXT_PROP]: {
         ...props[MCP_AUTH_CONTEXT_PROP],
         role: "owner",
-        orgScope: "user",
       },
     });
   });
@@ -289,7 +284,6 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
       [MCP_AUTH_CONTEXT_PROP]: {
         ...props[MCP_AUTH_CONTEXT_PROP],
         role: "owner",
-        orgScope: "user",
       },
     });
   });
@@ -314,52 +308,12 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
     expect(response.status).toBe(403);
   });
 
-  it("rebinds a token to the user's active org when the consent-time membership is gone", async () => {
+  // The grant is bound to its consent-time org for life: once the member row
+  // is gone the token is dead, never rebound to another org the user is in.
+  // The Bearer challenge sends compliant clients back through OAuth.
+  it("rejects a token whose consent-time membership is gone", async () => {
     authRepositoryMocks.getMembership.mockResolvedValue(null);
-    hostedOrganizationMocks.resolveExistingActiveHostedOrganization.mockResolvedValue(
-      { organizationId: "org-2", role: "member" },
-    );
-    // No orgScope: a grant minted before the flag existed heals the same way.
-    const props = createWorkersOAuthMcpProps({
-      userId: "user-1",
-      userEmail: "user@example.com",
-      organizationId: "org-1",
-      baseUrl: "https://open-seo.test",
-      clientId: "client-1",
-      scopes: ["mcp"],
-    });
-
-    const response = await handleAuthenticatedOpenSeoMcpRequest(
-      createMcpRequest(),
-      props,
-      {},
-      { ...ctx, props },
-    );
-
-    expect(response.status).toBe(200);
-    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
-      [MCP_AUTH_CONTEXT_PROP]: {
-        ...props[MCP_AUTH_CONTEXT_PROP],
-        organizationId: "org-2",
-        role: "member",
-        orgScope: "user",
-      },
-    });
-  });
-
-  it("rejects a token whose user belongs to no organization", async () => {
-    authRepositoryMocks.getMembership.mockResolvedValue(null);
-    hostedOrganizationMocks.resolveExistingActiveHostedOrganization.mockResolvedValue(
-      null,
-    );
-    const props = createWorkersOAuthMcpProps({
-      userId: "user-1",
-      userEmail: "user@example.com",
-      organizationId: "org-1",
-      baseUrl: "https://open-seo.test",
-      clientId: "client-1",
-      scopes: ["mcp"],
-    });
+    const props = hostedProps();
 
     const response = await handleAuthenticatedOpenSeoMcpRequest(
       createMcpRequest(),
@@ -369,6 +323,10 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
     );
 
     expect(response.status).toBe(401);
+    expect(response.headers.get("WWW-Authenticate")).toBe(
+      'Bearer error="invalid_token"',
+    );
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).not.toHaveBeenCalled();
   });
 
   it("rejects an OAuth client without the MCP scope", async () => {

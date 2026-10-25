@@ -90,7 +90,7 @@ This local connection is separate from ChatGPT web. See [OpenAI's MCP documentat
 
 ## Connect with an API key
 
-Use an API key in headless environments, CI, or clients where OAuth is inconvenient. API keys are personal: anything an agent does with your key acts as you in your workspace.
+Use an API key in headless environments, CI, or clients where OAuth is inconvenient. API keys are personal: anything an agent does with your key acts as you in the workspace that was active when you created it.
 
 In the [OpenSEO app](https://app.openseo.so/settings), open **Settings -> API keys**, create a key, and copy it when it appears. It won't be shown again.
 
@@ -124,6 +124,10 @@ codex mcp add openseo --url https://app.openseo.so/mcp --bearer-token-env-var OP
 
 Any other client that supports custom HTTP headers can send `Authorization: Bearer oseo_YOUR_KEY` or `x-api-key: oseo_YOUR_KEY`.
 
+## Workspaces and revoking access
+
+An OAuth connection or API key is tied to the workspace that was active when you authorized or created it. To use OpenSEO in another workspace, connect again and pick that workspace on the authorization page, or switch to it in the app before creating a key. To disconnect an agent, open [Settings](https://app.openseo.so/settings) and choose **Disconnect** under **Connected agents**. To revoke a key, choose **Revoke key** under **API keys**. A disconnected agent has to sign in again before it can call OpenSEO.
+
 ## Available tools
 
 OpenSEO MCP exposes tools for SEO research workflows:
@@ -149,6 +153,7 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Research questions about a keyword with ChatGPT's answers and cited sources (uses credits).
 - Configure AI prompt tracking, preview cost, and start or pause scheduled checks.
 - Read and export saved AI answers, trends, citations, and competitor appearances without using credits.
+- List the Search Console sites and Google Analytics properties your connected Google accounts can see, and bind one to a project (free, no credits). Connecting a Google account itself still happens in Settings > Integrations.
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
 - Tell Bing and other IndexNow search engines which pages on your site were added, changed, or removed (free, no credits). Your site hosts the project's key file, shown in Settings > Integrations. Google doesn't use IndexNow.

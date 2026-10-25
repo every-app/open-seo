@@ -45,7 +45,6 @@ const authContext: ToolAuthContext = {
   userEmail: "user@example.com",
   organizationId: "org-1",
   role: "owner",
-  orgScope: "pinned",
   clientId: "client-1",
   scopes: ["mcp"],
   baseUrl: "https://app.openseo.so",

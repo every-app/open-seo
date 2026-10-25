@@ -6,6 +6,7 @@ import {
   sharesEnabled,
 } from "@/server/features/reports/shareAccess";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { createReportMapGrants } from "@/server/features/reports/reportMapGrant";
 import { reportDocumentResponse, textResponse } from "@/shared/report-sandbox";
 import { sharePath } from "@/shared/report-share";
 
@@ -117,6 +118,7 @@ async function handleSharedReportRequest(
   return reportDocumentResponse(html, {
     cacheControl: EDGE_CACHE_CONTROL,
     noindex: true,
+    mapGrants: await createReportMapGrants(html),
   });
 }
 
