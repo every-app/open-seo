@@ -28,7 +28,10 @@ export const Route = createFileRoute("/api/wa/event")({
     handlers: {
       OPTIONS: () => emptyResponse(202),
       POST: async ({ request }) => {
-        // Cloudflare's request.cf carries visitor geo; no IP is ever stored.
+        // Geo: request.cf on Workers deployments; behind the Cloudflare
+        // tunnel (Docker self-host) request.cf is absent, but the edge
+        // stamps the visitor's country on every proxied request as
+        // CF-IPCountry. No IP is ever stored.
         const cf = (
           request as Request & {
             readonly cf?: { country?: string; region?: string; city?: string };
@@ -38,7 +41,7 @@ export const Route = createFileRoute("/api/wa/event")({
           rawBody: await request.text(),
           userAgent: request.headers.get("user-agent") ?? "",
           geo: {
-            country: cf?.country ?? null,
+            country: request.headers.get("cf-ipcountry") ?? cf?.country ?? null,
             region: cf?.region ?? null,
             city: cf?.city ?? null,
           },
