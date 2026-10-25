@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { CardShell } from "@/client/components/CardShell";
 import { QueryState } from "@/client/components/QueryState";
-import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import {
   Table,
   TableHeader,
@@ -41,13 +40,7 @@ export function DashboardNewQueries({
       errorFallback={t("dashboard.cards.new_keywords_title")}
     >
       {(data) =>
-        !data.value.connected ? (
-          <GoogleConnectionCard
-            provider="gsc"
-            projectId={projectId}
-            prominent
-          />
-        ) : (
+        !data.value.connected ? null : (
           <CardShell
             title={t("dashboard.cards.new_keywords_title")}
             titleInfo={
