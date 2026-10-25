@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/client/components/ui/table";
 import { useOrganizations } from "@/client/features/settings/useOrganizations";
+import { useLocale } from "@/client/lib/i18n";
 import { captureClientEvent } from "@/client/lib/posthog";
 import {
   listMcpConnections,
@@ -25,6 +26,7 @@ import {
 
 export function McpConnectionsSettings() {
   const queryClient = useQueryClient();
+  const { t } = useLocale();
   const [disconnecting, setDisconnecting] = useState<{
     id: string;
     clientName: string;
@@ -41,7 +43,7 @@ export function McpConnectionsSettings() {
     mutationFn: (grantId: string) => revokeMcpConnection({ data: { grantId } }),
     onSuccess: () => {
       captureClientEvent("mcp:connection_revoked");
-      toast.success("Agent disconnected");
+      toast.success(t("settings.connected_agents_success"));
       setDisconnecting(null);
       void queryClient.invalidateQueries({ queryKey: ["mcpConnections"] });
     },
@@ -49,28 +51,28 @@ export function McpConnectionsSettings() {
 
   return (
     <section className="space-y-3">
-      <SectionHeader title="Connected agents" />
-      <p className="text-sm">AI clients signed in to OpenSEO with OAuth.</p>
+      <SectionHeader title={t("settings.connected_agents_title")} />
+      <p className="text-sm">{t("settings.connected_agents_desc")}</p>
 
       <QueryState
         query={connectionsQuery}
-        errorFallback="We couldn't load your connected agents."
+        errorFallback={t("settings.connected_agents_error")}
       >
         {(connections) =>
           connections.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No agents connected yet.
+              {t("settings.connected_agents_empty")}
             </p>
           ) : (
             <TableCard>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Client</TableHead>
+                    <TableHead>{t("settings.connected_agents_client")}</TableHead>
                     {showOrganization ? (
-                      <TableHead>Organization</TableHead>
+                      <TableHead>{t("settings.connected_agents_organization")}</TableHead>
                     ) : null}
-                    <TableHead>Connected</TableHead>
+                    <TableHead>{t("settings.connected_agents_connected")}</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -90,7 +92,7 @@ export function McpConnectionsSettings() {
                       </TableCell>
                       <TableCell>
                         <RowActionsMenu
-                          label={`Actions for ${connection.clientName}`}
+                          label={`${t("settings.connected_agents_actions")} ${connection.clientName}`}
                         >
                           <DropdownMenuItem
                             variant="destructive"
@@ -102,7 +104,7 @@ export function McpConnectionsSettings() {
                             }
                           >
                             <Unplug />
-                            Disconnect
+                            {t("settings.connected_agents_disconnect")}
                           </DropdownMenuItem>
                         </RowActionsMenu>
                       </TableCell>
@@ -117,14 +119,16 @@ export function McpConnectionsSettings() {
 
       {disconnecting ? (
         <ConfirmDialog
-          title={`Disconnect “${disconnecting.clientName}”?`}
-          confirmLabel="Disconnect"
+          title={t("settings.connected_agents_disconnect_title", {
+            name: disconnecting.clientName,
+          })}
+          confirmLabel={t("settings.connected_agents_disconnect_confirm")}
           destructive
           pending={disconnectMutation.isPending}
           onClose={() => setDisconnecting(null)}
           onConfirm={() => disconnectMutation.mutate(disconnecting.id)}
         >
-          It will have to sign in to OpenSEO again.
+          {t("settings.connected_agents_disconnect_warning")}
         </ConfirmDialog>
       ) : null}
     </section>
