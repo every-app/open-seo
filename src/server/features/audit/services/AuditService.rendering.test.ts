@@ -76,14 +76,10 @@ describe("rendered audit start", () => {
     mocks.lock.mockResolvedValue(locks);
   });
 
-  it("rejects rendering where the deployment cannot provide it, saying why", async () => {
+  it("falls back to non-rendered crawl when rendering is unavailable on the deployment", async () => {
     mocks.renderingAllowed.mockResolvedValue(false);
-    const error = await AuditService.startAudit(renderedAudit).catch(
-      (reason: unknown) => reason,
-    );
-    expect(error).toMatchObject({ code: "AUDIT_RENDERING_UNAVAILABLE" });
-    // MCP clients see this message as the tool's answer.
-    expect(String(error)).toContain("CONTEXT_API_KEY");
+    const result = await AuditService.startAudit(renderedAudit);
+    expect(result).toHaveProperty("auditId");
     expect(mocks.lock).not.toHaveBeenCalled();
   });
 

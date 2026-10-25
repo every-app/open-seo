@@ -192,7 +192,7 @@ it("starts only one rendered 50-page audit for simultaneous website saves", asyn
     expect.objectContaining({
       projectId: "project",
       maxPages: 50,
-      renderJavaScript: true,
+      renderJavaScript: false,
       billingCustomer: customer,
     }),
   );

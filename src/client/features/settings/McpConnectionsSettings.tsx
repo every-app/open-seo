@@ -68,11 +68,17 @@ export function McpConnectionsSettings() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("settings.connected_agents_client")}</TableHead>
+                    <TableHead>
+                      {t("settings.connected_agents_client")}
+                    </TableHead>
                     {showOrganization ? (
-                      <TableHead>{t("settings.connected_agents_organization")}</TableHead>
+                      <TableHead>
+                        {t("settings.connected_agents_organization")}
+                      </TableHead>
                     ) : null}
-                    <TableHead>{t("settings.connected_agents_connected")}</TableHead>
+                    <TableHead>
+                      {t("settings.connected_agents_connected")}
+                    </TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>

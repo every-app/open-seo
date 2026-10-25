@@ -3,9 +3,6 @@ import { Package } from "lucide-react";
 import { CopyButton } from "@/client/components/CopyButton";
 import { useLocale } from "@/client/lib/i18n";
 
-export const AGENT_SETUP_DESCRIPTION =
-  "Paste this prompt into your agent to automatically configure OpenSEO for you.";
-
 export function AgentSetupPanel({
   prompt,
   onCopy,

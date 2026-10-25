@@ -100,8 +100,12 @@ export function GscCard({
           <TableHeader>
             <TableRow>
               <TableHead>{t("dashboard.cards.metric")}</TableHead>
-              <TableHead className="text-right">{t("dashboard.cards.value")}</TableHead>
-              <TableHead className="text-right">{t("dashboard.cards.change")}</TableHead>
+              <TableHead className="text-right">
+                {t("dashboard.cards.value")}
+              </TableHead>
+              <TableHead className="text-right">
+                {t("dashboard.cards.change")}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -186,13 +190,17 @@ export function AuditHealthCard({
       <CardShell title={t("dashboard.cards.site_health")}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6 text-center">
           <ScanSearch className="size-7 text-muted-foreground" />
-          <h3 className="font-medium">{t("dashboard.cards.find_holding_back")}</h3>
+          <h3 className="font-medium">
+            {t("dashboard.cards.find_holding_back")}
+          </h3>
           <p className="max-w-sm text-sm text-muted-foreground">
             {t("dashboard.cards.scan_desc")}
           </p>
           {domain ? (
             <Button disabled={scan.isPending} onClick={() => scan.mutate()}>
-              {scan.isPending ? t("dashboard.cards.starting_scan") : t("dashboard.cards.scan_website")}
+              {scan.isPending
+                ? t("dashboard.cards.starting_scan")
+                : t("dashboard.cards.scan_website")}
             </Button>
           ) : (
             <Button

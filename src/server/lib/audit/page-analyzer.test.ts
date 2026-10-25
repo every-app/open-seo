@@ -346,4 +346,3 @@ describe("Cloudflare email protection and /cdn-cgi/ link skipping", () => {
     expect(analysis.links[0].anchor).toBe("Contact Page");
   });
 });
-

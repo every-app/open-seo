@@ -85,10 +85,7 @@ export function countWords(text: string): number {
   );
   const cjkCount = cjkChars ? cjkChars.length : 0;
   const nonCjkText = text
-    .replace(
-      /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g,
-      " ",
-    )
+    .replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, " ")
     .trim();
   const nonCjkWords = nonCjkText
     ? nonCjkText.split(/\s+/).filter(Boolean).length

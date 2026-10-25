@@ -134,23 +134,23 @@ export interface RankCheckResult {
   serpFeatures: string[];
 }
 
+function getItemDomain(item: SerpLiveItem): string | null {
+  if (item.domain) return item.domain.toLowerCase();
+  if (item.url) {
+    try {
+      return new URL(item.url).hostname.toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function buildRankCheckResult(
   input: { keywordId: string; keyword: string; targetDomain: string },
   items: SerpLiveItem[],
 ): RankCheckResult {
   const target = input.targetDomain.toLowerCase();
-
-  const getItemDomain = (item: SerpLiveItem): string | null => {
-    if (item.domain) return item.domain.toLowerCase();
-    if (item.url) {
-      try {
-        return new URL(item.url).hostname.toLowerCase();
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  };
 
   const isTargetMatch = (item: SerpLiveItem) => {
     const domain = getItemDomain(item);
@@ -161,7 +161,8 @@ function buildRankCheckResult(
   const organicMatch = items.find(
     (item) => item.type === "organic" && isTargetMatch(item),
   );
-  const fallbackMatch = organicMatch || items.find((item) => isTargetMatch(item));
+  const fallbackMatch =
+    organicMatch || items.find((item) => isTargetMatch(item));
 
   return {
     keywordId: input.keywordId,

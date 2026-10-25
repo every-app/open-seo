@@ -13,7 +13,7 @@ const translations: Record<Locale, TranslationDict> = { de, en };
 
 let unsavedLocale: Locale | null = null;
 
-export function readLocalePreference(): Locale {
+function readLocalePreference(): Locale {
   if (typeof window === "undefined") {
     return DEFAULT_LOCALE;
   }
@@ -32,7 +32,7 @@ export function readLocalePreference(): Locale {
   }
 }
 
-export function writeLocalePreference(locale: Locale) {
+function writeLocalePreference(locale: Locale) {
   try {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
     unsavedLocale = null;
@@ -66,6 +66,10 @@ function subscribeToLocale(onStoreChange: () => void) {
   };
 }
 
+function isRecord(val: unknown): val is Record<string, unknown> {
+  return typeof val === "object" && val !== null;
+}
+
 /**
  * Access a nested translation string by dot notation (e.g. "nav.dashboard", "audit.start_audit").
  */
@@ -76,10 +80,10 @@ export function getTranslation(
 ): string {
   const dict = translations[locale] ?? translations[DEFAULT_LOCALE];
   const parts = key.split(".");
-  let current: any = dict;
+  let current: unknown = dict;
 
   for (const part of parts) {
-    if (current && typeof current === "object" && part in current) {
+    if (isRecord(current) && part in current) {
       current = current[part];
     } else {
       current = null;
@@ -89,9 +93,9 @@ export function getTranslation(
 
   // Fallback to English if not found
   if (typeof current !== "string") {
-    let fallback: any = translations.en;
+    let fallback: unknown = translations.en;
     for (const part of parts) {
-      if (fallback && typeof fallback === "object" && part in fallback) {
+      if (isRecord(fallback) && part in fallback) {
         fallback = fallback[part];
       } else {
         fallback = null;
@@ -101,13 +105,16 @@ export function getTranslation(
     current = typeof fallback === "string" ? fallback : key;
   }
 
-  if (params && typeof current === "string") {
-    return current.replace(/\{(\w+)\}/g, (_, paramKey) =>
-      paramKey in params ? String(params[paramKey]) : `{${paramKey}}`,
-    );
+  const result = typeof current === "string" ? current : key;
+
+  if (params) {
+    return result.replace(/\{(\w+)\}/g, (_, paramKey: string) => {
+      const val = params[paramKey];
+      return val !== undefined ? String(val) : `{${paramKey}}`;
+    });
   }
 
-  return current;
+  return result;
 }
 
 /**

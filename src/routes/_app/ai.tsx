@@ -69,10 +69,7 @@ function AiPage() {
   return (
     <div className="h-full overflow-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl">
-        <PageHeader
-          title={t("ai.title")}
-          description={t("ai.description")}
-        />
+        <PageHeader title={t("ai.title")} description={t("ai.description")} />
 
         <Tabs
           value={tab}
@@ -95,9 +92,7 @@ function AiPage() {
                   <CardTitle>
                     <h2>{t("ai.setup.title")}</h2>
                   </CardTitle>
-                  <CardDescription>
-                    {t("ai.setup.description")}
-                  </CardDescription>
+                  <CardDescription>{t("ai.setup.description")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <AgentList />

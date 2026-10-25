@@ -113,7 +113,8 @@ export function AgentSetup({
               }
               onClick={onFinish}
             >
-              {t("ai.onboarding.go_to_dashboard")} <ArrowRight className="size-4" />
+              {t("ai.onboarding.go_to_dashboard")}{" "}
+              <ArrowRight className="size-4" />
             </Button>
           }
         />

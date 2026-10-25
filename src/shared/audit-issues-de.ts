@@ -1,4 +1,4 @@
-export interface LocalizedAuditIssueContent {
+interface LocalizedAuditIssueContent {
   title: string;
   explanation: string;
   howToFix: string;

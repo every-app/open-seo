@@ -72,7 +72,8 @@ export const de = {
     page_singular: "Seite",
     page_plural: "Seiten",
     no_issues_recorded: "Keine Probleme für dieses Audit verzeichnet.",
-    no_issues_recorded_desc: "Die Website ist entweder in hervorragendem Zustand oder es liegen keine Beanstandungen vor.",
+    no_issues_recorded_desc:
+      "Die Website ist entweder in hervorragendem Zustand oder es liegen keine Beanstandungen vor.",
     render_javascript: "JavaScript rendern",
     max_pages: "Seitenlimit",
     lighthouse: "Lighthouse Performance",
@@ -113,7 +114,8 @@ export const de = {
     about: "Über OpenSEO",
     version: "Version",
     analytics: "Produktanalyse",
-    analytics_desc: "Teile anonymisierte Nutzungsdaten, um OpenSEO zu verbessern.",
+    analytics_desc:
+      "Teile anonymisierte Nutzungsdaten, um OpenSEO zu verbessern.",
     analytics_help: "Hilf mit, OpenSEO zu verbessern",
     analytics_enabled: "Analyse aktiviert",
     analytics_disabled: "Analyse deaktiviert",
@@ -128,7 +130,8 @@ export const de = {
     privacy_updates_label: "Produkt-Update-E-Mails erhalten",
     privacy_updates_error: "Wir konnten deine E-Mail-Auswahl nicht speichern.",
     connected_agents_title: "Verbundene Agenten",
-    connected_agents_desc: "KI-Clients, die über OAuth bei OpenSEO angemeldet sind.",
+    connected_agents_desc:
+      "KI-Clients, die über OAuth bei OpenSEO angemeldet sind.",
     connected_agents_error: "Verbundene Agenten konnten nicht geladen werden.",
     connected_agents_empty: "Noch keine Agenten verbunden.",
     connected_agents_client: "Client",
@@ -138,7 +141,8 @@ export const de = {
     connected_agents_disconnect: "Trennen",
     connected_agents_disconnect_title: "„{name}“ trennen?",
     connected_agents_disconnect_confirm: "Trennen",
-    connected_agents_disconnect_warning: "Der Agent muss sich erneut bei OpenSEO anmelden.",
+    connected_agents_disconnect_warning:
+      "Der Agent muss sich erneut bei OpenSEO anmelden.",
     connected_agents_success: "Agent getrennt",
   },
   project_settings: {
@@ -208,7 +212,8 @@ export const de = {
     skills: {
       intro:
         "Der Setup-Prompt installiert diese Skills. Rufe sie namentlich auf, wenn du einen vollständigen Bericht statt einer kurzen Antwort wünschst.",
-      "seo-coach": "Erklärt deinen aktuellen Stand und wählt den nächsten Schritt aus.",
+      "seo-coach":
+        "Erklärt deinen aktuellen Stand und wählt den nächsten Schritt aus.",
       "seo-project-setup":
         "Speichert deine Ziele, Mitbewerber und wichtigsten Seiten als gemeinsamen Kontext.",
       "seo-audit":
@@ -217,15 +222,15 @@ export const de = {
         "Findet die wenigen Anpassungen mit den besten Chancen auf Erwähnung in KI-Antworten.",
       "ai-prompt-research":
         "Ermittelt, was Nutzer ChatGPT zu deinem Markt fragen und wer zitiert wird.",
-      "keyword-research":
-        "Findet Keyword-Chancen anhand weniger Startthemen.",
+      "keyword-research": "Findet Keyword-Chancen anhand weniger Startthemen.",
       "keyword-clustering":
         "Gruppiert Keywords nach Suchintention und ordnet sie Zielseiten zu.",
       "competitive-landscape":
         "Zeigt die Marktführer in deiner Branche und warum sie erfolgreich sind.",
       "competitor-analysis":
         "Analysiert Keywords, Inhalte und Backlinks eines einzelnen Mitbewerbers.",
-      "link-prospecting": "Findet Backlink-Möglichkeiten und entwirft Kontaktaufnahmen.",
+      "link-prospecting":
+        "Findet Backlink-Möglichkeiten und entwirft Kontaktaufnahmen.",
       "local-seo":
         "Prüft das Google Unternehmensprofil und die Sichtbarkeit in Google Maps.",
       "seo-report":

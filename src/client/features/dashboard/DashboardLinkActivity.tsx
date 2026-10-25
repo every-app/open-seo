@@ -31,15 +31,16 @@ export function DashboardLinkActivity({
     retry: false,
   });
   return (
-    <QueryState query={query} errorFallback={t("dashboard.cards.new_backlinks_title")}>
+    <QueryState
+      query={query}
+      errorFallback={t("dashboard.cards.new_backlinks_title")}
+    >
       {(data) => (
         <CardShell
           title={t("dashboard.cards.new_backlinks_title")}
           titleInfo={
             <DashboardInfo label={t("dashboard.cards.new_backlinks_about")}>
-              <p>
-                {t("dashboard.cards.new_backlinks_desc")}
-              </p>
+              <p>{t("dashboard.cards.new_backlinks_desc")}</p>
             </DashboardInfo>
           }
           action={
@@ -59,7 +60,9 @@ export function DashboardLinkActivity({
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("dashboard.cards.referring_domain")}</TableHead>
-                  <TableHead className="text-right">{t("dashboard.cards.backlinks")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("dashboard.cards.backlinks")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -105,7 +108,9 @@ export function DashboardLinkActivity({
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8 text-center">
               <Link2 className="size-7 text-muted-foreground" />
-              <h3 className="font-medium">{t("dashboard.cards.no_new_links")}</h3>
+              <h3 className="font-medium">
+                {t("dashboard.cards.no_new_links")}
+              </h3>
               <p className="text-sm text-muted-foreground">
                 {t("dashboard.cards.explore_existing_links")}
               </p>

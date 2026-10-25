@@ -277,7 +277,7 @@ export function getIssueDescriptor(
   const base = issueRegistry[issueType];
   if (!base) return null;
   if (locale === "de") {
-    const de = AUDIT_ISSUE_DESCRIPTORS_DE[issueType as AuditIssueType];
+    const de = AUDIT_ISSUE_DESCRIPTORS_DE[issueType];
     if (de) {
       return {
         ...base,
@@ -288,23 +288,4 @@ export function getIssueDescriptor(
     }
   }
   return base;
-}
-
-export function getLocalizedAuditIssueTypes(
-  locale?: string,
-): Record<string, AuditIssueDescriptor> {
-  if (locale !== "de") return AUDIT_ISSUE_TYPES;
-  const result: Record<string, AuditIssueDescriptor> = {};
-  for (const [key, base] of Object.entries(AUDIT_ISSUE_TYPES)) {
-    const de = AUDIT_ISSUE_DESCRIPTORS_DE[key as AuditIssueType];
-    result[key] = de
-      ? {
-          ...base,
-          title: de.title,
-          explanation: de.explanation,
-          howToFix: de.howToFix,
-        }
-      : base;
-  }
-  return result;
 }

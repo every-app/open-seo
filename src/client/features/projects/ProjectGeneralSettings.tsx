@@ -31,9 +31,7 @@ export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
         const project = projects.find((entry) => entry.id === projectId);
         if (!project) {
           return (
-            <QueryError
-              fallback={t("project_settings.general.not_found")}
-            />
+            <QueryError fallback={t("project_settings.general.not_found")} />
           );
         }
         return (

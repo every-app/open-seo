@@ -74,7 +74,8 @@ export const en: TranslationDict = {
     page_singular: "page",
     page_plural: "pages",
     no_issues_recorded: "No issues recorded for this audit.",
-    no_issues_recorded_desc: "Either the site is in great shape, or this audit ran before issue checks existed — run a new audit to get the full report.",
+    no_issues_recorded_desc:
+      "Either the site is in great shape, or this audit ran before issue checks existed — run a new audit to get the full report.",
     render_javascript: "Render JavaScript",
     max_pages: "Max pages",
     lighthouse: "Lighthouse Performance",
@@ -140,7 +141,8 @@ export const en: TranslationDict = {
     connected_agents_disconnect: "Disconnect",
     connected_agents_disconnect_title: "Disconnect “{name}”?",
     connected_agents_disconnect_confirm: "Disconnect",
-    connected_agents_disconnect_warning: "It will have to sign in to OpenSEO again.",
+    connected_agents_disconnect_warning:
+      "It will have to sign in to OpenSEO again.",
     connected_agents_success: "Agent disconnected",
   },
   project_settings: {
@@ -219,19 +221,14 @@ export const en: TranslationDict = {
         "Finds the few changes most likely to get you cited in AI answers.",
       "ai-prompt-research":
         "Finds what people ask ChatGPT about your market and who gets cited.",
-      "keyword-research":
-        "Finds keyword opportunities from a few seed topics.",
-      "keyword-clustering":
-        "Groups keywords by intent and maps them to pages.",
-      "competitive-landscape":
-        "Maps who wins in your market and why.",
+      "keyword-research": "Finds keyword opportunities from a few seed topics.",
+      "keyword-clustering": "Groups keywords by intent and maps them to pages.",
+      "competitive-landscape": "Maps who wins in your market and why.",
       "competitor-analysis":
         "Studies one competitor's keywords, content, and backlinks.",
       "link-prospecting": "Finds link prospects and drafts outreach.",
-      "local-seo":
-        "Audits a Google Business Profile and Maps visibility.",
-      "seo-report":
-        "Saves any of the above as a report on your Reports page.",
+      "local-seo": "Audits a Google Business Profile and Maps visibility.",
+      "seo-report": "Saves any of the above as a report on your Reports page.",
     },
     panel: {
       description:
