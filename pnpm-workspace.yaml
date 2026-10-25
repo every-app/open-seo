@@ -30,6 +30,9 @@ minimumReleaseAgeExclude:
   # published 2026-08-07; needed for the MCP SDK v2 migration plus the
   # ChatGPT DCR client-auth-negotiation fix.
   - "@cloudflare/workers-oauth-provider"
+  # TEMPORARY (remove after 2026-10-31): body-parser 2.4.0, published 2026-10-22,
+  # fixes a high-severity DoS in 2.3.0 (see the body-parser override below).
+  - "body-parser@2.4.0"
   # TEMPORARY (remove after 2026-08-09): security releases published
   # 2026-07-30/31; required to clear current high-severity advisories.
   - "brace-expansion"
@@ -56,14 +59,16 @@ overrides:
   brace-expansion: "^5.0.12"
   # GHSA-737v-mqg7-c878 — waiting on better-auth
   defu: "^6.1.5"
-  # GHSA-p98j-92pf-mc4p plus earlier XSS advisories — waiting on posthog-js
-  dompurify: "^3.4.16"
+  # SAFE_FOR_TEMPLATES bypass (critical, fixed in 3.4.17), GHSA-p98j-92pf-mc4p and earlier XSS advisories — waiting on posthog-js
+  dompurify: "^3.4.17"
   # GHSA-v2hh-gcrm-f6hx, GHSA-7p8r-x3mc-p8w7, GHSA-4c8g-83qw-93j6 — waiting on @modelcontextprotocol/sdk
   fast-uri: "^3.1.6"
   # 9 advisories incl. GHSA-88fw-hqm2-52qc (CORS) — waiting on @modelcontextprotocol/sdk
   hono: "^4.13.5"
   # GHSA-mwp4-54f8-5fhr plus September 2026 subnet/classification fixes
   ip-address: "^10.7.1"
+  # IP spoofing via IPv4-mapped IPv6 trust subnets (critical, fixed in 2.0.8) — waiting on express
+  proxy-addr: "^2.0.8"
   # GHSA-5p4m-2wfm-xmqj — waiting on @tanstack/start-plugin-core
   js-yaml: "^4.3.2"
   # GHSA-v6wh-96g9-6wx3 — waiting on @tanstack/devtools-vite
@@ -76,8 +81,8 @@ overrides:
   shell-quote: "^1.8.4"
   # GHSA-v3rj-xjv7-4jmq — waiting on knip
   smol-toml: "^1.7.1"
-  # September 2026 TLS/cache/DoS fixes plus earlier advisories — cheerio/miniflare
-  undici: "^7.29.1"
+  # October 2026 high advisory (fixed in 7.30.1), September TLS/cache/DoS fixes and earlier — cheerio/miniflare/@ai-sdk
+  undici: "^7.30.1"
   # GHSA-67mh-4wv8-2f99 — update drizzle-kit's legacy loader instead of ignoring it.
   "@esbuild-kit/core-utils>esbuild": "^0.25.12"
   # GHSA-rgj7-g3m4-5g8c — Miniflare 4 pins 0.34.5; 0.35.4 fixes bundled libheif.
@@ -85,7 +90,11 @@ overrides:
   # September 2026 advisories: keep these fixes within each supported major.
   "@ai-sdk/provider-utils@4": "^4.0.33"
   "@hono/node-server@1": "^1.19.15"
-  "body-parser@2": "^2.3.0"
+  "body-parser@2": "^2.4.0"
+  # seroval critical/high (fixed in 1.6.3) — only reachable through better-auth's Solid client,
+  # which this React app never imports; pinned so the audit stays clean
+  "solid-js>seroval": "^1.6.3"
+  "solid-js>seroval-plugins": "^1.6.3"
   browserslist: "^4.28.7"
   baseline-browser-mapping: "^2.11.0"
   # autumn-js uses query-string 9, which supports the patched ESM decoder.
