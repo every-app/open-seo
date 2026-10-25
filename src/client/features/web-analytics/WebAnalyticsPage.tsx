@@ -58,54 +58,59 @@ export function WebAnalyticsPage({
   });
 
   return (
-    <QueryState query={siteQuery} errorFallback="Could not load web analytics.">
-      {(site) =>
-        site.enabled ? (
-          <WebAnalyticsDashboard
-            projectId={projectId}
-            snippet={snippetFor(site.siteId ?? "")}
-            period={period}
-            onPeriodChange={onPeriodChange}
-            onDisable={() => {
-              if (
-                window.confirm(
-                  "Disable web analytics? All collected visitor data for this project is deleted.",
-                )
-              ) {
-                disableMutation.mutate();
-              }
-            }}
-            disabling={disableMutation.isPending}
-          />
-        ) : (
-          <Card size="lg">
-            <CardHeader>
-              <CardTitle>Web Analytics</CardTitle>
-              <CardDescription>
-                See who visits your site, where they come from, and which pages
-                they read — measured from your own domain, no cookies banner
-                required.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Enable tracking for this project&apos;s site, then add one
-                script tag to your pages. No personal data is collected: no
-                cookies beyond an anonymous visitor id, no IP addresses, no
-                fingerprints.
-              </p>
-              <Button
-                onClick={() => enableMutation.mutate()}
-                disabled={enableMutation.isPending}
-              >
-                {enableMutation.isPending
-                  ? "Enabling…"
-                  : "Enable web analytics"}
-              </Button>
-            </CardContent>
-          </Card>
-        )
-      }
-    </QueryState>
+    <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
+      <QueryState
+        query={siteQuery}
+        errorFallback="Could not load web analytics."
+      >
+        {(site) =>
+          site.enabled ? (
+            <WebAnalyticsDashboard
+              projectId={projectId}
+              snippet={snippetFor(site.siteId ?? "")}
+              period={period}
+              onPeriodChange={onPeriodChange}
+              onDisable={() => {
+                if (
+                  window.confirm(
+                    "Disable web analytics? All collected visitor data for this project is deleted.",
+                  )
+                ) {
+                  disableMutation.mutate();
+                }
+              }}
+              disabling={disableMutation.isPending}
+            />
+          ) : (
+            <Card size="lg">
+              <CardHeader>
+                <CardTitle>Web Analytics</CardTitle>
+                <CardDescription>
+                  See who visits your site, where they come from, and which
+                  pages they read — measured from your own domain, no cookies
+                  banner required.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Enable tracking for this project&apos;s site, then add one
+                  script tag to your pages. No personal data is collected: no
+                  cookies beyond an anonymous visitor id, no IP addresses, no
+                  fingerprints.
+                </p>
+                <Button
+                  onClick={() => enableMutation.mutate()}
+                  disabled={enableMutation.isPending}
+                >
+                  {enableMutation.isPending
+                    ? "Enabling…"
+                    : "Enable web analytics"}
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        }
+      </QueryState>
+    </div>
   );
 }
