@@ -288,6 +288,13 @@
       "when": 1792713961615,
       "tag": "0040_bind_api_keys_to_organization",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792948394717,
+      "tag": "0041_youthful_jack_murdock",
+      "breakpoints": true
     }
   ]
 }

@@ -32,6 +32,9 @@
     "**/*.{js,mjs,ts,tsx}",
     "!src/routeTree.gen.ts",
     "!web/**",
+    // Static web assets (favicons, the analytics tracker, built report
+    // widgets), served by the host rather than imported by the app.
+    "!src/public/**",
     // Alchemy state/bundle artifacts (gitignored)
     "!.alchemy/**",
     "!tests/badseo/**",
