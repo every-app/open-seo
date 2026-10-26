@@ -1,19 +1,19 @@
 # OpenSEO on an Every App gateway
 
-`AUTH_MODE=everyapp` runs OpenSEO as an app behind an [Every App](https://everyapp.dev) gateway. The gateway does what a self-hoster otherwise sets up per deployment:
+`AUTH_MODE=everyapp` runs OpenSEO as an app behind an [Every App](https://everyapp.com) gateway. The gateway does what a self-hoster otherwise sets up per deployment:
 
-| Concern                            | Other self-host modes                                             | `everyapp`                                                                                                                   |
-| ---------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Sign-in, sign-out, who may open it | Cloudflare Access, or none                                        | The gateway's users, organizations, roles and per-app access                                                                 |
-| User and workspace                 | Access `sub` → `user` row, one shared workspace, everyone `owner` | Gateway `sub` → `user` row; the workspace and role come from the signed identity (see the two shapes below)                  |
-| Teams, invitations, ownership      | None                                                              | The gateway's; OpenSEO's team UI and server functions are off                                                                |
-| MCP                                | `/mcp` behind Access Managed OAuth                                | The gateway's one MCP connector lists OpenSEO's tools as `openseo_<tool>`; OpenSEO's own `/mcp` and `oseo_` API keys are off |
-| DataForSEO                         | `DATAFORSEO_API_KEY` on the deployment                            | The gateway holds it; calls go over the gateway binding                                                                      |
-| Context.dev (rendered audits)      | `CONTEXT_API_KEY` on the deployment                               | The gateway holds it, as for DataForSEO; optional, audits run unrendered without it                                          |
-| OpenRouter                         | `OPENROUTER_API_KEY` on the deployment                            | The gateway's AI proxy holds it                                                                                              |
-| Search Console and Analytics       | OpenSEO's own Google client                                       | The gateway will hold Google (designed, not built); until then they show as coming and OpenSEO's own callbacks answer 404    |
-| Site-audit engine                  | The `open-seo-audit` Worker                                       | The app's helper Worker, `<app worker>--audit`                                                                               |
-| Billing, Turnstile, Loops, PostHog | Off (hosted only)                                                 | Off; the gateway meters provider calls and will bill them                                                                    |
+| Concern                            | Other self-host modes                                             | `everyapp`                                                                                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign-in, sign-out, who may open it | Cloudflare Access, or none                                        | The gateway's users, organizations, roles and per-app access                                                                                   |
+| User and workspace                 | Access `sub` → `user` row, one shared workspace, everyone `owner` | Gateway `sub` → `user` row; the workspace and role come from the signed identity (see the two shapes below)                                    |
+| Teams, invitations, ownership      | None                                                              | The gateway's; OpenSEO's team UI and server functions are off                                                                                  |
+| MCP                                | `/mcp` behind Access Managed OAuth                                | The gateway's one MCP connector lists OpenSEO's tools as `openseo_<tool>`; OpenSEO's own `/mcp` and `oseo_` API keys are off                   |
+| DataForSEO                         | `DATAFORSEO_API_KEY` on the deployment                            | The gateway holds it; calls go over the gateway binding                                                                                        |
+| Context.dev (rendered audits)      | `CONTEXT_API_KEY` on the deployment                               | The gateway holds it, as for DataForSEO; optional, audits run unrendered without it                                                            |
+| OpenRouter                         | `OPENROUTER_API_KEY` on the deployment                            | The gateway's AI proxy holds it                                                                                                                |
+| Search Console and Analytics       | OpenSEO's own Google client                                       | The gateway holds the Google client; members connect Google in the gateway, and reads go through its proxy. OpenSEO's own callbacks answer 404 |
+| Site-audit engine                  | The `open-seo-audit` Worker                                       | The app's helper Worker, `<app worker>--audit`                                                                                                 |
+| Billing, Turnstile, Loops, PostHog | Off (hosted only)                                                 | Off; the gateway meters provider calls and will bill them                                                                                      |
 
 ## Two shapes, one mode
 
@@ -53,7 +53,7 @@ Limits read the deployment tier (`src/server/lib/deployment-tier.ts`), not `AUTH
   - Work no request started names the organization that owns it, sent as `x-everyapp-org` (`for: { background: true, organizationId }`): each Workflow names its payload's organization around `run()` and `pgStep` carries it into every step; SAM names its session's organization for the model and its tools; the DataForSEO metering seam (`dataforseo/client.ts`) names the customer's on every metered call.
   - Inside a request, a named organization must be the request's, or the call is refused before it leaves. A call that names nobody throws the SDK's `AttributionError` in a shared Worker, so a missed path fails closed. In a fork, the shared workspace is named as the pinned `EVERY_APP_ORG_ID`, the only organization a fork may name.
 - **SAM sockets.** The Worker authorizes a SAM WebSocket once, when it connects, and the `member` row is a mirror that nothing removes, so a removed member's open chat would keep working until it closed. In this mode each socket closes 15 minutes after it connects (`src/server/features/sam/samSocketLifetime.ts`, a Durable Object alarm), with a normal close the client reconnects after, through the gateway, which signs a fresh identity or refuses someone it no longer lets in. A reply streaming at that moment resumes on the new socket.
-- **Google** (`src/server/features/google/googleAccess.ts`). The seam for the gateway's Google integration. Until it exists, OpenSEO's own Google client is ignored in this mode even if set, Search Console and Analytics show as coming to Every App, and `/api/gsc/oauth/callback` and `/api/ga4/oauth/callback` answer 404.
+- **Google** (`src/server/features/google/googleAccess.ts`, `gatewayGoogle.ts`). The gateway holds the Google OAuth client (`GOOGLE_WORKSPACE_CLIENT_ID` and `GOOGLE_WORKSPACE_CLIENT_SECRET`, the manifest's optional `google-workspace` capability) and each member's connection; Search Console and GA4 reads go through its proxy. OpenSEO's own Google client is ignored in this mode even if set, its connect flow is off, and `/api/gsc/oauth/callback` and `/api/ga4/oauth/callback` answer 404.
 - **MCP tools** (`src/server/everyapp/tools.ts`). One list, `registerOpenSeoTools`, feeds both OpenSEO's own MCP server and the gateway's catalog, so a new tool reaches both. Read-only tools are `read`; deleting saved work is `destructive`, which the gateway hides from AI clients until it has approvals; everything else is `write`. Tools return OpenSEO's text for the model and their structured result for clients. `whoami` reports the mode as `Every App (first party)` or `Every App (fork)`.
 - **Account menu.** Shows the person from the identity, no organization switcher and no billing; "Sign out on Every App" opens the gateway (`GATEWAY_URL`, or the identity issuer in local dev), where sign-out happens.
 - **Build** (`cloudflare.config.ts`, `vite-plugin-every-app.ts`). With `AUTH_MODE=everyapp`, `vite.config.ts` swaps the Cloudflare Vite plugin 1.x and `wrangler.jsonc` for plugin 2.x and `cloudflare.config.ts`: the app's Worker from `everyAppWorker()`, and the site-audit engine (`src/audit-worker.ts`) as its helper Worker from `everyAppAuxiliaryWorker()`. The client build reads the same `AUTH_MODE`, so it shows the Every App copy. Every other build still uses `wrangler.jsonc`.
@@ -61,15 +61,16 @@ Limits read the deployment tier (`src/server/lib/deployment-tier.ts`), not `AUTH
 
 ## Settings
 
-`everyapp.config.ts` declares what OpenSEO needs set, with a `why` for whoever sets it, and whether OpenSEO opens without it. The provider keys are the gateway's, set once for every app from the private-every-app checkout with the hosted gateway selected; `CRAWLER_ACCESS_SECRET` and `OPENROUTER_MODEL` are OpenSEO's own, on its Workers. The gateway's app list shows OpenSEO as needing setup, with the command, until the required ones are set, and `pnpm everyapp status` shows each setting's state.
+`everyapp.config.ts` declares what OpenSEO needs set, with a `why` for whoever sets it, and whether OpenSEO opens without it. The provider keys are the gateway's, set once for every app from your Every App checkout; `pnpm everyapp configure openseo` asks for each, or set one alone: `CRAWLER_ACCESS_SECRET` and `OPENROUTER_MODEL` are OpenSEO's own, on its Workers. The gateway's app list shows OpenSEO as needing setup, with the command, until the required ones are set, and `pnpm everyapp status` shows each setting's state.
 
-| Setting                 | Held by | Need     | Used for                                                                                                 |
-| ----------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------- |
-| `OPENROUTER_API_KEY`    | gateway | required | SAM, prompt suggestions and website research, through the gateway's AI proxy                             |
-| `DATAFORSEO_API_KEY`    | gateway | required | Keyword, SERP, backlink, local business and AI answer data, including scheduled rank checks              |
-| `CONTEXT_API_KEY`       | gateway | optional | Rendering JavaScript-heavy pages when a site audit asks for it                                           |
-| `CRAWLER_ACCESS_SECRET` | OpenSEO | optional | Encrypting the Shopify crawler-access signatures audits of protected stores send (32+ chars)             |
-| `OPENROUTER_MODEL`      | OpenSEO | optional | The OpenRouter model SAM, prompt suggestions and website research run on (default `openai/gpt-5.6-luna`) |
+| Setting                                                        | Held by | Need     | Used for                                                                                                 |
+| -------------------------------------------------------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`                                           | gateway | required | SAM, prompt suggestions and website research, through the gateway's AI proxy                             |
+| `DATAFORSEO_API_KEY`                                           | gateway | required | Keyword, SERP, backlink, local business and AI answer data, including scheduled rank checks              |
+| `CONTEXT_API_KEY`                                              | gateway | optional | Rendering JavaScript-heavy pages when a site audit asks for it                                           |
+| `CRAWLER_ACCESS_SECRET`                                        | OpenSEO | optional | Encrypting the Shopify crawler-access signatures audits of protected stores send (32+ chars)             |
+| `OPENROUTER_MODEL`                                             | OpenSEO | optional | The OpenRouter model SAM, prompt suggestions and website research run on (default `openai/gpt-5.6-luna`) |
+| `GOOGLE_WORKSPACE_CLIENT_ID`, `GOOGLE_WORKSPACE_CLIENT_SECRET` | gateway | optional | Search Console and GA4 reads for your sites, with the Google account a member connects in Every App      |
 
 ```bash
 pnpm everyapp secret set OPENROUTER_API_KEY
@@ -85,7 +86,7 @@ Without `CONTEXT_API_KEY`, audits run unrendered: the "Render JavaScript" option
 
 ## Run it locally
 
-The Every App SDK and CLI it builds with come from npm (`@every-app/sdk` and `everyapp`, pinned to the same version in `package.json`), so a clone of this repository installs and builds on its own. To put it on your Gateway, run `pnpm everyapp install https://github.com/every-app/open-seo` from your [Every App](https://github.com/every-app/every-app) checkout: it installs the latest OpenSEO release, and the same command updates it later. The Release workflow (`.github/workflows/release.yml`) attaches `everyapp-release.tar.gz` to each OpenSEO release when it is published, and `gh workflow run release.yml -f tag=v<version>` attaches it to an existing one. To deploy your own changes instead, run `pnpm deploy:everyapp` (the fork shape, below).
+The Every App SDK and CLI it builds with are the published packages `@every-app/sdk` and `everyapp`, pinned to one exact version in `package.json`, so a clone of this repository installs and builds on its own: no checkout of the Every App repository beside it. To put it on your Gateway, run `pnpm everyapp install https://github.com/every-app/open-seo` from your [Every App](https://github.com/every-app/every-app) checkout, then `pnpm everyapp configure openseo`: the install takes the latest OpenSEO release, and the same command updates it later. The Release workflow (`.github/workflows/release.yml`) attaches `everyapp-release.tar.gz` to each OpenSEO release when it is published, and `gh workflow run release.yml -f tag=v<version>` attaches it to an existing one. To deploy your own changes instead, run that checkout's CLI from this directory: `node ../every-app/packages/cli/bin/everyapp.js deploy` (the CLI installed here runs `dev`, `db migrate` and `release`; a deploy also updates the Gateway, which only a checkout can build).
 
 ```bash
 pnpm install
@@ -111,8 +112,6 @@ pnpm deploy:everyapp     # everyapp deploy
 ## What isn't done
 
 - **A live deploy** of either shape.
-- **Google at the gateway**, which Search Console and Analytics wait for.
 - **Metering through the gateway's wallet.** Calls are attributed to organizations and capped per day; nothing is charged yet.
 - **Membership checks inside a SAM socket's lifetime.** A removed member can keep chatting for up to 15 minutes. A membership lookup at the gateway per turn would close that window; it isn't built.
-- **Publishing.** `@every-app/sdk` and `everyapp` are pinned to a release candidate (`0.3.0-rc.*`); move to the stable `0.3.0` when it is on npm.
 - **Long tools.** The gateway gives a tool call 30 seconds. Most OpenSEO tools return well within it; prompt exploration and some research can take longer.

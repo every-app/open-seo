@@ -125,7 +125,7 @@ export default {
   // the other unauthenticated routes are hosted-only, and the gateway's tool
   // calls (`/__everyapp/tools/*`) carry their own gateway-signed tokens.
   // Every member opens OpenSEO once it is installed, like the other three
-  // launch apps (Open CRM, Open Analytics, Agentic Inbox): the documented
+  // launch apps (OpenCRM, OpenAnalytics, Agentic Inbox): the documented
   // default for them. Without it a fresh install opens to owners and admins
   // only, and an admin grants the rest by hand.
   access: "everyone",

@@ -43,9 +43,20 @@ OpenSEO exposes an MCP server so AI agents like Claude Code, OpenClaw, and Herme
 - [Set up OpenSEO MCP](https://openseo.so/docs/mcp)
 - [Set up OpenSEO Agent Skills](https://openseo.so/docs/skills/setup)
 
+## Run on Every App
+
+OpenSEO runs as an app behind an [Every App](https://everyapp.com) gateway, in your own Cloudflare account, with sign-in, access and the provider keys handled by the gateway. From a checkout of [every-app/every-app](https://github.com/every-app/every-app), the folder you ran `pnpm everyapp setup` from:
+
+```bash
+pnpm everyapp install https://github.com/every-app/open-seo
+pnpm everyapp configure openseo
+```
+
+The first installs the latest release; run it again later to update. The second asks for an OpenRouter key and a DataForSEO key, then the optional ones. You need a Cloudflare account on Workers Paid, with R2 enabled once on the account before the install. See [everyapp.com/docs/apps/openseo](https://everyapp.com/docs/apps/openseo); [`docs/maintainers/every-app.md`](./docs/maintainers/every-app.md) covers how the port works.
+
 ## Self-Hosting
 
-OpenSEO supports two self-hosting paths. Both use email and password accounts: the first visitor creates the admin account, teammates join from invitation links, and MCP clients (Claude, ChatGPT, Codex, Cursor) sign in with the same accounts.
+OpenSEO also supports two self-hosting paths without Every App. Both use email and password accounts: the first visitor creates the admin account, teammates join from invitation links, and MCP clients (Claude, ChatGPT, Codex, Cursor) sign in with the same accounts.
 
 - **Docker** - On your own server or computer, with a prebuilt image that is ready in seconds. Works with Compose-based platforms such as Coolify, Portainer and Dokploy. See [`docs/SELF_HOSTING_DOCKER.md`](./docs/SELF_HOSTING_DOCKER.md).
   - Running the older single-container image? It keeps getting updates; [move to the new setup](./docs/SELF_HOSTING_DOCKER.md#move-from-the-old-docker-image) when you are ready, data included.
