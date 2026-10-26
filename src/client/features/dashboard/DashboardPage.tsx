@@ -18,6 +18,8 @@ import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { sort } from "remeda";
 import { DashboardOnboarding } from "./DashboardOnboarding";
+import { DashboardAgentCard } from "./DashboardAgentCard";
+import { getStepStatus } from "./dashboardSteps";
 import {
   AuditHealthCard,
   GscCard,
@@ -31,6 +33,7 @@ import {
   getDashboardOverview,
 } from "@/serverFunctions/dashboard";
 import { Skeleton } from "@/client/components/ui/skeleton";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 
 export function DashboardPage({
   projectId,
@@ -44,6 +47,7 @@ export function DashboardPage({
   const activationQuery = useQuery({
     queryKey: ["dashboardActivation", projectId],
     queryFn: () => getDashboardActivation({ data: { projectId } }),
+    refetchOnWindowFocus: "always",
   });
   const overviewQuery = useQuery({
     queryKey: ["dashboardOverview", projectId],
@@ -189,6 +193,11 @@ export function DashboardPage({
             Project settings
           </Button>
         </div>
+
+        {usesBetterAuthClient() &&
+        getStepStatus(activation, "mcp") === "todo" ? (
+          <DashboardAgentCard projectId={projectId} />
+        ) : null}
 
         <WorkspaceMergeBanner />
 

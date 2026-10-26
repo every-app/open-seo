@@ -14,7 +14,6 @@ export const Route = createFileRoute("/_marketing/domain-age-checker")({
         "Check when a domain was registered, how old it is, when it expires, and who the registrar is — up to 10 domains at once. No signup, no email.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free domain age checker",
     }),
   component: DomainAgeCheckerPage,
 });

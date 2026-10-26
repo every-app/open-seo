@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   crawlerHeadersFor,
+  normalizeCrawlerHost,
   shopifyCrawlerHeaders,
 } from "@/shared/crawler-access";
 
@@ -30,5 +31,12 @@ describe("crawlerHeadersFor", () => {
     expect(crawlerHeadersFor("https://store.example.com/a", expired)).toEqual(
       {},
     );
+  });
+});
+
+describe("normalizeCrawlerHost", () => {
+  it("rejects a scheme whose host https requests would read differently", () => {
+    // Under https, "5.6" is the IPv4 address 5.0.0.6.
+    expect(normalizeCrawlerHost("h://5.6")).toBeNull();
   });
 });

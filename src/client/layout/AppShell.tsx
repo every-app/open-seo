@@ -3,6 +3,7 @@ import { projectsQueryOptions } from "@/client/features/projects/projectQueries"
 import { Link, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  LegacyDockerBanner,
   MissingSeoSetupModal,
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
@@ -117,6 +118,7 @@ export function AuthenticatedAppLayout({
           shouldShowSeoApiWarning={shouldShowSeoApiWarning}
           seoApiKeyStatusError={seoApiKeyStatusError}
         />
+        <LegacyDockerBanner />
         {banner}
         <div className="min-h-0 flex-1 overflow-auto">{children}</div>
       </SidebarInset>

@@ -12,7 +12,6 @@ export const Route = createFileRoute("/_marketing/keyword-generator")({
         "Start with a topic and find keyword ideas people search for. Compare estimated search volume and difficulty in your target country.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "Free Keyword Generator",
     }),
   component: Page,
 });

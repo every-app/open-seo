@@ -96,6 +96,7 @@ export function useKeywordResearchController(
     deepFetchFailed,
     retrySerp,
     serpError,
+    serpOutOfCredits,
     serpRetrying,
   } = useKeywordSerpAnalysis(input.projectId, locationCode, input.locationName);
 
@@ -295,6 +296,7 @@ export function useKeywordResearchController(
     canLoadMoreSerp,
     deepFetchFailed,
     serpError,
+    serpOutOfCredits,
     serpRetrying,
     serpLoading,
     serpLoadingMore,

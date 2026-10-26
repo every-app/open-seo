@@ -1,10 +1,11 @@
 import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
-import { isHostedAuthMode } from "@/lib/auth-mode";
+import { usesBetterAuth } from "@/lib/auth-mode";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { ReportRepository } from "@/server/features/reports/repositories/ReportRepository";
 import { asAppError } from "@/server/lib/errors";
+import { createReportMapGrants } from "@/server/features/reports/reportMapGrant";
 import { reportDocumentResponse, textResponse } from "@/shared/report-sandbox";
 
 // The report viewer: the stored document, served byte for byte from the app's
@@ -28,11 +29,12 @@ async function handleReportRequest(
   try {
     context = await resolveUserContextFromHeaders(request.headers);
   } catch (error) {
-    // Only a missing session is answered here, and only in hosted mode. A
-    // config or session-store failure must not masquerade as "you are logged
-    // out", and the self-hosted modes have no sign-in page to complete.
+    // Only a missing session is answered here, and only where the app has
+    // its own sign-in page. A config or session-store failure must not
+    // masquerade as "you are logged out", and the delegated self-hosted modes
+    // have no sign-in page to complete.
     if (asAppError(error)?.code !== "UNAUTHENTICATED") throw error;
-    if (!isHostedAuthMode(env.AUTH_MODE)) {
+    if (!usesBetterAuth(env.AUTH_MODE)) {
       return textResponse("Sign in to read this report.", 401);
     }
     // The most likely real entry: someone opening a report link in a browser
@@ -85,6 +87,7 @@ async function handleReportRequest(
   return reportDocumentResponse(html, {
     print,
     cacheControl: "private, no-store",
+    mapGrants: await createReportMapGrants(html),
   });
 }
 

@@ -6,7 +6,7 @@ import type { handleAuthenticatedOpenSeoMcpRequest } from "@/server/mcp/transpor
 const mocks = vi.hoisted(() => ({
   verifyApiKey: vi.fn(),
   getHostedUser: vi.fn(),
-  resolveExistingActiveHostedOrganization: vi.fn(),
+  getMembership: vi.fn(),
   recordMcpAuthorized: vi.fn(),
   handleAuthenticatedOpenSeoMcpRequest:
     vi.fn<typeof handleAuthenticatedOpenSeoMcpRequest>(),
@@ -25,12 +25,8 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/server/auth/repositories/AuthRepository", () => ({
   AuthRepository: {
     getHostedUser: mocks.getHostedUser,
+    getMembership: mocks.getMembership,
   },
-}));
-
-vi.mock("@/server/auth/default-hosted-organization", () => ({
-  resolveExistingActiveHostedOrganization:
-    mocks.resolveExistingActiveHostedOrganization,
 }));
 
 vi.mock("@/server/features/activation/mcpActivation", () => ({
@@ -55,16 +51,20 @@ function request(headers?: HeadersInit, method = "POST") {
   return new Request("https://app.openseo.so/mcp", { method, headers });
 }
 
+// What verifyApiKey returns for a key bound to org-1 at creation.
+const boundKey = {
+  valid: true,
+  error: null,
+  key: { referenceId: "user-1", metadata: { organizationId: "org-1" } },
+};
+
 describe("handleMcpApiKeyRequest", () => {
   beforeEach(() => {
     mocks.getHostedUser.mockResolvedValue({
       id: "user-1",
       email: "person@example.com",
     });
-    mocks.resolveExistingActiveHostedOrganization.mockResolvedValue({
-      organizationId: "org-1",
-      role: "owner",
-    });
+    mocks.getMembership.mockResolvedValue({ role: "owner" });
     mocks.recordMcpAuthorized.mockResolvedValue(undefined);
     mocks.handleAuthenticatedOpenSeoMcpRequest.mockResolvedValue(
       new Response("mcp response"),
@@ -76,13 +76,9 @@ describe("handleMcpApiKeyRequest", () => {
     ["case-insensitive bearer", { Authorization: "bearer oseo_secret" }],
     ["x-api-key", { "x-api-key": "oseo_secret" }],
   ])(
-    "handles a valid key sent as %s with the hosted user, organization, and MCP scopes",
+    "handles a valid key sent as %s with the hosted user, its bound organization, and MCP scopes",
     async (_label, headers) => {
-      mocks.verifyApiKey.mockResolvedValue({
-        valid: true,
-        error: null,
-        key: { referenceId: "user-1" },
-      });
+      mocks.verifyApiKey.mockResolvedValue(boundKey);
       const mcpRequest = request(headers);
 
       const response = await handleMcpApiKeyRequest(mcpRequest, env, ctx);
@@ -91,9 +87,9 @@ describe("handleMcpApiKeyRequest", () => {
       expect(mocks.verifyApiKey).toHaveBeenCalledWith({
         body: { key: "oseo_secret" },
       });
-      expect(
-        mocks.resolveExistingActiveHostedOrganization,
-      ).toHaveBeenCalledWith("user-1");
+      // The org comes from the key's metadata; the role from the live member
+      // row in that org.
+      expect(mocks.getMembership).toHaveBeenCalledWith("user-1", "org-1");
       expect(mocks.recordMcpAuthorized).toHaveBeenCalledWith("org-1");
       expect(mocks.handleAuthenticatedOpenSeoMcpRequest).toHaveBeenCalledTimes(
         1,
@@ -117,13 +113,32 @@ describe("handleMcpApiKeyRequest", () => {
     },
   );
 
-  it("returns 403 when the user has no organization membership", async () => {
+  // A key that predates the org binding and was not backfilled is dead, not
+  // rebound to whatever org the user is in now.
+  it("returns 403 for a key with no organization in its metadata", async () => {
     mocks.verifyApiKey.mockResolvedValue({
       valid: true,
       error: null,
-      key: { referenceId: "user-1" },
+      key: { referenceId: "user-1", metadata: null },
     });
-    mocks.resolveExistingActiveHostedOrganization.mockResolvedValue(null);
+
+    const response = await handleMcpApiKeyRequest(
+      request({ Authorization: "Bearer oseo_secret" }),
+      env,
+      ctx,
+    );
+
+    expect(response?.status).toBe(403);
+    await expect(response?.json()).resolves.toMatchObject({
+      error: "account_access_revoked",
+    });
+    expect(mocks.getMembership).not.toHaveBeenCalled();
+    expect(mocks.handleAuthenticatedOpenSeoMcpRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 when the user was removed from the key's organization", async () => {
+    mocks.verifyApiKey.mockResolvedValue(boundKey);
+    mocks.getMembership.mockResolvedValue(null);
 
     const response = await handleMcpApiKeyRequest(
       request({ Authorization: "Bearer oseo_secret" }),
@@ -160,11 +175,7 @@ describe("handleMcpApiKeyRequest", () => {
   });
 
   it("returns 429 with Retry-After when the MCP_RATE_LIMIT binding denies", async () => {
-    mocks.verifyApiKey.mockResolvedValue({
-      valid: true,
-      error: null,
-      key: { referenceId: "user-1" },
-    });
+    mocks.verifyApiKey.mockResolvedValue(boundKey);
     const limit = vi.fn().mockResolvedValue({ success: false });
 
     const response = await handleMcpApiKeyRequest(

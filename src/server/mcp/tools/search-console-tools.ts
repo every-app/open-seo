@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import { z } from "zod";
+import { searchConsoleSchema } from "@/shared/mcp-contracts";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
@@ -12,6 +13,7 @@ import {
 } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { GscService } from "@/server/features/gsc/services/GscService";
 import {
@@ -66,6 +68,18 @@ async function missingSelfHostedGoogleClientResponse(
   projectId: string,
 ) {
   if (await hasGoogleOAuthConfig()) return null;
+
+  if ((await getGoogleAccessMode()) === "gateway") {
+    return mcpResponse({
+      text: "Google isn't set up in Every App yet. An owner or admin adds it once: create a Google OAuth client with the redirect URI https://<your gateway>/connect/google-workspace/callback, then paste it in Every App under Manage workspace → Providers, or run `pnpm everyapp secret set GOOGLE_WORKSPACE_CLIENT_ID GOOGLE_WORKSPACE_CLIENT_SECRET` (guide: https://everyapp.com/docs/connect-oauth). Then connect Search Console from the project's settings page.",
+      meta: buildProjectMeta(context, projectId),
+      structuredContent: {
+        ok: false,
+        connected: false,
+        reason: "gsc_oauth_not_configured",
+      },
+    });
+  }
 
   return mcpResponse({
     text: `This self-hosted OpenSEO deployment is not configured for Search Console yet. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET, then reconnect Search Console from the project's settings page. Setup docs: ${GSC_SELF_HOSTED_SETUP_DOCS_URL}`,
@@ -244,36 +258,7 @@ export const getSearchConsolePerformanceTool = {
     description:
       "Query the connected Search Console property's Search Analytics: clicks, impressions, CTR, and average position by query/page/country/device/date. First-party data — use it for what already ranks, near-ranking queries, and pages with real demand. Google sorts by clicks and can't filter by position, so minPosition/maxPosition/minImpressions are applied server-side over the top 1000 rows of the window — use them instead of fetching everything. ctr is a 0-1 fraction; position is a 1-based average and is omitted from rows when type is 'discover' or 'googleNews' (Google does not report it there — treat it as unavailable, not a failure); dates are Pacific Time; the last ~3 days may be incomplete. Reads only the Search Console property already connected to an OpenSEO project the caller is authorized to access. The server selects the Google account and property from that project's saved connection. Read-only; uses no credits.",
     inputSchema: perfInputSchema,
-    outputSchema: z.looseObject({
-      ok: z.boolean(),
-      reason: z.string().optional(),
-      connectUrl: z.string().optional(),
-      setupDocsUrl: z.string().optional(),
-      siteUrl: z.string().optional(),
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-      dimensions: z.array(z.string()).optional(),
-      rowCount: z.number().optional(),
-      rows: z
-        .array(
-          z
-            .object({
-              keys: z.array(z.string()).optional(),
-              clicks: z.number(),
-              impressions: z.number(),
-              ctr: z.number(),
-              // Google omits position for the discover and googleNews search
-              // types even though the other metrics are present. The table
-              // already renders a missing position as an em dash.
-              position: z.number().optional(),
-            })
-            .passthrough(),
-        )
-        .optional(),
-      hasMore: z.boolean().optional(),
-      nextStartRow: z.number().optional(),
-      ...optionalMetaOutputSchema,
-    }),
+    outputSchema: searchConsoleSchema,
     annotations: {
       readOnlyHint: true,
       openWorldHint: true,
@@ -291,7 +276,7 @@ export const getSearchConsolePerformanceTool = {
     const meta = buildProjectMeta(
       context,
       args.projectId,
-      `/p/${args.projectId}/settings/integrations`,
+      `/p/${args.projectId}/search-performance`,
     );
 
     // GSC rejects searchAppearance combined with any other dimension.
@@ -384,6 +369,7 @@ export const getSearchConsolePerformanceTool = {
         structuredContent: {
           ok: false,
           reason: isNotConnected ? "not_connected" : "api_error",
+          connectionRequired: isNotConnected || error instanceof GscTokenError,
           connectUrl,
         },
       });

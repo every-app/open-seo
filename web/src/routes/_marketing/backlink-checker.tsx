@@ -17,7 +17,6 @@ export const Route = createFileRoute("/_marketing/backlink-checker")({
         "Check backlinks for any domain: referring domains, top backlinks, anchor text, and follow status. Instant results, no signup, no email.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free backlink checker",
     }),
   component: BacklinkCheckerPage,
 });

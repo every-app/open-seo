@@ -12,7 +12,6 @@ export const Route = createFileRoute("/_marketing/competitor-keyword-finder")({
         "Find the keywords a competitor ranks for on Google, with search volumes, ranking positions, and the pages that rank. Enter a domain to get started.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "Free Competitor Keyword Finder",
     }),
   component: Page,
 });

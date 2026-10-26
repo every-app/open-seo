@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({ captureServerEvent: vi.fn() }));
 vi.mock("cloudflare:workers", () => ({ env: { DATABASE_PROVIDER: "d1" } }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: async () => true,
+  usesBetterAuthServer: async () => true,
 }));
 vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: mocks.captureServerEvent,

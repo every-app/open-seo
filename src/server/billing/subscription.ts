@@ -11,6 +11,7 @@ import {
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { autumn, AUTUMN_TRACK_RETRY_OPTIONS } from "@/server/billing/autumn";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
 import { AppError } from "@/server/lib/errors";
 
 export type BillingCustomerContext = Pick<
@@ -90,9 +91,13 @@ export async function customerHasPaidPlan(
 // Remaining shared usage credits — the monthly `usage_credits` balance plus the
 // rolled-over `topup_credits` balance. Both DataForSEO and LLM spend draw from
 // these (the `seo_data_usage` and `llm_usage` features both map into them).
+// `topupRemaining` is what can be spent now: 0 while the organization's
+// monthly auto-reload budget (Autumn's usage limit on the top-up balance) is
+// spent, which `topupBudgetReached` reports.
 export async function getUsageCreditsRemaining(customerId: string): Promise<{
   monthlyRemaining: number;
   topupRemaining: number;
+  topupBudgetReached: boolean;
 }> {
   const [monthlyCheck, topupCheck] = await Promise.all([
     autumn.check({ customerId, featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID }),
@@ -138,9 +143,16 @@ export async function getUsageCreditsRemaining(customerId: string): Promise<{
     );
   }
 
+  // A positive balance that refuses one credit is the budget: the usage
+  // limit is the only control on this balance that refuses with credits left.
+  const topupBudgetReached =
+    !topupCheck.allowed && (topupCheck.balance?.remaining ?? 0) > 0;
   return {
     monthlyRemaining: monthlyBalance.remaining,
-    topupRemaining: topupCheck.balance?.remaining ?? 0,
+    topupRemaining: topupBudgetReached
+      ? 0
+      : (topupCheck.balance?.remaining ?? 0),
+    topupBudgetReached,
   };
 }
 
@@ -158,10 +170,36 @@ export async function getUsageCreditsRemaining(customerId: string): Promise<{
  */
 export async function checkUsageCreditsDepleted(
   customer: BillingCustomerContext,
-): Promise<{ depleted: boolean; monthlyRemaining: number }> {
+): Promise<{
+  depleted: boolean;
+  monthlyRemaining: number;
+  /** Depleted because the monthly auto-reload budget is spent, with top-up
+   *  credits still in the balance; the refusal copy says to raise it. */
+  budgetReached: boolean;
+}> {
   const check = await getUsageCreditsRemaining(customer.organizationId);
-  if (check.monthlyRemaining + check.topupRemaining > 0) {
-    return { depleted: false, monthlyRemaining: check.monthlyRemaining };
+  const notDepleted = {
+    depleted: false,
+    monthlyRemaining: check.monthlyRemaining,
+    budgetReached: false,
+  };
+  if (check.monthlyRemaining + check.topupRemaining > 0) return notDepleted;
+
+  // The budget is a refusal Autumn made on purpose, not a stale balance, so
+  // there is nothing to confirm against the customer object, which shows
+  // the credits the budget holds back.
+  if (check.topupBudgetReached) {
+    await captureServerEvent({
+      distinctId: customer.userId,
+      event: "usage:credits_gate_refused",
+      organizationId: customer.organizationId,
+      properties: {
+        project_id: customer.projectId,
+        reason: "monthly_budget_reached",
+        monthly_remaining: check.monthlyRemaining,
+      },
+    });
+    return { ...notDepleted, depleted: true, budgetReached: true };
   }
 
   // No try/catch: if this second read fails while the first said depleted,
@@ -188,7 +226,7 @@ export async function checkUsageCreditsDepleted(
         confirmed,
       },
     );
-    return { depleted: false, monthlyRemaining: confirmed.monthlyRemaining };
+    return { ...notDepleted, monthlyRemaining: confirmed.monthlyRemaining };
   }
 
   await captureServerEvent({
@@ -201,7 +239,8 @@ export async function checkUsageCreditsDepleted(
       topup_remaining: confirmed.topupRemaining,
     },
   });
-  return { depleted: true, monthlyRemaining: check.monthlyRemaining };
+  await sendCreditsExhaustedEvent(customer);
+  return { ...notDepleted, depleted: true };
 }
 
 // A hold outlives the provider call it covers; an orphaned hold (isolate
@@ -303,7 +342,11 @@ export async function holdCredits(args: {
  * the common case (monthly covers the batch) is a single Autumn request.
  *
  * Throws INSUFFICIENT_CREDITS when no call fits; `refusedCalls` lists the
- * ones that did not when some did. Either way the refusal event is emitted.
+ * ones that did not when some did. Either way the refusal event and the
+ * credits-exhausted email event are sent. A top-up balance that covers the
+ * estimate and still refuses is the organization's monthly auto-reload
+ * budget (Autumn's usage limit): the error says so, as nothing but raising
+ * it or the next cycle helps.
  * The caller must settle every returned hold with `settleUsageCredits` once
  * its calls' real cost is known.
  */
@@ -349,6 +392,7 @@ export async function reserveUsageCredits(args: {
   const holds: UsageCreditHold[] = [];
   let monthlyRemaining = 0;
   let topupRemaining = 0;
+  let budgetReached = false;
   let refusedCalls: number[] = [];
   try {
     const monthly = await holdFitting(
@@ -374,11 +418,22 @@ export async function reserveUsageCredits(args: {
     );
     if (topup && !topup.allowed) {
       topupRemaining = topup.balance?.remaining ?? 0;
-      topup = await holdFitting(
-        AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-        topupCalls,
-        topupRemaining,
-      );
+      // The budget's headroom is not in the response, so the calls are
+      // refused rather than retried smaller.
+      budgetReached = topupRemaining >= creditsFor(topupCalls);
+      if (!budgetReached) {
+        topup = await holdFitting(
+          AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+          topupCalls,
+          topupRemaining,
+        );
+        // The smaller hold fits the balance just read, so a refusal of it
+        // is the budget too, unless the balance moved in between.
+        if (topup && !topup.allowed) {
+          budgetReached =
+            (topup.balance?.remaining ?? 0) >= topup.hold.estimatedCredits;
+        }
+      }
     }
     if (topup?.allowed) holds.push(topup.hold);
     refusedCalls = allCalls.filter(
@@ -400,7 +455,9 @@ export async function reserveUsageCredits(args: {
       organizationId: args.customer.organizationId,
       properties: {
         project_id: args.customer.projectId,
-        reason: "estimate_exceeds_balance",
+        reason: budgetReached
+          ? "monthly_budget_reached"
+          : "estimate_exceeds_balance",
         source: "dataforseo",
         credit_feature: args.creditFeature,
         estimated_credits: creditsFor(refusedCalls),
@@ -408,8 +465,19 @@ export async function reserveUsageCredits(args: {
         topup_remaining: topupRemaining,
       },
     });
+    // Most users are refused while they still have a few credits left, so
+    // this, not the zero-balance gate, is where most of them run out. A
+    // spent budget is not that: the credits are there, only held back.
+    if (!budgetReached) await sendCreditsExhaustedEvent(args.customer);
   }
-  if (holds.length === 0) throw new AppError("INSUFFICIENT_CREDITS");
+  if (holds.length === 0) {
+    throw new AppError(
+      "INSUFFICIENT_CREDITS",
+      budgetReached
+        ? "The organization has hit its monthly auto-reload budget, so its top-up credits are paused until the owner raises it or the billing cycle resets."
+        : undefined,
+    );
+  }
   return { holds, refusedCalls };
 }
 

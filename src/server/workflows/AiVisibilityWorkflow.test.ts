@@ -152,12 +152,39 @@ describe("AI visibility workflow", () => {
     );
   });
 
+  it("keeps collecting when a live batch's step fails, and finalizes what arrived", async () => {
+    mocks.prepare.mockResolvedValue({
+      market: { locationCode: 2840, languageCode: "en" },
+      modelBatches: [],
+      live: true,
+      batches: [[], []],
+    });
+    mocks.live.mockRejectedValueOnce(new Error("internal workflows error"));
+    await execute();
+    expect(mocks.live).toHaveBeenCalledTimes(2);
+    expect(mocks.finalize).toHaveBeenCalledExactlyOnceWith("run");
+    expect(mocks.markFailed).not.toHaveBeenCalled();
+  });
+
+  it("gives the free bookkeeping steps retries", async () => {
+    await execute();
+    for (const name of ["prepare", "finalize"])
+      expect(mocks.steps).toHaveBeenCalledWith(name, {
+        retries: { limit: 2, delay: "10 seconds" },
+        timeout: "2 minutes",
+      });
+  });
+
   it("fails the run when preparation fails", async () => {
     const error = new Error();
     mocks.prepare.mockRejectedValue(error);
     await expect(execute()).rejects.toThrow(error);
     expect(mocks.post).not.toHaveBeenCalled();
     expect(mocks.markFailed).toHaveBeenCalledExactlyOnceWith("run");
+    expect(mocks.steps).toHaveBeenCalledWith("mark-failed", {
+      retries: { limit: 2, delay: "10 seconds" },
+      timeout: "2 minutes",
+    });
   });
 
   it("does not log a rejected poll sleep as a failure, but still marks the run failed", async () => {

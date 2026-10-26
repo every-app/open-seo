@@ -7,21 +7,18 @@ import { buildDashboardUrl } from "@/server/mcp/urls";
 export type ToolAuthContext = {
   userId: string;
   userEmail: string;
+  // The one organization every tool call is bound to. Hosted credentials
+  // (OAuth grants, API keys) are pinned at creation to the org that was active
+  // then and re-checked against a live membership on every request; self-host
+  // and SAM are bound to their single org / the chat's project org.
   organizationId: string;
   // Org role for permission gates (owner/admin/member, comma-joined when
   // multiple). Hosted: stamped per request from the member row in
   // transport.ts. Self-host/delegated: one implicit user per org → "owner".
   role: string;
-  // How tool calls bind to an organization. "pinned": the request's
-  // organizationId is the authorization boundary — self-host and SAM, which
-  // have no member rows or are already bound to one project. "user": every
-  // hosted credential (OAuth tokens, API keys; stamped by the hosted
-  // transport) — project-scoped tools derive the org from the project row and
-  // authorize via the caller's membership in THAT org, so one credential works
-  // across every organization the user belongs to; organizationId is only the
-  // fallback context for the few tools with no project argument.
-  orgScope: "pinned" | "user";
   scopes: string[];
+  // OAuth client id, the literal "api_key", or null for first-party callers
+  // (self-host transports, SAM). See isHostedMcpClient.
   clientId: string | null;
   baseUrl: string;
   // Which client made the call ("Claude Code", "Codex", "API key", …), for
@@ -50,9 +47,6 @@ const applicationAuthContextSchema = z.object({
   // transport, never baked into tokens) and from delegated modes (implicit
   // owner).
   role: z.string().min(1).optional(),
-  // Stamped per request by the hosted transport, never baked into tokens;
-  // absent (self-host, SAM) means "pinned".
-  orgScope: z.enum(["pinned", "user"]).optional(),
   baseUrl: z.string().url(),
   // Compatibility fallback until workers-oauth-provider supplies the verified
   // context marker consumed by Agents SDK 0.20.x (the
@@ -120,6 +114,13 @@ function readClientTitle(context: ToolCallContext): string | undefined {
   return parsed.success ? parsed.data[CLIENT_INFO_META_KEY]?.title : undefined;
 }
 
+// Hosted credentials always carry a client identity: an OAuth client id or
+// "api_key". First-party callers (self-host transports, SAM) have none. Gates
+// hosted-only side effects such as finishing the onboarding wizard.
+export function isHostedMcpClient(auth: Pick<ToolAuthContext, "clientId">) {
+  return auth.clientId !== null;
+}
+
 export function createMcpToolContext(
   context: ToolCallContext,
   props: McpProps,
@@ -135,23 +136,19 @@ export function createMcpToolContext(
   const authInfo = context.http?.authInfo;
   const clientId = authInfo?.clientId ?? applicationAuth.clientId ?? null;
   const scopes = authInfo?.scopes ?? applicationAuth.scopes ?? [];
-  const orgScope = applicationAuth.orgScope ?? "pinned";
-  // Delegated/self-hosted modes have no member rows and a single implicit owner
-  // per org; "pinned" without a role means owner. Hosted ("user" scope)
-  // stamps the role from the member row per request in transport.ts.
-  const role =
-    applicationAuth.role ?? (orgScope === "pinned" ? "owner" : undefined);
-  if (!role) {
-    throw new Error(
-      "MCP auth context is missing a role for a user-scoped credential",
-    );
+  // Hosted credentials get their role stamped per request by transport.ts
+  // from the member row; one arriving without it bypassed that check, so fail
+  // closed. Delegated/self-hosted modes have no member rows and a single
+  // implicit owner per org.
+  if (isHostedMcpClient({ clientId }) && !applicationAuth.role) {
+    throw new Error("MCP auth context is missing a role for a hosted client");
   }
+  const role = applicationAuth.role ?? "owner";
 
   return {
     auth: {
       ...applicationAuth,
       role,
-      orgScope,
       clientId,
       scopes,
       clientLabel: resolveClientLabel({

@@ -43,6 +43,11 @@
       "binding": "AI_VISIBILITY_WORKFLOW",
       "class_name": "AiVisibilityWorkflow",
     },
+    {
+      "name": "local-rank-workflow",
+      "binding": "LOCAL_RANK_WORKFLOW",
+      "class_name": "LocalRankWorkflow",
+    },
   ],
   // Durable Object backing the SAM in-app agent (Agents SDK AIChatAgent). One
   // instance per chat session; messages persist in the DO's SQLite.

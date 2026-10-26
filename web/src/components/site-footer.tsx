@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { PrivacyChoicesLink } from "@/components/privacy-choices";
 import { SocialLinks } from "@/components/social-links";
 import { featureGroups } from "@/lib/feature-pages";
 import { freeToolList } from "@/lib/free-tools/tool-pages";
@@ -104,6 +105,7 @@ export function SiteFooter({ className }: { className?: string }) {
             </a>
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms-and-conditions">Terms</Link>
+            <PrivacyChoicesLink />
           </div>
         </div>
       </div>

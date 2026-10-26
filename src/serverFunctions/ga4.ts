@@ -12,6 +12,8 @@ import {
   probeAndRecordRefreshHealth,
 } from "@/server/features/google/services/GoogleIntegrationTokenHealthService";
 import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
+import { getGatewayGoogleConnectUrl } from "@/server/features/google/gatewayGoogle";
 import {
   createGoogleAuthorizationUrl,
   GA4_INTEGRATION,
@@ -233,10 +235,13 @@ export const startGa4Link = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(startLinkSchema)
   .handler(async ({ data, context }) => ({
-    url: await createGoogleAuthorizationUrl({
-      integration: GA4_INTEGRATION,
-      userId: context.userId,
-      callbackURL: data.callbackURL,
-      publicOrigin: getPublicOrigin(getRequest()),
-    }),
+    url:
+      (await getGoogleAccessMode()) === "gateway"
+        ? await getGatewayGoogleConnectUrl(data.callbackURL)
+        : await createGoogleAuthorizationUrl({
+            integration: GA4_INTEGRATION,
+            userId: context.userId,
+            callbackURL: data.callbackURL,
+            publicOrigin: getPublicOrigin(getRequest()),
+          }),
   }));

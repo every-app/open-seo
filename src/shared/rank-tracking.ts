@@ -53,6 +53,12 @@ export function rankCheckMethod(
 /** How many keywords are checked per batch */
 export const KEYWORDS_PER_BATCH = 10;
 
+/**
+ * Extra queued checks a rank check gives a keyword/device that errored or
+ * reads as lost or far below its known position.
+ */
+export const RETRY_ROUNDS = 2;
+
 /** Approximate seconds per batch */
 export const SECONDS_PER_BATCH = 6;
 
@@ -104,6 +110,11 @@ export function serpKeywordCostMultiplier(keyword: string) {
   return SERP_OPERATOR_KEYWORD.test(keyword) ? 5 : 1;
 }
 
+/**
+ * The most one rank check can cost: the check itself at `method` price, plus
+ * RETRY_ROUNDS queued retries of every keyword/device pair (retries go to
+ * pairs that error or read as lost, so most checks cost far less).
+ */
 export function estimateRankCheckCredits(
   keywords: readonly string[],
   devices: RankTrackingConfig["devices"],
@@ -118,6 +129,28 @@ export function estimateRankCheckCredits(
       serpKeywordCostMultiplier(keyword),
     ),
   );
+  const check = meteredCost(checkMultipliers, depth, method);
+  // Fork: a validated run re-crawls a doubtful pair up to crawlsPerPair times
+  // instead of taking the queued retries, each crawl a metered post of its
+  // own, so its worst case is that many times the nominal queued cost.
+  if (crawlsPerPair > 1) {
+    return {
+      costUsd: roundUsdForBilling(check.costUsd * crawlsPerPair),
+      costCredits: check.costCredits * crawlsPerPair,
+    };
+  }
+  const retry = meteredCost(checkMultipliers, depth, "queued");
+  return {
+    costUsd: roundUsdForBilling(check.costUsd + RETRY_ROUNDS * retry.costUsd),
+    costCredits: check.costCredits + RETRY_ROUNDS * retry.costCredits,
+  };
+}
+
+function meteredCost(
+  checkMultipliers: number[],
+  depth: number,
+  method: RankCheckMethod,
+) {
   const checksPerMeteredCall = method === "queued" ? MAX_TASKS_PER_POST : 1;
   let costUsd = 0;
   let costCredits = 0;
@@ -138,13 +171,7 @@ export function estimateRankCheckCredits(
     costUsd += applyBillingMarkupUsd(callRawUsd);
     costCredits += creditsForProviderUsd(callRawUsd);
   }
-
-  // This is the nominal queued task_post estimate. Rejected, failed, or
-  // timed-out tasks can later incur additional live-fallback spend. A
-  // validated run re-crawls pairs up to crawlsPerPair times, each crawl a
-  // metered post of its own, so its worst case is that many times the nominal.
-  costUsd = roundUsdForBilling(costUsd * crawlsPerPair);
-  return { costUsd, costCredits: costCredits * crawlsPerPair };
+  return { costUsd, costCredits };
 }
 
 // ---------------------------------------------------------------------------

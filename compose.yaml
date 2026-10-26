@@ -9,7 +9,7 @@ services:
     # `cp .env.example .env` creates it.
     env_file:
       - .env
-    # Anonymous usage heartbeat controls: docs/SELF_HOSTING_DOCKER.md#telemetry
+    # Anonymous usage heartbeat controls: docs/SELF_HOSTING_DOCKER_LEGACY.md#telemetry
     environment:
       # Required for local Docker self-hosting: exposes Compose env vars to cloudflare:workers bindings.
       - CLOUDFLARE_INCLUDE_PROCESS_ENV=true

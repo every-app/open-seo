@@ -24,3 +24,17 @@ export async function putTextToR2(
     sizeBytes: Buffer.byteLength(body),
   };
 }
+
+/** Deletes every object under `prefix`; returns how many were removed. */
+export async function deleteR2Prefix(bucket: R2Bucket, prefix: string) {
+  let cursor: string | undefined;
+  let deleted = 0;
+  do {
+    const page = await bucket.list({ prefix, cursor });
+    const keys = page.objects.map((object) => object.key);
+    if (keys.length) await bucket.delete(keys);
+    deleted += keys.length;
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+  return deleted;
+}

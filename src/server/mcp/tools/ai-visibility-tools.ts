@@ -148,6 +148,7 @@ export const generateAiVisibilityPromptsTool = defineAiTool({
   input: generateAiPromptsSchema,
   output: aiPromptSuggestionsSchema,
   readOnly: false,
+  openWorld: true,
   description:
     "Generate editable topic and prompt suggestions from shared Project context. Uses existing usage credits for one model call. Supply topic to add unique prompts to a saved topic or to name a new one, or omit it for a new topic the model names. Excludes all saved prompts and excludePrompts drafts, including case/whitespace variants. Does not save or collect answers. Review suggestions before saving through save_ai_visibility_tracker with the returned topic.",
   execute: (s, a, b) => s.generatePrompts(a, b),
@@ -165,9 +166,10 @@ export const completeAiResearchSetupTool = defineAiTool({
     review: z.looseObject({}).nullable(),
   }),
   readOnly: false,
+  openWorld: true,
   path: "research",
   description:
-    "Give a project with a saved website its Prompt Research keywords. Get the user's approval first: unless keywords exist, this starts paid research with usage credits. Starting is idempotent: a running or reviewable setup is returned, not restarted. With a business overview and competitors in shared context, one model call writes the keywords and, when the project has no tracking yet, seeds three tracker topics with five prompts each, scheduled weekly with the first check about a week later. Missing overview and competitors are researched independently; saved values are reused. Status becomes review when basics or competitors were researched: review new competitors, or preserve the saved list when preserveCompetitors=true, then save with save_project_website_setup. While status is running, call again after about 20 seconds. Never starts answer collection.",
+    "Set up Prompt Research keywords for a project with a saved website. Before starting missing setup, get the user's approval for paid research and any new recurring tracking. Research sends project context to an external model and reads websites or searches for competitors when needed, using OpenSEO credits. Existing keywords, running setup, or setup awaiting review are returned without restarting research. Saved context is reused. When no tracker exists, saving setup also creates three topics with five prompts each and enables weekly paid AI checks, first due about a week later. Returns keywords, status, and review. For status=review, review the proposed setup with the user, then save through save_project_website_setup, preserving saved competitors when review.preserveCompetitors=true. For status=running, call again after about 20 seconds. Does not start an answer check immediately.",
   execute: (s, a, b) => s.startResearchSetup(a, b),
   summarize: (d) =>
     d.status === "ready"
@@ -186,7 +188,7 @@ export const researchAiVisibilityPromptsTool = defineAiTool({
   openWorld: true,
   path: "research",
   description:
-    "Find questions about a keyword with ChatGPT's answers to them (DataForSEO has US English data only). The questions come from DataForSEO's question database, built mostly from Google \"People also ask\" questions; they are not logged ChatGPT prompts, and nobody can see real ChatGPT prompt volume. Matches the keyword in questions and answers, then keeps only questions that ask the keyword phrase or whose answers cite sites ranking on Google for the keyword or belonging to the project or its competitors, so unrelated meanings of the same words are dropped. Most common questions come first and near-duplicates are merged. Each prompt has the sources ChatGPT cited and whether the project's own domain is cited or brand is mentioned. Uses usage credits for one prompt search and one Google results lookup per keyword, cached for 24 hours. Requires a paid plan in hosted mode. Does not save or collect answers. Save picked prompts with source prompt_research through save_ai_visibility_tracker.",
+    "Find questions about a keyword with ChatGPT's answers to them (DataForSEO has US English data only). The questions come from DataForSEO's question database, built mostly from Google \"People also ask\" questions; they are not logged ChatGPT prompts, and nobody can see real ChatGPT prompt volume. Matches the keyword in questions and answers, then a model reads each question against the project's business overview and keeps only those that use the keyword in the business's sense, so unrelated meanings of the same words are dropped. Niche keywords may return few prompts. Most common questions come first and near-duplicates are merged. Each prompt has the sources ChatGPT cited and whether the project's own domain is cited or brand is mentioned. Uses usage credits for one prompt search and one relevance check per keyword, cached for 24 hours. Requires a paid plan in hosted mode. Does not save or collect answers. Save picked prompts with source prompt_research through save_ai_visibility_tracker.",
   execute: (s, a, b) => s.researchPrompts(a, b),
   summarize: (d) =>
     `Found ${d.prompts.length} relevant prompts for "${d.keyword}".`,
@@ -217,6 +219,7 @@ export const saveAiVisibilityTrackerTool = defineAiTool({
     skipped: z.number(),
   }),
   readOnly: false,
+  openWorld: true,
   description:
     "Bulk create or patch AI tracking prompts, their topics, engines, country, and language. Pause or archive a topic by pausing or archiving each of its prompts. Brand name/domain and competitors come from shared Project context; manage them there. Read the tracker first and edit prompts by ID. New trackers start on a weekly schedule; saving uses no credits, and the first paid check runs about a week later. Show the user the estimate before creating a tracker or adding prompts or engines, and pause with set_ai_visibility_schedule if they do not want scheduled checks. Do not rewrite customer prompts without direction.",
   execute: (s, a) => s.saveTracker(a),
@@ -244,6 +247,7 @@ export const setAiVisibilityScheduleTool = defineAiTool({
     run: aiRunOutput.nullable(),
   }),
   readOnly: false,
+  openWorld: true,
   description:
     "Enable daily, weekly, or monthly AI tracking, change the cadence or run time, or pause future checks. Enabling spends credits on every check; show the user the estimate from estimate_ai_visibility_cost and get approval first. Checks stop when credits run out. First enable queues one baseline and returns its run: read that run instead of buying another check. Pausing lets a running check finish.",
   execute: (s, a, b) => s.setSchedule(a, b),
@@ -256,6 +260,7 @@ export const runAiVisibilityCheckTool = defineAiTool({
   input: runAiCheckSchema,
   output: aiRunOutput,
   readOnly: false,
+  openWorld: true,
   description:
     "Start an explicitly approved one-off paid AI check, preserving the schedule. It collects live answers, so results arrive within minutes. maxCostUsd is the runNowCostUsd the user approved from estimate_ai_visibility_cost; the check is refused if it now costs more. Only one check runs per project at a time. Returns a run immediately. Never call this tool to poll: use get_ai_visibility_run with the returned run ID.",
   execute: (s, a, b) => s.runCheck(a, b),

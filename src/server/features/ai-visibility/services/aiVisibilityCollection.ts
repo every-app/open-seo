@@ -1,3 +1,4 @@
+import { NonRetryableError } from "cloudflare:workflows";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
   createDataforseoClient,
@@ -89,8 +90,9 @@ export async function prepareAiRun(
   )
 > {
   const run = await repo.getRunInternal(runId);
+  // Stale-run cleanup failed it already; a retry would find the same.
   if (!run || (run.status !== "queued" && run.status !== "running"))
-    throw new AppError("NOT_FOUND", `Run ${runId} is no longer active.`);
+    throw new NonRetryableError(`Run ${runId} is no longer active.`);
   const pending = (await repo.getObservations([runId])).filter(
     (row) => row.status === "pending",
   );
@@ -326,10 +328,15 @@ export async function collectAiRound(
 ): Promise<{ pending: AiPendingTask[]; retry: AiTaskBatch[] }> {
   const brands = await runBrands(runId);
   if (!brands) return { pending: [], retry: [] };
+  // A retried or timed-out step hands back answers an earlier attempt already
+  // saved or failed. Skip them, so each attempt continues where the last one
+  // stopped instead of saving every answer again.
+  const stillPending = new Set(await repo.listPendingObservationIds(runId));
+  const unsaved = tasks.filter((task) => stillPending.has(task.tag));
   const pending: AiPendingTask[] = [];
   const retry: AiPendingTask[] = [];
-  for (let i = 0; i < tasks.length; i += TASK_GET_CONCURRENCY) {
-    const chunk = tasks.slice(i, i + TASK_GET_CONCURRENCY);
+  for (let i = 0; i < unsaved.length; i += TASK_GET_CONCURRENCY) {
+    const chunk = unsaved.slice(i, i + TASK_GET_CONCURRENCY);
     const outcomes = await Promise.allSettled(
       chunk.map((task) => fetchAiTrackingTaskResult(task)),
     );
@@ -434,8 +441,9 @@ export async function finalizeAiRun(runId: string) {
     status,
     completedAt: new Date().toISOString(),
   });
-  if (status !== "failed")
-    await repo.updateTracker(run.trackerId, { lastSkipReason: null });
+  await repo.updateTracker(run.trackerId, {
+    lastSkipReason: status === "failed" ? AI_ANSWER_FAILURES.runFailed : null,
+  });
 }
 
 /** The workflow's failure path: fail the run and say why on the tracker. */

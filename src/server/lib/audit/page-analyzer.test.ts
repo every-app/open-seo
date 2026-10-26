@@ -9,7 +9,10 @@ import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
 import { normalizeUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
 import type { PageAnalysis, PageLink } from "@/server/lib/audit/types";
 
-/** The previous cheerio implementation, verbatim (minus passthrough fields). */
+/**
+ * The previous cheerio implementation (minus passthrough fields), plus
+ * separators around block elements so minified markup keeps word boundaries.
+ */
 function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   const $ = cheerio.load(html);
 
@@ -44,6 +47,12 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
 
   const bodyClone = $("body").clone();
   bodyClone.find("script, style, noscript, svg").remove();
+  bodyClone
+    .find(
+      "address,article,aside,blockquote,br,caption,dd,details,dialog,div,dl,dt,fieldset,figcaption,figure,footer,form,h1,h2,h3,h4,h5,h6,header,hgroup,hr,li,main,nav,ol,p,pre,section,summary,table,td,th,tr,ul",
+    )
+    .before(" ")
+    .after(" ");
   const bodyText = bodyClone.text().replace(/\s+/g, " ").trim();
   const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
 
@@ -205,6 +214,31 @@ describe("analyzeHtml parity with the DOM reference", () => {
       </p>
       <ul><li>four</li><li>five</li></ul>
     </body>`);
+  });
+});
+
+describe("analyzeHtml word count", () => {
+  const analyzeBody = (body: string) =>
+    analyzeHtml(`<body>${body}</body>`, PAGE_URL, 200, 0);
+
+  it.each([
+    ["paragraphs", "<p>one</p><p>two</p>"],
+    ["table cells", "<table><tr><td>one</td><td>two</td></tr></table>"],
+    ["line breaks", "one<br>two"],
+  ])("keeps word boundaries between %s in minified HTML", (_label, body) => {
+    expect(analyzeBody(body).bodyText).toBe("one two");
+  });
+
+  it("does not split words across inline markup", () => {
+    expect(analyzeBody("<p>Open<strong>SEO</strong></p>").wordCount).toBe(1);
+  });
+
+  it("counts words in scripts written without spaces", () => {
+    expect(
+      analyzeBody("<p>吉隆坡市中心永久地契公寓投资指南</p>").wordCount,
+    ).toBe(8);
+    expect(analyzeBody("<p>東京の不動産投資ガイド</p>").wordCount).toBe(5);
+    expect(analyzeBody("<p>KLCC 公寓指南 2026</p>").wordCount).toBe(4);
   });
 });
 

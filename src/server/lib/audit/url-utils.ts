@@ -156,3 +156,45 @@ export function detectUrlTemplate(pathname: string): string {
 export function getOrigin(url: string): string {
   return new URL(url).origin;
 }
+
+/** Files a crawl can follow a link to but cannot audit as a page. */
+const NON_DOCUMENT_EXTENSIONS =
+  /\.(?:jpe?g|png|gif|webp|avif|svg|ico|bmp|tiff?|heic|woff2?|ttf|otf|eot|mp4|webm|m4v|mov|avi|mp3|wav|ogg|m4a|flac|css|js|mjs|json|xml|txt|map|zip|gz|tgz|tar|rar|7z|dmg|exe)$/i;
+
+/**
+ * Shopify routes that are never storefront pages and that its edge refuses to
+ * crawlers, with an optional locale prefix (`/en/`, `/pt-br/`). The cart,
+ * checkout and account routes need no entry: Shopify's robots.txt disallows
+ * them.
+ */
+const SHOPIFY_NON_PAGE_PATHS =
+  /^\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:customer_authentication\/|customer_identity\/|discount\/|password(?:\/|$))/i;
+
+/**
+ * Whether a same-origin URL is worth a page fetch. Links to images, fonts,
+ * scripts and other files pass the SSRF check but are not pages: Shopify
+ * themes link every gallery photo on the storefront origin, and one store's
+ * audit spent 1,986 of its 2,608 fetches on them. Unknown extensions pass.
+ * The trade: a broken link to such a file is no longer reported.
+ *
+ * Cloudflare's reserved `/cdn-cgi/` paths are skipped too. Its email
+ * obfuscation rewrites every mailto link to `/cdn-cgi/l/email-protection`,
+ * which answers crawlers with a 404, so a site with an email in its footer
+ * got one false broken link per page.
+ */
+export function isAuditablePageUrl(
+  url: string,
+  sitePlatform?: "shopify",
+): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (NON_DOCUMENT_EXTENSIONS.test(parsed.pathname)) return false;
+  if (parsed.pathname.startsWith("/cdn-cgi/")) return false;
+  return !(
+    sitePlatform === "shopify" && SHOPIFY_NON_PAGE_PATHS.test(parsed.pathname)
+  );
+}

@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readPages, readSite } from "@/server/lib/scrape";
 
+vi.mock("@/server/lib/runtime-env", () => ({
+  getOptionalEnvValue: async (name: string) =>
+    name === "CONTEXT_API_KEY" ? "context-test-key" : undefined,
+}));
+
 describe("readSite SSRF guard", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
@@ -97,5 +102,75 @@ describe("readSite", () => {
     const result = await readSite("93.184.216.34");
 
     expect(result.blocked).toBe(true);
+  });
+});
+
+describe("readSite with Context usage", () => {
+  // The homepage is blocked, /internal redirects to a private host, and other
+  // URLs are missing; Context renders pages.
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL) => {
+        const url = String(input);
+        if (url.includes("dns-query"))
+          return Response.json({
+            Status: 0,
+            Answer: [{ type: 1, data: "93.184.216.34" }],
+          });
+        if (url.startsWith("https://api.context.dev/"))
+          return Response.json({
+            success: true,
+            type: "html",
+            html: "<title>Store</title><p>Linen sheets</p>",
+            metadata: { finalUrl: "https://store.example.com/" },
+            finalDOMState: "loaded",
+            key_metadata: { credits_consumed: 1 },
+          });
+        if (url === "https://store.example.com/")
+          return new Response(null, { status: 403 });
+        if (url === "https://store.example.com/internal")
+          return new Response(null, {
+            status: 302,
+            headers: { location: "http://169.254.169.254/" },
+          });
+        return new Response(null, { status: 404 });
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reads a blocked page through Context and counts its credit", async () => {
+    const usage = { cloudflareAttempts: 0, contextCredits: 0 };
+
+    const result = await readSite("store.example.com", 3, usage);
+
+    expect(result.pages).toEqual([
+      {
+        url: "https://store.example.com/",
+        title: "Store",
+        text: "Store Linen sheets",
+      },
+    ]);
+    expect(usage.contextCredits).toBe(1);
+  });
+
+  it("does not spend Context credits on a missing page", async () => {
+    const usage = { cloudflareAttempts: 0, contextCredits: 0 };
+
+    await readPages(["https://store.example.com/missing"], 1, usage);
+
+    expect(usage.contextCredits).toBe(0);
+  });
+
+  it("does not send a redirect to a blocked host to Context", async () => {
+    const usage = { cloudflareAttempts: 0, contextCredits: 0 };
+
+    await readPages(["https://store.example.com/internal"], 1, usage);
+
+    expect(usage.contextCredits).toBe(0);
   });
 });

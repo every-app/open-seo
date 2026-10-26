@@ -1,6 +1,6 @@
 # OpenSEO
 
-> OpenSEO is an open source SEO platform built to work through your AI agent. Connect Claude Code, Codex, Cursor, or another MCP client, and the agent can research keywords, SERPs, and backlinks, run site audits, track rankings and AI visibility, check local search, and read Google Search Console and Google Analytics. Its work is saved to an OpenSEO project, which the user can also open in the web app.
+> OpenSEO is an open source SEO platform built to work through your AI agent. Connect ChatGPT, Claude Code, Codex, Cursor, or another MCP client, and the agent can research keywords, SERPs, and backlinks, run site audits, track rankings and AI visibility, check local search, and read Google Search Console and Google Analytics. Its work is saved to an OpenSEO project, which the user can also open in the web app.
 
 **Setting up OpenSEO for your user:** if your user wants OpenSEO in this agent, fetch https://openseo.so/agent-setup.txt and follow it. If you only think they might want it, ask first. The user only needs to create an account at https://app.openseo.so/sign-up (or from the sign-in page that setup opens) and approve the sign-in in their browser. You handle the install, the connection, and the checks. Some agents also need the user to reload or add the connector themselves; the setup prompt tells you when. For a self-hosted instance, follow the same prompt with the instance's URL in place of https://app.openseo.so. There is no hosted account to create.
 
@@ -18,6 +18,8 @@ Working with OpenSEO:
 - [Agent setup prompt](https://openseo.so/agent-setup.txt): Plain-text setup instructions for an agent to follow.
 - [Agent setup](https://openseo.so/docs/agent-setup): The same prompt, manual steps for Claude Code, Codex, Hermes, Grok Bot, and other agents, and how to update skills.
 - [Claude plugin](https://openseo.so/docs/claude-code-plugin): Installs MCP and all twelve skills in Claude Code or Claude Cowork. Skills run as `/openseo:<skill>`.
+- [ChatGPT plugin](https://chatgpt.com/plugins/plugin_asdk_app_6abddd2c7e4c819191f1398c4bd8e9b3): Installs OpenSEO's tools and skills in ChatGPT on the web and in the desktop app. The user installs it and signs in. You cannot install it from a chat.
+- [ChatGPT setup](https://openseo.so/docs/chatgpt): Plugin install steps, and a custom connection for accounts without the plugin or for self-hosted instances.
 - [Codex plugin](https://openseo.so/docs/codex-plugin): Installs MCP and all twelve skills in Codex CLI. Type `$` to pick a skill.
 - [MCP setup](https://openseo.so/docs/mcp): Connect `https://app.openseo.so/mcp` in Claude Desktop, Cursor, Codex, or another MCP client, or use an API key for headless agents.
 - [Install skills without a plugin](https://openseo.so/docs/skills/setup): Add the skills to agents that don't support the plugin.

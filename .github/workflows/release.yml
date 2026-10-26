@@ -1,0 +1,91 @@
+name: Release
+# Builds the app as `pnpm everyapp release` does and attaches
+# everyapp-release.tar.gz to the GitHub release: the asset
+# `pnpm everyapp install https://github.com/<owner>/<repo>` fetches from the
+# repository's latest release. OpenSEO's releases themselves are published by
+# `pnpm release:publish` (scripts/publish-release.mjs), which creates the
+# v<version> release with its notes; this workflow only adds the asset, so the
+# two never race for a tag.
+#
+#   pull_request        builds; the tarball is a run artifact, no release
+#   release published   builds the release's tag and uploads the tarball to it
+#   workflow_dispatch   builds the given release tag and uploads the tarball
+#                       to that release (for a release published before this
+#                       workflow existed, or to rebuild one)
+#
+# The build needs no Cloudflare account and no secret: `everyapp release`
+# packs a tenant-neutral Build Output; the Gateway that installs it fills in
+# the account. The CLI and the SDK come from npm (package.json).
+on:
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The release tag to build and attach the tarball to (v<version>)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: everyapp release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Vite's SSR build of a large app wants more than Node's default heap.
+      NODE_OPTIONS: --max-old-space-size=4096
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.event.pull_request.head.sha }}
+
+      - name: Setup pnpm
+        # The version is package.json's packageManager.
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "^22.18.0"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pack the release
+        run: pnpm exec everyapp release --json --out everyapp-release.tar.gz | tee release.ndjson
+
+      - name: Read the release
+        id: release
+        run: |
+          done=$(jq -c 'select(.type == "done")' release.ndjson | tail -n 1)
+          test -n "$done"
+          echo "version=$(jq -r '.data.version' <<<"$done")" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(jq -r '.data.sha256' <<<"$done")" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the tarball with the run
+        uses: actions/upload-artifact@v4
+        with:
+          name: everyapp-release
+          path: everyapp-release.tar.gz
+          if-no-files-found: error
+
+      - name: Attach the tarball to the release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA256: ${{ steps.release.outputs.sha256 }}
+        run: |
+          gh release upload "$TAG" everyapp-release.tar.gz --clobber
+          echo "Attached everyapp-release.tar.gz (SHA-256 $SHA256) to $TAG." >> "$GITHUB_STEP_SUMMARY"
+          echo 'Install or update it from an Every App checkout: `pnpm everyapp install https://github.com/${{ github.repository }}`' >> "$GITHUB_STEP_SUMMARY"

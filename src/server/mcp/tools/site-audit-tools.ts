@@ -382,7 +382,9 @@ export const getAuditIssuesTool = {
       rows.length === 0
         ? args.severity || args.issueType
           ? `No issues found for audit ${audit.id} matching the given filters.`
-          : `No issues recorded for audit ${audit.id}. Note: audits run before issue checks existed have no issue data — re-run the audit with run_site_audit to get a real report.`
+          : audit.status === "running"
+            ? `Audit ${audit.id} is still running; issues are recorded when it finishes. Poll get_audit_status.`
+            : `Audit ${audit.id} found no issues across ${audit.pagesCrawled} crawled page${audit.pagesCrawled === 1 ? "" : "s"}.`
         : [
             `Audit ${audit.id} (${audit.startUrl}): ${rows.length} issues across ${summary.length} issue type${summary.length === 1 ? "" : "s"}.`,
             ...sections,

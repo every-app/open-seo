@@ -1,0 +1,75 @@
+{
+  "name": "openseo-standalone",
+  "main": "src/standalone-server.ts",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "workflows": [
+    {
+      "name": "site-audit-workflow",
+      "binding": "SITE_AUDIT_WORKFLOW",
+      "class_name": "SiteAuditWorkflow"
+    },
+    {
+      "name": "rank-check-workflow",
+      "binding": "RANK_CHECK_WORKFLOW",
+      "class_name": "RankCheckWorkflow"
+    },
+    {
+      "binding": "AI_VISIBILITY_WORKFLOW",
+      "name": "ai-visibility-workflow",
+      "class_name": "AiVisibilityWorkflow"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SAM_CHAT",
+        "class_name": "SamChatAgent"
+      },
+      {
+        "name": "AUDIT_SCRATCHPAD",
+        "class_name": "AuditScratchpad"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "AUDIT_ENGINE",
+      "service": "openseo-standalone",
+      "entrypoint": "AuditEngine"
+    }
+  ],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["SamChatAgent", "AuditScratchpad"]
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *", "17 3 * * *"]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "standalone-cache"
+    },
+    {
+      "binding": "OAUTH_KV",
+      "id": "standalone-oauth"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "openseo-standalone",
+      "database_id": "standalone-db",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "openseo-standalone"
+    }
+  ]
+}

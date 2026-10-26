@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { PostHog } from "posthog-node";
+import { asAppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
 /** Returns a one-shot PostHog client, or null if the key is missing. Caller must shut down after use.
@@ -14,6 +15,31 @@ function getServerPostHogClient(): PostHog | null {
     flushAt: 1,
     flushInterval: 0,
   });
+}
+
+/**
+ * The error as error tracking receives it: its type, AppError code and stack
+ * frames, never its message. Messages can quote customer content (DataForSEO
+ * echoes request params, failed queries print their values, model errors
+ * include output), so call sites log the full error to Cloudflare instead.
+ */
+function withoutMessage(error: unknown, depth = 0): Error {
+  const redacted = new Error(asAppError(error)?.code ?? "");
+  if (!(error instanceof Error)) {
+    redacted.stack = `Error: ${redacted.message}`;
+    return redacted;
+  }
+  redacted.name = error.name;
+  // Only real frames: a multi-line message would otherwise be parsed into
+  // frames, content included.
+  const frames = (error.stack ?? "")
+    .split("\n")
+    .filter((line) => /^\s+at /.test(line));
+  redacted.stack = [`${error.name}: ${redacted.message}`, ...frames].join("\n");
+  if (error.cause !== undefined && depth < 4) {
+    redacted.cause = withoutMessage(error.cause, depth + 1);
+  }
+  return redacted;
 }
 
 /**
@@ -35,7 +61,7 @@ export async function captureServerError(
   if (!client) return;
 
   try {
-    await client.captureExceptionImmediate(error, distinctId, {
+    await client.captureExceptionImmediate(withoutMessage(error), distinctId, {
       source: "server",
       ...properties,
     });
@@ -50,7 +76,8 @@ export async function captureServerEvent(args: {
   distinctId: string;
   event: string;
   properties?: Record<string, unknown>;
-  organizationId: string;
+  /** Null only before the user has an organization (sign-up). */
+  organizationId: string | null;
 }) {
   if (!(await isHostedServerAuthMode())) {
     return;
@@ -60,13 +87,26 @@ export async function captureServerEvent(args: {
   if (!client) return;
 
   try {
+    // Product analytics follows the user's choice (synced from the browser).
+    // Imported lazily so modules that only report events don't pull in the
+    // database client at load time. Scoped because some callers, like the
+    // chat agent's telemetry, run outside a request's Postgres scope.
+    const [{ withPgClient }, { AuthRepository }] = await Promise.all([
+      import("@/db"),
+      import("@/server/auth/repositories/AuthRepository"),
+    ]);
+    const optedOut = await withPgClient(() =>
+      AuthRepository.isAnalyticsOptedOut(args.distinctId),
+    );
+    if (optedOut) return;
+
     client.capture({
       distinctId: args.distinctId,
       event: args.event,
       properties: args.properties,
-      groups: {
-        organization: args.organizationId,
-      },
+      groups: args.organizationId
+        ? { organization: args.organizationId }
+        : undefined,
     });
   } catch (posthogError) {
     console.error("posthog server capture failed", posthogError);

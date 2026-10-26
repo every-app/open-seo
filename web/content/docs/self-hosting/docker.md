@@ -1,118 +1,50 @@
 ---
 title: "Docker Self-Hosting"
-description: "Run OpenSEO locally with Docker Compose using the published GHCR image."
+description: "Run OpenSEO on your own server or computer with Docker Compose and a prebuilt image."
 ---
 
-Run OpenSEO locally with Docker.
-
-In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network. For internet-facing self-hosting, use [Cloudflare](/docs/self-hosting/cloudflare) instead.
-
-The default `compose.yaml` uses the published GHCR image:
-
-- `ghcr.io/every-app/open-seo:latest`
+Run OpenSEO on your own server or computer with Docker Compose. The image is prebuilt, so OpenSEO is ready a few seconds after it starts. You sign in with email and password accounts: the first visitor creates the administrator's account and teammates join from invitation links.
 
 ## Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Docker Compose)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Docker Compose), with at least 4 GiB of memory for Docker
 - A [DataForSEO API key](/docs/self-hosting#dataforseo-api-key-setup)
 
 ## Quickstart
 
-Clone the repo, then:
-
 ```bash
 git clone https://github.com/every-app/open-seo.git
 cd open-seo
-cp .env.example .env
+export COMPOSE_FILE=deploy/standalone/compose.yaml
+cp deploy/standalone/.env.example deploy/standalone/.env
 ```
 
-Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](/docs/self-hosting#dataforseo-api-key-setup), then start OpenSEO:
+In `deploy/standalone/.env`, set `STORAGE_SECRET_KEY` to a unique random value (for example the output of `openssl rand -hex 32`) and `DATAFORSEO_API_KEY` to your key. Then start OpenSEO:
 
 ```bash
+docker compose pull
 docker compose up -d
+docker compose logs -f init
 ```
 
-Open `http://localhost:<PORT>` (default `3001`). Each container start builds the app and may take 1-2 minutes; follow progress with `docker compose logs -f`.
+Wait for `OpenSEO initialized and ready.`, open `http://localhost:3001` and create the administrator's account. Registration closes once that account exists, so create it before you put the installation on the internet.
 
-Optional env values:
+To add teammates, invite them from Team settings. The app copies an invitation link; send it yourself, since there is no email delivery.
 
-- `PORT` (defaults to `3001`)
-- `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
-- `AUTH_MODE=local_noauth` (already set in compose)
-- `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+## Coolify, Portainer and Dokploy
 
-AI Visibility uses your `DATAFORSEO_API_KEY` and sends tracked questions to DataForSEO. Set `OPENROUTER_API_KEY` for setup research and generated prompt suggestions. You pay providers directly; the app shows the collection cost before a check or schedule starts. Keep the container running for background answers and daily, weekly, or monthly tracking. The built-in scheduler checks for due work every five minutes; no host cron setup is required. See the [AI Visibility guide](/docs/ai-visibility).
+`deploy/standalone/compose.yaml` reads no other files from the repository, so you can paste it into a platform that runs Compose files, with the variables from `deploy/standalone/.env.example`. Point the platform's domain at the `web` service on port 80 and set `BETTER_AUTH_URL` to that `https://` address.
 
-If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
+## Public HTTPS, updates and backups
 
-```bash
-ALLOWED_HOST=yourdomain.com docker compose up -d
-```
+Set `BETTER_AUTH_URL` to your public `https://` address and put an HTTPS reverse proxy in front of `127.0.0.1:3001`. To update, pull the new image and restart. The full guide covers both, plus backups, password resets and optional features: [Docker self-hosting guide on GitHub](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_DOCKER.md).
 
-You can also persist it in `.env`.
+AI Visibility uses your `DATAFORSEO_API_KEY` and sends tracked questions to DataForSEO. Set `OPENROUTER_API_KEY` for setup research, Prompt Research, and generated prompt suggestions. You pay providers directly; the app shows the collection cost before a check or schedule starts. Background answers and daily, weekly, or monthly tracking run on their own while the containers are up. See the [AI Visibility guide](/docs/ai-visibility).
 
-## Telemetry
+## Without sign-in (advanced)
 
-OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. Telemetry also includes failed setup check names and statuses, never values or error messages. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
+`AUTH_MODE=local_noauth` runs OpenSEO without sign-in, as one admin user. Use it only where the network already controls who can reach the app, such as Tailscale, a private network or your own authenticating proxy. See [Without sign-in](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_DOCKER.md#without-sign-in-advanced) on GitHub.
 
-Heartbeats are triggered by requests to the app or MCP server. Requests to `/api/health`, including Docker's automatic health checks, do not trigger telemetry.
+## Running the older image?
 
-To disable it, set `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) in `.env`, then run `docker compose up -d --force-recreate open-seo`.
-
-## Pin to a specific image tag
-
-Set `OPEN_SEO_IMAGE` in `.env` and restart:
-
-```bash
-OPEN_SEO_IMAGE=ghcr.io/every-app/open-seo:v1.2.3
-docker compose up -d
-```
-
-## Build your own image locally
-
-If you are testing local code changes, build and run a local tag:
-
-```bash
-docker build -f deploy/docker/Dockerfile -t open-seo:local .
-OPEN_SEO_IMAGE=open-seo:local docker compose up -d
-```
-
-## Common commands
-
-Restart service after env changes:
-
-```bash
-docker compose up -d open-seo
-```
-
-Pull latest published image and restart:
-
-```bash
-docker compose pull && docker compose up -d
-```
-
-Stop:
-
-```bash
-docker compose down
-```
-
-## Health and troubleshooting
-
-Startup checks appear in `docker compose logs` before the build. Once running, `/api/health` reports configuration and database status, and `docker compose ps` reports container health.
-
-## Troubleshooting environment variables
-
-To confirm Docker Compose is using the expected environment variables:
-
-```bash
-docker compose config
-```
-
-Check that `AUTH_MODE=local_noauth`, and that `DATAFORSEO_API_KEY` is the base64 encoded value of your DataForSEO email and API password in this format: `email:password`.
-
-If you changed `.env`, recreate the container so Compose reapplies it:
-
-```bash
-docker compose up -d --force-recreate open-seo
-```
+The older single-container image (`ghcr.io/every-app/open-seo`) keeps getting updates, so nothing breaks. When you are ready, [move to this setup](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_DOCKER.md#move-from-the-old-docker-image); your projects, keywords, rank history, audits and reports come with you. The older image's own instructions, including telemetry settings, are in the [older image guide](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_DOCKER_LEGACY.md).

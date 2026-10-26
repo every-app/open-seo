@@ -10,6 +10,8 @@ data, or sensitive paths.
 
 ## Open
 
+- [ ] `2026-10-19T19:28:32Z` — `codex` — `pnpm cf-typegen` regenerates thousands of unrelated runtime types and changes `Env` inheritance, breaking existing Workflow fixtures and ambient bindings. Split binding generation from runtime updates so a new binding can be generated without an unrelated type migration; meanwhile declare new bindings in `src/env.d.ts`.
+
 - [ ] `2026-10-06T04:32:17Z` — `claude` — `npm --prefix web run types:check` (the web-content skill's final check) fails on a fresh worktree with only `web/` deps installed: `web/tsconfig.json` includes `**/*.ts`, so it type-checks `web/tests/free-tool-verification.spec.ts`, which imports the root-only `@playwright/test` and reports TS2307 plus a dozen implicit-any errors unrelated to the change. Add `@playwright/test` to `web` devDependencies or exclude that spec from `web/tsconfig.json`.
 - [ ] `2026-09-30T23:24:29Z` — `claude` — An `ENV_PREVIEW` secret without `AUTH_MODE=local_noauth` makes the PR preview deploy fall back to `cloudflare_access`, which provisions a self-host Access app. The deploy then fails with "Could not read the Zero Trust organization: Unauthorized", because the CI token has no Access permissions. The error suggests `pnpm alchemy login --configure`, which cannot fix CI. Check `AUTH_MODE` in the workflow's "Derive preview URL" step, beside the existing `WORKERS_SUBDOMAIN` check.
 - [ ] `2026-09-30T22:10:17Z` — `claude` — Since #784 moved `@tanstack/react-start` to 1.168.60, `pnpm vite build` rewrites the committed `src/routeTree.gen.ts` with a new import order (about 1,000 changed lines, identical routes), which leaves every local build with a dirty tree. Commit the regenerated file on main once.
@@ -29,6 +31,7 @@ data, or sensitive paths.
 
 - `2026-09-05T23:52:53Z` — `codex` — After `pnpm build` ran alongside an active Vite dev server, browser navigation failed and server functions returned undefined. The server logged `Cannot read properties of undefined (reading 'map')` in `runInRunnerObject` / `loadEntries`. Restarting Vite restored the same dashboard without code changes. Stop and restart the dev server around production builds before browser QA; consider documenting or isolating the shared build/runtime state.
 - [ ] `2026-09-27T22:06:28Z` — `claude` — Hosted auth mode can't run behind `pnpm dev:agents`: `hostedBaseUrlSchema` in `src/lib/auth.ts` accepts only https or the exact host `localhost`, so a portless `*.localhost` `BETTER_AUTH_URL` returns 500, and setting `TURNSTILE_SITE_KEY` without `TURNSTILE_SECRET_KEY` turns every `/api/auth` call into a bare "Missing Better Auth hosted configuration" 500. Workaround: run `vite dev --port <n> --strictPort` with `BETTER_AUTH_URL=http://localhost:<n>`; fix: accept `*.localhost` over http and name the missing variable in the error.
+- `2026-10-20T01:12:41Z` — `claude` — Process environment variables passed to `vite dev` (for example `AUTH_MODE=hosted PORT=3108`) do not reach the Worker's `env`: @cloudflare/vite-plugin builds Worker vars from `.env`/`.env.local` only, so overrides silently lose to the file. Set `CLOUDFLARE_INCLUDE_PROCESS_ENV=true` (as `tests/playwright.mcp-isolation.config.ts` and `compose.yaml` do) when a script needs a second dev server in a different auth mode.
 
 ## Deferred
 

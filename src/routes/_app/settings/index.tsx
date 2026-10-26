@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
 import { SectionHeader } from "@/client/components/PageHeader";
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
-import { Switch } from "@/client/components/ui/switch";
-import { authClient, useSession } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { everyAppAccountQueryOptions } from "@/client/features/every-app/everyAppAccountQueries";
+import { McpConnectionsSettings } from "@/client/features/settings/McpConnectionsSettings";
+import { PrivacySettings } from "@/client/features/settings/PrivacySettings";
+import {
+  isEveryAppClientAuthMode,
+  isHostedClientAuthMode,
+  usesBetterAuthClient,
+} from "@/lib/auth-mode";
 import { version } from "../../../../package.json";
 
 export const Route = createFileRoute("/_app/settings/")({
@@ -15,29 +19,9 @@ export const Route = createFileRoute("/_app/settings/")({
 
 function PersonalSettings() {
   const isHosted = isHostedClientAuthMode();
-  const { data: session } = useSession();
-  const [isSaving, setIsSaving] = useState(false);
-
-  const analyticsEnabled = session?.user?.analyticsOptedOut !== true;
-
-  async function updateAnalyticsPreference(enabled: boolean) {
-    setIsSaving(true);
-    try {
-      const result = await authClient.updateUser({
-        analyticsOptedOut: !enabled,
-      });
-      if (result.error) {
-        toast.error("We couldn't update your analytics setting.");
-      } else {
-        toast.success(enabled ? "Analytics enabled" : "Analytics disabled");
-      }
-    } catch {
-      toast.error("We couldn't update your analytics setting.");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
+  // API keys need Better Auth accounts (hosted or the standalone Docker
+  // edition); the analytics choices only exist on hosted.
+  const hasAccounts = usesBetterAuthClient();
   return (
     <div className="space-y-10">
       <section className="space-y-3">
@@ -48,30 +32,14 @@ function PersonalSettings() {
         </div>
       </section>
 
-      {isHosted ? (
-        <>
-          <ApiKeySettings />
+      {isEveryAppClientAuthMode() ? <EveryAppSettings /> : null}
 
-          <section className="space-y-3">
-            <SectionHeader title="Analytics" />
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <p className="text-sm">Help improve OpenSEO</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Share analytics and usage data.
-                </p>
-              </div>
-              <Switch
-                checked={analyticsEnabled}
-                disabled={isSaving}
-                onCheckedChange={(checked) => {
-                  void updateAnalyticsPreference(checked);
-                }}
-                aria-label="Enable product analytics"
-              />
-            </div>
-          </section>
-        </>
+      {isHosted ? <McpConnectionsSettings /> : null}
+
+      {hasAccounts ? <ApiKeySettings /> : null}
+
+      {isHosted ? (
+        <PrivacySettings />
       ) : (
         <section className="space-y-3">
           <SectionHeader title="About" />
@@ -84,5 +52,27 @@ function PersonalSettings() {
         </section>
       )}
     </div>
+  );
+}
+
+// Behind an Every App gateway, which owns the account, the team and the AI
+// connections: say so, and link back.
+function EveryAppSettings() {
+  const { data: account } = useQuery(everyAppAccountQueryOptions());
+  return (
+    <section className="space-y-3">
+      <SectionHeader title="Every App" />
+      <p className="text-sm text-muted-foreground">
+        Your account, teammates and AI connections are managed on Every App.
+      </p>
+      {account?.gatewayUrl ? (
+        <a
+          href={account.gatewayUrl}
+          className="inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Open Every App →
+        </a>
+      ) : null}
+    </section>
   );
 }

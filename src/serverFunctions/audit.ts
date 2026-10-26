@@ -1,4 +1,5 @@
 import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
+import { CrawlerCredentialService } from "@/server/features/audit/services/CrawlerCredentialService";
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { requireOrgPermission } from "@/server/auth/org-gate";
@@ -19,6 +20,11 @@ export const startAudit = createServerFn({ method: "POST" })
   .validator(startAuditSchema)
   .handler(async ({ data, context }) => {
     const limitTier = await AuditService.resolveAuditLimitTier(context);
+    // The dashboard's scan button always asks for rendering; installs with no
+    // renderer (Docker without a Context key) crawl without it instead of
+    // failing. The launch form only offers rendering where it's available.
+    const renderJavaScript =
+      data.renderJavaScript && (await isAuditRenderingAllowed());
 
     const result = await AuditService.startAudit({
       actorUserId: context.userId,
@@ -28,7 +34,7 @@ export const startAudit = createServerFn({ method: "POST" })
       maxPages: data.maxPages,
       lighthouseStrategy: data.lighthouseStrategy,
       limitTier,
-      renderJavaScript: data.renderJavaScript,
+      renderJavaScript,
     });
 
     waitUntil(
@@ -92,4 +98,7 @@ export const getAuditCapabilities = createServerFn({ method: "POST" })
   .validator(getAuditHistorySchema)
   .handler(async () => ({
     canRenderJavaScript: await isAuditRenderingAllowed(),
+    // Saving and replaying Shopify crawler access needs the optional
+    // CRAWLER_ACCESS_SECRET.
+    canStoreCrawlerAccess: await CrawlerCredentialService.hasEncryptionKey(),
   }));

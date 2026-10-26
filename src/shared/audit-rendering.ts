@@ -11,7 +11,16 @@ const CLOUDFLARE_USD_PER_BROWSER_HOUR = 0.09;
 const CLOUDFLARE_USD_PER_ATTEMPT =
   (CLOUDFLARE_RENDER_TIMEOUT_MS / 3_600_000) * CLOUDFLARE_USD_PER_BROWSER_HOUR;
 // Context.dev list price on the Developer plan. One scrape is one credit.
-const CONTEXT_USD_PER_CREDIT = 0.0025;
+export const CONTEXT_USD_PER_CREDIT = 0.0025;
+
+/**
+ * Why a rendered audit can't start behind an Every App gateway: the Context
+ * key is the gateway's, and optional in the manifest, so audits run
+ * unrendered until an admin sets it once for every app. Plain text: it is
+ * shown by ErrorState, toasts and MCP answers as is.
+ */
+export const GATEWAY_RENDERING_NOT_SET_UP_MESSAGE =
+  "JavaScript rendering isn't set up on your Every App gateway yet. An owner or admin sets it with pnpm everyapp secret set CONTEXT_API_KEY.";
 
 /** Provider units a rendered audit used, counted per crawl chunk. */
 export type RenderUsage = {

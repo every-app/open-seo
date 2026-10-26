@@ -5,6 +5,7 @@ import type {
   RankCheckTriggerResult,
   RankTrackingConfig,
 } from "@/types/schemas/rank-tracking";
+import { startWorkflow } from "@/server/lib/startWorkflow";
 
 type RunRow = Awaited<ReturnType<typeof RankTrackingRepository.getRunById>>;
 
@@ -162,25 +163,29 @@ export async function beginRankCheckRun(input: {
 
     if (created) {
       try {
-        await input.workflow.create({
-          id: runId,
-          params: {
-            runId,
-            configId: input.config.id,
-            billingCustomer: input.billingCustomer,
-            projectId: input.projectId,
-            domain: input.config.domain,
-            locationCode: input.config.locationCode,
-            languageCode: input.config.languageCode,
-            locationName: input.config.locationName ?? undefined,
-            devices: input.config.devices,
-            serpDepth: input.config.serpDepth,
-            trigger: input.trigger,
-            validateSerps: input.validateSerps,
-            keywordIds: input.keywordIds,
-            maxCostCredits: input.maxCostCredits,
+        await startWorkflow(
+          input.workflow,
+          {
+            id: runId,
+            params: {
+              runId,
+              configId: input.config.id,
+              billingCustomer: input.billingCustomer,
+              projectId: input.projectId,
+              domain: input.config.domain,
+              locationCode: input.config.locationCode,
+              languageCode: input.config.languageCode,
+              locationName: input.config.locationName ?? undefined,
+              devices: input.config.devices,
+              serpDepth: input.config.serpDepth,
+              trigger: input.trigger,
+              validateSerps: input.validateSerps,
+              keywordIds: input.keywordIds,
+              maxCostCredits: input.maxCostCredits,
+            },
           },
-        });
+          "rank check",
+        );
       } catch (error) {
         // Workflow couldn't start — flip the run to failed so the
         // partial-index slot is released. Best-effort cleanup of any

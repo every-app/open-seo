@@ -24,12 +24,15 @@ import {
 import type { AuditConfig } from "@/server/lib/audit/types";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { runAuditPhases } from "@/server/workflows/siteAuditWorkflowPhases";
+import { resolveAuditStart } from "@/server/workflows/siteAuditStart";
 import { pgStep } from "@/server/workflows/pgStep";
 import {
   DB_STEP,
   SETTLE_RENDERING_STEP,
+  START_URL_STEP,
 } from "@/server/workflows/auditStepConfigs";
 import type { RenderUsage } from "@/shared/audit-rendering";
+import { describeError } from "@/server/lib/errors";
 
 interface AuditParams {
   auditId: string;
@@ -61,8 +64,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
     event: WorkflowEvent<AuditParams>,
     step: WorkflowStep,
   ) {
-    const { auditId, billingCustomer, projectId, startUrl, config, access } =
-      event.payload;
+    const { auditId, billingCustomer, projectId } = event.payload;
     // Summed from checkpointed chunk results, so a replay rebuilds it exactly.
     const renderUsage: RenderUsage = {
       cloudflareAttempts: 0,
@@ -88,6 +90,23 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
         }
       });
 
+      // Probing the site happens here, not when the audit starts, so a
+      // slow site never delays the response that starts the audit.
+      const { startUrl, config, access } = await pgStep(
+        step,
+        "resolve-start-url",
+        START_URL_STEP,
+        () =>
+          resolveAuditStart({
+            auditId,
+            organizationId: billingCustomer.organizationId,
+            projectId,
+            startUrl: event.payload.startUrl,
+            config: event.payload.config,
+            access: event.payload.access,
+          }),
+      );
+
       await runAuditPhases(step, {
         auditId,
         workflowInstanceId: event.instanceId,
@@ -99,28 +118,13 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
         renderUsage,
       });
     } catch (error) {
-      console.error(`Audit ${auditId} failed:`, error);
-      // Workflow entrypoints run outside the server-function middleware, so
-      // nothing else forwards this throw to PostHog as a $exception. Capture it
-      // here (awaited — Workflows have no ctx.waitUntil) before re-throwing.
+      console.error(`Audit ${auditId} failed: ${describeError(error)}`, error);
       // Deploy-time resets are expected churn, not actionable errors.
       const isDeployReset =
         error instanceof Error &&
         error.message.includes(
           "Durable Object reset because its code was updated",
         );
-      if (!isDeployReset) {
-        await captureServerError(
-          error,
-          {
-            source: "site_audit_workflow",
-            audit_id: auditId,
-            organization_id: billingCustomer.organizationId,
-            project_id: projectId,
-          },
-          billingCustomer.userId,
-        );
-      }
       const errorInfo = classifyAuditError(error);
       await pgStep(step, "mark-failed", DB_STEP, async () => {
         // Read the phase before failAudit stamps currentPhase = "failed".
@@ -128,10 +132,31 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
           auditId,
           event.instanceId,
         );
+        // A completed audit (e.g. cleanup failed after finalize) stays
+        // completed, so it gets no failure telemetry either.
+        if (runningAudit?.status !== "running") return;
         await AuditRepository.failAudit(auditId, event.instanceId, {
           ...errorInfo,
           failedPhase: runningAudit?.currentPhase ?? null,
         });
+
+        // Workflow entrypoints run outside the server-function middleware, so
+        // nothing else forwards this throw to PostHog as a $exception. Captured
+        // inside this step: when Cloudflare loses the invocation (internal
+        // workflow errors, evicted Durable Objects), the step never runs and the
+        // engine replays the audit, which usually completes.
+        if (!isDeployReset) {
+          await captureServerError(
+            error,
+            {
+              source: "site_audit_workflow",
+              audit_id: auditId,
+              organization_id: billingCustomer.organizationId,
+              project_id: projectId,
+            },
+            billingCustomer.userId,
+          );
+        }
 
         await captureServerEvent({
           distinctId: billingCustomer.userId,
@@ -144,7 +169,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
             failed_phase: runningAudit?.currentPhase,
             pages_crawled: runningAudit?.pagesCrawled,
             pages_total: runningAudit?.pagesTotal,
-            run_lighthouse: config.lighthouseStrategy !== "none",
+            run_lighthouse: event.payload.config.lighthouseStrategy !== "none",
           },
         });
       });

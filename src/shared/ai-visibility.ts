@@ -299,7 +299,7 @@ export interface AiTrend {
  * engine. Keep in sync with each engine's DataForSEO locations endpoint.
  */
 export const AI_UNSUPPORTED_LOCATIONS: Record<AiEngine, readonly number[]> = {
-  chatgpt: [2275],
+  chatgpt: [2275, 2344, 2831, 2832, 2833, 2862],
   gemini: [],
   google_ai_overview: [],
   claude: liveUnsupportedLocations("claude"),

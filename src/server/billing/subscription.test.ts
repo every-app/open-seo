@@ -55,7 +55,12 @@ vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: vi.fn(),
 }));
 
+vi.mock("@/server/email/onboarding-drip", () => ({
+  sendCreditsExhaustedEvent: vi.fn(),
+}));
+
 import { captureServerEvent } from "@/server/lib/posthog";
+import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
 import { AUTUMN_TRACK_RETRY_OPTIONS } from "@/server/billing/autumn";
 import {
   customerHasPaidPlan,
@@ -122,6 +127,7 @@ describe("subscription billing", () => {
     await expect(result).resolves.toEqual({
       depleted: false,
       monthlyRemaining: 250,
+      budgetReached: false,
     });
     expect(monthlyChecks).toBe(2);
   });
@@ -324,6 +330,7 @@ describe("reserveUsageCredits", () => {
         credit_feature: "backlinks",
       },
     });
+    expect(sendCreditsExhaustedEvent).toHaveBeenCalledWith(customer);
   });
 
   it("retries a fail-open read once with the same lock, then fails closed", async () => {
