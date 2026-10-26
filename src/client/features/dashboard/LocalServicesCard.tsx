@@ -108,7 +108,7 @@ function Detail({ children }: { children: ReactNode }) {
 }
 
 function Performance({ performance }: { performance: Performance }) {
-  const { currencyCode, leadTotals, pacing } = performance;
+  const { currencyCode, leadTotals, pacing, monthlyBudget } = performance;
   const amount = (microsValue: number | null | undefined) =>
     money(microsValue, currencyCode);
   return (
@@ -147,6 +147,23 @@ function Performance({ performance }: { performance: Performance }) {
               pacing.utilization === null
                 ? "—"
                 : `${Math.round(pacing.utilization * 100)}%`,
+          },
+          {
+            label: (
+              <>
+                Monthly cap (est.)
+                <Detail>
+                  {amount(monthlyBudget.monthToDateSpendMicros)} MTD of{" "}
+                  {amount(monthlyBudget.estimatedMonthlyMaxMicros)}
+                </Detail>
+              </>
+            ),
+            value:
+              monthlyBudget.utilization === null
+                ? "—"
+                : monthlyBudget.likelyCapped
+                  ? "Capped"
+                  : `${Math.round(monthlyBudget.utilization * 100)}%`,
           },
         ]}
       />

@@ -81,6 +81,15 @@ describe("local services MCP tools", () => {
         weeklyBudgetMicros: 350_000_000,
         utilization: 0.5,
       },
+      monthlyBudget: {
+        startDate: "2026-09-01",
+        endDate: "2026-09-07",
+        monthToDateSpendMicros: 800_000_000,
+        estimatedMonthlyMaxMicros: 1_520_000_000,
+        remainingMicros: 720_000_000,
+        utilization: 800_000_000 / 1_520_000_000,
+        likelyCapped: false,
+      },
     });
 
     const result = await getLocalServicesPerformanceTool.handler(
@@ -100,6 +109,8 @@ describe("local services MCP tools", () => {
     expect(textContent(result)).toContain("Spend $123.00");
     expect(textContent(result)).toContain("2 charged");
     expect(textContent(result)).toContain("$175.00 of $350.00/week (50%)");
+    expect(textContent(result)).toContain("Monthly:");
+    expect(textContent(result)).toContain("est. max");
     expect(result.structuredContent).toMatchObject({
       ok: true,
       spendMicros: 123_000_000,

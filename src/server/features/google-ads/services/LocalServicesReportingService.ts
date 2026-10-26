@@ -24,6 +24,11 @@ import { GoogleAdsConnectionRepository } from "@/server/features/google-ads/repo
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const REPORT_WINDOW_DAYS = 28;
 const PACING_WINDOW_DAYS = 7;
+/** Google LSA UI auto monthly max = weekly average × 30.4 ÷ 7 (not in Ads API). */
+const LSA_DAYS_PER_MONTH = 30.4;
+const LSA_DAYS_PER_WEEK = 7;
+/** MTD spend at/above this fraction of the estimate usually means zero delivery. */
+const LSA_MONTHLY_CAP_UTILIZATION = 0.98;
 
 // ProtoJSON: int64 fields arrive as strings, enums as bare strings, and
 // scalar fields at their default value (false, 0) are omitted entirely.
@@ -199,6 +204,17 @@ type LocalServicesPerformance = {
     /** last7DaysSpend / weeklyBudget, 0..n, null without a weekly budget. */
     utilization: number | null;
   };
+  /** Month-to-date spend vs Google's derived monthly max (weekly × 30.4 ÷ 7).
+   *  The UI monthly cap is not exposed on the Ads API; this is an estimate. */
+  monthlyBudget: {
+    startDate: string;
+    endDate: string;
+    monthToDateSpendMicros: number;
+    estimatedMonthlyMaxMicros: number | null;
+    remainingMicros: number | null;
+    utilization: number | null;
+    likelyCapped: boolean;
+  };
 };
 
 function assertReportDate(value: string, label: string): string {
@@ -331,6 +347,45 @@ function isoDateBefore(isoDate: string, days: number): string {
   const date = new Date(`${isoDate}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() - days);
   return date.toISOString().slice(0, 10);
+}
+
+function monthStartFromIsoDate(isoDate: string): string {
+  return `${isoDate.slice(0, 7)}-01`;
+}
+
+function estimatedLsaMonthlyMaxMicros(weeklyBudgetMicros: number): number {
+  return Math.round(
+    (weeklyBudgetMicros * LSA_DAYS_PER_MONTH) / LSA_DAYS_PER_WEEK,
+  );
+}
+
+function buildMonthlyBudget(input: {
+  monthStart: string;
+  accountToday: string;
+  monthToDateSpendMicros: number;
+  weeklyBudgetMicros: number | null;
+}): LocalServicesPerformance["monthlyBudget"] {
+  const estimatedMonthlyMaxMicros =
+    input.weeklyBudgetMicros !== null
+      ? estimatedLsaMonthlyMaxMicros(input.weeklyBudgetMicros)
+      : null;
+  const utilization =
+    estimatedMonthlyMaxMicros && estimatedMonthlyMaxMicros > 0
+      ? input.monthToDateSpendMicros / estimatedMonthlyMaxMicros
+      : null;
+  return {
+    startDate: input.monthStart,
+    endDate: input.accountToday,
+    monthToDateSpendMicros: input.monthToDateSpendMicros,
+    estimatedMonthlyMaxMicros,
+    remainingMicros:
+      estimatedMonthlyMaxMicros !== null
+        ? estimatedMonthlyMaxMicros - input.monthToDateSpendMicros
+        : null,
+    utilization,
+    likelyCapped:
+      utilization !== null && utilization >= LSA_MONTHLY_CAP_UTILIZATION,
+  };
 }
 
 /** The report's default window: the last `REPORT_WINDOW_DAYS` account days,
@@ -560,8 +615,9 @@ async function getPerformance(input: {
       accountId: connection.googleAdsAccountId,
     };
     const { startDate, endDate } = resolveRange(connection.timeZone, input);
-    const pacingEnd = todayInAccountZone(connection.timeZone);
-    const [campaignRows, spendMicros, last7DaysSpendMicros, leads] =
+    const accountToday = todayInAccountZone(connection.timeZone);
+    const monthStart = monthStartFromIsoDate(accountToday);
+    const [campaignRows, spendMicros, last7DaysSpendMicros, monthToDateSpendMicros, leads] =
       await Promise.all([
         client.search(
           connection.customerId,
@@ -575,9 +631,10 @@ async function getPerformance(input: {
         fetchSpendMicros(
           client,
           connection,
-          isoDateBefore(pacingEnd, PACING_WINDOW_DAYS - 1),
-          pacingEnd,
+          isoDateBefore(accountToday, PACING_WINDOW_DAYS - 1),
+          accountToday,
         ),
+        fetchSpendMicros(client, connection, monthStart, accountToday),
         // One over the cap: the extra row is how "exactly 1,000 leads" is told
         // apart from "we stopped at 1,000".
         fetchLeads(
@@ -653,6 +710,12 @@ async function getPerformance(input: {
             ? last7DaysSpendMicros / weeklyBudgetMicros
             : null,
       },
+      monthlyBudget: buildMonthlyBudget({
+        monthStart,
+        accountToday,
+        monthToDateSpendMicros,
+        weeklyBudgetMicros,
+      }),
     };
     await recordRefreshSuccess({
       projectId: input.projectId,

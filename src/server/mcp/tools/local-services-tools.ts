@@ -122,7 +122,7 @@ export const getLocalServicesPerformanceTool = {
   config: {
     title: "Get Local Services Ads performance",
     description:
-      "Report on the connected Google Ads account's Local Services Ads (LSA): spend, lead totals (charged/booked/by type), cost per charged lead, campaign budgets, and pacing of the last 7 days' spend against the weekly budget. Money fields are micros (1,000,000 = 1 currency unit). Read-only; uses no credits. LSA data comes from the Google Ads API and requires the Google Ads connection plus approved API access.",
+      "Report on the connected Google Ads account's Local Services Ads (LSA): spend, lead totals (charged/booked/by type), cost per charged lead, campaign budgets, pacing of the last 7 days' spend against the weekly budget, and month-to-date spend vs Google's estimated monthly max (weekly × 30.4 ÷ 7 — the UI cap is not on the Ads API). Money fields are micros (1,000,000 = 1 currency unit). Read-only; uses no credits. LSA data comes from the Google Ads API and requires the Google Ads connection plus approved API access.",
     inputSchema: performanceInputSchema,
     outputSchema: z.looseObject({
       ok: z.boolean(),
@@ -151,6 +151,17 @@ export const getLocalServicesPerformanceTool = {
           last7DaysSpendMicros: z.number(),
           weeklyBudgetMicros: z.number().nullable(),
           utilization: z.number().nullable(),
+        })
+        .optional(),
+      monthlyBudget: z
+        .looseObject({
+          startDate: z.string(),
+          endDate: z.string(),
+          monthToDateSpendMicros: z.number(),
+          estimatedMonthlyMaxMicros: z.number().nullable(),
+          remainingMicros: z.number().nullable(),
+          utilization: z.number().nullable(),
+          likelyCapped: z.boolean(),
         })
         .optional(),
       campaigns: z
@@ -206,16 +217,21 @@ export const getLocalServicesPerformanceTool = {
       const range = performance.dateRange;
       const money = (value: number | null) =>
         formatMoney(value, performance.currencyCode);
-      const { leadTotals, pacing } = performance;
+      const { leadTotals, pacing, monthlyBudget } = performance;
       const utilization =
         pacing.utilization === null
           ? "n/a"
           : `${Math.round(pacing.utilization * 100)}%`;
+      const monthlyUtilization =
+        monthlyBudget.utilization === null
+          ? "n/a"
+          : `${Math.round(monthlyBudget.utilization * 100)}%`;
       const lines = [
         `LSA · customer ${performance.customerId} · ${range.startDate}→${range.endDate}`,
         `Spend ${money(performance.spendMicros)} · leads ${leadTotals.total}${leadTotals.truncated ? "+" : ""} (${leadTotals.charged} charged, ${leadTotals.booked} booked) · cost/charged lead ${money(performance.costPerChargedLeadMicros)}${leadTotals.truncated ? " (upper bound)" : ""}`,
         `Lead types: ${leadTotals.phoneCalls} calls, ${leadTotals.messages} messages, ${leadTotals.bookings} bookings`,
         `Pacing: last 7 days ${money(pacing.last7DaysSpendMicros)} of ${money(pacing.weeklyBudgetMicros)}/week (${utilization})`,
+        `Monthly: ${money(monthlyBudget.monthToDateSpendMicros)} MTD (${monthlyBudget.startDate}→${monthlyBudget.endDate}) of ~${money(monthlyBudget.estimatedMonthlyMaxMicros)} est. max (${monthlyUtilization} used, ~${money(monthlyBudget.remainingMicros)} left${monthlyBudget.likelyCapped ? " — likely at monthly cap, delivery may stop" : ""})`,
       ];
       if (leadTotals.truncated) {
         lines.push(
@@ -252,6 +268,7 @@ export const getLocalServicesPerformanceTool = {
           costPerChargedLeadMicros: performance.costPerChargedLeadMicros,
           leadTotals,
           pacing,
+          monthlyBudget,
           campaigns: performance.campaigns,
         },
       });

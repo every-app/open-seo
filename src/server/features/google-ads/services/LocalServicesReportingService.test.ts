@@ -74,6 +74,8 @@ describe("LocalServicesReportingService", () => {
   });
 
   it("aggregates spend, lead totals, CPL, and weekly pacing from GAQL rows", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-15T04:00:00Z"));
     mocks.search.mockImplementation((_customerId: string, query: string) => {
       if (query.includes("FROM local_services_lead")) {
         return Promise.resolve([
@@ -108,16 +110,22 @@ describe("LocalServicesReportingService", () => {
         ]);
       }
       if (query.includes("metrics.cost_micros")) {
-        return Promise.resolve(
-          query.includes("BETWEEN '2026-09-01'")
-            ? [{ campaign: { id: "42" }, metrics: { costMicros: "123000000" } }]
-            : [
-                {
-                  campaign: { id: "42" },
-                  metrics: { costMicros: "175000000" },
-                },
-              ],
-        );
+        if (query.includes("AND '2026-09-07'")) {
+          return Promise.resolve([
+            { campaign: { id: "42" }, metrics: { costMicros: "123000000" } },
+          ]);
+        }
+        if (query.includes("BETWEEN '2026-09-08'")) {
+          return Promise.resolve([
+            { campaign: { id: "42" }, metrics: { costMicros: "175000000" } },
+          ]);
+        }
+        if (query.includes("AND '2026-09-14'")) {
+          return Promise.resolve([
+            { campaign: { id: "42" }, metrics: { costMicros: "800000000" } },
+          ]);
+        }
+        return Promise.resolve([]);
       }
       return Promise.resolve([
         {
@@ -127,10 +135,11 @@ describe("LocalServicesReportingService", () => {
       ]);
     });
 
-    const performance =
-      await LocalServicesReportingService.getPerformance(range);
+    try {
+      const performance =
+        await LocalServicesReportingService.getPerformance(range);
 
-    expect(performance.spendMicros).toBe(123_000_000);
+      expect(performance.spendMicros).toBe(123_000_000);
     expect(performance.leadTotals).toEqual({
       total: 3,
       charged: 2,
@@ -141,15 +150,62 @@ describe("LocalServicesReportingService", () => {
       truncated: false,
     });
     expect(performance.costPerChargedLeadMicros).toBe(61_500_000);
-    expect(performance.pacing.weeklyBudgetMicros).toBe(350_000_000);
-    expect(performance.pacing.last7DaysSpendMicros).toBe(175_000_000);
-    expect(performance.pacing.utilization).toBe(0.5);
-    // The manager account rides along on every query.
-    expect(mocks.search).toHaveBeenCalledWith(
-      "1234567890",
-      expect.any(String),
-      { loginCustomerId: "2930000000" },
-    );
+      expect(performance.pacing.weeklyBudgetMicros).toBe(350_000_000);
+      expect(performance.pacing.last7DaysSpendMicros).toBe(175_000_000);
+      expect(performance.pacing.utilization).toBe(0.5);
+      expect(performance.monthlyBudget).toEqual({
+        startDate: "2026-09-01",
+        endDate: "2026-09-14",
+        monthToDateSpendMicros: 800_000_000,
+        estimatedMonthlyMaxMicros: 1_520_000_000,
+        remainingMicros: 720_000_000,
+        utilization: 800_000_000 / 1_520_000_000,
+        likelyCapped: false,
+      });
+      // The manager account rides along on every query.
+      expect(mocks.search).toHaveBeenCalledWith(
+        "1234567890",
+        expect.any(String),
+        { loginCustomerId: "2930000000" },
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("flags likelyCapped when MTD spend nears the estimated monthly max", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-27T04:00:00Z"));
+    mocks.search.mockImplementation((_customerId: string, query: string) => {
+      if (query.includes("FROM local_services_lead")) return Promise.resolve([]);
+      if (query.includes("metrics.cost_micros")) {
+        return Promise.resolve([
+          {
+            campaign: { id: "42" },
+            metrics: { costMicros: "1495000000" },
+          },
+        ]);
+      }
+      return Promise.resolve([
+        {
+          campaign: { id: "42", name: "LSA", status: "ENABLED" },
+          campaignBudget: { amountMicros: "50000000", period: "DAILY" },
+        },
+      ]);
+    });
+
+    try {
+      const performance = await LocalServicesReportingService.getPerformance({
+        projectId: "project_1",
+      });
+      expect(performance.monthlyBudget.estimatedMonthlyMaxMicros).toBe(
+        1_520_000_000,
+      );
+      expect(performance.monthlyBudget.likelyCapped).toBe(true);
+      expect(performance.monthlyBudget.remainingMicros).toBe(25_000_000);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("leaves the weekly target null for a non-daily budget period", async () => {
