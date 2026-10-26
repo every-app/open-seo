@@ -27,6 +27,14 @@ import { CopyButton } from "@/client/components/CopyButton";
 import { AgentList } from "@/client/features/ai-mcp/AgentList";
 
 const DOCS_URL = "https://openseo.so/docs/agent-setup";
+
+// An Every App app lives one label below its gateway
+// (`openseo.apps.example.com` under `apps.example.com`).
+function gatewayMcpUrl(appOrigin: string) {
+  const url = new URL(appOrigin);
+  url.hostname = url.hostname.split(".").slice(1).join(".");
+  return `${url.origin}/mcp`;
+}
 const COACH_DOCS_URL = "https://openseo.so/docs/skills/seo-coach";
 const LINK_CLASS =
   "text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground";
@@ -84,7 +92,7 @@ function AiPage() {
       <div className="mx-auto max-w-7xl">
         <PageHeader
           title="Agent setup"
-          description="The most powerful way to use OpenSEO is through the AI agent you already use. Set it up once, then ask it anything."
+          description="Connect the AI agent you already use. Set it up once, then ask it anything."
         />
 
         <Tabs
@@ -98,7 +106,7 @@ function AiPage() {
           className="mt-8"
         >
           <TabsList variant="line">
-            <TabsTrigger value="setup">Set up your agent</TabsTrigger>
+            <TabsTrigger value="setup">Setup</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
           </TabsList>
           <TabsContent value="setup">
@@ -184,6 +192,18 @@ function AiPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {getClientAuthMode() === "everyapp" ? (
+              <Alert className="mt-8">
+                <ShieldAlert />
+                <AlertDescription>
+                  Every App has one address for your agent, and it covers
+                  OpenSEO:{" "}
+                  <code className="font-mono">{gatewayMcpUrl(origin)}</code>.
+                  Connect it once.
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
             {getClientAuthMode() === "cloudflare_access" ? (
               <Alert variant="warning" className="mt-8">

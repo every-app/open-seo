@@ -63,6 +63,7 @@ import {
   fetchAiTrackingLiveAnswer,
   postAiTrackingTasks,
 } from "@/server/lib/dataforseo/ai-tracking";
+import { forOrganization } from "@/server/lib/gateway-attribution";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
 
@@ -343,11 +344,17 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
  */
 async function meterDataforseoCalls<T>(
   customer: BillingCustomerContext,
-  executes: Array<() => Promise<DataforseoApiResponse<T>>>,
+  calls: Array<() => Promise<DataforseoApiResponse<T>>>,
   callCredits: number[],
   creditFeature?: CreditFeature,
 ): Promise<PromiseSettledResult<T>[]> {
-  if (executes.length === 0) return [];
+  if (calls.length === 0) return [];
+  // Each call is the customer's organization's at an Every App gateway too:
+  // the served request's identity, or `x-everyapp-org` from a Workflow or
+  // SAM (gateway-attribution.ts).
+  const executes = calls.map(
+    (call) => () => forOrganization(customer.organizationId, call),
+  );
   const isHostedMode = await isHostedServerAuthMode();
 
   if (!isHostedMode) {

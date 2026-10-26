@@ -17,11 +17,14 @@ import {
   createDataforseoClient,
 } from "@/server/lib/dataforseo";
 import { AppError } from "@/server/lib/errors";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
+import {
+  buildChatAgentModel,
+  requireOpenRouterAccess,
+  type OpenRouterAccess,
+} from "@/server/lib/openrouter";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import {
   getOptionalEnvValue,
-  getRequiredEnvValue,
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
 import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
@@ -97,7 +100,8 @@ export async function researchAiPrompts(
       "INSUFFICIENT_CREDITS",
       "You need usage credits to research prompts.",
     );
-  const openRouterApiKey = await getRequiredEnvValue("OPENROUTER_API_KEY");
+  // Its calls are the customer's organization's behind an Every App gateway.
+  const openRouter = await requireOpenRouterAccess(customer.organizationId);
   const state = await getTracker({ projectId: input.projectId });
   const keyword = normalizeAiSuggestion(input.keyword);
   // DataForSEO has ChatGPT prompt data only in US English.
@@ -121,7 +125,7 @@ export async function researchAiPrompts(
       projectId: input.projectId,
       keyword,
       prompts: loaded.prompts,
-      openRouterApiKey,
+      openRouter,
     },
     customer,
   );
@@ -223,7 +227,7 @@ async function relevantQuestions(
     projectId: string;
     keyword: string;
     prompts: CachedPrompt[];
-    openRouterApiKey: string;
+    openRouter: OpenRouterAccess;
   },
   customer: BillingCustomerContext,
 ): Promise<Set<string>> {
@@ -258,7 +262,7 @@ async function relevantQuestions(
 
   const result = await generateText({
     model: buildChatAgentModel(
-      input.openRouterApiKey,
+      input.openRouter,
       await getOptionalEnvValue("OPENROUTER_MODEL"),
       "low",
     ),

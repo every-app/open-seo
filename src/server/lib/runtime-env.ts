@@ -45,7 +45,7 @@ export async function usesBetterAuthServer(): Promise<boolean> {
   return usesBetterAuth(await getOptionalEnvValue("AUTH_MODE"));
 }
 
-async function getWorkersEnv(): Promise<Record<string, unknown> | null> {
+export async function getWorkersEnv(): Promise<Record<string, unknown> | null> {
   if (!workersEnvPromise) {
     workersEnvPromise = loadWorkersEnv();
   }

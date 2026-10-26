@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { cn } from "cn";
 import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
 import { ProjectWebsiteSetup } from "@/client/features/projects/ProjectWebsiteSetup";
 import { QueryError } from "@/client/components/QueryState";
@@ -7,9 +8,12 @@ import { SkeletonPageContent } from "@/client/components/SkeletonPresets";
 
 export function ProjectWebsiteGate({
   projectId,
+  header,
   children,
 }: {
   projectId: string;
+  /** The page's title, kept above the setup card so the page keeps its name. */
+  header?: ReactNode;
   children: ReactNode;
 }) {
   const query = useQuery(projectsQueryOptions());
@@ -27,8 +31,16 @@ export function ProjectWebsiteGate({
   if (!project) return null;
   if (project.domain) return children;
   return (
-    <div className="grid min-h-[calc(100dvh-8rem)] place-items-center">
-      <ProjectWebsiteSetup projectId={projectId} />
-    </div>
+    <>
+      {header}
+      <div
+        className={cn(
+          "grid place-items-center",
+          header ? "min-h-[calc(100dvh-13rem)]" : "min-h-[calc(100dvh-8rem)]",
+        )}
+      >
+        <ProjectWebsiteSetup projectId={projectId} />
+      </div>
+    </>
   );
 }

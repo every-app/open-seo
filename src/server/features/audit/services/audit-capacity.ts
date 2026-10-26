@@ -6,7 +6,7 @@ import {
   PAID_MAX_AUDIT_PAGES,
 } from "@/shared/audit-limits";
 
-export type AuditLimitTier = "free" | "paid" | "self_hosted";
+export type AuditLimitTier = "free" | "paid" | "self_hosted" | "every_app";
 
 // The crawler runs on our Workers compute and isn't credit-metered, so these
 // per-tier bounds are the abuse control: free accounts cost nothing to create,
@@ -38,6 +38,16 @@ export const AUDIT_LIMITS: Record<
     maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,
     maxCapacityUnits: Number.POSITIVE_INFINITY,
     maxRunningAudits: Number.POSITIVE_INFINITY,
+  },
+  // OpenSEO on Every App (first party or a fork): Every App pays for the
+  // crawl, and there is no plan to read until the gateway's wallet exists.
+  // The invite-only preview gets the paid plan's page and total bounds, so
+  // the launch form's limits hold, but a few audits at a time per
+  // organization instead of unlimited ones.
+  every_app: {
+    maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,
+    maxCapacityUnits: 100_000,
+    maxRunningAudits: 2,
   },
 };
 

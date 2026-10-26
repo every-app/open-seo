@@ -35,7 +35,7 @@ function ProjectsPage() {
       <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="Projects"
-          description="Each project has its own Search Console, rank tracking, and audits."
+          description="Each project has its own website, rank tracking, and audits."
           actions={
             <Button onClick={() => setCreating(true)}>
               <Plus data-icon="inline-start" />
@@ -69,7 +69,7 @@ function ProjectsPage() {
                         ) : null}
                       </span>
                       <span className="truncate text-xs text-muted-foreground">
-                        {project.domain ?? "No domain set"}
+                        {project.domain ?? "No website yet"}
                       </span>
                     </span>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
@@ -126,7 +126,7 @@ function ArchivedProjects() {
                 {project.name}
               </span>
               <span className="truncate text-xs text-muted-foreground">
-                {project.domain ?? "No domain set"}
+                {project.domain ?? "No website yet"}
               </span>
             </span>
             <Button

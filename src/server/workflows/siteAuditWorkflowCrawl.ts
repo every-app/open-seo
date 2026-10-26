@@ -29,6 +29,7 @@ import type { RenderUsage } from "@/shared/audit-rendering";
 import type { CrawlerAccess } from "@/shared/crawler-access";
 import { pgStep } from "@/server/workflows/pgStep";
 import { CRAWL_CHUNK_STEP } from "@/server/workflows/auditStepConfigs";
+import { getContextFetch } from "@/server/lib/provider-access";
 
 /**
  * The crawl runs in chunks: each chunk is one durable step that leases up to
@@ -310,7 +311,10 @@ async function runCrawlChunk(
           await import("@/server/lib/audit/rendered-page");
         return RenderedPageService.renderPage(url, {
           browser: env.BROWSER,
-          contextApiKey: env.CONTEXT_API_KEY,
+          // Behind an Every App gateway its calls are the audit's
+          // organization's, named around the Workflow's run() and carried
+          // into this step by pgStep.
+          contextFetch: await getContextFetch(),
           auditId,
           usage: renderUsage,
         });

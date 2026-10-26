@@ -43,6 +43,9 @@ import { DEFAULT_LOCATION_CODE } from "@/shared/keyword-locations";
 import { scheduleLabel } from "@/shared/rank-tracking";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 
+export const PROMPT_TRACKING_DESCRIPTION =
+  "Track the prompts your customers use with AI. Inspect where your business is mentioned or cited.";
+
 export function PromptTrackingPage({
   projectId,
   tab,
@@ -171,7 +174,7 @@ function PromptTrackingContent({
     <div className="space-y-4">
       <PageHeader
         title="Prompt Tracking"
-        description="Track the prompts your customers use with AI. Inspect where your business is mentioned or cited."
+        description={PROMPT_TRACKING_DESCRIPTION}
       />
       {!state.configured ? (
         <EmptyState

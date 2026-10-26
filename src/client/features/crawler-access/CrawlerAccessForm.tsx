@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useAppForm } from "@/client/components/form/useAppForm";
+import { useAuditCapabilities } from "@/client/features/audit/shared";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import { saveCrawlerCredential } from "@/serverFunctions/crawlerAccess";
 import {
   isCrawlerAccessExpired,
@@ -11,6 +13,24 @@ import {
 
 export const crawlerCredentialsQueryKey = ["crawler-credentials"];
 export const saveCrawlerCredentialMutationKey = ["save-crawler-credential"];
+
+/**
+ * How CRAWLER_ACCESS_SECRET gets set, for every place that says a signature
+ * can't be saved without it: the form here and the Shopify crawl warning.
+ */
+export function CrawlerAccessSetupHint() {
+  return isEveryAppClientAuthMode() ? (
+    <>
+      An admin sets <code>CRAWLER_ACCESS_SECRET</code> with{" "}
+      <code>pnpm everyapp secret set CRAWLER_ACCESS_SECRET --app openseo</code>.
+    </>
+  ) : (
+    <>
+      Set <code>CRAWLER_ACCESS_SECRET</code> (32 or more characters) on the
+      server, then restart OpenSEO.
+    </>
+  );
+}
 
 const signatureSchema = z.object({
   host: z.string().trim().min(1, "Enter a domain."),
@@ -82,6 +102,18 @@ export function CrawlerAccessForm({
       formApi.reset({ ...value, signatureInput: "", signature: "" });
     },
   });
+
+  // Saving needs CRAWLER_ACCESS_SECRET, which is optional: say so here
+  // instead of failing on save.
+  const canStoreCrawlerAccess =
+    useAuditCapabilities(projectId).data?.canStoreCrawlerAccess;
+  if (canStoreCrawlerAccess === false) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Crawler access isn't set up yet. <CrawlerAccessSetupHint />
+      </p>
+    );
+  }
 
   return (
     <form.AppForm>

@@ -23,7 +23,10 @@ import {
 } from "@/client/features/audit/launch/types";
 import type { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
 import { getFieldError, getFormError } from "@/client/lib/forms";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  isEveryAppClientAuthMode,
+  isHostedClientAuthMode,
+} from "@/lib/auth-mode";
 import { RENDERED_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { renderingEstimateText } from "@/shared/audit-rendering";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
@@ -185,7 +188,7 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
           htmlFor="audit-run-lighthouse"
           title="Lighthouse measures the performance of your pages and identifies issues."
         >
-          Include Lighthouse
+          Include Lighthouse scores
         </FieldLabel>
       </div>
 
@@ -249,7 +252,14 @@ function RenderingOptions({
           }
         </launchForm.Subscribe>
       )}
-      {canRenderJavaScript === false && (
+      {canRenderJavaScript === false && isEveryAppClientAuthMode() && (
+        <FieldDescription>
+          JavaScript rendering isn't set up on your Every App gateway yet. An
+          owner or admin sets it with{" "}
+          <code>pnpm everyapp secret set CONTEXT_API_KEY</code>.
+        </FieldDescription>
+      )}
+      {canRenderJavaScript === false && !isEveryAppClientAuthMode() && (
         <FieldDescription>
           This deployment has no browser, so rendering needs a Context.dev API
           key. Set <code>CONTEXT_API_KEY</code>, restart OpenSEO, then reload

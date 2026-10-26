@@ -1,5 +1,8 @@
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
-import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
+import {
+  auditRenderingUnavailableMessage,
+  isAuditRenderingAllowed,
+} from "@/server/lib/audit/rendering-policy";
 import {
   lockRenderingCredits,
   releaseRenderingLocks,
@@ -32,12 +35,21 @@ import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { reconcileRunningAudit } from "@/server/features/audit/services/auditReconciler";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { startWorkflow } from "@/server/lib/startWorkflow";
+import {
+  getDeploymentTier,
+  isEveryAppTier,
+} from "@/server/lib/deployment-tier";
 
 // Free accounts keep bounded audit capacity; rendering reserves usage credits.
+// Off app.openseo.so the deployment tier picks the bounds (deployment-tier.ts).
 async function resolveAuditLimitTier(
   customer: BillingCustomerContext,
 ): Promise<AuditLimitTier> {
-  if (!(await isHostedServerAuthMode())) return "self_hosted";
+  if (!(await isHostedServerAuthMode())) {
+    return isEveryAppTier(await getDeploymentTier())
+      ? "every_app"
+      : "self_hosted";
+  }
   await getOrCreateOrganizationCustomer(customer);
   return (await customerHasPaidPlan(customer.organizationId)) ? "paid" : "free";
 }
@@ -56,7 +68,7 @@ async function startAudit(input: {
   if (renderJavaScript && !(await isAuditRenderingAllowed())) {
     throw new AppError(
       "AUDIT_RENDERING_UNAVAILABLE",
-      "JavaScript rendering is not available on this deployment. It needs a Cloudflare deployment with Browser Run, or CONTEXT_API_KEY. Run the audit without rendering instead.",
+      await auditRenderingUnavailableMessage(),
     );
   }
   const limits = AUDIT_LIMITS[input.limitTier];

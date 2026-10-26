@@ -28,8 +28,40 @@ declare namespace Cloudflare {
     // oxlint-disable-next-line typescript-eslint/consistent-type-imports
     AUDIT_ENGINE: Service<typeof import("./audit-worker").default>;
 
-    AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted" | "password";
+    AUTH_MODE?:
+      | "cloudflare_access"
+      | "local_noauth"
+      | "hosted"
+      | "password"
+      | "everyapp";
     BYPASS_EMAIL_VERIFICATION?: string;
+
+    // AUTH_MODE=everyapp: OpenSEO behind an Every App gateway. The deploy
+    // (`everyapp deploy`) sets the identity keys, the app id the tokens
+    // must name, and the binding through which the gateway calls DataForSEO
+    // and OpenRouter with keys only it holds. `everyapp dev` sets the dev
+    // keys; EVERYAPP_DEV accepts them, in local dev only.
+    EVERYAPP_APP_ID?: string;
+    EVERYAPP_IDENTITY_PUBLIC_KEYS?: string;
+    EVERYAPP_IDENTITY_ISSUER?: string;
+    EVERYAPP_DEV?: string;
+    EVERY_APP_GATEWAY?: Fetcher;
+    // Set: a fork pinned to that organization. Unset: first party, the
+    // organization comes from each request's identity.
+    EVERY_APP_ORG_ID?: string;
+    GATEWAY_URL?: string;
+    // AUTH_MODE=everyapp only (server/lib/deployment-tier.ts): first_party or
+    // fork, derived from EVERY_APP_ORG_ID when unset.
+    DEPLOYMENT_TIER?: string;
+    // "off" holds a first-party deployment's scheduled rank checks and AI
+    // visibility runs; they run otherwise.
+    FIRST_PARTY_SCHEDULED_CHECKS?: string;
+    // "1" on a first-party deployment's Workers: one Worker serves every
+    // organization, so the SDK refuses a gateway call that says nobody's
+    // (server/lib/gateway-attribution.ts).
+    EVERYAPP_SHARED?: string;
+    // The Worker's name, which the gateway mints every identity for (`aud`).
+    EVERYAPP_AUDIENCE?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
     POSTHOG_PUBLIC_KEY?: string;
@@ -107,7 +139,8 @@ interface ImportMetaEnv {
     | "cloudflare_access"
     | "local_noauth"
     | "hosted"
-    | "password";
+    | "password"
+    | "everyapp";
   readonly DATABASE_PROVIDER?: "d1" | "postgres";
   readonly BYPASS_EMAIL_VERIFICATION?: string;
   readonly POSTHOG_PUBLIC_KEY?: string;

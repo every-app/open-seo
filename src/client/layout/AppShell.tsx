@@ -19,6 +19,10 @@ import {
   SidebarTrigger,
 } from "@/client/components/ui/sidebar";
 
+// Dismissed once per browser session: after that the banner carries the
+// message, and a route change does not bring the dialog back.
+const SETUP_DIALOG_DISMISSED_KEY = "openseo:dataforseo-setup-dismissed";
+
 export function AuthenticatedAppLayout({
   children,
   projectId,
@@ -91,9 +95,11 @@ export function AuthenticatedAppLayout({
     }
 
     if (!seoApiKeyStatusQuery.isSuccess) return;
-    setShowMissingSeoApiKeyModal(!seoApiKeyStatusQuery.data.configured);
+    setShowMissingSeoApiKeyModal(
+      !seoApiKeyStatusQuery.data.configured &&
+        !sessionStorage.getItem(SETUP_DIALOG_DISMISSED_KEY),
+    );
   }, [
-    location.pathname,
     seoApiKeyStatusQuery.data,
     seoApiKeyStatusQuery.isError,
     seoApiKeyStatusQuery.isSuccess,
@@ -125,7 +131,10 @@ export function AuthenticatedAppLayout({
 
       {showMissingSeoApiKeyModal ? (
         <MissingSeoSetupModal
-          onClose={() => setShowMissingSeoApiKeyModal(false)}
+          onClose={() => {
+            sessionStorage.setItem(SETUP_DIALOG_DISMISSED_KEY, "1");
+            setShowMissingSeoApiKeyModal(false);
+          }}
         />
       ) : null}
 

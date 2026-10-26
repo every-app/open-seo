@@ -23,6 +23,7 @@ import {
 } from "@/client/features/integrations/googleProviders";
 import { useGooglePickerResume } from "@/client/features/integrations/useGooglePickerResume";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 
 /**
  * Connects one project to Search Console or Google Analytics: link a Google
@@ -266,16 +267,27 @@ function ConnectionStatusPill({
   connected: boolean;
   setupRequired: boolean;
 }) {
+  // On Every App there is nothing a member can set up: Google arrives with
+  // the gateway (GoogleOAuthSetupWarning), so no warning.
+  const notAvailableYet = setupRequired && isEveryAppClientAuthMode();
   return (
     <Badge
-      variant={connected ? "success" : setupRequired ? "warning" : "outline"}
+      variant={
+        connected
+          ? "success"
+          : setupRequired && !notAvailableYet
+            ? "warning"
+            : "outline"
+      }
     >
       <span className="size-1.5 rounded-full bg-current" />
       {connected
         ? "Connected"
-        : setupRequired
-          ? "Setup required"
-          : "Not connected"}
+        : notAvailableYet
+          ? "Not available yet"
+          : setupRequired
+            ? "Setup required"
+            : "Not connected"}
     </Badge>
   );
 }

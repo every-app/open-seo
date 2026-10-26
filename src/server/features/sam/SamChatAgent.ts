@@ -26,14 +26,14 @@ import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository
 import { ProjectContextService } from "@/server/features/project-context/services/ProjectContextService";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildSamSkillSource } from "@/server/features/sam/samSkills";
+import { closeSamSocket, scheduleSamSocketClose } from "./samSocketLifetime";
 import { buildSamSystemPrompt } from "@/server/features/sam/samSystemPrompt";
 import {
   SamTelemetry,
   type SamTurnStats,
 } from "@/server/features/sam/samTurnTelemetry";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
+import { buildSamChatModel } from "@/server/lib/openrouter";
 import {
-  getEnvValueSync,
   isHostedServerAuthMode,
   usesBetterAuthServer,
 } from "@/server/lib/runtime-env";
@@ -92,8 +92,7 @@ function deriveTitle(text: string): string {
 
 function firstUserText(messages: UIMessage[]): string {
   const firstUser = messages.find((message) => message.role === "user");
-  const textPart = firstUser?.parts.find((part) => part.type === "text");
-  return textPart?.text ?? "";
+  return firstUser?.parts.find((part) => part.type === "text")?.text ?? "";
 }
 
 type SamContext = {
@@ -189,20 +188,28 @@ export class SamChatAgent extends Think {
     return super.fetch(request);
   }
 
+  // Behind an Every App gateway, each WebSocket closes a fixed time after it
+  // connects and the client reconnects through the gateway (samSocketLifetime.ts).
+  override async onConnect(...args: Parameters<Think["onConnect"]>) {
+    await super.onConnect(...args);
+    await scheduleSamSocketClose(this.env, this, args[0].id);
+  }
+
+  closeExpiredSocket(connectionId: string): void {
+    closeSamSocket(this.getConnection(connectionId));
+  }
+
   getModel() {
     return this.buildModel("max");
   }
 
+  // Behind an Every App gateway the model's calls are the session's
+  // organization's: SAM's turns are background work no request started.
   private buildModel(reasoningEffort: "max" | "low") {
-    const apiKey = getEnvValueSync(this.env, "OPENROUTER_API_KEY");
-    if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
-    }
-    return buildChatAgentModel(
-      apiKey,
-      getEnvValueSync(this.env, "OPENROUTER_MODEL"),
-      reasoningEffort,
-    );
+    return buildSamChatModel(this.env, reasoningEffort, async () => {
+      const ctx = await withPgClient(() => this.loadSamContext());
+      return ctx?.project.organizationId;
+    });
   }
 
   override getSkills() {

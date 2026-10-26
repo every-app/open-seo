@@ -33,6 +33,7 @@ import {
   getCodeChallenge,
   getCodeVerifier,
 } from "./googleOAuthState";
+import { ownGoogleCallbackDisabled } from "./googleAccess";
 
 /**
  * Google data grants (Search Console, Analytics) are linked here rather than
@@ -426,6 +427,11 @@ export async function handleGoogleOAuthCallbackRequest(
   request: Request,
   integration: GoogleOAuthIntegration,
 ) {
+  // Behind an Every App gateway the gateway holds Google, so OpenSEO's own
+  // callback doesn't exist there (googleAccess.ts).
+  if (await ownGoogleCallbackDisabled()) {
+    return new Response("Not found", { status: 404 });
+  }
   try {
     const context = await resolveUserContextFromHeaders(request.headers);
     return await handleGoogleOAuthCallback({

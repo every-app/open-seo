@@ -9,6 +9,10 @@
     "src/standalone-server.ts",
     // Separately bundled MCP App, served as an inline HTML resource.
     "src/client/mcp-widgets/main.tsx",
+    // Every App manifest and Worker, read by the everyapp CLI and the
+    // Cloudflare Vite plugin 2.x (AUTH_MODE=everyapp)
+    "everyapp.config.ts",
+    "cloudflare.config.ts",
     // Detect Tanstack Start Routes
     "src/start.ts",
     "src/router.tsx",
@@ -58,5 +62,6 @@
     // Imported by app.css; shadcn is also the component CLI
     "tw-animate-css",
     "shadcn",
+    // Linked from an Every App checkout until the SDK is published: Knip
   ],
 }

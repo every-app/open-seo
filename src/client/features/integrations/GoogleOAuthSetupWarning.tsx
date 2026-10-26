@@ -1,10 +1,11 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
 } from "@/client/components/ui/alert";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 
 export function GoogleOAuthSetupWarning({
   integrationName,
@@ -13,6 +14,23 @@ export function GoogleOAuthSetupWarning({
   integrationName: string;
   docsUrl: string;
 }) {
+  if (isEveryAppClientAuthMode()) {
+    // Google connects through the gateway, which holds the Google client
+    // (Every App → Manage workspace → Providers); OpenSEO holds none here
+    // (server/features/google/googleAccess.ts).
+    return (
+      <Alert variant="info">
+        <Info className="size-4" />
+        <AlertTitle>Google isn't set up in Every App yet</AlertTitle>
+        <AlertDescription>
+          <p>
+            {integrationName} connects through Every App once an admin adds
+            Google under Manage workspace → Providers. Nothing to paste here.
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
+  }
   return (
     <Alert variant="warning">
       <AlertTriangle className="size-4" />

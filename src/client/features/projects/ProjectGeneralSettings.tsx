@@ -15,6 +15,7 @@ import {
 } from "@/client/lib/active-project";
 import { toastInitialAudit } from "@/client/features/projects/initialAuditToast";
 import { archiveProject, updateProject } from "@/serverFunctions/projects";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import type { ProjectSummary } from "./types";
 
 export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
@@ -98,7 +99,6 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
 
   return (
     <section className="space-y-3">
-      <SectionHeader title="General" />
       <form.AppForm>
         <form.Form className="flex flex-col gap-4">
           <form.AppField name="name">
@@ -107,20 +107,21 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
             )}
           </form.AppField>
 
-          <p className="text-sm text-muted-foreground">
-            Adding your website starts a 50-page scan with JavaScript rendering.
-            Rendering uses your credits.
-          </p>
           <form.AppField name="domain">
             {(field) => (
               <field.TextField
                 label={
                   <>
-                    Domain{" "}
+                    Website{" "}
                     <span className="font-normal text-muted-foreground">
                       (optional)
                     </span>
                   </>
+                }
+                description={
+                  isEveryAppClientAuthMode()
+                    ? "Adding it starts a 50-page site audit."
+                    : "Adding your website starts a 50-page scan with JavaScript rendering. Rendering uses your credits."
                 }
                 placeholder="example.com"
                 maxLength={255}
@@ -147,7 +148,7 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
             <form.Subscribe selector={(state) => state.isDefaultValue}>
               {(isDefaultValue) => (
                 <form.SubmitButton disabled={isDefaultValue}>
-                  Save changes
+                  Save
                 </form.SubmitButton>
               )}
             </form.Subscribe>
@@ -186,14 +187,14 @@ function DangerSection({
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           {canArchive
-            ? "Archiving removes the project from your workspace and stops its scheduled rank tracking. You can restore it later from the Projects page."
+            ? "Archiving hides the project and stops its scheduled rank tracking. Restore it from Projects."
             : "You can't archive your only project."}
         </p>
         <div className="flex shrink-0 gap-2">
           <InlineConfirm
             label={`Archive ${project.name}`}
             triggerLabel="Archive project"
-            confirmLabel="Yes, archive project"
+            confirmLabel="Archive"
             pending={archiveMutation.isPending}
             disabled={!canArchive}
             onConfirm={() => archiveMutation.mutate()}

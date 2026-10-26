@@ -335,6 +335,7 @@ function SavedKeywordsPage() {
             state would claim there are no saved keywords. */}
         {savedKeywordsQuery.isError && data === undefined ? null : (
           <SavedKeywordsTable
+            projectId={projectId}
             rows={savedKeywords}
             rowSelection={rowSelection}
             sorting={sorting}

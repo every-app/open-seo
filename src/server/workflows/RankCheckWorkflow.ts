@@ -5,6 +5,7 @@ import {
 } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import { withPgClient } from "@/db";
+import { forOrganization } from "@/server/lib/gateway-attribution";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
@@ -289,8 +290,11 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
   async run(event: WorkflowEvent<RankCheckParams>, step: WorkflowStep) {
     // Scope a per-request Postgres client for this workflow invocation (no-op in
     // D1 mode). The socket is reclaimed when the invocation ends, so there is
-    // nothing to tear down here.
-    return withPgClient(() => this.runScoped(event, step));
+    // nothing to tear down here. Behind an Every App gateway, every call the
+    // run makes is its organization's (gateway-attribution.ts).
+    return forOrganization(event.payload.billingCustomer.organizationId, () =>
+      withPgClient(() => this.runScoped(event, step)),
+    );
   }
 
   private async runScoped(

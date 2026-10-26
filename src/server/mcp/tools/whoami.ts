@@ -5,6 +5,11 @@ import {
 import { mcpResponse } from "@/server/mcp/formatters";
 import { type ToolContext } from "@/server/mcp/context";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import {
+  deploymentTierLabel,
+  getDeploymentTier,
+  isEveryAppTier,
+} from "@/server/lib/deployment-tier";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { z } from "zod";
 
@@ -18,7 +23,9 @@ export const whoamiTool = {
     outputSchema: z.looseObject({
       userEmail: z.string(),
       scopes: z.array(z.string()),
-      mode: z.enum(["hosted", "self-hosted"]),
+      mode: z.enum(["hosted", "self-hosted", "every-app"]),
+      // Behind an Every App gateway only: first_party or fork.
+      deploymentTier: z.enum(["first_party", "fork"]).optional(),
       creditsRemaining: z.number().nullable(),
       ...optionalMetaOutputSchema,
     }),
@@ -45,9 +52,11 @@ export const whoamiTool = {
         // Account identity is still available when billing is unavailable.
       }
     }
+    const tier = isHosted ? "hosted" : await getDeploymentTier();
+    const everyAppTier = isEveryAppTier(tier) ? tier : undefined;
     const lines = [
       `Account: ${auth.userEmail}`,
-      `Mode: ${isHosted ? "hosted" : "self-hosted"}`,
+      `Mode: ${deploymentTierLabel(tier)}`,
       `Scopes: ${auth.scopes.length > 0 ? auth.scopes.join(", ") : "none"}`,
     ];
     if (isHosted) {
@@ -68,7 +77,8 @@ export const whoamiTool = {
       structuredContent: {
         userEmail: auth.userEmail,
         scopes: auth.scopes,
-        mode: isHosted ? "hosted" : "self-hosted",
+        mode: isHosted ? "hosted" : everyAppTier ? "every-app" : "self-hosted",
+        ...(everyAppTier ? { deploymentTier: everyAppTier } : {}),
         creditsRemaining,
       },
     });

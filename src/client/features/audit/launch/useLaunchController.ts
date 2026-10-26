@@ -38,7 +38,7 @@ function getLaunchValidationErrors(
 
   return createFormValidationErrors({
     fields: {
-      url: "Please enter a URL.",
+      url: "Enter a URL.",
     },
   });
 }

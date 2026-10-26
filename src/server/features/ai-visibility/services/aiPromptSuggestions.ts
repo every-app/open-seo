@@ -9,10 +9,12 @@ import {
 } from "@/server/billing/subscription";
 import { billResearchSpend } from "@/server/billing/researchSpend";
 import { requireOpenRouterCostUsd } from "@/server/lib/chatAgent";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
+import {
+  buildChatAgentModel,
+  requireOpenRouterAccess,
+} from "@/server/lib/openrouter";
 import {
   getOptionalEnvValue,
-  getRequiredEnvValue,
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
@@ -74,7 +76,8 @@ export async function generateAiPrompts(
     : suggestedAiTopicSchema;
   const result = await generateText({
     model: buildChatAgentModel(
-      await getRequiredEnvValue("OPENROUTER_API_KEY"),
+      // The customer's organization's call behind an Every App gateway.
+      await requireOpenRouterAccess(customer.organizationId),
       await getOptionalEnvValue("OPENROUTER_MODEL"),
       "low",
     ),

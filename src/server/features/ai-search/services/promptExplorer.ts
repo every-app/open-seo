@@ -338,10 +338,13 @@ function mapErrorToResult(
   if (
     reason instanceof AppError &&
     (reason.code === "INSUFFICIENT_CREDITS" ||
-      reason.code === "AI_SEARCH_BILLING_ISSUE")
+      reason.code === "AI_SEARCH_BILLING_ISSUE" ||
+      reason.code === "DATAFORSEO_AUTH_FAILED" ||
+      reason.code === "AUTH_CONFIG_MISSING")
   ) {
     // These account-level failures apply to every model, so surface one clear
-    // error instead of silently degrading to per-model failures.
+    // error instead of silently degrading to per-model failures. A gateway
+    // without a DataForSEO key is one: "try again" could never succeed.
     throw reason;
   }
 

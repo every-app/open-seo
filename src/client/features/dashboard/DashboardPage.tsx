@@ -168,10 +168,12 @@ export function DashboardPage({
               Your website
             </p>
             <h1 className="text-2xl font-semibold">
-              {activation.domain || "Dashboard"}
+              {activation.domain || "Overview"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Search visibility, links and site health in one place.
+              {activation.domain
+                ? "Search visibility, links and site health in one place."
+                : "Add your website in Project settings to scan it and see who links to it."}
             </p>
           </div>
           <Button
