@@ -119,6 +119,8 @@ declare namespace Cloudflare {
 
     // OpenRouter API key for the SAM in-app chat agent.
     OPENROUTER_API_KEY?: string;
+    // Optional base URL to use another OpenRouter-compatible provider.
+    OPENROUTER_BASE_URL?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
   }

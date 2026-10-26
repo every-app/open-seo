@@ -40,6 +40,24 @@ it("sends OpenAI calls to MiniMax M3 from a country where OpenAI is blocked", as
   ).toBe("minimax/minimax-m3");
 });
 
+it("sends requests to a custom base URL without the region lookup", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(completion());
+  const { buildChatAgentModel } = await import("./openrouter");
+  await generateText({
+    model: buildChatAgentModel({
+      apiKey: "key",
+      baseURL: "https://llm.example.com/v1",
+    }),
+    prompt: "hi",
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+    "https://llm.example.com/v1/chat/completions",
+  );
+});
+
 it("stays on OpenAI when the country lookup fails", async () => {
   expect(
     await requestedModel(async () => {
