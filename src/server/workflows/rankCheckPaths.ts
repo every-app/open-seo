@@ -1,7 +1,12 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import {
+  fetchRankCheckTaskResult,
+  MAX_TASKS_PER_POST,
+} from "@/server/lib/dataforseo";
 import type {
   createDataforseoClient,
+  PostedRankCheckTask,
   RankCheckResult,
   RankCheckTaskInput,
 } from "@/server/lib/dataforseo";
@@ -10,6 +15,7 @@ import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
 import { pgStep } from "@/server/workflows/pgStep";
 
+// Fork: exported for the validated path (rankCheckQueuedPath.ts).
 export const SINGLE_ATTEMPT_STEP_CONFIG = {
   retries: { limit: 0, delay: "1 second" as const },
   timeout: "2 minutes" as const,
@@ -26,15 +32,6 @@ const LIVE_RETRY_BACKOFFS_MS = [5_000, 10_000];
 // after it, so these steps get room SINGLE_ATTEMPT_STEP_CONFIG does not give.
 export const LIVE_BATCH_STEP_CONFIG = {
   retries: { limit: 0, delay: "1 second" as const },
-  timeout: "5 minutes" as const,
-};
-
-// Collect steps may issue hundreds of task_get calls, so they get more room
-// than SINGLE_ATTEMPT_STEP_CONFIG's 2-minute timeout. Unlike the metered
-// steps, retrying is safe and free: task_get isn't charged and snapshot
-// inserts are onConflictDoNothing. The live path's bookkeeping step shares it.
-export const COLLECT_STEP_CONFIG = {
-  retries: { limit: 2, delay: "10 seconds" as const },
   timeout: "5 minutes" as const,
 };
 
@@ -62,6 +59,7 @@ export function mapResultsToSnapshotRows(
 
 export interface CheckContext {
   client: ReturnType<typeof createDataforseoClient>;
+  /** Fork: the tracker, for the validated path's history baselines. */
   configId: string;
   keywords: KeywordEntry[];
   devices: RankTrackingConfig["devices"];
@@ -73,7 +71,7 @@ export interface CheckContext {
   runId: string;
   /**
    * Fork: check every queued result against its own page and withhold the
-   * ones Google served without the requested location (see runQueuedCheck).
+   * ones Google served without the requested location (rankCheckQueuedPath).
    */
   validateSerps?: boolean;
 }
@@ -209,18 +207,13 @@ export async function checkBatchLive(
  * Snapshots are written incrementally after each batch so partial results
  * survive batch failures. ~6s per keyword batch, longer when calls are retried.
  * Each round of a batch's calls is billed with one credit hold and one settle
- * (checkBatchLive).
- * A failed batch step doesn't stop the run. Afterwards, every keyword/device
- * pair still without a snapshot is returned so the workflow can send it
- * through the task queue (runQueuedCheck), which retries timeouts and in-band
- * task errors at queue price. Failed live calls aren't billed, so the retry
- * stays within the live estimate the user approved. Exception: a step that
- * died after its calls were metered gets billed again at queue price.
+ * (checkBatchLive). A failed batch step doesn't stop the run; its pairs are
+ * retried by retryRankChecks.
  */
 export async function runLiveCheck(
   step: WorkflowStep,
   ctx: CheckContext,
-): Promise<RankCheckTaskInput[]> {
+): Promise<void> {
   for (let i = 0; i < ctx.keywords.length; i += KEYWORDS_PER_BATCH) {
     const keywordBatch = ctx.keywords.slice(i, i + KEYWORDS_PER_BATCH);
     const batchTasks = expandToTaskInputs(keywordBatch, ctx.devices);
@@ -242,38 +235,195 @@ export async function runLiveCheck(
         },
       );
     } catch (error) {
-      // Earlier batches are already saved; this batch's pairs come back as
-      // missing for the workflow to queue.
       console.warn(
         `[rank-check] ${ctx.runId} live-batch-${batchIndex} failed:`,
         error,
       );
     }
   }
+}
 
-  // Diff against the DB rather than batch return values, so pairs from a
-  // batch step that threw are included too.
-  const missing = await pgStep(
+// Poll cadence for queued tasks. Standard-priority tasks complete in ~5
+// minutes on average, so the first check waits 4 minutes; cumulative waits are
+// 4 / 6 / 8 / 10 / 12 / 15 minutes, after which unfinished tasks are left for
+// retryRankChecks.
+const QUEUED_POLL_INTERVALS = [
+  "4 minutes",
+  "2 minutes",
+  "2 minutes",
+  "2 minutes",
+  "2 minutes",
+  "3 minutes",
+] as const;
+
+/** Concurrent task_get requests within a collect step. */
+const TASK_GET_CONCURRENCY = 25;
+
+/** Max task_get calls per collect round (bounds one round's fan-out). */
+const TASK_GETS_PER_COLLECT = 500;
+
+// Collect steps may issue hundreds of task_get calls, so they get more room
+// than SINGLE_ATTEMPT_STEP_CONFIG's 2-minute timeout. Unlike the metered
+// steps, retrying is safe and free: task_get isn't charged and snapshot
+// writes are idempotent.
+export const COLLECT_STEP_CONFIG = {
+  retries: { limit: 2, delay: "10 seconds" as const },
+  timeout: "5 minutes" as const,
+};
+
+/**
+ * Fetch results for queued tasks (one free task_get each). Transient task_get
+ * failures stay pending for the next round; tasks DataForSEO failed are
+ * dropped.
+ */
+async function fetchQueuedRound(
+  ctx: CheckContext,
+  tasks: PostedRankCheckTask[],
+): Promise<{
+  completed: RankCheckResultWithDevice[];
+  stillPending: PostedRankCheckTask[];
+}> {
+  const completed: RankCheckResultWithDevice[] = [];
+  const stillPending: PostedRankCheckTask[] = [];
+
+  for (let i = 0; i < tasks.length; i += TASK_GET_CONCURRENCY) {
+    const chunk = tasks.slice(i, i + TASK_GET_CONCURRENCY);
+    const settled = await Promise.allSettled(
+      chunk.map((task) =>
+        fetchRankCheckTaskResult({
+          taskId: task.taskId,
+          keywordId: task.keywordId,
+          keyword: task.keyword,
+          targetDomain: ctx.domain,
+        }),
+      ),
+    );
+    settled.forEach((result, index) => {
+      const task = chunk[index];
+      if (result.status === "rejected") {
+        // Transient fetch failure — try again next round.
+        console.warn(
+          `[rank-check] ${ctx.runId} task_get failed:`,
+          result.reason,
+        );
+        stillPending.push(task);
+      } else if (result.value.status === "pending") {
+        stillPending.push(task);
+      } else if (result.value.status === "failed") {
+        console.warn(
+          `[rank-check] ${ctx.runId} task ${task.taskId} failed: ${result.value.message}`,
+        );
+      } else {
+        completed.push({ ...result.value.result, device: task.device });
+      }
+    });
+  }
+  return { completed, stillPending };
+}
+
+/**
+ * Post tasks to DataForSEO's standard queue (~30% of live cost), one metered
+ * step per 100, then poll task_get for ~15 minutes. `onCollected` runs inside
+ * each collect step with that round's results. A task that's rejected, fails
+ * or never finishes gets no result. Returns every collected result.
+ */
+export async function runQueuedTasks(
+  step: WorkflowStep,
+  ctx: CheckContext,
+  tasks: RankCheckTaskInput[],
+  label: string,
+  onCollected?: (results: RankCheckResultWithDevice[]) => Promise<void>,
+): Promise<RankCheckResultWithDevice[]> {
+  // A failed post must not abort the run: earlier chunks were already
+  // charged at DataForSEO, so their results have to be collected.
+  let pending: PostedRankCheckTask[] = [];
+  for (let i = 0; i < tasks.length; i += MAX_TASKS_PER_POST) {
+    const chunk = tasks.slice(i, i + MAX_TASKS_PER_POST);
+    const postLabel = `${label}post-tasks-${Math.floor(i / MAX_TASKS_PER_POST)}`;
+    try {
+      pending.push(
+        ...(await pgStep(step, postLabel, SINGLE_ATTEMPT_STEP_CONFIG, () =>
+          ctx.client.serp.rankCheckTaskPost({
+            tasks: chunk,
+            locationCode: ctx.locationCode,
+            languageCode: ctx.languageCode,
+            locationName: ctx.locationName,
+            depth: ctx.serpDepth,
+            targetDomain: ctx.domain,
+          }),
+        )),
+      );
+    } catch (error) {
+      console.warn(`[rank-check] ${ctx.runId} ${postLabel} failed:`, error);
+    }
+  }
+  const collected: RankCheckResultWithDevice[] = [];
+
+  // A collect failure (past its retries) leaves that round's tasks pending for
+  // the next round instead of failing the run.
+  for (
+    let round = 0;
+    round < QUEUED_POLL_INTERVALS.length && pending.length > 0;
+    round++
+  ) {
+    await step.sleep(`${label}wait-${round}`, QUEUED_POLL_INTERVALS[round]);
+
+    // Cap task_gets per round so one collect step stays well inside the
+    // per-invocation subrequest limit at the 1000-keyword config ceiling.
+    const batch = pending.slice(0, TASK_GETS_PER_COLLECT);
+    const overflow = pending.slice(TASK_GETS_PER_COLLECT);
+    try {
+      // Results come back as the step's output, so a replay sees them too.
+      const outcome = await pgStep(
+        step,
+        `${label}collect-${round}`,
+        COLLECT_STEP_CONFIG,
+        async () => {
+          const fetched = await fetchQueuedRound(ctx, batch);
+          if (onCollected && fetched.completed.length > 0) {
+            await onCollected(fetched.completed);
+          }
+          return fetched;
+        },
+      );
+      collected.push(...outcome.completed);
+      pending = [...outcome.stillPending, ...overflow];
+    } catch (error) {
+      console.warn(
+        `[rank-check] ${ctx.runId} ${label}collect-${round} failed:`,
+        error,
+      );
+    }
+  }
+  return collected;
+}
+
+/**
+ * Check every keyword/device pair through the task queue (scheduled runs),
+ * writing snapshots as tasks complete. Billing happens at task_post. Pairs
+ * left without a result are retried by retryRankChecks.
+ */
+export async function runQueuedCheck(
+  step: WorkflowStep,
+  ctx: CheckContext,
+): Promise<void> {
+  await runQueuedTasks(
     step,
-    "find-missing",
-    COLLECT_STEP_CONFIG,
-    async () => {
+    ctx,
+    expandToTaskInputs(ctx.keywords, ctx.devices),
+    "",
+    async (results) => {
+      await RankTrackingRepository.insertSnapshots(
+        mapResultsToSnapshotRows(ctx.runId, results),
+      );
+      // Progress for the UI; finalize recounts from the DB anyway.
       const snapshots = await RankTrackingRepository.getSnapshotsForRun(
         ctx.runId,
       );
-      const checked = new Set(
-        snapshots.map((s) => `${s.trackingKeywordId}:${s.device}`),
-      );
-      // Live progress counts attempted keywords; reset it to the real count
-      // while the queue runs.
       await RankTrackingRepository.updateRun(ctx.runId, {
         keywordsChecked: new Set(snapshots.map((s) => s.trackingKeywordId))
           .size,
       });
-      return expandToTaskInputs(ctx.keywords, ctx.devices).filter(
-        (t) => !checked.has(`${t.keywordId}:${t.device}`),
-      );
     },
   );
-  return missing;
 }

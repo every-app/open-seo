@@ -4,6 +4,7 @@ import { ONBOARDING_STEPS } from "./onboardingModel";
 import { WebsiteOnboardingStep } from "./WebsiteOnboardingStep";
 import { AgentSetup } from "@/client/features/ai-mcp/AgentSetup";
 import { SearchConsoleOnboardingStep } from "./SearchConsoleOnboardingStep";
+import { AnalyticsOnboardingStep } from "./AnalyticsOnboardingStep";
 
 type PostSignupOnboardingProps = {
   step: number;
@@ -34,7 +35,12 @@ export function PostSignupOnboarding({
       {accountMenu}
       <OnboardingCard
         step={step + 1}
-        steps={["Website", "Google Search Console", "Agent setup"]}
+        steps={[
+          "Website",
+          "Google Search Console",
+          "Preferences",
+          "Agent setup",
+        ]}
         onStepChange={onStepChange}
         disabled={isSaving}
       >
@@ -51,8 +57,10 @@ export function PostSignupOnboarding({
               onBack={onBack}
               onSkip={onSkip}
             />
+          ) : ONBOARDING_STEPS[step] === "analytics" ? (
+            <AnalyticsOnboardingStep onBack={onBack} onNext={onNext} />
           ) : (
-            <AgentSetup onNext={onFinish} onBack={onBack} disabled={isSaving} />
+            <AgentSetup onFinish={onFinish} onBack={onBack} />
           )}
         </fieldset>
       </OnboardingCard>

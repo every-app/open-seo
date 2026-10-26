@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- fork retry and validated-run cases merged with upstream's queue fallback */
+/* eslint-disable max-lines -- fork live-retry and validated-run cases beside upstream's queued retries */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowStep } from "cloudflare:workers";
 import {
@@ -9,12 +9,16 @@ import type { RankCheckTaskInput } from "@/server/lib/dataforseo";
 import { AppError } from "@/server/lib/errors";
 import { runLiveCheck } from "./rankCheckPaths";
 import { runQueuedCheck } from "./rankCheckQueuedPath";
+import { retryRankChecks } from "./rankCheckRetries";
 
 const mocks = vi.hoisted(() => ({
   rankCheckBatch: vi.fn(),
   rankCheckTaskPost: vi.fn(),
   insertSnapshots: vi.fn(),
+  upsertSnapshots: vi.fn(),
+  deleteNotFoundSnapshots: vi.fn(),
   getSnapshotsForRun: vi.fn(),
+  getBestPositionsForKeywords: vi.fn(),
   getRecentSnapshotsForConfig: vi.fn(),
   setRunErrorIfEmpty: vi.fn(),
   updateRun: vi.fn(),
@@ -172,17 +176,49 @@ describe("live rank check retries", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Pairs the live endpoint missed: the live path reports them and the workflow
-// sends them through the queue with no live fallback and no not-found saves.
+// Upstream's paths: the live check writes what it gets and leaves the rest to
+// retryRankChecks, which rechecks an errored, lost, or (on a first or manual
+// check) missed pair through the queue, keeping the best position found.
 // ---------------------------------------------------------------------------
 
-const elevenKeywords = Array.from({ length: 11 }, (_, index) => ({
-  id: `kw_${index}`,
-  keyword: `keyword ${index}`,
-}));
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only sleep is reached; pgStep is mocked
+const retryStep = { sleep: vi.fn() } as unknown as WorkflowStep;
 
-describe("pairs the live endpoint missed", () => {
-  beforeEach(() => {
+function retryContext(
+  keywordIds: string[],
+  devices: CheckContext["devices"] = "desktop",
+) {
+  return checkContext({
+    keywords: keywordIds.map((id) => ({ id, keyword: `keyword ${id}` })),
+    devices,
+  });
+}
+
+function snapshot(keywordId: string, position: number | null) {
+  return { trackingKeywordId: keywordId, device: "desktop", position };
+}
+
+/** Each task_get answers with the next position. */
+function queuedResults(...positions: Array<number | null>) {
+  for (const position of positions) {
+    vi.mocked(fetchRankCheckTaskResult).mockImplementationOnce(
+      async (task) => ({
+        status: "completed",
+        result: {
+          ...task,
+          position,
+          url: null,
+          serpFeatures: [],
+          topDomains: [],
+        },
+      }),
+    );
+  }
+}
+
+describe("runLiveCheck", () => {
+  it("keeps going after a failed live batch", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
     mocks.rankCheckBatch.mockImplementation(
       async (inputs: RankCheckTaskInput[]) =>
         inputs.map((input) => ({
@@ -196,95 +232,162 @@ describe("pairs the live endpoint missed", () => {
           },
         })),
     );
+    mocks.insertSnapshots.mockRejectedValueOnce(new Error("step timed out"));
+
+    await runLiveCheck(
+      retryStep,
+      retryContext(Array.from({ length: 11 }, (_, i) => `kw_${i}`)),
+    );
+
+    expect(mocks.rankCheckBatch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("retryRankChecks", () => {
+  beforeEach(() => {
     mocks.rankCheckTaskPost.mockImplementation(
       async ({ tasks }: { tasks: RankCheckTaskInput[] }) =>
         tasks.map((task) => ({ ...task, taskId: `task_${task.keywordId}` })),
     );
-    mocks.getSnapshotsForRun.mockResolvedValue([]);
+    vi.mocked(fetchRankCheckTaskResult).mockImplementation(async (task) => ({
+      status: "completed",
+      result: {
+        ...task,
+        position: 5,
+        url: null,
+        serpFeatures: [],
+        topDomains: [],
+      },
+    }));
+    mocks.getBestPositionsForKeywords.mockResolvedValue([
+      { trackingKeywordId: "kw_0", position: 1 },
+      { trackingKeywordId: "kw_never", position: null },
+    ]);
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
-  it("keeps going after a failed live batch and returns only the missing pairs", async () => {
-    // The first batch step dies after its calls; the second batch saves kw_10.
-    mocks.insertSnapshots.mockRejectedValueOnce(new Error("step timed out"));
-    mocks.getSnapshotsForRun.mockResolvedValue([
-      { trackingKeywordId: "kw_10", device: "desktop" },
-    ]);
+  it("retries a check that errored through the queue, keeping a not found for a keyword that never ranked", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([]);
+    queuedResults(null);
 
-    const missing = await runLiveCheck(
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- steps are executed directly by the pgStep mock
-      {} as WorkflowStep,
-      checkContext({ keywords: elevenKeywords, devices: "desktop" }),
+    await retryRankChecks(
+      retryStep,
+      retryContext(["kw_never"]),
+      "config_1",
+      "scheduled",
     );
-
-    expect(mocks.rankCheckBatch).toHaveBeenCalledTimes(2);
-    expect(missing).toEqual(
-      elevenKeywords.slice(0, 10).map((kw) => ({
-        keyword: kw.keyword,
-        keywordId: kw.id,
-        device: "desktop",
-      })),
-    );
-    // Live progress counted attempted keywords; it is reset to the real count.
-    expect(mocks.updateRun).toHaveBeenLastCalledWith("run_1", {
-      keywordsChecked: 1,
-    });
-  });
-
-  it("returns no pairs when the live endpoint checked every one", async () => {
-    mocks.getSnapshotsForRun.mockResolvedValue([
-      { trackingKeywordId: "kw_0", device: "mobile" },
-    ]);
-
-    expect(await runLive()).toEqual([]);
-  });
-
-  const pairs: RankCheckTaskInput[] = [
-    { keyword: "kw_0", keywordId: "kw_0", device: "desktop" },
-    { keyword: "kw_1", keywordId: "kw_1", device: "desktop" },
-  ];
-
-  function retryQueued() {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- steps run directly through the pgStep mock; only sleep is called
-    const step = { sleep: vi.fn() } as unknown as WorkflowStep;
-    return runQueuedCheck(step, checkContext({ devices: "desktop" }), {
-      taskInputs: pairs,
-      liveFallback: false,
-      saveNotFound: false,
-    });
-  }
-
-  // The live attempt before the queue already recorded the run's error, and a
-  // second live call could pass the credits the user approved.
-  it("makes no live call and records no error when a queued retry fails", async () => {
-    vi.mocked(fetchRankCheckTaskResult).mockResolvedValue({
-      status: "failed",
-      message: "Internal SE Server Error.",
-    });
-
-    const stats = await retryQueued();
 
     expect(mocks.rankCheckBatch).not.toHaveBeenCalled();
-    expect(mocks.setRunErrorIfEmpty).not.toHaveBeenCalled();
-    expect(stats).toMatchObject({ queueTasks: 2, fallbackTasks: 0 });
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledOnce();
+    expect(mocks.upsertSnapshots).toHaveBeenCalledWith([
+      expect.objectContaining({
+        trackingKeywordId: "kw_never",
+        position: null,
+      }),
+    ]);
+    expect(mocks.deleteNotFoundSnapshots).not.toHaveBeenCalled();
   });
 
-  it("leaves a pair unchecked when its queued retry doesn't find the domain", async () => {
-    vi.mocked(fetchRankCheckTaskResult).mockImplementation(
-      async ({ keywordId }) => ({
-        status: "completed",
-        result: {
-          ...rankResult(keywordId === "kw_0" ? null : 5),
-          keywordId,
-          keyword: keywordId,
-        },
-      }),
+  it("retries a keyword that lost its known rank and keeps the best position found", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      snapshot("kw_0", null),
+      snapshot("kw_never", null),
+    ]);
+    queuedResults(15, 20);
+
+    await retryRankChecks(
+      retryStep,
+      retryContext(["kw_0", "kw_never"]),
+      "config_1",
+      "scheduled",
     );
 
-    await retryQueued();
+    // 15 is still far below #1, so it gets the second retry too.
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tasks: [expect.objectContaining({ keywordId: "kw_0" })],
+      }),
+    );
+    expect(mocks.upsertSnapshots).toHaveBeenCalledOnce();
+    expect(mocks.upsertSnapshots).toHaveBeenCalledWith([
+      expect.objectContaining({ trackingKeywordId: "kw_0", position: 15 }),
+    ]);
+  });
 
-    expect(mocks.insertSnapshots).toHaveBeenCalledWith([
-      expect.objectContaining({ trackingKeywordId: "kw_1", position: 5 }),
+  it("retries a device's miss once a retry finds the keyword on the other device", async () => {
+    // Desktop missed on the first check and mobile errored.
+    mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_never", null)]);
+    // Retry 1 answers mobile at #3; retry 2 answers desktop.
+    queuedResults(3, null);
+
+    await retryRankChecks(
+      retryStep,
+      retryContext(["kw_never"], "both"),
+      "config_1",
+      "scheduled",
+    );
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        tasks: [expect.objectContaining({ device: "desktop" })],
+      }),
+    );
+    expect(mocks.deleteNotFoundSnapshots).toHaveBeenCalledWith([
+      { runId: "run_1", trackingKeywordId: "kw_never", device: "desktop" },
+    ]);
+  });
+
+  it("finds a new keyword on its second recheck after the first recheck misses", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_new", null)]);
+    queuedResults(null, 3);
+
+    await retryRankChecks(
+      retryStep,
+      retryContext(["kw_new"]),
+      "config_1",
+      "scheduled",
+    );
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
+    expect(mocks.upsertSnapshots).toHaveBeenCalledWith([
+      expect.objectContaining({ trackingKeywordId: "kw_new", position: 3 }),
+    ]);
+    expect(mocks.deleteNotFoundSnapshots).not.toHaveBeenCalled();
+  });
+
+  it("rechecks a miss on a keyword that never ranked when the check is manual", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_never", null)]);
+    queuedResults(null, 4);
+
+    await retryRankChecks(
+      retryStep,
+      retryContext(["kw_never"]),
+      "config_1",
+      "manual",
+    );
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
+    expect(mocks.upsertSnapshots).toHaveBeenCalledWith([
+      expect.objectContaining({ trackingKeywordId: "kw_never", position: 4 }),
+    ]);
+  });
+
+  it("never saves a not found for a keyword that ranked before", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_0", null)]);
+    queuedResults(null, null);
+
+    await retryRankChecks(
+      retryStep,
+      retryContext(["kw_0"]),
+      "config_1",
+      "scheduled",
+    );
+
+    expect(mocks.rankCheckTaskPost).toHaveBeenCalledTimes(2);
+    expect(mocks.upsertSnapshots).not.toHaveBeenCalled();
+    expect(mocks.deleteNotFoundSnapshots).toHaveBeenCalledWith([
+      { runId: "run_1", trackingKeywordId: "kw_0", device: "desktop" },
     ]);
   });
 });

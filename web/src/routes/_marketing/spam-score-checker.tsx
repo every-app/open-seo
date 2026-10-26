@@ -14,7 +14,6 @@ export const Route = createFileRoute("/_marketing/spam-score-checker")({
         "Check a domain's backlink spam score and see the spammiest links pointing at it. No signup, no email.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free backlink spam score checker",
     }),
   component: SpamScoreCheckerPage,
 });

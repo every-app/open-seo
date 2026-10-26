@@ -20,6 +20,7 @@ import {
   member,
   organization,
   user as authUser,
+  userSignupCampaigns,
 } from "@/db/schema";
 
 type DelegatedOrganizationInput = {
@@ -98,6 +99,18 @@ async function getHostedUser(userId: string) {
     },
     where: eq(authUser.id, userId),
   });
+}
+
+async function getOrganizationOwner(organizationId: string) {
+  const [owner] = await db
+    .select({ id: authUser.id, email: authUser.email })
+    .from(member)
+    .innerJoin(authUser, eq(authUser.id, member.userId))
+    .where(
+      and(eq(member.organizationId, organizationId), eq(member.role, "owner")),
+    )
+    .limit(1);
+  return owner ?? null;
 }
 
 /** Names for a set of user ids in one query; missing ids are simply absent. */
@@ -262,6 +275,11 @@ async function hasPendingInvitationForEmail(email: string) {
   return pending !== undefined;
 }
 
+async function hasAnyUser() {
+  const [first] = await db.select({ id: authUser.id }).from(authUser).limit(1);
+  return first !== undefined;
+}
+
 async function getLastActiveOrganizationId(userId: string) {
   const record = await db.query.user.findFirst({
     columns: { lastActiveOrganizationId: true },
@@ -281,6 +299,48 @@ async function setLastActiveOrganization(
     .where(eq(authUser.id, userId));
 }
 
+async function isAnalyticsOptedOut(userId: string) {
+  const [record] = await db
+    .select({ analyticsOptedOut: authUser.analyticsOptedOut })
+    .from(authUser)
+    .where(eq(authUser.id, userId))
+    .limit(1);
+  return record?.analyticsOptedOut === true;
+}
+
+async function saveSignupCampaign(
+  userId: string,
+  campaign: {
+    utmSource: string | null;
+    utmCampaign: string | null;
+    utmContent: string | null;
+  },
+) {
+  await db.insert(userSignupCampaigns).values({ userId, ...campaign });
+}
+
+async function setTermsAcceptance(
+  userId: string,
+  version: string,
+  acceptedAt: Date,
+) {
+  await db
+    .update(authUser)
+    .set({ termsAcceptedVersion: version, termsAcceptedAt: acceptedAt })
+    .where(eq(authUser.id, userId));
+}
+
+async function setProductUpdatesOptIn(
+  userId: string,
+  optIn: boolean,
+  changedAt: Date,
+) {
+  await db
+    .update(authUser)
+    .set({ productUpdatesOptIn: optIn, productUpdatesChangedAt: changedAt })
+    .where(eq(authUser.id, userId));
+}
+
 export const AuthRepository = {
   upsertDelegatedOrganization,
   findFirstOrganizationIdForUser,
@@ -292,7 +352,13 @@ export const AuthRepository = {
   listMembershipsForUser,
   getLastActiveOrganizationId,
   setLastActiveOrganization,
+  setTermsAcceptance,
+  setProductUpdatesOptIn,
   getHostedUser,
   getHostedUserNames,
+  getOrganizationOwner,
   hasPendingInvitationForEmail,
+  hasAnyUser,
+  isAnalyticsOptedOut,
+  saveSignupCampaign,
 } as const;

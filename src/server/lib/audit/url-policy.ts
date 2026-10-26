@@ -1,5 +1,7 @@
 import { AppError } from "@/server/lib/errors";
-import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
+import { publicFetch } from "@/server/lib/public-fetch";
+import type { CrawlerAccess } from "@/shared/crawler-access";
+import { auditRequestHeaders } from "@/server/lib/audit/web-bot-auth";
 
 const BLOCKED_HOSTS = new Set([
   "localhost",
@@ -188,6 +190,20 @@ async function hostnameResolvesToBlockedAddress(
 }
 
 /**
+ * Shopify storefronts, custom domains included, resolve into Shopify's
+ * 23.227.38.0/24. This identifies a store even when its edge answers with a
+ * bare 429 that carries no `powered-by` header.
+ */
+export async function isShopifyHost(hostname: string): Promise<boolean> {
+  try {
+    const addresses = await resolveAddressRecords(normalizeHost(hostname), "A");
+    return addresses.some((address) => address.startsWith("23.227.38."));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Synchronous SSRF check for URLs discovered mid-crawl (links, redirect
  * targets, sitemap entries). Blocks non-http(s) schemes, private/loopback IP
  * literals, and internal hostnames. DNS resolution is only performed for the
@@ -265,13 +281,10 @@ export async function resolveStartUrlRedirects(
   for (let hop = 0; hop < START_URL_REDIRECT_HOPS; hop++) {
     let response: Response;
     try {
-      response = await fetch(current, {
+      response = await publicFetch(current, {
         method: "HEAD",
         redirect: "manual",
-        headers: {
-          "User-Agent": "OpenSEO-Audit/1.0",
-          ...crawlerHeadersFor(current, access),
-        },
+        headers: await auditRequestHeaders(current, access),
         signal: AbortSignal.timeout(START_URL_PROBE_TIMEOUT_MS),
       });
     } catch {

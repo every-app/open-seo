@@ -1,4 +1,5 @@
 import type { FeaturePage } from "@/lib/feature-pages";
+import { buildBreadcrumbJsonLd, SITE_URL, toCanonicalUrl } from "@/lib/seo";
 
 type FeaturePageProps = {
   page: FeaturePage;
@@ -32,7 +33,9 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
 
       <FeatureImage page={page} />
 
-      {page.featuredLink ? (
+      {page.toolCallout ? (
+        <ToolCallout callout={page.toolCallout} />
+      ) : page.featuredLink ? (
         <section className="mt-12">
           <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
             <a
@@ -50,7 +53,7 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          What you can do
+          {page.headings?.workflows ?? "What you can do"}
         </h2>
         <ol className="mt-5 grid gap-4 md:grid-cols-3">
           {page.workflows.map((workflow, index) => (
@@ -75,15 +78,28 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
       {page.showMetrics ? <MetricsSection page={page} /> : null}
 
       <div className="mt-12 grid gap-5 md:grid-cols-2">
-        <ListSection title="Use cases" items={page.useCases} />
-        <ListSection title="Why OpenSEO" items={page.differentiators} />
+        <ListSection
+          title={page.headings?.useCases ?? "Use cases"}
+          items={page.useCases}
+        />
+        <ListSection
+          title={page.headings?.differentiators ?? "Why OpenSEO"}
+          items={page.differentiators}
+        />
       </div>
+
+      {page.contextSections ? (
+        <ContextSections
+          sections={page.contextSections}
+          image={page.contextImage}
+        />
+      ) : null}
 
       {page.guides ? <GuidesSection guides={page.guides} /> : null}
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          Related features
+          {page.headings?.related ?? "Related features"}
         </h2>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {page.related.map((item) => (
@@ -106,7 +122,7 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          FAQ
+          {page.headings?.faq ?? "FAQ"}
         </h2>
         <div className="mt-5 divide-y divide-[var(--color-border-subtle)] rounded-lg border border-[var(--color-border-subtle)] bg-white">
           {page.faqs.map((faq) => (
@@ -141,8 +157,135 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
           </a>
         </div>
       </section>
+
+      {page.structuredData
+        ? buildFeatureJsonLd(page).map((block) => (
+            <script
+              key={block["@type"]}
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(block) }}
+            />
+          ))
+        : null}
     </article>
   );
+}
+
+function ToolCallout({
+  callout,
+}: {
+  callout: NonNullable<FeaturePage["toolCallout"]>;
+}) {
+  return (
+    <section className="mt-12">
+      <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
+        {callout.title}
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
+        {callout.description}
+      </p>
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {callout.links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-5 transition-colors hover:border-neutral-900"
+          >
+            <h3 className="text-base font-semibold text-neutral-950">
+              {link.title}
+              <span
+                aria-hidden="true"
+                className="ml-1 text-[var(--color-brand-accent)]"
+              >
+                &rarr;
+              </span>
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-brand-muted)]">
+              {link.description}
+            </p>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ContextSections({
+  sections,
+  image,
+}: {
+  sections: NonNullable<FeaturePage["contextSections"]>;
+  image: FeaturePage["contextImage"];
+}) {
+  return (
+    <div className="mt-12 space-y-10">
+      {sections.map((section, index) => (
+        <section key={section.title} className="max-w-3xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
+            {section.title}
+          </h2>
+          <p className="mt-3 text-base leading-7 text-neutral-700">
+            {section.body}
+          </p>
+          {index === 0 && image ? (
+            <figure className="mt-6">
+              <img
+                src={image.src}
+                alt={image.alt}
+                width={image.width}
+                height={image.height}
+                loading="lazy"
+                decoding="async"
+                className="w-full rounded-lg border border-[var(--color-border-subtle)]"
+              />
+              <figcaption className="mt-2 text-sm text-[var(--color-brand-muted)]">
+                {image.caption}
+              </figcaption>
+            </figure>
+          ) : null}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function buildFeatureJsonLd(page: FeaturePage) {
+  const path = `/features/${page.slug}`;
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: `OpenSEO ${page.eyebrow}`,
+      applicationCategory: "SEO",
+      operatingSystem: "Web",
+      url: toCanonicalUrl(path),
+      description: page.description,
+      offers: {
+        "@type": "Offer",
+        price: "10",
+        priceCurrency: "USD",
+      },
+      provider: {
+        "@type": "Organization",
+        name: "OpenSEO",
+        url: SITE_URL,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: page.faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: { "@type": "Answer", text: faq.answer },
+      })),
+    },
+    buildBreadcrumbJsonLd([
+      { name: "Home", path: "/" },
+      { name: "Features", path: "/features" },
+      { name: page.eyebrow, path },
+    ]),
+  ];
 }
 
 function FeatureImage({ page }: FeaturePageProps) {
@@ -168,7 +311,7 @@ function MetricsSection({ page }: FeaturePageProps) {
   return (
     <section className="mt-12">
       <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-        Data you can act on
+        {page.headings?.metrics ?? "Data you can act on"}
       </h2>
       <dl className="mt-5 grid overflow-hidden rounded-lg border border-[var(--color-border-subtle)] bg-white sm:grid-cols-2 md:grid-cols-4">
         {page.metrics.map((metric, index) => (

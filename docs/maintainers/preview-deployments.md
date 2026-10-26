@@ -62,7 +62,8 @@ Zero Trust team domain. Set that full value in `.env.preview` as
 `https://open-seo-<stage>.<WORKERS_SUBDOMAIN>` — hosted previews use that as
 `BETTER_AUTH_URL`, and CI's verify step probes it; a wrong value fails the
 check. Previews in `local_noauth` or `cloudflare_access` mode deploy without
-it, since nothing reads `BETTER_AUTH_URL` there.
+it, since nothing reads `BETTER_AUTH_URL` there; `password` stages read the
+subdomain from the account when it is unset.
 
 Set `ACCESS_ALLOWED_EMAILS` to the exact comma-separated emails that may open
 previews:
@@ -90,7 +91,7 @@ pnpm deploy:preview --stage manual-preview --yes
 `.env.preview`; extra flags land on the deploy. CI runs this same command.
 Two alchemy conventions to know: omitting `--stage` targets alchemy's default
 per-user stage (`dev_$USER`), and stage `hosted-prod` with `.env.preview` fails
-in the stack (no `BETTER_AUTH_URL`) — use `pnpm deploy:postgres` for production.
+in the stack: production requires hosted auth, Postgres, and existing resource IDs.
 
 Each preview starts with an empty database: open the URL, pass the Access
 challenge, and you're in. Previews default to `AUTH_MODE=local_noauth`, so
@@ -145,55 +146,11 @@ pnpm destroy:preview --stage pub-<pr> --yes
 
 ## Production
 
-Production deploys through the same Alchemy stack, stage `hosted-prod`, which
-names the existing production resources so `--adopt` imports them instead of
-creating fresh ones. Its domains do not match the preview Access wildcard.
-(The stage is `hosted-prod`, not `prod`, so a self-hoster's stage name can
-never collide with the adoption path.)
-
-```sh
-pnpm deploy:postgres
-```
-
-The script runs the Postgres migrations (`db:migrate:pg`), builds, and then
-`alchemy deploy --env-file .env.production --stage hosted-prod --adopt` —
-`--adopt` and the stage are baked in so they cannot be forgotten, and alchemy
-shows the plan for approval before applying. It uses the same
-`pnpm alchemy login` credential as previews (make sure `query_cache:write`
-was enabled for Hyperdrive).
-
-### First-cutover checklist (one time)
-
-The first Alchemy prod deploy adopts live resources. Before running it:
-
-1. Append `--dry-run` to the alchemy command and read the plan — every prod
-   resource (D1 `open-seo`, KV `every-super-seo`/`OAUTH_KV`, R2 `open-seo`,
-   Hyperdrive `openseo`, Worker `open-seo`) should be adopted, none created.
-2. Diff `.env.production` against the live worker's secrets
-   (`GET /accounts/:id/workers/scripts/open-seo/secrets`): alchemy's deploy
-   replaces the COMPLETE binding set, so any live secret missing from the env
-   file deploys as `""` — most vars are optional-with-empty-default, so the
-   deploy succeeds while silently disabling that integration.
-3. Rehearse adoption on a scratch stage that mirrors prod's shape — deploy
-   the scratch worker **with wrangler first** (including the `migrations`
-   block) so it carries a wrangler-era migration tag and live DO namespaces
-   like prod; a fresh alchemy stage skips the exact adoption path prod will
-   take.
-4. Compare `SELECT name FROM d1_migrations` on the prod D1 against
-   `ls drizzle/*.sql` — alchemy applies any missing D1 migrations on the
-   first deploy (wrangler-compatible ledger, verified), and the dormant prod
-   D1 hasn't been migrated since the Postgres cutover.
-5. Confirm the `HYPERDRIVE_ORIGIN_*` values in `.env.production` match the
-   live Hyperdrive config — Cloudflare never returns origin credentials, so a
-   mismatch would rewrite the origin.
-6. Note: prod already serves on `open-seo.<subdomain>.workers.dev` (alchemy
-   keeps it enabled; the workers.dev toggle never appears in `--dry-run`).
-   The prod resources (worker, D1, R2, KV, Hyperdrive) carry alchemy's
-   `RemovalPolicy.retain`, stamped into state on the first prod deploy: a
-   destroy of stage `hosted-prod` forgets state but leaves the live resources
-   untouched. (Workflow registrations are the exception — they're created
-   inside the worker provider and aren't individually retainable — but
-   re-registering a workflow is a lossless upsert.)
+OpenSEO's hosted production deploys through the manually dispatched
+`Deploy production` GitHub workflow (Alchemy stage `hosted-prod`, secrets held
+in the GitHub `production` environment). See
+[production deployment](production-deployment.md). Local preview deployment commands do
+not deploy production.
 
 ## Self-hosting on Cloudflare
 

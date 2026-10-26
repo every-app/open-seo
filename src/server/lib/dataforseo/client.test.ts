@@ -71,6 +71,10 @@ vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: vi.fn(),
 }));
 
+vi.mock("@/server/email/onboarding-drip", () => ({
+  sendCreditsExhaustedEvent: vi.fn(),
+}));
+
 // Mock every section module the client wraps so meterDataforseoCall's
 // `execute()` resolves to a controllable fixture.
 vi.mock("@/server/lib/dataforseo/labs", () => ({

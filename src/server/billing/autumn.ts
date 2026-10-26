@@ -56,6 +56,10 @@ export const autumn = {
     update: (...args: Parameters<Autumn["customers"]["update"]>) =>
       loadAutumn().then((client) => client.customers.update(...args)),
   },
+  events: {
+    aggregate: (...args: Parameters<Autumn["events"]["aggregate"]>) =>
+      loadAutumn().then((client) => client.events.aggregate(...args)),
+  },
   invoices: {
     list: (...args: Parameters<Autumn["invoices"]["list"]>) =>
       loadAutumn().then((client) => client.invoices.list(...args)),

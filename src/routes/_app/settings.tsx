@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { NavTab, NavTabs } from "@/client/components/NavTabs";
 import { PageHeader } from "@/client/components/PageHeader";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsLayout,
@@ -13,8 +13,9 @@ export const Route = createFileRoute("/_app/settings")({
 function SettingsLayout() {
   const tabs = [
     { to: "/settings" as const, label: "Personal", exact: true },
-    // Self-host has no memberships — the organization tab would 404.
-    ...(isHostedClientAuthMode()
+    // Access / no-auth self-host has no memberships — the organization tab
+    // would 404.
+    ...(usesBetterAuthClient()
       ? [{ to: "/settings/organization" as const, label: "Organization" }]
       : []),
   ];

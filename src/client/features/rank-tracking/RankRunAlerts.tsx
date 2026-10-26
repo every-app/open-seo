@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { useRankRunPolling } from "./useRankRunPolling";
 
@@ -20,6 +21,10 @@ export function RankRunAlerts({
         </AlertDescription>
       </Alert>
     );
+  }
+
+  if (run.status === "failed" && run.errorMessage === "INSUFFICIENT_CREDITS") {
+    return <InsufficientCreditsError title="Your last rank check didn't run" />;
   }
 
   if (run.status === "failed") {

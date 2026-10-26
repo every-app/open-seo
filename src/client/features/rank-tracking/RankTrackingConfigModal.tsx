@@ -33,8 +33,6 @@ import {
   type SaveConfigInput,
 } from "./useSaveConfigMutations";
 import { ScheduleField } from "./ScheduleField";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
-import { SCHEDULED_RANK_CHECKS_PAUSED } from "@/shared/rank-tracking-pause";
 import {
   localScheduleTimeFrom,
   randomScheduleDate,
@@ -152,8 +150,6 @@ function RankTrackingConfigModalContent({
 }: Props & { initialMarket: ProjectMarket }) {
   const countryId = useId();
   const isEdit = !!existingConfig;
-  const scheduledChecksPaused =
-    SCHEDULED_RANK_CHECKS_PAUSED && isHostedClientAuthMode();
   const [createdConfigId, setCreatedConfigId] = useState<string>();
   // An untouched edit leaves the stored run time alone; anything that changes
   // the schedule sends the time on screen so it is the one that gets saved.
@@ -178,9 +174,7 @@ function RankTrackingConfigModalContent({
     targetingMode: existingConfig?.locationName ? "local" : "national",
     locationName: existingConfig?.locationName ?? undefined,
     devices: existingConfig?.devices ?? "mobile",
-    schedule:
-      existingConfig?.scheduleInterval ??
-      (scheduledChecksPaused ? "manual" : "weekly"),
+    schedule: existingConfig?.scheduleInterval ?? "weekly",
     // Shown and edited in the browser's timezone; the server converts it to UTC.
     scheduleTime: localScheduleTimeFrom(
       existingConfig?.nextCheckAt
@@ -342,7 +336,6 @@ function RankTrackingConfigModalContent({
                   form.setFieldValue("scheduleTime", time);
                   setScheduleTimeEdited(true);
                 }}
-                scheduledChecksPaused={scheduledChecksPaused}
               />
 
               <form.AppField name="serpDepth">
@@ -401,15 +394,15 @@ function CostEstimate({
     <div className="space-y-0.5 rounded-lg bg-muted px-3 py-2.5 text-xs text-muted-foreground">
       <div>
         <span className="font-mono font-semibold text-foreground">
-          ~${costPerKeyword.toFixed(4)}
+          up to ${costPerKeyword.toFixed(4)}
         </span>{" "}
         per keyword per check
       </div>
       {schedule !== "manual" && (
         <div>
-          50 keywords would cost{" "}
+          50 keywords would cost up to{" "}
           <span className="font-mono font-semibold text-foreground">
-            ~${(costPerKeyword * 50 * checksPerMonth).toFixed(2)}
+            ${(costPerKeyword * 50 * checksPerMonth).toFixed(2)}
           </span>
           /month
         </div>

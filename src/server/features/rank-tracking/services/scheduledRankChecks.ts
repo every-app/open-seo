@@ -7,6 +7,7 @@ import {
   devicesCount,
   isScheduledRankTrackingInterval,
 } from "@/shared/rank-tracking";
+import { describeError } from "@/server/lib/errors";
 
 // Work admitted per tick, in task units (keywords × devices). Admission
 // control, not a hard rate limit: the first start of a tick is always
@@ -17,8 +18,8 @@ import {
 // and up to three ticks' ~15-minute poll windows overlap the */5 cron — so a
 // full tick can burst ~1,000 polls into a single minute, stacking with the
 // residual rounds of the two prior ticks. Overruns aren't
-// loud failures: throttled polls age into the live fallback at ~3× cost,
-// billed to the customer, so keep real headroom under the cap.
+// loud failures: throttled polls leave tasks unfinished, which are retried
+// and billed to the customer again, so keep real headroom under the cap.
 // 1,000/tick ≈ 288,000 units/day, ~45× steady-state demand — it only binds
 // during backlog catch-up.
 const SCHEDULED_TASK_UNIT_BUDGET = 1000;
@@ -186,7 +187,7 @@ export async function runScheduledRankChecks(env: Env) {
         // make hundreds of configs due again on the next tick.
         workflowStartErrors++;
         console.error(
-          `[cron] Failed to start scheduled rank check for config ${config.id} (${config.domain}):`,
+          `[cron] Failed to start scheduled rank check for config ${config.id} (${config.domain}): ${describeError(err)}`,
           err,
         );
         continue;

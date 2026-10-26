@@ -47,3 +47,31 @@ export function truncateToBytes(text: string, maxBytes: number) {
     ? text
     : new TextDecoder().decode(bytes.subarray(0, maxBytes));
 }
+
+/** Read a response body up to maxBytes; null when the body exceeds it. */
+export async function readBodyCapped(
+  response: Response,
+  maxBytes: number,
+): Promise<string | null> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const joined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    joined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(joined);
+}

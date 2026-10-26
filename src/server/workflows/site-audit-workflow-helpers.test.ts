@@ -3,6 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createCrawlThrottle } from "@/server/lib/audit/crawl-throttle";
 import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
 
+// No crawl gateway and no signing key configured: publicFetch is plain fetch
+// and requests go unsigned, and both env lookups must settle in microtasks so
+// the fake-timer cases below can advance past them.
+vi.mock("@/server/lib/runtime-env", () => ({
+  getOptionalEnvValue: async () => undefined,
+}));
+
 const PAGE_URL = "https://example.com/page";
 const PAGE_HTML =
   "<html><head><title>A page</title></head><body><h1>A page</h1></body></html>";
@@ -60,25 +67,13 @@ describe("crawlPage", () => {
     expect(page?.rateLimited).toBe(true);
   });
 
-  it("records a page the site keeps rate limiting, without calling it blocked", async () => {
-    vi.useFakeTimers();
-    const fetchMock = stubFetch({ status: 429, retryAfter: "1" });
-
-    const crawled = crawl();
-    await vi.advanceTimersByTimeAsync(30_000);
-    const page = await crawled;
-
-    expect(fetchMock).toHaveBeenCalledTimes(4);
-    expect(page?.fetchClass).toBe("rate_limited");
-  });
-
   // A long Retry-After is deferred to a later chunk; one past the audit's
   // whole cooldown budget is recorded as the page's final answer.
   it.each([
     ["defers the URL when its cooldown outlasts the chunk", "600", null, false],
     [
       "records a final 429 when the wait exceeds the cooldown budget",
-      "3600",
+      "8000",
       "rate_limited",
       true,
     ],

@@ -20,6 +20,7 @@ vi.mock("@/server/features/gsc/services/GscService", async () => ({
 }));
 vi.mock("./DashboardCacheService", () => ({
   DashboardCacheService: {
+    gscNamespace: () => "dashboard:gsc",
     readThrough: async (input: { load: () => Promise<unknown> }) => ({
       value: await input.load(),
     }),

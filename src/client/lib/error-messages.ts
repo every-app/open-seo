@@ -1,6 +1,10 @@
 import { FREE_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
+import { GATEWAY_RENDERING_NOT_SET_UP_MESSAGE } from "@/shared/audit-rendering";
 import { isErrorCode, type ErrorCode } from "@/shared/error-codes";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  isEveryAppClientAuthMode,
+  isHostedClientAuthMode,
+} from "@/lib/auth-mode";
 
 /**
  * Copy for an error we did not expect. Hosted users cannot read our logs, so
@@ -12,14 +16,20 @@ export const UNEXPECTED_ERROR_MESSAGE = isHostedClientAuthMode()
 
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   UNAUTHENTICATED: "Please sign in and try again.",
-  AUTH_CONFIG_MISSING:
-    "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
+  AUTH_CONFIG_MISSING: isEveryAppClientAuthMode()
+    ? "OpenSEO can't reach your Every App gateway for this right now. An owner or admin can check its setup with pnpm everyapp status."
+    : "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
   PAYMENT_REQUIRED:
     "An active hosted subscription is required before you can use OpenSEO.",
   INSUFFICIENT_CREDITS:
     "You don't have enough credits for this. Upgrade your plan or buy more credits to keep going.",
-  AUDIT_RENDERING_UNAVAILABLE:
-    "JavaScript rendering is not configured on this deployment. Ask your administrator to enable a renderer.",
+  PAYMENT_METHOD_REQUIRED:
+    "We couldn't charge a card on file. Add or update your card in the billing portal, then try again.",
+  PAYMENT_ACTION_REQUIRED:
+    "Your bank needs more time or a confirmation for this charge. Check your balance in a minute; if nothing arrived, buy your first top-up with the Buy credits button, then turn on auto-reload.",
+  AUDIT_RENDERING_UNAVAILABLE: isEveryAppClientAuthMode()
+    ? GATEWAY_RENDERING_NOT_SET_UP_MESSAGE
+    : "JavaScript rendering is not configured on this deployment. Ask your administrator to enable a renderer.",
   FORBIDDEN: "You do not have access to this resource.",
   NOT_FOUND: "The requested resource was not found.",
   AUDIT_CAPACITY_REACHED:
@@ -37,8 +47,9 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "The connected DataForSEO account has a billing or balance issue.",
   AI_VISIBILITY_ERROR:
     "The AI visibility request could not be completed. Review the tracking settings and try again.",
-  DATAFORSEO_AUTH_FAILED:
-    "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
+  DATAFORSEO_AUTH_FAILED: isEveryAppClientAuthMode()
+    ? "DataForSEO isn't set up on your Every App gateway yet, or rejected the key it holds. An owner or admin sets it with pnpm everyapp secret set DATAFORSEO_API_KEY."
+    : "DataForSEO rejected the credentials. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password, and that the DataForSEO account is verified and has API access.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:
     "The data provider is temporarily unavailable. Please retry in a moment.",

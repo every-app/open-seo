@@ -13,7 +13,7 @@ import {
   telemetryState,
   user,
 } from "@/db/schema";
-import { getAuthMode } from "@/lib/auth-mode";
+import { getAuthMode, isEveryAppAuthMode } from "@/lib/auth-mode";
 import {
   getOptionalEnvValue,
   isHostedServerAuthMode,
@@ -125,6 +125,8 @@ function isNonProductionBuild() {
 
 async function telemetryIsDisabled() {
   if (await isHostedServerAuthMode()) return true;
+  // Off on Every App installs for now.
+  if (isEveryAppAuthMode(await getOptionalEnvValue("AUTH_MODE"))) return true;
   if (
     isTelemetryOptOutValue(
       await getOptionalEnvValue("OPENSEO_TELEMETRY_DISABLED"),

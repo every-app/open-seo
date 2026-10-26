@@ -24,7 +24,7 @@ exports="$(node scripts/doppler-env.mjs --export)" || exit 1
 eval "$exports"
 unset exports DOPPLER_TOKEN DOPPLER_ONLY
 
-echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER.md#telemetry'
+echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER_LEGACY.md#telemetry'
 
 # The preflight validates env BEFORE the slow steps, so misconfiguration fails
 # in seconds with the exact fix instead of after a multi-minute build.
@@ -32,10 +32,7 @@ pnpm exec tsx scripts/selfhost-preflight.ts
 
 pnpm run db:migrate:local
 
-# POSTHOG_SOURCEMAPS (CI sourcemap uploads) moves vite's outDir; keep the
-# fingerprint marker beside the output it describes.
-if [ "${POSTHOG_SOURCEMAPS:-}" = "true" ]; then OUT_DIR=dist-sourcemaps; else OUT_DIR=dist; fi
-FP_FILE="$OUT_DIR/.openseo-build-env"
+FP_FILE="dist/.openseo-build-env"
 
 # Everything that changes build output: the envPrefix prefixes from
 # vite.config.ts (keep in sync) plus POSTHOG_SOURCEMAPS.

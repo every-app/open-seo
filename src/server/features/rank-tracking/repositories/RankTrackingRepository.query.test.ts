@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- fork top-domains and validated-history query cases beside upstream retry-snapshot cases */
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { eq } from "drizzle-orm";
@@ -31,6 +32,16 @@ beforeAll(async () => {
   client = createClient({ url: "file::memory:" });
   testDb = drizzle(client);
   vi.doMock("@/db", () => ({ db: testDb }));
+  // Run batched writes one by one against the same in-memory database.
+  vi.doMock("@/db/runBatch", () => ({
+    DB_BATCH_SIZE: 100,
+    executeInBatches: async <T>(
+      items: T[],
+      build: (tx: typeof testDb, item: T) => Promise<unknown>,
+    ) => {
+      for (const item of items) await build(testDb, item);
+    },
+  }));
 
   await client.executeMultiple(`
     CREATE TABLE projects (
@@ -90,8 +101,11 @@ beforeAll(async () => {
       position INTEGER,
       url TEXT,
       serp_features TEXT,
+      top_domains TEXT,
       checked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE UNIQUE INDEX rank_snapshots_run_keyword_device_idx
+      ON rank_snapshots (run_id, tracking_keyword_id, device);
   `);
 
   // No FK clauses above — deliberate. deleteConfigCascade must remove children
@@ -430,5 +444,70 @@ describe("getConfigTrend", () => {
     expect(trend).toMatchObject([
       { runId: "run_a", keywordsTotal: 2, total: 2 },
     ]);
+  });
+});
+
+async function seedRun(id: string, status: string) {
+  await client.execute({
+    sql: "INSERT INTO rank_check_runs (id, config_id, project_id, status, started_at) VALUES (?, 'cfg_a', 'proj_1', ?, ?)",
+    args: [id, status, NOW],
+  });
+}
+
+function snapshotRow(
+  runId: string,
+  trackingKeywordId: string,
+  device: "desktop" | "mobile",
+  position: number | null,
+) {
+  return { runId, trackingKeywordId, keyword: "kw", device, position };
+}
+
+describe("retry snapshot queries", () => {
+  it("finds each keyword's best position on any device from completed runs only", async () => {
+    await seedRun("run_done", "completed");
+    await seedRun("run_active", "running");
+    await RankTrackingRepository.insertSnapshots([
+      snapshotRow("run_done", "kw_ranked", "desktop", null),
+      snapshotRow("run_done", "kw_ranked", "mobile", 4),
+      snapshotRow("run_done", "kw_never", "desktop", null),
+      snapshotRow("run_active", "kw_never", "mobile", 1),
+    ]);
+
+    const best =
+      await RankTrackingRepository.getBestPositionsForKeywords("cfg_a");
+
+    expect(best).toEqual(
+      expect.arrayContaining([
+        { trackingKeywordId: "kw_never", position: null },
+        { trackingKeywordId: "kw_ranked", position: 4 },
+      ]),
+    );
+  });
+
+  it("upserts a retry's result over the saved one, and keeps it through miss cleanup", async () => {
+    await seedRun("run_a", "running");
+    await RankTrackingRepository.insertSnapshots([
+      snapshotRow("run_a", "kw_0", "desktop", null),
+    ]);
+
+    await RankTrackingRepository.upsertSnapshots([
+      snapshotRow("run_a", "kw_0", "desktop", 2),
+      snapshotRow("run_a", "kw_1", "desktop", 7),
+    ]);
+
+    // Cleanup of unconfirmed misses never removes a row that holds a position.
+    await RankTrackingRepository.deleteNotFoundSnapshots([
+      { runId: "run_a", trackingKeywordId: "kw_0", device: "desktop" },
+    ]);
+
+    const rows = await RankTrackingRepository.getSnapshotsForRun("run_a");
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ trackingKeywordId: "kw_0", position: 2 }),
+        expect.objectContaining({ trackingKeywordId: "kw_1", position: 7 }),
+      ]),
+    );
   });
 });

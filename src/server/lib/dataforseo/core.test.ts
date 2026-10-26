@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/lib/runtime-env", () => ({
+  // AUTH_MODE unset: the deployment holds the DataForSEO key.
+  getOptionalEnvValue: vi.fn(async () => undefined),
   getRequiredEnvValue: vi.fn(async () => "encoded-credentials"),
 }));
 
@@ -28,6 +30,22 @@ describe("DataForSEO transport", () => {
     expect(new Headers(init?.headers).get("Authorization")).toBe(
       "Basic encoded-credentials",
     );
+  });
+
+  // An unverified account answers with HTTP 403 (status_code 40104). Left as
+  // INTERNAL_ERROR it reached self-hosters as "an unexpected error occurred".
+  it("maps a 403 to DATAFORSEO_AUTH_FAILED", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        Response.json({ status_code: 40104 }, { status: 403 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      dataforseoPost("/v3/backlinks/summary/live", []),
+    ).rejects.toMatchObject({ code: "DATAFORSEO_AUTH_FAILED" });
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   // The request-deadline abort arrives as a bare DOMException. Left unclassified

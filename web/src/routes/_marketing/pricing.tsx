@@ -223,7 +223,7 @@ function Pricing() {
             "Works inside Claude, Cursor, and ChatGPT",
             "Google Search Console data is free and doesn't touch your $10",
             "Includes $10 of usage every month",
-            "Buy extra usage anytime; it never expires",
+            "Buy extra usage anytime, or reload it automatically; it never expires",
           ].map((item) => (
             <li key={item} className="flex gap-2.5 text-sm text-neutral-700">
               <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brand-accent)]">
@@ -441,7 +441,9 @@ function Pricing() {
               What if I use all my credits for the month?
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
-              Buy top-up credits at any time to keep using paid features.
+              Buy top-up credits at any time, or turn on auto-reload so
+              OpenSEO buys them for you when you run low, up to a monthly
+              limit you set.
             </dd>
           </div>
           <div className="py-4 first:pt-0 last:pb-0">

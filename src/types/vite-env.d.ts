@@ -1,4 +1,8 @@
 /// <reference types="vite/client" />
+declare module "virtual:openseo-mcp-widget" {
+  const html: string;
+  export default html;
+}
 interface ViteTypeOptions {
   // By adding this line, you can make the type of ImportMetaEnv strict
   // to disallow unknown keys.

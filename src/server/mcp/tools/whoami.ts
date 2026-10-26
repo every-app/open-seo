@@ -4,7 +4,10 @@ import {
 } from "@/server/billing/subscription";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { type ToolContext } from "@/server/mcp/context";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import {
+  isEveryAppServerAuthMode,
+  isHostedServerAuthMode,
+} from "@/server/lib/runtime-env";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { z } from "zod";
 
@@ -18,7 +21,7 @@ export const whoamiTool = {
     outputSchema: z.looseObject({
       userEmail: z.string(),
       scopes: z.array(z.string()),
-      mode: z.enum(["hosted", "self-hosted"]),
+      mode: z.enum(["hosted", "self-hosted", "every-app"]),
       creditsRemaining: z.number().nullable(),
       ...optionalMetaOutputSchema,
     }),
@@ -33,25 +36,37 @@ export const whoamiTool = {
     const auth = context.auth;
     const isHosted = await isHostedServerAuthMode();
     let creditsRemaining: number | null = null;
+    let budgetReached = false;
     if (isHosted) {
       try {
         const customer = await getOrCreateOrganizationCustomer(auth);
-        const { monthlyRemaining, topupRemaining } =
+        const { monthlyRemaining, topupRemaining, topupBudgetReached } =
           await getUsageCreditsRemaining(customer.id);
         creditsRemaining = monthlyRemaining + topupRemaining;
+        budgetReached = topupBudgetReached;
       } catch {
         // Account identity is still available when billing is unavailable.
       }
     }
+    const mode = isHosted
+      ? "hosted"
+      : (await isEveryAppServerAuthMode())
+        ? "every-app"
+        : "self-hosted";
     const lines = [
       `Account: ${auth.userEmail}`,
-      `Mode: ${isHosted ? "hosted" : "self-hosted"}`,
+      `Mode: ${mode === "every-app" ? "Every App" : mode}`,
       `Scopes: ${auth.scopes.length > 0 ? auth.scopes.join(", ") : "none"}`,
     ];
     if (isHosted) {
       lines.push(
         `Credits remaining: ${creditsRemaining != null ? creditsRemaining.toLocaleString() : "unknown"}`,
       );
+      if (budgetReached) {
+        lines.push(
+          "Top-up credits: paused until the owner raises the monthly auto-reload budget on the Billing page.",
+        );
+      }
     }
     return mcpResponse({
       text: lines.join("\n"),
@@ -61,7 +76,7 @@ export const whoamiTool = {
       structuredContent: {
         userEmail: auth.userEmail,
         scopes: auth.scopes,
-        mode: isHosted ? "hosted" : "self-hosted",
+        mode,
         creditsRemaining,
       },
     });

@@ -4,6 +4,7 @@ import {
   inferAdditionalFields,
   organizationClient,
 } from "better-auth/client/plugins";
+import { clearLastProjectId } from "@/client/lib/active-project";
 import { captureClientEvent, resetAnalyticsUser } from "@/client/lib/posthog";
 import { userAdditionalFields } from "@/lib/auth-options";
 import { orgAccessControl, orgRoles } from "@/lib/org-permissions";
@@ -27,6 +28,10 @@ export function signOutAndRedirect() {
   const signInHref = getSignInHrefForLocation(window.location);
   captureClientEvent("auth:sign_out");
   resetAnalyticsUser();
+  // The remembered project belongs to this account. Left behind, it would
+  // open the next account straight into the app shell, past the onboarding
+  // gate in the app layout.
+  clearLastProjectId();
   void authClient.signOut({
     fetchOptions: {
       onSuccess: () => {

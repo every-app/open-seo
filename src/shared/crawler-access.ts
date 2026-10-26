@@ -49,14 +49,17 @@ export function normalizeCrawlerHost(input: string): string | null {
   const raw = input.trim().toLowerCase();
   if (!raw) return null;
 
-  let hostname: string;
+  let url: URL;
   try {
-    hostname = new URL(raw.includes("://") ? raw : `https://${raw}`).hostname;
+    url = new URL(raw.includes("://") ? raw : `https://${raw}`);
   } catch {
     return null;
   }
+  // Other schemes parse hosts differently ("h://5.6" keeps "5.6", which https
+  // reads as 5.0.0.6), so the saved host would never match a request.
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
 
-  const host = hostname.replace(/\.$/, "");
+  const host = url.hostname.replace(/\.$/, "");
   if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)) return null;
   return host;
 }

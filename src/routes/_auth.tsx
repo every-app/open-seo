@@ -6,7 +6,7 @@ import {
 } from "@/client/features/auth/AuthPage";
 import { useSession } from "@/lib/auth-client";
 import { PageLoading } from "@/client/components/Spinner";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 import { getCurrentAuthRedirect, isDocumentRoute } from "@/lib/auth-redirect";
 
 export const Route = createFileRoute("/_auth")({
@@ -19,7 +19,7 @@ function AuthPageLayout() {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
   const [hasResolvedSession, setHasResolvedSession] = useState(false);
-  const isHostedMode = isHostedClientAuthMode();
+  const hasAccounts = usesBetterAuthClient();
   const redirectTo = getCurrentAuthRedirect(search.redirect);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ function AuthPageLayout() {
 
   // Loading the session, or handing a signed-in user off to the destination.
   if (
-    isHostedMode &&
+    hasAccounts &&
     ((isPending && !hasResolvedSession) || session?.user?.id)
   ) {
     return <PageLoading />;

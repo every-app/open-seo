@@ -4,6 +4,8 @@ const ERROR_CODES = [
   "UNAUTHENTICATED",
   "AUTH_CONFIG_MISSING",
   "PAYMENT_REQUIRED",
+  "PAYMENT_METHOD_REQUIRED",
+  "PAYMENT_ACTION_REQUIRED",
   "INSUFFICIENT_CREDITS",
   "FORBIDDEN",
   "NOT_FOUND",
@@ -35,6 +37,10 @@ const NON_REPORTABLE_ERROR_CODES = new Set<ErrorCode>([
   "RATE_LIMITED",
   "NOT_FOUND",
   "PAYMENT_REQUIRED",
+  // The customer's own card declined, is missing, or needs their bank's
+  // confirmation; the message tells them what to do.
+  "PAYMENT_METHOD_REQUIRED",
+  "PAYMENT_ACTION_REQUIRED",
   "INSUFFICIENT_CREDITS",
   "VALIDATION_ERROR",
   "UNKNOWN_LOCATION",

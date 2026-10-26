@@ -24,6 +24,7 @@ import {
   prepareWebsiteTracking,
   startWebsiteTrackingRun,
 } from "./websiteTrackingSetup";
+import { startWorkflow } from "@/server/lib/startWorkflow";
 
 /**
  * Prompt Research needs saved keywords. Website setup writes them; a
@@ -123,20 +124,24 @@ export async function startAiResearchSetup(
   const { instance } = await readSetupRun(input.projectId);
   if (instance) await instance.restart();
   else
-    await env.AI_VISIBILITY_WORKFLOW.create({
-      id: setupInstanceId(input.projectId),
-      // Only the billing fields: the request context is not serializable.
-      params: {
-        setupProjectId: input.projectId,
-        runSeededTracking,
-        customer: {
-          organizationId: customer.organizationId,
-          userId: customer.userId,
-          userEmail: customer.userEmail,
-          projectId: input.projectId,
+    await startWorkflow(
+      env.AI_VISIBILITY_WORKFLOW,
+      {
+        id: setupInstanceId(input.projectId),
+        // Only the billing fields: the request context is not serializable.
+        params: {
+          setupProjectId: input.projectId,
+          runSeededTracking,
+          customer: {
+            organizationId: customer.organizationId,
+            userId: customer.userId,
+            userEmail: customer.userEmail,
+            projectId: input.projectId,
+          },
         },
       },
-    });
+      "AI research setup",
+    );
   return { ...setup, status: "running" as const, failure: null };
 }
 

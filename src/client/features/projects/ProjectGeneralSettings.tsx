@@ -15,6 +15,7 @@ import {
 } from "@/client/lib/active-project";
 import { toastInitialAudit } from "@/client/features/projects/initialAuditToast";
 import { archiveProject, updateProject } from "@/serverFunctions/projects";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import type { ProjectSummary } from "./types";
 
 export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
@@ -108,8 +109,9 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
           </form.AppField>
 
           <p className="text-sm text-muted-foreground">
-            Adding your website starts a 50-page scan with JavaScript rendering.
-            Rendering uses your credits.
+            {isEveryAppClientAuthMode()
+              ? "Adding your website starts a 50-page site audit."
+              : "Adding your website starts a 50-page scan with JavaScript rendering. Rendering uses your credits."}
           </p>
           <form.AppField name="domain">
             {(field) => (

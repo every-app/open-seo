@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   runLiveCheck: vi.fn(),
   runQueuedCheck: vi.fn(),
+  runValidatedCheck: vi.fn(),
+  retryRankChecks: vi.fn(),
   failRunIfActive: vi.fn(),
   captureServerEvent: vi.fn(),
   isHostedServerAuthMode: vi.fn(),
@@ -34,21 +36,31 @@ vi.mock("@/server/features/rank-tracking/services/rankCheckRunGuards", () => ({
 }));
 vi.mock("@/server/workflows/rankCheckPaths", () => ({
   runLiveCheck: mocks.runLiveCheck,
-  SINGLE_ATTEMPT_STEP_CONFIG: {
-    retries: { limit: 0, delay: "1 second" },
-    timeout: "2 minutes",
-  },
-}));
-vi.mock("@/server/workflows/rankCheckQueuedPath", () => ({
   runQueuedCheck: mocks.runQueuedCheck,
 }));
+vi.mock("@/server/workflows/rankCheckQueuedPath", () => ({
+  runQueuedCheck: mocks.runValidatedCheck,
+}));
+vi.mock("@/server/workflows/rankCheckRetries", () => ({
+  retryRankChecks: mocks.retryRankChecks,
+}));
 vi.mock("@/server/workflows/pgStep", () => ({
-  pgStep: (
+  // Like the engine, run() gets a rebuilt Error, never the thrown object.
+  pgStep: async (
     _step: unknown,
     _name: string,
     _config: unknown,
     fn: () => unknown,
-  ) => fn(),
+  ) => {
+    try {
+      return await fn();
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? `${error.name}: ${error.message}` : "",
+        { cause: error },
+      );
+    }
+  },
 }));
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
@@ -61,6 +73,9 @@ vi.mock("@/server/billing/autumn", () => ({
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
+}));
+vi.mock("@/server/email/onboarding-drip", () => ({
+  sendCreditsExhaustedEvent: vi.fn(),
 }));
 
 const billingCustomer = {
@@ -85,7 +100,7 @@ const payload = {
   languageCode: "en",
   devices: "desktop" as "desktop" | "mobile" | "both",
   serpDepth: 10,
-  trigger: "manual" as const,
+  trigger: "manual" as "manual" | "scheduled",
 };
 
 function keywords(count: number) {
@@ -128,20 +143,33 @@ describe("rank check workflow credit ceiling", () => {
   it("rejects a keyword-list race before balance or DataForSEO calls", async () => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(5));
 
-    await expect(runWorkflow({ maxCostCredits: 12 })).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-    });
+    await expect(runWorkflow({ maxCostCredits: 20 })).rejects.toThrow();
 
     expect(mocks.autumnCheck).not.toHaveBeenCalled();
     expect(mocks.createDataforseoClient).not.toHaveBeenCalled();
     expect(mocks.runLiveCheck).not.toHaveBeenCalled();
   });
 
+  it("keeps a credits refusal as the bare code, so the credits card shows", async () => {
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(5));
+    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 0 } });
+
+    await expect(runWorkflow({})).rejects.toThrow("INSUFFICIENT_CREDITS");
+
+    expect(mocks.failRunIfActive).toHaveBeenCalledWith(
+      "run_1",
+      "INSUFFICIENT_CREDITS",
+    );
+    expect(mocks.updateConfig).toHaveBeenCalledWith("config_1", "project_1", {
+      lastSkipReason: "insufficient_credits",
+    });
+  });
+
   // Exactly at the ceiling is approved (the guard is strictly greater), and
   // callers without a ceiling — every scheduled check — must not be treated
   // as approving zero credits.
   it.each([
-    ["at the approved ceiling", 12, 4],
+    ["at the approved ceiling", 20, 4],
     ["without a ceiling", undefined, 5],
   ])("checks the reloaded list %s", async (_label, maxCostCredits, count) => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(count));
@@ -198,7 +226,7 @@ describe("rank check finalization", () => {
       { trackingKeywordId: "kw_1", device: "mobile" },
       { trackingKeywordId: "kw_2", device: "desktop" },
     ]);
-    mocks.runQueuedCheck.mockResolvedValue({
+    mocks.runValidatedCheck.mockResolvedValue({
       queueTasks: 6,
       queueCollected: 4,
       fallbackTasks: 0,
@@ -215,6 +243,7 @@ describe("rank check finalization", () => {
     await runWorkflow({ devices: "both", validateSerps: true });
 
     expect(mocks.runLiveCheck).not.toHaveBeenCalled();
+    expect(mocks.retryRankChecks).not.toHaveBeenCalled();
     expect(mocks.updateRun).toHaveBeenCalledWith(
       "run_1",
       expect.objectContaining({
@@ -248,10 +277,9 @@ describe("rank check finalization", () => {
   });
 });
 
-describe("manual run queue fallback", () => {
+describe("check paths", () => {
   beforeEach(() => {
     mocks.getConfigById.mockResolvedValue({ isActive: true });
-    mocks.runQueuedCheck.mockResolvedValue(null);
     mocks.getRunById.mockResolvedValue(activeRun);
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(2));
     mocks.getSnapshotsForRun.mockResolvedValue([]);
@@ -259,28 +287,45 @@ describe("manual run queue fallback", () => {
     mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
   });
 
-  // The options are the contract: a second live call could pass the credits
-  // the user approved, and a queued not-found must not overwrite a position.
-  it("queues only the pairs the live endpoint missed, without a live fallback", async () => {
-    const missed = [
-      { keyword: "keyword 1", keywordId: "kw_1", device: "desktop" },
-    ];
-    mocks.runLiveCheck.mockResolvedValue(missed);
-
+  it("checks a manual run live, then retries through the queue", async () => {
     await runWorkflow({});
 
-    expect(mocks.runQueuedCheck).toHaveBeenCalledWith(
+    expect(mocks.runLiveCheck).toHaveBeenCalledOnce();
+    expect(mocks.runQueuedCheck).not.toHaveBeenCalled();
+    expect(mocks.retryRankChecks).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ runId: "run_1" }),
-      { taskInputs: missed, liveFallback: false, saveNotFound: false },
+      expect.objectContaining({ runId: "run_1", configId: "config_1" }),
+      "config_1",
+      "manual",
     );
   });
 
-  it("skips the queue when the live endpoint checked every pair", async () => {
-    mocks.runLiveCheck.mockResolvedValue([]);
+  it("checks a scheduled run through the queue, then retries", async () => {
+    await runWorkflow({ trigger: "scheduled" });
 
-    await runWorkflow({});
+    expect(mocks.runQueuedCheck).toHaveBeenCalledOnce();
+    expect(mocks.runLiveCheck).not.toHaveBeenCalled();
+    expect(mocks.retryRankChecks).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      "config_1",
+      "scheduled",
+    );
+  });
 
+  // Fork: a validated run re-crawls its doubtful pairs itself; a queued
+  // retry's result could not be checked against its page.
+  it("sends a validated run through the validated path only", async () => {
+    mocks.runValidatedCheck.mockResolvedValue(null);
+
+    await runWorkflow({ validateSerps: true });
+
+    expect(mocks.runValidatedCheck).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ validateSerps: true }),
+    );
+    expect(mocks.runLiveCheck).not.toHaveBeenCalled();
     expect(mocks.runQueuedCheck).not.toHaveBeenCalled();
+    expect(mocks.retryRankChecks).not.toHaveBeenCalled();
   });
 });

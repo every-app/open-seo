@@ -1,6 +1,8 @@
+import { gatewayRefusal } from "@every-app/sdk/server";
 import { AppError } from "@/server/lib/errors";
-import { getRequiredEnvValue } from "@/server/lib/runtime-env";
 import type { ErrorCode } from "@/shared/error-codes";
+import { DATAFORSEO_NOT_SET_UP_MESSAGE } from "@/shared/gateway-setup-messages";
+import { getDataforseoFetch } from "@/server/lib/provider-access";
 // No runtime cycle: envelope.ts imports only the DataforseoErrorClassifier
 // type from here.
 import {
@@ -57,6 +59,34 @@ function formatDataforseoRequestPath(url: RequestInfo): string {
 }
 
 /**
+ * A refusal the Every App gateway made itself (the app doesn't ask for
+ * DataForSEO, the gateway has no key, the call names no organization), as
+ * opposed to DataForSEO's own answer
+ * passed through, as OpenSEO's error; null for DataForSEO's answer.
+ *
+ * A missing key gets OpenSEO's own sentence as the message: rank checks store
+ * error.message and the MCP tools answer with it, and the gateway's wording
+ * is its operator's. The gateway's text stays in the details.
+ */
+async function gatewayRefusalError(response: Response) {
+  const refusal = await gatewayRefusal(response);
+  if (!refusal) return null;
+  const details = {
+    provider: "dataforseo",
+    gatewayError: refusal.code,
+    gatewayMessage: refusal.message,
+  };
+  if (refusal.code === "integration_not_configured") {
+    return new AppError(
+      "DATAFORSEO_AUTH_FAILED",
+      DATAFORSEO_NOT_SET_UP_MESSAGE,
+      details,
+    );
+  }
+  return new AppError("AUTH_CONFIG_MISSING", refusal.message, details);
+}
+
+/**
  * The single authenticated `fetch` used by every DataForSEO call. Throws on
  * non-2xx; task-level failures (which return HTTP 200) are handled downstream
  * by {@link assertOk}. An optional classifier maps recognised HTTP failures to
@@ -67,9 +97,7 @@ function createAuthenticatedFetch(
   maxServerErrorRetries = DATAFORSEO_MAX_RETRIES,
 ) {
   return async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-    const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
-    const headers = new Headers(init?.headers);
-    headers.set("Authorization", `Basic ${apiKey}`);
+    const providerFetch = await getDataforseoFetch();
     // Resolve the signal once so retries share the overall request timeout
     // rather than restarting a fresh 60s budget on each attempt.
     const signal =
@@ -78,7 +106,7 @@ function createAuthenticatedFetch(
     for (let attempt = 0; ; attempt++) {
       let response: Response;
       try {
-        response = await fetch(url, { ...init, headers, signal });
+        response = await providerFetch(url, { ...init, signal });
       } catch (error) {
         // Both abort flavours mean "we ran out of time", and neither carries a
         // useful name of its own: the shared budget above rejects with
@@ -106,6 +134,10 @@ function createAuthenticatedFetch(
       }
       if (response.ok) return response;
 
+      // A gateway refusal: retrying can't fix it.
+      const refused = await gatewayRefusalError(response);
+      if (refused) throw refused;
+
       // Transient upstream 5xx on an idempotent read -> back off and retry.
       if (response.status >= 500 && attempt < maxServerErrorRetries) {
         await new Promise((resolve) =>
@@ -119,12 +151,13 @@ function createAuthenticatedFetch(
       const classified = classify?.(response.status, rawText, path);
       if (classified) throw classified;
 
+      // An unverified account (status_code 40104) answers with 403, not 401.
       const code: ErrorCode =
         response.status >= 500
           ? "UPSTREAM_UNAVAILABLE"
           : response.status === 429
             ? "RATE_LIMITED"
-            : response.status === 401
+            : response.status === 401 || response.status === 403
               ? "DATAFORSEO_AUTH_FAILED"
               : "INTERNAL_ERROR";
       const error = new AppError(

@@ -1,9 +1,84 @@
+import { ConfigurationError, createGatewayFetch } from "@every-app/sdk/server";
 import {
   createOpenRouter,
   type LanguageModelV3,
   type OpenRouterProvider,
 } from "@openrouter/ai-sdk-provider";
 import { wrapLanguageModel } from "ai";
+import { isEveryAppAuthMode } from "@/lib/auth-mode";
+import { gatewayCallFor } from "@/server/lib/gateway-attribution";
+import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
+
+/**
+ * How a deployment reaches OpenRouter: with its own key, or behind an Every
+ * App gateway (AUTH_MODE=everyapp) through the gateway's AI proxy, which
+ * holds the key. The proxy's host is a placeholder the binding never
+ * resolves.
+ */
+export type OpenRouterAccess =
+  | { apiKey: string }
+  | { gatewayFetch: typeof fetch };
+
+const GATEWAY_BASE_URL =
+  "https://every-app-gateway.invalid/api/ai/openrouter/api/v1";
+
+function isBehindEveryAppGateway(env: object): boolean {
+  return isEveryAppAuthMode(getEnvValueSync(env, "AUTH_MODE"));
+}
+
+/** The gateway's AI proxy fetch (whose call it is: gateway-attribution.ts). */
+function gatewayOpenRouterFetch(env: object): typeof fetch {
+  return createGatewayFetch({
+    env,
+    for: gatewayCallFor(),
+  });
+}
+
+/**
+ * This deployment's OpenRouter access, or null without one. Sync for
+ * samAccess.
+ */
+export function getOpenRouterAccess(env: object): OpenRouterAccess | null {
+  if (isBehindEveryAppGateway(env)) {
+    try {
+      return { gatewayFetch: gatewayOpenRouterFetch(env) };
+    } catch (error) {
+      // No gateway binding (and no local key in dev). A call that says
+      // nobody's (AttributionError) is a bug, so it is thrown.
+      if (error instanceof ConfigurationError) return null;
+      throw error;
+    }
+  }
+  const apiKey = getEnvValueSync(env, "OPENROUTER_API_KEY");
+  return apiKey ? { apiKey } : null;
+}
+
+/** SAM's model, from its Durable Object env. Sync: Think's getModel() is. */
+export function buildSamChatModel(
+  env: object,
+  reasoningEffort: "max" | "low",
+): LanguageModelV3 {
+  const access = getOpenRouterAccess(env);
+  if (!access) {
+    throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
+  }
+  return buildChatAgentModel(
+    access,
+    getEnvValueSync(env, "OPENROUTER_MODEL"),
+    reasoningEffort,
+  );
+}
+
+/** For server code: the access, or the error a missing key always threw. */
+export async function requireOpenRouterAccess(): Promise<OpenRouterAccess> {
+  const access = getOpenRouterAccess((await getWorkersEnv()) ?? {});
+  if (!access) {
+    throw new Error(
+      "Missing required environment variable: OPENROUTER_API_KEY",
+    );
+  }
+  return access;
+}
 
 // OpenRouter model slug used for the SAM in-app chat agent. Override with
 // OPENROUTER_MODEL to swap models without a code change.
@@ -57,15 +132,22 @@ async function openAiBlockedHere(): Promise<boolean> {
  * accounting above captures.
  *
  * Sync on purpose: Think's `getModel()` hook is sync and runs on every turn,
- * so the SAM agent reads the key/model from its DO env and builds here.
+ * so the SAM agent reads its access/model from its DO env and builds here.
  */
 export function buildChatAgentModel(
-  apiKey: string,
+  access: OpenRouterAccess,
   modelId?: string,
   reasoningEffort: "max" | "low" = "max",
 ): LanguageModelV3 {
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
-  const openrouter = createOpenRouter({ apiKey });
+  const openrouter =
+    "apiKey" in access
+      ? createOpenRouter({ apiKey: access.apiKey })
+      : createOpenRouter({
+          apiKey: "gateway-managed",
+          baseURL: GATEWAY_BASE_URL,
+          fetch: access.gatewayFetch,
+        });
   const primary = openRouterModel(openrouter, model, reasoningEffort);
   if (!model.startsWith("openai/")) return primary;
   // Where OpenRouter would reject OpenAI, pick MiniMax M3 before the request.

@@ -15,7 +15,6 @@ export const Route = createFileRoute("/_marketing/serp-simulator")({
         "Preview your title and meta description in desktop and mobile search results, with pixel measurements and approximate truncation. No signup, no email.",
       path: TOOL.path,
       titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free SERP snippet simulator",
     }),
   component: SerpSimulatorPage,
 });

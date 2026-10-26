@@ -1,4 +1,3 @@
-import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { AppError } from "@/server/lib/errors";
 import { buildBillingCustomer, type ToolContext } from "@/server/mcp/context";
@@ -13,41 +12,10 @@ async function requireProjectAccess(
 ) {
   const { baseUrl, ...auth } = toolContext.auth;
 
-  // User-scoped credentials have no org binding: derive the org from the
-  // project row, then authorize via the caller's membership in that org. The
-  // returned auth is rebound to the project's org + the member's role there,
-  // so billing and every downstream org read follow the project.
-  if (auth.orgScope === "user") {
-    const resolved = await ProjectService.getProjectWithOrganization(projectId);
-    const membership = resolved
-      ? await AuthRepository.getMembership(auth.userId, resolved.organizationId)
-      : null;
-    // One FORBIDDEN for both unknown project and non-membership, so probing
-    // with foreign project ids can't distinguish "exists" from "no access".
-    if (!resolved || !membership) {
-      throw new AppError("FORBIDDEN");
-    }
-
-    const projectAuth = {
-      ...auth,
-      organizationId: resolved.organizationId,
-      role: membership.role,
-    };
-    // instrumentMcpToolHandler wraps outside this gate and reads
-    // toolContext.auth after the handler returns, so the usage event and the
-    // activation milestone credit the project's org, not the fallback one.
-    toolContext.auth = { ...projectAuth, baseUrl };
-    return {
-      auth: projectAuth,
-      baseUrl,
-      billing: buildBillingCustomer(projectAuth, projectId),
-      project: resolved.project,
-    };
-  }
-
-  // Authorize the caller-supplied projectId against the token's organization.
-  // Assert on the result instead of relying on the lookup throwing, so this
-  // stays a hard gate even if the service's error behavior ever changes.
+  // Authorize the caller-supplied projectId against the credential's bound
+  // organization. Assert on the result instead of relying on the lookup
+  // throwing, so this stays a hard gate even if the service's error behavior
+  // ever changes.
   const project = await ProjectService.getProjectForOrganization(
     auth.organizationId,
     projectId,

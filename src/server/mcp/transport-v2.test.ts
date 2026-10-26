@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createWorkersOAuthMcpProps } from "@/server/mcp/context";
 import { handleAuthenticatedOpenSeoMcpRequest } from "@/server/mcp/transport";
 
+vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/lib/auth", () => ({
   getHostedBaseUrl: () => "https://open-seo.test",
 }));
@@ -15,10 +16,6 @@ vi.mock("@/server/auth/repositories/AuthRepository", () => ({
   AuthRepository: {
     getMembership: vi.fn(async () => ({ role: "owner" })),
   },
-}));
-
-vi.mock("@/server/auth/default-hosted-organization", () => ({
-  resolveExistingActiveHostedOrganization: vi.fn(),
 }));
 
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({

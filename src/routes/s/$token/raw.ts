@@ -6,6 +6,7 @@ import {
   sharesEnabled,
 } from "@/server/features/reports/shareAccess";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { createReportMapGrants } from "@/server/features/reports/reportMapGrant";
 import { reportDocumentResponse, textResponse } from "@/shared/report-sandbox";
 import { sharePath } from "@/shared/report-share";
 
@@ -102,8 +103,10 @@ async function handleSharedReportRequest(
           report_id: report.id,
           project_id: report.projectId,
           skill: report.skill,
-          // Kept so link-preview bots can be excluded from the count.
-          user_agent: request.headers.get("User-Agent"),
+          // Browsers framing the report send Sec-Fetch-Dest; link-preview
+          // bots generally don't, so this excludes them from the count
+          // without recording the viewer's user agent.
+          from_browser: dest === "iframe",
           // Readers are anonymous and stay that way: no person profile is
           // created for a share pseudonym.
           $process_person_profile: false,
@@ -115,6 +118,7 @@ async function handleSharedReportRequest(
   return reportDocumentResponse(html, {
     cacheControl: EDGE_CACHE_CONTROL,
     noindex: true,
+    mapGrants: await createReportMapGrants(html),
   });
 }
 

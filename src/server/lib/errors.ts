@@ -25,3 +25,20 @@ export function asAppError(error: unknown): AppError | null {
 export function toClientError(error: unknown): Error {
   return new Error(asAppError(error)?.code ?? "INTERNAL_ERROR");
 }
+
+/**
+ * The error's name, message and code, then its causes, for a log line.
+ * Workers Logs render an Error passed to `console.error` as its stack frames
+ * alone, so a log keeps the message only when it is written out like this.
+ * An error the Workflows engine threw over RPC is marked remote.
+ */
+export function describeError(error: unknown, depth = 0): string {
+  if (!(error instanceof Error)) return String(error);
+  const code = asAppError(error)?.code;
+  const parts = [`${error.name}: ${error.message}`];
+  if (code && code !== error.message) parts.push(`(${code})`);
+  if ("remote" in error && error.remote === true) parts.push("(remote)");
+  if (error.cause !== undefined && depth < 4)
+    parts.push(`<- ${describeError(error.cause, depth + 1)}`);
+  return parts.join(" ");
+}

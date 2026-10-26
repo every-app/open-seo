@@ -7,14 +7,14 @@ detail — what the script converts, the low-downtime delta sync, cutover and
 rollback — see
 [d1-to-postgres-detailed.md](./d1-to-postgres-detailed.md).
 
-> **Scope:** this runbook is for the OpenSEO production deployment —
-> `pnpm deploy:postgres` is hardwired to alchemy stage `hosted-prod`, its domains, and
-> `.env.production`. The alchemy self-host path (non-`prod` stages) has no
-> Hyperdrive wiring, so Postgres is not currently available to self-hosters.
+> **Scope:** this is the historical production data-copy procedure. Routine
+> schema migrations and deployments now run through the manual GitHub workflow;
+> see [production deployment](../production-deployment.md).
+> Self-hosted Alchemy stages do not provision Hyperdrive.
 
 > Switching `DATABASE_PROVIDER` to `postgres` changes where the app reads and
 > writes — it does **not** move existing data. This copies the data. D1 is never
-> written to, so rollback is just flipping the provider back to `d1`.
+> written to, so a database rollback requires a separate deployment configuration change.
 
 ## 1. Credentials → `.env.local`
 
@@ -72,7 +72,7 @@ binding — the app only connects to Postgres through Hyperdrive) and deploy, th
 smoke-test (load a project, save a keyword, check billing):
 
 ```sh
-pnpm deploy:postgres
+pnpm deploy:prod
 ```
 
 > **Optional — freeze writes** for a perfectly consistent snapshot: pause the

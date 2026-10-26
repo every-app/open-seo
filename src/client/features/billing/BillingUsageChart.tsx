@@ -1,7 +1,5 @@
 import { Bar, BarChart } from "recharts";
-import { sort } from "remeda";
-import { autumnSeoDataCreditsToUsd } from "@/shared/billing";
-import type { BillingUsageEvent } from "@/serverFunctions/billing";
+import type { BillingUsage } from "@/server/billing/usage";
 import { QueryState } from "@/client/components/QueryState";
 import {
   ChartGrid,
@@ -16,34 +14,30 @@ import {
   type ChartConfig,
 } from "@/client/components/ui/chart";
 import { BillingUsageSection } from "@/client/features/billing/BillingUsageSection";
-import {
-  BILLING_USAGE_DAYS,
-  useBillingUsageEvents,
-} from "@/client/features/billing/useBillingUsageEvents";
+import { useBillingUsage } from "@/client/features/billing/useBillingUsage";
 
 const chartConfig = {
-  credits: { label: "Usage", color: "#7c3aed" },
+  usd: { label: "Usage", color: "#7c3aed" },
 } satisfies ChartConfig;
 
 export function BillingUsageChart() {
-  const eventsQuery = useBillingUsageEvents();
+  const usageQuery = useBillingUsage();
 
   return (
     <BillingUsageSection title="Usage">
       <QueryState
-        query={eventsQuery}
+        query={usageQuery}
         errorFallback="Failed to load usage"
         loading={<Skeleton className="h-40 w-full" />}
       >
-        {(events) => <UsageChart events={events} />}
+        {(usage) => <UsageChart days={usage.days} />}
       </QueryState>
     </BillingUsageSection>
   );
 }
 
-function UsageChart({ events }: { events: BillingUsageEvent[] }) {
-  const chartData = binEventsByDay(events);
-  const totalSpend = chartData.reduce((sum, d) => sum + d.credits, 0);
+function UsageChart({ days }: { days: BillingUsage["days"] }) {
+  const totalSpend = days.reduce((sum, day) => sum + day.usd, 0);
 
   return (
     <div className="space-y-3">
@@ -61,7 +55,7 @@ function UsageChart({ events }: { events: BillingUsageEvent[] }) {
         ) : (
           <ChartContainer config={chartConfig} className="h-full">
             <BarChart
-              data={chartData}
+              data={days}
               margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
             >
               <ChartGrid />
@@ -82,8 +76,8 @@ function UsageChart({ events }: { events: BillingUsageEvent[] }) {
                 }
               />
               <Bar
-                dataKey="credits"
-                fill="var(--color-credits)"
+                dataKey="usd"
+                fill="var(--color-usd)"
                 radius={[2, 2, 0, 0]}
                 maxBarSize={12}
               />
@@ -92,34 +86,6 @@ function UsageChart({ events }: { events: BillingUsageEvent[] }) {
         )}
       </div>
     </div>
-  );
-}
-
-/**
- * One bar for each local day, from 30 days ago to today, in USD. An event
- * older than that (cached data after midnight) gets its own bar, so the
- * total still matches the per-feature breakdown.
- */
-function binEventsByDay(events: BillingUsageEvent[]) {
-  const creditsByDay = new Map<number, number>();
-  const day = new Date();
-  day.setHours(0, 0, 0, 0);
-  day.setDate(day.getDate() - BILLING_USAGE_DAYS);
-  for (let i = 0; i <= BILLING_USAGE_DAYS; i++) {
-    creditsByDay.set(day.getTime(), 0);
-    day.setDate(day.getDate() + 1);
-  }
-
-  for (const event of events) {
-    const eventDay = new Date(event.timestamp).setHours(0, 0, 0, 0);
-    creditsByDay.set(eventDay, (creditsByDay.get(eventDay) ?? 0) + event.value);
-  }
-
-  return sort([...creditsByDay], ([a], [b]) => a - b).map(
-    ([date, credits]) => ({
-      date,
-      credits: autumnSeoDataCreditsToUsd(credits),
-    }),
   );
 }
 

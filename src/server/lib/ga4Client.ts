@@ -1,6 +1,8 @@
 /* eslint-disable max-lines -- one client module per Google integration (gscClient precedent); GA4 spans the Admin and Data APIs */
 import { z } from "zod";
 import { getGoogleAccessToken } from "@/server/features/google/googleOAuth";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
+import { getGatewayGoogleFetch } from "@/server/features/google/gatewayGoogle";
 import {
   Ga4AdminApiError,
   Ga4DataApiError,
@@ -155,26 +157,49 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
-function memoizedGa4AccessToken(opts: {
+type Authenticated = { fetch: typeof fetch; headers: Record<string, string> };
+
+/**
+ * The fetch and headers that reach Google Analytics authenticated, resolved
+ * once per client: behind the gateway, the gateway's fetch with the
+ * member's token on it (gatewayGoogle.ts); otherwise OpenSEO's own grant.
+ */
+async function authenticateGa4(opts: {
   userId: string;
   ga4AccountId: string;
-}) {
-  let accessTokenPromise: Promise<string> | undefined;
+}): Promise<Authenticated> {
+  if ((await getGoogleAccessMode()) === "gateway") {
+    const gatewayFetch = await getGatewayGoogleFetch();
+    if (!gatewayFetch) {
+      throw new Ga4TokenError(
+        "Google isn't reachable through the Every App gateway here.",
+      );
+    }
+    return { fetch: gatewayFetch, headers: {} };
+  }
+  return {
+    fetch,
+    headers: { Authorization: `Bearer ${await getGa4AccessToken(opts)}` },
+  };
+}
+
+function memoizedGa4Access(opts: { userId: string; ga4AccountId: string }) {
+  let authenticated: Promise<Authenticated> | undefined;
+  // Fork: a failed refresh is retried, but not in the same tick: a short
+  // random hold keeps a burst of requests from stampeding the token endpoint.
   let blockedUntil = 0;
   return () => {
-    const now = Date.now();
-    if (now < blockedUntil) {
+    if (Date.now() < blockedUntil) {
       return Promise.reject(
         new Ga4TokenError("Google Analytics token refresh is cooling down."),
       );
     }
-    accessTokenPromise ??= getGa4AccessToken(opts).catch((error: unknown) => {
-      accessTokenPromise = undefined;
-      // Keep refresh retries fast, but avoid immediate same-tick stampedes.
+    authenticated ??= authenticateGa4(opts).catch((error: unknown) => {
+      authenticated = undefined;
       blockedUntil = Date.now() + 500 + Math.floor(Math.random() * 750);
       throw error;
     });
-    return accessTokenPromise;
+    return authenticated;
   };
 }
 
@@ -183,15 +208,13 @@ export function createGa4AdminClient(opts: {
   userId: string;
   ga4AccountId: string;
 }) {
-  const accessToken = memoizedGa4AccessToken(opts);
+  const access = memoizedGa4Access(opts);
 
   async function request(url: string): Promise<unknown> {
-    const token = await accessToken();
+    const { fetch: send, headers } = await access();
     let response: Response;
     try {
-      response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      response = await send(url, { headers });
     } catch (error) {
       if (isAbortError(error)) throw error;
       throw new Ga4AdminApiError(
@@ -426,19 +449,19 @@ export function createGa4DataClient(opts: {
   propertyId: string;
 }) {
   const propertyId = propertyIdSchema.parse(opts.propertyId);
-  const accessToken = memoizedGa4AccessToken(opts);
+  const access = memoizedGa4Access(opts);
 
   return {
     async runReport(
       request: Ga4RunReportRequest,
     ): Promise<Ga4RunReportResponse> {
-      const token = await accessToken();
+      const { fetch: send, headers } = await access();
       let response: Response;
       try {
-        response = await fetch(`${GA4_DATA_API_BASE}/${propertyId}:runReport`, {
+        response = await send(`${GA4_DATA_API_BASE}/${propertyId}:runReport`, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...headers,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(request),

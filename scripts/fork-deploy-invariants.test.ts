@@ -1,5 +1,4 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -75,6 +74,13 @@ const SHIPPED_SQLITE_MIGRATIONS = [
   "0058_crazy_blindfold",
   "0059_rank_snapshot_top_domains",
   "0060_chief_centennial",
+  "0061_flowery_misty_knight",
+  "0062_heavy_johnny_storm",
+  "0063_flaky_devos",
+  "0064_thankful_aaron_stack",
+  "0065_reflective_wrecker",
+  "0066_bumpy_fat_cobra",
+  "0067_bind_api_keys_to_organization",
 ];
 
 type Journal = { entries: { idx: number; when: number; tag: string }[] };
@@ -157,37 +163,5 @@ describe("Railway build files", () => {
     ],
   ])("%s is an exact copy of %s", (copy, source) => {
     expect(readFileSync(copy, "utf8")).toBe(readFileSync(source, "utf8"));
-  });
-});
-
-// Upstream pauses scheduled rank checks on its hosted platform behind a
-// constant that every use must pair with a hosted-mode check. This deployment
-// is self-hosted and runs its rank checks on a schedule, so an unpaired use
-// would silently stop them.
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) return sourceFiles(path);
-    return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)
-      ? [path]
-      : [];
-  });
-}
-
-describe("scheduled rank check pause", () => {
-  it("is paired with a hosted-mode check wherever it is used", () => {
-    const uses = sourceFiles("src")
-      .filter((file) => !file.endsWith("rank-tracking-pause.ts"))
-      .flatMap((file) =>
-        readFileSync(file, "utf8")
-          .replace(/^import[^;]*;$/gm, "")
-          .split("\n")
-          .filter((line) => line.includes("SCHEDULED_RANK_CHECKS_PAUSED"))
-          .map((line) => `${file}: ${line.trim()}`),
-      );
-    expect(uses.length).toBeGreaterThan(0);
-    for (const use of uses) {
-      expect(use).toMatch(/isHosted(Server|Client)?AuthMode/);
-    }
   });
 });

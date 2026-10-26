@@ -99,8 +99,8 @@ export function IssuesView({
       {issues.length === 0 ? (
         <EmptyState
           variant="plain"
-          title="No issues recorded for this audit."
-          description="Either the site is in great shape, or this audit ran before issue checks existed — run a new audit to get the full report."
+          title="No issues found."
+          description="Every crawled page passed the issue checks."
         />
       ) : (
         <div>

@@ -233,6 +233,17 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         dataforseoPricing.serp.local,
         "local_seo",
       ),
+      // Live Maps searches for a Local SEO check, one per grid point; one
+      // credit hold covers the batch.
+      localBatch: (inputs: Parameters<typeof fetchLocalSerp>[0][]) =>
+        meterDataforseoCalls(
+          customer,
+          inputs.map((input) => () => fetchLocalSerp(input)),
+          inputs.map((input) =>
+            creditsForProviderUsd(dataforseoPricing.serp.local(input)),
+          ),
+          "local_seo",
+        ),
       // One queued Maps task per rank grid point; one metered charge covers
       // them all (DataForSEO bills task_post, collection is free).
       localTaskPost: meter(

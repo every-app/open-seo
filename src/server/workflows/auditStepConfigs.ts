@@ -9,6 +9,12 @@ import type { WorkflowStepConfig } from "cloudflare:workers";
  * step now has a timeout sized to its real work and a small retry budget.
  */
 
+/** Redirect probe of the start URL: up to 5 hops at 10s each. */
+export const START_URL_STEP: WorkflowStepConfig = {
+  retries: { limit: 2, delay: "5 seconds", backoff: "exponential" },
+  timeout: "2 minutes",
+};
+
 /** Robots + sitemap walk (bounded at 300 docs / 15s per fetch internally). */
 export const DISCOVERY_STEP: WorkflowStepConfig = {
   retries: { limit: 2, delay: "5 seconds", backoff: "exponential" },
