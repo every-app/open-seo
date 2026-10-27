@@ -2,6 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { SUBREQUEST_LIMIT_ERROR } from "@/shared/rank-tracking";
 import type { useRankRunPolling } from "./useRankRunPolling";
 
 /** Warnings about the latest rank check: stale, failed, or incomplete. */
@@ -50,8 +51,9 @@ export function RankRunAlerts({
         <AlertDescription className="text-foreground">
           <p>
             <span className="font-medium">Your last check was incomplete.</span>{" "}
-            Our search data provider had errors, so some keywords will show
-            their previous position.
+            {run.errorMessage.includes(SUBREQUEST_LIMIT_ERROR)
+              ? SUBREQUEST_LIMIT_ERROR
+              : "Our search data provider had errors, so some keywords will show their previous position."}
           </p>
         </AlertDescription>
       </Alert>

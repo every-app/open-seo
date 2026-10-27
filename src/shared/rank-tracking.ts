@@ -39,6 +39,10 @@ export const KEYWORDS_PER_BATCH = 10;
  */
 export const RETRY_ROUNDS = 2;
 
+/** Why a rank check stopped early on the Workers Free plan; the UI matches on it. */
+export const SUBREQUEST_LIMIT_ERROR =
+  "Cloudflare's per-invocation subrequest limit was reached (the Workers Free plan allows 50), so the check stopped early. Upgrade to Workers Paid and redeploy to check every keyword.";
+
 /** Approximate seconds per batch */
 export const SECONDS_PER_BATCH = 6;
 

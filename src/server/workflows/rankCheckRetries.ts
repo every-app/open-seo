@@ -166,31 +166,35 @@ function withOtherDevicePositions(pairs: RetryPair[]): RetryPair[] {
  * (queue price, for manual runs too), stopping once a retry settles it. A
  * keyword that ranked before is never saved as not found: if no try found it,
  * its miss is removed, so it reads as not checked and keeps its previous
- * position.
+ * position. Once a check hits the platform subrequest limit, no more retries
+ * are posted, but misses are still dropped.
  */
 export async function retryRankChecks(
   step: WorkflowStep,
   ctx: CheckContext,
   configId: string,
   trigger: RankCheckTrigger,
+  subrequestLimited = false,
 ): Promise<void> {
   let pairs = await pgStep(step, "find-retries", COLLECT_STEP_CONFIG, () =>
     findRetryPairs(ctx, configId, trigger),
   );
 
-  for (let round = 0; round < RETRY_ROUNDS; round++) {
+  let limited = subrequestLimited;
+  for (let round = 0; round < RETRY_ROUNDS && !limited; round++) {
     const toRetry = pairs.filter(needsRetry);
     if (toRetry.length === 0) break;
     console.log(
       `[rank-check] ${ctx.runId} retry ${round + 1}: ${toRetry.length} check(s)`,
     );
     const label = `retry-${round}-`;
-    const collected = await runQueuedTasks(step, ctx, toRetry, label);
+    const outcome = await runQueuedTasks(step, ctx, toRetry, label);
+    limited = outcome.subrequestLimited;
     const updated = await pgStep(
       step,
       `${label}save`,
       COLLECT_STEP_CONFIG,
-      () => saveRetryResults(ctx.runId, pairs, collected),
+      () => saveRetryResults(ctx.runId, pairs, outcome.collected),
     );
     pairs = withOtherDevicePositions(updated);
   }
