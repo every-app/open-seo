@@ -4,7 +4,11 @@ import {
   type LanguageModelV3,
   type OpenRouterProvider,
 } from "@openrouter/ai-sdk-provider";
-import { wrapLanguageModel } from "ai";
+import {
+  extractJsonMiddleware,
+  type LanguageModelMiddleware,
+  wrapLanguageModel,
+} from "ai";
 import { isEveryAppAuthMode } from "@/lib/auth-mode";
 import { gatewayCallFor } from "@/server/lib/gateway-attribution";
 import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
@@ -151,7 +155,14 @@ export function buildChatAgentModel(
           baseURL: GATEWAY_BASE_URL,
           fetch: access.gatewayFetch,
         });
-  const primary = openRouterModel(openrouter, model, reasoningEffort);
+  const base = openRouterModel(openrouter, model, reasoningEffort);
+  const primary =
+    "apiKey" in access && access.baseURL
+      ? wrapLanguageModel({
+          model: base,
+          middleware: [toolsBeforeSchemaMiddleware(), extractJsonMiddleware()],
+        })
+      : base;
   if (!model.startsWith("openai/")) return primary;
   // Where OpenRouter would reject OpenAI, pick MiniMax M3 before the request.
   // The country lookup is async and getModel() is sync, so it runs per call.
@@ -165,6 +176,40 @@ export function buildChatAgentModel(
       wrapStream: async ({ params }) => (await pick()).doStream(params),
     },
   });
+}
+
+/**
+ * Local OpenAI-compatible servers (vLLM, llama.cpp, LiteLLM) apply a JSON
+ * schema `response_format` with constrained decoding, which masks the tokens
+ * that open a tool call. A call that sends tools and a schema together, as
+ * generateText with Output.object does, then never calls a tool: website
+ * research skips search_competitors and ends "incomplete". OpenRouter's
+ * hosted models do not have this problem, so this runs only with
+ * OPENROUTER_BASE_URL. While tools are offered, the schema moves from
+ * response_format into the system prompt; extractJsonMiddleware then strips
+ * the code fences such models tend to add, so Output.object still parses.
+ */
+function toolsBeforeSchemaMiddleware(): LanguageModelMiddleware {
+  return {
+    specificationVersion: "v3",
+    transformParams: async ({ params }) => {
+      const { responseFormat, tools, prompt } = params;
+      if (!tools?.length || responseFormat?.type !== "json") return params;
+      const schema = responseFormat.schema
+        ? `\n${JSON.stringify(responseFormat.schema)}`
+        : "";
+      const instruction = `When you are done using tools, reply with only a JSON object${schema ? " matching this JSON schema" : ""}, with no code fences and no other text.${schema}`;
+      const [first, ...rest] = prompt;
+      const nextPrompt =
+        first?.role === "system"
+          ? [
+              { ...first, content: `${first.content}\n\n${instruction}` },
+              ...rest,
+            ]
+          : [{ role: "system" as const, content: instruction }, ...prompt];
+      return { ...params, prompt: nextPrompt, responseFormat: undefined };
+    },
+  };
 }
 
 function openRouterModel(
