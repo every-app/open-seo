@@ -16,7 +16,7 @@ import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
  * resolves.
  */
 export type OpenRouterAccess =
-  | { apiKey: string }
+  | { apiKey: string; baseURL?: string }
   | { gatewayFetch: typeof fetch };
 
 const GATEWAY_BASE_URL =
@@ -50,7 +50,10 @@ export function getOpenRouterAccess(env: object): OpenRouterAccess | null {
     }
   }
   const apiKey = getEnvValueSync(env, "OPENROUTER_API_KEY");
-  return apiKey ? { apiKey } : null;
+  // Any OpenAI-compatible endpoint that speaks OpenRouter's chat API; unset
+  // means OpenRouter itself.
+  const baseURL = getEnvValueSync(env, "OPENROUTER_BASE_URL");
+  return apiKey ? { apiKey, baseURL } : null;
 }
 
 /** SAM's model, from its Durable Object env. Sync: Think's getModel() is. */
@@ -142,14 +145,17 @@ export function buildChatAgentModel(
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
   const openrouter =
     "apiKey" in access
-      ? createOpenRouter({ apiKey: access.apiKey })
+      ? createOpenRouter({ apiKey: access.apiKey, baseURL: access.baseURL })
       : createOpenRouter({
           apiKey: "gateway-managed",
           baseURL: GATEWAY_BASE_URL,
           fetch: access.gatewayFetch,
         });
   const primary = openRouterModel(openrouter, model, reasoningEffort);
-  if (!model.startsWith("openai/")) return primary;
+  // The MiniMax fallback is an OpenRouter slug; another provider may not have it.
+  if (!model.startsWith("openai/") || ("apiKey" in access && access.baseURL)) {
+    return primary;
+  }
   // Where OpenRouter would reject OpenAI, pick MiniMax M3 before the request.
   // The country lookup is async and getModel() is sync, so it runs per call.
   const fallback = openRouterModel(openrouter, MINIMAX_M3, reasoningEffort);
