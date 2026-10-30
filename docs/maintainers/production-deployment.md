@@ -61,20 +61,21 @@ from the account Secrets Store each run, so no extra GitHub secret is needed).
 
 ### Variables
 
-| Variable                                | Value                                          |
-| --------------------------------------- | ---------------------------------------------- |
-| `CLOUDFLARE_ACCOUNT_ID`                 | Production account ID                          |
-| `HYPERDRIVE_ID`                         | Existing `openseo` Hyperdrive configuration ID |
-| `GOOGLE_CLIENT_ID`                      | Existing Google OAuth client ID                |
-| `TURNSTILE_SITE_KEY`                    | Existing public Turnstile site key             |
-| `LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID`   | Verification template ID                       |
-| `LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID` | Password-reset template ID                     |
-| `LOOPS_TRANSACTIONAL_INVITATION_ID`     | Invitation template ID                         |
-| `LOOPS_PRODUCT_UPDATES_LIST_ID`         | Product-updates mailing list ID; optional      |
-| `META_PIXEL_ID`                         | Meta pixel ID for signup attribution; optional |
-| `POSTHOG_PUBLIC_KEY`, `POSTHOG_HOST`    | Existing analytics configuration; optional     |
-| `OPENROUTER_MODEL`                      | Optional model override                        |
-| `OPENSEO_TELEMETRY_DISABLED`            | Optional telemetry setting                     |
+| Variable                                | Value                                                      |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID`                 | Production account ID                                      |
+| `HYPERDRIVE_ID`                         | Existing `openseo` Hyperdrive configuration ID             |
+| `GOOGLE_CLIENT_ID`                      | Existing Google OAuth client ID                            |
+| `TURNSTILE_SITE_KEY`                    | Existing public Turnstile site key                         |
+| `LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID`   | Verification template ID                                   |
+| `LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID` | Password-reset template ID                                 |
+| `LOOPS_TRANSACTIONAL_INVITATION_ID`     | Invitation template ID                                     |
+| `LOOPS_PRODUCT_UPDATES_LIST_ID`         | Product-updates mailing list ID; optional                  |
+| `META_PIXEL_ID`                         | Meta pixel ID for signup attribution; optional             |
+| `POSTHOG_PUBLIC_KEY`, `POSTHOG_HOST`    | Existing analytics configuration; optional                 |
+| `OPENROUTER_MODEL`                      | Optional model override                                    |
+| `OPENROUTER_BASE_URL`                   | Optional OpenAI-compatible server instead of openrouter.ai |
+| `OPENSEO_TELEMETRY_DISABLED`            | Optional telemetry setting                                 |
 
 The workflow fixes `AUTH_MODE=hosted`, `DATABASE_PROVIDER=postgres`,
 `BETTER_AUTH_URL=https://app.openseo.so`, and email verification enabled.
