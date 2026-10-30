@@ -30,6 +30,8 @@ services:
       # Optional: AI features (SAM, the in-app SEO agent)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
+      # Optional: OpenAI-compatible server instead of openrouter.ai
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-}
       - VITE_SHOW_DEVTOOLS=false
     ports:
       - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"

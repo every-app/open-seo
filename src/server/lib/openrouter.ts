@@ -16,7 +16,7 @@ import { getEnvValueSync, getWorkersEnv } from "@/server/lib/runtime-env";
  * resolves.
  */
 export type OpenRouterAccess =
-  | { apiKey: string }
+  | { apiKey: string; baseURL?: string }
   | { gatewayFetch: typeof fetch };
 
 const GATEWAY_BASE_URL =
@@ -50,7 +50,10 @@ export function getOpenRouterAccess(env: object): OpenRouterAccess | null {
     }
   }
   const apiKey = getEnvValueSync(env, "OPENROUTER_API_KEY");
-  return apiKey ? { apiKey } : null;
+  // OPENROUTER_BASE_URL points the client at any OpenAI-compatible server
+  // (vLLM, llama.cpp, LiteLLM) instead of openrouter.ai. Unset = OpenRouter.
+  const baseURL = getEnvValueSync(env, "OPENROUTER_BASE_URL") || undefined;
+  return apiKey ? { apiKey, baseURL } : null;
 }
 
 /** SAM's model, from its Durable Object env. Sync: Think's getModel() is. */
@@ -142,7 +145,7 @@ export function buildChatAgentModel(
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
   const openrouter =
     "apiKey" in access
-      ? createOpenRouter({ apiKey: access.apiKey })
+      ? createOpenRouter({ apiKey: access.apiKey, baseURL: access.baseURL })
       : createOpenRouter({
           apiKey: "gateway-managed",
           baseURL: GATEWAY_BASE_URL,
