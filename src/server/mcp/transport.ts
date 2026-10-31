@@ -22,6 +22,7 @@ import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
 import { supportsMcpApps } from "@/server/mcp/ui-capabilities";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
+import { describeError } from "@/server/lib/errors";
 
 // Mirrors the agents SDK's DEFAULT_CORS_OPTIONS so legacy responses carry the
 // same CORS surface as the modern handler's.
@@ -194,10 +195,15 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
   // pushes compliant clients back through OAuth, and the new grant binds to
   // whichever org is active at that consent.
   const authContext = result.data[MCP_AUTH_CONTEXT_PROP];
+  // The uncaught exception log shows drizzle's "Failed query" message only;
+  // the database error that caused it lives on error.cause.
   const membership = await AuthRepository.getMembership(
     authContext.userId,
     authContext.organizationId,
-  );
+  ).catch((error: unknown) => {
+    console.error(`mcp.auth membership lookup failed: ${describeError(error)}`);
+    throw error;
+  });
   if (!membership) {
     return new Response("Organization access revoked", {
       status: 401,
