@@ -79,8 +79,8 @@ beforeAll(async () => {
   ({ GoogleAccountService: service } = await import("./GoogleAccountService"));
 });
 
-afterAll(() => {
-  client.close();
+afterAll(async () => {
+  await client.close();
   rmSync(directory, { recursive: true });
 });
 beforeEach(async () => {
