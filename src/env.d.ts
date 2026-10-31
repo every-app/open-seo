@@ -54,6 +54,10 @@ declare namespace Cloudflare {
     EVERYAPP_AUDIENCE?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
+    // Flagship app holding our feature flags (src/server/lib/featureFlags.ts).
+    // Bound only on hosted production; everywhere else every flag reads off.
+    // oxlint-disable-next-line typescript-eslint/consistent-type-imports
+    FLAGS?: import("@cloudflare/workers-types").Flagship;
     POSTHOG_PUBLIC_KEY?: string;
     POSTHOG_HOST?: string;
     BETTER_AUTH_SECRET?: string;

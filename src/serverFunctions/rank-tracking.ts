@@ -5,8 +5,8 @@ import { RankTrackingService } from "@/server/features/rank-tracking/services/Ra
 import { RankTrackingKeywordService } from "@/server/features/rank-tracking/services/RankTrackingKeywordService";
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
 import { AppError, asAppError } from "@/server/lib/errors";
-import { FeatureFlag } from "@/server/lib/featureFlags";
-import { captureServerEvent, isFeatureFlagOn } from "@/server/lib/posthog";
+import { FeatureFlag, isFeatureFlagOn } from "@/server/lib/featureFlags";
+import { captureServerEvent } from "@/server/lib/posthog";
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import {
   requireAuthenticatedContext,

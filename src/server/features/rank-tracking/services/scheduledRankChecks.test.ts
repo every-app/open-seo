@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MAX_KEYWORDS_PER_CONFIG } from "@/shared/rank-tracking";
-import type { FeatureFlag } from "@/server/lib/featureFlags";
 import { runScheduledRankChecks } from "./scheduledRankChecks";
 
 type DueConfigRow = {
@@ -47,10 +46,12 @@ const mocks = vi.hoisted(() => ({
     >(),
   customerHasPaidPlan: vi.fn<(organizationId: string) => Promise<boolean>>(),
   isHostedServerAuthMode: vi.fn<() => Promise<boolean>>(),
-  isFeatureFlagOn: vi.fn<(flag: FeatureFlag) => Promise<boolean>>(),
+  getFlag: vi.fn<(flag: string) => Promise<boolean>>(),
 }));
 
-vi.mock("cloudflare:workers", () => ({ env: {} }));
+vi.mock("cloudflare:workers", () => ({
+  env: { FLAGS: { getBooleanValue: mocks.getFlag } },
+}));
 vi.mock(
   "@/server/features/rank-tracking/repositories/RankTrackingRepository",
   () => ({
@@ -69,9 +70,6 @@ vi.mock("@/server/billing/subscription", () => ({
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
-}));
-vi.mock("@/server/lib/posthog", () => ({
-  isFeatureFlagOn: mocks.isFeatureFlagOn,
 }));
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test double for the workflow binding
@@ -97,7 +95,7 @@ function dueConfig(overrides: Partial<DueConfigRow> = {}): DueConfigRow {
 describe("runScheduledRankChecks", () => {
   beforeEach(() => {
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
-    mocks.isFeatureFlagOn.mockResolvedValue(false);
+    mocks.getFlag.mockResolvedValue(false);
     mocks.customerHasPaidPlan.mockResolvedValue(true);
     mocks.claimDueConfig.mockResolvedValue(true);
     mocks.beginRankCheckRun.mockResolvedValue({ ok: true, runId: "run_1" });
@@ -108,7 +106,7 @@ describe("runScheduledRankChecks", () => {
   });
 
   it("starts and claims nothing while the pause flag is on, so configs stay due", async () => {
-    mocks.isFeatureFlagOn.mockResolvedValue(true);
+    mocks.getFlag.mockResolvedValue(true);
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await runScheduledRankChecks(testEnv);

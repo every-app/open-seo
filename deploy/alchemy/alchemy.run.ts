@@ -124,6 +124,13 @@ const makeResources = (stage: string, usesD1: boolean) => {
     OAUTH_KV: Cloudflare.KV.Namespace("OAUTH_KV", {
       title: prod ? PROD_NAMES.oauthKv : `open-seo-oauth-kv-${stage}`,
     }).pipe(keep),
+    // Feature flags (src/server/lib/featureFlags.ts), app worker and prod
+    // only: every other stage, and every self-host, reads them all as off.
+    // Alchemy owns just the app. The flags themselves are created and flipped
+    // in the Cloudflare dashboard: a managed Flag resource would push its
+    // declared state back over a flip made during an outage whenever a deploy
+    // updated it.
+    ...(prod ? { FLAGS: Cloudflare.Flagship.App("FLAGS", {}).pipe(keep) } : {}),
   };
 };
 
@@ -392,7 +399,8 @@ export default Alchemy.Stack(
       authMode === "cloudflare_access" || authMode === "password";
 
     // Created once and bound into BOTH workers — they share the same
-    // D1/KV/R2 (and prod Hyperdrive). OAUTH_KV stays app-worker-only.
+    // D1/KV/R2 (and prod Hyperdrive). OAUTH_KV and FLAGS stay
+    // app-worker-only.
     const resources = makeResources(stage, databaseProvider !== "postgres");
 
     // Aux worker: the site-audit engine (src/audit-worker.ts) — the

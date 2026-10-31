@@ -2,8 +2,7 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import { FeatureFlag } from "@/server/lib/featureFlags";
-import { isFeatureFlagOn } from "@/server/lib/posthog";
+import { FeatureFlag, isFeatureFlagOn } from "@/server/lib/featureFlags";
 import {
   computeNextCheckAt,
   devicesCount,

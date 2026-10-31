@@ -1,11 +1,9 @@
 import { expect, it, vi } from "vitest";
 import { AppError } from "@/server/lib/errors";
-import { FeatureFlag } from "@/server/lib/featureFlags";
-import { captureServerError, isFeatureFlagOn } from "@/server/lib/posthog";
+import { captureServerError } from "@/server/lib/posthog";
 
-const { captureExceptionImmediate, evaluateFlags } = vi.hoisted(() => ({
+const { captureExceptionImmediate } = vi.hoisted(() => ({
   captureExceptionImmediate: vi.fn<(error: Error) => Promise<void>>(),
-  evaluateFlags: vi.fn<() => Promise<{ isEnabled: () => boolean }>>(),
 }));
 vi.mock("cloudflare:workers", () => ({
   env: { POSTHOG_PUBLIC_KEY: "phc_test", POSTHOG_HOST: "https://ph.test" },
@@ -16,7 +14,6 @@ vi.mock("@/server/lib/runtime-env", () => ({
 vi.mock("posthog-node", () => ({
   PostHog: class {
     captureExceptionImmediate = captureExceptionImmediate;
-    evaluateFlags = evaluateFlags;
     shutdown = async () => {};
   },
 }));
@@ -36,13 +33,4 @@ it("reports errors without their messages, which can quote customer content", as
   const cause = sent?.cause instanceof Error ? sent.cause : undefined;
   expect(cause?.message).toBe("");
   expect(cause?.stack).not.toContain("acme");
-});
-
-it("reads a feature flag as off when PostHog can't be reached", async () => {
-  evaluateFlags.mockRejectedValue(new Error("fetch failed"));
-  vi.spyOn(console, "error").mockImplementation(() => {});
-
-  await expect(
-    isFeatureFlagOn(FeatureFlag.PauseScheduledRankChecks),
-  ).resolves.toBe(false);
 });
