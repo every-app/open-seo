@@ -31,7 +31,10 @@ import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuIte
 import { useLocale } from "@/client/lib/i18n";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
-import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
+import {
+  isEveryAppClientAuthMode,
+  isHostedClientAuthMode,
+} from "@/lib/auth-mode";
 import { everyAppAccountQueryOptions } from "@/client/features/every-app/everyAppAccountQueries";
 import { BILLING_ROUTE } from "@/shared/billing";
 import {
@@ -347,17 +350,19 @@ function AccountFooter({ ready }: { ready: boolean }) {
                   <Settings className="size-4" />
                   {t("nav.settings")}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  render={
-                    <Link
-                      to={BILLING_ROUTE}
-                      onClick={() => setOpenMobile(false)}
-                    />
-                  }
-                >
-                  <CreditCard className="size-4" />
-                  {t("common.billing")}
-                </DropdownMenuItem>
+                {isHostedClientAuthMode() ? (
+                  <DropdownMenuItem
+                    render={
+                      <Link
+                        to={BILLING_ROUTE}
+                        onClick={() => setOpenMobile(false)}
+                      />
+                    }
+                  >
+                    <CreditCard className="size-4" />
+                    {t("common.billing")}
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>{t("common.theme")}</DropdownMenuLabel>
                   <div className="px-1 pb-1">
