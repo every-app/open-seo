@@ -29,6 +29,7 @@ import {
   getKeywordHistory,
   getConfigTrend,
   getPositionMatrix,
+  getSnapshotsInRange,
 } from "./snapshotQueries";
 import {
   tryCreateRun,
@@ -41,6 +42,7 @@ import {
   upsertSnapshots,
   deleteNotFoundSnapshots,
   getSnapshotsForRun,
+  getRunsInRange,
 } from "./runQueries";
 
 // ---------------------------------------------------------------------------
@@ -455,4 +457,6 @@ export const RankTrackingRepository = {
   getKeywordHistory,
   getConfigTrend,
   getPositionMatrix,
+  getSnapshotsInRange,
+  getRunsInRange,
 };
