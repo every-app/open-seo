@@ -11,6 +11,7 @@ You sign in with email and password accounts: the first visitor creates the admi
 
 - **Node 22.6 or newer** and **pnpm** (`corepack enable` sets it up).
 - **A Cloudflare account with R2 enabled.** Activating R2 requires a payment method on file, even within its free tier — if you have never used R2, open `R2` in the Cloudflare dashboard once.
+- **A workers.dev subdomain.** A new account has none until you open `Workers & Pages` in the Cloudflare dashboard once; without it the bootstrap below fails with "You need a workers.dev subdomain". The subdomain becomes part of your OpenSEO URL.
 - **A DataForSEO account** — see [DataForSEO API key setup](/docs/self-hosting#dataforseo-api-key-setup).
 
 ## 1) Clone your OpenSEO repo
@@ -36,8 +37,8 @@ pnpm install
 ## 2) Log in to Cloudflare (once)
 
 ```bash
-pnpm alchemy login                # the default scopes are enough
-pnpm alchemy cloudflare bootstrap # deploys alchemy's state-store Worker to your account
+pnpm alchemy login deploy/alchemy/alchemy.run.ts # the default scopes are enough
+pnpm alchemy cloudflare bootstrap                # deploys alchemy's state-store Worker to your account
 ```
 
 ## 3) Create `.env.selfhost`
@@ -89,12 +90,17 @@ pnpm deploy:selfhost --yes
 With `AUTH_MODE=cloudflare_access`, Cloudflare's own login protects the Worker: every request is checked at Cloudflare's edge before it reaches OpenSEO, and only the emails you list get through. It needs an extra login scope, a Zero Trust team (created for you), and Zero Trust settings before MCP clients can connect, so expect more setup. Choose the sign-in mode before your first deploy; the two keep separate user records.
 
 1. In `.env.selfhost`, set `AUTH_MODE=cloudflare_access` and `ACCESS_ALLOWED_EMAILS` (comma-separated).
-2. Add the `access:write` scope to your Cloudflare login: run `pnpm alchemy login --configure`, answer yes to "Customize OAuth scopes?", and select `access:write` alongside the defaults.
+2. Add the `access:write` scope to your Cloudflare login: run `pnpm alchemy login deploy/alchemy/alchemy.run.ts --configure`, answer yes to "Customize OAuth scopes?", and select `access:write` alongside the defaults.
 3. Run `pnpm deploy:selfhost --yes`. The deploy creates the Cloudflare Access application protecting the Worker (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one is created for you, named after your workers.dev subdomain.
 
 Open the printed URL and sign in with Cloudflare Access. To add teammates, add them to `ACCESS_ALLOWED_EMAILS` and redeploy. MCP clients need Managed OAuth turned on for the Access application; see [Connect the MCP server through Cloudflare Access](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md#through-cloudflare-access) on GitHub.
 
 Deployments created before password accounts existed have no `AUTH_MODE` in `.env.selfhost`, which still means Cloudflare Access, so they keep working unchanged.
+
+## Site audits
+
+- **Workers free plan:** a Cloudflare Workflow on the free plan can make 50 outgoing requests, and each site audit runs as one Workflow, so an audit stops loading pages after about 40 of them. The Workers Paid plan raises the limit to 10,000. See [Workflows limits](https://developers.cloudflare.com/workflows/reference/limits/).
+- **Shopify crawler access:** saving the crawler-access signature a Shopify store creates needs `CRAWLER_ACCESS_SECRET` in `.env.selfhost`, set to at least 32 random characters (e.g. `openssl rand -hex 32`), then `pnpm deploy:selfhost --yes`. Keep the value once set: changing it makes saved signatures unreadable.
 
 ## More guides on GitHub
 

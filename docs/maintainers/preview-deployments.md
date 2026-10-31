@@ -28,7 +28,7 @@ Alchemy-managed Cloudflare Access boundary.
 Alchemy manages Cloudflare credentials itself — nothing credential-shaped goes
 in the env files.
 
-- **Locally**, run `pnpm alchemy login` once. Answer yes to
+- **Locally**, run `pnpm alchemy login deploy/alchemy/alchemy.run.ts` once. Answer yes to
   **Customize OAuth scopes?** and enable `access:write` on top of the defaults
   (the preview Access gate needs it; add `query_cache:write` too if you will
   deploy production — Hyperdrive). The credential is stored globally, and
@@ -80,7 +80,7 @@ requested application stage and cannot touch the Access stack.
 ## Local preview
 
 ```sh
-pnpm alchemy login    # once — see Credentials above
+pnpm alchemy login deploy/alchemy/alchemy.run.ts  # once — see Credentials above
 cp deploy/.env.preview.example .env.preview
 pnpm preview:access   # once — the shared Access gate (safe to re-run)
 pnpm deploy:preview --stage manual-preview --yes
