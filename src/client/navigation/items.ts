@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Search,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
@@ -64,6 +65,11 @@ const projectNavItems = [
     to: "/p/$projectId/audit" as const,
     label: "Site Audit",
     icon: ClipboardCheck,
+  },
+  {
+    to: "/p/$projectId/web-analytics" as const,
+    label: "Web Analytics",
+    icon: Users,
   },
   {
     to: "/p/$projectId/ai-visibility" as const,
@@ -154,6 +160,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/local-seo"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
+        byPath("/p/$projectId/web-analytics"),
       ],
     },
     {

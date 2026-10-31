@@ -442,6 +442,13 @@
       "when": 1792713962596,
       "tag": "0062_bind_api_keys_to_organization",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "6",
+      "when": 1792948388857,
+      "tag": "0063_safe_mongoose",
+      "breakpoints": true
     }
   ]
 }

@@ -12,6 +12,9 @@
     "web",
     "src/routeTree.gen.ts",
     "src/worker-configuration.d.ts",
+    // Static assets (favicons, vendored/built JS like the analytics tracker
+    // and report widgets), not app source.
+    "src/public",
     "scripts"
   ],
   "rules": {
