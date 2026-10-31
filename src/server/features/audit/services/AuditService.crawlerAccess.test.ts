@@ -36,7 +36,9 @@ vi.mock("cloudflare:workers", () => ({
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: vi.fn().mockResolvedValue(false),
-  getOptionalEnvValue: vi.fn().mockResolvedValue(SECRET),
+  getOptionalEnvValue: vi.fn(async (name: string) =>
+    name === "CRAWLER_ACCESS_SECRET" ? SECRET : undefined,
+  ),
 }));
 vi.mock("@/server/email/onboarding-drip", () => ({
   markOnboardingMilestone: vi.fn(),

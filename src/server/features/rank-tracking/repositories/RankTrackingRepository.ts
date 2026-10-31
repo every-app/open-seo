@@ -2,12 +2,14 @@ import {
   and,
   asc,
   count,
+  desc,
   eq,
   inArray,
   isNull,
   lte,
   max,
   ne,
+  sql,
 } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/db";
@@ -223,6 +225,34 @@ async function getKeywordsForConfig(configId: string) {
     .orderBy(rankTrackingKeywords.createdAt);
 }
 
+/** A project's most important tracked keywords: pinned first, then by search volume. */
+async function getTopKeywordsForProject(projectId: string, limit: number) {
+  const volume = max(rankTrackingKeywords.searchVolume);
+  const rows = await db
+    .select({ keyword: rankTrackingKeywords.keyword })
+    .from(rankTrackingKeywords)
+    .innerJoin(
+      rankTrackingConfigs,
+      eq(rankTrackingConfigs.id, rankTrackingKeywords.configId),
+    )
+    .where(
+      and(
+        eq(rankTrackingConfigs.projectId, projectId),
+        eq(rankTrackingConfigs.isActive, true),
+      ),
+    )
+    .groupBy(rankTrackingKeywords.keyword)
+    // CASE puts nulls last in both SQLite and Postgres.
+    .orderBy(
+      sql`min(CASE WHEN ${rankTrackingKeywords.pinnedAt} IS NULL THEN 1 ELSE 0 END)`,
+      sql`CASE WHEN ${volume} IS NULL THEN 1 ELSE 0 END`,
+      desc(volume),
+      asc(rankTrackingKeywords.keyword),
+    )
+    .limit(limit);
+  return rows.map((row) => row.keyword);
+}
+
 async function addKeywordsToConfig(
   keywords: (typeof rankTrackingKeywords.$inferInsert)[],
 ) {
@@ -411,6 +441,7 @@ export const RankTrackingRepository = {
   deleteNotFoundSnapshots,
   getSnapshotsForRun,
   getKeywordsForConfig,
+  getTopKeywordsForProject,
   addKeywordsToConfig,
   removeKeywordsFromConfig,
   setKeywordsPinned,

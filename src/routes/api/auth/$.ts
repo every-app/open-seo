@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getAuth, hasHostedAuthConfig } from "@/lib/auth";
-import { isHostedAuthMode } from "@/lib/auth-mode";
+import { getAuth, hasBetterAuthConfig } from "@/lib/auth";
+import { usesBetterAuth } from "@/lib/auth-mode";
 
 async function handleAuthRequest(request: Request) {
-  if (!isHostedAuthMode(env.AUTH_MODE)) {
+  if (!usesBetterAuth(env.AUTH_MODE)) {
     return new Response("Not found", {
       status: 404,
     });
   }
 
-  if (!hasHostedAuthConfig()) {
-    return new Response("Missing Better Auth hosted configuration", {
+  if (!hasBetterAuthConfig()) {
+    return new Response("Missing Better Auth configuration", {
       status: 500,
     });
   }

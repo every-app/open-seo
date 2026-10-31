@@ -44,6 +44,14 @@ jobs:
       - name: Build worker (eager-bundle guard)
         run: pnpm vite build
 
+      # The standalone Docker edition: one server module for celld. Keeps the
+      # single-module build and the crawl gateway honest without Docker.
+      - name: Build standalone server
+        run: pnpm build:standalone
+
+      - name: Test standalone crawl gateway
+        run: pnpm test:standalone:gateway
+
       - name: Install website dependencies
         run: pnpm --dir web install --frozen-lockfile
 
@@ -78,3 +86,26 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  standalone-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build standalone Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/standalone/Dockerfile
+          push: false
+          load: false
+          platforms: linux/amd64
+          cache-from: type=gha,scope=standalone
+          cache-to: type=gha,mode=max,scope=standalone

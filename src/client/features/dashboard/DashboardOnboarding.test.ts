@@ -18,9 +18,9 @@ const fresh: DashboardActivation = {
   ga4: { connected: false, propertyDisplayName: null, cardDismissedAt: null },
   gsc: { connected: false, siteUrl: null },
   umami: { connected: false, websiteName: null },
-  mcp: { authorizedAt: null, firstToolCallAt: null, cardDismissedAt: null },
-  competitorClickedAt: null,
-  keywordsClickedAt: null,
+  mcp: { authorizedAt: null, firstToolCallAt: null, cardDismissed: false },
+  competitorResearchedAt: null,
+  keywordsResearchedAt: null,
   hasAudit: false,
   hasMultipleProjects: false,
   hasTeammate: false,
@@ -56,8 +56,8 @@ describe("dashboard onboarding visibility", () => {
     expect(
       renderChecklist({
         ...fresh,
-        competitorClickedAt: "2026-09-28",
-        keywordsClickedAt: "2026-09-28",
+        competitorResearchedAt: "2026-09-28",
+        keywordsResearchedAt: "2026-09-28",
         hasAudit: true,
         mcp: { ...fresh.mcp, authorizedAt: "2026-09-28" },
         hasTeammate: true,

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, MapPin, Plus } from "lucide-react";
 import { listLocalTrackers } from "@/serverFunctions/local-seo";
+import { localAreaLabel } from "@/shared/local-seo";
 import {
   Card,
   CardAction,
@@ -71,8 +72,7 @@ export function LocalTrackerList({
                       {tracker.address}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {tracker.gridSize}×{tracker.gridSize} grid ·{" "}
-                      {tracker.spacingKm} km spacing · Mobile
+                      {localAreaLabel(tracker)} · Mobile
                     </p>
                   </div>
                   <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

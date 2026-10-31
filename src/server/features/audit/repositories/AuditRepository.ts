@@ -355,6 +355,16 @@ async function getAuditUsageForOrganization(organizationId: string) {
   };
 }
 
+async function hasAuditInOrganization(organizationId: string) {
+  const rows = await db
+    .select({ id: audits.id })
+    .from(audits)
+    .innerJoin(projects, eq(audits.projectId, projects.id))
+    .where(eq(projects.organizationId, organizationId))
+    .limit(1);
+  return rows.length > 0;
+}
+
 async function getAuditResultsForProject(auditId: string, projectId: string) {
   const audit = await getAuditForProject(auditId, projectId);
   if (!audit) {
@@ -435,6 +445,7 @@ export const AuditRepository = {
   hasPagesForAudit,
   getAuditsByProject,
   getAuditUsageForOrganization,
+  hasAuditInOrganization,
   getAuditResultsForProject,
   getLighthouseResultById,
   deleteAuditForProject,

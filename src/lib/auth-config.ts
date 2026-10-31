@@ -16,8 +16,10 @@ export function createBaseAuthConfig(options?: {
         // On Cloudflare Workers the client IP arrives in CF-Connecting-IP;
         // x-forwarded-for (better-auth's default) is absent, so without this
         // getIp() returns null and rate limiting is silently skipped on every
-        // /api/auth endpoint. Header lookup is case-insensitive.
-        ipAddressHeaders: ["cf-connecting-ip"],
+        // /api/auth endpoint. Header lookup is case-insensitive. The
+        // standalone Docker edition's Nginx strips CF-Connecting-IP and sets
+        // X-Real-IP instead (deploy/standalone/nginx.conf).
+        ipAddressHeaders: ["cf-connecting-ip", "x-real-ip"],
       },
       // Better Auth writes the OAuth state verification row with a 10-minute
       // expiry but sets the matching signed cookie with maxAge 300, and checks

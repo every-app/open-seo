@@ -51,3 +51,27 @@ async function instanceExists<P>(workflow: Workflow<P>, id: string) {
     return false;
   }
 }
+
+/**
+ * An AI visibility or rank check run still active after this long is stuck:
+ * the slowest that finished on hosted took under 6 hours. Its instance may
+ * still report "running" (a frozen step on the Docker edition stays
+ * "running" for good), so the run would otherwise block its tracker forever.
+ */
+export const STUCK_RUN_AFTER_MS = 12 * 60 * 60_000;
+
+/**
+ * Stops a stuck instance, so it can no longer post paid calls after its run is
+ * failed. `get` throws for an unknown id and `terminate` for an instance that
+ * already stopped; both leave nothing to stop.
+ */
+export async function terminateStuckWorkflow<P>(
+  workflow: Workflow<P>,
+  id: string,
+) {
+  try {
+    await (await workflow.get(id)).terminate();
+  } catch {
+    // Already gone or stopped.
+  }
+}

@@ -59,10 +59,13 @@ import {
   fetchLlmResponse,
   fetchLlmTopPages,
 } from "@/server/lib/dataforseo/ai";
+import { fetchAiTrackingLiveAnswer } from "@/server/lib/dataforseo/ai-tracking";
 import {
-  fetchAiTrackingLiveAnswer,
-  postAiTrackingTasks,
-} from "@/server/lib/dataforseo/ai-tracking";
+  postAiTrackingTasksOnHold,
+  settleAiTrackingHold,
+  type AiTrackingHold,
+} from "@/server/lib/dataforseo/ai-tracking-billing";
+import { inDataforseoSlot } from "@/server/lib/dataforseo/request-slots";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
 
@@ -207,6 +210,18 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
     },
     serp: {
       live: meter(customer, fetchLiveSerp, dataforseoPricing.serp.live),
+      // Settles only after every live SERP has answered: a Worker request
+      // queues its 7th fetch still waiting for response headers, so a per-call
+      // settle sent while other live SERPs are still running can time out
+      // before it reaches Autumn. Resolves per call, in order.
+      liveBatch: (inputs: Parameters<typeof fetchLiveSerp>[0][]) =>
+        meterDataforseoCalls(
+          customer,
+          inputs.map((input) => () => fetchLiveSerp(input)),
+          inputs.map((input) =>
+            creditsForProviderUsd(dataforseoPricing.serp.live(input)),
+          ),
+        ),
       // A rank check batch shares one credit hold and one settle across its
       // live calls (see meterDataforseoCalls). Resolves per call, in order.
       rankCheckBatch: (inputs: Parameters<typeof fetchRankCheckSerp>[0][]) =>
@@ -302,14 +317,18 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         fetchLlmResponse,
         dataforseoPricing.aiSearch.llmResponse,
       ),
-      // Posts up to 100 tracked prompts for one engine; one metered charge
-      // covers the batch (DataForSEO bills task_post, collection is free).
-      trackingTaskPost: meter(
-        customer,
-        postAiTrackingTasks,
-        dataforseoPricing.aiSearch.trackingTaskPost,
-        "ai_prompt_responses",
-      ),
+      // Posts up to 100 tracked prompts for one engine on an open credit
+      // hold. DataForSEO bills task_post, but the customer pays only for the
+      // answers that arrive: the caller settles the hold with
+      // settleTrackingHold once collection ends.
+      trackingTaskPost: (
+        input: Parameters<typeof postAiTrackingTasksOnHold>[1],
+      ) => postAiTrackingTasksOnHold(customer, input),
+      settleTrackingHold: (input: {
+        hold: AiTrackingHold;
+        /** One per task whose answer arrived. */
+        costs: number[];
+      }) => settleAiTrackingHold(customer, input),
       // A manual run's live answers share one credit hold and one settle (see
       // meterDataforseoCalls). Resolves per call, in order.
       trackingLiveBatch: (
@@ -430,9 +449,12 @@ async function meterDataforseoCall<T>(
   estimatedCredits: number,
   creditFeature?: CreditFeature,
 ): Promise<T> {
+  // Each single call settles as soon as it answers, so cap how many run at
+  // once (request-slots.ts). A batch settles after all of its calls answer,
+  // so it doesn't need the cap.
   const [result] = await meterDataforseoCalls(
     customer,
-    [execute],
+    [() => inDataforseoSlot(execute)],
     [estimatedCredits],
     creditFeature,
   );

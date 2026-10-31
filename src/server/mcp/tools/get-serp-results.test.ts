@@ -33,7 +33,7 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
 const toolContext = makeToolContext();
 
 function mockLiveSerp(rows: number) {
-  const live = vi.fn().mockResolvedValue(
+  const live = vi.fn<(input: unknown) => Promise<unknown>>().mockResolvedValue(
     Array.from({ length: rows }, (_, index) => ({
       type: "organic",
       rank_absolute: index + 1,
@@ -43,7 +43,12 @@ function mockLiveSerp(rows: number) {
       description: "desc",
     })),
   );
-  mocks.createDataforseoClient.mockReturnValue({ serp: { live } });
+  mocks.createDataforseoClient.mockReturnValue({
+    serp: {
+      liveBatch: (inputs: unknown[]) =>
+        Promise.allSettled(inputs.map((input) => live(input))),
+    },
+  });
   return live;
 }
 

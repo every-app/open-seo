@@ -17,10 +17,15 @@ export type PlanStatus = "free" | "paid";
 export const AUTUMN_PAID_PLAN_ID = "base-plan";
 // YC deal: same entitlements as the base plan with $50 of monthly credits.
 export const AUTUMN_YC_PLAN_ID = "yc-plan";
+// Base Plan entitlements with 20% more monthly credits than the price.
+export const AUTUMN_PRO_PLAN_ID = "pro-plan";
+export const AUTUMN_AGENCY_PLAN_ID = "agency-plan";
 /** The plans the app sells through checkout. */
 export const CHECKOUT_PLAN_IDS = [
   AUTUMN_PAID_PLAN_ID,
   AUTUMN_YC_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
+  AUTUMN_AGENCY_PLAN_ID,
 ] as const;
 export type CheckoutPlanId = (typeof CHECKOUT_PLAN_IDS)[number];
 export const AUTUMN_SEO_DATA_TOP_UP_PLAN_ID = "credit-top-up";

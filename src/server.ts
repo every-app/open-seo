@@ -3,6 +3,8 @@ import {
   defaultStreamHandler,
 } from "@tanstack/react-start/server";
 import { routeAgentRequest } from "agents";
+import { everyApp } from "@every-app/sdk/server";
+import { serveEveryAppRequest } from "@/server/lib/gateway-attribution";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
@@ -11,7 +13,12 @@ import { reconcileStaleAudits } from "@/server/features/audit/services/auditReco
 import { sendFirstAuditEmails } from "@/server/features/audit/services/firstAuditEmails";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
+import {
+  getAuthMode,
+  isHostedAuthMode,
+  setRuntimeAuthMode,
+  usesBetterAuth,
+} from "@/lib/auth-mode";
 import {
   createOpenSeoOAuthProvider,
   type OpenSeoOAuthEnv,
@@ -19,6 +26,7 @@ import {
 import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_ROUTE } from "@/server/mcp/context";
 import { withPgClient } from "@/db";
+import { withDataforseoSlots } from "@/server/lib/dataforseo/request-slots";
 import {
   AUTUMN_WEBHOOK_PATH,
   handleAutumnWebhookRequest,
@@ -27,6 +35,9 @@ import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleGdprStorageErasure } from "@/server/gdpr/storage-erasure";
 import { GDPR_STORAGE_ERASURE_PATH } from "@/shared/gdpr-erasure";
+import { handleOperatorRequest } from "@/server/standalone/admin";
+import { handleImport, isLegacyImportActive } from "@/server/standalone/import";
+import { hasOperatorSecret } from "@/server/standalone/operator-auth";
 
 const startHandler = createStartHandler(defaultStreamHandler);
 
@@ -132,7 +143,33 @@ function fetch(
 ): Promise<Response> {
   // Scope a per-request Postgres client (no-op in D1 mode). The client isn't
   // closed here — the Workers↔Hyperdrive socket is reclaimed at invocation end.
-  return withPgClient(() => Promise.resolve(handleFetch(request, env, ctx)));
+  // The DataForSEO cap is per request too, matching the connection limit.
+  return withPgClient(() =>
+    withDataforseoSlots(() => Promise.resolve(handleFetch(request, env, ctx))),
+  );
+}
+
+// AUTH_MODE=everyapp: OpenSEO is private behind an Every App gateway, which
+// signs the person's identity onto every request it forwards. Fail closed on
+// anything else before routing, then resolve users per request as the other
+// modes do. Gateway calls made while serving the request forward its
+// identity (gateway-attribution.ts). The gateway's tool calls
+// (`/__everyapp/tools/*`) load the MCP tools on first use only.
+async function handleEveryAppRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  if (new URL(request.url).pathname.startsWith("/__everyapp/")) {
+    const { everyAppTools } = await import("@/server/everyapp/tools");
+    return everyAppTools.fetch(request, env, ctx);
+  }
+  // everyApp() also drops any Set-Cookie on the way out.
+  return everyApp<Env>((verified, _env, _ctx, user) =>
+    serveEveryAppRequest(verified, user, () =>
+      handleAppRequest(verified, env, ctx),
+    ),
+  ).fetch(request, env, ctx);
 }
 
 function handleFetch(
@@ -140,10 +177,36 @@ function handleFetch(
   env: Env,
   ctx: ExecutionContext,
 ): Response | Promise<Response> {
+  if (getAuthMode(env.AUTH_MODE) === "everyapp") {
+    return handleEveryAppRequest(request, env, ctx);
+  }
+  return handleAppRequest(request, env, ctx);
+}
+
+async function handleAppRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
   const authMode = getAuthMode(env.AUTH_MODE);
+  setRuntimeAuthMode(env.AUTH_MODE);
   const publicRequest = requestWithPublicOrigin(request);
   const pathname = new URL(publicRequest.url).pathname;
   ctx.waitUntil(maybeSendSelfHostHeartbeat(pathname));
+
+  // Standalone Docker operator tooling (account commands, legacy import).
+  // Both handlers answer 404 without the operator secret; the block is also
+  // what keeps hosted from paying a KV read per request.
+  if (hasOperatorSecret()) {
+    if (pathname === "/api/standalone/import")
+      return handleImport(publicRequest);
+    if (await isLegacyImportActive()) {
+      return new Response("Data import in progress", { status: 503 });
+    }
+    if (pathname === "/api/standalone/admin") {
+      return handleOperatorRequest(publicRequest);
+    }
+  }
 
   if (pathname === "/api/ai-visibility/download") {
     return import("@/server/features/ai-visibility/services/aiVisibilityExport").then(
@@ -160,11 +223,11 @@ function handleFetch(
     return routeChatAgents(publicRequest, env);
   }
 
-  if (isHostedAuthMode(authMode)) {
-    if (pathname === AUTUMN_WEBHOOK_PATH) {
-      return handleAutumnWebhookRequest(publicRequest);
-    }
+  if (isHostedAuthMode(authMode) && pathname === AUTUMN_WEBHOOK_PATH) {
+    return handleAutumnWebhookRequest(publicRequest);
+  }
 
+  if (usesBetterAuth(authMode)) {
     return openSeoOAuthProvider.fetch(
       publicRequest,
       env as OpenSeoOAuthEnv,
@@ -204,13 +267,19 @@ export default {
     env: Env,
     _ctx: ExecutionContext,
   ) {
+    // A legacy Docker import owns the database until it finishes.
+    if (hasOperatorSecret() && (await isLegacyImportActive())) return;
     if (controller.cron === MCP_OAUTH_PURGE_CRON) {
-      // Only hosted mode runs the OAuth provider (and has OAUTH_KV bound).
-      if (isHostedAuthMode(getAuthMode(env.AUTH_MODE))) {
+      const authMode = getAuthMode(env.AUTH_MODE);
+      // Only the modes with their own accounts run the OAuth provider (and
+      // have OAUTH_KV bound).
+      if (usesBetterAuth(authMode)) {
         const result = await openSeoOAuthProvider.purgeExpiredData(
           env as OpenSeoOAuthEnv,
         );
         console.log("[mcp-oauth] purged expired OAuth data", result);
+      }
+      if (isHostedAuthMode(authMode)) {
         // Daily referral-sale sweep: catches paid Autumn invoices the
         // billing.updated webhook path misses (renewals, one-time top-ups).
         try {
@@ -246,6 +315,9 @@ export default {
       console.error("[cron] Stale-audit reconcile failed:", err);
     }
     // Scope a per-request Postgres client for the cron run (no-op in D1 mode).
+    // The cron itself calls no provider: it starts Workflows, each carrying
+    // the organization that owns the tracker, which every gateway call the
+    // run makes names (gateway-attribution.ts).
     const checks = await Promise.allSettled([
       withPgClient(() => runScheduledRankChecks(env)),
       withPgClient(async () => {

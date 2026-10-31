@@ -41,12 +41,18 @@ describe("buildDubSaleRequest", () => {
     ).toBe(1999);
   });
 
+  it("tracks the yearly Agency plan, the largest invoice we sell", () => {
+    expect(buildDubSaleRequest(invoice({ total: 2000 }), "org_1")?.amount).toBe(
+      200000,
+    );
+  });
+
   it.each([
     ["unpaid", { status: "open" }],
     ["zero-total", { total: 0 }],
     ["non-USD", { currency: "eur" }],
     // A total this large signals cents were passed where dollars belong.
-    ["implausibly large", { total: 1900 }],
+    ["implausibly large", { total: 3000 }],
   ])("skips %s invoices", (_label, overrides) => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});

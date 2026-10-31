@@ -17,8 +17,15 @@ const WORKERS_AI_PROVIDER_STUB = fileURLToPath(
  * out. `generateBundle` below fails the build if one sneaks back in via a
  * static import chain.
  */
-const EAGER_DENYLIST: Array<{ pattern: RegExp; expected: string }> = [
+const EAGER_DENYLIST: Array<{
+  pattern: RegExp;
+  expected: string;
+  // Enforced by code splitting rather than by a stub/alias, so it cannot
+  // hold in the single-module standalone build (see vite.config.ts).
+  requiresCodeSplitting?: boolean;
+}> = [
   {
+    requiresCodeSplitting: true,
     pattern: /node_modules\/autumn-js\//,
     expected: "lazy-loaded behind the facade in src/server/billing/autumn.ts",
   },
@@ -45,6 +52,7 @@ const EAGER_DENYLIST: Array<{ pattern: RegExp; expected: string }> = [
       "localize zod errors)",
   },
   {
+    requiresCodeSplitting: true,
     // Startup CPU, not memory: every tool's zod input/output schemas and the
     // SDK's protocol schemas are built at module scope, which pushed the main
     // worker toward the 400 ms startup CPU limit.
@@ -56,6 +64,7 @@ const EAGER_DENYLIST: Array<{ pattern: RegExp; expected: string }> = [
       "(SamChatAgent.beforeTurn)",
   },
   {
+    requiresCodeSplitting: true,
     // Pre-existing boundary from the site-audit engine, guarded here too.
     pattern: /node_modules\/cheerio\//,
     expected:
@@ -101,7 +110,11 @@ const CLIENT_ENTRY_DENYLIST: Array<{ pattern: RegExp; expected: string }> = [
  *    verbatim, so `generateBundle` escapes what is left in them.
  */
 export function leanWorkerBundle(): Plugin {
+  let standalone = false;
   return {
+    configResolved(config) {
+      standalone = config.mode === "standalone";
+    },
     name: "lean-worker-bundle",
     config() {
       return {
@@ -147,7 +160,9 @@ export function leanWorkerBundle(): Plugin {
       if (environment === "client") {
         denylist = CLIENT_ENTRY_DENYLIST;
       } else if (["ssr", "open_seo_audit"].includes(environment)) {
-        denylist = EAGER_DENYLIST;
+        denylist = EAGER_DENYLIST.filter(
+          (rule) => !standalone || !rule.requiresCodeSplitting,
+        );
       } else {
         return;
       }

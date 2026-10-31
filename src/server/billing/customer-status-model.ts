@@ -10,6 +10,8 @@ const autumnSubscriptionSchema = z
     status: z.string().nullish(),
     pastDue: z.boolean().nullish(),
     canceledAt: z.number().nullish(),
+    // Present when the customer is fetched with `subscriptions.plan` expanded.
+    plan: z.object({ price: z.unknown().nullish() }).passthrough().nullish(),
   })
   .passthrough();
 
@@ -36,6 +38,10 @@ export type BillingCustomerStatusSnapshot = {
   // derivable without widening the table.
   pastDue: boolean;
   canceledAt: number | null;
+  /** Whether the paid plan charges a base price, read off the plan Autumn
+   *  returns with the subscription. Null when the plan wasn't expanded, as in
+   *  rows stored before the sync started asking for it. */
+  paidPlanPriced: boolean | null;
   customerJson: string;
   syncedAt: string;
 };
@@ -65,6 +71,7 @@ export function deriveBillingCustomerStatusSnapshot(
     paidPlanStatus: subscription?.status ?? null,
     pastDue: subscription?.pastDue === true,
     canceledAt: subscription?.canceledAt ?? null,
+    paidPlanPriced: subscription?.plan ? subscription.plan.price != null : null,
     // Full payload kept verbatim — query rarely-used fields via json_extract.
     customerJson: JSON.stringify(customer),
     syncedAt: new Date().toISOString(),

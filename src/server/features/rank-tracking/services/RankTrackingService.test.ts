@@ -20,6 +20,7 @@ vi.mock("cloudflare:workers", () => ({
   env: { RANK_CHECK_WORKFLOW: { create: mocks.startWorkflow } },
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
+  getOptionalEnvValue: () => Promise.resolve(undefined),
   getRequiredEnvValue: () => Promise.resolve("basic-key"),
   isHostedServerAuthMode: mocks.isHosted,
 }));

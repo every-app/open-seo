@@ -46,6 +46,10 @@ vi.mock("@/server/lib/audit/ids", () => ({
 import { runCrawlPhase } from "@/server/workflows/siteAuditWorkflowCrawl";
 import { parseRobotsTxt } from "@/server/lib/audit/discovery";
 import type { RenderedPageService } from "@/server/lib/audit/rendered-page";
+import {
+  estimateRenderingCredits,
+  renderUsageCredits,
+} from "@/shared/audit-rendering";
 
 const ORIGIN = "https://example.com";
 const HTML = "<html><title>A page</title><body><h1>A page</h1></body></html>";
@@ -108,6 +112,7 @@ function crawl(
   maxPages = 100,
   renderJavaScript = false,
   sitePlatform?: "shopify",
+  renderHold?: { deadlineAt: number; credits: number },
 ) {
   urls = Array.from({ length: maxPages }, (_, i) => `${ORIGIN}/${i}`);
   return runCrawlPhase(
@@ -127,6 +132,7 @@ function crawl(
       sitePlatform,
       robots: parseRobotsTxt(ORIGIN, ""),
       renderUsage,
+      renderHold,
     },
   );
 }
@@ -303,7 +309,10 @@ describe("crawl pacing and cooldowns", () => {
     const fetchMock = serve(() => 429);
     const result = crawl();
     await vi.runAllTimersAsync();
-    expect(await result).toMatchObject({ completed: false, rateLimited: true });
+    expect(await result).toMatchObject({
+      completed: false,
+      stoppedBy: "crawl-rate-limited",
+    });
     expect(fetchMock).toHaveBeenCalledTimes(6);
     expect(saved).toHaveLength(3);
     expect(saved.every((page) => page.fetchClass === "rate_limited")).toBe(
@@ -320,7 +329,7 @@ describe("crawl pacing and cooldowns", () => {
     expect(await result).toEqual({
       pagesCrawled: 1,
       completed: false,
-      rateLimited: true,
+      stoppedBy: "crawl-rate-limited",
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(mocks.sleepUntil).not.toHaveBeenCalled();
@@ -347,6 +356,41 @@ describe("rendering usage", () => {
   });
 });
 
+describe("rendering credit hold", () => {
+  it("stops starting pages at the deadline so the hold settles", async () => {
+    const fetchMock = serve(() => 200);
+    mocks.renderPage.mockResolvedValue({ html: HTML, status: 200 });
+    const run = crawl(250, true, undefined, {
+      deadlineAt: 5_000,
+      credits: Infinity,
+    });
+    await vi.runAllTimersAsync();
+    expect(await run).toMatchObject({
+      completed: false,
+      stoppedBy: "crawl-time-limit",
+    });
+    // One request a second from t=0, none started at or after the deadline.
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+  });
+
+  it("stops before rendering could cost more than the hold", async () => {
+    serve(() => 200);
+    mocks.renderPage.mockImplementation(async (_url, { usage }) => {
+      usage.cloudflareAttempts += 1;
+      usage.contextCredits += 1;
+      return { html: HTML, status: 200 };
+    });
+    const credits = estimateRenderingCredits(10).high;
+    const run = crawl(100, true, undefined, { deadlineAt: Infinity, credits });
+    await vi.runAllTimersAsync();
+    expect(await run).toMatchObject({
+      completed: false,
+      stoppedBy: "crawl-credits-exhausted",
+    });
+    expect(renderUsageCredits(renderUsage)).toBeLessThanOrEqual(credits);
+  });
+});
+
 describe("throttled Shopify pages", () => {
   it("are rendered instead of waiting when the audit renders JavaScript", async () => {
     serve(() => 429);
@@ -364,6 +408,9 @@ describe("throttled Shopify pages", () => {
     mocks.renderPage.mockRejectedValue(new Error("Unable to render this page"));
     const run = crawl(100, true, "shopify");
     await vi.runAllTimersAsync();
-    expect(await run).toMatchObject({ completed: false, rateLimited: true });
+    expect(await run).toMatchObject({
+      completed: false,
+      stoppedBy: "crawl-rate-limited",
+    });
   });
 });

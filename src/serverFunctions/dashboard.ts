@@ -7,7 +7,6 @@ import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   dashboardProjectInputSchema,
   dashboardBacklinksInputSchema,
-  dashboardStepClickSchema,
   dashboardStepDismissalSchema,
 } from "@/types/schemas/dashboard";
 
@@ -33,14 +32,6 @@ export const getDashboardOverview = createServerFn({ method: "POST" })
     }),
   );
 
-export const markDashboardStepClicked = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
-  .validator(dashboardStepClickSchema)
-  .handler(async ({ context, data }) => {
-    await ActivationRepository.markStepClicked(context.projectId, data.step);
-    return { ok: true as const };
-  });
-
 // Hides only the optional GA4 pitch on this project's dashboard. The
 // integration remains available in Project Settings and a later connection
 // makes the dashboard card visible again.
@@ -52,16 +43,32 @@ export const dismissDashboardGa4Card = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+// Hides only the agent card, for this person on every project in the
+// workspace. The checklist's agent step stays.
+export const dismissDashboardAgentCard = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(dashboardProjectInputSchema)
+  .handler(async ({ context }) => {
+    await ActivationRepository.dismissAgentCard(
+      context.userId,
+      context.projectId,
+    );
+    return { ok: true as const };
+  });
+
+// Skips or restores a setup step for this person on every project in the
+// workspace.
 export const setDashboardStepDismissed = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(dashboardStepDismissalSchema)
   .handler(async ({ context, data }) => {
-    await DashboardService.setStepDismissed(
-      context.userId,
-      context.projectId,
-      data.step,
-      data.dismissed,
-    );
+    await DashboardService.setStepDismissed({
+      userId: context.userId,
+      organizationId: context.organizationId,
+      projectId: context.projectId,
+      step: data.step,
+      dismissed: data.dismissed,
+    });
     return { ok: true };
   });
 

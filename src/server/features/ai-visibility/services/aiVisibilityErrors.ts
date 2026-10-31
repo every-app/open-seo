@@ -16,7 +16,10 @@ export class AiVisibilityError extends AppError {
  * answer stores this copy or an error code, never a provider's message.
  */
 export const AI_ANSWER_FAILURES = {
-  notArrived: "No answer arrived within the collection window.",
+  notArrived:
+    "Our data provider hasn't returned this answer yet. You'll only be charged credits if we get it, and the answer will appear here.",
+  notCollected:
+    "Our data provider hasn't returned some answers yet. You'll only be charged credits for the ones we get.",
   runFailed: "The last check could not collect answers.",
   notStarted: "Collection could not start.",
   stoppedBeforeStart: "Collection stopped before it started.",

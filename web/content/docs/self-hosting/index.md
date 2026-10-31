@@ -5,10 +5,14 @@ description: "Run OpenSEO yourself with Docker or Cloudflare, bring your own Dat
 
 OpenSEO is free and open source. Self-hosting means the app costs $0. You bring your own DataForSEO API key and pay DataForSEO directly for API usage.
 
-There are two self-hosting paths:
+There are two self-hosting paths. Both use email and password accounts: the first visitor creates the admin account and teammates join from invitation links.
 
-- **Simple: [Docker](/docs/self-hosting/docker)**, recommended for personal use on your own machine. Easiest way to get started.
-- **Advanced: [Cloudflare](/docs/self-hosting/cloudflare)**, for internet-facing self-hosting across multiple devices or with your team. A SaaS-like experience with automatic database backups, and it works on Cloudflare's free plan. Slightly more setup if you're unfamiliar with Cloudflare.
+- **[Docker](/docs/self-hosting/docker)**, on your own server or computer. A prebuilt image that is ready in seconds, and works with Compose-based platforms such as Coolify, Portainer and Dokploy.
+- **[Cloudflare](/docs/self-hosting/cloudflare)**, with no server to run. One deploy command puts OpenSEO on your own Cloudflare account, with automatic database backups, and it works on Cloudflare's free plan.
+
+OpenSEO also runs on [EveryApp](https://everyapp.com/docs/apps/openseo), which installs it on your own Cloudflare account with sign-in, team access and your DataForSEO key handled for you.
+
+For security-conscious setups, you can replace the accounts with your own network controls: Cloudflare Access in front of the Cloudflare deploy, or Docker without sign-in behind Tailscale or a private network.
 
 ## DataForSEO API key setup
 
@@ -18,8 +22,8 @@ OpenSEO uses [DataForSEO](https://dataforseo.com/?aff=255379) to fetch SEO data.
 2. Click "Send by email" to get your credentials.
 3. Copy the longer credentials labelled "Base64" credentials.
 4. Set this as `DATAFORSEO_API_KEY` in your environment:
-   - Docker: `.env`
-   - Cloudflare: as a Worker secret in the dashboard
+   - Docker: `deploy/standalone/.env`
+   - Cloudflare: `.env.selfhost`
    - Local development: `.env.local`
 
 New DataForSEO accounts include $1 of free credit to test with, and the minimum top-up is $50. See [pricing](/pricing) for cost estimates. Self-hosted costs run slightly lower, since the hosted service adds a 28% fee on DataForSEO requests.

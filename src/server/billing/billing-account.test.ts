@@ -36,7 +36,13 @@ describe("getOrganizationBillingAccount", () => {
         },
         [AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID]: { remaining: 2500 },
       },
-      subscriptions: [{ planId: "friends_and_family_2", pastDue: true }],
+      subscriptions: [
+        {
+          planId: "friends_and_family_2",
+          pastDue: true,
+          plan: { name: "Friends & Family" },
+        },
+      ],
       purchases: [],
       sendEmailReceipts: true,
     });
@@ -44,6 +50,7 @@ describe("getOrganizationBillingAccount", () => {
     await expect(getOrganizationBillingAccount(context)).resolves.toEqual({
       planStatus: "paid",
       paidPlanId: "friends_and_family_2",
+      paidPlanName: "Friends & Family",
       monthlyCreditsUsd: 20,
       monthlyRemainingUsd: 1.5,
       topUpRemainingUsd: 2.5,
@@ -59,6 +66,7 @@ describe("getOrganizationBillingAccount", () => {
     expect(getOrCreateMock).toHaveBeenCalledWith({
       customerId: "org_1",
       email: "owner@example.com",
+      expand: ["subscriptions.plan"],
     });
 
     getOrCreateMock.mockResolvedValueOnce({

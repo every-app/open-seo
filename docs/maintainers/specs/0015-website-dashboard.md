@@ -6,7 +6,9 @@ The dashboard is the home for monitoring the current project's website. Research
 
 The dashboard has addressable Overview, Keywords and Backlinks tabs. Opening a tab mounts its detail view; inactive views do not fetch their data. Rank tracking remains in its existing workflow and is omitted from the dashboard.
 
-Overview keeps the existing onboarding checklist and completion rules. The checklist appears only on Overview.
+Overview shows the setup checklist until every step is done and nothing is saved for later. The checklist describes the workspace, not one project: a step done on any project counts on every project. The competitor and keyword steps complete the first time the workspace runs a domain overview or keyword research, from the research pages or an agent. An audit of any project completes the audit step, and the Site health card still offers a scan for a project without one. The agent step completes when an agent connects. A skip applies to that person on every project in the workspace. The competitor, keyword, audit and agent steps can be skipped for now: they wait under "saved for later" until restored. Skipping the teammate or projects step marks it complete. The agent card above the checklist is separate from the agent step: dismissing the card hides only the card, for that person on every project in the workspace, and skipping the step leaves the card. Dismissals made before the two were split still hide both. The checklist appears only on Overview.
+
+Hiding the checklist after a fixed time, or for everyone who uses an agent, was considered. Both would hide it from people who still have steps left. Because agent research now completes the research steps, neither is needed.
 
 Overview includes new search queries and recent link activity. New referring domains take precedence over new backlinks. When the provider reports no new domains, the card shows new backlinks; when neither exists, it offers a path to the full backlink view. Domain discovery dates identify newly observed referring sites, rather than assuming every recently discovered link comes from a new domain.
 

@@ -150,6 +150,27 @@ const accessScopeHint =
   " (if this is a permissions error, re-run `pnpm alchemy login --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
 
 /**
+ * The account's workers.dev subdomain (`<name>.workers.dev`): the configured
+ * WORKERS_SUBDOMAIN when set, else one API read. Every worker hostname this
+ * stack deploys derives from it.
+ */
+const resolveWorkersSubdomain = (configured: string, scopeHint: string) =>
+  Effect.gen(function* () {
+    if (configured) return configured;
+    const { accountId } = yield* yield* Cloudflare.CloudflareEnvironment;
+    const observed = yield* CfWorkers.getSubdomain({ accountId }).pipe(
+      Effect.catch((error) =>
+        Effect.die(
+          new Error(
+            `Could not read the workers.dev subdomain: ${String(error)}${scopeHint}`,
+          ),
+        ),
+      ),
+    );
+    return `${observed.subdomain}.workers.dev`;
+  });
+
+/**
  * Self-host auth (AUTH_MODE=cloudflare_access): derive the Access values
  * instead of making the user copy them out of the dashboard. TEAM_DOMAIN is
  * the account's Zero Trust team domain (one API read; the team is created —
@@ -174,20 +195,11 @@ const resolveSelfHostAccess = (
 
     // The workers.dev subdomain names both the Access application's hostname
     // (which must exist before the Worker resource does) and an auto-created
-    // Zero Trust team; it is deterministic from the account.
-    let subdomain = workersSubdomain;
-    if (!subdomain) {
-      const observed = yield* CfWorkers.getSubdomain({ accountId }).pipe(
-        Effect.catch((error) =>
-          Effect.die(
-            new Error(
-              `Could not read the workers.dev subdomain: ${String(error)}${accessScopeHint}`,
-            ),
-          ),
-        ),
-      );
-      subdomain = `${observed.subdomain}.workers.dev`;
-    }
+    // Zero Trust team.
+    const subdomain = yield* resolveWorkersSubdomain(
+      workersSubdomain,
+      accessScopeHint,
+    );
 
     if (!teamDomain) {
       const organization = yield* ZeroTrust.listOrganizationsForAccount({
@@ -251,8 +263,9 @@ const resolveSelfHostAccess = (
 // an `--env-file`, which the alchemy CLI loads into Config, NOT process.env;
 // the production workflow exports them as job/step env instead.
 const dataEnv = {
-  // AUTH_MODE, DATABASE_PROVIDER, BETTER_AUTH_URL, TEAM_DOMAIN, and
-  // POLICY_AUD are stage-dependent and set in the stack body below.
+  // AUTH_MODE, DATABASE_PROVIDER, BETTER_AUTH_URL, TEAM_DOMAIN, POLICY_AUD,
+  // and OPENSEO_OPERATOR_SECRET are stage-dependent and set in the stack body
+  // below, which also replaces an unset BETTER_AUTH_SECRET in password mode.
   DATAFORSEO_API_KEY: Config.redacted("DATAFORSEO_API_KEY"),
   BYPASS_EMAIL_VERIFICATION: optionalVar("BYPASS_EMAIL_VERIFICATION"),
   BETTER_AUTH_SECRET: optionalSecret("BETTER_AUTH_SECRET"),
@@ -305,6 +318,7 @@ export default Alchemy.Stack(
     const prod = stage === HOSTED_PROD_STAGE;
     // Fail closed: an unset AUTH_MODE gets the Access-gated mode (matching the
     // app's own default in src/lib/auth-mode.ts), never public hosted signup.
+    // New self-host deployments get AUTH_MODE=password from deploy/.env.selfhost.example;
     // hosted/local_noauth must be set explicitly.
     const authMode = yield* Config.string("AUTH_MODE").pipe(
       Config.withDefault("cloudflare_access"),
@@ -335,6 +349,12 @@ export default Alchemy.Stack(
       }
     } else if (workersSubdomain) {
       authUrl = `https://${workerName(stage)}.${workersSubdomain}`;
+    } else if (authMode === "password") {
+      // Password accounts need the real public URL (session cookies, the
+      // OAuth callbacks MCP clients use). The self-host env file sets no
+      // WORKERS_SUBDOMAIN, so read it from the account.
+      const subdomain = yield* resolveWorkersSubdomain(workersSubdomain, "");
+      authUrl = `https://${workerName(stage)}.${subdomain}`;
     } else if (authMode === "hosted") {
       return yield* Effect.die(
         new Error(
@@ -352,6 +372,24 @@ export default Alchemy.Stack(
       authMode === "cloudflare_access" && !prod,
       workersSubdomain,
     );
+
+    // Password accounts need a session secret. The self-host env file sets
+    // none: the deploy mints one and keeps it in alchemy state, so redeploys
+    // keep every session valid. An explicit BETTER_AUTH_SECRET always wins.
+    const configuredAuthSecret = yield* dataEnv.BETTER_AUTH_SECRET;
+    const betterAuthSecret =
+      authMode === "password" && !Redacted.value(configuredAuthSecret)
+        ? yield* Alchemy.makeRandom("BetterAuthSecret")
+        : configuredAuthSecret;
+    // Operator account commands (`pnpm selfhost:admin`: password resets,
+    // accounts outside the invitation flow) stay off until the self-hoster
+    // sets a secret for them.
+    const operatorSecret = yield* optionalSecret("OPENSEO_OPERATOR_SECRET");
+
+    // Self-host deploys may run on the free Workers plan, which rejects the
+    // paid-plan CPU limits below.
+    const selfHostPlan =
+      authMode === "cloudflare_access" || authMode === "password";
 
     // Created once and bound into BOTH workers — they share the same
     // D1/KV/R2 (and prod Hyperdrive). OAUTH_KV stays app-worker-only.
@@ -374,11 +412,8 @@ export default Alchemy.Stack(
       },
       // Audit workflow steps parse and persist batches of HTML — the same
       // CPU allowance the app worker used to carry for them. Configurable
-      // CPU limits are a paid-plan feature; self-host deploys
-      // (cloudflare_access) may run on the free plan, which rejects them.
-      ...(authMode === "cloudflare_access"
-        ? {}
-        : { limits: { cpuMs: 300_000 } }),
+      // CPU limits are a paid-plan feature (see selfHostPlan).
+      ...(selfHostPlan ? {} : { limits: { cpuMs: 300_000 } }),
       observability: {
         enabled: wrangler.observability?.enabled ?? true,
         traces: { enabled: wrangler.observability?.traces?.enabled ?? false },
@@ -443,12 +478,9 @@ export default Alchemy.Stack(
       // Site audits moved to the open-seo-audit worker, but RankCheckWorkflow
       // still parses SERP batches here — keep the CPU allowance until that
       // workflow's per-tick CPU is measured or it moves too. Configurable CPU
-      // limits are a paid-plan feature, and self-host deploys
-      // (cloudflare_access) may run on the free plan — which rejects them —
-      // so those get the plan default instead.
-      ...(authMode === "cloudflare_access"
-        ? {}
-        : { limits: { cpuMs: 300_000 } }),
+      // limits are a paid-plan feature; self-host deploys get the plan
+      // default instead (see selfHostPlan).
+      ...(selfHostPlan ? {} : { limits: { cpuMs: 300_000 } }),
       observability: {
         enabled: wrangler.observability?.enabled ?? true,
         traces: { enabled: wrangler.observability?.traces?.enabled ?? false },
@@ -470,6 +502,10 @@ export default Alchemy.Stack(
         AUTH_MODE: authMode,
         DATABASE_PROVIDER: databaseProvider || "d1",
         BETTER_AUTH_URL: authUrl,
+        BETTER_AUTH_SECRET: betterAuthSecret,
+        ...(authMode === "password" && Redacted.value(operatorSecret)
+          ? { OPENSEO_OPERATOR_SECRET: operatorSecret }
+          : {}),
         // The audit worker above always binds BROWSER; the app worker checks
         // this before it offers "Render JavaScript".
         AUDIT_BROWSER_RENDERING: "true",

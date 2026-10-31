@@ -42,7 +42,7 @@ const PROMPT_RESPONSE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 /**
  * Hard cap on response length. Set to the DataForSEO per-call maximum because
- * reasoning models (gpt-5, gemini-2.5-pro) count hidden chain-of-thought
+ * reasoning models (gpt-5, gemini) count hidden chain-of-thought
  * tokens against this budget — at 1024 ChatGPT regularly burns the whole
  * budget on reasoning and returns a near-empty visible message.
  */
@@ -338,10 +338,13 @@ function mapErrorToResult(
   if (
     reason instanceof AppError &&
     (reason.code === "INSUFFICIENT_CREDITS" ||
-      reason.code === "AI_SEARCH_BILLING_ISSUE")
+      reason.code === "AI_SEARCH_BILLING_ISSUE" ||
+      reason.code === "DATAFORSEO_AUTH_FAILED" ||
+      reason.code === "AUTH_CONFIG_MISSING")
   ) {
     // These account-level failures apply to every model, so surface one clear
-    // error instead of silently degrading to per-model failures.
+    // error instead of silently degrading to per-model failures. A gateway
+    // without a DataForSEO key is one: "try again" could never succeed.
     throw reason;
   }
 

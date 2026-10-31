@@ -22,6 +22,7 @@ const STATIC_PATHS = [
   "/pricing",
   "/privacy",
   "/terms-and-conditions",
+  "/partner-terms",
   "/blogs",
   "/docs",
   "/features",

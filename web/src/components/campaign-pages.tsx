@@ -187,7 +187,7 @@ const SELF_HOST_ANSWER = (
 );
 
 const BILLING_ANSWER =
-  "One plan at $10/mo includes $10 of usage every month. Buy extra usage when you need it, or let auto-reload buy it for you up to a monthly limit; top-ups never expire. Cancel anytime from your billing portal.";
+  "Starting from $10/mo, with $10 of usage every month. Buy extra usage when you need it, or let auto-reload buy it for you up to a monthly limit; top-ups never expire. Cancel anytime from your billing portal.";
 
 // ─── /agencies ───────────────────────────────────────────────────────
 
@@ -502,7 +502,7 @@ export function AgencyLandingPage() {
 
       <PriceCompare
         heading="Priced for client work"
-        body="One plan at $10/mo with $10 of usage included. More clients means more usage, not a bigger plan."
+        body="Starting from $10/mo with $10 of usage included. Every plan has every feature, so more clients just means more usage."
         openSeo={{
           price: "~$27",
           caption:

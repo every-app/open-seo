@@ -63,9 +63,10 @@ milliseconds, signed or not, and the refusals are per URL more often than per
 site (see `shopify-crawling.md`). When the audited site is a Shopify store (its
 `powered-by` header, a saved crawler signature, or a host in Shopify's address
 range) and the audit renders JavaScript, a page whose direct fetch returns 429
-goes straight to the renderers instead of the shared backoff. Browser Run is
-usually throttled too; Context fetches from outside Cloudflare and reads the
-page. A page neither renderer reads is given up on as `rate_limited`, which
+goes straight to the renderers instead of the shared backoff. Shopify's edge
+lets Browser Run through, so these pages almost always render on Cloudflare and
+cost no more than any other rendered page; Context reads the few it misses. A
+page neither renderer reads is given up on as `rate_limited`, which
 pauses the crawl like any other refusal; a store that refuses several pages in
 a row stops the crawl.
 
@@ -98,10 +99,14 @@ retried finalize cannot charge twice. Unlike a single DataForSEO call, one
 audit's hold is split: the monthly balance covers what it can and top-up
 covers the rest.
 
-1. `startAudit` locks the worst case, page limit × the fallback rate, from the
-   monthly balance first and top-up for the remainder. Not enough across both
-   refuses the audit with `INSUFFICIENT_CREDITS` before the workflow starts.
-   The lock ids travel in the workflow params.
+1. `startAudit` locks the estimated cost, twice the Cloudflare-only estimate
+   (`renderingHoldCredits`), from the monthly balance first and top-up for the
+   remainder. Not enough across both refuses the audit with
+   `INSUFFICIENT_CREDITS` before the workflow starts. The lock ids travel in
+   the workflow params. Most pages render on Cloudflare (about 95% of rendered
+   pages in production), so this usually covers the audit without holding the
+   six-times-larger worst case. The launch form and MCP tool quote this amount
+   as what the audit costs at most.
 2. Each crawl chunk counts Cloudflare attempts and Context credits and returns
    them in its step result. Chunks make no Autumn calls.
 3. The workflow sums the checkpointed chunk counts. At the end, whether the
@@ -109,15 +114,23 @@ covers the rest.
    monthly first, and releases the rest.
 4. Locks expire after at most 24 hours. An audit that dies without settling
    returns the hold to the customer on its own.
-5. A rendered audit crawls at most 1,000 pages (`RENDERED_MAX_AUDIT_PAGES`),
-   enforced like the plan page limits: `startAudit` refuses more with
-   `AUDIT_PAGE_LIMIT_EXCEEDED`, and the launch form caps its page input. At
-   the 20 second worst case per Cloudflare attempt, that keeps a rendered
-   crawl well inside the lock's 24 hours, so settlement finds its lock.
+5. The crawl stays inside the one hold. A chunk starts a page only while the
+   credits rendered so far, plus every in-flight page and this one at the
+   Context worst case, fit the hold. When they no longer do, the crawl stops
+   and the report gets a `crawl-credits-exhausted` issue. Only a site that
+   falls back to Context heavily reaches it.
+6. A hosted rendered audit stops crawling 22 hours after it starts
+   (`RENDERED_CRAWL_TIME_LIMIT_HOURS`), so settlement still finds its lock.
+   The deadline counts from the workflow's creation, just after the locks are
+   taken, and is the same on every replay. A crawl chunk starts no request
+   after it, and the report gets a `crawl-time-limit` issue. Rendered audits
+   take the plan's page limit. The launch form shows the estimate before a
+   large rendered audit starts.
 
 What we absorb rather than charge: renders in a chunk attempt that failed
 before returning its counts, a settlement that Autumn rejects, usage beyond
-the hold (a retried chunk can render a page twice).
+the hold (a retried chunk can render a page twice, outside the chunk's own
+count).
 
 Alternatives considered:
 
@@ -127,6 +140,15 @@ Alternatives considered:
 - **Charging up front with a refund:** needs a manual refund on every failure
   path, and overcharges when the workflow dies.
 - **Per-page billing:** hundreds of Autumn calls per audit.
+- **Holding the worst case** (the first release): every page at the Context
+  rate is six times what most audits cost, so accounts with a few dollars of
+  credits were refused audits they could easily pay for.
+- **Growing the hold mid-crawl:** one lock per audit keeps settlement a single
+  step, and an audit never ends up holding credits the user did not agree to
+  at the start.
+- **A fixed page cap** (1,000 pages at first): rendered pages take from a few
+  seconds to half a minute, so any cap that fits the slowest site inside the
+  lock refuses large sites that would finish in a few hours.
 
 ## Open items
 

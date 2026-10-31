@@ -1,13 +1,14 @@
 import {
+  AUTUMN_AGENCY_PLAN_ID,
   AUTUMN_PAID_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
   AUTUMN_YC_PLAN_ID,
   type CheckoutPlanId,
 } from "@/shared/billing";
 
 // What a checkout page advertises before the customer holds the plan. Once
-// they do, status and credits come from the Autumn customer (see
-// billing-account.ts) and only the name is read from here (getPlanName), so
-// these only need to match the Autumn plans they sell.
+// they do, everything shown about it comes from the Autumn customer (see
+// billing-account.ts), so these only need to match the Autumn plans they sell.
 export type PlanOffer = {
   planId: CheckoutPlanId;
   name: string;
@@ -29,14 +30,26 @@ export const YC_PLAN_OFFER: PlanOffer = {
   monthlyCreditsUsd: 50,
 };
 
-/** A plan's display name. Plans without an offer here (friends and family)
- *  show their ID, which is also their name in Autumn. */
-export function getPlanName(planId: string) {
-  return (
-    [BASE_PLAN_OFFER, YC_PLAN_OFFER].find((offer) => offer.planId === planId)
-      ?.name ?? planId
-  );
-}
+export const PRO_PLAN_OFFER: PlanOffer = {
+  planId: AUTUMN_PRO_PLAN_ID,
+  name: "Pro Plan",
+  priceUsd: 30,
+  monthlyCreditsUsd: 36,
+};
+
+export const AGENCY_PLAN_OFFER: PlanOffer = {
+  planId: AUTUMN_AGENCY_PLAN_ID,
+  name: "Agency Plan",
+  priceUsd: 200,
+  monthlyCreditsUsd: 240,
+};
+
+/** The tiers /subscribe offers, cheapest first. */
+export const TIER_PLAN_OFFERS = [
+  BASE_PLAN_OFFER,
+  PRO_PLAN_OFFER,
+  AGENCY_PLAN_OFFER,
+] as const;
 
 export function monthlyCreditsFeature(offer: PlanOffer) {
   return `Includes $${offer.monthlyCreditsUsd.toFixed(2)} of Usage Credits each month`;

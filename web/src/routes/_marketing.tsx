@@ -5,6 +5,7 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { EveryAppBanner } from "@/components/every-app-banner";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { SiteFooter } from "@/components/site-footer";
 import { featureGroups } from "@/lib/feature-pages";
@@ -174,6 +175,7 @@ function MarketingLayout() {
 
   return (
     <main className="fd-light min-h-screen bg-[var(--color-surface)] text-[var(--color-brand)]">
+      <EveryAppBanner />
       <header className="sticky top-0 z-50 w-full border-b border-[#ded9d2] bg-[#f5f1ec]/95 backdrop-blur-xl">
         <div className="relative mx-auto w-full max-w-[1232px] px-6">
           <nav

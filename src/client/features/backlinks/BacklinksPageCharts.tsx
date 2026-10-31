@@ -21,12 +21,12 @@ import {
 
 const trendChartConfig = {
   backlinks: { label: "Backlinks", color: "#2563eb" },
-  referringDomains: { label: "Referring domains", color: "#14b8a6" },
+  referringDomains: { label: "Referring domains", color: "#e69f00" },
 } satisfies ChartConfig;
 
 const newLostChartConfig = {
-  lostBacklinks: { label: "Lost backlinks", color: "#ef4444" },
-  newBacklinks: { label: "New backlinks", color: "#16a34a" },
+  lostBacklinks: { label: "Lost backlinks", color: "#d55e00" },
+  newBacklinks: { label: "New backlinks", color: "#2563eb" },
 } satisfies ChartConfig;
 
 const tooltip = (

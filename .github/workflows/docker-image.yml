@@ -16,6 +16,18 @@ jobs:
   docker:
     if: github.repository == 'every-app/open-seo'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # The original single-container image. Existing installations
+          # auto-update from :latest, so it must stay this image.
+          - image: ghcr.io/every-app/open-seo
+            file: deploy/docker/Dockerfile
+          # The standalone edition (deploy/standalone/compose.yaml): a
+          # multi-container stack whose data format differs, so it is never
+          # published under the name above.
+          - image: ghcr.io/every-app/open-seo-standalone
+            file: deploy/standalone/Dockerfile
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +49,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/every-app/open-seo
+          images: ${{ matrix.image }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -51,7 +63,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: deploy/docker/Dockerfile
+          file: ${{ matrix.file }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}

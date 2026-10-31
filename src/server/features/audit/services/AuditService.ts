@@ -1,5 +1,8 @@
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
-import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
+import {
+  auditRenderingUnavailableMessage,
+  isAuditRenderingAllowed,
+} from "@/server/lib/audit/rendering-policy";
 import {
   lockRenderingCredits,
   releaseRenderingLocks,
@@ -21,7 +24,6 @@ import {
 } from "@/server/features/audit/services/audit-capacity";
 import { AppError } from "@/server/lib/errors";
 import { deleteR2Prefix } from "@/server/lib/r2";
-import { RENDERED_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import {
   parseAuditConfig,
@@ -52,20 +54,17 @@ async function startAudit(input: {
   limitTier: AuditLimitTier;
   renderJavaScript?: boolean;
 }) {
-  let renderJavaScript = input.renderJavaScript ?? false;
+  const renderJavaScript = input.renderJavaScript ?? false;
   if (renderJavaScript && !(await isAuditRenderingAllowed())) {
-    renderJavaScript = false;
+    throw new AppError(
+      "AUDIT_RENDERING_UNAVAILABLE",
+      await auditRenderingUnavailableMessage(),
+    );
   }
   const limits = AUDIT_LIMITS[input.limitTier];
   const maxPages = clampAuditMaxPages(input.maxPages);
   if (maxPages > limits.maxPagesPerAudit) {
     throw new AppError("AUDIT_PAGE_LIMIT_EXCEEDED");
-  }
-  if (renderJavaScript && maxPages > RENDERED_MAX_AUDIT_PAGES) {
-    throw new AppError(
-      "AUDIT_PAGE_LIMIT_EXCEEDED",
-      `Audits that render JavaScript are limited to ${RENDERED_MAX_AUDIT_PAGES.toLocaleString("en-US")} pages.`,
-    );
   }
 
   const lighthouseStrategy = input.lighthouseStrategy ?? "auto";

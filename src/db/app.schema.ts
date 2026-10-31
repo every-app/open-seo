@@ -407,14 +407,17 @@ export const organizationActivationState = sqliteTable(
 );
 
 // Per-project state for the dashboard's onboarding checklist. Most steps
-// complete via real product state (projects.domain, gsc_connections, MCP
-// activation); the competitor and keyword steps complete on click-through.
+// complete via real product state (audits, teammates, MCP activation). The
+// competitor and keyword steps record the first domain overview or keyword
+// research run on the project, from the app or an agent; the column names
+// predate that. The checklist counts a step done on any of the workspace's
+// projects.
 export const projectActivationState = sqliteTable("project_activation_state", {
   projectId: text("project_id")
     .primaryKey()
     .references(() => projects.id, { onDelete: "cascade" }),
-  competitorStepClickedAt: text("competitor_step_clicked_at"),
-  keywordStepClickedAt: text("keyword_step_clicked_at"),
+  competitorResearchedAt: text("competitor_step_clicked_at"),
+  keywordResearchedAt: text("keyword_step_clicked_at"),
   // "I already connected" on the MCP card: hides the card for this project
   // without faking the org-level first-tool-call milestone, which stays
   // truthful and self-heals when a real external call lands.

@@ -5,6 +5,7 @@ import {
 } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import { withPgClient } from "@/db";
+import { yieldingStep } from "@/server/workflows/yieldingStep";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
@@ -290,7 +291,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
     // Scope a per-request Postgres client for this workflow invocation (no-op in
     // D1 mode). The socket is reclaimed when the invocation ends, so there is
     // nothing to tear down here.
-    return withPgClient(() => this.runScoped(event, step));
+    return withPgClient(() => this.runScoped(event, yieldingStep(step)));
   }
 
   private async runScoped(
@@ -400,10 +401,20 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         }),
       );
     } catch (error) {
-      console.error(
-        `Rank check ${runId} failed: ${describeError(error)}`,
-        error,
-      );
+      // Cloudflare resets the Workflow's Durable Object on a deploy or its own
+      // restarts. The engine replays the run from its last finished step and
+      // it completes normally, so this is a warning, not a failure.
+      if (
+        error instanceof Error &&
+        error.message.includes("Durable Object reset because its code")
+      ) {
+        console.warn(`Rank check ${runId} interrupted: ${error.message}`);
+      } else {
+        console.error(
+          `Rank check ${runId} failed: ${describeError(error)}`,
+          error,
+        );
+      }
       // A retry after the body finished (an engine storage failure) sends the
       // failed event again; harmless.
       await pgStep(step, "mark-failed", FREE_STEP_CONFIG, async () =>

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readPages, readSite } from "@/server/lib/scrape";
 
 vi.mock("@/server/lib/runtime-env", () => ({
-  getOptionalEnvValue: async () => "context-test-key",
+  getOptionalEnvValue: async (name: string) =>
+    name === "CONTEXT_API_KEY" ? "context-test-key" : undefined,
 }));
 
 describe("readSite SSRF guard", () => {

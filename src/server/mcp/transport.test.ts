@@ -21,6 +21,7 @@ const authRepositoryMocks = vi.hoisted(() => ({
   getMembership: vi.fn(),
 }));
 
+vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/auth/repositories/AuthRepository", () => ({
   AuthRepository: authRepositoryMocks,
 }));

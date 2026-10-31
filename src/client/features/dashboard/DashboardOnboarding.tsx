@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, RotateCcw } from "lucide-react";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { setDashboardStepDismissed } from "@/serverFunctions/dashboard";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
@@ -53,7 +53,7 @@ export function DashboardOnboarding({
     },
   });
   const steps = setupSteps.filter(
-    (step) => step.id !== "team" || isHostedClientAuthMode(),
+    (step) => step.id !== "team" || usesBetterAuthClient(),
   );
   const remaining = steps.filter(
     (step) => getStepStatus(activation, step.id) === "todo",
@@ -90,7 +90,7 @@ export function DashboardOnboarding({
         }}
       >
         {remaining.map((item) => {
-          const { label, detail } = getTranslatedSetupStep(item, t);
+          const { label, detail, skipLabel } = getTranslatedSetupStep(item, t);
           const Icon = item.icon;
           return (
             <AccordionItem key={item.id} value={item.id}>
@@ -121,9 +121,7 @@ export function DashboardOnboarding({
                       dismiss.mutate({ step: item.id, dismissed: true })
                     }
                   >
-                    {item.id === "project"
-                      ? t("dashboard.onboarding.only_one_project")
-                      : t("dashboard.onboarding.skip")}
+                    {skipLabel}
                   </Button>
                 </div>
               </AccordionContent>

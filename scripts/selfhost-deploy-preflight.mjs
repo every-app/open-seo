@@ -35,7 +35,7 @@ if (!existsSync(envFile)) {
     "",
     `  ${cmd("cp deploy/.env.selfhost.example .env.selfhost")}`,
     "",
-    `then set ${em("DATAFORSEO_API_KEY")} and ${em("ACCESS_ALLOWED_EMAILS")}.`,
+    `then set ${em("DATAFORSEO_API_KEY")}.`,
   );
 }
 const env = {};
@@ -48,10 +48,21 @@ if (!env.DATAFORSEO_API_KEY) {
     `${em("DATAFORSEO_API_KEY")} is not set in ${envFile} — see docs/DATAFORSEO_API_KEY.md for how to get one.`,
   );
 }
-// When both are set, the deploy provisions no Access resources (hand-managed
-// application) and needs neither ACCESS_ALLOWED_EMAILS nor the access:write
-// login scope.
-const managedAccess = !(env.TEAM_DOMAIN && env.POLICY_AUD);
+// Mirrors the stack's default (deploy/alchemy/alchemy.run.ts): an unset
+// AUTH_MODE is the Access-gated mode. A typo would deploy that mode without
+// its Access application, so reject it here.
+const AUTH_MODES = ["cloudflare_access", "local_noauth", "hosted", "password"];
+const authMode = env.AUTH_MODE || "cloudflare_access";
+if (!AUTH_MODES.includes(authMode)) {
+  fail(
+    `${em("AUTH_MODE")}=${authMode} in ${envFile} is not one of ${AUTH_MODES.join(", ")}.`,
+  );
+}
+// Only the Access-gated mode provisions Access resources, and not when both
+// TEAM_DOMAIN and POLICY_AUD name a hand-managed application. Nothing else
+// needs ACCESS_ALLOWED_EMAILS or the access:write login scope.
+const managedAccess =
+  authMode === "cloudflare_access" && !(env.TEAM_DOMAIN && env.POLICY_AUD);
 if (managedAccess && !env.ACCESS_ALLOWED_EMAILS) {
   fail(
     `${em("ACCESS_ALLOWED_EMAILS")} is not set in ${envFile} — list who may sign in through`,
@@ -73,8 +84,10 @@ if (!process.env.CLOUDFLARE_API_TOKEN) {
   }
   if (!cloudflare) {
     fail(
-      `No Cloudflare login found (alchemy profile "${profileName}") — run ${cmd("pnpm alchemy login")}`,
-      `first (answer yes to "Customize OAuth scopes?" and enable ${em("access:write")}).`,
+      `No Cloudflare login found (alchemy profile "${profileName}") — run ${cmd("pnpm alchemy login")} first`,
+      managedAccess
+        ? `(answer yes to "Customize OAuth scopes?" and enable ${em("access:write")}).`
+        : "(the default scopes are enough).",
     );
   }
   if (

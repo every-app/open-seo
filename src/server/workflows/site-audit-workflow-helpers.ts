@@ -6,6 +6,7 @@ import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
+import { publicFetch } from "@/server/lib/public-fetch";
 import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
 import { auditRequestHeaders } from "@/server/lib/audit/web-bot-auth";
 
@@ -82,7 +83,7 @@ async function fetchPage(
     // /docs/) need no special handling: normalizeUrl preserves trailing
     // slashes, so /docs and /docs/ are distinct URLs and the redirect resolves
     // to its canonical target instead of cycling back to its own source.
-    const response = await fetch(url, {
+    const response = await publicFetch(url, {
       headers: {
         Accept: "text/html,application/xhtml+xml",
         ...(await auditRequestHeaders(url, access)),

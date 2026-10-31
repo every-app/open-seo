@@ -83,7 +83,7 @@ export const runRankTrackerTool = {
     );
 
     return mcpResponse({
-      text: `Rank check ${result.runId} started for tracker ${args.trackerId}. Poll get_rank_tracker until lastCheckedAt advances, then read the updated positions.`,
+      text: `Rank check ${result.runId} started for tracker ${args.trackerId}. It retries keywords that error or come back missing, so it can take up to an hour. Poll get_rank_tracker until lastCheckedAt advances, then read the updated positions.`,
       meta: buildProjectMeta(context, args.projectId, trackerPath),
       structuredContent: {
         trackerId: args.trackerId,

@@ -4,7 +4,6 @@ import {
   type getLocalTracker,
 } from "@/serverFunctions/local-seo";
 import { QueryError } from "@/client/components/QueryState";
-import { EmptyState } from "@/client/components/EmptyState";
 import { Button } from "@/client/components/ui/button";
 import { Card } from "@/client/components/ui/card";
 import {
@@ -68,7 +67,7 @@ export function LocalKeywordMap({
           <p className="text-xs text-muted-foreground">
             {selectedScan
               ? `${historical ? "Saved check" : "Latest check"} · ${new Date(selectedScan.createdAt).toLocaleString()}`
-              : "Grid preview"}
+              : "Not checked yet"}
           </p>
         </div>
         {historical && (
@@ -113,14 +112,14 @@ export function LocalKeywordMap({
             )}
             cid={tracker.cid}
             placeId={tracker.placeId}
+            gridSize={tracker.gridSize}
+            spacingKm={tracker.spacingKm}
           />
         ) : (
-          <Card className="gap-0 py-0 shadow-none">
-            <EmptyState
-              variant="plain"
-              title="Preview your coverage"
-              description="Check rankings to see where this business appears for your tracked keywords. Select a point to see the businesses ranking there."
-            />
+          <Card className="justify-center px-6 py-0 shadow-none">
+            <p className="text-center text-sm text-muted-foreground">
+              Run a check to see where this business ranks across the area.
+            </p>
           </Card>
         )}
       </div>

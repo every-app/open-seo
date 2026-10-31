@@ -275,6 +275,11 @@ async function hasPendingInvitationForEmail(email: string) {
   return pending !== undefined;
 }
 
+async function hasAnyUser() {
+  const [first] = await db.select({ id: authUser.id }).from(authUser).limit(1);
+  return first !== undefined;
+}
+
 async function getLastActiveOrganizationId(userId: string) {
   const record = await db.query.user.findFirst({
     columns: { lastActiveOrganizationId: true },
@@ -353,6 +358,7 @@ export const AuthRepository = {
   getHostedUserNames,
   getOrganizationOwner,
   hasPendingInvitationForEmail,
+  hasAnyUser,
   isAnalyticsOptedOut,
   saveSignupCampaign,
 } as const;

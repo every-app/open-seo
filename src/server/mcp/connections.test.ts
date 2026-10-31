@@ -11,12 +11,12 @@ vi.mock("@/server/mcp/oauth-provider", () => ({
   getCapturedOAuthHelpers: () => helpers,
 }));
 
-it("lists grants newest first with the client name and bound organization", async () => {
+it("lists grants newest first with the client name, chat app and bound organization", async () => {
   helpers.listUserGrants.mockResolvedValue({
     items: [
       {
         id: "grant-old",
-        clientId: "codex",
+        clientId: "claude",
         metadata: { organizationId: "org-1" },
         createdAt: 1_700_000_000,
       },
@@ -29,7 +29,14 @@ it("lists grants newest first with the client name and bound organization", asyn
     ],
   });
   helpers.lookupClient.mockImplementation((clientId: string) =>
-    Promise.resolve(clientId === "codex" ? { clientName: "Codex" } : null),
+    Promise.resolve(
+      clientId === "claude"
+        ? {
+            clientName: "Claude",
+            redirectUris: ["https://claude.ai/api/mcp/auth_callback"],
+          }
+        : null,
+    ),
   );
 
   await expect(
@@ -38,12 +45,14 @@ it("lists grants newest first with the client name and bound organization", asyn
     {
       id: "grant-new",
       clientName: "MCP client",
+      webChat: null,
       createdAt: 1_700_000_100_000,
       organizationId: null,
     },
     {
       id: "grant-old",
-      clientName: "Codex",
+      clientName: "Claude",
+      webChat: "claude",
       createdAt: 1_700_000_000_000,
       organizationId: "org-1",
     },

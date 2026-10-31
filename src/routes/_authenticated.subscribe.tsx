@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 import { QueryError } from "@/client/components/QueryState";
 import { StatusScreen } from "@/client/components/StatusScreen";
 import {
@@ -12,12 +13,18 @@ import {
   openUpgradeCheckout,
   prefetchUpgradeCheckout,
 } from "@/client/features/billing/checkout";
+import { AnnualPlanDialog } from "@/client/features/billing/AnnualPlanDialog";
 import { PlanPageAccountMenu } from "@/client/features/billing/PlanPageAccountMenu";
-import { PlanOfferCard } from "@/client/features/billing/PlanOfferCard";
 import {
-  BASE_PLAN_OFFER,
-  monthlyCreditsFeature,
-} from "@/client/features/billing/plan-offers";
+  PlanGuarantee,
+  PlanOfferCard,
+} from "@/client/features/billing/PlanOfferCard";
+import { monthlyCreditsFeature } from "@/client/features/billing/plan-offers";
+import {
+  TIERS,
+  isTier,
+  type Tier,
+} from "@/client/features/billing/subscribe-tiers";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { useSession } from "@/lib/auth-client";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -26,13 +33,10 @@ import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { useCanManageBilling } from "@/client/features/team/organizationQueries";
 import { SUPPORT_EMAIL } from "@/client/lib/support";
 import { Button } from "@/client/components/ui/button";
-
-const PLAN_FEATURES = [
-  "Keyword research, backlinks, rank tracking, and site audits",
-  "MCP server and agent skills for Claude, Cursor, and ChatGPT",
-  "Google Search Console Integration",
-  monthlyCreditsFeature(BASE_PLAN_OFFER),
-];
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
 
 // How long the post-checkout "finalizing" screen polls Autumn before giving
 // up and letting the user through anyway, and how often it polls.
@@ -45,7 +49,13 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
   ssr: false,
   validateSearch: (
     search: Record<string, unknown>,
-  ): { upgrade?: true; redirect?: string; checkout?: "success" } => ({
+  ): {
+    upgrade?: true;
+    redirect?: string;
+    checkout?: "success";
+    plan?: Tier;
+    billing?: "yearly";
+  } => ({
     upgrade:
       search.upgrade === true || search.upgrade === "true" ? true : undefined,
     redirect:
@@ -53,15 +63,21 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
         ? normalizeAuthRedirect(search.redirect)
         : undefined,
     checkout: search.checkout === "success" ? "success" : undefined,
+    plan: isTier(search.plan) ? search.plan : undefined,
+    billing: search.billing === "yearly" ? "yearly" : undefined,
   }),
-  loaderDeps: ({ search: { upgrade, checkout } }) => ({ upgrade, checkout }),
+  loaderDeps: ({ search: { upgrade, checkout, plan } }) => ({
+    upgrade,
+    checkout,
+    plan,
+  }),
   // Start the billing read alongside the session check, not after it. Upgrade
   // links outside Billing land here with ?upgrade=true, and hovering one
   // preloads this route, so the checkout link starts before the click.
   loader: ({ deps }) => {
     prefetchBillingAccount();
     if (deps.upgrade && deps.checkout !== "success") {
-      prefetchUpgradeCheckout();
+      prefetchUpgradeCheckout(TIERS[deps.plan ?? "base"].offer.planId);
     }
   },
   component: SubscribePage,
@@ -69,9 +85,23 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
 
 function SubscribePage() {
   const navigate = useNavigate();
-  const { upgrade: isUpgradeFlow, redirect, checkout } = Route.useSearch();
+  const {
+    upgrade: isUpgradeFlow,
+    redirect,
+    checkout,
+    plan: requestedPlan,
+    billing,
+  } = Route.useSearch();
+  const highlightedPlan = requestedPlan ?? "base";
   const { data: session } = useSession();
-  const [isAttaching, setIsAttaching] = useState(false);
+  // The plan whose checkout is opening, so only its button spins.
+  const [attachingPlan, setAttachingPlan] = useState<Tier | null>(null);
+  // The pricing page's Yearly switch carries over with ?billing=yearly.
+  const [yearly, setYearly] = useState(billing === "yearly");
+  // The yearly dialog keeps its last plan so its text doesn't blank out while
+  // it animates closed.
+  const [annualPlan, setAnnualPlan] = useState<Tier>("base");
+  const [annualDialogOpen, setAnnualDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [finalizingTimedOut, setFinalizingTimedOut] = useState(false);
   const checkoutCompleted = checkout === "success";
@@ -89,6 +119,8 @@ function SubscribePage() {
         : false,
   });
   const account = accountQuery.data;
+  const paidPlanId = account?.paidPlanId ?? null;
+  const paidPlanName = account?.paidPlanName ?? null;
 
   // Checkout is owner-only; other members hitting the paywall are pointed at
   // their organization owner instead of a Subscribe button that would 403.
@@ -121,10 +153,36 @@ function SubscribePage() {
     if (subscribeRouteState === "redirectToApp") {
       if (checkoutCompleted) {
         captureClientEvent("billing:checkout_success");
+      } else if (requestedPlan && paidPlanId) {
+        // A paying customer followed a pricing-page plan link. Switching
+        // plans goes through support for now; say so instead of a silent
+        // redirect.
+        const wanted = TIERS[requestedPlan].offer;
+        toast.info(
+          paidPlanId === wanted.planId
+            ? `You're already on the ${wanted.name}`
+            : `You're on the ${paidPlanName}`,
+          {
+            id: "subscribe-plan-switch",
+            description:
+              paidPlanId === wanted.planId
+                ? undefined
+                : `To switch to the ${wanted.name}, email ${SUPPORT_EMAIL}.`,
+            duration: 10_000,
+          },
+        );
       }
       void navigate({ href: redirect ?? "/", replace: true });
     }
-  }, [checkoutCompleted, navigate, redirect, subscribeRouteState]);
+  }, [
+    checkoutCompleted,
+    navigate,
+    paidPlanId,
+    paidPlanName,
+    redirect,
+    requestedPlan,
+    subscribeRouteState,
+  ]);
 
   useEffect(() => {
     if (subscribeRouteState === "showPaywall" && !isUpgradeFlow) {
@@ -176,12 +234,12 @@ function SubscribePage() {
     );
   }
 
-  async function handleSubscribe() {
+  async function handleSubscribe(tier: Tier) {
     setError(null);
-    setIsAttaching(true);
+    setAttachingPlan(tier);
 
     try {
-      await openUpgradeCheckout();
+      await openUpgradeCheckout(TIERS[tier].offer.planId);
     } catch (err) {
       setError(
         getStandardErrorMessage(
@@ -189,17 +247,26 @@ function SubscribePage() {
           "We couldn't start the checkout. Please try again.",
         ),
       );
-      setIsAttaching(false);
+      setAttachingPlan(null);
     }
   }
 
+  function openAnnualDialog(tier: Tier) {
+    setAnnualPlan(tier);
+    setAnnualDialogOpen(true);
+    captureClientEvent("billing:annual_plan_interest", {
+      planId: TIERS[tier].offer.planId,
+    });
+  }
+
   const firstName = session?.user?.name?.split(" ")[0] || "";
+  const annual = TIERS[annualPlan];
 
   return (
-    <div className="w-full max-w-sm space-y-6">
+    <div className="w-full max-w-5xl space-y-6">
       <PlanPageAccountMenu email={session?.user?.email} />
 
-      <div className="space-y-3 text-center">
+      <div className="mx-auto max-w-sm space-y-3 text-center">
         <img
           src="/transparent-logo.png"
           alt="OpenSEO"
@@ -217,51 +284,100 @@ function SubscribePage() {
         </p>
       </div>
 
-      <PlanOfferCard
-        offer={BASE_PLAN_OFFER}
-        features={PLAN_FEATURES}
-        afterFeatures={
-          /* Sub-bullet of the Usage Credits line above. */
-          <li className="-mt-1 pl-6 text-xs">
-            <a
-              className="text-muted-foreground underline decoration-muted-foreground/40 decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
-              href="https://openseo.so/pricing"
-              target="_blank"
-              rel="noreferrer"
-              onClick={() =>
-                captureClientEvent("billing:pricing_estimator_click")
-              }
-            >
-              How far do usage credits go?{" "}
-              <span aria-hidden="true">&#8599;</span>
-            </a>
-          </li>
-        }
+      <ToggleGroup
+        variant="outline"
+        spacing={0}
+        value={[yearly ? "yearly" : "monthly"]}
+        onValueChange={(next) => {
+          // A press on the active item empties the group. Keep one item on.
+          if (next[0]) setYearly(next[0] === "yearly");
+        }}
+        className="mx-auto"
+        aria-label="Billing period"
       >
+        <ToggleGroupItem
+          value="monthly"
+          className="px-4 aria-pressed:bg-primary/15 aria-pressed:text-primary"
+        >
+          Monthly
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="yearly"
+          className="px-4 aria-pressed:bg-primary/15 aria-pressed:text-primary"
+        >
+          Yearly (2 months free)
+        </ToggleGroupItem>
+      </ToggleGroup>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {Object.keys(TIERS)
+          .filter(isTier)
+          .map((tier) => {
+            const { offer, annualPriceUsd, description, features } =
+              TIERS[tier];
+            return (
+              <PlanOfferCard
+                key={tier}
+                offer={offer}
+                description={description}
+                priceLabel={
+                  yearly
+                    ? `$${annualPriceUsd.toLocaleString()}/year`
+                    : undefined
+                }
+                features={[...features, monthlyCreditsFeature(offer)]}
+                highlighted={tier === highlightedPlan}
+              >
+                {canManageBilling ? (
+                  <Button
+                    className="w-full"
+                    variant={tier === highlightedPlan ? "default" : "secondary"}
+                    pending={attachingPlan === tier}
+                    // One checkout at a time: a second one would replace the first.
+                    disabled={attachingPlan !== null}
+                    onClick={() =>
+                      yearly
+                        ? openAnnualDialog(tier)
+                        : void handleSubscribe(tier)
+                    }
+                  >
+                    {attachingPlan === tier ? "Redirecting..." : "Subscribe"}
+                  </Button>
+                ) : null}
+              </PlanOfferCard>
+            );
+          })}
+      </div>
+
+      <div className="mx-auto max-w-sm space-y-3">
         {error ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-center text-sm text-destructive">
             {error}
           </p>
         ) : null}
-
-        {canManageBilling ? (
-          <Button
-            className="w-full"
-            variant="secondary"
-            pending={isAttaching}
-            onClick={() => void handleSubscribe()}
-          >
-            {isAttaching ? "Redirecting..." : "Subscribe"}
-          </Button>
-        ) : (
-          <p className="text-sm text-muted-foreground">
+        {canManageBilling ? null : (
+          <p className="text-center text-sm text-muted-foreground">
             Only the organization owner can subscribe. Ask them to upgrade this
             organization.
           </p>
         )}
-      </PlanOfferCard>
+        <PlanGuarantee />
+        <p className="text-center text-xs">
+          <a
+            className="text-muted-foreground underline decoration-muted-foreground/40 decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
+            href="https://openseo.so/pricing"
+            target="_blank"
+            rel="noreferrer"
+            onClick={() =>
+              captureClientEvent("billing:pricing_estimator_click")
+            }
+          >
+            How far do usage credits go? <span aria-hidden="true">&#8599;</span>
+          </a>
+        </p>
+      </div>
 
-      <div className="text-center space-y-2">
+      <div className="mx-auto max-w-sm text-center space-y-2">
         <p className="text-sm text-muted-foreground">
           Questions? Email{" "}
           <a
@@ -283,6 +399,14 @@ function SubscribePage() {
           </Button>
         ) : null}
       </div>
+
+      <AnnualPlanDialog
+        open={annualDialogOpen}
+        onOpenChange={setAnnualDialogOpen}
+        planName={annual.offer.name}
+        annualPriceUsd={annual.annualPriceUsd}
+        onSubscribeMonthly={() => void handleSubscribe(annualPlan)}
+      />
     </div>
   );
 }

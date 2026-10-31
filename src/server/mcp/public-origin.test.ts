@@ -1,7 +1,41 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getPublicOrigin, requestWithPublicOrigin } from "./public-origin";
 
+const { env } = vi.hoisted(() => ({ env: {} as Record<string, string> }));
+vi.mock("cloudflare:workers", () => ({ env }));
+
+afterEach(() => {
+  delete env.AUTH_MODE;
+  delete env.BETTER_AUTH_URL;
+  delete env.OPENSEO_OPERATOR_SECRET;
+});
+
 describe("getPublicOrigin", () => {
+  it("uses the configured origin, not forwarded headers, in password mode", () => {
+    env.AUTH_MODE = "password";
+    env.BETTER_AUTH_URL = "https://seo.example.com";
+    const request = new Request("http://runtime:8080/mcp", {
+      headers: {
+        "x-forwarded-proto": "https",
+        "x-forwarded-host": "evil.test",
+      },
+    });
+
+    expect(getPublicOrigin(request)).toBe("https://seo.example.com");
+  });
+
+  it("honors a configured origin in no-auth mode only in the standalone edition", () => {
+    env.AUTH_MODE = "local_noauth";
+    env.BETTER_AUTH_URL = "http://seo.internal:3001";
+    const request = new Request("http://192.168.1.10:3001/mcp");
+
+    // The old Docker image: BETTER_AUTH_URL may sit in its .env, no operator secret.
+    expect(getPublicOrigin(request)).toBe("http://192.168.1.10:3001");
+
+    env.OPENSEO_OPERATOR_SECRET = "s".repeat(32);
+    expect(getPublicOrigin(request)).toBe("http://seo.internal:3001");
+  });
+
   it("uses the forwarded public protocol and host for tunneled requests", () => {
     const request = new Request("http://localhost:3102/api/oauth/consent", {
       headers: {

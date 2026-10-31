@@ -26,7 +26,7 @@ import {
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { renderingEstimateText } from "@/shared/audit-rendering";
-import { RENDERED_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
+import { RENDERED_CRAWL_TIME_LIMIT_HOURS } from "@/shared/audit-limits";
 
 const auditIdSchema = z
   .string()
@@ -68,7 +68,7 @@ const runInputSchema = {
     .boolean()
     .optional()
     .describe(
-      `Render JavaScript before auditing, for sites whose content or links load client-side or whose bot protection blocks the plain crawler. Slower, and limited to ${RENDERED_MAX_AUDIT_PAGES.toLocaleString("en-US")} pages. On hosted plans: ${renderingEstimateText(100)} Billing counts pages actually rendered. Hosted plans hold the high end until the audit ends; an account that cannot cover it is refused. Default false.`,
+      `Render JavaScript before auditing, for sites whose content or links load client-side or whose bot protection blocks the plain crawler. Slower. On hosted plans, for 100 pages: ${renderingEstimateText(100)} Hosted plans hold that amount until the audit ends; an account that cannot cover it is refused. A hosted rendered crawl stops after ${RENDERED_CRAWL_TIME_LIMIT_HOURS} hours. Default false.`,
     ),
   runLighthouse: z
     .boolean()

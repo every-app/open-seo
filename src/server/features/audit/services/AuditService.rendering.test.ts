@@ -1,23 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as RenderingPolicy from "@/server/lib/audit/rendering-policy";
 
-const mocks = vi.hoisted(() => ({
-  workflowCreate:
-    vi.fn<(options: { params: { renderLocks?: unknown } }) => Promise<void>>(),
-  deleteAudit: vi.fn(),
-  renderingAllowed: vi.fn(),
-  lock: vi.fn(),
-  release: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const workflowCreate =
+    vi.fn<(options: { params: { renderLocks?: unknown } }) => Promise<void>>();
+  return {
+    workflowCreate,
+    deleteAudit: vi.fn(),
+    renderingAllowed: vi.fn(),
+    lock: vi.fn(),
+    release: vi.fn(),
+    env: {
+      SITE_AUDIT_WORKFLOW: {
+        create: workflowCreate,
+        get: vi.fn().mockRejectedValue(new Error("No instance")),
+      },
+    } as Record<string, unknown>,
+  };
+});
 
-vi.mock("cloudflare:workers", () => ({
-  env: {
-    SITE_AUDIT_WORKFLOW: {
-      create: mocks.workflowCreate,
-      get: vi.fn().mockRejectedValue(new Error("No instance")),
-    },
-  },
-}));
-vi.mock("@/server/lib/audit/rendering-policy", () => ({
+vi.mock("cloudflare:workers", () => ({ env: mocks.env }));
+// The check is mocked; the message it comes with is the real one, which
+// reads AUTH_MODE from the env above.
+vi.mock("@/server/lib/audit/rendering-policy", async (importOriginal) => ({
+  ...(await importOriginal<typeof RenderingPolicy>()),
   isAuditRenderingAllowed: mocks.renderingAllowed,
 }));
 vi.mock("@/server/lib/audit/rendering-billing", () => ({
@@ -76,11 +82,32 @@ describe("rendered audit start", () => {
     mocks.lock.mockResolvedValue(locks);
   });
 
-  it("falls back to non-rendered crawl when rendering is unavailable on the deployment", async () => {
+  it("rejects rendering where the deployment cannot provide it, saying why", async () => {
     mocks.renderingAllowed.mockResolvedValue(false);
-    const result = await AuditService.startAudit(renderedAudit);
-    expect(result).toHaveProperty("auditId");
+    const error = await AuditService.startAudit(renderedAudit).catch(
+      (reason: unknown) => reason,
+    );
+    expect(error).toMatchObject({ code: "AUDIT_RENDERING_UNAVAILABLE" });
+    // MCP clients see this message as the tool's answer.
+    expect(String(error)).toContain("CONTEXT_API_KEY");
     expect(mocks.lock).not.toHaveBeenCalled();
+  });
+
+  it("behind an Every App gateway, says the key is the gateway's and how an admin sets it", async () => {
+    mocks.renderingAllowed.mockResolvedValue(false);
+    mocks.env.AUTH_MODE = "everyapp";
+    try {
+      const error = await AuditService.startAudit(renderedAudit).catch(
+        (reason: unknown) => reason,
+      );
+      expect(error).toMatchObject({ code: "AUDIT_RENDERING_UNAVAILABLE" });
+      expect(String(error)).toContain(
+        "JavaScript rendering isn't set up on your Every App gateway yet. An owner or admin sets it with pnpm everyapp secret set CONTEXT_API_KEY.",
+      );
+      expect(mocks.lock).not.toHaveBeenCalled();
+    } finally {
+      delete mocks.env.AUTH_MODE;
+    }
   });
 
   it("holds the audit's worst case and hands the locks to the workflow", async () => {
@@ -91,16 +118,6 @@ describe("rendered audit start", () => {
     expect(mocks.workflowCreate.mock.calls[0][0].params.renderLocks).toEqual(
       locks,
     );
-  });
-
-  it("refuses more than 1,000 rendered pages on a paid plan before holding credits", async () => {
-    const error = await AuditService.startAudit({
-      ...renderedAudit,
-      maxPages: 1_001,
-    }).catch((reason: unknown) => reason);
-    expect(error).toMatchObject({ code: "AUDIT_PAGE_LIMIT_EXCEEDED" });
-    expect(String(error)).toContain("limited to 1,000 pages");
-    expect(mocks.lock).not.toHaveBeenCalled();
   });
 
   it("does not start an audit the organization cannot cover", async () => {

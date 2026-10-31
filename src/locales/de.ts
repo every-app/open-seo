@@ -11,6 +11,7 @@ export const de = {
     my_site: "Meine Website",
     search_performance: "GSC Insights",
     rank_tracking: "Rank-Tracking",
+    local_seo: "Local SEO",
     saved_keywords: "Gespeicherte Keywords",
     audit: "Site-Audit",
     ai_visibility: "KI-Sichtbarkeit",
@@ -160,6 +161,8 @@ export const de = {
       name_required: "Gib einen Projektnamen ein.",
       scan_notice:
         "Das Hinzufügen deiner Website startet einen Scan von bis zu 50 Seiten mit JavaScript-Rendering. Das Rendering verbraucht dein Kontingent.",
+      scan_notice_everyapp:
+        "Das Hinzufügen deiner Website startet ein 50-Seiten-Website-Audit.",
       domain: "Domain",
       optional: "(optional)",
       market_help:

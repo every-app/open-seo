@@ -12,6 +12,7 @@ export const en: TranslationDict = {
     my_site: "My Site",
     search_performance: "GSC Insights",
     rank_tracking: "Rank Tracking",
+    local_seo: "Local SEO",
     saved_keywords: "Saved Keywords",
     audit: "Site Audit",
     ai_visibility: "AI Visibility",
@@ -159,6 +160,8 @@ export const en: TranslationDict = {
       name_required: "Enter a project name.",
       scan_notice:
         "Adding your website starts a 50-page scan with JavaScript rendering. Rendering uses your credits.",
+      scan_notice_everyapp:
+        "Adding your website starts a 50-page site audit.",
       domain: "Domain",
       optional: "(optional)",
       market_help:

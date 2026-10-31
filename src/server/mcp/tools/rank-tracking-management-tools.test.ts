@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import { AppError } from "@/server/lib/errors";
 import { addRankTrackingKeywordsTool } from "./add-rank-tracking-keywords";
 import { createRankTrackerTool } from "./create-rank-tracker";
 import { getRankTrackerTool } from "./get-rank-tracker";
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   createConfig: vi.fn(),
   getTracker: vi.fn(),
   addKeywords: vi.fn(),
+  refreshKeywordMetrics: vi.fn(),
   triggerCheck: vi.fn(),
   captureServerEvent: vi.fn(),
   waitUntil: vi.fn(),
@@ -30,6 +32,7 @@ vi.mock("@/server/features/rank-tracking/services/RankTrackingService", () => ({
     createConfig: mocks.createConfig,
     getTracker: mocks.getTracker,
     addKeywords: mocks.addKeywords,
+    refreshKeywordMetrics: mocks.refreshKeywordMetrics,
     triggerCheck: mocks.triggerCheck,
   },
 }));
@@ -59,6 +62,7 @@ describe("rank tracking management MCP tools", () => {
       languageCode: "en",
     });
     mocks.captureServerEvent.mockResolvedValue(undefined);
+    mocks.refreshKeywordMetrics.mockResolvedValue({ updated: 1 });
   });
 
   it("creates a manual tracker from project defaults without spending credits", async () => {
@@ -141,6 +145,9 @@ describe("rank tracking management MCP tools", () => {
       toolContext,
     );
     expect(textContent(added)).toContain("Added 1 of 3 requested");
+    expect(textContent(added)).toContain(
+      "Fetched search volume, difficulty and CPC for 1 keyword.",
+    );
     expect(added.structuredContent).toMatchObject({ requested: 3, added: 1 });
     expect(mocks.addKeywords).toHaveBeenCalledWith(
       trackerId,
@@ -151,6 +158,23 @@ describe("rank tracking management MCP tools", () => {
         maxEstimatedScheduledCheckCredits: undefined,
       },
       true,
+    );
+  });
+
+  it("keeps the add successful when a billing refusal stops the metrics fetch", async () => {
+    mocks.addKeywords.mockResolvedValue({ added: 1, addedIds: [keywordId] });
+    mocks.refreshKeywordMetrics.mockRejectedValue(
+      new AppError("INSUFFICIENT_CREDITS"),
+    );
+
+    const added = await addRankTrackingKeywordsTool.handler(
+      { projectId, trackerId, keywords: ["seo"] },
+      toolContext,
+    );
+
+    expect(added.structuredContent).toMatchObject({ added: 1 });
+    expect(textContent(added)).toContain(
+      "Search volume was not fetched (INSUFFICIENT_CREDITS).",
     );
   });
 

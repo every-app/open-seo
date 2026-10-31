@@ -12,6 +12,7 @@ const snapshot = (
   isPaying: true,
   pastDue: false,
   canceledAt: null,
+  paidPlanPriced: true as boolean | null,
   ...overrides,
 });
 
@@ -19,6 +20,7 @@ const free = snapshot({
   paidPlanId: null,
   paidPlanStatus: null,
   isPaying: false,
+  paidPlanPriced: null,
 });
 
 describe("deriveBillingLifecycleEvents", () => {
@@ -32,15 +34,28 @@ describe("deriveBillingLifecycleEvents", () => {
     expect(
       deriveBillingLifecycleEvents(
         free,
-        snapshot({ paidPlanId: "friends_and_family_2" }),
+        snapshot({
+          paidPlanId: "friends_and_family_2",
+          paidPlanPriced: false,
+        }),
       ),
     ).toEqual([]);
     expect(
       deriveBillingLifecycleEvents(
         snapshot(),
-        snapshot({ paidPlanId: "yc-plan" }),
+        snapshot({ paidPlanId: "pro-plan-annual" }),
       ),
     ).toEqual([]);
+  });
+
+  it("judges a row stored without plan pricing by the plan it moves to", () => {
+    const stored = snapshot({ paidPlanPriced: null });
+    // The same plan renewing is not a new subscription.
+    expect(deriveBillingLifecycleEvents(stored, snapshot())).toEqual([]);
+    // Leaving it is still a cancellation.
+    expect(deriveBillingLifecycleEvents(stored, free)).toEqual([
+      { name: "subscription_canceled", planId: "base-plan" },
+    ]);
   });
 
   it("reports a payment failure once when the subscription goes past due", () => {

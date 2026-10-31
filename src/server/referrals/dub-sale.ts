@@ -12,9 +12,10 @@ export type AutumnInvoice = {
   createdAt: number;
 };
 
-// The largest legitimate invoice today is the $10/mo plan plus a $99 top-up;
-// anything near this cap means the dollars-vs-cents assumption below broke.
-const MAX_PLAUSIBLE_INVOICE_TOTAL_USD = 1000;
+// The largest legitimate invoice today is the $2,000/yr Agency plan plus a $99
+// top-up; anything near this cap means the dollars-vs-cents assumption below
+// broke.
+const MAX_PLAUSIBLE_INVOICE_TOTAL_USD = 2500;
 
 /** Maps a paid Autumn invoice to a Dub /track/sale body, or null when the
  *  invoice shouldn't be tracked. Autumn's `total` is in major units (dollars);

@@ -13,12 +13,12 @@ export const dashboardSetupStepSchema = z.enum([
   "project",
 ]);
 export type DashboardSetupStep = z.infer<typeof dashboardSetupStepSchema>;
-// Steps that complete on click-through rather than from product state.
-export const dashboardClickStepSchema = z.enum(["competitor", "keywords"]);
-export type DashboardClickStep = z.infer<typeof dashboardClickStepSchema>;
-export const dashboardStepClickSchema = dashboardProjectInputSchema.extend({
-  step: dashboardClickStepSchema,
-});
+// Steps that complete when the workspace first runs that research, from the
+// app or an agent.
+export type DashboardResearchStep = Extract<
+  DashboardSetupStep,
+  "competitor" | "keywords"
+>;
 export const dashboardStepDismissalSchema = dashboardProjectInputSchema.extend({
   step: dashboardSetupStepSchema,
   dismissed: z.boolean(),

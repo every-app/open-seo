@@ -59,6 +59,19 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
     ).toMatchObject({ organizationId: "org_123", ...expected });
   });
 
+  it("reads whether the paid plan is priced off the expanded plan", () => {
+    const pricedWith = (plan?: { price: unknown }) =>
+      deriveBillingCustomerStatusSnapshot({
+        id: "org_1",
+        flags: paidFlags("base-plan"),
+        subscriptions: [{ planId: "base-plan", status: "active", plan }],
+      }).paidPlanPriced;
+
+    expect(pricedWith({ price: { amount: 10, interval: "month" } })).toBe(true);
+    expect(pricedWith({ price: null })).toBe(false);
+    expect(pricedWith()).toBeNull();
+  });
+
   it("prefers the active row when the plan has several subscriptions", () => {
     const snapshot = deriveBillingCustomerStatusSnapshot({
       id: "org_789",

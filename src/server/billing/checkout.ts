@@ -4,8 +4,10 @@ import { requireOrgPermission } from "@/server/auth/org-gate";
 import { autumn } from "@/server/billing/autumn";
 import { AppError } from "@/server/lib/errors";
 import {
+  AUTUMN_AGENCY_PLAN_ID,
   AUTUMN_CHECKOUT_SESSION_PARAMS,
   AUTUMN_PAID_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
   AUTUMN_SEO_DATA_CREDITS_PER_USD,
   AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
@@ -25,6 +27,8 @@ const PLAN_CHECKOUT_SESSION_PARAMS: Record<
 > = {
   [AUTUMN_PAID_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
   [AUTUMN_YC_PLAN_ID]: AUTUMN_YC_CHECKOUT_SESSION_PARAMS,
+  [AUTUMN_PRO_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
+  [AUTUMN_AGENCY_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
 };
 
 // redirectMode "always" makes Autumn return a link instead of billing: Stripe

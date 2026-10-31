@@ -63,7 +63,9 @@ Set these three values, then restart OpenSEO:
 | `BETTER_AUTH_SECRET`   | A random string of **at least 32 characters** (encrypts stored tokens). |
 
 `BETTER_AUTH_SECRET` is not needed for normal self-hosting — only for Search
-Console, because the stored OAuth tokens are encrypted at rest with it. Generate
+Console, because the stored OAuth tokens are encrypted at rest with it. The
+Cloudflare self-host with password accounts (`AUTH_MODE=password`) and the
+Docker setup (`deploy/standalone`) generate one already; leave it unset there. Generate
 one with:
 
 ```sh
@@ -72,18 +74,22 @@ openssl rand -base64 32
 
 Where to set them:
 
-- **Docker self-hosting:** `.env`
+- **Docker self-hosting:** `deploy/standalone/.env`
+- **Older Docker image:** `.env`
 - **Cloudflare:** the Workers dashboard (as secrets)
 - **Local development:** `.env.local`
 
 ## 5) Restart and connect
 
 Restart OpenSEO so it picks up the new variables. For Docker, changing `.env`
-means Compose has to recreate the container to reapply it:
+means Compose has to recreate the containers to reapply it:
 
 ```bash
-docker compose up -d --force-recreate open-seo
+docker compose up -d --force-recreate init web crawl-gateway
 ```
+
+On the older Docker image, run `docker compose up -d --force-recreate open-seo`
+instead.
 
 Then open **Integrations**, click **Connect with Google**, authorize the Google
 account that owns your verified property, and pick the property to bind to your
@@ -108,11 +114,7 @@ must exactly equal `<your-origin>/api/gsc/oauth/callback`. Re-check scheme
 (in the app or via the MCP tools) — one of `GOOGLE_CLIENT_ID`,
 `GOOGLE_CLIENT_SECRET`, or `BETTER_AUTH_SECRET` is missing, or the secret is
 shorter than 32 characters. Set all three and restart. On Docker, recreate the
-container so Compose reapplies `.env`:
-
-```bash
-docker compose up -d --force-recreate open-seo
-```
+containers so Compose reapplies `.env`, as in [step 5](#5-restart-and-connect).
 
 **`access_denied` during sign-in** — the Google account isn't listed as a test
 user on the OAuth consent screen (while the app is in Testing mode). Add it under

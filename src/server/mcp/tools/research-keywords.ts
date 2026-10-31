@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import { recordResearchStep } from "@/server/features/activation/researchActivation";
 import type { EnrichedKeyword } from "@/server/features/keywords/services/research/helpers";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
@@ -191,6 +192,7 @@ export const researchKeywordsTool = {
     );
 
     const okCount = results.filter((r) => r.ok).length;
+    if (okCount > 0) await recordResearchStep(args.projectId, "keywords");
     const failCount = results.length - okCount;
     // One text budget for the whole response, split across the seeds.
     const budget = sectionTableBudget(results.length);

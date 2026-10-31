@@ -169,11 +169,13 @@ export const completeAiResearchSetupTool = defineAiTool({
   openWorld: true,
   path: "research",
   description:
-    "Set up Prompt Research keywords for a project with a saved website. Before starting missing setup, get the user's approval for paid research and any new recurring tracking. Research sends project context to an external model and reads websites or searches for competitors when needed, using OpenSEO credits. Existing keywords, running setup, or setup awaiting review are returned without restarting research. Saved context is reused. When no tracker exists, saving setup also creates three topics with five prompts each and enables weekly paid AI checks, first due about a week later. Returns keywords, status, and review. For status=review, review the proposed setup with the user, then save through save_project_website_setup, preserving saved competitors when review.preserveCompetitors=true. For status=running, call again after about 20 seconds. Does not start an answer check immediately.",
+    "Set up Prompt Research keywords for a project with a saved website. Before starting missing setup, get the user's approval for paid research and any new recurring tracking. Research sends project context to an external model and reads websites or searches for competitors when needed, using OpenSEO credits. Existing keywords, an existing tracker (whose topics Prompt Research lists), running setup, or setup awaiting review are returned without restarting research. Saved context is reused. When no tracker exists, saving setup also creates three topics with five prompts each and enables weekly paid AI checks, first due about a week later. Returns keywords, status, and review. For status=review, review the proposed setup with the user, then save through save_project_website_setup, preserving saved competitors when review.preserveCompetitors=true. For status=running, call again after about 20 seconds. Does not start an answer check immediately.",
   execute: (s, a, b) => s.startResearchSetup(a, b),
   summarize: (d) =>
     d.status === "ready"
-      ? `Research keywords: ${d.keywords.join(", ")}.`
+      ? d.keywords.length
+        ? `Research keywords: ${d.keywords.join(", ")}.`
+        : "AI research is set up: Prompt Research lists the tracker's topics."
       : d.status === "review"
         ? "Setup research is ready for review. Save it with save_project_website_setup after the user confirms."
         : `Setup is ${d.status}.`,

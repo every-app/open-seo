@@ -16,6 +16,7 @@ import {
 import { toastInitialAudit } from "@/client/features/projects/initialAuditToast";
 import { archiveProject, updateProject } from "@/serverFunctions/projects";
 import { useLocale } from "@/client/lib/i18n";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import type { ProjectSummary } from "./types";
 
 export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
@@ -117,7 +118,9 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
           </form.AppField>
 
           <p className="text-sm text-muted-foreground">
-            {t("project_settings.general.scan_notice")}
+            {isEveryAppClientAuthMode()
+              ? t("project_settings.general.scan_notice_everyapp")
+              : t("project_settings.general.scan_notice")}
           </p>
           <form.AppField name="domain">
             {(field) => (

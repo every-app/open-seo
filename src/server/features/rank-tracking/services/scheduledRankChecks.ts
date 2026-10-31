@@ -2,6 +2,8 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { FeatureFlag } from "@/server/lib/featureFlags";
+import { isFeatureFlagOn } from "@/server/lib/posthog";
 import {
   computeNextCheckAt,
   devicesCount,
@@ -37,6 +39,15 @@ const ALREADY_RUNNING_IDS_CAP = 20;
 // Cron body for the `scheduled` Worker handler: start a rank-check run for every
 // config that's due. Wrapped in `withPgClient` at the entrypoint (server.ts).
 export async function runScheduledRankChecks(env: Env) {
+  // Nothing is claimed while the pause flag is on, so every config stays due
+  // and the scheduler works through the backlog, oldest first and within the
+  // per-tick budget, once it's turned off. Runs already started keep going.
+  const pauseFlag = FeatureFlag.PauseScheduledRankChecks;
+  if (await isFeatureFlagOn(pauseFlag)) {
+    console.warn({ event: "rank_tracking_scheduler_paused", flag: pauseFlag });
+    return;
+  }
+
   const nowIso = new Date().toISOString();
   const dueConfigs =
     await RankTrackingRepository.getDueConfigsWithOrganization(nowIso);

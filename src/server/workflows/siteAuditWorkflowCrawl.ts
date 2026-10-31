@@ -2,18 +2,11 @@ import { env, type WorkflowStep } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import type { RobotsResult } from "@/server/lib/audit/discovery";
 import type { AuditConfig, CrawledPageResult } from "@/server/lib/audit/types";
-import { isAuditablePageUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
-import { isCrawlableUrl } from "@/server/lib/audit/url-policy";
-import { deterministicAuditRowId } from "@/server/lib/audit/ids";
-import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
-import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import {
   getAuditScratchpad,
   type ClaimedUrl,
-  type FrontierStats,
-  type ScratchpadPageLinksRow,
 } from "@/server/features/audit/AuditScratchpad";
-import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
+import { persistCrawledPages } from "@/server/workflows/siteAuditWorkflowPersist";
 import {
   adjustCrawlWindow,
   clampCrawlWindow,
@@ -25,10 +18,16 @@ import {
   type CrawlThrottleState,
 } from "@/server/lib/audit/crawl-throttle";
 import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
-import type { RenderUsage } from "@/shared/audit-rendering";
+import {
+  estimateRenderingCredits,
+  renderUsageCredits,
+  type RenderUsage,
+} from "@/shared/audit-rendering";
 import type { CrawlerAccess } from "@/shared/crawler-access";
 import { pgStep } from "@/server/workflows/pgStep";
 import { CRAWL_CHUNK_STEP } from "@/server/workflows/auditStepConfigs";
+import { getContextFetch } from "@/server/lib/provider-access";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
 /**
  * The crawl runs in chunks: each chunk is one durable step that leases up to
@@ -41,6 +40,11 @@ import { CRAWL_CHUNK_STEP } from "@/server/workflows/auditStepConfigs";
 const CHUNK_TARGET_PAGES = 200;
 /** Stop launching new fetches after this long; leftover leases are released. */
 const CHUNK_SOFT_DEADLINE_MS = 90_000;
+/**
+ * How long past its soft deadline a chunk may keep waiting before it logs the
+ * fetches it is still waiting on. Longer than any single page fetch or render.
+ */
+const STUCK_CHUNK_GRACE_MS = 60_000;
 /** Crawled pages are persisted in sub-batches of this size. */
 const PERSIST_BATCH_SIZE = 25;
 /**
@@ -59,36 +63,6 @@ const FIRST_PERSIST_BATCH_SIZE = 5;
  */
 const MAX_QUEUED_PERSIST_BATCHES = 2;
 
-/**
- * Mega-menu/footer-heavy sites can carry 1000+ links per page; cap what we
- * record so a 10k-page crawl can't produce tens of millions of link targets
- * to scan at finalize.
- */
-const MAX_STORED_LINKS_PER_PAGE = 500;
-/**
- * Cap newly discovered URLs sent to the scratchpad per persist sub-batch.
- * Serialized RPC messages are limited to 32 MiB; a crawler-trap page family
- * (faceted nav, calendars) can emit tens of thousands of unique URLs per
- * page. Dropped URLs are usually re-discovered from later pages, and a site
- * generating this many is past maxPages anyway.
- */
-const MAX_DISCOVERED_PER_BATCH = 20_000;
-const MAX_PROGRESS_TITLE_CHARS = 300;
-
-function shouldQueueCrawlLink(
-  link: string,
-  origin: string,
-  robots: RobotsResult,
-  sitePlatform: AuditConfig["sitePlatform"],
-): boolean {
-  return (
-    isSameOrigin(link, origin) &&
-    isCrawlableUrl(link) &&
-    isAuditablePageUrl(link, sitePlatform) &&
-    robots.isAllowed(link)
-  );
-}
-
 type CrawlPhaseParams = {
   auditId: string;
   workflowInstanceId: string;
@@ -106,13 +80,22 @@ type CrawlPhaseParams = {
   renderUsage: RenderUsage;
   /** Crawler-access headers for the audited host, when the org has one. */
   access?: CrawlerAccess | null;
+  /**
+   * A metered rendered audit's credit hold. No fetch starts after its
+   * deadline or once rendering it could cost more than it holds.
+   */
+  renderHold?: { deadlineAt: number; credits: number };
 };
 
 export type CrawlPhaseResult = {
   pagesCrawled: number;
   /** True when the frontier was exhausted before hitting maxPages. */
   completed: boolean;
-  rateLimited?: boolean;
+  /** Why the crawl stopped before running out of URLs or pages. */
+  stoppedBy?:
+    | "crawl-rate-limited"
+    | "crawl-time-limit"
+    | "crawl-credits-exhausted";
 };
 
 export async function runCrawlPhase(
@@ -154,12 +137,13 @@ export async function runCrawlPhase(
       result.renderUsage?.cloudflareAttempts ?? 0;
     params.renderUsage.contextCredits +=
       result.renderUsage?.contextCredits ?? 0;
-    if (result.rateLimited) {
-      return {
-        pagesCrawled: attemptedTotal,
-        completed: false,
-        rateLimited: true,
-      };
+    const stoppedBy = result.rateLimited
+      ? "crawl-rate-limited"
+      : result.timedOut
+        ? "crawl-time-limit"
+        : result.outOfCredits && "crawl-credits-exhausted";
+    if (stoppedBy) {
+      return { pagesCrawled: attemptedTotal, completed: false, stoppedBy };
     }
     // `?? initial`: an instance in flight across a deploy replays cached
     // step results from before endWindow existed.
@@ -183,6 +167,19 @@ export async function runCrawlPhase(
   return { pagesCrawled: attemptedTotal, completed: pending === 0 };
 }
 
+type CrawlChunkResult = {
+  attemptedInChunk: number;
+  attempted: number;
+  pending: number;
+  endWindow: number;
+  rateLimited?: boolean;
+  timedOut?: boolean;
+  outOfCredits?: boolean;
+  throttleState?: CrawlThrottleState;
+  resumeAt?: number;
+  renderUsage?: RenderUsage;
+};
+
 async function runCrawlChunk(
   input: CrawlPhaseParams & {
     chunkNo: number;
@@ -190,19 +187,11 @@ async function runCrawlChunk(
     startWindow: number;
     throttleState?: CrawlThrottleState;
   },
-): Promise<{
-  attemptedInChunk: number;
-  attempted: number;
-  pending: number;
-  endWindow: number;
-  rateLimited?: boolean;
-  throttleState?: CrawlThrottleState;
-  resumeAt?: number;
-  renderUsage?: RenderUsage;
-}> {
+): Promise<CrawlChunkResult> {
   const { auditId, workflowInstanceId, origin, maxPages, robots, chunkNo } =
     input;
   const scratchpad = getAuditScratchpad(auditId);
+  const renderDeadlineAt = input.renderHold?.deadlineAt ?? Infinity;
   let previousThrottle =
     (await scratchpad.getCrawlThrottle()) ?? input.throttleState;
 
@@ -214,7 +203,34 @@ async function runCrawlChunk(
     chunkNo,
     claimLimit,
   );
-  const deadlineAt = Date.now() + CHUNK_SOFT_DEADLINE_MS;
+  // One line at each end of a chunk, so a crawl that stops making progress
+  // shows where: inside a chunk, in a cooldown between chunks, or replaying.
+  const startedAt = Date.now();
+  console.info("site_audit:chunk_start", {
+    auditId,
+    chunkNo,
+    claimed: claimed.length,
+    isRetry,
+  });
+  const logChunkEnd = (result: CrawlChunkResult) => {
+    console.info("site_audit:chunk_end", {
+      auditId,
+      chunkNo,
+      attemptedInChunk: result.attemptedInChunk,
+      attempted: result.attempted,
+      pending: result.pending,
+      durationMs: Date.now() - startedAt,
+      rateLimited: result.rateLimited,
+      timedOut: result.timedOut,
+      outOfCredits: result.outOfCredits,
+      resumeAt: result.resumeAt && new Date(result.resumeAt).toISOString(),
+    });
+    return result;
+  };
+  const deadlineAt = Math.min(
+    Date.now() + CHUNK_SOFT_DEADLINE_MS,
+    renderDeadlineAt,
+  );
   if (isRetry && previousThrottle) {
     // Requests made since the last checkpoint may have consumed a slot.
     previousThrottle = {
@@ -241,7 +257,7 @@ async function runCrawlChunk(
   );
   if (claimed.length === 0) {
     const stats = await scratchpad.getStats();
-    return {
+    return logChunkEnd({
       attemptedInChunk: 0,
       attempted: stats.attempted,
       pending: stats.pending,
@@ -252,7 +268,7 @@ async function runCrawlChunk(
         throttle.state.pausedUntil > Date.now()
           ? throttle.state.pausedUntil
           : undefined,
-    };
+    });
   }
 
   const depthByUrl = new Map(claimed.map((entry) => [entry.url, entry.depth]));
@@ -267,6 +283,7 @@ async function runCrawlChunk(
   let nextIndex = 0;
   let attemptedInChunk = 0;
   const inFlight = new Set<Promise<void>>();
+  const inFlightSince = new Map<string, number>();
   const deferred: string[] = [];
   let persistThreshold = FIRST_PERSIST_BATCH_SIZE;
   let batch: CrawledPageResult[] = [];
@@ -304,13 +321,28 @@ async function runCrawlChunk(
   // This attempt's rendering counts, returned in the step result. The audit's
   // credit lock is settled once, when the audit ends.
   const renderUsage: RenderUsage = { cloudflareAttempts: 0, contextCredits: 0 };
+  // Whether `pending` in-flight pages and one more, each at the Context worst
+  // case, still fit the hold on top of what this audit has rendered so far.
+  const canAffordRender = (pending: number) =>
+    !input.renderHold ||
+    renderUsageCredits({
+      cloudflareAttempts:
+        input.renderUsage.cloudflareAttempts + renderUsage.cloudflareAttempts,
+      contextCredits:
+        input.renderUsage.contextCredits + renderUsage.contextCredits,
+    }) +
+      estimateRenderingCredits(pending + 1).high <=
+      input.renderHold.credits;
   const render = input.renderJavaScript
     ? async (url: string) => {
         const { RenderedPageService } =
           await import("@/server/lib/audit/rendered-page");
         return RenderedPageService.renderPage(url, {
           browser: env.BROWSER,
-          contextApiKey: env.CONTEXT_API_KEY,
+          // Behind an Every App gateway its calls are the audit's
+          // organization's, named around the Workflow's run() and carried
+          // into this step by pgStep.
+          contextFetch: await getContextFetch(),
           auditId,
           usage: renderUsage,
         });
@@ -340,10 +372,29 @@ async function runCrawlChunk(
       })
       .finally(() => {
         inFlight.delete(promise);
+        inFlightSince.delete(entry.url);
       });
     inFlight.add(promise);
+    inFlightSince.set(entry.url, Date.now());
   };
 
+  // Hosted logs keep only the path: a query string or user info in a link the
+  // audited site controls can carry secrets. Self-hosters read their own logs.
+  const logFullUrls = !(await isHostedServerAuthMode());
+  const stuckTimer = setTimeout(
+    () => {
+      console.warn("site_audit:chunk_stuck", {
+        auditId,
+        chunkNo,
+        queuedPersists,
+        inFlight: [...inFlightSince].map(([url, since]) => ({
+          url: logFullUrls ? url : new URL(url).pathname,
+          seconds: Math.round((Date.now() - since) / 1000),
+        })),
+      });
+    },
+    Math.max(0, deadlineAt - Date.now()) + STUCK_CHUNK_GRACE_MS,
+  );
   while (true) {
     while (
       inFlight.size < windowSize &&
@@ -353,7 +404,11 @@ async function runCrawlChunk(
       // queuedPersists changes when persistChain settles. Keep it out of the
       // loop condition because the type-aware linter cannot see that async
       // mutation and flags the otherwise valid backpressure check.
-      if (throttle.stopped || queuedPersists > MAX_QUEUED_PERSIST_BATCHES)
+      if (
+        throttle.stopped ||
+        queuedPersists > MAX_QUEUED_PERSIST_BATCHES ||
+        !canAffordRender(inFlight.size)
+      )
         break;
       launch(claimed[nextIndex]);
       nextIndex += 1;
@@ -378,6 +433,7 @@ async function runCrawlChunk(
   }
   flush();
   await persistChain;
+  clearTimeout(stuckTimer);
   await scratchpad.saveCrawlThrottle(throttle.state);
 
   // Preserve URLs without a page result, including slots stopped by a cooldown.
@@ -394,108 +450,27 @@ async function runCrawlChunk(
   // most one sub-batch, not a whole chunk.
   const stats = await scratchpad.getStats();
   const throttleState = throttle.state;
-  return {
+  return logChunkEnd({
     attemptedInChunk,
     attempted: stats.attempted,
     pending: stats.pending,
     endWindow: windowSize,
     rateLimited: throttle.stopped,
+    outOfCredits: unattempted.length > 0 && !canAffordRender(0),
+    // Work is left and neither now nor the site's pacing allows another
+    // request before the deadline, so no later chunk could start one either.
+    timedOut:
+      unattempted.length > 0 &&
+      Math.max(
+        Date.now(),
+        throttleState.pausedUntil,
+        throttleState.nextRequestAt,
+      ) >= renderDeadlineAt,
     throttleState,
     resumeAt:
       throttleState.pausedUntil > Date.now()
         ? throttleState.pausedUntil
         : undefined,
     renderUsage,
-  };
-}
-
-async function persistCrawledPages(input: {
-  auditId: string;
-  workflowInstanceId: string;
-  origin: string;
-  robots: RobotsResult;
-  sitePlatform: AuditConfig["sitePlatform"];
-  scratchpad: ReturnType<typeof getAuditScratchpad>;
-  pages: CrawledPageResult[];
-  depthByUrl: Map<string, number | null>;
-  maxPages: number;
-}): Promise<FrontierStats> {
-  const {
-    auditId,
-    origin,
-    robots,
-    sitePlatform,
-    scratchpad,
-    pages,
-    depthByUrl,
-  } = input;
-
-  // Deterministic ids keep every write idempotent across step retries.
-  for (const page of pages) {
-    page.id = await deterministicAuditRowId(auditId, page.url);
-  }
-  const issues = pages.flatMap((page) => runPageReporters(page));
-  await AuditRepository.insertCrawledBatch(auditId, pages, issues);
-
-  const links: ScratchpadPageLinksRow[] = [];
-  const discovered = new Map<string, number | null>();
-  for (const page of pages) {
-    const pageDepth = depthByUrl.get(page.url) ?? null;
-    const childDepth = pageDepth === null ? null : pageDepth + 1;
-
-    const targets: string[] = [];
-    for (const link of page.links) {
-      if (!link.isInternal) continue;
-      if (targets.length < MAX_STORED_LINKS_PER_PAGE) {
-        targets.push(link.targetUrl);
-      }
-      if (
-        discovered.size < MAX_DISCOVERED_PER_BATCH &&
-        !discovered.has(link.targetUrl) &&
-        shouldQueueCrawlLink(link.targetUrl, origin, robots, sitePlatform)
-      ) {
-        discovered.set(link.targetUrl, childDepth);
-      }
-    }
-    if (targets.length > 0) {
-      links.push({ pageId: page.id, url: page.url, targets });
-    }
-
-    // Redirect targets continue the same navigation path: same depth.
-    if (
-      page.redirectUrl &&
-      !discovered.has(page.redirectUrl) &&
-      shouldQueueCrawlLink(page.redirectUrl, origin, robots, sitePlatform)
-    ) {
-      discovered.set(page.redirectUrl, pageDepth);
-    }
-  }
-
-  const stats = await scratchpad.recordBatch({
-    crawledUrls: pages.map((page) => page.url),
-    pages: pages.map((page) => ({
-      pageId: page.id,
-      url: page.url,
-      statusCode: page.statusCode,
-      fetchClass: page.fetchClass,
-      redirectUrl: page.redirectUrl,
-    })),
-    links,
-    discovered: Array.from(discovered, ([url, depth]) => ({ url, depth })),
   });
-
-  await AuditRepository.updateAuditProgress(auditId, input.workflowInstanceId, {
-    pagesCrawled: stats.attempted,
-    pagesTotal: Math.min(stats.seen, input.maxPages),
-  });
-  await AuditProgressKV.pushCrawledUrls(
-    auditId,
-    pages.map((page) => ({
-      url: page.url,
-      statusCode: page.statusCode,
-      title: page.title.slice(0, MAX_PROGRESS_TITLE_CHARS),
-      crawledAt: Date.now(),
-    })),
-  );
-  return stats;
 }

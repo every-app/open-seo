@@ -1,0 +1,100 @@
+name: openseo-standalone
+x-app: &app
+  # The published image. To build it from this checkout instead, add
+  # compose.build.yaml (see docs/SELF_HOSTING_DOCKER.md). This file
+  # reads nothing else from the checkout, so it can be pasted into Coolify,
+  # Portainer or Dokploy on its own.
+  image: ${OPENSEO_IMAGE:-ghcr.io/every-app/open-seo-standalone:latest}
+x-storage: &storage
+  CELLD_BUCKET: openseo
+  S3_ENDPOINT: http://storage:9000
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY:?Set STORAGE_ACCESS_KEY in .env}
+  AWS_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY:?Set STORAGE_SECRET_KEY in .env}
+services:
+  storage:
+    # RustFS is the S3-compatible store celld keeps its state in. MinIO's
+    # community images were delisted from Docker Hub and Quay in September
+    # 2026; RustFS passes `celld diagnose` (conditional create and overwrite),
+    # which Garage does not.
+    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
+    environment:
+      RUSTFS_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY}
+    volumes: [storage:/data]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:9000/health]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  runtime:
+    <<: *app
+    environment:
+      <<: *storage
+      CELLD_MAX_RSS_MB: "1536"
+      CELLD_MAX_RESIDENT_CELLS: "64"
+      CELLD_V8_HEAP_LIMIT_MB: "256"
+      CELLD_MAX_REQUEST_BODY_BYTES: "33554432"
+      RUST_LOG: warn,cell_console=info
+    mem_limit: 2g
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+    volumes: [runtime:/data, config:/config:ro]
+    depends_on:
+      storage: { condition: service_healthy }
+    restart: unless-stopped
+    stop_grace_period: 60s
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8080/api/health]
+      interval: 10s
+      timeout: 5s
+      start_period: 120s
+      retries: 5
+  init:
+    <<: *app
+    command: [sh, /opt/standalone/init.sh]
+    network_mode: service:runtime
+    environment:
+      <<: *storage
+      AUTH_MODE: ${AUTH_MODE:-password}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3001}
+      CONTEXT_API_KEY: ${CONTEXT_API_KEY:-}
+      DATAFORSEO_API_KEY: ${DATAFORSEO_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+    volumes: [config:/config, web-config:/web-config]
+    depends_on:
+      runtime: { condition: service_started }
+    restart: "no"
+  crawl-gateway:
+    <<: *app
+    command: [node, /opt/standalone/crawl-gateway.mjs]
+    volumes: [config:/config:ro]
+    depends_on:
+      init: { condition: service_completed_successfully }
+    restart: unless-stopped
+  web:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    ports: ["127.0.0.1:${PORT:-3001}:80"]
+    # Written by init from deploy/standalone/nginx.conf in the image. nocopy
+    # keeps nginx's own default.conf (root-owned) out of the shared volume.
+    volumes:
+      - type: volume
+        source: web-config
+        target: /etc/nginx/conf.d
+        read_only: true
+        volume: { nocopy: true }
+    depends_on:
+      init: { condition: service_completed_successfully }
+      crawl-gateway: { condition: service_started }
+    restart: unless-stopped
+volumes:
+  storage:
+  runtime:
+  config:
+  web-config:

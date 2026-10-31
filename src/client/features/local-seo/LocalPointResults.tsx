@@ -1,6 +1,11 @@
 import type { getLocalScan } from "@/serverFunctions/local-seo";
 import { EmptyState } from "@/client/components/EmptyState";
-import { Card, CardHeader, CardTitle } from "@/client/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
 import {
   Table,
   TableBody,
@@ -19,18 +24,23 @@ export function LocalPointResults({
   results,
   cid,
   placeId,
+  gridSize,
+  spacingKm,
 }: {
   point: LocalGridDisplayPoint;
   results: PointResult[];
   cid: string | null;
   placeId: string | null;
+  gridSize: number;
+  spacingKm: number;
 }) {
   return (
     <Card className="h-full min-h-0 min-w-0 gap-0 overflow-hidden py-0 shadow-none">
-      <CardHeader className="shrink-0 px-4 py-3">
-        <CardTitle className="text-sm">
-          Row {point.row + 1}, column {point.col + 1}
-        </CardTitle>
+      <CardHeader className="shrink-0 items-center gap-2 px-4 py-3">
+        <CardTitle className="text-sm">Results</CardTitle>
+        <CardAction className="row-span-1 self-center text-xs text-muted-foreground">
+          {searchedFrom(point, gridSize, spacingKm)}
+        </CardAction>
       </CardHeader>
       <div className="min-h-0 flex-1 overflow-y-auto border-t border-border">
         {point.status !== LocalPointStatus.Completed ? (
@@ -94,4 +104,22 @@ export function LocalPointResults({
       </div>
     </Card>
   );
+}
+
+/** Where a point's search ran, e.g. "Searched 2 km north, 2 km west of your listing". */
+function searchedFrom(
+  point: LocalGridDisplayPoint,
+  gridSize: number,
+  spacingKm: number,
+) {
+  const center = (gridSize - 1) / 2;
+  const north = (center - point.row) * spacingKm;
+  const east = (point.col - center) * spacingKm;
+  const parts = [
+    north && `${Math.abs(north)} km ${north > 0 ? "north" : "south"}`,
+    east && `${Math.abs(east)} km ${east > 0 ? "east" : "west"}`,
+  ].filter(Boolean);
+  return parts.length
+    ? `Searched ${parts.join(", ")} of your listing`
+    : "Searched from your listing";
 }

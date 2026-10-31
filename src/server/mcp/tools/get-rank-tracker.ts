@@ -95,7 +95,7 @@ function formatLatestRun(
     return `Latest run: failed — ${run.errorMessage ?? "Unknown error"}`;
   if (run.status === "completed")
     return `Latest run: ${run.completedAt ?? run.lastCheckedAt ?? "completed"}`;
-  return `Latest run: ${run.status}`;
+  return `Latest run: ${run.status}. A check retries keywords that error or come back missing, so it can take up to an hour. Positions below are from the last completed check until then.`;
 }
 
 const inputSchema = {

@@ -13,6 +13,15 @@ const CLOUDFLARE_USD_PER_ATTEMPT =
 // Context.dev list price on the Developer plan. One scrape is one credit.
 export const CONTEXT_USD_PER_CREDIT = 0.0025;
 
+/**
+ * Why a rendered audit can't start behind an Every App gateway: the Context
+ * key is the gateway's, and optional in the manifest, so audits run
+ * unrendered until an admin sets it once for every app. Plain text: it is
+ * shown by ErrorState, toasts and MCP answers as is.
+ */
+export const GATEWAY_RENDERING_NOT_SET_UP_MESSAGE =
+  "JavaScript rendering isn't set up on your Every App gateway yet. An owner or admin sets it with pnpm everyapp secret set CONTEXT_API_KEY.";
+
 /** Provider units a rendered audit used, counted per crawl chunk. */
 export type RenderUsage = {
   cloudflareAttempts: number;
@@ -28,8 +37,8 @@ export function renderUsageCredits(usage: RenderUsage): number {
 
 /**
  * Usage-credit range for rendering up to `maxPages` pages. The low end renders
- * every page on Cloudflare. The high end is every page falling back to Context
- * after its Cloudflare attempt, which is also what a hosted audit reserves.
+ * every page on Cloudflare, which is what most sites cost. The high end is
+ * every page falling back to Context after its Cloudflare attempt.
  */
 export function estimateRenderingCredits(maxPages: number) {
   return {
@@ -45,6 +54,15 @@ export function estimateRenderingCredits(maxPages: number) {
 }
 
 /**
+ * What a hosted rendered audit holds when it starts, and the most it charges:
+ * twice the Cloudflare-only estimate. Most pages render on Cloudflare, so
+ * this covers almost every audit without holding the Context worst case.
+ */
+export function renderingHoldCredits(maxPages: number) {
+  return estimateRenderingCredits(maxPages).low * 2;
+}
+
+/**
  * Usage credits as the dollars users see everywhere else. Rounded up to the
  * cent, so an account holding the shown amount always covers the hold.
  */
@@ -55,11 +73,16 @@ function formatRenderingUsd(credits: number) {
 
 /** Why a hosted account cannot start a rendered audit of `maxPages` pages. */
 export function renderingCreditsNeededText(maxPages: number) {
-  const { high } = estimateRenderingCredits(maxPages);
-  return `Rendering up to ${maxPages.toLocaleString("en-US")} pages needs ${formatRenderingUsd(high)} of credits available. Lower the page limit or add credits.`;
+  return `Rendering up to ${maxPages.toLocaleString("en-US")} pages needs ${formatRenderingUsd(renderingHoldCredits(maxPages))} of credits available. Lower the page limit or add credits.`;
+}
+
+export const RENDERING_COST_NOTE =
+  "Sites that block our browser need an advanced renderer. If the cost is higher than expected, it will stop.";
+
+export function renderingCostText(maxPages: number) {
+  return `Costs up to ${formatRenderingUsd(renderingHoldCredits(maxPages))}.`;
 }
 
 export function renderingEstimateText(maxPages: number) {
-  const { low, high } = estimateRenderingCredits(maxPages);
-  return `Estimated ${formatRenderingUsd(low)} to ${formatRenderingUsd(high)} for up to ${maxPages.toLocaleString("en-US")} pages. Sites with aggressive bot detection need our more capable renderer and cost more.`;
+  return `${renderingCostText(maxPages)} ${RENDERING_COST_NOTE}`;
 }

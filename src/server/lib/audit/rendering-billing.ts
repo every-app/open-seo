@@ -11,8 +11,8 @@ import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
-  estimateRenderingCredits,
   renderingCreditsNeededText,
+  renderingHoldCredits,
   renderUsageCredits,
   type RenderUsage,
 } from "@/shared/audit-rendering";
@@ -29,10 +29,11 @@ const LOCK_TTL_MS = 24 * 60 * 60_000 - 60_000;
 export type RenderingLock = UsageCreditHold;
 
 /**
- * Holds the worst-case rendering cost of a hosted audit before it starts:
- * every page falling back to Context. Throws INSUFFICIENT_CREDITS when the
- * monthly and top-up balances together cannot cover it. Returns no locks
- * outside hosted mode, where rendering is unmetered.
+ * Holds a hosted rendered audit's estimated cost before it starts
+ * (`renderingHoldCredits`). A site that falls back to Context more than that
+ * covers stops crawling when the hold runs out. Throws INSUFFICIENT_CREDITS
+ * when the monthly and top-up balances together cannot cover it. Returns no
+ * locks outside hosted mode, where rendering is unmetered.
  *
  * Unlike a single DataForSEO call, one audit's hold is large enough to split:
  * the monthly balance covers what it can and top-up covers the rest.
@@ -46,7 +47,7 @@ export async function lockRenderingCredits(input: {
   const { id: customerId } = await getOrCreateOrganizationCustomer(
     input.customer,
   );
-  const required = estimateRenderingCredits(input.maxPages).high;
+  const required = renderingHoldCredits(input.maxPages);
   const insufficient = new AppError(
     "INSUFFICIENT_CREDITS",
     renderingCreditsNeededText(input.maxPages),

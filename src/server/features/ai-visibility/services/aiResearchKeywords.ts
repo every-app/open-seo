@@ -27,14 +27,14 @@ import {
 import { startWorkflow } from "@/server/lib/startWorkflow";
 
 /**
- * Prompt Research needs saved keywords. Website setup writes them; a
- * project set up before that, or with a website saved another way, gets them
- * here after the user confirms the spend. The paid work runs in the AI
- * visibility workflow under one instance per project, so a page reload reads
- * the same run instead of starting another. Without an overview or
- * competitors, the website research result waits in the instance output for
- * the same competitor review as onboarding; saving that review writes the
- * keywords.
+ * Prompt Research needs saved keywords or a tracker's topics. Website setup
+ * writes both; a project with neither, set up before that or with a website
+ * saved another way, gets them here after the user confirms the spend. The
+ * paid work runs in the AI visibility workflow under one instance per project,
+ * so a page reload reads the same run instead of starting another. Without an
+ * overview or competitors, the website research result waits in the instance
+ * output for the same competitor review as onboarding; saving that review
+ * writes the keywords.
  */
 const setupOutputSchema = z.object({
   // Reviews saved before suggested keywords existed still load.
@@ -83,14 +83,18 @@ async function readSetupRun(projectId: string) {
 }
 
 export async function getAiResearchSetup(projectId: string) {
-  const [keywords, sections, competitors] = await Promise.all([
+  const [keywords, tracker, sections, competitors] = await Promise.all([
     repo.listResearchKeywords(projectId),
+    repo.getTracker(projectId),
     ProjectContextRepository.listSections(projectId),
     ProjectContextRepository.listCompetitors(projectId),
   ]);
-  const run = keywords.length
-    ? { status: "ready" as const }
-    : await readSetupRun(projectId);
+  // A tracker saved through the MCP has no research keywords. Prompt Research
+  // lists its topics instead, so the project is already set up.
+  const run =
+    keywords.length || tracker
+      ? { status: "ready" as const }
+      : await readSetupRun(projectId);
   return {
     keywords,
     ...missingContext(sections, competitors),

@@ -14,7 +14,7 @@ import type { AiTrend } from "@/shared/ai-visibility";
 
 export const trendSeries = [
   { key: "mentionRate", label: "Brand mentions", color: "#2563eb" },
-  { key: "citationRate", label: "Owned citations", color: "#14b8a6" },
+  { key: "citationRate", label: "Owned citations", color: "#e69f00" },
 ] as const;
 
 const chartConfig: ChartConfig = Object.fromEntries(

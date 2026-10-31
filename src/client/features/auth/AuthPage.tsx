@@ -4,7 +4,7 @@ import {
   getCurrentAuthRedirect,
   getOAuthSignedQuery,
 } from "@/lib/auth-redirect";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { isHostedClientAuthMode, usesBetterAuthClient } from "@/lib/auth-mode";
 import { PRIVACY_URL, TERMS_URL } from "@/shared/terms";
 
 export const authRedirectSearchSchema = z.object({
@@ -25,11 +25,15 @@ export function useAuthPageState(redirect: string | undefined) {
       ? getOAuthSignedQuery(window.location.search)
       : null;
   const isHostedMode = isHostedClientAuthMode();
+  // Better Auth accounts exist (hosted or the standalone Docker edition), so
+  // the email/password form can sign someone in.
+  const isBetterAuthMode = usesBetterAuthClient();
 
   return {
     redirectTo,
     oauthQuery,
     isHostedMode,
+    isBetterAuthMode,
   };
 }
 

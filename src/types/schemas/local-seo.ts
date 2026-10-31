@@ -15,8 +15,6 @@ export const localBusinessSchema = z
     "Choose a Google Maps listing with a CID or place ID.",
   );
 
-export type LocalBusiness = z.infer<typeof localBusinessSchema>;
-
 export const localProjectSchema = z.object({ projectId });
 export const localTrackerIdSchema = localProjectSchema.extend({
   trackerId: z.uuid(),
@@ -26,10 +24,14 @@ export const localScanIdSchema = localProjectSchema.extend({
 });
 export const localLookupSchema = localProjectSchema.extend({
   query: z.string().trim().min(2).max(200),
+  /** A DataForSEO location name from the city search, e.g. "Pittsburgh,Pennsylvania,United States". */
+  locationName: z.string().trim().min(1).max(200),
 });
-export const localKeywordsSchema = z
-  .array(z.string().trim().min(1).max(120))
-  .max(20);
+export const MAX_LOCAL_KEYWORDS = 20;
+export const MAX_LOCAL_KEYWORD_LENGTH = 120;
+const localKeywordsSchema = z
+  .array(z.string().trim().min(1).max(MAX_LOCAL_KEYWORD_LENGTH))
+  .max(MAX_LOCAL_KEYWORDS);
 export const updateLocalKeywordsSchema = localTrackerIdSchema.extend({
   keywords: localKeywordsSchema,
 });

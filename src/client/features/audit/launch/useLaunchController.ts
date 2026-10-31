@@ -83,7 +83,7 @@ export function useLaunchController({
     onSubmit: async ({ formApi, value }) => {
       const effectiveMaxPages = commitMaxPagesInput(
         launchForm,
-        getMaxPagesLimit(isFreePlan, value.renderJavaScript),
+        getMaxPagesLimit(isFreePlan),
       );
       formApi.setErrorMap({ onSubmit: undefined });
 
@@ -124,17 +124,14 @@ export function useLaunchController({
     launchForm.store,
     (state) => state.values.renderJavaScript,
   );
-  const maxPagesLimit = getMaxPagesLimit(isFreePlan, renderJavaScript);
-  // What an upgrade offers with the current options, so the upgrade hint
-  // never promises pages a rendered audit cannot crawl.
-  const paidMaxPagesLimit = getMaxPagesLimit(false, renderJavaScript);
+  const maxPagesLimit = getMaxPagesLimit(isFreePlan);
 
   return {
     launchForm,
     historyQuery,
     canRenderJavaScript: capabilitiesQuery.data?.canRenderJavaScript,
     maxPagesLimit,
-    paidMaxPagesLimit,
+    renderJavaScript,
     commitMaxPagesInput: () => commitMaxPagesInput(launchForm, maxPagesLimit),
     deleteAudit: (auditId: string) => deleteMutation.mutate(auditId),
     largeCrawlPages,

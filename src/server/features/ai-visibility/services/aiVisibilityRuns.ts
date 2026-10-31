@@ -6,10 +6,7 @@ import {
 } from "../repositories/AiVisibilityRepository";
 import { AI_ANSWER_FAILURES, AiVisibilityError } from "./aiVisibilityErrors";
 import { aiScope } from "./aiVisibilityConfiguration";
-import {
-  getOptionalEnvValue,
-  isHostedServerAuthMode,
-} from "@/server/lib/runtime-env";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   getOrCreateOrganizationCustomer,
   getUsageCreditsRemaining,
@@ -23,7 +20,12 @@ import { requireConfiguration } from "./aiVisibilityMutation";
 import { aiPromptIsBranded } from "./aiVisibilityMatching";
 import { aiRunView } from "./aiVisibilityResults";
 import { aiCostForAnswers } from "./aiVisibilityCost";
-import { startWorkflow } from "@/server/lib/startWorkflow";
+import { hasDataforseoAccess } from "@/server/lib/provider-access";
+import {
+  startWorkflow,
+  STUCK_RUN_AFTER_MS,
+  terminateStuckWorkflow,
+} from "@/server/lib/startWorkflow";
 
 const ACTIVE_WORKFLOW_STATUSES = new Set([
   "queued",
@@ -36,15 +38,21 @@ const STARTUP_GRACE_MS = 60_000;
 
 /**
  * Why an active run's workflow is no longer collecting it, or null while it
- * is. The workflow instance id is the run id, like rank checks.
+ * is. The workflow instance id is the run id, like rank checks. A run active
+ * for too long is stuck, even if its workflow still reports running.
  */
 async function staleRunReason(run: RunRow): Promise<string | null> {
   if (run.status !== "queued" && run.status !== "running") return null;
   const status = await env.AI_VISIBILITY_WORKFLOW.get(run.id)
     .then((instance) => instance.status())
     .catch(() => null);
-  if (status && ACTIVE_WORKFLOW_STATUSES.has(status.status)) return null;
-  if (Date.now() - Date.parse(run.createdAt) < STARTUP_GRACE_MS) return null;
+  const ageMs = Date.now() - Date.parse(run.createdAt);
+  if (status && ACTIVE_WORKFLOW_STATUSES.has(status.status)) {
+    if (ageMs < STUCK_RUN_AFTER_MS) return null;
+    console.warn(`[ai-visibility] ${run.id} workflow stuck (${status.status})`);
+    return AI_ANSWER_FAILURES.stopped;
+  }
+  if (ageMs < STARTUP_GRACE_MS) return null;
   if (!status) return AI_ANSWER_FAILURES.stoppedBeforeStart;
   console.warn(`[ai-visibility] ${run.id} workflow stopped (${status.status})`);
   return AI_ANSWER_FAILURES.stopped;
@@ -65,6 +73,8 @@ export async function failAiRun(runId: string, error: string) {
 export async function reconcileAiRun(run: RunRow): Promise<RunRow> {
   const reason = await staleRunReason(run);
   if (!reason) return run;
+  // A stuck instance may still be running: stop it so it posts no more calls.
+  await terminateStuckWorkflow(env.AI_VISIBILITY_WORKFLOW, run.id);
   await failAiRun(run.id, reason);
   return (await repo.getRunInternal(run.id)) ?? run;
 }
@@ -75,7 +85,7 @@ export async function startRun(
   billing: BillingCustomerContext,
   promptIds?: string[],
 ): Promise<AiRun> {
-  if (!(await getOptionalEnvValue("DATAFORSEO_API_KEY")))
+  if (!(await hasDataforseoAccess()))
     throw new AiVisibilityError(
       "PROVIDER_NOT_CONFIGURED",
       "An operator must configure DATAFORSEO_API_KEY before collection. Your saved tracker remains available.",
@@ -152,10 +162,8 @@ export async function startRun(
       // The one-active-run index rejected the insert, or it truly failed.
       const blocker = await repo.getActiveRun(config.tracker.id);
       if (!blocker) throw error;
-      if (attempt === 0 && (await staleRunReason(blocker))) {
-        await reconcileAiRun(blocker);
+      if (attempt === 0 && (await reconcileAiRun(blocker)).status === "failed")
         continue;
-      }
       throw new AiVisibilityError(
         "RUN_IN_PROGRESS",
         "A check is already collecting answers. Read that run instead of starting another; this check was not started or charged.",

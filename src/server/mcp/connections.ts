@@ -1,6 +1,7 @@
 import { sortBy } from "remeda";
 import { z } from "zod";
 import { getCapturedOAuthHelpers } from "@/server/mcp/oauth-provider";
+import { getWebChat } from "@/server/mcp/web-chat";
 
 // The OAuth grants behind "Connected agents" in Settings. Grants live under
 // the KV key grant:{userId}:{grantId}, so listUserGrants and revokeGrant can
@@ -21,6 +22,7 @@ async function listMcpConnections(userId: string) {
       return {
         id: grant.id,
         clientName: client?.clientName ?? "MCP client",
+        webChat: getWebChat(client?.redirectUris ?? []),
         // The provider stores Unix seconds.
         createdAt: grant.createdAt * 1000,
         // Named on the client from the organizations the user belongs to,

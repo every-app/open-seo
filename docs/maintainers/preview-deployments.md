@@ -62,7 +62,8 @@ Zero Trust team domain. Set that full value in `.env.preview` as
 `https://open-seo-<stage>.<WORKERS_SUBDOMAIN>` — hosted previews use that as
 `BETTER_AUTH_URL`, and CI's verify step probes it; a wrong value fails the
 check. Previews in `local_noauth` or `cloudflare_access` mode deploy without
-it, since nothing reads `BETTER_AUTH_URL` there.
+it, since nothing reads `BETTER_AUTH_URL` there; `password` stages read the
+subdomain from the account when it is unset.
 
 Set `ACCESS_ALLOWED_EMAILS` to the exact comma-separated emails that may open
 previews:

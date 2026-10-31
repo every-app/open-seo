@@ -1,11 +1,12 @@
 import { env, waitUntil } from "cloudflare:workers";
 import { parseCookies } from "better-auth/cookies";
-import { BASE_PLAN_OFFER } from "@/client/features/billing/plan-offers";
+import { TIER_PLAN_OFFERS } from "@/client/features/billing/plan-offers";
 import { captureServerError } from "@/server/lib/posthog";
 import { requestPrivacyChoices } from "@/shared/privacy-choices";
 
-// Meta ad conversions (hosted only): a signup, and a subscription to the base
-// plan. Sent only when the visitor's advertising (Meta) choice allows it, read
+// Meta ad conversions (hosted only): a signup, and a subscription to a tier
+// plan (Base, Pro or Agency; YC deal subscriptions aren't reported). Sent
+// only when the visitor's advertising (Meta) choice allows it, read
 // from the privacy cookie, location and GPC header of their own request, and
 // the pixel on openseo.so left its cookies. Deliberately no name or email.
 //
@@ -128,10 +129,14 @@ export async function pinMetaCheckout(
   }
 }
 
-/** Reports a new base plan subscription for an organization whose checkout
+/** Reports a new tier plan subscription for an organization whose checkout
  *  was pinned. Must never fail the webhook. */
-export async function captureMetaPurchase(organizationId: string) {
-  if (!isMetaConfigured()) return;
+export async function captureMetaPurchase(
+  organizationId: string,
+  planId: string,
+) {
+  const offer = TIER_PLAN_OFFERS.find((tier) => tier.planId === planId);
+  if (!offer || !isMetaConfigured()) return;
   try {
     const pin = await env.KV.get<MetaVisit>(
       `${META_CHECKOUT_KV_PREFIX}${organizationId}`,
@@ -140,7 +145,7 @@ export async function captureMetaPurchase(organizationId: string) {
     if (!pin) return;
     sendMetaEvent("Purchase", pin, {
       currency: "USD",
-      value: BASE_PLAN_OFFER.priceUsd,
+      value: offer.priceUsd,
     });
   } catch (error) {
     console.error("Meta purchase tracking failed", { organizationId, error });

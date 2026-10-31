@@ -25,7 +25,7 @@ describe("runSelfhostPreflight", () => {
 
     expect(result.failed).toBe(true);
     expect(itemFor(result, "AUTH_MODE")?.message).toContain(
-      "cloudflare_access, local_noauth, hosted",
+      "cloudflare_access, local_noauth, hosted, password",
     );
   });
 
@@ -34,6 +34,10 @@ describe("runSelfhostPreflight", () => {
     [
       { AUTH_MODE: "hosted", BETTER_AUTH_SECRET: "x".repeat(40) },
       ["BETTER_AUTH_URL", "GOOGLE_CLIENT_ID"],
+    ],
+    [
+      { AUTH_MODE: "password", BETTER_AUTH_SECRET: "x".repeat(40) },
+      ["BETTER_AUTH_URL"],
     ],
   ])("fails %o listing every missing variable", (env, mentions) => {
     const result = runSelfhostPreflight(env);

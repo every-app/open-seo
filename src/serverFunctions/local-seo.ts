@@ -19,7 +19,13 @@ export const lookupLocalBusiness = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(localLookupSchema)
   .handler(({ data, context }) =>
-    LocalSeoService.lookupBusiness(data.query, context.project, context),
+    LocalSeoService.lookupBusiness(
+      context.projectId,
+      data.query,
+      data.locationName,
+      context.project.languageCode,
+      context,
+    ),
   );
 export const createLocalTracker = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)

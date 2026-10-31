@@ -4,7 +4,6 @@ import { billingCustomerStatus } from "@/db/schema";
 import { autumn } from "@/server/billing/autumn";
 import { disableAutoReloadIfUnpaid } from "@/server/billing/auto-reload";
 import { captureMetaPurchase } from "@/server/referrals/meta";
-import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
 import {
   deriveBillingCustomerStatusSnapshot,
   type BillingCustomerStatusSnapshot,
@@ -15,7 +14,11 @@ import { syncBillingStatusToLoops } from "./loops-sync";
 export async function syncAutumnCustomerStatus(customerId: string) {
   // getOrCreate is effectively a "get" here — a billing.updated webhook always
   // references an existing Autumn customer. The SDK returns the camelCase shape.
-  const customer = await autumn.customers.getOrCreate({ customerId });
+  // The expanded plan tells the lifecycle emails whether it charges money.
+  const customer = await autumn.customers.getOrCreate({
+    customerId,
+    expand: ["subscriptions.plan"],
+  });
   const snapshot = deriveBillingCustomerStatusSnapshot(customer);
   // Auto-reload charges the saved card; a plan that ended must not keep it.
   await disableAutoReloadIfUnpaid(customerId);
@@ -41,15 +44,10 @@ export async function syncAutumnCustomerStatus(customerId: string) {
 
   await upsertBillingCustomerStatus(snapshot);
   // After the write, so a retried webhook (which sees no change) can't
-  // report the subscription twice. YC Plan subscriptions aren't reported.
-  if (
-    events.some(
-      (event) =>
-        event.name === "subscription_started" &&
-        event.planId === AUTUMN_PAID_PLAN_ID,
-    )
-  ) {
-    await captureMetaPurchase(customerId);
+  // report the subscription twice.
+  const started = events.find((event) => event.name === "subscription_started");
+  if (started) {
+    await captureMetaPurchase(customerId, started.planId);
   }
   return snapshot;
 }

@@ -3,19 +3,12 @@ import {
   FREE_MAX_AUDIT_PAGES,
   MIN_AUDIT_PAGES,
   PAID_MAX_AUDIT_PAGES,
-  RENDERED_MAX_AUDIT_PAGES,
 } from "@/shared/audit-limits";
 
 export const MIN_PAGES = MIN_AUDIT_PAGES;
 
-export function getMaxPagesLimit(
-  isFreePlan: boolean,
-  renderJavaScript: boolean,
-) {
-  const planLimit = isFreePlan ? FREE_MAX_AUDIT_PAGES : PAID_MAX_AUDIT_PAGES;
-  return renderJavaScript
-    ? Math.min(planLimit, RENDERED_MAX_AUDIT_PAGES)
-    : planLimit;
+export function getMaxPagesLimit(isFreePlan: boolean) {
+  return isFreePlan ? FREE_MAX_AUDIT_PAGES : PAID_MAX_AUDIT_PAGES;
 }
 
 /** The page limit an audit runs with for what is typed in the form. */

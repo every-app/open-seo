@@ -50,3 +50,14 @@ gh release create v0.0.2 --target main --title v0.0.2 --notes-file docs/release-
 ```
 
 For now, prefer patch releases while the project is still in rapid early development unless there is a clear reason to cut a minor or major release.
+
+## Docker edition runtime check
+
+The standalone Docker image runs on celld, which implements only part of the Workers runtime contract. Before a release that changes `deploy/standalone/` or bumps `CELLD_VERSION`, build the image and check that celld still does what OpenSEO relies on (about a minute):
+
+```sh
+docker build -f deploy/standalone/Dockerfile -t openseo-standalone:check .
+pnpm test:standalone:runtime openseo-standalone:check
+```
+
+A `no` on a required line is a regression to fix before the release. The `(upstream)` lines turn to `yes` once celld fixes a known gap; then the matching workaround (`src/server/workflows/yieldingStep.ts` for denoland/celld#299, `src/server/standalone/aes-kw.ts` for denoland/celld#295) can go.

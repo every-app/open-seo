@@ -3,9 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createCrawlThrottle } from "@/server/lib/audit/crawl-throttle";
 import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
 
-// Resolves the request-signing env lookup instantly, so it can't race the
-// fake timers below.
-vi.mock("cloudflare:workers", () => ({ env: {} }));
+// No crawl gateway and no signing key configured: publicFetch is plain fetch
+// and requests go unsigned, and both env lookups must settle in microtasks so
+// the fake-timer cases below can advance past them.
+vi.mock("@/server/lib/runtime-env", () => ({
+  getOptionalEnvValue: async () => undefined,
+}));
 
 const PAGE_URL = "https://example.com/page";
 const PAGE_HTML =

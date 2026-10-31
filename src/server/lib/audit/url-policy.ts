@@ -1,4 +1,5 @@
 import { AppError } from "@/server/lib/errors";
+import { publicFetch } from "@/server/lib/public-fetch";
 import type { CrawlerAccess } from "@/shared/crawler-access";
 import { auditRequestHeaders } from "@/server/lib/audit/web-bot-auth";
 
@@ -280,7 +281,7 @@ export async function resolveStartUrlRedirects(
   for (let hop = 0; hop < START_URL_REDIRECT_HOPS; hop++) {
     let response: Response;
     try {
-      response = await fetch(current, {
+      response = await publicFetch(current, {
         method: "HEAD",
         redirect: "manual",
         headers: await auditRequestHeaders(current, access),

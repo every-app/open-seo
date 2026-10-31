@@ -10,6 +10,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import { withPgClient } from "@/db";
+import { yieldingStep } from "@/server/workflows/yieldingStep";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import {
@@ -33,6 +34,7 @@ import {
 } from "@/server/workflows/auditStepConfigs";
 import type { RenderUsage } from "@/shared/audit-rendering";
 import { describeError } from "@/server/lib/errors";
+import { RENDERED_CRAWL_TIME_LIMIT_HOURS } from "@/shared/audit-limits";
 
 interface AuditParams {
   auditId: string;
@@ -57,7 +59,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
     // Scope a per-request Postgres client for this workflow invocation (no-op in
     // D1 mode). The socket is reclaimed when the invocation ends, so there is
     // nothing to tear down here.
-    return withPgClient(() => this.runScoped(event, step));
+    return withPgClient(() => this.runScoped(event, yieldingStep(step)));
   }
 
   private async runScoped(
@@ -116,6 +118,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
         config,
         access: await CrawlerCredentialService.openCrawlerAccess(access),
         renderUsage,
+        renderHold: renderHoldFor(event),
       });
     } catch (error) {
       console.error(`Audit ${auditId} failed: ${describeError(error)}`, error);
@@ -191,4 +194,16 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       }
     }
   }
+}
+
+function renderHoldFor(event: WorkflowEvent<AuditParams>) {
+  const locks = event.payload.renderLocks ?? [];
+  if (locks.length === 0) return undefined;
+  return {
+    // The locks are taken just before the workflow is created, so its
+    // timestamp dates them, and it is the same on every replay.
+    deadlineAt:
+      event.timestamp.getTime() + RENDERED_CRAWL_TIME_LIMIT_HOURS * 3_600_000,
+    credits: locks.reduce((sum, lock) => sum + lock.estimatedCredits, 0),
+  };
 }

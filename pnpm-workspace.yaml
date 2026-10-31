@@ -1,6 +1,18 @@
 minimumReleaseAge: 11520
 minimumReleaseAgeExclude:
   - "@every-app/*"
+  # The Every App CLI ships beside the SDK on the `next` dist-tag.
+  - "everyapp"
+  # TEMPORARY (remove after 2026-10-17): the Every App build
+  # (vite.everyapp.config.ts) uses the Cloudflare CLI and its Vite plugin's
+  # 2.0 beta, published 2026-10-09.
+  - "cf@1.0.0-beta.14"
+  - "@cloudflare/vite-plugin@2.0.0-beta.sha-91c870c02"
+  - "miniflare@5.20261006.1-alpha"
+  - "@cloudflare/config@0.24.1"
+  - "@cloudflare/build-output-utils@0.9.0"
+  - "@cloudflare/codemods@0.4.2"
+  - "@cloudflare/runtime-types@0.1.9"
   # TEMPORARY (remove after 2026-10-01): DOMPurify security fix, GHSA-p98j-92pf-mc4p.
   - "dompurify@3.4.16"
   # TEMPORARY (remove after 2026-10-08): latest TanStack Start release
@@ -100,3 +112,9 @@ overrides:
 # that actually succeeded. Fixed upstream in 1.0.0-rc; drop on upgrade.
 patchedDependencies:
   "@distilled.cloud/cloudflare@0.28.2": patches/@distilled.cloud__cloudflare@0.28.2.patch
+
+# Build scripts pnpm may run on install; it skips every other package's and
+# warns "Ignored build scripts". esbuild and workerd fetch their binaries.
+allowBuilds:
+  esbuild: true
+  workerd: true

@@ -3,7 +3,6 @@ import { DashboardService } from "./DashboardService";
 
 const repository = vi.hoisted(() => ({
   audits: vi.fn(),
-  latestAudit: vi.fn(),
   issues: vi.fn(),
 }));
 vi.mock("@/server/features/projects/repositories/ProjectRepository", () => ({
@@ -25,7 +24,6 @@ vi.mock("@/server/features/umami/repositories/UmamiRepository", () => ({
 vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
   AuditRepository: {
     getAuditsByProject: repository.audits,
-    getLatestAuditForProject: repository.latestAudit,
   },
 }));
 vi.mock("@/server/features/audit/repositories/auditSummaryQueries", () => ({
@@ -47,7 +45,6 @@ const competitor = {
 
 beforeEach(() => {
   repository.audits.mockResolvedValue([competitor, ownAudit]);
-  repository.latestAudit.mockResolvedValue(competitor);
   repository.issues.mockResolvedValue([]);
 });
 

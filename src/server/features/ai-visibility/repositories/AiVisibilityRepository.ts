@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, isNull, lte, ne } from "drizzle-orm";
+import { chunk } from "remeda";
 import { db } from "@/db";
 import { runBatch } from "@/db/runBatch";
 import {
@@ -195,8 +196,16 @@ async function persistAnswer(input: {
     tx
       .delete(aiMatches)
       .where(eq(aiMatches.observationId, input.observationId)),
-    ...input.sources.map((s) => tx.insert(aiSources).values(s)),
-    ...input.matches.map((m) => tx.insert(aiMatches).values(m)),
+    // Multi-row inserts keep the transaction to a few round trips, so a
+    // collect step saving many answers does not hold pooled connections. D1
+    // allows 100 bound parameters per statement: 6 columns per source and 8
+    // per match.
+    ...chunk(input.sources, 16).map((rows) =>
+      tx.insert(aiSources).values(rows),
+    ),
+    ...chunk(input.matches, 12).map((rows) =>
+      tx.insert(aiMatches).values(rows),
+    ),
     tx
       .update(aiObservations)
       .set(input.values)
@@ -302,10 +311,36 @@ export const AiVisibilityRepository = {
           .select({
             runId: aiObservations.runId,
             status: aiObservations.status,
+            error: aiObservations.error,
           })
           .from(aiObservations)
           .where(inArray(aiObservations.runId, runIds))
       : Promise.resolve([]),
+  listPendingObservationIds: async (runId: string) =>
+    (
+      await db
+        .select({ id: aiObservations.id })
+        .from(aiObservations)
+        .where(
+          and(
+            eq(aiObservations.runId, runId),
+            eq(aiObservations.status, "pending"),
+          ),
+        )
+    ).map((row) => row.id),
+  listFailedObservationIds: async (runId: string, error: string) =>
+    (
+      await db
+        .select({ id: aiObservations.id })
+        .from(aiObservations)
+        .where(
+          and(
+            eq(aiObservations.runId, runId),
+            eq(aiObservations.status, "failed"),
+            eq(aiObservations.error, error),
+          ),
+        )
+    ).map((row) => row.id),
   getEvidence,
   persistAnswer,
   failPendingObservations,

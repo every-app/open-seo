@@ -59,13 +59,19 @@ describe("captureMetaSignup", () => {
 });
 
 describe("captureMetaPurchase", () => {
-  it("reports a pinned checkout's subscription", async () => {
+  it("reports a pinned checkout's subscription at the plan's price", async () => {
     await pinMetaCheckout("org-1", browserRequest({ "cf-ipcountry": "US" }));
-    await captureMetaPurchase("org-1");
+    await captureMetaPurchase("org-1", "pro-plan");
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0]?.[1]?.body).toEqual(
-      expect.stringContaining('"event_name":"Purchase"'),
+      expect.stringMatching(/"event_name":"Purchase".*"value":30\b/),
     );
+  });
+
+  it("doesn't report YC deal subscriptions", async () => {
+    await pinMetaCheckout("org-1", browserRequest({ "cf-ipcountry": "US" }));
+    await captureMetaPurchase("org-1", "yc-plan");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("sends nothing when the buyer's last checkout didn't allow advertising", async () => {
@@ -74,7 +80,7 @@ describe("captureMetaPurchase", () => {
       "org-1",
       browserRequest({ "cf-ipcountry": "US", "sec-gpc": "1" }),
     );
-    await captureMetaPurchase("org-1");
+    await captureMetaPurchase("org-1", "base-plan");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

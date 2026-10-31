@@ -109,7 +109,7 @@ The organization id comes from the signed-in session, never from the client.
 
 **Self-hosting**
 
-- `local_noauth` has no login, so `/mcp` is open. It is meant to run behind the operator's own auth (`docs/SELF_HOSTING_DOCKER.md`).
+- `local_noauth` has no login, so `/mcp` is open. It is meant to run behind the operator's own auth (`docs/SELF_HOSTING_DOCKER.md`, `docs/SELF_HOSTING_DOCKER_LEGACY.md`).
 - Every `cloudflare_access` user is owner of the one shared workspace.
 - Paid-plan checks, credit checks and report sharing are hosted-only.
 - The self-host telemetry heartbeat (`src/server/lib/self-host-telemetry.ts`) and preflight beacon (`scripts/selfhost-preflight.ts`). They send aggregate counts, a random install id, version, deploy target, database backend, install age, and the names of failed setup checks. They never send URLs, keywords or emails. Documented in `docs/SELF_HOSTING_DOCKER.md`; off with `OPENSEO_TELEMETRY_DISABLED` or `DO_NOT_TRACK`.

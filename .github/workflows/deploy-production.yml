@@ -124,6 +124,26 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          POSTHOG_SOURCEMAPS: "true"
+          NODE_OPTIONS: --max-old-space-size=8192
+
+      # Error tracking groups exceptions by their original source location,
+      # which it can only resolve for chunks tagged here, in the build that
+      # ships. A PostHog outage must not block a deploy.
+      - name: Upload sourcemaps to PostHog
+        continue-on-error: true
+        run: |
+          pnpm dlx @posthog/cli@0.18.10 sourcemap inject --directory ./dist
+          pnpm dlx @posthog/cli@0.18.10 sourcemap upload --directory ./dist --delete-after
+        env:
+          POSTHOG_CLI_HOST: ${{ vars.POSTHOG_CLI_HOST }}
+          POSTHOG_CLI_ENV_ID: ${{ vars.POSTHOG_CLI_ENV_ID }}
+          POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
+
+      # --delete-after already removed them unless the upload failed.
+      - name: Keep sourcemaps out of the deploy
+        run: find dist -name '*.map' -delete
 
       - name: Migrate production Postgres
         run: pnpm db:migrate:pg

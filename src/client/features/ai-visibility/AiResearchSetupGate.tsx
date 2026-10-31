@@ -8,6 +8,7 @@ import { Field, FieldLabel } from "@/client/components/ui/field";
 import { Textarea } from "@/client/components/ui/textarea";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 import { getErrorCode } from "@/client/lib/error-messages";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
 import { WebsiteResearchProgress } from "@/client/features/projects/WebsiteResearchProgress";
 import { WebsiteSetupReview } from "@/client/features/projects/WebsiteSetupReview";
@@ -27,8 +28,8 @@ import {
 } from "./shared";
 
 /**
- * AI visibility needs research keywords. A project with a website but no
- * keywords confirms the spend here, then the server runs setup once: website
+ * AI visibility needs research keywords or a tracker. A project with a website
+ * but neither confirms the spend here, then the server runs setup once: website
  * research and the onboarding competitor review when the overview or
  * competitors are missing, otherwise one keyword and prompt generation. The
  * run lives on the server, so leaving or reloading the page finds it again.
@@ -184,7 +185,9 @@ export function AiResearchSetupGate({
                 <AlertDescription>
                   {unreadable
                     ? "We couldn’t read this website. Its bot protection may be blocking us. Describe your business below and try again, or check the URL in project settings."
-                    : "We couldn’t finish setting up AI visibility. Try again."}
+                    : isEveryAppClientAuthMode()
+                      ? "We couldn’t finish setting up AI visibility. It needs DataForSEO and OpenRouter on your Every App gateway: if they aren’t set up yet, an owner or admin runs pnpm everyapp secret set DATAFORSEO_API_KEY OPENROUTER_API_KEY. Then try again."
+                      : "We couldn’t finish setting up AI visibility. Try again."}
                 </AlertDescription>
               </Alert>
             )
@@ -220,8 +223,9 @@ export function AiResearchSetupGate({
               {failed ? "Try again" : "Start research"}
             </Button>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Research and a first run of your prompts use a small amount of
-              usage credits.
+              {isEveryAppClientAuthMode()
+                ? "Research and a first run of your prompts use the DataForSEO and OpenRouter keys on your Every App gateway."
+                : "Research and a first run of your prompts use a small amount of usage credits."}
             </p>
           </div>
         </CardContent>

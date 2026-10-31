@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  getTracker,
   listCompetitors,
   listResearchKeywords,
   research,
@@ -8,6 +9,7 @@ const {
   prepareWebsiteTracking,
   startWebsiteTrackingRun,
 } = vi.hoisted(() => ({
+  getTracker: vi.fn(),
   listCompetitors: vi.fn(),
   listResearchKeywords: vi.fn(),
   research: vi.fn(),
@@ -58,7 +60,7 @@ vi.mock(
   }),
 );
 vi.mock("../repositories/AiVisibilityRepository", () => ({
-  AiVisibilityRepository: { listResearchKeywords },
+  AiVisibilityRepository: { getTracker, listResearchKeywords },
 }));
 vi.mock("@/server/features/projects/services/websiteResearch", () => ({
   researchWebsite: research,
@@ -127,6 +129,17 @@ describe("runAiResearchSetup", () => {
 });
 
 describe("getAiResearchSetup", () => {
+  it("counts a tracker saved without research keywords as set up", async () => {
+    listResearchKeywords.mockResolvedValue([]);
+    listCompetitors.mockResolvedValue([]);
+    getTracker.mockResolvedValueOnce({ id: "tracker" });
+    workflow.get.mockRejectedValue(new Error("not found"));
+
+    await expect(getAiResearchSetup("project")).resolves.toMatchObject({
+      status: "ready",
+    });
+  });
+
   it.each([
     [
       "AppError: We couldn't read this website. Check the URL and try again.",

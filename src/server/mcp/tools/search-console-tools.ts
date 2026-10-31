@@ -13,6 +13,7 @@ import {
 } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { GscService } from "@/server/features/gsc/services/GscService";
 import {
@@ -67,6 +68,18 @@ async function missingSelfHostedGoogleClientResponse(
   projectId: string,
 ) {
   if (await hasGoogleOAuthConfig()) return null;
+
+  if ((await getGoogleAccessMode()) === "gateway") {
+    return mcpResponse({
+      text: "Google isn't set up in Every App yet. An owner or admin adds it once: create a Google OAuth client with the redirect URI https://<your gateway>/connect/google-workspace/callback, then paste it in Every App under Manage workspace → Providers, or run `pnpm everyapp secret set GOOGLE_WORKSPACE_CLIENT_ID GOOGLE_WORKSPACE_CLIENT_SECRET` (guide: https://everyapp.com/docs/providers/google#connect-accounts). Then connect Search Console from the project's settings page.",
+      meta: buildProjectMeta(context, projectId),
+      structuredContent: {
+        ok: false,
+        connected: false,
+        reason: "gsc_oauth_not_configured",
+      },
+    });
+  }
 
   return mcpResponse({
     text: `This self-hosted OpenSEO deployment is not configured for Search Console yet. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET, then reconnect Search Console from the project's settings page. Setup docs: ${GSC_SELF_HOSTED_SETUP_DOCS_URL}`,

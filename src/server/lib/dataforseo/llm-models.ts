@@ -34,7 +34,7 @@ const FALLBACK_MODEL_NAMES: Record<LlmResponseModelSlug, string[]> = {
     "gpt-5",
   ],
   claude: ["claude-sonnet-5", "claude-sonnet-4-6", "claude-sonnet-4-5"],
-  gemini: ["gemini-2.5-pro"],
+  gemini: ["gemini-3.5-flash"],
   perplexity: ["sonar-reasoning-pro", "sonar-pro", "sonar"],
 };
 
@@ -51,6 +51,10 @@ const PINNED_MODEL_NAMES: Partial<Record<LlmResponseModelSlug, string>> = {
   // The catalog lists claude-sonnet-5-5, but its live calls fail with 50000
   // "Internal Error" while claude-sonnet-5 answers (verified 2026-10-07).
   claude: "claude-sonnet-5",
+  // gemini-2.5-pro fails every call with 50301 "rate_limit_exceeded" and the
+  // catalog lists no newer pro, while gemini-3.5-flash answers (verified
+  // 2026-10-27).
+  gemini: "gemini-3.5-flash",
 };
 
 /**
@@ -64,7 +68,7 @@ const PINNED_MODEL_NAMES: Partial<Record<LlmResponseModelSlug, string>> = {
 const LATEST_RULES: Record<LlmResponseModelSlug, RegExp> = {
   chat_gpt: /^gpt-(\d+(?:\.\d+)*)$/,
   claude: /^claude-sonnet-(\d+(?:-\d+)*)$/,
-  gemini: /^gemini-(\d+(?:\.\d+)*)-pro$/,
+  gemini: /^gemini-(\d+(?:\.\d+)*)-flash$/,
   perplexity: /^sonar-reasoning-pro$/,
 };
 

@@ -355,6 +355,8 @@ export async function reserveUsageCredits(args: {
   customerId: string;
   callCredits: number[];
   creditFeature?: CreditFeature;
+  /** How long an unsettled hold keeps its credits; see holdCredits. */
+  ttlMs?: number;
 }): Promise<{ holds: UsageCreditHold[]; refusedCalls: number[] }> {
   const callCredits = args.callCredits.map((credits) => Math.max(1, credits));
   const allCalls = callCredits.map((_, index) => index);
@@ -386,6 +388,7 @@ export async function reserveUsageCredits(args: {
       estimatedCredits: credits,
       callIndexes: fitting,
       properties,
+      ttlMs: args.ttlMs,
     });
   };
 

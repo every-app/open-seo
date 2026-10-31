@@ -54,6 +54,8 @@ const LIVE_REQUEST_TIMEOUT_MS = 150_000;
 export interface PostedAiTrackingTask {
   tag: string;
   taskId: string;
+  /** What DataForSEO charged for this task, owed only if its answer arrives. */
+  costUsd: number;
 }
 
 /**
@@ -89,9 +91,10 @@ function aiTrackingTaskBody(
 }
 
 /**
- * Posts up to 100 prompts for one engine. DataForSEO bills at task_post, so
- * this is the metered call. Rejected entries come back without a task; the
- * caller fails their answers.
+ * Posts up to 100 prompts for one engine. DataForSEO bills at task_post; the
+ * metered client holds credits for it and charges each task once its answer
+ * arrives. Rejected entries come back without a task; the caller fails their
+ * answers.
  */
 export async function postAiTrackingTasks(
   input: AiTrackingMarket & {
@@ -130,7 +133,7 @@ export async function postAiTrackingTasks(
       );
       continue;
     }
-    posted.push({ tag, taskId: entry.id });
+    posted.push({ tag, taskId: entry.id, costUsd: entry.cost ?? 0 });
   }
   return {
     data: posted,

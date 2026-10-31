@@ -1,6 +1,6 @@
 const socialLinks = [
   { label: "YouTube", href: "https://www.youtube.com/@openseo_so" },
-  { label: "X", href: "https://x.com/openseo_so" },
+  { label: "X", href: "https://x.com/openseo" },
   { label: "LinkedIn", href: "https://www.linkedin.com/company/openseo-so" },
   { label: "Instagram", href: "https://www.instagram.com/openseo.so/" },
 ];
