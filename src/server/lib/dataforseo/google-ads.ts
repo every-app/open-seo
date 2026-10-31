@@ -46,6 +46,11 @@ export function isAdsKeyword(keyword: string): boolean {
   );
 }
 
+// Google Ads names Norwegian "no". Project markets use Bokmål "nb".
+function adsLanguageCode(languageCode: string): string {
+  return languageCode === "nb" ? "no" : languageCode;
+}
+
 export async function fetchAdsSearchVolume(input: {
   keywords: string[];
   locationCode: number;
@@ -66,7 +71,7 @@ export async function fetchAdsSearchVolume(input: {
       {
         keywords: input.keywords,
         ...locationParams,
-        language_code: input.languageCode,
+        language_code: adsLanguageCode(input.languageCode),
       },
     ],
   );
@@ -89,7 +94,7 @@ export async function fetchAdsKeywordIdeas(input: {
       {
         keywords: [input.keyword],
         location_code: input.locationCode,
-        language_code: input.languageCode,
+        language_code: adsLanguageCode(input.languageCode),
         sort_by: "search_volume",
       },
     ],
