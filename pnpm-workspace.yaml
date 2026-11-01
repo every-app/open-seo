@@ -112,6 +112,7 @@ overrides:
 # that actually succeeded. Fixed upstream in 1.0.0-rc; drop on upgrade.
 patchedDependencies:
   "@distilled.cloud/cloudflare@0.28.2": patches/@distilled.cloud__cloudflare@0.28.2.patch
+  "alchemy@2.0.0-beta.61": patches/alchemy@2.0.0-beta.61.patch
 
 # Build scripts pnpm may run on install; it skips every other package's and
 # warns "Ignored build scripts". esbuild and workerd fetch their binaries.

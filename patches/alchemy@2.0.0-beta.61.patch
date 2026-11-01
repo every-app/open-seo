@@ -1,0 +1,28 @@
+diff --git a/lib/Cloudflare/Workers/WorkerProvider.js b/lib/Cloudflare/Workers/WorkerProvider.js
+index 5c4c4555cbbe92330341c470079addd7af5e94cb..ed2601f58af963118ae30db8da4fce466dd4a48f 100644
+--- a/lib/Cloudflare/Workers/WorkerProvider.js
++++ b/lib/Cloudflare/Workers/WorkerProvider.js
+@@ -364,16 +364,16 @@ export const LiveWorkerProvider = () => Provider.effect(Worker, Effect.gen(funct
+         const cached = zoneCache.get(hostname);
+         if (cached)
+             return cached;
+-        const zoneList = yield* zones
+-            .listZones({})
+-            .pipe(Effect.map((response) => response.result ?? []));
+-        for (const zone of zoneList) {
+-            zoneCache.set(zone.name, zone.id);
+-        }
++        // Look each candidate up by name: an unfiltered listZones returns only
++        // the first page (20 zones), missing zones on larger accounts.
+         const parts = hostname.split(".");
+         for (let i = 0; i < parts.length - 1; i++) {
+             const candidate = parts.slice(i).join(".");
+-            const match = zoneList.find((z) => z.name === candidate);
++            const match = zoneCache.has(candidate)
++                ? { id: zoneCache.get(candidate) }
++                : (yield* zones
++                    .listZones({ name: candidate })
++                    .pipe(Effect.map((response) => response.result ?? []))).find((z) => z.name === candidate);
+             if (match) {
+                 zoneCache.set(hostname, match.id);
+                 return match.id;

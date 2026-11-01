@@ -42,6 +42,31 @@ export const readWorkersSubdomain = ({ required }: { required: boolean }) =>
     );
   });
 
+/**
+ * Optional self-host hostname (e.g. seo.example.com) in a zone on this
+ * account; hosted prod serves fixed domains instead. Password mode only: the
+ * provisioned Access application protects the workers.dev hostname, so a
+ * custom domain would bypass it.
+ */
+export const readCustomDomain = (stage: string, authMode: string) =>
+  Effect.gen(function* () {
+    if (stage === HOSTED_PROD_STAGE) return "";
+    const domain = (yield* Config.string("CUSTOM_DOMAIN").pipe(
+      Config.withDefault(""),
+    )).trim();
+    if (domain && !/^[a-z0-9.-]+$/i.test(domain)) {
+      return yield* Effect.die(
+        new Error("CUSTOM_DOMAIN must be a bare hostname (seo.example.com)."),
+      );
+    }
+    if (domain && authMode !== "password") {
+      return yield* Effect.die(
+        new Error("CUSTOM_DOMAIN requires AUTH_MODE=password."),
+      );
+    }
+    return domain;
+  });
+
 /** Reads ACCESS_ALLOWED_EMAILS; dies with `remedy` when none are set. */
 export const requireAllowedEmails = (remedy: string) =>
   Effect.gen(function* () {

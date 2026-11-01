@@ -50,6 +50,8 @@ Copy the template and set `DATAFORSEO_API_KEY`; everything else is optional:
 cp deploy/.env.selfhost.example .env.selfhost
 ```
 
+To serve OpenSEO on your own hostname, set `CUSTOM_DOMAIN=seo.example.com`. Its domain must be a zone on the same Cloudflare account; the deploy creates the DNS record and certificate. Choose it before creating accounts, since sign-in and MCP connections are tied to that address. It works with password accounts only, not Cloudflare Access.
+
 ## 4) Deploy
 
 ```bash
