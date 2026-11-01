@@ -38,8 +38,8 @@ pnpm install
 ## 2) Log in to Cloudflare (once)
 
 ```bash
-pnpm alchemy login                # the default scopes are enough
-pnpm alchemy cloudflare bootstrap # deploys alchemy's state-store Worker to your account
+pnpm alchemy login deploy/alchemy/alchemy.run.ts  # the default scopes are enough
+pnpm alchemy cloudflare bootstrap  # deploys alchemy's state-store Worker to your account
 ```
 
 ## 3) Create `.env.selfhost`
@@ -91,7 +91,7 @@ pnpm deploy:selfhost --yes
 With `AUTH_MODE=cloudflare_access`, Cloudflare's own login protects the Worker: every request is checked at Cloudflare's edge before it reaches OpenSEO, and only the emails you list get through. It needs an extra login scope, a Zero Trust team (created for you), and Zero Trust settings before MCP clients can connect, so expect more setup. Choose the sign-in mode before your first deploy; the two keep separate user records.
 
 1. In `.env.selfhost`, set `AUTH_MODE=cloudflare_access` and `ACCESS_ALLOWED_EMAILS` (comma-separated).
-2. Add the `access:write` scope to your Cloudflare login: run `pnpm alchemy login --configure`, answer yes to "Customize OAuth scopes?", and select `access:write` alongside the defaults.
+2. Add the `access:write` scope to your Cloudflare login: run `pnpm alchemy login --configure deploy/alchemy/alchemy.run.ts`, answer yes to "Customize OAuth scopes?", and select `access:write` alongside the defaults.
 3. Run `pnpm deploy:selfhost --yes`. The deploy creates the Cloudflare Access application protecting the Worker (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one is created for you, named after your workers.dev subdomain.
 
 Open the printed URL and sign in with Cloudflare Access. To add teammates, add them to `ACCESS_ALLOWED_EMAILS` and redeploy; dashboard edits to that Access policy are overwritten on the next deploy. To manage the Access application yourself, set `TEAM_DOMAIN` (`https://your-team.cloudflareaccess.com`) and `POLICY_AUD` (the application's audience tag) instead — the deploy then provisions no Access resources. MCP clients need Managed OAuth turned on for the Access application; see [Operations](./SELF_HOSTING_CLOUDFLARE_OPERATIONS.md#through-cloudflare-access).

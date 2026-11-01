@@ -147,7 +147,7 @@ const optionalSecret = (name: string) =>
   Config.redacted(name).pipe(Config.withDefault(Redacted.make("")));
 
 const accessScopeHint =
-  " (if this is a permissions error, re-run `pnpm alchemy login --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
+  " (if this is a permissions error, re-run `pnpm alchemy login --configure deploy/alchemy/alchemy.run.ts`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
 
 /**
  * The account's workers.dev subdomain (`<name>.workers.dev`): the configured
