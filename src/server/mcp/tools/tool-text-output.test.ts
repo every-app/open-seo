@@ -254,8 +254,8 @@ describe("MCP tool text output (service-backed tools)", () => {
     {
       status: "completed",
       errorMessage:
-        "Checked 17 of 19 keyword(s): 40101 Internal SE Server Error",
-      text: "Latest run: partial (2026-10-30T10:00:00.000Z) — Checked 17 of 19 keyword(s): 40101 Internal SE Server Error.",
+        'Checked 17 of 19 keyword(s): 40101 Internal SE Server Error. Not checked: "a", "b".',
+      text: 'Latest run: partial (2026-10-30T10:00:00.000Z) — Checked 17 of 19 keyword(s): 40101 Internal SE Server Error. Not checked: "a", "b". Keywords without',
     },
   ] as const)(
     "get_rank_tracker surfaces a $status run's error",

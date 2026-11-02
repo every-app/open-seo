@@ -224,6 +224,28 @@ describe("rank check finalization", () => {
     );
   });
 
+  it("leaves a bare error code out of a partial run's message", async () => {
+    mocks.getRunById.mockResolvedValue({
+      ...activeRun,
+      keywordsTotal: 2,
+      errorMessage: "UPSTREAM_UNAVAILABLE",
+    });
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(2));
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      { trackingKeywordId: "kw_0", device: "desktop" },
+    ]);
+
+    await runWorkflow({});
+
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({
+        status: "completed",
+        errorMessage: 'Checked 1 of 2 keyword(s). Not checked: "keyword 1".',
+      }),
+    );
+  });
+
   it("names the keywords a partial run could not check", async () => {
     mocks.getRunById.mockResolvedValue({
       ...activeRun,

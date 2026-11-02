@@ -49,7 +49,10 @@ async function addKeywords(
     if (
       normalized &&
       !seen.has(normalized) &&
-      !existingKeywords.has(normalized)
+      !existingKeywords.has(normalized) &&
+      // Rows added before language-aware lowercasing used toLowerCase(), so
+      // a Turkish re-add must not create a twin of that older row.
+      (matchCase || !existingKeywords.has(trimmed.toLowerCase()))
     ) {
       seen.add(normalized);
       rows.push({

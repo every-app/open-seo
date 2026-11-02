@@ -97,7 +97,7 @@ function formatLatestRun(
   // A completed run carries an error message only when some keyword/device
   // checks got no result; those keywords keep their previous position.
   if (run.status === "completed" && run.errorMessage)
-    return `Latest run: partial${finishedAt ? ` (${finishedAt})` : ""} — ${run.errorMessage}. Keywords without a result in this run show their previous position.`;
+    return `Latest run: partial${finishedAt ? ` (${finishedAt})` : ""} — ${run.errorMessage.replace(/\.$/, "")}. Keywords without a result in this run show their previous position.`;
   if (run.status === "completed")
     return `Latest run: ${finishedAt ?? "completed"}`;
   return `Latest run: ${run.status}. A check retries keywords that error or come back missing, so it can take up to an hour. Positions below are from the last completed check until then.`;

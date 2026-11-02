@@ -193,6 +193,10 @@ async function finalizeRankCheckRun(input: {
   const keywordError = run.errorMessage ?? input.batchError;
   const status =
     keywordsChecked === 0 && keywordsTotal > 0 ? "failed" : "completed";
+  // A bare code (UPSTREAM_UNAVAILABLE) is for the failed-run copy to
+  // translate; the partial message is shown as is, so it is left out there.
+  const partialReason =
+    keywordError && !isErrorCode(keywordError) ? keywordError : null;
   const checkedSummary =
     checkedByDevice.length > 1
       ? checkedByDevice
@@ -204,7 +208,7 @@ async function finalizeRankCheckRun(input: {
       ? (keywordError ?? "No keywords could be checked.")
       : isPartial
         ? [
-            `Checked ${checkedSummary} keyword(s)${keywordError ? `: ${keywordError}` : ""}`.replace(
+            `Checked ${checkedSummary} keyword(s)${partialReason ? `: ${partialReason}` : ""}`.replace(
               /\.?$/,
               ".",
             ),
