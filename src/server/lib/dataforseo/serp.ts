@@ -83,7 +83,44 @@ const serpSnapshotItemSchema = z
       .nullable()
       .optional(),
   })
-  .passthrough();
+  .passthrough()
+  .transform(unwrapGoogleRedirect);
+
+/**
+ * Google wraps many organic results in a google.com/goto redirect, and
+ * DataForSEO reports them with domain "google.com" and an encoded URL. The
+ * real site is only in the breadcrumb ("https://www.runnersworld.com › gear").
+ * When the breadcrumb isn't a URL (Reddit's "230+ comments") the domain is
+ * unknown, which beats crediting google.com with the result.
+ */
+function unwrapGoogleRedirect<
+  T extends { url?: string | null; breadcrumb?: string | null },
+>(item: T): T & { domain?: string | null } {
+  if (!item.url || !isGoogleRedirect(item.url)) return item;
+  return { ...item, domain: breadcrumbHost(item.breadcrumb) };
+}
+
+function isGoogleRedirect(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.pathname === "/goto" &&
+      /^(www\.)?google\.[a-z.]+$/.test(parsed.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function breadcrumbHost(breadcrumb: string | null | undefined): string | null {
+  const first = breadcrumb?.split("›")[0]?.trim();
+  if (!first || !/^https?:\/\//i.test(first)) return null;
+  try {
+    return new URL(first).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
 
 export type SerpLiveItem = z.infer<typeof serpSnapshotItemSchema>;
 
