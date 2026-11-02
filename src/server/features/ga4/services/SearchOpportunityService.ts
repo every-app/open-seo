@@ -151,7 +151,11 @@ async function getOpportunities(
   for (const row of ga4.rows) {
     const host = typeof row.hostName === "string" ? row.hostName : "";
     const landing = typeof row.landingPage === "string" ? row.landingPage : "";
-    const key = normalizePageKey(`${host}${landing}`);
+    // GA4 reports a session with no landing page as "" or "(not set)". Joined
+    // to the hostname alone it would read as the homepage.
+    const key = landing.startsWith("/")
+      ? normalizePageKey(`${host}${landing}`)
+      : null;
     if (!key) {
       invalidGa4Rows += 1;
       continue;

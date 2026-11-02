@@ -171,6 +171,33 @@ describe("SearchOpportunityService", () => {
     });
   });
 
+  it("does not join GA4 rows without a landing page to the homepage", async () => {
+    mocks.getPerformance.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      request: {},
+      rows: [
+        {
+          keys: ["https://example.com/"],
+          clicks: 1,
+          impressions: 100,
+          ctr: 0.01,
+          position: 10,
+        },
+      ],
+    });
+    mocks.runGa4Report.mockResolvedValue({
+      ...ga4Result,
+      rows: ["", "(not set)"].map((landingPage) => ({
+        ...ga4Result.rows[1],
+        landingPage,
+      })),
+    });
+    const result = await SearchOpportunityService.getOpportunities({
+      projectId: "project_1",
+    });
+    expect(result.rows[0]?.joinStatus).toBe("gsc_only");
+  });
+
   it("anchors the shared default range to the GA4 property date", async () => {
     mocks.getGa4Connection.mockResolvedValue({
       propertyTimeZone: "America/Los_Angeles",
