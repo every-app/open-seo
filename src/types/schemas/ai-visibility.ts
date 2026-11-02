@@ -161,6 +161,12 @@ export const aiPageResultsSchema = aiResultsSchema
 export const aiSourcesSchema = aiResultsSchema.extend({
   groupBy: z.enum(["url", "domain"]).default("url"),
   ownership: z.enum(["all", "own", "competitor", "other"]).default("all"),
+  evidence: z
+    .enum(["cited", "retrieved"])
+    .default("cited")
+    .describe(
+      "cited (default) counts pages the answers cite. retrieved counts pages the engines found while searching, cited or not; citedAnswerCount then says how many of those answers also cited it, so answerCount minus citedAnswerCount is retrieved but not cited.",
+    ),
 });
 export const aiTrendSchema = aiProjectSchema.extend({
   days: z

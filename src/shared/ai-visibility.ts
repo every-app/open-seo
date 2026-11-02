@@ -137,12 +137,22 @@ export interface AiCostEstimate {
   currency: "USD";
   warnings: string[];
 }
+/**
+ * Whether the engine cited the brand's domain, found it while searching but
+ * left it out of the answer, or never found it.
+ */
+export type AiRetrieval = "cited" | "retrieved_not_cited" | "not_found";
 export interface AiBrandResult {
   name: string;
   domain: string;
   own: boolean;
   mentioned: boolean;
   cited: boolean;
+  /**
+   * Null when the answer has no recorded search results (Google AI Overviews,
+   * answers collected before search results were kept) and does not cite it.
+   */
+  retrieval: AiRetrieval | null;
   /** Character offset of the first mention in the answer, or null. */
   firstMention: number | null;
 }
@@ -158,6 +168,8 @@ export interface AiObservationRow {
   answerStatus: "answered" | "no_answer" | null;
   brands: AiBrandResult[];
   citationCount: number;
+  /** Pages the engine found while searching, cited or not. */
+  searchResultCount: number;
   collectedAt: string | null;
   error: string | null;
 }
@@ -169,6 +181,8 @@ export interface AiBrandSummary {
   answers: number;
   mentions: number;
   citations: number;
+  /** Answers that found its domain while searching but did not cite it. */
+  retrievedNotCited: number;
   /** Sum and count of mention positions (1 = named first) in answers naming it. */
   positionTotal: number;
   positionCount: number;
@@ -201,12 +215,20 @@ export interface AiSource {
   title: string | null;
   position: number;
 }
+export interface AiSearchResult extends AiSource {
+  snippet: string | null;
+  publishedAt: string | null;
+  /** Whether the answer also cites this page. */
+  cited: boolean;
+}
 export interface AiAnswer {
   observation: AiObservationRow;
   answerText: string | null;
   answerMarkdown: string | null;
   /** Cited pages, in the engine's order. */
   sources: AiSource[];
+  /** Pages the engine found while searching, cited or not, in its order. */
+  searchResults: AiSearchResult[];
   /** Where each mentioned brand appears in answerText. */
   mentions: { domain: string; spans: { start: number; end: number }[] }[];
   requestedLocationCode: number;
@@ -219,9 +241,12 @@ export interface AiSourceRow {
   domain: string;
   title: string | null;
   ownership: "own" | "competitor" | "other";
+  /** Answers that cited it, or that retrieved it when evidence is "retrieved". */
   answerCount: number;
+  /** Of those answers, the ones that cited it. */
+  citedAnswerCount: number;
   promptCount: number;
-  /** The tracked prompts whose answers cited this source. */
+  /** The tracked prompts whose answers cited (or retrieved) this source. */
   promptIds: string[];
   engines: { engine: AiEngine; answerCount: number }[];
   observationIds: string[];
@@ -237,6 +262,9 @@ export interface AiSources {
     ownership: "all" | "own" | "competitor" | "other";
   };
   groupBy: "url" | "domain";
+  evidence: "cited" | "retrieved";
+  /** Answered collections in scope that recorded search results. */
+  answersWithSearchResults: number;
   truncated: boolean;
 }
 

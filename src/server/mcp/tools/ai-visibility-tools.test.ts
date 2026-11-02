@@ -241,6 +241,8 @@ describe("AI visibility assistant tools", () => {
         ownership: "all",
       },
       groupBy: "url",
+      evidence: "cited",
+      answersWithSearchResults: 0,
       truncated: false,
     };
     mocks.service.getSources.mockResolvedValue(sourceData);

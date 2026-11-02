@@ -23,12 +23,14 @@ export function summarizeAiBrands(rows: AiObservationRow[]): AiBrandSummary[] {
         answers: 0,
         mentions: 0,
         citations: 0,
+        retrievedNotCited: 0,
         positionTotal: 0,
         positionCount: 0,
       };
       summary.answers++;
       if (b.mentioned) summary.mentions++;
       if (b.cited) summary.citations++;
+      if (b.retrieval === "retrieved_not_cited") summary.retrievedNotCited++;
       const position = mentionOrder.indexOf(b.domain) + 1;
       if (position > 0) {
         summary.positionTotal += position;

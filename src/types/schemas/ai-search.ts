@@ -208,6 +208,16 @@ export type PromptExplorerCitation = z.infer<
   typeof promptExplorerCitationSchema
 >;
 
+/** A page the model found while searching; `cited` when the answer cites it. */
+const promptExplorerSearchResultSchema = promptExplorerCitationSchema.extend({
+  publishedAt: z.string().nullable(),
+  cited: z.boolean(),
+});
+
+export type PromptExplorerSearchResult = z.infer<
+  typeof promptExplorerSearchResultSchema
+>;
+
 export const promptExplorerModelResultSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("success"),
@@ -215,6 +225,7 @@ export const promptExplorerModelResultSchema = z.discriminatedUnion("status", [
     modelName: z.string().nullable(),
     text: z.string(),
     citations: z.array(promptExplorerCitationSchema),
+    searchResults: z.array(promptExplorerSearchResultSchema),
     fanOutQueries: z.array(z.string()),
     brandMentioned: z.boolean().nullable(),
     outputTokens: z.number().int().nonnegative().nullable(),
