@@ -48,11 +48,13 @@ export const brandLookupInputSchema = z.object({
   // have no URL to scope. Omitted = derive from the query (root → domain, path
   // → subfolder).
   scope: researchScopeSchema.optional(),
-  locationCode: z.number().int().positive().default(2840),
-  languageCode: z.string().min(2).max(8).default("en"),
 });
 
-export type BrandLookupInput = z.infer<typeof brandLookupInputSchema>;
+// The lookup runs in the project's market, which the server function adds.
+export type BrandLookupInput = z.infer<typeof brandLookupInputSchema> & {
+  locationCode: number;
+  languageCode: string;
+};
 
 const brandPlatformBreakdownSchema = z.object({
   platform: z.enum(["chat_gpt", "google"]),
