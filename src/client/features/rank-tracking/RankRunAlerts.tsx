@@ -2,6 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { partialRunSummary } from "@/shared/rank-tracking";
 import type { useRankRunPolling } from "./useRankRunPolling";
 
 /** Warnings about the latest rank check: stale, failed, or incomplete. */
@@ -55,7 +56,9 @@ export function RankRunAlerts({
             We couldn't confirm a result for some keywords, so they show their
             previous position.
           </p>
-          <p className="mt-1 text-muted-foreground">{run.errorMessage}</p>
+          <p className="mt-1 text-muted-foreground">
+            {partialRunSummary(run.errorMessage)}
+          </p>
         </AlertDescription>
       </Alert>
     );

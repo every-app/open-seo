@@ -1,5 +1,35 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { computeNextCheckAt, estimateRankCheckCredits } from "./rank-tracking";
+import {
+  computeNextCheckAt,
+  estimateRankCheckCredits,
+  partialRunSummary,
+} from "./rank-tracking";
+
+describe("partialRunSummary", () => {
+  it.each([
+    {
+      stored: "Checked 11 of 12 keyword(s): UPSTREAM_UNAVAILABLE",
+      shown: "Checked 11 of 12 keyword(s).",
+    },
+    {
+      stored:
+        'Checked 3 of 5 keyword(s): Task completed with partial results. Some pages could not be retrieved. Not checked: "a", "b".',
+      shown: "Checked 3 of 5 keyword(s).",
+    },
+    {
+      stored:
+        'Checked 3 of 3 desktop and 0 of 3 mobile keyword(s). Not checked: "a" (mobile).',
+      shown: "Checked 3 of 3 desktop and 0 of 3 mobile keyword(s).",
+    },
+    // Rows from before the "Checked" wording have nothing to remove.
+    {
+      stored: "3 keyword(s) could not be checked",
+      shown: "3 keyword(s) could not be checked",
+    },
+  ])("shows $shown", ({ stored, shown }) => {
+    expect(partialRunSummary(stored)).toBe(shown);
+  });
+});
 
 describe("rank tracking cost estimates", () => {
   it.each([
