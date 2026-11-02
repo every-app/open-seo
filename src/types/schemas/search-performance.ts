@@ -13,6 +13,15 @@ export const SEARCH_PERFORMANCE_RANGES = [
   "last_3_months",
 ] as const;
 
+/** Search Console reports the page offers. Discover and Google News have no
+ *  query dimension and no position, so those views show pages only. */
+export const SEARCH_PERFORMANCE_TYPES = [
+  "web",
+  "discover",
+  "googleNews",
+] as const;
+export type SearchPerformanceType = (typeof SEARCH_PERFORMANCE_TYPES)[number];
+
 /** Device values exactly as the GSC `device` dimension returns/accepts them. */
 export const GSC_DEVICES = ["DESKTOP", "MOBILE", "TABLET"] as const;
 
@@ -36,6 +45,7 @@ const searchPerformanceFilterShape = {
     })
     .optional(),
   projectId: z.string().min(1),
+  searchType: z.enum(SEARCH_PERFORMANCE_TYPES).default("web"),
   dateRange: z.enum(SEARCH_PERFORMANCE_RANGES).default("last_28_days"),
   device: z.enum(GSC_DEVICES).optional(),
   // ISO-3166-1 alpha-3, the code GSC returns in `country` dimension keys.
@@ -93,6 +103,7 @@ const textMatchParam = z
 /** /p/$projectId/search-performance query params. */
 export const searchPerformanceSearchSchema = z.object({
   tab: z.enum(SEARCH_PERFORMANCE_TABS).optional().catch(undefined),
+  type: z.enum(SEARCH_PERFORMANCE_TYPES).optional().catch(undefined),
   range: z.enum(SEARCH_PERFORMANCE_RANGES).optional().catch(undefined),
   device: z.enum(GSC_DEVICES).optional().catch(undefined),
   country: z.string().length(3).optional().catch(undefined),

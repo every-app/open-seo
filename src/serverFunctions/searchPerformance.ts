@@ -16,6 +16,7 @@ import {
 } from "@/server/features/gsc/searchPerformanceReport";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
+  type SearchPerformanceType,
   searchPerformanceInputSchema,
   searchPerformanceTableExportInputSchema,
   searchPerformanceTableInputSchema,
@@ -34,6 +35,7 @@ const EXPORT_ROW_LIMIT = 1000;
  *  country applies everywhere except the country breakdown itself (so the
  *  dropdown keeps every option visible while one country is selected). */
 function buildGscFilters(data: {
+  searchType: SearchPerformanceType;
   device?: string;
   country?: string;
   pageFilter?: { operator: "contains" | "equals"; expression: string };
@@ -47,7 +49,8 @@ function buildGscFilters(data: {
     : [];
   if (data.pageFilter)
     nonCountryFilters.push({ dimension: "page", ...data.pageFilter });
-  if (data.queryFilter)
+  // Discover and Google News have no query dimension to filter on.
+  if (data.queryFilter && data.searchType === "web")
     nonCountryFilters.push({ dimension: "query", ...data.queryFilter });
   const filters: GscPerformanceFilter[] = data.country
     ? [
@@ -81,6 +84,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
     const prev = previousPeriod(startDate, endDate);
     const projectId = context.projectId;
     const { nonCountryFilters, filters } = buildGscFilters(data);
+    const type = data.searchType;
 
     try {
       const [current, previous, queryPages, countries] = await Promise.all([
@@ -88,6 +92,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
           projectId,
           startDate,
           endDate,
+          type,
           dimensions: ["date"],
           filters,
           rowLimit: DAILY_ROW_LIMIT,
@@ -96,22 +101,28 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
           projectId,
           startDate: prev.startDate,
           endDate: prev.endDate,
+          type,
           dimensions: ["date"],
           filters,
           rowLimit: DAILY_ROW_LIMIT,
         }),
+        // Striking distance needs queries and positions, which only web has.
+        type === "web"
+          ? GscService.getPerformance({
+              projectId,
+              startDate,
+              endDate,
+              type,
+              dimensions: ["query", "page"],
+              filters,
+              rowLimit: STRIKING_DISTANCE_FETCH_LIMIT,
+            })
+          : { rows: [] },
         GscService.getPerformance({
           projectId,
           startDate,
           endDate,
-          dimensions: ["query", "page"],
-          filters,
-          rowLimit: STRIKING_DISTANCE_FETCH_LIMIT,
-        }),
-        GscService.getPerformance({
-          projectId,
-          startDate,
-          endDate,
+          type,
           dimensions: ["country"],
           filters: nonCountryFilters,
           rowLimit: COUNTRY_ROW_LIMIT,
@@ -159,6 +170,7 @@ export const getSearchPerformanceTable = createServerFn({ method: "POST" })
         projectId: context.projectId,
         startDate,
         endDate,
+        type: data.searchType,
         dimensions: [data.dimension],
         filters,
         // One extra row tells us whether a further page exists.
@@ -207,6 +219,7 @@ export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
       projectId: context.projectId,
       startDate,
       endDate,
+      type: data.searchType,
       dimensions: [data.dimension],
       filters,
       rowLimit: EXPORT_ROW_LIMIT,
