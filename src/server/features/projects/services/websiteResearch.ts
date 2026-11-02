@@ -54,6 +54,12 @@ async function retryInvalidOutput<T>(
     try {
       return await generate(abortSignal);
     } catch (error) {
+      // The deadline aborts mid-request with a bare TimeoutError.
+      if (abortSignal.aborted)
+        throw new AppError(
+          "INTERNAL_ERROR",
+          "Website research took too long. Please try again.",
+        );
       if (
         attempt === OUTPUT_RETRIES ||
         !NoObjectGeneratedError.isInstance(error)

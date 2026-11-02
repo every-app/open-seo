@@ -241,6 +241,22 @@ describe("researchWebsite", () => {
     expect(result.competitors).toEqual([competitor]);
   });
 
+  it("explains a research deadline timeout", async () => {
+    listCompetitors.mockResolvedValue([]);
+    vi.spyOn(AbortSignal, "timeout").mockReturnValue(
+      AbortSignal.abort(new DOMException("", "TimeoutError")),
+    );
+    generateText.mockImplementation(
+      ({ abortSignal }: { abortSignal: AbortSignal }) =>
+        Promise.reject(abortSignal.reason),
+    );
+
+    await expect(
+      researchWebsite("https://saved.com", project, customer),
+    ).rejects.toThrow("Website research took too long");
+    expect(generateText).toHaveBeenCalledOnce();
+  });
+
   it("does not credit a retry with an earlier attempt's search", async () => {
     listCompetitors.mockResolvedValue([]);
     const succeed = generateText.getMockImplementation()!;
