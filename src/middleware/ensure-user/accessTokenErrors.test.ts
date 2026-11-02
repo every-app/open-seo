@@ -37,6 +37,17 @@ describe("classifyAccessVerificationError", () => {
     expect(error.message).toContain("TEAM_DOMAIN");
   });
 
+  it("maps non-200 JWKS HTTP responses to a TEAM_DOMAIN config error", () => {
+    const error = classifyAccessVerificationError(
+      new joseErrors.JOSEError(
+        "Expected 200 OK from the JSON Web Key Set HTTP response",
+      ),
+    );
+
+    expect(error.code).toBe("AUTH_CONFIG_MISSING");
+    expect(error.message).toContain("TEAM_DOMAIN");
+  });
+
   it.each([
     new TypeError("fetch failed"),
     new Error("Network connection lost"),

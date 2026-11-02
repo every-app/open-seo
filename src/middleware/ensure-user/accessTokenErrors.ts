@@ -32,6 +32,9 @@ export function classifyAccessVerificationError(error: unknown): AppError {
     error instanceof joseErrors.JWKSNoMatchingKey ||
     error instanceof joseErrors.JWKSInvalid ||
     error instanceof joseErrors.JWKSTimeout ||
+    error instanceof joseErrors.JWKSMultipleMatchingKeys ||
+    (error instanceof joseErrors.JOSEError &&
+      error.message.includes("JSON Web Key Set")) ||
     // The caller only classifies errors thrown by jwtVerify itself, so a
     // non-jose error can only come from the remote JWKS fetch (TypeError in
     // browsers/node, plain Error like "Network connection lost" in workerd).
