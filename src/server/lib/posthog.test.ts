@@ -31,6 +31,17 @@ it("reports errors without their messages, which can quote customer content", as
   expect(sent?.stack).toMatch(/^AppError: INTERNAL_ERROR\n\s+at /);
   expect(sent?.stack).not.toMatch(/coffee|acme/);
   const cause = sent?.cause instanceof Error ? sent.cause : undefined;
-  expect(cause?.message).toBe("");
+  expect(cause?.message).toBe("message redacted");
   expect(cause?.stack).not.toContain("acme");
+});
+
+it("describes uncoded errors by the status or code they carry", async () => {
+  const error = new Error("Failed query: select role from member");
+  error.cause = Object.assign(new Error("terminating connection"), {
+    code: "57P01",
+  });
+
+  await captureServerError(error);
+
+  expect(captureExceptionImmediate.mock.calls[0]?.[0].message).toBe("57P01");
 });
