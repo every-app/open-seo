@@ -334,11 +334,11 @@ export async function researchWebsite(
               }),
             }
           : undefined,
-        onStepFinish: (step) => {
+        onStepFinish: async (step) => {
           spend.push({
             provider: "openrouter",
             creditFeature: "agent",
-            costUsd: requireOpenRouterCostUsd(step.providerMetadata),
+            costUsd: await requireOpenRouterCostUsd(step.providerMetadata),
             operation: "project_website_research",
           });
         },
