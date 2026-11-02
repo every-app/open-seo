@@ -116,9 +116,9 @@ export const removeSavedKeywords = createServerFn({
 export const refreshSavedKeywordMetrics = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(refreshSavedKeywordMetricsSchema)
-  .handler(async ({ context }) => {
+  .handler(async ({ data, context }) => {
     return KeywordResearchService.refreshSavedKeywordMetrics(
-      { projectId: context.projectId },
+      { projectId: context.projectId, savedKeywordIds: data.savedKeywordIds },
       context,
     );
   });
