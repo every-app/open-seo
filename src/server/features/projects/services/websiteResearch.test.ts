@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type * as Ai from "ai";
+import { z } from "zod";
 
 const {
   generateText,
@@ -9,7 +10,14 @@ const {
   listCompetitors,
   listKeywords,
 } = vi.hoisted(() => ({
-  generateText: vi.fn(),
+  generateText:
+    vi.fn<
+      (options: {
+        output: { schema: unknown };
+        tools?: ResearchTools;
+        abortSignal: AbortSignal;
+      }) => Promise<{ output: Record<string, unknown> }>
+    >(),
   readSite: vi.fn(),
   search: vi.fn(),
   listSections: vi.fn(),
@@ -200,6 +208,40 @@ describe("researchWebsite", () => {
     );
 
     expect(result.suggestedKeywords).toEqual(valid.slice(0, 15));
+  });
+
+  // Anthropic rejects the word-limit regex, so the model gets none and a long
+  // name is cut instead of failing a run that is already billed.
+  it("asks the model for no regex and cuts topic names to five words", async () => {
+    listSections.mockResolvedValue([]);
+    listCompetitors.mockResolvedValue([]);
+    listKeywords.mockResolvedValue([]);
+    const research = generateText.getMockImplementation();
+    if (!research) throw new Error("Expected the default research mock");
+    generateText.mockImplementationOnce(async (options) => {
+      const { output } = await research(options);
+      const longName = "best rank tracker for small agencies";
+      return {
+        output: {
+          ...output,
+          suggestedTopics: [
+            { ...topics[0], name: longName },
+            ...topics.slice(1),
+          ],
+        },
+      };
+    });
+
+    const result = await researchWebsite(
+      "https://saved.com",
+      project,
+      customer,
+    );
+
+    const schema = generateText.mock.calls[0]?.[0].output.schema;
+    if (!(schema instanceof z.ZodType)) throw new Error("Expected a schema");
+    expect(JSON.stringify(z.toJSONSchema(schema))).not.toContain('"pattern"');
+    expect(result.suggestedTopics[0].name).toBe("best rank tracker for small");
   });
 
   it.each([

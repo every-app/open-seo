@@ -13,6 +13,16 @@ export const suggestedAiTopicSchema = z.object({
     .describe("A succinct topic name, at most five words"),
   prompts: z.array(z.string().trim().min(1).max(500)).length(5),
 });
+// What the model is asked for. Anthropic structured output cannot compile the
+// word-limit regex, so names are cut to five words after generation instead.
+export const generatedAiTopicSchema = suggestedAiTopicSchema.extend({
+  name: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120)
+    .describe("A succinct topic name, at most five words"),
+});
 export const generateAiPromptsSchema = z.object({
   projectId: z.string().uuid(),
   topic: z

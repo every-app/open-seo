@@ -31,7 +31,11 @@ import {
   WEBSITE_UNREADABLE_MESSAGE,
   websiteResearchSchema,
 } from "@/types/schemas/projectWebsite";
-import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
+import { generatedAiTopicSchema } from "@/types/schemas/aiPromptSuggestions";
+import {
+  normalizeAiSuggestion,
+  toTopicName,
+} from "@/shared/ai-prompt-suggestions";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
 import { AiVisibilityRepository } from "@/server/features/ai-visibility/repositories/AiVisibilityRepository";
 
@@ -146,8 +150,7 @@ export async function researchWebsite(
       : {}),
     ...(missingTopics
       ? {
-          suggestedTopics:
-            websiteResearchSchema.shape.suggestedTopics.length(5),
+          suggestedTopics: z.array(generatedAiTopicSchema).length(5),
           // Checked after generation, so a malformed extra keyword is dropped
           // instead of failing a run that is already billed.
           suggestedKeywords: z.array(z.string()),
@@ -351,6 +354,13 @@ export async function researchWebsite(
     const research = websiteResearchSchema.parse({
       ...preserved,
       ...output,
+      suggestedTopics: z
+        .array(generatedAiTopicSchema)
+        .parse(output.suggestedTopics ?? [])
+        .map((topic) => ({
+          ...topic,
+          name: toTopicName(topic.name),
+        })),
       // Without live search, competitors can't be verified. The review starts
       // with none so the user can add them instead of losing a paid run.
       ...(searchOutage ? { competitors: [] } : {}),
