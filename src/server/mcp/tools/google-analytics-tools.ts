@@ -440,7 +440,10 @@ const OPPORTUNITY_COLUMNS: McpTableColumn<SearchOpportunityRow>[] = [
 
 function opportunityText(result: SearchOpportunityResult) {
   const range = result.request.dateRange;
-  const summary = `Search opportunities for ${range.startDate} through ${range.endDate}: ${result.rowCount} returned from ${result.totalCandidateRows} candidates. ${result.coverage.matchedRows} candidates matched GA4 landing pages.`;
+  const emptyGa4 = result.warnings.includes("ga4_no_organic_landing_pages")
+    ? ` GA4 recorded no organic landing pages from ${range.startDate} through ${range.endDate}, so nothing could be matched or scored. If the property started collecting data recently, this window may end before its first day of data; pass startDate and endDate inside the days GA4 has data for. The default window ends three days ago to let Search Console data settle.`
+    : "";
+  const summary = `Search opportunities for ${range.startDate} through ${range.endDate}: ${result.rowCount} returned from ${result.totalCandidateRows} candidates. ${result.coverage.matchedRows} candidates matched GA4 landing pages.${emptyGa4}`;
   if (result.rows.length === 0) return summary;
   return `${summary}\n${formatMcpTable(result.rows, OPPORTUNITY_COLUMNS)}`;
 }

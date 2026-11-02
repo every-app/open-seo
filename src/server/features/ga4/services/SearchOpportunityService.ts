@@ -285,10 +285,18 @@ async function getOpportunities(
       ga4: ga4.totalRowCount > ga4.rows.length,
       candidates: returned.length < candidates.length,
     },
-    warnings:
-      ga4.request.propertyTimeZone === "America/Los_Angeles"
-        ? ga4.warnings
-        : [...ga4.warnings, "source_time_zones_differ"],
+    warnings: [
+      ...ga4.warnings,
+      ...(ga4.request.propertyTimeZone === "America/Los_Angeles"
+        ? []
+        : ["source_time_zones_differ"]),
+      // Search Console has pages but GA4 recorded no organic landing pages at
+      // all, which is usually a property that started collecting after this
+      // window, not a URL-matching problem.
+      ...(ga4.rows.length === 0 && candidates.length > 0
+        ? ["ga4_no_organic_landing_pages"]
+        : []),
+    ],
     reportMetadata: ga4.reportMetadata,
     quota: ga4.quota,
   };
