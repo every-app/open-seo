@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { computeNextCheckAt, estimateRankCheckCredits } from "./rank-tracking";
+import {
+  computeNextCheckAt,
+  estimateRankCheckCredits,
+  normalizeKeyword,
+} from "./rank-tracking";
 
 describe("rank tracking cost estimates", () => {
   it.each([
@@ -168,5 +172,23 @@ describe("rank tracking schedules", () => {
     expect(computeNextCheckAt("monthly", kolkata)).toBe(
       "2026-03-30T19:30:00.000Z",
     );
+  });
+});
+
+describe("normalizeKeyword", () => {
+  it("lowercases English keywords normally", () => {
+    expect(normalizeKeyword("SEO Tools", "en")).toBe("seo tools");
+    expect(normalizeKeyword("SEARCH", undefined)).toBe("search");
+    expect(normalizeKeyword("SEARCH", null)).toBe("search");
+  });
+
+  it("handles Turkish dotted and dotless I according to language code", () => {
+    expect(normalizeKeyword("KIRMIZI", "tr")).toBe("kırmızı");
+    expect(normalizeKeyword("İstanbul avukat", "tr")).toBe("istanbul avukat");
+    expect(normalizeKeyword("IĞDIR", "tr")).toBe("ığdır");
+  });
+
+  it("falls back gracefully when given an invalid language code", () => {
+    expect(normalizeKeyword("TEST", "invalid-lang-code-12345")).toBe("test");
   });
 });
