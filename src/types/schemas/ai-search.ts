@@ -210,6 +210,7 @@ export type PromptExplorerCitation = z.infer<
 
 /** A page the model found while searching; `cited` when the answer cites it. */
 const promptExplorerSearchResultSchema = promptExplorerCitationSchema.extend({
+  snippet: z.string().nullable(),
   publishedAt: z.string().nullable(),
   cited: z.boolean(),
 });

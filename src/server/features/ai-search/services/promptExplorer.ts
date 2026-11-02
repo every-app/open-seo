@@ -306,10 +306,12 @@ function extractSearchResults(
 ): PromptExplorerSearchResult[] {
   const { citations, searchResults } = parseLlmResponseAnswer(response);
   const cited = new Set(citations.map((citation) => citation.url));
-  return searchResults.slice(0, 25).map((page) => ({
+  // Uncapped: a brand found only far down the list was still found.
+  return searchResults.map((page) => ({
     url: page.url,
     domain: page.domain,
     title: page.title,
+    snippet: page.snippet,
     publishedAt: page.publishedAt,
     cited: cited.has(page.url),
     matchedBrand: false,
