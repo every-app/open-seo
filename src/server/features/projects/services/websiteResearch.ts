@@ -373,42 +373,42 @@ export async function researchWebsite(
         )
         .slice(0, MAX_SUGGESTED_KEYWORDS),
     });
-    const topicNames = research.suggestedTopics.map((topic) =>
-      normalizeAiSuggestion(topic.name),
-    );
-    const promptTexts = research.suggestedTopics.flatMap((topic) =>
-      topic.prompts.map(normalizeAiSuggestion),
-    );
-    if (
-      new Set(topicNames).size !== topicNames.length ||
-      new Set(promptTexts).size !== promptTexts.length
-    )
-      throw new AppError(
-        "INTERNAL_ERROR",
-        "Website research returned duplicate tracking suggestions. Please try again.",
-      );
+    // Recover from a weak suggestion instead of failing a run that is already
+    // billed: drop a topic that repeats a name or prompt, and a competitor that
+    // the pages read during this run don't verify.
+    const topicNames = new Set<string>();
+    const promptTexts = new Set<string>();
+    research.suggestedTopics = research.suggestedTopics.filter((topic) => {
+      const name = normalizeAiSuggestion(topic.name);
+      const prompts = topic.prompts.map(normalizeAiSuggestion);
+      if (
+        topicNames.has(name) ||
+        new Set(prompts).size !== prompts.length ||
+        prompts.some((prompt) => promptTexts.has(prompt))
+      )
+        return false;
+      topicNames.add(name);
+      for (const prompt of prompts) promptTexts.add(prompt);
+      return true;
+    });
     if (missingCompetitors && !searchSucceeded && !searchOutage)
       throw new AppError(
         "INTERNAL_ERROR",
         "Website research was incomplete. Please try again.",
       );
-    for (const competitor of research.competitors) {
+    research.competitors = research.competitors.filter((competitor) => {
       competitor.domain = normalizeBacklinksTarget(competitor.domain, {
         scope: "domain",
       }).apiTarget;
       const sourceDomain = normalizeBacklinksTarget(competitor.sourceUrl, {
         scope: "domain",
       }).apiTarget;
-      if (
-        !sources.has(competitor.sourceUrl) ||
-        sourceDomain !== competitor.domain ||
-        competitor.domain === domain
-      )
-        throw new AppError(
-          "INTERNAL_ERROR",
-          "A competitor could not be verified. Please try again.",
-        );
-    }
+      return (
+        sources.has(competitor.sourceUrl) &&
+        sourceDomain === competitor.domain &&
+        competitor.domain !== domain
+      );
+    });
     return research;
   } finally {
     if (contextUsage.contextCredits > 0)

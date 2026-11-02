@@ -244,6 +244,66 @@ describe("researchWebsite", () => {
     expect(result.suggestedTopics[0].name).toBe("best rank tracker for small");
   });
 
+  it("drops topics that repeat a name or prompt instead of failing the paid run", async () => {
+    listKeywords.mockResolvedValue([]);
+    const [first, second, third, fourth] = topics;
+    generateText.mockResolvedValueOnce({
+      output: {
+        suggestedTopics: [
+          first,
+          { ...second, name: " Rank  Tracker " },
+          { ...third, prompts: [...third.prompts.slice(1), first.prompts[0]] },
+          {
+            ...fourth,
+            prompts: [
+              ...fourth.prompts.slice(0, 4),
+              fourth.prompts[0].toUpperCase(),
+            ],
+          },
+          topics[4],
+        ],
+        suggestedKeywords: [],
+      },
+    });
+
+    const result = await researchWebsite(
+      "https://saved.com",
+      project,
+      customer,
+    );
+
+    expect(result.suggestedTopics).toEqual([first, topics[4]]);
+  });
+
+  it("drops a competitor it could not verify instead of failing the paid run", async () => {
+    listCompetitors.mockResolvedValue([]);
+    const succeed = generateText.getMockImplementation()!;
+    generateText.mockImplementationOnce(async (options) => {
+      await succeed(options);
+      return {
+        output: {
+          competitors: [
+            competitor,
+            { ...competitor, domain: "unread.com" },
+            {
+              ...competitor,
+              domain: "saved.com",
+              sourceUrl: "https://saved.com/",
+            },
+          ],
+        },
+      };
+    });
+
+    const result = await researchWebsite(
+      "https://saved.com",
+      project,
+      customer,
+    );
+
+    expect(result.competitors).toEqual([competitor]);
+  });
+
   it.each([
     { failures: 1, competitors: [competitor] },
     { failures: 4, competitors: [] },
