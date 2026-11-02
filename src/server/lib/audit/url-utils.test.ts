@@ -25,6 +25,22 @@ describe("normalizeUrl", () => {
     );
   });
 
+  it("drops tracking params so tagged links dedupe to the page", () => {
+    expect(
+      normalizeUrl(
+        "https://x.com/products/skis?_pos=3&_sid=6744e5c60&_ss=r&utm_source=mail&srsltid=abc",
+      ),
+    ).toBe("https://x.com/products/skis");
+    expect(
+      normalizeUrl("https://x.com/collections/skis?page=2&fbclid=xyz"),
+    ).toBe("https://x.com/collections/skis?page=2");
+    expect(
+      normalizeUrl("https://x.com/p?utm_source=mail", undefined, {
+        keepTrackingParams: true,
+      }),
+    ).toBe("https://x.com/p?utm_source=mail");
+  });
+
   it("returns null for unsupported protocol", () => {
     expect(normalizeUrl("mailto:test@example.com")).toBeNull();
   });

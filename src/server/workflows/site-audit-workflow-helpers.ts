@@ -20,7 +20,9 @@ function parseLinkHeaderCanonical(
     const match = part.match(/<([^>]+)>\s*;([^]*)/);
     if (!match) continue;
     if (/rel\s*=\s*"?canonical"?/i.test(match[2])) {
-      return normalizeUrl(match[1].trim(), pageUrl);
+      return normalizeUrl(match[1].trim(), pageUrl, {
+        keepTrackingParams: true,
+      });
     }
   }
   return null;
@@ -261,7 +263,9 @@ export async function crawlPage(
       title: analysis.title,
       metaDescription: analysis.metaDescription,
       canonicalUrl: analysis.canonical
-        ? (normalizeUrl(analysis.canonical, url) ?? analysis.canonical)
+        ? (normalizeUrl(analysis.canonical, url, {
+            keepTrackingParams: true,
+          }) ?? analysis.canonical)
         : null,
       robotsMeta: analysis.robotsMeta,
       xRobotsTag,
