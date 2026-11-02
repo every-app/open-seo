@@ -93,8 +93,13 @@ function formatLatestRun(
   if (!run) return "Latest run: never";
   if (run.status === "failed")
     return `Latest run: failed — ${run.errorMessage ?? "Unknown error"}`;
+  const finishedAt = run.completedAt ?? run.lastCheckedAt;
+  // A completed run carries an error message only when some keyword/device
+  // checks got no result; those keywords keep their previous position.
+  if (run.status === "completed" && run.errorMessage)
+    return `Latest run: partial${finishedAt ? ` (${finishedAt})` : ""} — ${run.errorMessage}. Keywords without a result in this run show their previous position.`;
   if (run.status === "completed")
-    return `Latest run: ${run.completedAt ?? run.lastCheckedAt ?? "completed"}`;
+    return `Latest run: ${finishedAt ?? "completed"}`;
   return `Latest run: ${run.status}. A check retries keywords that error or come back missing, so it can take up to an hour. Positions below are from the last completed check until then.`;
 }
 
@@ -131,7 +136,7 @@ export const getRankTrackerTool = {
   config: {
     title: "Get rank tracker",
     description:
-      "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + a page of latest snapshots (pinned keywords first), including `trackingKeywordId` for removals and pins, `pinned`, and `googleSerpUrl`, a live Google search for the tracked keyword, language, country, and city. Use offset/limit to read additional keywords. Without it, lists all trackers in the project. Uses no credits. Use create_rank_tracker when no tracker exists; then use add_rank_tracking_keywords, remove_rank_tracking_keywords, pin_rank_tracking_keywords, estimate_rank_tracker_cost, or run_rank_tracker to manage it. `lastCheckedAt` shows position freshness. A null position means the domain was not found in the results the check returned, which can be fewer than `serpDepth`, so it does not prove the domain ranks below `serpDepth`.",
+      "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + a page of latest snapshots (pinned keywords first), including `trackingKeywordId` for removals and pins, `pinned`, and `googleSerpUrl`, a live Google search for the tracked keyword, language, country, and city. Use offset/limit to read additional keywords. Without it, lists all trackers in the project. Uses no credits. Use create_rank_tracker when no tracker exists; then use add_rank_tracking_keywords, remove_rank_tracking_keywords, pin_rank_tracking_keywords, estimate_rank_tracker_cost, or run_rank_tracker to manage it. `lastCheckedAt` shows position freshness. A `completed` run with an `errorMessage` was partial: some checks got no result, and the message says how many were checked. A null position means the domain was not found in the results the check returned, which can be fewer than `serpDepth`, so it does not prove the domain ranks below `serpDepth`.",
     inputSchema,
     outputSchema: z
       .object({

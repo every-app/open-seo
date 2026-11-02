@@ -55,6 +55,7 @@ export function RankRunAlerts({
             We couldn't confirm a result for some keywords, so they show their
             previous position.
           </p>
+          <p className="mt-1 text-muted-foreground">{run.errorMessage}</p>
         </AlertDescription>
       </Alert>
     );

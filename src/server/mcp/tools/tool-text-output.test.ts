@@ -245,44 +245,53 @@ describe("MCP tool text output (service-backed tools)", () => {
     });
   });
 
-  it("get_rank_tracker surfaces the latest run failure", async () => {
-    mocks.getTracker.mockResolvedValue({
-      config: {
-        id: "tracker_1",
-        domain: "example.com",
-        scheduleInterval: "daily",
-        devices: "desktop",
-        serpDepth: 20,
-      },
-      results: {
-        run: {
-          id: "run_1",
-          lastCheckedAt: null,
-          completedAt: null,
-          status: "failed",
-          errorMessage: "Provider request timed out",
+  it.each([
+    {
+      status: "failed",
+      errorMessage: "Provider request timed out",
+      text: "Latest run: failed — Provider request timed out",
+    },
+    {
+      status: "completed",
+      errorMessage:
+        "Checked 17 of 19 keyword(s): 40101 Internal SE Server Error",
+      text: "Latest run: partial (2026-10-30T10:00:00.000Z) — Checked 17 of 19 keyword(s): 40101 Internal SE Server Error.",
+    },
+  ] as const)(
+    "get_rank_tracker surfaces a $status run's error",
+    async ({ status, errorMessage, text }) => {
+      mocks.getTracker.mockResolvedValue({
+        config: {
+          id: "tracker_1",
+          domain: "example.com",
+          scheduleInterval: "daily",
+          devices: "desktop",
+          serpDepth: 20,
         },
-        rows: [],
-      },
-    });
-
-    const result = await getRankTrackerTool.handler(
-      { projectId: "project_1", trackerId: "tracker_1" },
-      toolContext,
-    );
-
-    expect(textContent(result)).toContain(
-      "Latest run: failed — Provider request timed out",
-    );
-    expect(result.structuredContent).toMatchObject({
-      results: {
-        run: {
-          status: "failed",
-          errorMessage: "Provider request timed out",
+        results: {
+          run: {
+            id: "run_1",
+            lastCheckedAt: null,
+            completedAt:
+              status === "completed" ? "2026-10-30T10:00:00.000Z" : null,
+            status,
+            errorMessage,
+          },
+          rows: [],
         },
-      },
-    });
-  });
+      });
+
+      const result = await getRankTrackerTool.handler(
+        { projectId: "project_1", trackerId: "tracker_1" },
+        toolContext,
+      );
+
+      expect(textContent(result)).toContain(text);
+      expect(result.structuredContent).toMatchObject({
+        results: { run: { status, errorMessage } },
+      });
+    },
+  );
 
   it("get_ranked_keywords renders nested provider rows as a text table", async () => {
     const rankedKeywords = vi.fn().mockResolvedValue({
