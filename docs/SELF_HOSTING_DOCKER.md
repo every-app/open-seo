@@ -98,7 +98,7 @@ runtime the image serves the app through (tracked upstream at
 not caused by the app's own request handling, and it affects every OpenSEO version.
 
 To keep a memory-limited container from being OOM-killed, the container runs a watchdog
-that recycles the server process gracefully once the container's cgroup memory reaches
+that recycles the server process gracefully once the container's working-set memory (cgroup usage excluding inactive file cache) reaches
 90% of its limit (checked every 60 seconds). A recycle costs a few seconds of downtime,
 and the standard `restart: unless-stopped` / Kubernetes restart policy brings the server
 right back — a few seconds of downtime instead of a hard OOM kill. There is no data loss:

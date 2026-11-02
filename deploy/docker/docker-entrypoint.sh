@@ -59,26 +59,32 @@ case "$MEMORY_CHECK_INTERVAL" in
 esac
 RECYCLE_BYTES="${SELF_HOST_MEMORY_RECYCLE_BYTES:-}"
 
+MEMORY_USAGE_FILE=""
+MEMORY_STAT_FILE=""
+LIMIT_BYTES=""
+
+if [ -f "$CGROUP_BASE/memory.max" ]; then
+  # cgroup v2 (Docker 20+, current Kubernetes nodes).
+  MEMORY_USAGE_FILE="$CGROUP_BASE/memory.current"
+  MEMORY_STAT_FILE="$CGROUP_BASE/memory.stat"
+  LIMIT_BYTES="$(cat "$CGROUP_BASE/memory.max")"
+elif [ -f "$CGROUP_BASE/memory/memory.limit_in_bytes" ]; then
+  # cgroup v1 fallback.
+  MEMORY_USAGE_FILE="$CGROUP_BASE/memory/memory.usage_in_bytes"
+  MEMORY_STAT_FILE="$CGROUP_BASE/memory/memory.stat"
+  LIMIT_BYTES="$(cat "$CGROUP_BASE/memory/memory.limit_in_bytes")"
+fi
+
+# "max" (v2 unlimited) or an unparsable value disables the watchdog limit detection.
+case "$LIMIT_BYTES" in
+  ''|*[!0-9]*) LIMIT_BYTES="" ;;
+esac
+
 if [ -z "$RECYCLE_BYTES" ]; then
-  if [ -f "$CGROUP_BASE/memory.max" ]; then
-    # cgroup v2 (Docker 20+, current Kubernetes nodes).
-    MEMORY_USAGE_FILE="$CGROUP_BASE/memory.current"
-    LIMIT_BYTES="$(cat "$CGROUP_BASE/memory.max")"
-  elif [ -f "$CGROUP_BASE/memory/memory.limit_in_bytes" ]; then
-    # cgroup v1 fallback.
-    MEMORY_USAGE_FILE="$CGROUP_BASE/memory/memory.usage_in_bytes"
-    LIMIT_BYTES="$(cat "$CGROUP_BASE/memory/memory.limit_in_bytes")"
-  else
-    LIMIT_BYTES=""
-  fi
-  # "max" (v2 unlimited) or an unparsable value disables the watchdog.
-  case "$LIMIT_BYTES" in
-    ''|*[!0-9]*) LIMIT_BYTES="" ;;
-  esac
   if [ -n "$LIMIT_BYTES" ]; then
     RECYCLE_BYTES=$(( LIMIT_BYTES * 90 / 100 ))
   fi
-elif [ ! -f "$CGROUP_BASE/memory.max" ] && [ ! -f "$CGROUP_BASE/memory/memory.limit_in_bytes" ]; then
+elif [ -z "$MEMORY_USAGE_FILE" ]; then
   # An explicit threshold with no readable cgroup would silently never fire.
   echo "Memory watchdog warning: SELF_HOST_MEMORY_RECYCLE_BYTES is set but no cgroup memory files were found under $CGROUP_BASE; the watchdog will never fire. Set SELF_HOST_CGROUP_PATH if the cgroup is mounted elsewhere."
 fi
@@ -115,6 +121,17 @@ while :; do
       case "$USAGE" in
         ''|*[!0-9]*) continue ;;
       esac
+      if [ -n "$MEMORY_STAT_FILE" ] && [ -f "$MEMORY_STAT_FILE" ]; then
+        INACTIVE="$(awk '$1=="inactive_file"||$1=="total_inactive_file"{print $2; exit}' "$MEMORY_STAT_FILE" 2>/dev/null || true)"
+        case "$INACTIVE" in
+          ''|*[!0-9]*) INACTIVE=0 ;;
+        esac
+        if [ "$USAGE" -gt "$INACTIVE" ]; then
+          USAGE=$(( USAGE - INACTIVE ))
+        else
+          USAGE=0
+        fi
+      fi
       if [ "$USAGE" -ge "$RECYCLE_BYTES" ]; then
         : > "$RECYCLE_MARKER"
         pkill -TERM -P "$SERVER_PID" 2>/dev/null || true
