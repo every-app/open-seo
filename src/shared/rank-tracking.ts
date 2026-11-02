@@ -391,14 +391,9 @@ export function scheduleLabel(
   return "Manual";
 }
 
-/**
- * A partial run's stored message as people should read it: how much was
- * checked. The stored text can go on to give a provider reason and the
- * unchecked keywords, which agents still get through get_rank_tracker.
- */
-export function partialRunSummary(errorMessage: string): string {
-  const checked = /^Checked .*? keyword\(s\)/.exec(errorMessage)?.[0];
-  return checked ? `${checked}.` : errorMessage;
+/** Older failed runs stored "AppError: Insufficient credits for rank check". */
+export function isOutOfCreditsRunError(errorMessage: string | null): boolean {
+  return /insufficient.credits/i.test(errorMessage ?? "");
 }
 
 export function devicesCount(devices: RankTrackingConfig["devices"]): number {

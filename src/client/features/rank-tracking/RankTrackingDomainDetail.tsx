@@ -15,7 +15,6 @@ import { SkeletonCard } from "@/client/components/SkeletonPresets";
 import { useHostedPlanGate } from "@/client/features/billing/HostedPlanGate";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { FreePlanAlert } from "./FreePlanAlert";
-import { RankTrackingChangesAlert } from "./RankTrackingChangesAlert";
 import { RankRunAlerts } from "./RankRunAlerts";
 import { ScheduledChecksPausedAlert } from "./ScheduledChecksPausedAlert";
 import { RankTrackingDetailHeader } from "./RankTrackingDetailHeader";
@@ -236,8 +235,6 @@ export function RankTrackingDomainDetail({
 
   return (
     <div className="space-y-3">
-      <RankTrackingChangesAlert />
-
       <RankRunAlerts run={latestRun} />
 
       <FreePlanAlert visible={planStatus === "free"} />

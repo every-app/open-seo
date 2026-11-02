@@ -120,9 +120,7 @@ function NotCheckedCell() {
       >
         <CircleSlash className="size-3.5" aria-hidden />
       </TooltipTrigger>
-      <TooltipContent>
-        Not checked: check failed, no position recorded.
-      </TooltipContent>
+      <TooltipContent>No result from Google on this check.</TooltipContent>
     </Tooltip>
   );
 }

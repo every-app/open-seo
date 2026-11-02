@@ -39,7 +39,7 @@ const BUCKETS = [
     key: "notChecked",
     label: "Not checked",
     color: "#d1d5db",
-    hint: "Check failed, no position recorded.",
+    hint: "No result from Google on this check.",
   },
 ] as const;
 

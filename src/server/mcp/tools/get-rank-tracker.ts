@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { sortBy } from "remeda";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
+import { isOutOfCreditsRunError } from "@/shared/rank-tracking";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import {
@@ -92,15 +93,17 @@ function formatLatestRun(
 ): string {
   if (!run) return "Latest run: never";
   if (run.status === "failed")
-    return `Latest run: failed — ${run.errorMessage ?? "Unknown error"}`;
+    return isOutOfCreditsRunError(run.errorMessage)
+      ? "Latest run: failed — INSUFFICIENT_CREDITS"
+      : "Latest run: failed. Google's results have been unreliable lately, so positions below are from the last completed check.";
   const finishedAt = run.completedAt ?? run.lastCheckedAt;
   // A completed run carries an error message only when some keyword/device
   // checks got no result; those keywords keep their previous position.
   if (run.status === "completed" && run.errorMessage)
-    return `Latest run: partial${finishedAt ? ` (${finishedAt})` : ""} — ${run.errorMessage.replace(/\.$/, "")}. Keywords without a result in this run show their previous position.`;
+    return `Latest run: partial${finishedAt ? ` (${finishedAt})` : ""} — ${run.errorMessage.replace(/\.$/, "")}. Google's results have been unreliable lately, so some keywords show their previous position.`;
   if (run.status === "completed")
     return `Latest run: ${finishedAt ?? "completed"}`;
-  return `Latest run: ${run.status}. A check retries keywords that error or come back missing, so it can take up to an hour. Positions below are from the last completed check until then.`;
+  return `Latest run: ${run.status}. A check retries keywords that error or come back missing, so it can take up to 3 hours. Positions below are from the last completed check until then.`;
 }
 
 const inputSchema = {

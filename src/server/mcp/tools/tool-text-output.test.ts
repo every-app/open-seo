@@ -249,16 +249,21 @@ describe("MCP tool text output (service-backed tools)", () => {
     {
       status: "failed",
       errorMessage: "Provider request timed out",
-      text: "Latest run: failed — Provider request timed out",
+      text: "Latest run: failed. Google's results have been unreliable lately, so positions below are from the last completed check.",
+    },
+    {
+      status: "failed",
+      errorMessage: "AppError: Insufficient credits for rank check",
+      text: "Latest run: failed — INSUFFICIENT_CREDITS",
     },
     {
       status: "completed",
       errorMessage:
         'Checked 17 of 19 keyword(s): 40101 Internal SE Server Error. Not checked: "a", "b".',
-      text: 'Latest run: partial (2026-10-30T10:00:00.000Z) — Checked 17 of 19 keyword(s): 40101 Internal SE Server Error. Not checked: "a", "b". Keywords without',
+      text: `Latest run: partial (2026-10-30T10:00:00.000Z) — Checked 17 of 19 keyword(s): 40101 Internal SE Server Error. Not checked: "a", "b". Google's results have been unreliable lately, so some keywords show their previous position.`,
     },
   ] as const)(
-    "get_rank_tracker surfaces a $status run's error",
+    "get_rank_tracker reports a $status run with error: $errorMessage",
     async ({ status, errorMessage, text }) => {
       mocks.getTracker.mockResolvedValue({
         config: {

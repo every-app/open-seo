@@ -8,9 +8,15 @@ import {
   Archive,
   CircleAlert,
   Globe,
+  Info,
   Plus,
   ChevronRight,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
 import {
   getRankTrackingConfigSummaries,
   updateRankTrackingConfig,
@@ -293,6 +299,24 @@ function DomainRow({
               {parseDbTimestamp(
                 summary.lastRunCompletedAt,
               ).toLocaleDateString()}
+              {summary.lastRunIncomplete && (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      // Above the row link, like the archive button.
+                      <span
+                        aria-label="Last check incomplete"
+                        className="pointer-events-auto relative z-10 ml-1 inline-flex cursor-help align-text-bottom"
+                      />
+                    }
+                  >
+                    <Info className="size-3.5" aria-hidden />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Some results from the last check are missing.
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </>
           )}
         </p>
