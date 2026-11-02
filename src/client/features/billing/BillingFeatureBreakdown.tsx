@@ -4,11 +4,18 @@ import { Skeleton } from "@/client/components/ui/skeleton";
 import { BillingUsageSection } from "@/client/features/billing/BillingUsageSection";
 import { useBillingUsage } from "@/client/features/billing/useBillingUsage";
 
-export function BillingFeatureBreakdown() {
+/** Last 30 days of usage split by feature or by project. */
+export function BillingFeatureBreakdown({
+  by,
+}: {
+  by: "features" | "projects";
+}) {
   const usageQuery = useBillingUsage();
 
   return (
-    <BillingUsageSection title="Usage by feature">
+    <BillingUsageSection
+      title={by === "features" ? "Usage by feature" : "Usage by project"}
+    >
       <QueryState
         query={usageQuery}
         errorFallback="Failed to load usage"
@@ -20,7 +27,7 @@ export function BillingFeatureBreakdown() {
           </div>
         }
       >
-        {(usage) => <BreakdownRows rows={usage.features} />}
+        {(usage) => <BreakdownRows rows={usage[by]} />}
       </QueryState>
     </BillingUsageSection>
   );

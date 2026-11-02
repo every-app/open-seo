@@ -364,6 +364,8 @@ export async function reserveUsageCredits(args: {
     calls.reduce((sum, index) => sum + callCredits[index], 0);
   const properties = {
     creditFeature: args.creditFeature,
+    // The billing page groups usage by project on this.
+    projectId: args.customer.projectId,
     provider: "dataforseo",
     estimatedCredits: creditsFor(allCalls),
   };
@@ -568,6 +570,7 @@ export async function settleUsageCredits(args: {
 
   const { landed, error } = await finalizeHold(hold, actualCredits, {
     creditFeature,
+    projectId: customer.projectId,
     provider: "dataforseo",
     paths,
     totalCostUsd,
@@ -662,6 +665,7 @@ export async function trackUsageCreditSpend(args: {
   const properties = {
     currency: "USD",
     creditFeature: args.creditFeature,
+    projectId: args.customer.projectId,
     totalCostUsd,
     totalCostCredits,
     ...args.properties,
