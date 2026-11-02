@@ -394,6 +394,39 @@ async function getTracker(configId: string, projectId: string) {
   return { config, results };
 }
 
+/**
+ * Position history for one device over a tracker's last `runLimit` completed
+ * full runs, plus the keywords it currently tracks so callers can name rows.
+ */
+async function getPositionHistory(input: {
+  configId: string;
+  projectId: string;
+  /** Defaults to desktop, or mobile for a mobile-only tracker. */
+  device?: "desktop" | "mobile";
+  runLimit: number;
+}) {
+  // The project-scoped config lookup is the authorization gate for the
+  // configId-keyed reads, so it runs first.
+  const config = await getValidatedConfig(input.configId, input.projectId);
+  const device =
+    input.device ?? (config.devices === "mobile" ? "mobile" : "desktop");
+  if (config.devices !== "both" && config.devices !== device) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `This tracker only checks ${config.devices}.`,
+    );
+  }
+  const [keywords, cells] = await Promise.all([
+    RankTrackingRepository.getKeywordsForConfig(input.configId),
+    RankTrackingRepository.getPositionMatrix(
+      input.configId,
+      device,
+      input.runLimit,
+    ),
+  ]);
+  return { config, device, keywords, cells };
+}
+
 async function requireRankCheckAccess(organizationId: string) {
   if (!(await isHostedServerAuthMode())) return;
   if (await customerHasPaidPlan(organizationId)) return;
@@ -468,5 +501,6 @@ export const RankTrackingService = {
   refreshKeywordMetrics,
   getConfigs,
   getTracker,
+  getPositionHistory,
   requireRankCheckAccess,
 };
