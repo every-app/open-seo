@@ -87,6 +87,26 @@ describe("RankTrackingService management invariants", () => {
     ]);
   });
 
+  it("lowercases with the tracker's language, so Turkish I and İ keep their letters", async () => {
+    mocks.getConfigById.mockResolvedValue({ ...config, languageCode: "tr" });
+    mocks.getKeywordsForConfig.mockResolvedValue([]);
+    mocks.addKeywordsToConfig.mockImplementation(
+      async (rows: Array<{ id: string }>) => rows.map((row) => row.id),
+    );
+
+    await RankTrackingService.addKeywords(
+      "config_1",
+      "project_1",
+      ["İstanbul avukat", "KIRMIZI"],
+      { kind: "direct_user_action" },
+    );
+
+    expect(mocks.addKeywordsToConfig).toHaveBeenCalledWith([
+      expect.objectContaining({ keyword: "istanbul avukat" }),
+      expect.objectContaining({ keyword: "kırmızı" }),
+    ]);
+  });
+
   it("keeps case as typed when matchCase is set, alongside the lowercase keyword", async () => {
     mocks.getKeywordsForConfig.mockResolvedValue([
       { id: "kw_1", keyword: "nodex" },
