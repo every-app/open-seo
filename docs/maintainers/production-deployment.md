@@ -56,8 +56,10 @@ optional ones simply turn their feature off.
 
 The Cloudflare token needs the permissions the Alchemy stack already uses:
 Workers scripts, D1, KV, R2, Workflows, custom-domain management, Account
-Settings Read, and Secrets Store Read (Alchemy fetches its state-store token
-from the account Secrets Store each run, so no extra GitHub secret is needed).
+Settings Read, and Secrets Store Edit. Alchemy reads its state-store token from
+the account Secrets Store each run through a temporary Secrets Store binding,
+and Cloudflare requires Edit to bind a secret; Read fails with "Secrets store
+binding authorization failed".
 
 ### Variables
 
