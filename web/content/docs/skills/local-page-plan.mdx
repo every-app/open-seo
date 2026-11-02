@@ -1,0 +1,59 @@
+---
+title: "Local Page Plan Agent Skill"
+description: "Decide which local service pages and service-area pages to build or optimize first from keyword demand, Search Console, and Google Analytics."
+---
+
+<RunSkillCallout command="/local-page-plan" />
+
+The Local Page Plan Agent Skill decides which service pages and city pages a local home-service business should publish or improve first.
+
+Your agent starts from the services the business actually performs and the cities it will drive to. It reads local keyword demand through OpenSEO, then Search Console and Google Analytics when those are connected to the project. A business with no site yet is ranked on keyword demand only.
+
+You get an ordered plan for pages shaped like `/services/<slug>/` and `/service-areas/<slug>/`: build now, optimize first, later, or do not build.
+
+## What this skill helps your agent do
+
+- Rank confirmed services by local demand, intent, and keyword difficulty.
+- Rank confirmed cities by the same evidence and name which city to publish first.
+- Use Search Console striking-distance queries and query-to-page rows when Search Console is connected.
+- Use organic landing pages and key events when Google Analytics is connected.
+- Keep symptom, price, and neighborhood queries on an existing service or city page.
+- Hand the confirmed pages to a site build. The skill does not write the website.
+
+## When to use it
+
+Use this skill before choosing which service and city pages to build for a plumber, electrician, HVAC company, roofer, or another local home-service business.
+
+It helps when a new site needs a short first set of pages, or when an existing site needs to know which current URLs to improve before adding more cities.
+
+Use [Local SEO](/docs/skills/local-seo) when the question is Google Maps visibility around a storefront. Use [Keyword Research](/docs/skills/keyword-research) when you want a keyword list rather than a page order.
+
+## What you get back
+
+Your agent should return how many service pages and city pages to build now, which city is first, and whether an existing URL should be optimized before any new page. Each row carries the primary keyword, local volume, and keyword difficulty, or `unknown` when the data is missing.
+
+The order compares this business's own cities and services. It is not a Maps rank and it does not name a date.
+
+## How to get the best result
+
+- Confirm the real service list and the cities the business will drive to before the agent spends credits.
+- Connect Search Console and Google Analytics on the project's Integrations page when the business already has a site.
+- Leave a new business unconnected. The plan still runs on keyword demand.
+- Ask for the seed count before a long city list. More than 10 paid seeds stops for a confirmation.
+- Confirm the build-now rows before anyone drafts the pages.
+
+## Use it with OpenSEO MCP
+
+Set up [OpenSEO MCP](/docs/mcp) so your agent can resolve local keyword locations, read Search Console and Google Analytics, and save the report to the project.
+
+## Read the actual skill
+
+The source `SKILL.md` lives on GitHub:
+
+- [Local Page Plan skill](https://github.com/every-app/open-seo/tree/main/.agents/skills/local-page-plan)
+
+## Related skills
+
+- [Keyword Research](/docs/skills/keyword-research) when you need a broader keyword list.
+- [Keyword Clustering](/docs/skills/keyword-clustering) when a keyword set still needs intent groups.
+- [Local SEO](/docs/skills/local-seo) when the next question is Maps coverage for the first city.

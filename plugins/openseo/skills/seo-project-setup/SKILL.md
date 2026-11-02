@@ -118,7 +118,7 @@ Save the pages that actually matter with `addKeyPages` — money pages, topic hu
 
 GSC is the richest first-party signal: existing impressions, near-ranking terms, cannibalization, and pages that already have search demand.
 
-**Preferred (hosted): connect it natively.** On the project's Integrations page, connect Google Search Console and pull live data with `get_search_console_performance`. If the user has already connected a Google account there, you can pick the property yourself: `list_search_console_sites` shows what each connected account can see, and `set_search_console_site` binds one to the project (`list_google_analytics_properties` / `set_google_analytics_property` do the same for GA4). Once connected, the agent reads it directly in `keyword-research` and `keyword-clustering` — no manual files to maintain.
+**Preferred (hosted): connect it natively.** On the project's Integrations page, connect Google Search Console and pull live data with `get_search_console_performance`. If the user has already connected a Google account there, you can pick the property yourself: `list_search_console_sites` shows what each connected account can see, and `set_search_console_site` binds one to the project (`list_google_analytics_properties` / `set_google_analytics_property` do the same for GA4). Once connected, the agent reads it directly in `keyword-research`, `keyword-clustering`, and `local-page-plan` — no manual files to maintain. Google Analytics landing pages and key events feed `local-page-plan` the same way when `set_google_analytics_property` has bound a property.
 
 **Fallback (self-hosted, or if the user prefers files):** ask the user to export CSVs from Search Console into a local working folder (see step 9).
 
@@ -160,6 +160,7 @@ After intake, recommend one next OpenSEO workflow:
 - `seo-audit`: when the site already exists and the user wants to know what to fix or do first, especially if they are new to SEO
 - `keyword-research`: when the user needs ideas from seed topics
 - `keyword-clustering`: when they have keywords or GSC data to map to pages
+- `local-page-plan`: when a local home-service business needs an ordered list of service pages and city pages, using Search Console and Analytics when those are connected
 - `competitive-landscape`: when the market is unclear
 - `competitor-analysis`: when they know a competitor to study
 - `link-prospecting`: when they have a linkable asset or target page

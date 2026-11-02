@@ -61,6 +61,10 @@ const SKILLS = [
     "Studies one competitor's keywords, content, and backlinks.",
   ],
   ["link-prospecting", "Finds link prospects and drafts outreach."],
+  [
+    "local-page-plan",
+    "Decides which local service and city pages to build or improve first.",
+  ],
   ["local-seo", "Audits a Google Business Profile and Maps visibility."],
   ["seo-report", "Saves any of the above as a report on your Reports page."],
 ];

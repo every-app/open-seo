@@ -90,6 +90,7 @@ Want to go deeper?
 - `ai-prompt-research`: finds questions people ask about a market, with ChatGPT's answers and the domains they cite, and suggests which to track. Research only.
 - `keyword-research`: finds search opportunities from seed topics and evaluates volume, difficulty, CPC, intent, and SERPs.
 - `keyword-clustering`: groups keywords by intent and maps clusters to existing or proposed pages.
+- `local-page-plan`: decides which local service pages and city pages to build or optimize first, using local keyword demand plus Search Console and Google Analytics when those are connected.
 - `competitive-landscape`: identifies who wins across a market and what content/backlink patterns are working.
 - `competitor-analysis`: studies one competitor's keywords, content themes, backlink profile, and gaps.
 - `local-seo`: audits a Google Business Profile against local competitors and maps Maps visibility around a location.
@@ -152,6 +153,7 @@ Offer 2-4 options based on context, each tied to the skill that delivers it:
 - "See what people ask ChatGPT about your market." → `ai-prompt-research`
 - "Research keywords from your seed topics." → `keyword-research`
 - "Cluster your GSC queries into page targets." → `keyword-clustering`
+- "Decide which service and city pages to build first." → `local-page-plan`
 - "Map the competitive landscape before choosing pages." → `competitive-landscape`
 - "Study one competitor." → `competitor-analysis`
 - "Find link prospects for your best linkable asset." → `link-prospecting`

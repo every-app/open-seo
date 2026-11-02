@@ -85,6 +85,7 @@ Use your agent's skill picker or ask for a workflow by name. In Codex, type `$`;
 - `seo-coach`
 - `keyword-research`
 - `keyword-clustering`
+- `local-page-plan`
 - `competitive-landscape`
 - `competitor-analysis`
 - `link-prospecting`

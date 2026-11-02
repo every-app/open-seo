@@ -3,7 +3,7 @@ title: "Install the OpenSEO plugin for Claude Code and Claude Cowork"
 description: "Add OpenSEO MCP and Agent Skills to Claude Code or Claude Cowork with one plugin install."
 ---
 
-The OpenSEO plugin bundles OpenSEO MCP and all twelve SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Claude Code and in Claude Cowork.
+The OpenSEO plugin bundles OpenSEO MCP and all thirteen SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Claude Code and in Claude Cowork.
 
 ## Install in Claude Code
 
@@ -16,7 +16,7 @@ Run these two commands in Claude Code:
 
 If the install summary says `Run /reload-plugins to activate.`, run that command.
 
-Claude Code connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables twelve skills:
+Claude Code connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables thirteen skills:
 
 - SEO Project Setup
 - SEO Coach
@@ -25,6 +25,7 @@ Claude Code connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables twe
 - AI Prompt Research
 - Keyword Research
 - Keyword Clustering
+- Local Page Plan
 - Competitive Landscape
 - Competitor Analysis
 - Local SEO
@@ -47,6 +48,7 @@ In Claude Code, plugin skills are namespaced by the plugin name:
 /openseo:ai-prompt-research
 /openseo:keyword-research
 /openseo:keyword-clustering
+/openseo:local-page-plan
 /openseo:competitive-landscape
 /openseo:competitor-analysis
 /openseo:local-seo

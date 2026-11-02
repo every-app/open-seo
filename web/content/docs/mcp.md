@@ -177,6 +177,7 @@ Start with one focused workflow instead of asking your agent to "do SEO" broadly
 - Use [competitive landscape](/docs/skills/competitive-landscape) to map a market before choosing competitors or pages.
 - Use [competitor analysis](/docs/skills/competitor-analysis) to study one competitor.
 - Use [keyword clustering](/docs/skills/keyword-clustering) to turn keywords into page groups.
+- Use [local page plan](/docs/skills/local-page-plan) to decide which local service and city pages to build or improve first.
 - Use [link prospecting](/docs/skills/link-prospecting) to find outreach prospects for a linkable asset.
 
 ## Troubleshooting

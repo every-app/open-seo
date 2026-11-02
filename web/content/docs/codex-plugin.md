@@ -3,7 +3,7 @@ title: "Install the OpenSEO plugin for Codex"
 description: "Add OpenSEO MCP and Agent Skills to Codex with one marketplace and one install command."
 ---
 
-The OpenSEO plugin bundles OpenSEO MCP and all twelve SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Codex CLI.
+The OpenSEO plugin bundles OpenSEO MCP and all thirteen SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Codex CLI.
 
 ## Desktop app
 
@@ -27,7 +27,7 @@ codex mcp login openseo
 
 `codex mcp login` opens a browser to approve the OpenSEO connection. If it reports that `openseo` isn't found, restart Codex first — bundled MCP servers only register after a restart, not immediately after install — then run `codex mcp login openseo` again.
 
-Codex connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables twelve skills:
+Codex connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables thirteen skills:
 
 - SEO Project Setup
 - SEO Coach
@@ -36,6 +36,7 @@ Codex connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables twelve sk
 - AI Prompt Research
 - Keyword Research
 - Keyword Clustering
+- Local Page Plan
 - Competitive Landscape
 - Competitor Analysis
 - Local SEO
