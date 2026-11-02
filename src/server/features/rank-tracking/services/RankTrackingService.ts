@@ -23,6 +23,7 @@ import {
 import {
   estimateRankCheckCredits,
   MAX_CONFIGS_PER_PROJECT,
+  normalizeKeyword,
   rankCheckCostApprovalError,
 } from "@/shared/rank-tracking";
 import { resolveNextCheckAt } from "./configSchedule";
@@ -341,7 +342,11 @@ async function refreshKeywordMetrics(
     // lowercased, so ask in lowercase. A match-case keyword can sit next to
     // its lowercase twin; both then map to the same metrics row and the
     // request carries no duplicates.
-    keywords: [...new Set(keywords.map((kw) => kw.keyword.toLowerCase()))],
+    keywords: [
+      ...new Set(
+        keywords.map((kw) => normalizeKeyword(kw.keyword, config.languageCode)),
+      ),
+    ],
     locationCode: config.locationCode,
     // Trackers can pair any SERP language with any country; the keyword-data
     // APIs only serve the country's own languages.
@@ -355,13 +360,18 @@ async function refreshKeywordMetrics(
     creditFeature: "rank_tracking",
   });
   const byKeyword = new Map(
-    metrics.map((metric) => [metric.keyword.toLowerCase(), metric]),
+    metrics.map((metric) => [
+      normalizeKeyword(metric.keyword, config.languageCode),
+      metric,
+    ]),
   );
 
   const now = new Date().toISOString();
   const updates = keywords
     .map((kw) => {
-      const metric = byKeyword.get(kw.keyword.toLowerCase());
+      const metric = byKeyword.get(
+        normalizeKeyword(kw.keyword, config.languageCode),
+      );
       if (!metric) return null;
       // Rank tracking only tracks volume / difficulty / CPC.
       return {

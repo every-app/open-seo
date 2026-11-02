@@ -7,6 +7,7 @@ import {
   estimateScheduledRankCheckCredits,
   isScheduledRankTrackingInterval,
   MAX_KEYWORDS_PER_CONFIG,
+  normalizeKeyword,
 } from "@/shared/rank-tracking";
 
 async function addKeywords(
@@ -41,7 +42,9 @@ async function addKeywords(
   for (const raw of keywords) {
     if (rows.length >= available) break;
     const trimmed = raw.trim();
-    const normalized = matchCase ? trimmed : trimmed.toLowerCase();
+    const normalized = matchCase
+      ? trimmed
+      : normalizeKeyword(trimmed, config.languageCode);
     if (
       normalized &&
       !seen.has(normalized) &&

@@ -48,6 +48,25 @@ export const MAX_KEYWORDS_PER_CONFIG = 1000;
 /** Maximum length of a single tracked keyword */
 export const MAX_TRACKED_KEYWORD_LENGTH = 200;
 
+/**
+ * Normalizes a rank-tracking keyword for storage and metrics matching.
+ * Uses locale-aware lowercasing with the tracker's language code so that
+ * languages like Turkish and Azerbaijani handle dotted/dotless I correctly.
+ */
+export function normalizeKeyword(
+  keyword: string,
+  languageCode?: string | null,
+): string {
+  if (!languageCode) {
+    return keyword.toLowerCase();
+  }
+  try {
+    return keyword.toLocaleLowerCase(languageCode);
+  } catch {
+    return keyword.toLowerCase();
+  }
+}
+
 /** Maximum configs (domain+location combos) per project */
 export const MAX_CONFIGS_PER_PROJECT = 500;
 
