@@ -172,6 +172,9 @@ function TableCard({ controller }: Props) {
         isFiltered={activeFilterCount > 0}
         resetFilters={controller.resetFilters}
         handleRowClick={controller.handleRowClick}
+        serpLoadingKeyword={
+          controller.serpLoading ? controller.activeSerpKeyword : null
+        }
         toolbar={
           <>
             <DataTableToolbar
