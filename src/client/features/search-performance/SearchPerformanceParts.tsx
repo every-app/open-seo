@@ -70,14 +70,16 @@ function dimensionExportTable(
       isPage ? "Page" : "Query",
       "Clicks",
       "Impressions",
-      "CTR",
+      "CTR (%)",
       "Position",
     ],
     rows: rows.map((row) => [
       row.key,
       row.clicks,
       row.impressions,
-      row.ctr,
+      // CTR is a 0-1 ratio; exports keep two decimals, which would turn 0.0234
+      // into 0.02. As a percentage the same precision reads 2.34.
+      Math.round(row.ctr * 10_000) / 100,
       row.position,
     ]),
   };
