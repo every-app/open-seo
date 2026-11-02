@@ -21,9 +21,14 @@ export const DISCOVERY_STEP: WorkflowStepConfig = {
   timeout: "4 minutes",
 };
 
-/** One crawl chunk: ~90s soft crawl deadline + persistence headroom. */
+/**
+ * One crawl chunk: ~90s soft crawl deadline + persistence headroom. Workflows
+ * now and then loses an attempt whose code finished (WorkflowInternalError),
+ * and a long audit runs enough chunks to hit two losses in a row, so one
+ * retry is not enough. Chunk writes are idempotent.
+ */
 export const CRAWL_CHUNK_STEP: WorkflowStepConfig = {
-  retries: { limit: 1, delay: "10 seconds", backoff: "constant" },
+  retries: { limit: 3, delay: "10 seconds", backoff: "constant" },
   timeout: "5 minutes",
 };
 

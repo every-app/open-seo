@@ -273,9 +273,9 @@ async function runCrawlChunk(
 
   const depthByUrl = new Map(claimed.map((entry) => [entry.url, entry.depth]));
 
-  // A retry means the previous attempt died mid-crawl (in production almost
-  // always exceededMemory), and it is the chunk's last attempt — so it runs
-  // under drastically reduced limits instead of the profile that just failed.
+  // A retry means the previous attempt died mid-crawl (often exceededMemory),
+  // so it runs under drastically reduced limits instead of the profile that
+  // just failed.
   const limits = isRetry ? RETRY_CRAWL_WINDOW : CRAWL_WINDOW;
   let windowSize = isRetry
     ? limits.initial
