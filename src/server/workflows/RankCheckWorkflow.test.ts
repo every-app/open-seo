@@ -219,7 +219,29 @@ describe("rank check finalization", () => {
         status: "completed",
         keywordsChecked: 3,
         errorMessage:
-          "Checked 3 of 3 desktop and 0 of 3 mobile keyword(s): Invalid Field: 'location_name'.",
+          'Checked 3 of 3 desktop and 0 of 3 mobile keyword(s): Invalid Field: \'location_name\'. Not checked: "keyword 0" (mobile), "keyword 1" (mobile), "keyword 2" (mobile).',
+      }),
+    );
+  });
+
+  it("names the keywords a partial run could not check", async () => {
+    mocks.getRunById.mockResolvedValue({
+      ...activeRun,
+      keywordsTotal: 12,
+      errorMessage: "Internal SE Server Error.",
+    });
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(12));
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      { trackingKeywordId: "kw_0", device: "desktop" },
+    ]);
+
+    await runWorkflow({});
+
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({
+        status: "completed",
+        errorMessage: `Checked 1 of 12 keyword(s): Internal SE Server Error. Not checked: "keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5", "keyword 6", "keyword 7", "keyword 8", "keyword 9", "keyword 10" and 1 more.`,
       }),
     );
   });

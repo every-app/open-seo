@@ -150,6 +150,7 @@ async function finalizeRankCheckRun(input: {
   billingCustomer: BillingCustomerContext;
   trigger: RankCheckParams["trigger"];
   devices: RankCheckParams["devices"];
+  keywords: Array<{ id: string; keyword: string }>;
   batchError: string | null;
 }) {
   // If stale-cleanup already marked our run failed, don't overwrite that
@@ -202,7 +203,15 @@ async function finalizeRankCheckRun(input: {
     status === "failed"
       ? (keywordError ?? "No keywords could be checked.")
       : isPartial
-        ? `Checked ${checkedSummary} keyword(s)${keywordError ? `: ${keywordError}` : ""}`
+        ? [
+            `Checked ${checkedSummary} keyword(s)${keywordError ? `: ${keywordError}` : ""}`.replace(
+              /\.?$/,
+              ".",
+            ),
+            describeUnchecked(input.keywords, devices, snapshots),
+          ]
+            .filter(Boolean)
+            .join(" ")
         : null;
 
   // Flipping status away from 'pending'/'running' is what releases the
@@ -246,6 +255,32 @@ async function finalizeRankCheckRun(input: {
     },
   });
 }
+
+/** Names a partial run's unchecked keywords, so users see which ones failed. */
+function describeUnchecked(
+  keywords: Array<{ id: string; keyword: string }>,
+  devices: Array<"desktop" | "mobile">,
+  snapshots: Array<{ trackingKeywordId: string; device: string }>,
+) {
+  const checked = new Set(
+    snapshots.map((s) => `${s.trackingKeywordId}:${s.device}`),
+  );
+  const unchecked = keywords.flatMap((kw) => {
+    const missing = devices.filter((d) => !checked.has(`${kw.id}:${d}`));
+    if (missing.length === 0) return [];
+    // Name the device only when the other one got a result.
+    return missing.length < devices.length
+      ? [`"${kw.keyword}" (${missing[0]})`]
+      : [`"${kw.keyword}"`];
+  });
+  if (unchecked.length === 0) return "";
+  const shown = unchecked.slice(0, UNCHECKED_KEYWORDS_SHOWN).join(", ");
+  const more = unchecked.length - UNCHECKED_KEYWORDS_SHOWN;
+  return `Not checked: ${shown}${more > 0 ? ` and ${more} more` : ""}.`;
+}
+
+/** Keeps a partial run's message readable on a large tracker. */
+const UNCHECKED_KEYWORDS_SHOWN = 10;
 
 async function markRankCheckRunFailed(input: {
   runId: string;
@@ -397,6 +432,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           billingCustomer,
           trigger,
           devices,
+          keywords,
           batchError,
         }),
       );

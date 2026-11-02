@@ -78,15 +78,14 @@ export function RankTrackingHistoryMatrix({
                   {kw.keyword}
                 </TableCell>
                 {runs.map((r, i) => {
-                  // No row for a run after the keyword's first result means
-                  // that check failed. Before the first result, the keyword
-                  // was not tracked yet.
-                  const notChecked =
-                    !byRun?.has(r.runId) &&
-                    runs.slice(0, i).some((prev) => byRun?.has(prev.runId));
-                  const position = byRun?.get(r.runId) ?? null;
+                  // No cell at all means the keyword wasn't tracked yet.
+                  const cell = byRun?.get(r.runId);
+                  const notChecked = cell?.checked === false;
+                  const position = cell?.position ?? null;
                   const previous =
-                    i > 0 ? (byRun?.get(runs[i - 1].runId) ?? null) : undefined;
+                    i > 0
+                      ? (byRun?.get(runs[i - 1].runId)?.position ?? null)
+                      : undefined;
                   return (
                     <TableCell key={r.runId} className="text-right">
                       {notChecked ? (
@@ -166,10 +165,10 @@ export function countMatrixRuns(cells: RankPositionMatrixCell[]): number {
 
 function buildMatrix(cells: RankPositionMatrixCell[]): {
   runs: MatrixRun[];
-  cellByKeyword: Map<string, Map<string, number | null>>;
+  cellByKeyword: Map<string, Map<string, RankPositionMatrixCell>>;
 } {
   const runMap = new Map<string, string>(); // runId -> checkedAt
-  const cellByKeyword = new Map<string, Map<string, number | null>>();
+  const cellByKeyword = new Map<string, Map<string, RankPositionMatrixCell>>();
   for (const c of cells) {
     runMap.set(c.runId, c.checkedAt);
     let byRun = cellByKeyword.get(c.trackingKeywordId);
@@ -177,7 +176,7 @@ function buildMatrix(cells: RankPositionMatrixCell[]): {
       byRun = new Map();
       cellByKeyword.set(c.trackingKeywordId, byRun);
     }
-    byRun.set(c.runId, c.position);
+    byRun.set(c.runId, c);
   }
   const runs = sort(
     [...runMap.entries()].map(([runId, checkedAt]) => ({ runId, checkedAt })),

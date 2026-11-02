@@ -50,6 +50,8 @@ export interface RankPositionMatrixCell {
   checkedAt: string;
   trackingKeywordId: string;
   position: number | null;
+  /** False when the keyword was tracked but this run got no result for it. */
+  checked: boolean;
 }
 
 async function requireConfig(configId: string, projectId: string) {
