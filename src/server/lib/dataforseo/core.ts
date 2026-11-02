@@ -102,11 +102,17 @@ function createAuthenticatedFetch(
     // rather than restarting a fresh 60s budget on each attempt.
     const signal =
       init?.signal ?? AbortSignal.timeout(DATAFORSEO_REQUEST_TIMEOUT_MS);
+    // Ask for gzip explicitly: standalone workerd (the Docker edition) sends
+    // no Accept-Encoding, so DataForSEO answers uncompressed (~9.9 MB vs
+    // ~0.6 MB for the US location list) and slow links hit the timeout. The
+    // runtime decodes the gzip body itself.
+    const headers = new Headers(init?.headers);
+    if (!headers.has("Accept-Encoding")) headers.set("Accept-Encoding", "gzip");
 
     for (let attempt = 0; ; attempt++) {
       let response: Response;
       try {
-        response = await providerFetch(url, { ...init, signal });
+        response = await providerFetch(url, { ...init, headers, signal });
       } catch (error) {
         // Both abort flavours mean "we ran out of time", and neither carries a
         // useful name of its own: the shared budget above rejects with
