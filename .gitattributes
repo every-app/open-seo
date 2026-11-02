@@ -1,0 +1,20 @@
+# Windows clones default to core.autocrlf=true, which checks text files out
+# with CRLF. That breaks SKILL.md frontmatter parsing and makes
+# `prettier --check` (endOfLine: lf) report every file. Keep LF everywhere;
+# text=auto keeps Git's own binary detection.
+* text=auto eol=lf
+
+# Binary by declaration, so a wrong guess can never rewrite these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.avif binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
