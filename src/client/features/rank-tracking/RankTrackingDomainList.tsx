@@ -47,6 +47,7 @@ import { Skeleton } from "@/client/components/ui/skeleton";
 import { useDebouncedDraft } from "@/client/hooks/useDebouncedDraft";
 import type { RankTrackingListSearch } from "@/types/schemas/rank-tracking-search";
 import { QueryError } from "@/client/components/QueryState";
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 
 type ConfigSummary = Awaited<
   ReturnType<typeof getRankTrackingConfigSummaries>
@@ -289,7 +290,9 @@ function DomainRow({
             <>
               {" "}
               &middot; Last:{" "}
-              {new Date(summary.lastRunCompletedAt).toLocaleDateString()}
+              {parseDbTimestamp(
+                summary.lastRunCompletedAt,
+              ).toLocaleDateString()}
             </>
           )}
         </p>

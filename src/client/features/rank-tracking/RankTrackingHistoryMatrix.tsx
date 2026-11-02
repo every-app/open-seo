@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/client/components/ui/tooltip";
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 
 /**
  * "By date" view: keyword rows × recent check columns, each cell the position
@@ -186,7 +187,7 @@ function buildMatrix(cells: RankPositionMatrixCell[]): {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("en-US", {
+  return parseDbTimestamp(value).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });

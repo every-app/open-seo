@@ -7,6 +7,7 @@ import type {
   RankTrackingDeviceResult,
   RankTrackingRow,
 } from "@/types/schemas/rank-tracking";
+import { formatExportTimestamp } from "@/client/lib/db-timestamp";
 
 const FEATURE_SHORT_LABELS: Record<string, string> = {
   featured_snippet: "FS",
@@ -177,6 +178,7 @@ function buildRankTrackingExport(
           "Desktop Change",
           "Desktop URL",
           "Desktop SERP Features",
+          "Desktop Checked At (UTC)",
         ]
       : []),
     ...(showMobile
@@ -185,6 +187,7 @@ function buildRankTrackingExport(
           "Mobile Change",
           "Mobile URL",
           "Mobile SERP Features",
+          "Mobile Checked At (UTC)",
         ]
       : []),
   ];
@@ -201,6 +204,9 @@ function buildRankTrackingExport(
           csvChange(row.desktop.position, row.desktop.previousPosition),
           row.desktop.rankingUrl ?? "",
           row.desktop.serpFeatures.join(", "),
+          row.desktop.checkedAt
+            ? formatExportTimestamp(row.desktop.checkedAt)
+            : "",
         ]
       : []),
     ...(showMobile
@@ -209,6 +215,9 @@ function buildRankTrackingExport(
           csvChange(row.mobile.position, row.mobile.previousPosition),
           row.mobile.rankingUrl ?? "",
           row.mobile.serpFeatures.join(", "),
+          row.mobile.checkedAt
+            ? formatExportTimestamp(row.mobile.checkedAt)
+            : "",
         ]
       : []),
   ]);

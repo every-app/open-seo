@@ -39,6 +39,7 @@ import {
   withBrowserTimeZone,
   type LocalScheduleTime,
 } from "./scheduleTime";
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 
 type Props = {
   projectId: string;
@@ -178,7 +179,7 @@ function RankTrackingConfigModalContent({
     // Shown and edited in the browser's timezone; the server converts it to UTC.
     scheduleTime: localScheduleTimeFrom(
       existingConfig?.nextCheckAt
-        ? new Date(existingConfig.nextCheckAt)
+        ? parseDbTimestamp(existingConfig.nextCheckAt)
         : randomScheduleDate(),
     ),
     serpDepth: existingConfig?.serpDepth ?? 40,
