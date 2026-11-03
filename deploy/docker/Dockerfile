@@ -10,6 +10,8 @@ RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
+# The Every App SDK and CLI, vendored as file: tarballs while unreleased.
+COPY vendor ./vendor
 RUN pnpm install --frozen-lockfile
 
 COPY . .

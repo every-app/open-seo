@@ -62,6 +62,8 @@ describe("Google clients behind the Every App gateway", () => {
     expect(new Headers(init?.headers).has("authorization")).toBe(false);
     expect(mocks.getAccessToken).not.toHaveBeenCalled();
     expect(mocks.fetch).not.toHaveBeenCalled();
+    // On the connection of the member the client is for.
+    expect(mocks.getGatewayGoogleFetch).toHaveBeenCalledWith("u1");
   });
 
   it("posts a Search Analytics query through the gateway with its JSON body", async () => {

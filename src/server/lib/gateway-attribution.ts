@@ -12,6 +12,8 @@ import { decodeJwt } from "jose";
 
 interface ServedRequest {
   request: Request;
+  /** The member the forwarded identity names. */
+  userId: string;
   /** When the forwarded identity expires (epoch ms). */
   expiresAt: number;
 }
@@ -46,7 +48,7 @@ export function serveEveryAppRequest<T>(
 ): T {
   if (!user) return fn();
   return servedRequests.run(
-    { request, expiresAt: identityExpiry(request) },
+    { request, userId: user.id, expiresAt: identityExpiry(request) },
     fn,
   );
 }
@@ -57,8 +59,25 @@ export function serveEveryAppRequest<T>(
  */
 export function gatewayCallFor(): GatewayCallFor {
   const served = servedRequests.getStore();
-  if (served && Date.now() < served.expiresAt - IDENTITY_EXPIRY_MARGIN_MS) {
+  if (served && identityIsGood(served)) return served.request;
+  return { background: true };
+}
+
+/**
+ * The SDK's `for` for a call on `userId`'s own connection to an OAuth
+ * provider (Google): the served request when it is that member's and its
+ * identity is good, else that member's connection named as background work
+ * (a Workflow, SAM's turn, or another member reading a project whose
+ * property `userId` connected).
+ */
+export function gatewayCallForUser(userId: string): GatewayCallFor {
+  const served = servedRequests.getStore();
+  if (served && served.userId === userId && identityIsGood(served)) {
     return served.request;
   }
-  return { background: true };
+  return { background: true, userId };
+}
+
+function identityIsGood(served: ServedRequest): boolean {
+  return Date.now() < served.expiresAt - IDENTITY_EXPIRY_MARGIN_MS;
 }
