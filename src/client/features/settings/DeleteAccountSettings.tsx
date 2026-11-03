@@ -55,7 +55,7 @@ function deletionErrorMessage(error: unknown) {
     case "FORBIDDEN":
       return "For your security, sign out and sign back in, then try again.";
     case "VALIDATION_ERROR":
-      return "Your account can't be deleted yet. The reasons are listed under Delete account.";
+      return "Your account can't be deleted yet. Click Delete account again to see why.";
     case "CONFLICT":
       return "Your account is already scheduled for deletion.";
     default:
@@ -82,89 +82,84 @@ export function DeleteAccountSettings() {
         away and the deletion happens{" "}
         {status ? `${status.deletionDelayDays} days` : "two weeks"} later.
       </p>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20"
+        disabled={!status}
+        onClick={() => setOpen(true)}
+      >
+        Delete account
+      </Button>
 
-      {status && status.blockers.length > 0 ? (
-        <p className="text-sm font-medium">
-          You can't delete your account yet:
-        </p>
-      ) : null}
-      {status && status.blockers.length > 0 ? (
-        <ul className="list-disc space-y-1 pl-5 text-sm">
-          {status.blockers.map((blocker) => (
-            <li key={blocker.organizationName}>{blockerText(blocker)}</li>
-          ))}
-        </ul>
-      ) : null}
-
-      {status &&
-      status.blockers.length === 0 &&
-      status.billingToStop.length > 0 ? (
-        <Alert variant="warning">
-          <AlertTriangle />
-          <AlertTitle>Deleting your account stops billing</AlertTitle>
-          <AlertDescription>
-            <ul className="list-disc space-y-1 pl-5">
-              {status.billingToStop.map((charge) => (
-                <li key={charge.organizationName}>{billingText(charge)}</li>
-              ))}
-            </ul>
-            <p className="mt-2">
-              A canceled plan doesn't renew, and you keep its credits until the
-              deletion date.
-            </p>
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {status && status.blockers.length === 0 && !status.signedInRecently ? (
-        <p className="text-sm">
-          For your security, sign out and sign back in before deleting your
-          account.
-        </p>
-      ) : null}
-
-      <div className="flex gap-2">
-        {status &&
-        status.blockers.length === 0 &&
-        status.billingToStop.length > 0 ? (
-          <Alert variant="warning">
-            <AlertTriangle />
-            <AlertTitle>Deleting your account stops billing</AlertTitle>
-            <AlertDescription>
-              <ul className="list-disc space-y-1 pl-5">
-                {status.billingToStop.map((charge) => (
-                  <li key={charge.organizationName}>{billingText(charge)}</li>
-                ))}
-              </ul>
-              <p className="mt-2">
-                A canceled plan doesn't renew, and you keep its credits until
-                the deletion date.
-              </p>
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        {status && status.blockers.length === 0 && !status.signedInRecently ? (
-          <Button variant="secondary" onClick={() => signOutAndRedirect()}>
-            Sign out
-          </Button>
+      {open && status ? (
+        status.blockers.length > 0 ? (
+          <BlockedDialog status={status} onClose={() => setOpen(false)} />
+        ) : !status.signedInRecently ? (
+          <SignInAgainDialog onClose={() => setOpen(false)} />
         ) : (
-          <Button
-            variant="destructive"
-            disabled={!status || status.blockers.length > 0}
-            onClick={() => setOpen(true)}
-          >
-            Delete account
-          </Button>
-        )}
-      </div>
-
-      {open ? <DeleteAccountDialog onClose={() => setOpen(false)} /> : null}
+          <DeleteAccountDialog status={status} onClose={() => setOpen(false)} />
+        )
+      ) : null}
     </section>
   );
 }
 
-function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+function BlockedDialog({
+  status,
+  onClose,
+}: {
+  status: Status;
+  onClose: () => void;
+}) {
+  return (
+    <AlertDialog open onOpenChange={(next) => !next && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>You can't delete your account yet</AlertDialogTitle>
+          <AlertDialogDescription render={<div />}>
+            <ul className="list-disc space-y-1 pl-5 text-left">
+              {status.blockers.map((blocker) => (
+                <li key={blocker.organizationName}>{blockerText(blocker)}</li>
+              ))}
+            </ul>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Close</AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function SignInAgainDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <AlertDialog open onOpenChange={(next) => !next && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Sign in again to continue</AlertDialogTitle>
+          <AlertDialogDescription>
+            For your security, sign out and sign back in before deleting your
+            account.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <Button onClick={() => signOutAndRedirect()}>Sign out</Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function DeleteAccountDialog({
+  status,
+  onClose,
+}: {
+  status: Status;
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const [confirmEmail, setConfirmEmail] = useState("");
@@ -182,8 +177,8 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
     },
     onError: (error) => {
       toast.error(deletionErrorMessage(error));
-      // A blocker or an expired sign-in found by the server: show the page's
-      // explanation of it.
+      // A blocker or an expired sign-in found by the server: reopening the
+      // dialog shows the explanation.
       void queryClient.invalidateQueries({
         queryKey: ["accountDeletionStatus"],
       });
@@ -207,6 +202,23 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
             undone after the deletion date. Type your email to confirm.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {status.billingToStop.length > 0 ? (
+          <Alert variant="warning">
+            <AlertTriangle />
+            <AlertTitle>Deleting your account stops billing</AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc space-y-1 pl-5">
+                {status.billingToStop.map((charge) => (
+                  <li key={charge.organizationName}>{billingText(charge)}</li>
+                ))}
+              </ul>
+              <p className="mt-2">
+                A canceled plan doesn't renew, and you keep its credits until
+                the deletion date.
+              </p>
+            </AlertDescription>
+          </Alert>
+        ) : null}
         <Input
           value={confirmEmail}
           onChange={(event) => setConfirmEmail(event.target.value)}
