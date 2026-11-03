@@ -4,6 +4,7 @@ import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
 import { SectionHeader } from "@/client/components/PageHeader";
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
 import { everyAppAccountQueryOptions } from "@/client/features/every-app/everyAppAccountQueries";
+import { DeleteAccountSettings } from "@/client/features/settings/DeleteAccountSettings";
 import { McpConnectionsSettings } from "@/client/features/settings/McpConnectionsSettings";
 import { PrivacySettings } from "@/client/features/settings/PrivacySettings";
 import {
@@ -51,6 +52,8 @@ function PersonalSettings() {
           </div>
         </section>
       )}
+
+      {isHosted ? <DeleteAccountSettings /> : null}
     </div>
   );
 }

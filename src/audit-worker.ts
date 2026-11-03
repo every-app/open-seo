@@ -18,7 +18,7 @@ export { AuditScratchpad } from "./server/features/audit/AuditScratchpad";
 // The scratchpad DO is private to this worker: the Cloudflare API refuses an
 // upload that deletes a class while any binding still references its name, so
 // the app worker could not keep a cross-script binding through the cutover.
-// The app's two control needs (audit delete/cancel, GDPR erasure) go through
+// The app's two control needs (audit delete/cancel, account-deletion erasure) go through
 // this entrypoint instead. Nothing routes to fetch — the app worker owns all
 // traffic.
 export default class AuditEngine extends WorkerEntrypoint {

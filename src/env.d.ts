@@ -22,7 +22,7 @@ declare namespace Cloudflare {
     AUDIT_SCRATCHPAD: DurableObjectNamespace;
 
     // Service binding to the audit worker's AuditEngine entrypoint (cancel +
-    // GDPR erasure of scratchpad state). The inline import() is required: a
+    // account-deletion erasure of scratchpad state). The inline import() is required: a
     // top-level import would turn this ambient file into a module and break
     // the global augmentation.
     // oxlint-disable-next-line typescript-eslint/consistent-type-imports
@@ -91,8 +91,12 @@ declare namespace Cloudflare {
     // unless both are set.
     META_PIXEL_ID?: string;
     META_CONVERSIONS_API_TOKEN?: string;
-    // HMAC secret for the operator-only GDPR storage-erasure endpoint.
-    GDPR_ERASURE_SECRET?: string;
+    // Self-serve account deletion (hosted only): the Loops template that
+    // confirms the request, and a PostHog personal API key (person read and
+    // write) with its project ID to delete the person's analytics.
+    LOOPS_TRANSACTIONAL_ACCOUNT_DELETION_ID?: string;
+    POSTHOG_PROJECT_ID?: string;
+    POSTHOG_ACCOUNT_DELETION_API_KEY?: string;
 
     // Cloudflare Turnstile — signup captcha (hosted only). Secret verifies
     // tokens server-side; site key is public and inlined into the client build.

@@ -3,7 +3,6 @@ import {
   revokeGoogleToken,
 } from "@/server/features/google/googleOAuth";
 import type { SamChatAgent } from "@/server/features/sam/SamChatAgent";
-import { captureServerError } from "@/server/lib/posthog";
 import { deleteR2Prefix } from "@/server/lib/r2";
 import { DashboardCacheService } from "@/server/features/dashboard/services/DashboardCacheService";
 import { deleteProjectAiObjects } from "@/server/features/ai-visibility/services/aiVisibilityStorage";
@@ -11,56 +10,33 @@ import {
   DUB_REFERRED_ORG_KV_PREFIX,
   DUB_REFERRED_USER_KV_PREFIX,
 } from "@/server/referrals/dub";
-import {
-  AI_SEARCH_PROMPT_CACHE_NAMESPACE,
-  cacheObjectPrefix,
-} from "@/server/lib/r2-cache";
-import {
-  gdprStorageErasurePayloadSchema,
-  signGdprErasureRequest,
-  type GdprStorageErasurePayload,
-} from "@/shared/gdpr-erasure";
+import type { GA4_OAUTH_PROVIDER_ID } from "@/shared/ga4";
+import type { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 
-const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
-const MAX_BODY_BYTES = 5 * 1024 * 1024;
-const PROMPT_CACHE_PREFIX = cacheObjectPrefix(AI_SEARCH_PROMPT_CACHE_NAMESPACE);
+/** What an account erasure removes outside the database. */
+type StorageErasureInput = {
+  userId: string;
+  organizationIds: string[];
+  /** Every project of the erased organizations. */
+  projectIds: string[];
+  samSessionIds: string[];
+  auditIds: string[];
+  activeAuditWorkflowIds: string[];
+  activeRankWorkflowIds: string[];
+  activeAiVisibilityWorkflowIds: string[];
+  activeLocalRankWorkflowIds: string[];
+  r2Keys: string[];
+  googleAccounts: {
+    providerId: typeof GSC_OAUTH_PROVIDER_ID | typeof GA4_OAUTH_PROVIDER_ID;
+    accountId: string;
+  }[];
+};
 
 type GoogleRevocationResult = {
   providerId: string;
   accountId: string;
   status: "revoked" | "token_unavailable";
 };
-
-function timingSafeEqual(left: string, right: string): boolean {
-  const leftBytes = new TextEncoder().encode(left);
-  const rightBytes = new TextEncoder().encode(right);
-  let difference = leftBytes.length ^ rightBytes.length;
-  const length = Math.max(leftBytes.length, rightBytes.length);
-  for (let index = 0; index < length; index += 1) {
-    difference |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
-  }
-  return difference === 0;
-}
-
-async function authenticateRequest(
-  request: Request,
-  body: string,
-  secret: string,
-): Promise<boolean> {
-  const timestamp = request.headers.get("x-gdpr-timestamp") ?? "";
-  const signature = request.headers.get("x-gdpr-signature") ?? "";
-  const timestampMs = Number(timestamp);
-  if (
-    !timestamp ||
-    !signature ||
-    !Number.isFinite(timestampMs) ||
-    Math.abs(Date.now() - timestampMs) > MAX_CLOCK_SKEW_MS
-  ) {
-    return false;
-  }
-  const expected = await signGdprErasureRequest(secret, timestamp, body);
-  return timingSafeEqual(signature, expected);
-}
 
 async function terminateWorkflows(workflow: Workflow, ids: string[]) {
   let terminated = 0;
@@ -93,7 +69,10 @@ async function deleteKvPrefix(namespace: KVNamespace, prefix: string) {
   return deleted;
 }
 
-async function deleteOauthGrants(namespace: KVNamespace, userId: string) {
+export async function deleteOauthGrants(
+  namespace: KVNamespace,
+  userId: string,
+) {
   const grantPrefix = `grant:${userId}:`;
   let cursor: string | undefined;
   let deletedGrants = 0;
@@ -114,35 +93,9 @@ async function deleteOauthGrants(namespace: KVNamespace, userId: string) {
   return { deletedGrants, deletedTokens };
 }
 
-async function deleteOrganizationPromptCaches(
-  bucket: R2Bucket,
-  organizationIds: string[],
-) {
-  const targets = new Set(organizationIds);
-  let cursor: string | undefined;
-  const keys: string[] = [];
-  do {
-    const page = await bucket.list({
-      prefix: PROMPT_CACHE_PREFIX,
-      cursor,
-      include: ["customMetadata"],
-    });
-    for (const object of page.objects) {
-      if (targets.has(object.customMetadata?.organizationId ?? "")) {
-        keys.push(object.key);
-      }
-    }
-    cursor = page.truncated ? page.cursor : undefined;
-  } while (cursor);
-  for (let index = 0; index < keys.length; index += 1_000) {
-    await bucket.delete(keys.slice(index, index + 1_000));
-  }
-  return keys.length;
-}
-
 async function revokeGoogleAccount(
   userId: string,
-  account: GdprStorageErasurePayload["googleAccounts"][number],
+  account: StorageErasureInput["googleAccounts"][number],
 ): Promise<GoogleRevocationResult> {
   let accessToken: string;
   try {
@@ -168,7 +121,10 @@ async function revokeGoogleAccount(
   return { ...account, status: "revoked" };
 }
 
-async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
+export async function eraseAccountStorage(
+  env: Env,
+  payload: StorageErasureInput,
+) {
   // Stop live workflows first so a running crawl can't rewrite a scratchpad
   // after it is wiped.
   const auditWorkflowsTerminated = await terminateWorkflows(
@@ -183,7 +139,7 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
     env.AI_VISIBILITY_WORKFLOW,
     [
       ...payload.activeAiVisibilityWorkflowIds,
-      ...payload.aiVisibilityProjectIds.map(
+      ...payload.projectIds.map(
         (projectId) => `ai-research-setup-${projectId}`,
       ),
     ],
@@ -219,7 +175,7 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
 
   // Dub referral pins key on user/org ids and store a referral click
   // identifier. The Dub-side customer record (pseudonymous external id) is
-  // removed via the erasure runbook.
+  // not removed here; see docs/maintainers/account-deletion.md.
   await env.KV.delete(`${DUB_REFERRED_USER_KV_PREFIX}${payload.userId}`);
   for (const organizationId of payload.organizationIds) {
     await env.KV.delete(`${DUB_REFERRED_ORG_KV_PREFIX}${organizationId}`);
@@ -228,15 +184,14 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
   for (let index = 0; index < payload.r2Keys.length; index += 1_000) {
     await env.R2.delete(payload.r2Keys.slice(index, index + 1_000));
   }
-  const promptCacheObjects = await deleteOrganizationPromptCaches(
-    env.R2,
-    payload.organizationIds,
-  );
-  // aiVisibilityProjectIds lists every project of the erased organizations.
+  // Prompt Explorer's cached answers (dataforseo-cache/ai-search:...) are
+  // not listed here: the bucket's lifecycle rule expires them before the
+  // waiting period ends, and no new ones can be written once sign-in is
+  // blocked.
   let aiVisibilityObjects = 0;
   let searchConsoleCacheObjects = 0;
   let siteAuditObjects = 0;
-  for (const projectId of payload.aiVisibilityProjectIds) {
+  for (const projectId of payload.projectIds) {
     aiVisibilityObjects += await deleteProjectAiObjects(env.R2, projectId);
     searchConsoleCacheObjects +=
       await DashboardCacheService.deleteGscCache(projectId);
@@ -266,66 +221,9 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
       oauthTokens: oauth.deletedTokens,
     },
     r2Objects: payload.r2Keys.length,
-    promptCacheObjects,
     aiVisibilityObjects,
     searchConsoleCacheObjects,
     siteAuditObjects,
     googleRevocations,
   };
-}
-
-export async function handleGdprStorageErasure(
-  request: Request,
-  env: Env,
-): Promise<Response> {
-  const secret = env.GDPR_ERASURE_SECRET?.trim();
-  if (!secret) return new Response("Not found", { status: 404 });
-  if (request.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
-  }
-
-  // The body is buffered before authentication, so bound it first. workerd
-  // hands the handler at most content-length bytes (the connection is killed
-  // at the declared length), while a body with no content-length streams
-  // unbounded — so the header is required, not advisory.
-  if (!request.headers.has("content-length")) {
-    return new Response("Content-Length required", { status: 411 });
-  }
-  const declaredLength = Number(request.headers.get("content-length"));
-  if (
-    !Number.isInteger(declaredLength) ||
-    declaredLength < 0 ||
-    declaredLength > MAX_BODY_BYTES
-  ) {
-    return new Response("Payload too large", { status: 413 });
-  }
-
-  const rawBody = await request.text();
-  if (!(await authenticateRequest(request, rawBody, secret))) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  let input: unknown;
-  try {
-    input = JSON.parse(rawBody || "null") as unknown;
-  } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const parsed = gdprStorageErasurePayloadSchema.safeParse(input);
-  if (!parsed.success) {
-    return Response.json({ error: "Invalid erasure payload" }, { status: 400 });
-  }
-
-  try {
-    const result = await eraseStorage(env, parsed.data);
-    return Response.json({ ok: true, result });
-  } catch (error) {
-    // Raw fetch handlers run outside the server-function middleware, so
-    // nothing else reports failures here.
-    console.error("gdpr.storage-erasure failed:", error);
-    // Deliberately anonymous: this request erases the user, so keying the
-    // exception to their distinct id would recreate the person profile.
-    await captureServerError(error, { source: "gdpr_storage_erasure" });
-    return Response.json({ error: "Erasure failed" }, { status: 500 });
-  }
 }

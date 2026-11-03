@@ -68,6 +68,24 @@ export const userSignupCampaigns = pgTable("user_signup_campaigns", {
   utmContent: text("utm_content"),
 });
 
+// A self-serve account deletion the user asked for. Sign-in is blocked while
+// the row exists; the daily cron erases the account once deleteAfter passes
+// (src/server/account-deletion). Both timestamps are ISO strings written by
+// the app, so they compare the same way on both dialects.
+export const accountDeletionRequests = pgTable(
+  "account_deletion_requests",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    requestedAt: text("requested_at").notNull(),
+    deleteAfter: text("delete_after").notNull(),
+  },
+  (table) => [
+    index("account_deletion_requests_delete_after_idx").on(table.deleteAfter),
+  ],
+);
+
 // Projects for keyword research
 export const projects = pgTable(
   "projects",

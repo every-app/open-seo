@@ -307,7 +307,7 @@ async function remove(auditId: string, projectId: string) {
     console.warn(`Failed to destroy audit scratchpad ${auditId}:`, error);
   }
   // Best-effort: the stored Lighthouse reports. A miss is swept when the
-  // account is erased (storage-erasure.ts).
+  // account is erased (account-deletion/storage.ts).
   try {
     await deleteR2Prefix(env.R2, `site-audit/${projectId}/${auditId}/`);
   } catch (error) {

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- the one production stack: every Worker, binding, var and secret is declared here */
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as CfWorkers from "@distilled.cloud/cloudflare/workers";
@@ -290,7 +291,6 @@ const dataEnv = {
   DUB_API_KEY: optionalSecret("DUB_API_KEY"),
   META_PIXEL_ID: optionalVar("META_PIXEL_ID"),
   META_CONVERSIONS_API_TOKEN: optionalSecret("META_CONVERSIONS_API_TOKEN"),
-  GDPR_ERASURE_SECRET: optionalSecret("GDPR_ERASURE_SECRET"),
   LOOPS_API_KEY: optionalSecret("LOOPS_API_KEY"),
   LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID: optionalVar(
     "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID",
@@ -302,8 +302,15 @@ const dataEnv = {
     "LOOPS_TRANSACTIONAL_INVITATION_ID",
   ),
   LOOPS_PRODUCT_UPDATES_LIST_ID: optionalVar("LOOPS_PRODUCT_UPDATES_LIST_ID"),
+  LOOPS_TRANSACTIONAL_ACCOUNT_DELETION_ID: optionalVar(
+    "LOOPS_TRANSACTIONAL_ACCOUNT_DELETION_ID",
+  ),
   POSTHOG_PUBLIC_KEY: optionalVar("POSTHOG_PUBLIC_KEY"),
   POSTHOG_HOST: optionalVar("POSTHOG_HOST"),
+  POSTHOG_PROJECT_ID: optionalVar("POSTHOG_PROJECT_ID"),
+  POSTHOG_ACCOUNT_DELETION_API_KEY: optionalSecret(
+    "POSTHOG_ACCOUNT_DELETION_API_KEY",
+  ),
   TURNSTILE_SECRET_KEY: optionalSecret("TURNSTILE_SECRET_KEY"),
   TURNSTILE_SITE_KEY: optionalVar("TURNSTILE_SITE_KEY"),
   // Alchemy reconciles worker vars and secrets on every deploy, so every value
@@ -521,9 +528,8 @@ export default Alchemy.Stack(
         TEAM_DOMAIN: access.teamDomain,
         POLICY_AUD: access.policyAud,
 
-        // Service binding to the audit worker's AuditEngine entrypoint
-        // (cancel + GDPR erasure of scratchpad state; env key = binding
-        // name).
+        // Service binding to the audit worker's AuditEngine entrypoint (cancel
+        // and account deletion's scratchpad wipe; env key = binding name).
         AUDIT_ENGINE: auditWorker,
 
         // Per-user throttle for /mcp API-key auth (see

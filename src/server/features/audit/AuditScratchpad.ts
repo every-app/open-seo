@@ -286,7 +286,7 @@ export class AuditScratchpad extends DurableObject {
     await this.ctx.storage.deleteAll();
   }
 
-  /** Same wipe exposed under the common erasure RPC used by the admin tool. */
+  /** Same wipe exposed under the common erasure RPC used by account deletion. */
   async destroyForErasure(): Promise<void> {
     await this.destroy();
   }

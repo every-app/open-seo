@@ -41,7 +41,7 @@ The organization id comes from the signed-in session, never from the client.
     - `cloudflare_access`: needs the Access JWT
     - `local_noauth`: open
   - share links `/s/<token>`, `/s/<token>/raw`, `/s/<token>/og.png` (hosted only)
-  - `/api/health`, `/api/privacy-region`, `/.well-known/openai-apps-challenge`, the Autumn webhook, GDPR erasure, and `web/src/routes/api/`
+  - `/api/health`, `/api/privacy-region`, `/.well-known/openai-apps-challenge`, the Autumn webhook, and `web/src/routes/api/`
 - A signed-in hosted user: trusted only in organizations they belong to. Sign-up is free, so this is a low bar.
   - Roles (`src/lib/org-permissions.ts`): owner (billing), admin (projects, integrations, invitations), member. Handlers check them with `requireOrgPermission` (`src/server/auth/org-gate.ts`).
 - Other members of the same organization: must not use a user's MCP API keys, MCP OAuth authorizations or SAM sessions.
@@ -88,11 +88,13 @@ The organization id comes from the signed-in session, never from the client.
 7. Google OAuth. Can someone use a Google account they did not authorize, or read its tokens?
    `src/server/features/google/`, callbacks in `src/routes/api/gsc/` and `src/routes/api/ga4/`. The OAuth `state` value is single-use and tied to the signed-in user. Tokens are encrypted with `BETTER_AUTH_SECRET`.
 8. Signed endpoints. Can a request without the secret get through?
-   Two endpoints accept only signed requests: the Autumn webhook (`src/server/billing/autumn-webhook.ts`, `svix.ts`) and GDPR erasure (`src/server/gdpr/`). GDPR erasure returns 404 when its secret is unset.
+   The Autumn webhook (`src/server/billing/autumn-webhook.ts`, `svix.ts`) accepts only signed requests.
 9. Prompt injection. Can a crawled page make SAM act against its user?
    SAM (`src/server/features/sam/`) reads third-party pages. It can call tools that change the project or spend credits. It can also save notes to project memory, and those notes come back in later chats.
 10. Free tools. Can someone get around the spend caps?
     The free tools (`web/src/routes/api/`, `web/src/lib/free-tools/`) need no account and spend the site's DataForSEO key. Three caps limit them: Turnstile, a per-IP rate limit, and a daily budget kept in a Durable Object. `event.ts` (analytics proxy to plausible.io) and `subscribe.ts` (adds any email to the Loops newsletter) are not free tools and have none of these controls. This is known, and abuse of either is Low.
+11. Account deletion (hosted). Can someone delete an account or workspace that isn't theirs?
+    `src/server/account-deletion/`. A user can only schedule their own account, needs a sign-in from the last 15 minutes and their typed email, and can't while they own a workspace with other members. The daily cron erases it 14 days later; only workspaces the user is the sole member of are deleted with it.
 
 ## What to leave alone
 
@@ -114,7 +116,7 @@ The organization id comes from the signed-in session, never from the client.
 - Paid-plan checks, credit checks and report sharing are hosted-only.
 - The self-host telemetry heartbeat (`src/server/lib/self-host-telemetry.ts`) and preflight beacon (`scripts/selfhost-preflight.ts`). They send aggregate counts, a random install id, version, deploy target, database backend, install age, and the names of failed setup checks. They never send URLs, keywords or emails. Documented in `docs/SELF_HOSTING_DOCKER.md`; off with `OPENSEO_TELEMETRY_DISABLED` or `DO_NOT_TRACK`.
 - Self-host `/api/health` lists which features are configured (never the values).
-- Anything needing the operator's Cloudflare account, environment, database or GDPR secret.
+- Anything needing the operator's Cloudflare account, environment, or database.
 
 **Known limits**
 
@@ -186,7 +188,7 @@ A report without a working reproduction is capped at Medium. A dependency CVE ne
 - take over another account
 - obtain server secrets (`BETTER_AUTH_SECRET`, `CRAWLER_ACCESS_SECRET`, provider keys)
 - obtain another user's Google tokens, API keys or OAuth tokens
-- forge an Autumn webhook or GDPR erasure signature
+- forge an Autumn webhook signature
 - run code on the server
 
 **High:**
