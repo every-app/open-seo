@@ -76,6 +76,8 @@ BETTER_AUTH_URL=https://seo.example.com
 
 Redeploy, and the hostname is attached to the Worker. Its zone has to be on the same Cloudflare account; the DNS record is created for you, and the certificate is issued a minute or two later.
 
+This applies to the password accounts above. With `AUTH_MODE=cloudflare_access` the app stays on its workers.dev hostname: the Access application that gates it is created for that hostname, so `BETTER_AUTH_URL` is ignored.
+
 Set this before you create the administrator's account if you can. Sign-in works only on this origin, so changing it later signs everyone out, and MCP clients have to be re-added at the new `/mcp` URL. The workers.dev hostname keeps serving pages but can no longer sign anyone in.
 
 ## Giving teammates access
