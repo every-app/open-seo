@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { cn } from "cn";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import {
-  AI_ENGINE_LABELS,
-  aiNoAnswerLabel,
-  type AiEngine,
-  type AiObservationRow,
-  type AiPrompt,
+import type {
+  AiEngine,
+  AiObservationRow,
+  AiPrompt,
 } from "@/shared/ai-visibility";
 import { ConfirmDialog } from "@/client/components/ConfirmDialog";
 import { Button } from "@/client/components/ui/button";
-import { Skeleton } from "@/client/components/ui/skeleton";
 import { Spinner } from "@/client/components/ui/spinner";
 import {
   Table,
@@ -21,10 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui/table";
-import { EngineLabel } from "./EngineLabel";
 import { PromptActionsMenu } from "./PromptActions";
 import { RenameTopicDialog } from "./RenameTopicDialog";
-import { aiRate } from "./shared";
+import { EngineResult, PromptRate } from "./PromptResultCells";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
 
 export function PromptInventory({
@@ -58,6 +54,7 @@ export function PromptInventory({
   onReduce: (patch: AiTrackerPatch) => void;
   onReview: (patch: AiTrackerPatch) => void;
 }) {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [archiving, setArchiving] = useState<{
     kind: "prompt" | "topic";
@@ -181,7 +178,20 @@ export function PromptInventory({
                   // prompt and its result cells are grayed out.
                   const dim = ready ? undefined : "opacity-60";
                   return (
-                    <TableRow key={prompt.id}>
+                    // Any cell opens the prompt; the link keeps it keyboard reachable.
+                    <TableRow
+                      key={prompt.id}
+                      className={ready ? "cursor-pointer" : undefined}
+                      onClick={
+                        ready
+                          ? () =>
+                              void navigate({
+                                to: "/p/$projectId/ai-visibility/prompts/$promptId",
+                                params: { projectId, promptId: prompt.id },
+                              })
+                          : undefined
+                      }
+                    >
                       <TableCell
                         className={cn("min-w-72 py-4 pl-10 first:pl-10", dim)}
                       >
@@ -191,6 +201,8 @@ export function PromptInventory({
                             params={{ projectId, promptId: prompt.id }}
                             className="whitespace-pre-wrap text-sm font-medium underline-offset-4 hover:text-primary hover:underline"
                             data-ph-mask
+                            // The row navigates too; this keeps new-tab clicks to one tab.
+                            onClick={(event) => event.stopPropagation()}
                           >
                             {prompt.text}
                           </Link>
@@ -239,7 +251,8 @@ export function PromptInventory({
                           loading={loading}
                         />
                       </TableCell>
-                      <TableCell>
+                      {/* Menu items portal out, but their clicks still bubble to the row. */}
+                      <TableCell onClick={(event) => event.stopPropagation()}>
                         <div className="flex justify-end">
                           <PromptActionsMenu
                             label={`Actions for ${prompt.text}`}
@@ -332,74 +345,5 @@ export function promptHasResults(
     !!rows?.some(
       (row) => row.promptId === prompt.id && row.answerStatus === "answered",
     )
-  );
-}
-
-function PromptRate({
-  rows,
-  kind,
-  loading,
-}: {
-  rows: AiObservationRow[] | undefined;
-  kind: "mentioned" | "cited";
-  loading: boolean;
-}) {
-  if (loading) return <Skeleton className="h-4 w-10" />;
-  const eligible =
-    rows?.filter(
-      (row) =>
-        row.answerStatus === "answered" &&
-        row.brands.some((brand) => brand.own),
-    ) ?? [];
-  const count = eligible.filter((row) =>
-    row.brands.some((brand) => brand.own && brand[kind]),
-  ).length;
-  return (
-    <span
-      className="flex flex-col text-sm tabular-nums"
-      title={
-        rows
-          ? `${count} of ${eligible.length} eligible answers`
-          : "No results available"
-      }
-    >
-      {aiRate(count, eligible.length)}
-      {eligible.length > 0 && (
-        <span className="text-xs text-muted-foreground">
-          {count} of {eligible.length}
-        </span>
-      )}
-    </span>
-  );
-}
-
-function EngineResult({
-  engine,
-  row,
-}: {
-  engine: AiEngine;
-  row: AiObservationRow | undefined;
-}) {
-  const own = row?.brands.find((brand) => brand.own);
-  const result = !row
-    ? "No result available"
-    : row.status === "failed"
-      ? "Failed"
-      : row.status === "pending"
-        ? "Running"
-        : row.answerStatus === "no_answer"
-          ? aiNoAnswerLabel(engine)
-          : row.answerStatus !== "answered"
-            ? "Answer unavailable"
-            : own?.mentioned
-              ? "Mentioned"
-              : "Not mentioned";
-  return (
-    <span
-      title={`${AI_ENGINE_LABELS[engine]}: ${result}`}
-      className={`inline-flex h-6 items-center text-xs ${result === "Mentioned" ? "text-success" : result === "Failed" ? "text-destructive" : "text-muted-foreground"}`}
-    >
-      <EngineLabel engine={engine} />
-    </span>
   );
 }

@@ -70,7 +70,10 @@ export const aiResearchKeywordsQueryOptions = (projectId: string) =>
     queryFn: () => listAiResearchKeywords({ data: { projectId } }),
   });
 
-export type AiTrendDays = 7 | 28 | 90;
+type AiTrendDays = 7 | 28 | 90;
+
+/** Long enough to show a trend on a weekly schedule. */
+export const DEFAULT_AI_TREND_DAYS: AiTrendDays = 28;
 
 export const aiTrendQueryOptions = (projectId: string, days: AiTrendDays) =>
   queryOptions({
