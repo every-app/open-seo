@@ -1,8 +1,14 @@
+import { Info } from "lucide-react";
 import type { BillingUsage } from "@/server/billing/usage";
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { QueryState } from "@/client/components/QueryState";
 import { Skeleton } from "@/client/components/ui/skeleton";
 import { BillingUsageSection } from "@/client/features/billing/BillingUsageSection";
 import { useBillingUsage } from "@/client/features/billing/useBillingUsage";
+
+// Usage events carry a project from Nov 1, 2026. Until that day leaves the
+// 30-day window, older usage still shows as Workspace.
+const PROJECT_USAGE_COMPLETE_AT = Date.parse("2026-12-02T00:00:00Z");
 
 /** Last 30 days of usage split by feature or by project. */
 export function BillingFeatureBreakdown({
@@ -16,6 +22,14 @@ export function BillingFeatureBreakdown({
     <BillingUsageSection
       title={by === "features" ? "Usage by feature" : "Usage by project"}
     >
+      {by === "projects" && Date.now() < PROJECT_USAGE_COMPLETE_AT ? (
+        <Alert className="mb-4">
+          <Info />
+          <AlertDescription>
+            Project tracking started Nov 1, so earlier usage shows as Workspace.
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <QueryState
         query={usageQuery}
         errorFallback="Failed to load usage"
