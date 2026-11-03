@@ -1,7 +1,7 @@
 import type {
   ArchiveProjectInput,
   CreateProjectInput,
-  RestoreProjectInput,
+  ArchivedProjectInput,
   SetProjectWebsiteInput,
   UpdateProjectInput,
 } from "@/types/schemas/projects";
@@ -169,7 +169,7 @@ export async function listArchivedProjects(organizationId: string) {
 
 export async function restoreProject(
   organizationId: string,
-  input: RestoreProjectInput,
+  input: ArchivedProjectInput,
 ) {
   try {
     await ProjectRepository.restoreProject(

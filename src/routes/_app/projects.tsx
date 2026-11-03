@@ -5,9 +5,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
+  deleteArchivedProject,
   getArchivedProjects,
   restoreProject,
 } from "@/serverFunctions/projects";
+import { ConfirmDialog } from "@/client/components/ConfirmDialog";
 import { PageHeader, SectionHeader } from "@/client/components/PageHeader";
 import { QueryState } from "@/client/components/QueryState";
 import { Badge } from "@/client/components/ui/badge";
@@ -110,6 +112,22 @@ function ArchivedProjects() {
     },
   });
 
+  const [deleting, setDeleting] = React.useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const deleteMutation = useMutation({
+    mutationFn: (projectId: string) =>
+      deleteArchivedProject({ data: { archivedProjectId: projectId } }),
+    onSuccess: async () => {
+      setDeleting(null);
+      await queryClient.invalidateQueries({
+        queryKey: ["projects", "archived"],
+      });
+      toast.success("Project deleted");
+    },
+  });
+
   if (archived.length === 0) return null;
 
   return (
@@ -129,17 +147,41 @@ function ArchivedProjects() {
                 {project.domain ?? "No domain set"}
               </span>
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => restoreMutation.mutate(project.id)}
-              disabled={restoreMutation.isPending}
-            >
-              Restore
-            </Button>
+            <span className="flex shrink-0 gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => restoreMutation.mutate(project.id)}
+                disabled={restoreMutation.isPending}
+              >
+                Restore
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setDeleting(project)}
+              >
+                Delete
+              </Button>
+            </span>
           </li>
         ))}
       </ul>
+      {deleting ? (
+        <ConfirmDialog
+          title={`Permanently delete \u201c${deleting.name}\u201d?`}
+          confirmLabel="Delete permanently"
+          destructive
+          pending={deleteMutation.isPending}
+          onClose={() => setDeleting(null)}
+          onConfirm={() => deleteMutation.mutate(deleting.id)}
+        >
+          This deletes the project and all of its data: audits, rank tracking,
+          saved keywords, reports, AI visibility, and chats. It can&apos;t be
+          undone.
+        </ConfirmDialog>
+      ) : null}
     </section>
   );
 }
