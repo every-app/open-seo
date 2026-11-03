@@ -58,7 +58,10 @@ export function normalizeBacklinksTarget(
   }
 
   const protocol = /^http:\/\//i.test(trimmed) ? "http" : "https";
-  const pageUrl = `${protocol}://${target.urlHostname}${target.path || "/"}`;
+  // DataForSEO matches page URLs exactly, so /post/ and /post are different
+  // pages. Keep the trailing slash the user typed (query/fragment are rejected).
+  const trailingSlash = target.path && trimmed.endsWith("/") ? "/" : "";
+  const pageUrl = `${protocol}://${target.urlHostname}${target.path || "/"}${trailingSlash}`;
   return {
     apiTarget: pageUrl,
     displayTarget: pageUrl,
