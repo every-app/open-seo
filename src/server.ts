@@ -253,22 +253,6 @@ export { SamChatAgent } from "./server/features/sam/SamChatAgent";
 
 // Daily OAuth KV garbage collection; must match a trigger in wrangler.jsonc.
 const MCP_OAUTH_PURGE_CRON = "17 3 * * *";
-// TEMPORARY: runs due account deletions every minute so the first ones can
-// be checked in production. Remove with its wrangler.jsonc entry.
-const ACCOUNT_DELETION_TEST_CRON = "* * * * *";
-
-async function runAccountDeletions() {
-  try {
-    const { AccountDeletionService } =
-      await import("@/server/account-deletion/AccountDeletionService");
-    const result = await withPgClient(() =>
-      AccountDeletionService.runDueDeletions(),
-    );
-    console.log("[account-deletion] run", result);
-  } catch (err) {
-    console.error("[cron] Account deletion run failed:", err);
-  }
-}
 
 export default {
   fetch,
@@ -279,12 +263,6 @@ export default {
   ) {
     // A legacy Docker import owns the database until it finishes.
     if (hasOperatorSecret() && (await isLegacyImportActive())) return;
-    if (controller.cron === ACCOUNT_DELETION_TEST_CRON) {
-      if (isHostedAuthMode(getAuthMode(env.AUTH_MODE))) {
-        await runAccountDeletions();
-      }
-      return;
-    }
     if (controller.cron === MCP_OAUTH_PURGE_CRON) {
       const authMode = getAuthMode(env.AUTH_MODE);
       // Only the modes with their own accounts run the OAuth provider (and
@@ -316,7 +294,16 @@ export default {
         }
 
         // Self-serve account deletions whose 14-day wait is over.
-        await runAccountDeletions();
+        try {
+          const { AccountDeletionService } =
+            await import("@/server/account-deletion/AccountDeletionService");
+          const result = await withPgClient(() =>
+            AccountDeletionService.runDueDeletions(),
+          );
+          console.log("[account-deletion] daily run", result);
+        } catch (err) {
+          console.error("[cron] Account deletion run failed:", err);
+        }
       }
       return;
     }
