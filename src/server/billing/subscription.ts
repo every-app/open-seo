@@ -69,10 +69,20 @@ export async function customerHasPaidPlan(
   customerId: string,
   opts: { retryDenied?: boolean } = {},
 ) {
-  const result = await autumn.check({
-    customerId,
-    featureId: AUTUMN_PAID_PLAN_FEATURE_ID,
-  });
+  // The Autumn customer is created lazily, on an org's first billed action,
+  // so an org that only set up a rank tracker has none yet. No customer has
+  // no plan: answering "free" lets the scheduler mark the tracker
+  // plan_required instead of retrying the error every tick.
+  let result;
+  try {
+    result = await autumn.check({
+      customerId,
+      featureId: AUTUMN_PAID_PLAN_FEATURE_ID,
+    });
+  } catch (error) {
+    if (errorBodyIncludes(error, "customer_not_found")) return false;
+    throw error;
+  }
   if (result.allowed || !opts.retryDenied) return result.allowed;
 
   // Autumn sometimes returns degraded entitlement data in a successful
@@ -487,9 +497,10 @@ export async function reserveUsageCredits(args: {
 }
 
 // The SDK throws 4xx responses with the raw response body attached. Autumn
-// answers a reused lockId with 409 `lock_already_exists`, and a finalize for
-// a lock it no longer holds with a 400 whose message starts "Lock not found"
-// (the code is the generic invalid_request).
+// answers an unknown customer with 404 `customer_not_found`, a reused lockId
+// with 409 `lock_already_exists`, and a finalize for a lock it no longer
+// holds with a 400 whose message starts "Lock not found" (the code is the
+// generic invalid_request).
 function errorBodyIncludes(error: unknown, text: string) {
   return (
     error instanceof Error &&

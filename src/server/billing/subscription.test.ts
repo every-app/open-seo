@@ -103,6 +103,13 @@ describe("subscription billing", () => {
     });
   });
 
+  it("treats an org with no Autumn customer as not on a paid plan", async () => {
+    const notFound = { body: '{"code":"customer_not_found"}' };
+    checkMock.mockRejectedValueOnce(Object.assign(new Error(), notFound));
+
+    await expect(customerHasPaidPlan("org_123")).resolves.toBe(false);
+  });
+
   it("retries a missing monthly balance once", async () => {
     vi.useFakeTimers();
     let monthlyChecks = 0;
