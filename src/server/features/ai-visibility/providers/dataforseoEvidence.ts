@@ -10,6 +10,7 @@ const resultSchema = z.object({
   // ChatGPT and Gemini LLM Scraper fields.
   markdown: optionalMarkdown,
   sources: sourceList,
+  search_results: sourceList,
   // Google organic SERP field.
   items: z.array(z.unknown()).max(500).nullish(),
 });
@@ -27,11 +28,24 @@ const sourceSchema = z.object({
   title: z.string().max(10_000).transform(withoutNul).nullish(),
 });
 
+// LLM Responses name the excerpt `snippet`; the ChatGPT LLM Scraper names it
+// `description` and leaves out the date.
+const searchResultSchema = sourceSchema.extend({
+  snippet: z.string().nullish(),
+  description: z.string().nullish(),
+  date: z.string().max(100).nullish(),
+});
+
 export interface AiCitation {
   url: string;
   domain: string;
   title: string | null;
   position: number;
+}
+
+export interface AiSearchResult extends AiCitation {
+  snippet: string | null;
+  publishedAt: string | null;
 }
 
 export interface ParsedAiAnswer {
@@ -40,6 +54,8 @@ export interface ParsedAiAnswer {
   /** Plain prose for brand matching; empty without an answer. */
   answerText: string;
   citations: AiCitation[];
+  /** Pages the engine found while searching, cited or not. */
+  searchResults: AiSearchResult[];
   collectedAt: string | null;
 }
 
@@ -57,6 +73,7 @@ export function parseDataforseoAnswer(
       answerMarkdown: null,
       answerText: "",
       citations: [],
+      searchResults: [],
       collectedAt: null,
     };
   const parsed = resultSchema.safeParse(raw);
@@ -83,13 +100,15 @@ export function parseDataforseoAnswer(
     answerMarkdown: answerText.trim() ? markdown : null,
     answerText: answerText.trim() ? answerText : "",
     citations: citationsFrom(sources),
+    searchResults: searchResultsFrom(result.search_results ?? []),
     collectedAt: dateOrNull(result.datetime),
   };
 }
 
 /**
  * Normalize one live LLM Responses answer. The message sections hold the
- * answer, and their annotations hold the cited pages.
+ * answer, their annotations hold the cited pages, and search_results holds
+ * every page the model found while searching.
  */
 export function parseLlmResponseAnswer(
   result: LlmResponseResult,
@@ -110,6 +129,7 @@ export function parseLlmResponseAnswer(
     citations: citationsFrom(
       sections.flatMap((section) => section.annotations ?? []),
     ),
+    searchResults: searchResultsFrom(result.search_results ?? []),
     collectedAt: null,
   };
 }
@@ -158,9 +178,26 @@ function citationPill(label: string, url: string): boolean {
 
 /** Safe, de-duplicated cited URLs with tracking parameters removed. */
 function citationsFrom(list: unknown[]): AiCitation[] {
-  const citations = new Map<string, AiCitation>();
+  return pagesFrom(list, sourceSchema, (page) => page);
+}
+
+/** Safe, de-duplicated search results, normalized like citations. */
+function searchResultsFrom(list: unknown[]): AiSearchResult[] {
+  return pagesFrom(list, searchResultSchema, (page, data) => ({
+    ...page,
+    snippet: snippetOrNull(data.snippet ?? data.description),
+    publishedAt: dateOrNull(data.date),
+  }));
+}
+
+function pagesFrom<S extends typeof sourceSchema, T extends AiCitation>(
+  list: unknown[],
+  schema: S,
+  build: (page: AiCitation, data: z.infer<S>) => T,
+): T[] {
+  const pages = new Map<string, T>();
   for (const item of list) {
-    const source = sourceSchema.safeParse(item);
+    const source = schema.safeParse(item);
     const safe = source.success ? safeHttpUrl(source.data.url) : null;
     if (!source.success || !safe) continue;
     const url = new URL(safe);
@@ -169,21 +206,44 @@ function citationsFrom(list: unknown[]): AiCitation[] {
     for (const key of Array.from(url.searchParams.keys()))
       if (
         /^utm_/i.test(key) ||
-        ["gclid", "fbclid", "msclkid"].includes(key.toLowerCase())
+        ["gclid", "fbclid", "msclkid", "_hsmi"].includes(key.toLowerCase())
       )
         url.searchParams.delete(key);
     const normalized = url.toString();
-    const existing = citations.get(normalized);
+    const existing = pages.get(normalized);
     if (existing) {
       existing.title ??= source.data.title ?? null;
       continue;
     }
-    citations.set(normalized, {
-      url: normalized,
-      domain: url.hostname,
-      title: source.data.title ?? null,
-      position: citations.size + 1,
-    });
+    pages.set(
+      normalized,
+      build(
+        {
+          url: normalized,
+          domain: url.hostname,
+          title: source.data.title ?? null,
+          position: pages.size + 1,
+        },
+        source.data,
+      ),
+    );
   }
-  return [...citations.values()];
+  return [...pages.values()];
+}
+
+const SNIPPET_LIMIT = 500;
+
+/**
+ * ChatGPT's search snippets open with an internal citation marker (wrapped in
+ * private-use characters) and a "[wordlim: 200]" note, and can run to whole
+ * pages of text.
+ */
+function snippetOrNull(value: string | null | undefined): string | null {
+  const text = withoutNul(value ?? "")
+    .replace(/^\p{Co}?cite\p{Co}?turn\w+\p{Co}?\s*(\[wordlim: \d+\]\s*)?/u, "")
+    .trim();
+  if (!text) return null;
+  return text.length > SNIPPET_LIMIT
+    ? `${text.slice(0, SNIPPET_LIMIT - 1)}…`
+    : text;
 }

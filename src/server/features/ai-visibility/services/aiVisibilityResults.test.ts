@@ -33,6 +33,8 @@ type Answer = {
   mentioned?: string[];
   cited?: string[];
   sources?: string[];
+  /** Pages the engine found while searching. */
+  retrieved?: string[];
 };
 
 /** One run of the given answers, each on its own prompt. */
@@ -87,6 +89,16 @@ async function seedRun(
         url,
         domain: new URL(url).hostname,
         title: null,
+        position: position + 1,
+      })),
+      searchResults: (answer.retrieved ?? []).map((url, position) => ({
+        id: crypto.randomUUID(),
+        observationId: id,
+        url,
+        domain: new URL(url).hostname,
+        title: null,
+        snippet: null,
+        publishedAt: null,
         position: position + 1,
       })),
       matches: answer.failed
@@ -226,6 +238,7 @@ describe("AI visibility results", () => {
       competitorGap: false,
       groupBy: "url",
       ownership: "all",
+      evidence: "cited",
     });
     expect(sources.rows).toMatchObject([
       {
@@ -235,6 +248,75 @@ describe("AI visibility results", () => {
         promptIds: ["prompt-0", "prompt-1"],
       },
       { url: "https://ahrefs.com/blog", ownership: "competitor" },
+    ]);
+  });
+
+  it("says whether each brand was cited, retrieved but not cited, or never found", async () => {
+    const runId = await seedRun("baseline", [
+      {
+        markdown: "a",
+        cited: ["OpenSEO"],
+        sources: ["https://openseo.so/pricing"],
+        retrieved: ["https://openseo.so/pricing", "https://ahrefs.com/blog"],
+      },
+      { markdown: "b", retrieved: ["https://example.com/"] },
+      // Collected before search results were kept: unknown, not "not found".
+      { markdown: "c" },
+    ]);
+    const results = await loadAiResults({
+      ...query,
+      includeHistory: false,
+      competitorGap: false,
+    });
+    expect(
+      results.rows.map((row) =>
+        Object.fromEntries(row.brands.map((b) => [b.name, b.retrieval])),
+      ),
+    ).toEqual([
+      { OpenSEO: "cited", Ahrefs: "retrieved_not_cited" },
+      { OpenSEO: "not_found", Ahrefs: "not_found" },
+      { OpenSEO: null, Ahrefs: null },
+    ]);
+    expect(results.summaries).toMatchObject([
+      { domain: "openseo.so", retrievedNotCited: 0 },
+      { domain: "ahrefs.com", retrievedNotCited: 1 },
+    ]);
+    const answer = await loadAiAnswer({
+      projectId,
+      observationId: `${runId}:prompt-0`,
+    });
+    expect(answer.searchResults).toMatchObject([
+      { url: "https://openseo.so/pricing", cited: true },
+      { url: "https://ahrefs.com/blog", cited: false },
+    ]);
+  });
+
+  it("counts pages found while searching, and how many of those answers cited them", async () => {
+    await seedRun("baseline", [
+      {
+        markdown: "a",
+        sources: ["https://openseo.so/pricing"],
+        retrieved: ["https://openseo.so/pricing", "https://openseo.so/blog"],
+      },
+      { markdown: "b", retrieved: ["https://openseo.so/pricing"] },
+      { markdown: "c" },
+    ]);
+    const sources = await loadAiSources({
+      ...query,
+      includeHistory: false,
+      competitorGap: false,
+      groupBy: "url",
+      ownership: "own",
+      evidence: "retrieved",
+    });
+    expect(sources.answersWithSearchResults).toBe(2);
+    expect(sources.rows).toMatchObject([
+      {
+        url: "https://openseo.so/pricing",
+        answerCount: 2,
+        citedAnswerCount: 1,
+      },
+      { url: "https://openseo.so/blog", answerCount: 1, citedAnswerCount: 0 },
     ]);
   });
 

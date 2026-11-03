@@ -16,6 +16,7 @@ import {
   formatModelLabel,
 } from "@/shared/prompt-explorer-labels";
 import { supportsWebSearchCountry } from "@/shared/prompt-search-countries";
+import { parseLlmResponseAnswer } from "@/server/features/ai-visibility/providers/dataforseoEvidence";
 import { safeHostname, safeHttpUrl } from "@/shared/safe-url";
 import {
   promptExplorerModelResultSchema,
@@ -24,6 +25,7 @@ import {
   type PromptExplorerModel,
   type PromptExplorerModelResult,
   type PromptExplorerResult,
+  type PromptExplorerSearchResult,
 } from "@/types/schemas/ai-search";
 
 /**
@@ -135,7 +137,7 @@ async function runModel(
     webSearch: args.input.webSearch,
     webSearchCountryCode: country ?? null,
     // Bumped when prompt/payload shape changes — busts stale cache entries.
-    systemPromptV: 7,
+    systemPromptV: 8,
   });
 
   const cached = promptExplorerModelResultSchema.safeParse(
@@ -207,6 +209,7 @@ function shapeSuccess(
 ): PromptExplorerModelResult {
   const text = extractText(response);
   const citations = extractCitations(response);
+  const searchResults = extractSearchResults(response);
   const fanOutQueries = (response.fan_out_queries ?? []).slice(0, 20);
 
   return {
@@ -215,6 +218,7 @@ function shapeSuccess(
     modelName: response.model_name ?? null,
     text,
     citations,
+    searchResults,
     fanOutQueries,
     brandMentioned: null,
     outputTokens:
@@ -238,6 +242,10 @@ function reapplyHighlightBrand(
   return {
     ...result,
     citations,
+    searchResults: result.searchResults.map((page) => ({
+      ...page,
+      matchedBrand: matchesBrand(page.url, page.title, highlightBrand),
+    })),
     brandMentioned: computeBrandMentioned(
       result.text,
       citations,
@@ -287,6 +295,27 @@ export function extractCitations(
   }
 
   return citations.slice(0, 25);
+}
+
+/**
+ * Pages the model found while searching, marked cited when the answer cites
+ * them. Uses the AI visibility parser so both features normalize URLs alike.
+ */
+function extractSearchResults(
+  response: LlmResponseResult,
+): PromptExplorerSearchResult[] {
+  const { citations, searchResults } = parseLlmResponseAnswer(response);
+  const cited = new Set(citations.map((citation) => citation.url));
+  // Uncapped: a brand found only far down the list was still found.
+  return searchResults.map((page) => ({
+    url: page.url,
+    domain: page.domain,
+    title: page.title,
+    snippet: page.snippet,
+    publishedAt: page.publishedAt,
+    cited: cited.has(page.url),
+    matchedBrand: false,
+  }));
 }
 
 function computeBrandMentioned(

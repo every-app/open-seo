@@ -148,6 +148,9 @@ export const llmResponseResultSchema = z
     web_search: z.boolean().nullable().optional(),
     items: z.array(responseItemSchema).nullable().optional(),
     fan_out_queries: z.array(z.string()).nullable().optional(),
+    // Every page the model found while searching, cited or not. Left unknown
+    // here: the evidence parser validates each entry and drops bad ones.
+    search_results: z.array(z.unknown()).nullable().optional(),
   })
   .passthrough();
 

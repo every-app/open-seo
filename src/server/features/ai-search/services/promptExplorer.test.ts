@@ -150,6 +150,58 @@ describe("explorePrompt web-search retry", () => {
   });
 });
 
+describe("explorePrompt search results", () => {
+  it("returns every page the model found, with snippets, marked cited or not", async () => {
+    const found = Array.from({ length: 25 }, (_, index) => ({
+      title: `Page ${index}`,
+      url: `https://example.com/${index}`,
+      date: null,
+      snippet: null,
+    }));
+    llmResponse.mockResolvedValueOnce({
+      ...modelResponse(true),
+      search_results: [
+        ...found,
+        {
+          title: "OpenSEO",
+          url: "https://openseo.so/guide",
+          date: "2026-10-16 22:32:00 +00:00",
+          snippet: "Open source SEO",
+        },
+        { title: "Source", url: "https://example.com/post" },
+      ],
+    });
+
+    const [result] = (
+      await explorePrompt(
+        {
+          projectId: "p1",
+          prompt: "best open source seo tool",
+          models: ["chat_gpt"],
+          webSearch: true,
+          highlightBrand: "openseo",
+        },
+        { organizationId: "org_1", userId: "user_1", userEmail: "a@b.c" },
+      )
+    ).results;
+
+    expect(
+      result?.status === "success" && result.searchResults.slice(25),
+    ).toEqual([
+      {
+        url: "https://openseo.so/guide",
+        domain: "openseo.so",
+        title: "OpenSEO",
+        snippet: "Open source SEO",
+        publishedAt: "2026-10-16T22:32:00.000Z",
+        cited: false,
+        matchedBrand: true,
+      },
+      expect.objectContaining({ url: "https://example.com/post", cited: true }),
+    ]);
+  });
+});
+
 describe("Prompt Explorer countries", () => {
   const billing = {
     organizationId: "org_1",

@@ -132,6 +132,7 @@ export const {
   aiRuns,
   aiObservations,
   aiSources,
+  aiSearchResults,
   aiMatches,
   localRankTrackers,
   localRankChecks,

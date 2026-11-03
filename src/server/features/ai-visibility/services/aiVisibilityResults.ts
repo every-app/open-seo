@@ -5,6 +5,7 @@ import {
 } from "@/shared/ai-visibility-results";
 import type {
   AiAnswer,
+  AiBrandResult,
   AiObservationRow,
   AiResults,
   AiRun,
@@ -53,11 +54,29 @@ export function aiRunView(
 
 type Evidence = Awaited<ReturnType<typeof repo.getEvidence>>;
 
+/**
+ * Cited beats retrieved. An answer without recorded search results cannot say
+ * whether the engine found an uncited brand, so that stays unknown.
+ */
+function aiRetrieval(
+  brand: { domain: string; cited: boolean },
+  searchResults: { domain: string }[],
+): AiBrandResult["retrieval"] {
+  if (brand.cited) return "cited";
+  if (!searchResults.length) return null;
+  return searchResults.some((result) =>
+    ownedAiDomain(result.domain, brand.domain),
+  )
+    ? "retrieved_not_cited"
+    : "not_found";
+}
+
 function rowsFor(
   observations: ObservationWithPrompt[],
   evidence: Evidence,
 ): AiObservationRow[] {
   const sources = groupByProp(evidence.sources, "observationId");
+  const searchResults = groupByProp(evidence.searchResults, "observationId");
   const matches = groupByProp(evidence.matches, "observationId");
   return observations.map((o) => ({
     id: o.id,
@@ -77,12 +96,17 @@ function rowsFor(
     collectedAt: o.collectedAt,
     error: publicAiAnswerError(o.error),
     citationCount: sources[o.id]?.length ?? 0,
+    searchResultCount: searchResults[o.id]?.length ?? 0,
     brands: (matches[o.id] ?? []).map((m) => ({
       name: m.name,
       domain: m.domain,
       own: m.own,
       mentioned: m.mentioned,
       cited: m.cited,
+      retrieval:
+        o.status === "completed" && o.answerMarkdown
+          ? aiRetrieval(m, searchResults[o.id] ?? [])
+          : null,
       firstMention: m.firstMention,
     })),
   }));
@@ -229,6 +253,7 @@ export async function loadAiAnswer(
 export async function loadAiFullAnswers(input: AiResultsInput) {
   const { result, run, observations, evidence } = await loadAiResultSet(input);
   const sources = groupByProp(evidence.sources, "observationId");
+  const searchResults = groupByProp(evidence.searchResults, "observationId");
   const matches = groupByProp(evidence.matches, "observationId");
   // Rows carry the competitor-gap filter; observations do not.
   const rowIds = new Set(result.rows.map((row) => row.id));
@@ -241,6 +266,7 @@ export async function loadAiFullAnswers(input: AiResultsInput) {
             run,
             {
               sources: sources[observation.id] ?? [],
+              searchResults: searchResults[observation.id] ?? [],
               matches: matches[observation.id] ?? [],
             },
             true,
@@ -260,6 +286,7 @@ function answerView(
   const markdown = observation.answerMarkdown;
   const answerText = markdown ? markdownToText(markdown) : null;
   const limit = full ? Infinity : ANSWER_LIMIT;
+  const citedUrls = new Set(evidence.sources.map((source) => source.url));
   return {
     observation: row,
     answerText: answerText?.slice(0, limit) ?? null,
@@ -270,6 +297,17 @@ function answerView(
       title,
       position,
     })),
+    searchResults: evidence.searchResults.map(
+      ({ url, domain, title, snippet, publishedAt, position }) => ({
+        url,
+        domain,
+        title,
+        snippet,
+        publishedAt,
+        position,
+        cited: citedUrls.has(url),
+      }),
+    ),
     // Highlights are worked out for the open answer, not stored.
     mentions: answerText
       ? row.brands
@@ -295,12 +333,23 @@ export async function loadAiSources(input: AiSourcesInput): Promise<AiSources> {
     {
       row: AiSourceRow;
       answers: Set<string>;
+      cited: Set<string>;
       prompts: Set<string>;
       engines: Map<AiSourceRow["engines"][number]["engine"], Set<string>>;
     }
   >();
   const observed = new Map(first.rows.map((r) => [r.id, r]));
-  for (const source of evidence.sources) {
+  const keyOf = (page: { url: string; domain: string }) =>
+    input.groupBy === "domain" ? page.domain : page.url;
+  // Which keys each answer cites, to count retrieved pages that were cited.
+  const citedKeys = new Set(
+    evidence.sources.map(
+      (source) => `${source.observationId} ${keyOf(source)}`,
+    ),
+  );
+  const pages =
+    input.evidence === "retrieved" ? evidence.searchResults : evidence.sources;
+  for (const source of pages) {
     const answer = observed.get(source.observationId);
     if (answer?.answerStatus !== "answered") continue;
     const own = answer.brands.find((b) => b.own);
@@ -313,7 +362,7 @@ export async function loadAiSources(input: AiSourcesInput): Promise<AiSources> {
           ? "competitor"
           : "other";
     if (input.ownership !== "all" && input.ownership !== ownership) continue;
-    const key = input.groupBy === "domain" ? source.domain : source.url;
+    const key = keyOf(source);
     const group = groups.get(key) ?? {
       row: {
         key,
@@ -322,6 +371,7 @@ export async function loadAiSources(input: AiSourcesInput): Promise<AiSources> {
         title: input.groupBy === "url" ? source.title : null,
         ownership,
         answerCount: 0,
+        citedAnswerCount: 0,
         promptCount: 0,
         promptIds: [],
         engines: [],
@@ -329,10 +379,12 @@ export async function loadAiSources(input: AiSourcesInput): Promise<AiSources> {
         truncated: false,
       },
       answers: new Set<string>(),
+      cited: new Set<string>(),
       prompts: new Set<string>(),
       engines: new Map<AiSourceRow["engines"][number]["engine"], Set<string>>(),
     };
     group.answers.add(answer.id);
+    if (citedKeys.has(`${answer.id} ${key}`)) group.cited.add(answer.id);
     group.prompts.add(answer.promptId);
     const engineAnswers = group.engines.get(answer.engine) ?? new Set<string>();
     engineAnswers.add(answer.id);
@@ -343,6 +395,7 @@ export async function loadAiSources(input: AiSourcesInput): Promise<AiSources> {
     [...groups.values()].map((g) => ({
       ...g.row,
       answerCount: g.answers.size,
+      citedAnswerCount: g.cited.size,
       promptCount: g.prompts.size,
       promptIds: [...g.prompts],
       engines: [...g.engines].map(([engine, answers]) => ({
@@ -364,6 +417,10 @@ export async function loadAiSources(input: AiSourcesInput): Promise<AiSources> {
     coverage: first.coverage,
     appliedFilters: { ...first.appliedFilters, ownership: input.ownership },
     groupBy: input.groupBy,
+    evidence: input.evidence,
+    answersWithSearchResults: first.rows.filter(
+      (row) => row.answerStatus === "answered" && row.searchResultCount > 0,
+    ).length,
     truncated: first.truncated,
   };
 }

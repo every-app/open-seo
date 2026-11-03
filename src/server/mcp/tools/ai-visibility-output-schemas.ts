@@ -95,11 +95,15 @@ const observation = z.looseObject({
       own: flag,
       mentioned: flag,
       cited: flag,
+      retrieval: z
+        .enum(["cited", "retrieved_not_cited", "not_found"])
+        .nullable(),
       firstMention: count.nullable(),
     }),
   ),
   answerStatus: z.enum(["answered", "no_answer"]).nullable(),
   citationCount: count,
+  searchResultCount: count,
   collectedAt: nullableText,
   error: nullableText,
 });
@@ -117,6 +121,7 @@ export const aiResultsOutput = z.looseObject({
       answers: count,
       mentions: count,
       citations: count,
+      retrievedNotCited: count,
       positionTotal: count,
       positionCount: count,
     }),
@@ -142,6 +147,17 @@ export const aiAnswerOutput = z.looseObject({
       position: count,
     }),
   ),
+  searchResults: z.array(
+    z.looseObject({
+      url: text,
+      domain: text,
+      title: nullableText,
+      snippet: nullableText,
+      publishedAt: nullableText,
+      position: count,
+      cited: flag,
+    }),
+  ),
   mentions: z.array(
     z.looseObject({
       domain: text,
@@ -162,6 +178,7 @@ export const aiSourcesOutput = z.looseObject({
       title: nullableText,
       ownership: z.enum(["own", "competitor", "other"]),
       answerCount: count,
+      citedAnswerCount: count,
       promptCount: count,
       promptIds: z.array(text),
       engines: z.array(z.looseObject({ engine, answerCount: count })),
@@ -176,6 +193,8 @@ export const aiSourcesOutput = z.looseObject({
     ownership: z.enum(["all", "own", "competitor", "other"]),
   }),
   groupBy: z.enum(["url", "domain"]),
+  evidence: z.enum(["cited", "retrieved"]),
+  answersWithSearchResults: count,
   truncated: flag,
 });
 const rate = z.number().min(0).max(100).nullable();

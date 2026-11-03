@@ -8,6 +8,7 @@ import {
   aiRuns,
   aiObservations,
   aiSources,
+  aiSearchResults,
   aiMatches,
   projects,
   projectCompetitors,
@@ -144,22 +145,29 @@ async function getObservation(id: string) {
 
 async function getEvidence(observationIds: string[]) {
   const sources: (typeof aiSources.$inferSelect)[] = [];
+  const searchResults: (typeof aiSearchResults.$inferSelect)[] = [];
   const matches: (typeof aiMatches.$inferSelect)[] = [];
   // Keep every IN list under D1's bind limit; result sets remain bounded by run size.
   for (let offset = 0; offset < observationIds.length; offset += 80) {
     const ids = observationIds.slice(offset, offset + 80);
-    const [s, m] = await Promise.all([
+    const [s, r, m] = await Promise.all([
       db
         .select()
         .from(aiSources)
         .where(inArray(aiSources.observationId, ids))
         .orderBy(asc(aiSources.position)),
+      db
+        .select()
+        .from(aiSearchResults)
+        .where(inArray(aiSearchResults.observationId, ids))
+        .orderBy(asc(aiSearchResults.position)),
       db.select().from(aiMatches).where(inArray(aiMatches.observationId, ids)),
     ]);
     sources.push(...s);
+    searchResults.push(...r);
     matches.push(...m);
   }
-  return { sources, matches };
+  return { sources, searchResults, matches };
 }
 
 /**
@@ -187,6 +195,7 @@ async function persistAnswer(input: {
   observationId: string;
   values: Partial<ObservationRow>;
   sources: (typeof aiSources.$inferInsert)[];
+  searchResults: (typeof aiSearchResults.$inferInsert)[];
   matches: (typeof aiMatches.$inferInsert)[];
 }) {
   await runBatch((tx) => [
@@ -194,14 +203,20 @@ async function persistAnswer(input: {
       .delete(aiSources)
       .where(eq(aiSources.observationId, input.observationId)),
     tx
+      .delete(aiSearchResults)
+      .where(eq(aiSearchResults.observationId, input.observationId)),
+    tx
       .delete(aiMatches)
       .where(eq(aiMatches.observationId, input.observationId)),
     // Multi-row inserts keep the transaction to a few round trips, so a
     // collect step saving many answers does not hold pooled connections. D1
-    // allows 100 bound parameters per statement: 6 columns per source and 8
-    // per match.
+    // allows 100 bound parameters per statement: 6 columns per source, 8 per
+    // search result and 8 per match.
     ...chunk(input.sources, 16).map((rows) =>
       tx.insert(aiSources).values(rows),
+    ),
+    ...chunk(input.searchResults, 12).map((rows) =>
+      tx.insert(aiSearchResults).values(rows),
     ),
     ...chunk(input.matches, 12).map((rows) =>
       tx.insert(aiMatches).values(rows),

@@ -49,6 +49,8 @@ it.each(["neutral", "branded", "all"] as const)(
     mocks.service.getSources.mockResolvedValue({
       ...common,
       groupBy: "url",
+      evidence: "cited",
+      answersWithSearchResults: 0,
       appliedFilters: { ...common.appliedFilters, ownership: "all" },
     });
     const expected =

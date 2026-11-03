@@ -464,6 +464,11 @@ async function saveAiAnswer(
       observationId,
       ...citation,
     })),
+    searchResults: answer.searchResults.map((result) => ({
+      id: crypto.randomUUID(),
+      observationId,
+      ...result,
+    })),
     matches: brands.map((brand) => ({
       id: crypto.randomUUID(),
       observationId,

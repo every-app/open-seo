@@ -146,6 +146,26 @@ export const aiSources = sqliteTable(
   (t) => [index("ai_sources_observation_idx").on(t.observationId)],
 );
 
+// Pages the engine found while searching for an answer, cited or not, in the
+// engine's order. Comparing them with ai_sources tells "never found" apart from
+// "found but not cited".
+export const aiSearchResults = sqliteTable(
+  "ai_search_results",
+  {
+    id: text("id").primaryKey(),
+    observationId: text("observation_id")
+      .notNull()
+      .references(() => aiObservations.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    domain: text("domain").notNull(),
+    title: text("title"),
+    snippet: text("snippet"),
+    publishedAt: text("published_at"),
+    position: integer("position").notNull(),
+  },
+  (t) => [index("ai_search_results_observation_idx").on(t.observationId)],
+);
+
 // Each brand's result in one answer. Name and domain are copied from the
 // project when the answer is matched, so later edits never rewrite history.
 export const aiMatches = sqliteTable(

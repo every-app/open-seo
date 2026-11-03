@@ -35,6 +35,7 @@ const modelOutputSchema = z.discriminatedUnion("status", [
   success
     .extend({
       citations: z.array(success.shape.citations.element.loose()),
+      searchResults: z.array(success.shape.searchResults.element.loose()),
     })
     .loose(),
   failure.loose(),
@@ -45,7 +46,7 @@ export const explorePromptTool = {
   config: {
     title: "Explore an AI prompt",
     description:
-      "Ask one prompt in ChatGPT, or compare answers from selected AI models. Returns answer text, citations, search queries, brand mentions, and per-model errors. Use for a one-off answer comparison; use AI visibility tracking tools for consumer-site observations and recurring monitoring. Charges actual model usage per uncached model; web search may make one additional paid attempt if the first answer did not search. Cached answers are free for seven days. Requires a paid plan in hosted mode. Does not configure tracking or start project setup.",
+      "Ask one prompt in ChatGPT, or compare answers from selected AI models. Returns answer text, citations, search queries, the pages each model found while searching (searchResults, each marked cited or not, so a page found but not cited shows as cited=false), brand mentions, and per-model errors. Use for a one-off answer comparison; use AI visibility tracking tools for consumer-site observations and recurring monitoring. Charges actual model usage per uncached model; web search may make one additional paid attempt if the first answer did not search. Cached answers are free for seven days. Requires a paid plan in hosted mode. Does not configure tracking or start project setup.",
     inputSchema: inputSchema.shape,
     outputSchema: promptExplorerResultSchema
       .extend({

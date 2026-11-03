@@ -18,6 +18,7 @@ function answer(text: string, citedHosts: string[] = []): ParsedAiAnswer {
       title: null,
       position: index + 1,
     })),
+    searchResults: [],
     collectedAt: null,
   };
 }
