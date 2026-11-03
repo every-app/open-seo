@@ -19,6 +19,18 @@ export function clampMaxPagesInput(input: string, maxPagesLimit: number) {
     : MIN_PAGES;
 }
 
+/** Prefer the immutable submit snapshot over possibly stale live form state. */
+export function resolveMaxPagesInput(
+  submittedInput: string | undefined,
+  currentInput: string,
+  maxPagesLimit: number,
+) {
+  return clampMaxPagesInput(
+    submittedInput === undefined ? currentInput : submittedInput,
+    maxPagesLimit,
+  );
+}
+
 export type LaunchFormValues = {
   url: string;
   maxPagesInput: string;
