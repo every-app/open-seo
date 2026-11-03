@@ -191,7 +191,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground"
+          className="w-(--sidebar-width) bg-sidebar p-0 pt-[env(safe-area-inset-top,0px)] text-sidebar-foreground [&_[data-slot=sheet-close]]:top-[calc(--spacing(3)+env(safe-area-inset-top,0px))]"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
