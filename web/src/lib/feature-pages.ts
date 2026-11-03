@@ -605,7 +605,7 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.rankTracking,
     eyebrow: "Rank Tracking",
     navDescription: "Monitor keyword positions.",
-    title: "Rank tracker for monitoring keyword positions",
+    title: "Rank tracker for keyword positions on desktop and mobile",
     description:
       "Track the keywords that matter, optionally compare desktop and mobile results, and keep ranking changes connected to your research workflow.",
     seoDescription:
@@ -623,7 +623,7 @@ export const featurePages = {
       {
         title: "Add tracked domains",
         description:
-          "Create rank tracking configurations for the domains and locations you care about.",
+          "Create a tracker for each domain, country or city, and language you sell in.",
       },
       {
         title: "Track important keywords",
@@ -653,12 +653,55 @@ export const featurePages = {
       "Optional desktop and mobile tracking helps teams avoid one-dimensional rank reports.",
       "OpenSEO can expose ranking data to AI agents through MCP.",
     ],
-    featuredLink: {
-      title: "Free competitor keyword finder",
-      description:
-        "Find the keywords a competitor ranks for before choosing what to track. No signup required.",
-      href: "/competitor-keyword-finder",
+    headings: {
+      workflows: "Set up a tracker, add keywords, read the movement",
+      metrics: "What each check records",
+      useCases: "When to track rankings",
+      differentiators: "Why track where you research",
+      related: "Where to find keywords worth tracking",
+      faq: "Rank tracking questions",
     },
+    toolCallout: {
+      title: "Pick what to track before you pay to track it",
+      description: "Two free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free competitor keyword finder",
+          description:
+            "See up to 20 keywords a competitor ranks for, with search demand, difficulty and the pages that rank.",
+          href: "/competitor-keyword-finder",
+        },
+        {
+          title: "Free SERP simulator",
+          description:
+            "Holding a position but not getting clicks? Preview your title and description on desktop and mobile.",
+          href: "/serp-simulator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Schedules, limits and what a check costs",
+        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords, on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. 100 keywords on both devices, checked weekly, comes to about $2. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
+      },
+      {
+        title: "Track a city, not just a country",
+        body: 'A national rank says little to a plumber in Pittsburgh. Set a tracker to a city, county or region and every check reads the results a searcher there sees. Search volume switches to the local number too. "rv storage near me" gets about 135,000 searches a month nationally and about 70 in Pittsburgh, so a national figure on a local tracker overstates demand. Language is set per tracker, so you can track Spanish searches in the US next to English ones.',
+      },
+      {
+        title: "Why Search Console's average position isn't a rank",
+        body: "Search Console averages every impression across countries, devices and personalized results into one number. That number can hold steady while your result in the one market you sell to moves. A tracker checks a fixed country or city, on a fixed device, on a schedule, so a drop shows up as a drop. Use Search Console to find the keywords worth tracking, and the tracker to watch them.",
+      },
+    ],
+    contextImage: {
+      src: "/features/rank-tracking/openseo-rank-tracker-monthly-cost.png",
+      alt: "Grid of monthly rank tracking costs for 100, 250, 500 and 1,000 keywords checked on desktop and mobile at top 40. Monthly checks cost $0.50 to $4.99, weekly $2.00 to $19.97, daily $14.98 to $149.76. Every monthly cell, and weekly up to 500 keywords, fits inside the $10 of usage in the Base plan.",
+      caption:
+        "Monthly cost by keyword count and schedule, before retries. Most weekly trackers fit inside the Base plan's included usage.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Keyword Clustering", href: "/docs/skills/keyword-clustering" },
       {
@@ -682,6 +725,21 @@ export const featurePages = {
         question: "How should I choose keywords to track?",
         answer:
           "Start with keywords tied to important pages, active content work, and competitor opportunities discovered in keyword research.",
+      },
+      {
+        question: "How often does OpenSEO check rankings?",
+        answer:
+          "Daily, weekly or monthly, set per tracker, or only when you run a check yourself. Monthly checks run at the end of the month.",
+      },
+      {
+        question: "How much does rank tracking cost?",
+        answer:
+          "It depends on the number of keywords, devices, result depth and how often you check. 100 keywords on desktop and mobile, checked weekly, is about $2 a month. The app shows the monthly cost before you save a tracker, and checks draw from the usage included in your plan.",
+      },
+      {
+        question: "Can I track rankings in a specific city?",
+        answer:
+          "Yes. Pick a city, county or region when you set up the tracker. Positions come from that location's results, and search volume shows the local figure.",
       },
     ],
     guides: {
