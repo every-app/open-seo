@@ -66,6 +66,18 @@ This provisions the D1 database, KV namespaces, and R2 bucket, applies the datab
 
 If something fails, see Troubleshooting below.
 
+## Using your own domain
+
+The app is served at `https://open-seo-selfhost.<your-subdomain>.workers.dev` unless you name a hostname of your own in `.env.selfhost`:
+
+```
+BETTER_AUTH_URL=https://seo.example.com
+```
+
+Redeploy, and the hostname is attached to the Worker. Its zone has to be on the same Cloudflare account; the DNS record is created for you, and the certificate is issued a minute or two later.
+
+Set this before you create the administrator's account if you can. Sign-in works only on this origin, so changing it later signs everyone out, and MCP clients have to be re-added at the new `/mcp` URL. The workers.dev hostname keeps serving pages but can no longer sign anyone in.
+
 ## Giving teammates access
 
 Invite them from Team settings. The app copies an invitation link; the invited address creates its own account from that link and joins your workspace. There is no email delivery, so send the link yourself. Everyone works in one shared workspace and sees the same projects.

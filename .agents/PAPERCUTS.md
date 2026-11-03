@@ -10,6 +10,8 @@ data, or sensitive paths.
 
 ## Open
 
+- [ ] `2026-11-02T23:28:56Z` — `claude` — `pnpm alchemy login`, as step 2 of `docs/SELF_HOSTING_CLOUDFLARE.md` gives it, fails on a fresh self-host checkout with "Cannot find module '<repo>/alchemy.run.ts'" and a 15-line stack trace, because the entrypoint lives at `deploy/alchemy/alchemy.run.ts`. Working command: `pnpm alchemy login deploy/alchemy/alchemy.run.ts --env-file .env.selfhost`. Add an `alchemy:login` script that passes the entrypoint the way `deploy:selfhost` already does, or correct the documented command.
+
 - [ ] `2026-10-19T19:28:32Z` — `codex` — `pnpm cf-typegen` regenerates thousands of unrelated runtime types and changes `Env` inheritance, breaking existing Workflow fixtures and ambient bindings. Split binding generation from runtime updates so a new binding can be generated without an unrelated type migration; meanwhile declare new bindings in `src/env.d.ts`.
 
 - [ ] `2026-10-06T04:32:17Z` — `claude` — `npm --prefix web run types:check` (the web-content skill's final check) fails on a fresh worktree with only `web/` deps installed: `web/tsconfig.json` includes `**/*.ts`, so it type-checks `web/tests/free-tool-verification.spec.ts`, which imports the root-only `@playwright/test` and reports TS2307 plus a dozen implicit-any errors unrelated to the change. Add `@playwright/test` to `web` devDependencies or exclude that spec from `web/tsconfig.json`.

@@ -1,6 +1,5 @@
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as CfWorkers from "@distilled.cloud/cloudflare/workers";
 import * as ZeroTrust from "@distilled.cloud/cloudflare/zero-trust";
 import * as Config from "effect/Config";
 import * as Console from "effect/Console";
@@ -15,6 +14,7 @@ import {
   requireAllowedEmails,
   workerName,
 } from "./alchemy.access.ts";
+import { resolveAuthUrl, resolveWorkersSubdomain } from "./alchemy.authUrl.ts";
 
 // Preview hostnames are `open-seo-<stage>.<WORKERS_SUBDOMAIN>` — the naming
 // lives in alchemy.access.ts, shared with the Access wildcard the security
@@ -148,27 +148,6 @@ const optionalSecret = (name: string) =>
 
 const accessScopeHint =
   " (if this is a permissions error, re-run `pnpm alchemy login --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
-
-/**
- * The account's workers.dev subdomain (`<name>.workers.dev`): the configured
- * WORKERS_SUBDOMAIN when set, else one API read. Every worker hostname this
- * stack deploys derives from it.
- */
-const resolveWorkersSubdomain = (configured: string, scopeHint: string) =>
-  Effect.gen(function* () {
-    if (configured) return configured;
-    const { accountId } = yield* yield* Cloudflare.CloudflareEnvironment;
-    const observed = yield* CfWorkers.getSubdomain({ accountId }).pipe(
-      Effect.catch((error) =>
-        Effect.die(
-          new Error(
-            `Could not read the workers.dev subdomain: ${String(error)}${scopeHint}`,
-          ),
-        ),
-      ),
-    );
-    return `${observed.subdomain}.workers.dev`;
-  });
 
 /**
  * Self-host auth (AUTH_MODE=cloudflare_access): derive the Access values
@@ -334,38 +313,14 @@ export default Alchemy.Stack(
     }
     const workersSubdomain = yield* readWorkersSubdomain({ required: false });
 
-    // Auth needs an absolute BETTER_AUTH_URL. Prod sets it explicitly;
-    // previews always derive it from the deterministic worker name — a wrong
-    // WORKERS_SUBDOMAIN surfaces in CI's post-deploy Access verify step.
-    let authUrl: string;
-    if (prod) {
-      authUrl = yield* optionalVar("BETTER_AUTH_URL");
-      if (!authUrl) {
-        return yield* Effect.die(
-          new Error(
-            "Set BETTER_AUTH_URL (https://app.openseo.so) in the production workflow.",
-          ),
-        );
-      }
-    } else if (workersSubdomain) {
-      authUrl = `https://${workerName(stage)}.${workersSubdomain}`;
-    } else if (authMode === "password") {
-      // Password accounts need the real public URL (session cookies, the
-      // OAuth callbacks MCP clients use). The self-host env file sets no
-      // WORKERS_SUBDOMAIN, so read it from the account.
-      const subdomain = yield* resolveWorkersSubdomain(workersSubdomain, "");
-      authUrl = `https://${workerName(stage)}.${subdomain}`;
-    } else if (authMode === "hosted") {
-      return yield* Effect.die(
-        new Error(
-          "Hosted previews derive BETTER_AUTH_URL from WORKERS_SUBDOMAIN — set it to the account's full workers.dev subdomain (shown under Workers & Pages).",
-        ),
-      );
-    } else {
-      // local_noauth / cloudflare_access never read BETTER_AUTH_URL —
-      // src/lib/auth.ts uses a placeholder baseURL off the hosted path.
-      authUrl = "";
-    }
+    const explicitAuthUrl = yield* optionalVar("BETTER_AUTH_URL");
+    const { authUrl, selfHostDomain } = yield* resolveAuthUrl({
+      stage,
+      prod,
+      authMode,
+      workersSubdomain,
+      explicitAuthUrl,
+    });
 
     const access = yield* resolveSelfHostAccess(
       stage,
@@ -461,7 +416,13 @@ export default Alchemy.Stack(
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      // A self-host deploy serves BETTER_AUTH_URL's hostname the same way, so
+      // its zone must be on this account.
+      domain: prod
+        ? ["app.openseo.so", "www.app.openseo.so"]
+        : selfHostDomain
+          ? [selfHostDomain]
+          : undefined,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under

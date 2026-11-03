@@ -112,6 +112,12 @@ overrides:
 # that actually succeeded. Fixed upstream in 1.0.0-rc; drop on upgrade.
 patchedDependencies:
   "@distilled.cloud/cloudflare@0.28.2": patches/@distilled.cloud__cloudflare@0.28.2.patch
+  # A Worker custom domain's zone is looked up by listing the account's zones,
+  # but only the first page is read — so on an account with more zones than fit
+  # in one page the deploy fails with "Could not infer Cloudflare Zone" for a
+  # hostname whose zone is right there. Patched to query each candidate by
+  # exact name. Drop once alchemy fixes it upstream.
+  "alchemy@2.0.0-beta.61": patches/alchemy@2.0.0-beta.61.patch
 
 # Build scripts pnpm may run on install; it skips every other package's and
 # warns "Ignored build scripts". esbuild and workerd fetch their binaries.

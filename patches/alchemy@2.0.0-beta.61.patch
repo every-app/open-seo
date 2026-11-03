@@ -1,0 +1,73 @@
+diff --git a/lib/Cloudflare/Workers/WorkerProvider.js b/lib/Cloudflare/Workers/WorkerProvider.js
+index 5c4c4555cbbe92330341c470079addd7af5e94cb..14428b0929930d59aabeaafe5837e15f42571c0b 100644
+--- a/lib/Cloudflare/Workers/WorkerProvider.js
++++ b/lib/Cloudflare/Workers/WorkerProvider.js
+@@ -364,17 +364,22 @@ export const LiveWorkerProvider = () => Provider.effect(Worker, Effect.gen(funct
+         const cached = zoneCache.get(hostname);
+         if (cached)
+             return cached;
+-        const zoneList = yield* zones
+-            .listZones({})
+-            .pipe(Effect.map((response) => response.result ?? []));
+-        for (const zone of zoneList) {
+-            zoneCache.set(zone.name, zone.id);
+-        }
++        // Look each candidate up by exact name. Listing the account's zones
++        // returns only the first page, so on an account with more zones than
++        // fit in one page the lookup missed zones that do exist.
+         const parts = hostname.split(".");
+         for (let i = 0; i < parts.length - 1; i++) {
+             const candidate = parts.slice(i).join(".");
+-            const match = zoneList.find((z) => z.name === candidate);
++            const cachedCandidate = zoneCache.get(candidate);
++            if (cachedCandidate) {
++                zoneCache.set(hostname, cachedCandidate);
++                return cachedCandidate;
++            }
++            const match = yield* zones
++                .listZones({ name: candidate, perPage: 50 })
++                .pipe(Effect.map((response) => (response.result ?? []).find((z) => z.name === candidate)));
+             if (match) {
++                zoneCache.set(candidate, match.id);
+                 zoneCache.set(hostname, match.id);
+                 return match.id;
+             }
+diff --git a/src/Cloudflare/Workers/WorkerProvider.ts b/src/Cloudflare/Workers/WorkerProvider.ts
+index ac4b5508499e089a7a7a4b92fb3a5159a634e49d..025fb2639832be244dbed6266eecc719f4531cd3 100644
+--- a/src/Cloudflare/Workers/WorkerProvider.ts
++++ b/src/Cloudflare/Workers/WorkerProvider.ts
+@@ -511,18 +511,26 @@ export const LiveWorkerProvider = () =>
+           const cached = zoneCache.get(hostname);
+           if (cached) return cached;
+ 
+-          const zoneList = yield* zones
+-            .listZones({})
+-            .pipe(Effect.map((response) => response.result ?? []));
+-          for (const zone of zoneList) {
+-            zoneCache.set(zone.name, zone.id);
+-          }
+-
++          // Look each candidate up by exact name. Listing the account's zones
++          // returns only the first page, so on an account with more zones
++          // than fit in one page the lookup missed zones that do exist.
+           const parts = hostname.split(".");
+           for (let i = 0; i < parts.length - 1; i++) {
+             const candidate = parts.slice(i).join(".");
+-            const match = zoneList.find((z) => z.name === candidate);
++            const cachedCandidate = zoneCache.get(candidate);
++            if (cachedCandidate) {
++              zoneCache.set(hostname, cachedCandidate);
++              return cachedCandidate;
++            }
++            const match = yield* zones
++              .listZones({ name: candidate, perPage: 50 })
++              .pipe(
++                Effect.map((response) =>
++                  (response.result ?? []).find((z) => z.name === candidate),
++                ),
++              );
+             if (match) {
++              zoneCache.set(candidate, match.id);
+               zoneCache.set(hostname, match.id);
+               return match.id;
+             }
