@@ -1,7 +1,13 @@
 import { Sparkles } from "lucide-react";
 import { Badge } from "@/client/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
 import { exportRows } from "@/client/lib/exportRows";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { isGoogleRedirect } from "@/shared/google-serp-url";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 import type {
   RankTrackingDeviceResult,
@@ -118,9 +124,30 @@ export function DeviceUrlCell({
   if (!result.rankingUrl) {
     return <span className="text-xs text-muted-foreground">-</span>;
   }
+  const href = toFullUrl(result.rankingUrl, domain);
+  // Until a run resolves them, Google's goto links have no useful path to show.
+  if (isGoogleRedirect(result.rankingUrl)) {
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-fit text-xs underline"
+            />
+          }
+        >
+          View page
+        </TooltipTrigger>
+        <TooltipContent>Google hid this page's address.</TooltipContent>
+      </Tooltip>
+    );
+  }
   return (
     <a
-      href={toFullUrl(result.rankingUrl, domain)}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className="block truncate text-xs hover:underline"

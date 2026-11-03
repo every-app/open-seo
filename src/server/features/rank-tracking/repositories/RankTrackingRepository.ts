@@ -39,6 +39,7 @@ import {
   getActiveRunForConfig,
   insertSnapshots,
   upsertSnapshots,
+  updateSnapshotUrls,
   deleteNotFoundSnapshots,
   getSnapshotsForRun,
 } from "./runQueries";
@@ -439,6 +440,7 @@ export const RankTrackingRepository = {
   getActiveRunForConfig,
   insertSnapshots,
   upsertSnapshots,
+  updateSnapshotUrls,
   deleteNotFoundSnapshots,
   getSnapshotsForRun,
   getKeywordsForConfig,

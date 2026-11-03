@@ -14,6 +14,7 @@ import {
   runQueuedCheck,
 } from "@/server/workflows/rankCheckPaths";
 import { retryRankChecks } from "@/server/workflows/rankCheckRetries";
+import { resolveRunGotoUrls } from "@/server/workflows/rankCheckGotoUrls";
 import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -426,6 +427,18 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         // persisted incrementally. Continue to finalization.
         batchError = error instanceof Error ? error.message : String(error);
         console.warn(`[rank-check] ${runId} partial failure: ${batchError}`);
+      }
+
+      try {
+        await pgStep(step, "resolve-goto-urls", FREE_STEP_CONFIG, () =>
+          resolveRunGotoUrls(runId),
+        );
+      } catch (error) {
+        // The positions are saved and the goto links still work, so this
+        // doesn't fail the run.
+        console.warn(
+          `[rank-check] ${runId} goto URLs not resolved: ${describeError(error)}`,
+        );
       }
 
       await pgStep(step, "finalize", FREE_STEP_CONFIG, async () =>
