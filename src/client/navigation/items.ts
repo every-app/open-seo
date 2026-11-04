@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   FileText,
   Globe,
+  Bell,
   LayoutDashboard,
   Link2,
   MapPin,
@@ -44,6 +45,11 @@ const projectNavItems = [
     to: "/p/$projectId/local-seo" as const,
     label: "Local SEO",
     icon: MapPin,
+  },
+  {
+    to: "/p/$projectId/notifications" as const,
+    label: "Notifications",
+    icon: Bell,
   },
   {
     to: "/p/$projectId/search-performance" as const,
@@ -152,6 +158,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/local-seo"),
+        byPath("/p/$projectId/notifications"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
       ],

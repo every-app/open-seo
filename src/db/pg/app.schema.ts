@@ -512,5 +512,71 @@ export const crawlerCredentials = pgTable(
   ],
 );
 
+export const notificationChannels = pgTable(
+  "notification_channels",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    provider: text("provider", { enum: ["slack", "teams"] }).notNull(),
+    webhookCiphertext: text("webhook_ciphertext").notNull(),
+    webhookHost: text("webhook_host").notNull(),
+    createdAt: timestampColumn("created_at").notNull().default(isoNow),
+    updatedAt: timestampColumn("updated_at").notNull().default(isoNow),
+  },
+  (table) => [
+    index("notification_channels_project_idx").on(
+      table.projectId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const notificationRules = pgTable(
+  "notification_rules",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => notificationChannels.id, { onDelete: "cascade" }),
+    ruleType: text("rule_type", { enum: ["rank_position_change"] }).notNull(),
+    rankConfigId: text("rank_config_id").references(() => rankTrackingConfigs.id, {
+      onDelete: "cascade",
+    }),
+    positionThreshold: integer("position_threshold").notNull().default(3),
+    weeklySummary: boolean("weekly_summary").notNull().default(false),
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: timestampColumn("created_at").notNull().default(isoNow),
+    updatedAt: timestampColumn("updated_at").notNull().default(isoNow),
+  },
+  (table) => [
+    index("notification_rules_project_idx").on(table.projectId, table.enabled),
+    index("notification_rules_config_idx").on(table.rankConfigId),
+  ],
+);
+
+export const notificationDeliveries = pgTable(
+  "notification_deliveries",
+  {
+    id: text("id").primaryKey(),
+    ruleId: text("rule_id")
+      .notNull()
+      .references(() => notificationRules.id, { onDelete: "cascade" }),
+    runId: text("run_id").notNull(),
+    deliveredAt: timestampColumn("delivered_at").notNull().default(isoNow),
+  },
+  (table) => [
+    uniqueIndex("notification_deliveries_rule_run_idx").on(
+      table.ruleId,
+      table.runId,
+    ),
+  ],
+);
+
 // Cross-request refresh claims survive Worker instances and prevent duplicate spend.
 export { dataRefreshClaims } from "./dashboard.schema";
