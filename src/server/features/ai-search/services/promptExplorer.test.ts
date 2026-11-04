@@ -173,7 +173,7 @@ describe("Prompt Explorer countries", () => {
     );
   });
 
-  it("runs supported models and identifies skipped models without spending on them", async () => {
+  it("skips a model that doesn't list the country without spending on it, and runs Gemini without one", async () => {
     const result = await explorePrompt(
       promptExplorerInputSchema.parse(input),
       billing,
@@ -181,10 +181,16 @@ describe("Prompt Explorer countries", () => {
     expect(result.results).toMatchObject([
       { model: "chat_gpt", status: "success", webSearchCountryCode: "BG" },
       { model: "claude", status: "error", errorCode: "UNSUPPORTED_COUNTRY" },
-      { model: "gemini", status: "error", errorCode: "UNSUPPORTED_COUNTRY" },
+      { model: "gemini", status: "success", webSearchCountryCode: null },
       { model: "perplexity", status: "success", webSearchCountryCode: "BG" },
     ]);
-    expect(llmResponse).toHaveBeenCalledTimes(2);
+    expect(llmResponse).toHaveBeenCalledTimes(3);
+    expect(llmResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        modelSlug: "gemini",
+        webSearchCountryCode: undefined,
+      }),
+    );
   });
 
   it.each([false, true])(

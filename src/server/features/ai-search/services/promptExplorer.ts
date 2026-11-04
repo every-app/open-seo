@@ -15,7 +15,10 @@ import {
   formatCountryLabel,
   formatModelLabel,
 } from "@/shared/prompt-explorer-labels";
-import { supportsWebSearchCountry } from "@/shared/prompt-search-countries";
+import {
+  ignoresWebSearchCountry,
+  supportsWebSearchCountry,
+} from "@/shared/prompt-search-countries";
 import { safeHostname, safeHttpUrl } from "@/shared/safe-url";
 import {
   promptExplorerModelResultSchema,
@@ -104,20 +107,17 @@ type RunModelArgs = {
 async function runModel(
   args: RunModelArgs,
 ): Promise<PromptExplorerModelResult> {
-  const country = args.input.webSearch
-    ? args.input.webSearchCountryCode
-    : undefined;
+  const country =
+    args.input.webSearch && !ignoresWebSearchCountry(args.model)
+      ? args.input.webSearchCountryCode
+      : undefined;
   if (country && !supportsWebSearchCountry(args.model, country)) {
     const modelLabel = formatModelLabel(args.model);
-    const limitation =
-      args.model === "gemini"
-        ? `${modelLabel} doesn’t support country selection.`
-        : `${modelLabel} doesn’t support ${formatCountryLabel(country)} as a search country.`;
     return {
       status: "error",
       model: args.model,
       errorCode: "UNSUPPORTED_COUNTRY",
-      message: `${limitation} Select “No country preference” above, then run again to include ${modelLabel}.`,
+      message: `${modelLabel} doesn’t support ${formatCountryLabel(country)} as a search country. Select “No country preference” above, then run again to include ${modelLabel}.`,
     };
   }
   // Part of the cache key so a model upgrade refetches rather than serving
@@ -147,7 +147,7 @@ async function runModel(
     return reapplyHighlightBrand(cached.data, args.highlightBrand);
   }
 
-  let rawResponse = await fetchModelResponse(args, modelName);
+  let rawResponse = await fetchModelResponse(args, modelName, country);
   // `web_search: true` only permits searching; models the upstream can't
   // force (Claude is the only one that accepts `force_web_search` — see
   // dataforseo/ai.ts) regularly answer from memory and return zero citations
@@ -156,13 +156,15 @@ async function runModel(
   // odds of a cited answer; keep the retry only if it actually searched.
   // A failed retry keeps the first answer, which is already paid for.
   if (args.input.webSearch && !rawResponse.web_search) {
-    const retried = await fetchModelResponse(args, modelName).catch((err) => {
-      console.error(
-        `ai-search.prompt-response.${args.model}.retry failed:`,
-        err,
-      );
-      return null;
-    });
+    const retried = await fetchModelResponse(args, modelName, country).catch(
+      (err) => {
+        console.error(
+          `ai-search.prompt-response.${args.model}.retry failed:`,
+          err,
+        );
+        return null;
+      },
+    );
     if (retried?.web_search) rawResponse = retried;
   }
   const shaped = {
@@ -184,13 +186,14 @@ async function runModel(
 function fetchModelResponse(
   args: RunModelArgs,
   modelName: string,
+  country: string | undefined,
 ): Promise<LlmResponseResult> {
   return args.dataforseo.aiSearch.llmResponse({
     modelSlug: args.model,
     modelName,
     userPrompt: args.input.prompt,
     webSearch: args.input.webSearch,
-    webSearchCountryCode: args.input.webSearchCountryCode,
+    webSearchCountryCode: country,
     maxOutputTokens: PROMPT_RESPONSE_MAX_TOKENS,
   });
 }

@@ -31,40 +31,87 @@ import {
   type LocalTrackerRow,
 } from "../repositories/LocalSeoRepository";
 import { finalizeLocalCheck, localPointSearch } from "./localSeoCollection";
+import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { startWorkflow } from "@/server/lib/startWorkflow";
 
-const profileSchema = z.object({
+// A Google Maps result. Ads and results without coordinates fail the parse
+// and are left out.
+const mapsListingSchema = z.object({
+  type: z.literal("maps_search"),
   title: z.string(),
   cid: z.string().nullish(),
   place_id: z.string().nullish(),
   address: z.string().nullish(),
   latitude: z.number(),
   longitude: z.number(),
+  category: z.string().nullish(),
+  rating: z
+    .object({
+      value: z.number().nullish(),
+      votes_count: z.number().nullish(),
+    })
+    .nullish(),
 });
 
+const LISTING_RESULTS = 20;
+const STARTER_KEYWORDS = 5;
+
+/** Up to five starter keywords: the project's top rank-tracking keywords,
+ *  then the listing's primary Google category in any slots left. Additional
+ *  categories are left out: owners list loosely related ones ("band",
+ *  "art studio"). */
+function starterKeywords(
+  tracked: string[],
+  category: string | null | undefined,
+) {
+  const keyword = category?.trim().toLowerCase();
+  const fromCategory = keyword ? [keyword, `${keyword} near me`] : [];
+  return [...new Set([...tracked, ...fromCategory])].slice(0, STARTER_KEYWORDS);
+}
+
+/** The Google Maps listings matching a business name in a city, so the user
+ *  can pick their branch of a chain. */
 async function lookupBusiness(
+  projectId: string,
   query: string,
-  market: { locationCode: number; languageCode: string },
+  locationName: string,
+  languageCode: string,
   customer: BillingCustomerContext,
 ) {
-  const profile = await createDataforseoClient(
-    customer,
-  ).business.myBusinessInfo({ keyword: query, ...market });
-  if (!profile) return null;
-  const parsed = profileSchema.safeParse(profile);
-  if (!parsed.success)
-    throw new AppError(
-      "UPSTREAM_UNAVAILABLE",
-      "This listing did not include usable map coordinates. Try its business name and full address.",
-    );
-  const row = parsed.data;
-  return localBusinessSchema.parse({
-    title: row.title,
-    cid: row.cid ?? null,
-    placeId: row.place_id ?? null,
-    address: row.address ?? null,
-    latitude: row.latitude,
-    longitude: row.longitude,
+  const [items, trackedKeywords] = await Promise.all([
+    createDataforseoClient(customer).serp.local({
+      keyword: query,
+      locationName,
+      languageCode,
+      searchType: "maps",
+      device: "desktop",
+      depth: LISTING_RESULTS,
+    }),
+    RankTrackingRepository.getTopKeywordsForProject(
+      projectId,
+      STARTER_KEYWORDS,
+    ),
+  ]);
+  return items.flatMap((item) => {
+    const parsed = mapsListingSchema.safeParse(item);
+    if (!parsed.success) return [];
+    const row = parsed.data;
+    return [
+      {
+        business: localBusinessSchema.parse({
+          title: row.title,
+          cid: row.cid ?? null,
+          placeId: row.place_id ?? null,
+          address: row.address ?? null,
+          latitude: row.latitude,
+          longitude: row.longitude,
+        }),
+        category: row.category ?? null,
+        rating: row.rating?.value ?? null,
+        reviews: row.rating?.votes_count ?? null,
+        suggestedKeywords: starterKeywords(trackedKeywords, row.category),
+      },
+    ];
   });
 }
 

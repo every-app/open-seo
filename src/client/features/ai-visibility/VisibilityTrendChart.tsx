@@ -57,13 +57,9 @@ export function VisibilityTrendChart({ trend }: { trend: AiTrend }) {
     >
       <LineChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
         <ChartGrid />
-        <ChartXAxis
-          dataKey="time"
-          type="number"
-          scale="time"
-          domain={[start, Date.parse(trend.current.end)]}
-          tickFormatter={shortDate}
-        />
+        {/* Evenly spaced and centered, so a few runs fill the chart instead of
+            crowding the end of the selected period. */}
+        <ChartXAxis dataKey="time" scale="band" tickFormatter={shortDate} />
         <ChartYAxis
           domain={[0, 100]}
           ticks={[0, 25, 50, 75, 100]}

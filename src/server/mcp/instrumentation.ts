@@ -166,15 +166,16 @@ export function instrumentMcpToolHandler<TArgs>(
                   : undefined,
             },
       );
-      // Dashboard activation milestone: a successful call from an external
-      // MCP client (OAuth clientId; SAM and the self-hosted transport are
-      // first-party with clientId null). Awaited so the write stays inside
+      // Activation milestone for the dashboard and the onboarding emails: a
+      // successful call from an external MCP client (OAuth clientId or API
+      // key; SAM and the self-hosted transport are first-party with clientId
+      // null). Awaited so the write stays inside
       // the request's DB scope; a per-isolate memo keeps this off the hot
       // path after the first call.
       if (succeeded) {
         const auth = context.auth;
         if (auth.clientId) {
-          await recordExternalMcpToolCall(auth.organizationId);
+          await recordExternalMcpToolCall(auth);
         }
       }
       return result;

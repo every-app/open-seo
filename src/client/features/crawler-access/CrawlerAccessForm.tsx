@@ -15,22 +15,32 @@ export const crawlerCredentialsQueryKey = ["crawler-credentials"];
 export const saveCrawlerCredentialMutationKey = ["save-crawler-credential"];
 
 /**
- * On Every App, CRAWLER_ACCESS_SECRET is optional, so the form and the Shopify
- * crawl warning say how to set it instead of failing on save.
+ * CRAWLER_ACCESS_SECRET is optional on Every App and on self-hosts, so the form
+ * and the Shopify crawl warning say how to set it instead of failing on save.
  */
 export function CrawlerAccessSetupHint() {
+  if (isEveryAppClientAuthMode()) {
+    return (
+      <>
+        An admin sets <code>CRAWLER_ACCESS_SECRET</code> with{" "}
+        <code>
+          pnpm everyapp secret set CRAWLER_ACCESS_SECRET --app openseo
+        </code>
+        .
+      </>
+    );
+  }
   return (
     <>
-      An admin sets <code>CRAWLER_ACCESS_SECRET</code> with{" "}
-      <code>pnpm everyapp secret set CRAWLER_ACCESS_SECRET --app openseo</code>.
+      An admin sets <code>CRAWLER_ACCESS_SECRET</code> to at least 32 random
+      characters in the deployment's environment, then redeploys.
     </>
   );
 }
 
-/** Whether to show the setup hint: only behind Every App, once known. */
+/** Whether to show the setup hint, once the server has said. */
 export function useCrawlerAccessNeedsSetup(projectId: string) {
-  const canStore = useAuditCapabilities(projectId).data?.canStoreCrawlerAccess;
-  return isEveryAppClientAuthMode() && canStore === false;
+  return useAuditCapabilities(projectId).data?.canStoreCrawlerAccess === false;
 }
 
 const signatureSchema = z.object({

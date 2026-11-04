@@ -4,6 +4,7 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { projectWebSearchCountry } from "@/shared/prompt-search-countries";
 import {
   promptExplorerInputSchema,
   promptExplorerModelResultSchema,
@@ -26,7 +27,7 @@ const inputSchema = promptExplorerInputSchema.extend({
   ),
   webSearchCountryCode:
     promptExplorerInputSchema.shape.webSearchCountryCode.describe(
-      "Optional two-letter web-search country code. Omit for no country preference. Gemini does not support country selection; unsupported model/country combinations return per-model errors without a paid call.",
+      "Optional two-letter web-search country code. Omit to use the project's country, or no country preference when a selected model cannot use it. Gemini always answers without a country. A country you name returns per-model errors for other models that cannot use it, without a paid call.",
     ),
 });
 
@@ -63,7 +64,13 @@ export const explorePromptTool = {
     async (args: z.infer<typeof inputSchema>, context) => {
       const { explorePrompt } =
         await import("@/server/features/ai-search/services/promptExplorer");
-      const result = await explorePrompt(args, context.billing);
+      const webSearchCountryCode =
+        args.webSearchCountryCode ??
+        projectWebSearchCountry(context.project.locationCode, args.models);
+      const result = await explorePrompt(
+        { ...args, webSearchCountryCode },
+        context.billing,
+      );
       const meta = buildProjectMeta(
         context,
         args.projectId,
@@ -72,7 +79,7 @@ export const explorePromptTool = {
           q: args.prompt,
           models: JSON.stringify(args.models),
           web: String(args.webSearch),
-          cc: args.webSearchCountryCode ?? "default",
+          cc: webSearchCountryCode ?? "default",
           hb: args.highlightBrand,
         },
       );

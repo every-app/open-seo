@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   integrationFetch: vi.fn(),
   connectUrl: vi.fn(),
   env: {} as Record<string, unknown>,
+  /** What `gatewayCallFor()` answers: the served request. */
+  served: new Request("https://openseo.example.com/"),
 }));
 
 vi.mock("@every-app/sdk/server", () => ({
@@ -12,6 +14,10 @@ vi.mock("@every-app/sdk/server", () => ({
   integrationStatus: mocks.integrationStatus,
   integrationFetch: mocks.integrationFetch,
   connectUrl: mocks.connectUrl,
+}));
+vi.mock("@/server/lib/gateway-attribution", () => ({
+  gatewayCallFor: () => mocks.served,
+  gatewayCallForUser: (userId: string) => ({ background: true, userId }),
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   getWorkersEnv: async () => mocks.env,
@@ -27,8 +33,6 @@ import {
 } from "./gatewayGoogle";
 import { isGatewayGoogleAvailable } from "./googleAccess";
 
-const organization = { background: true } as const;
-
 describe("Google through the Every App gateway", () => {
   beforeEach(() => {
     mocks.env.AUTH_MODE = "everyapp";
@@ -38,7 +42,7 @@ describe("Google through the Every App gateway", () => {
     for (const key of Object.keys(mocks.env)) delete mocks.env[key];
   });
 
-  it("asks the gateway for the organization's google-workspace connection", async () => {
+  it("asks the gateway for the served member's google-workspace connection", async () => {
     mocks.integrationStatus.mockResolvedValue({
       requested: true,
       configured: true,
@@ -46,21 +50,19 @@ describe("Google through the Every App gateway", () => {
       flow: "both",
       connectPath: "/connect/google-workspace",
       connection: {
-        account: "user",
         label: "ben@example.com",
-        scopeSets: ["identity", "search-console.read", "analytics.read"],
         ready: true,
       },
     });
 
     const status = await getGatewayGoogleStatus();
 
-    // The organization's connection, whoever is asking: everyone shares
-    // one OpenSEO workspace.
+    // The member's own connection to OpenSEO: there is no organization
+    // connection any more.
     expect(mocks.integrationStatus).toHaveBeenCalledWith({
       env: mocks.env,
       provider: GATEWAY_GOOGLE_PROVIDER,
-      for: organization,
+      for: mocks.served,
     });
     expect(status).toEqual({
       available: true,
@@ -87,15 +89,13 @@ describe("Google through the Every App gateway", () => {
     });
   });
 
-  it("asks to reconnect when the connection lacks a set or expired", async () => {
+  it("asks to reconnect when the connection expired or was revoked", async () => {
     mocks.integrationStatus.mockResolvedValue({
       requested: true,
       configured: true,
       ready: true,
       connection: {
-        account: "user",
         label: "ben@example.com",
-        scopeSets: ["identity"],
         ready: false,
         reconnect: true,
       },
@@ -126,18 +126,19 @@ describe("Google through the Every App gateway", () => {
     });
 
     expect((await getGatewayGoogleStatus()).available).toBe(false);
-    expect(await getGatewayGoogleFetch()).toBeNull();
+    expect(await getGatewayGoogleFetch("u1")).toBeNull();
   });
 
-  it("hands out the gateway's fetch on the organization's connection", async () => {
+  it("hands out the gateway's fetch on the named member's connection", async () => {
     const gatewayFetch = vi.fn();
     mocks.integrationFetch.mockReturnValue(gatewayFetch);
 
-    expect(await getGatewayGoogleFetch()).toBe(gatewayFetch);
+    // A project's reads name the member who connected its property.
+    expect(await getGatewayGoogleFetch("u_connector")).toBe(gatewayFetch);
     expect(mocks.integrationFetch).toHaveBeenCalledWith({
       env: mocks.env,
       provider: GATEWAY_GOOGLE_PROVIDER,
-      for: organization,
+      for: { background: true, userId: "u_connector" },
     });
   });
 
@@ -154,7 +155,6 @@ describe("Google through the Every App gateway", () => {
       env: mocks.env,
       provider: GATEWAY_GOOGLE_PROVIDER,
       returnTo: "https://open-seo.example.com/integrations",
-      account: "organization",
     });
     expect(url).toContain("/connect/google-workspace");
   });

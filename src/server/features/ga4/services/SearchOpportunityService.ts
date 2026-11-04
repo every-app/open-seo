@@ -151,7 +151,11 @@ async function getOpportunities(
   for (const row of ga4.rows) {
     const host = typeof row.hostName === "string" ? row.hostName : "";
     const landing = typeof row.landingPage === "string" ? row.landingPage : "";
-    const key = normalizePageKey(`${host}${landing}`);
+    // GA4 reports a session with no landing page as "" or "(not set)". Joined
+    // to the hostname alone it would read as the homepage.
+    const key = landing.startsWith("/")
+      ? normalizePageKey(`${host}${landing}`)
+      : null;
     if (!key) {
       invalidGa4Rows += 1;
       continue;
@@ -281,10 +285,18 @@ async function getOpportunities(
       ga4: ga4.totalRowCount > ga4.rows.length,
       candidates: returned.length < candidates.length,
     },
-    warnings:
-      ga4.request.propertyTimeZone === "America/Los_Angeles"
-        ? ga4.warnings
-        : [...ga4.warnings, "source_time_zones_differ"],
+    warnings: [
+      ...ga4.warnings,
+      ...(ga4.request.propertyTimeZone === "America/Los_Angeles"
+        ? []
+        : ["source_time_zones_differ"]),
+      // Search Console has pages but GA4 recorded no organic landing pages at
+      // all, which is usually a property that started collecting after this
+      // window, not a URL-matching problem.
+      ...(ga4.rows.length === 0 && candidates.length > 0
+        ? ["ga4_no_organic_landing_pages"]
+        : []),
+    ],
     reportMetadata: ga4.reportMetadata,
     quota: ga4.quota,
   };

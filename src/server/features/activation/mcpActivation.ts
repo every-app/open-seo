@@ -1,5 +1,6 @@
 import { waitUntil } from "cloudflare:workers";
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
+import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import { captureServerEvent } from "@/server/lib/posthog";
 
 // Orgs whose activation milestones are already recorded (or in flight) in
@@ -29,18 +30,50 @@ export async function recordMcpAuthorized(
   }
 }
 
-export async function recordExternalMcpToolCall(
-  organizationId: string,
-): Promise<void> {
-  if (recordedToolCallOrgs.has(organizationId)) return;
-  recordedToolCallOrgs.add(organizationId);
+export async function recordExternalMcpToolCall(caller: {
+  userId: string;
+  userEmail: string;
+  organizationId: string;
+}): Promise<void> {
+  if (recordedToolCallOrgs.has(caller.organizationId)) return;
+  recordedToolCallOrgs.add(caller.organizationId);
+  let first: boolean;
   try {
-    await ActivationRepository.recordFirstMcpToolCall(organizationId);
+    first = await ActivationRepository.recordFirstMcpToolCall(
+      caller.organizationId,
+    );
   } catch (error) {
     // Allow a retry on a later call rather than losing the milestone.
-    recordedToolCallOrgs.delete(organizationId);
+    recordedToolCallOrgs.delete(caller.organizationId);
     console.error("activation: recordExternalMcpToolCall failed", error);
+    return;
   }
+  // Sent from the organization's first call only, not per isolate: Loops
+  // rate-limits the whole team.
+  if (first) await markOnboardingMilestone(caller, "mcpToolCalled");
+}
+
+/**
+ * Tells the onboarding emails that a user connected an agent (OAuth consent
+ * or a new API key), and which chat app it runs in. Whether OpenSEO has been
+ * used from an agent is per workspace, so connecting in a workspace that
+ * already has counts as used: a teammate who joins later isn't asked to try
+ * their agent. Best-effort like the milestones above.
+ */
+export async function markMcpConnected(
+  user: { userId: string; userEmail: string; organizationId: string },
+  agentProvider?: "claude" | "chatgpt",
+): Promise<void> {
+  const activation = await ActivationRepository.getOrganizationActivation(
+    user.organizationId,
+  ).catch((error: unknown) => {
+    console.error("activation: markMcpConnected lookup failed", error);
+    return null;
+  });
+  await markOnboardingMilestone(user, "mcpConnected", {
+    agentProvider,
+    mcpToolCalled: activation?.firstMcpToolCallAt ? true : undefined,
+  });
 }
 
 /**

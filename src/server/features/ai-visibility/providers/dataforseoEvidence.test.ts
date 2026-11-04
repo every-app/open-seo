@@ -33,6 +33,20 @@ describe("DataForSEO answer evidence", () => {
     });
   });
 
+  it("removes NUL characters, which Postgres text columns reject", () => {
+    const result = parseDataforseoAnswer(
+      {
+        markdown: "Open\0SEO",
+        sources: [{ url: "https://openseo.so/", title: "Open\0SEO" }],
+      },
+      "chatgpt",
+    );
+    expect(result).toMatchObject({
+      answerMarkdown: "OpenSEO",
+      citations: [{ title: "OpenSEO" }],
+    });
+  });
+
   it("reads every Google AI Overview reference as a citation", () => {
     const result = parseDataforseoAnswer(
       {

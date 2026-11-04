@@ -32,6 +32,11 @@ export function classifyAccessVerificationError(error: unknown): AppError {
     error instanceof joseErrors.JWKSNoMatchingKey ||
     error instanceof joseErrors.JWKSInvalid ||
     error instanceof joseErrors.JWKSTimeout ||
+    // jose throws a bare JOSEError only from the remote JWKS fetch: a non-200
+    // (a TEAM_DOMAIN naming a team that doesn't exist returns 404) or a body
+    // that isn't JSON.
+    (error instanceof joseErrors.JOSEError &&
+      error.code === joseErrors.JOSEError.code) ||
     // The caller only classifies errors thrown by jwtVerify itself, so a
     // non-jose error can only come from the remote JWKS fetch (TypeError in
     // browsers/node, plain Error like "Network connection lost" in workerd).

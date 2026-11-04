@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DomainService } from "@/server/features/domain/services/DomainService";
+import { recordResearchStep } from "@/server/features/activation/researchActivation";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
@@ -90,6 +91,7 @@ export const getDomainOverviewTool = {
       },
       context.billing,
     );
+    await recordResearchStep(args.projectId, "competitor");
     const text = [
       `Target: ${result.displayTarget} (scope: ${result.scope})`,
       `Organic traffic: ${result.organicTraffic ?? "?"}`,

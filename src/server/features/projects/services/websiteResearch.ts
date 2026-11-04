@@ -31,7 +31,11 @@ import {
   WEBSITE_UNREADABLE_MESSAGE,
   websiteResearchSchema,
 } from "@/types/schemas/projectWebsite";
-import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
+import { generatedAiTopicSchema } from "@/types/schemas/aiPromptSuggestions";
+import {
+  normalizeAiSuggestion,
+  toTopicName,
+} from "@/shared/ai-prompt-suggestions";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
 import { AiVisibilityRepository } from "@/server/features/ai-visibility/repositories/AiVisibilityRepository";
 
@@ -54,6 +58,12 @@ async function retryInvalidOutput<T>(
     try {
       return await generate(abortSignal);
     } catch (error) {
+      // The deadline aborts mid-request with a bare TimeoutError.
+      if (abortSignal.aborted)
+        throw new AppError(
+          "INTERNAL_ERROR",
+          "Website research took too long. Please try again.",
+        );
       if (
         attempt === OUTPUT_RETRIES ||
         !NoObjectGeneratedError.isInstance(error)
@@ -140,8 +150,7 @@ export async function researchWebsite(
       : {}),
     ...(missingTopics
       ? {
-          suggestedTopics:
-            websiteResearchSchema.shape.suggestedTopics.length(5),
+          suggestedTopics: z.array(generatedAiTopicSchema).length(5),
           // Checked after generation, so a malformed extra keyword is dropped
           // instead of failing a run that is already billed.
           suggestedKeywords: z.array(z.string()),
@@ -328,11 +337,11 @@ export async function researchWebsite(
               }),
             }
           : undefined,
-        onStepFinish: (step) => {
+        onStepFinish: async (step) => {
           spend.push({
             provider: "openrouter",
             creditFeature: "agent",
-            costUsd: requireOpenRouterCostUsd(step.providerMetadata),
+            costUsd: await requireOpenRouterCostUsd(step.providerMetadata),
             operation: "project_website_research",
           });
         },
@@ -345,6 +354,13 @@ export async function researchWebsite(
     const research = websiteResearchSchema.parse({
       ...preserved,
       ...output,
+      suggestedTopics: z
+        .array(generatedAiTopicSchema)
+        .parse(output.suggestedTopics ?? [])
+        .map((topic) => ({
+          ...topic,
+          name: toTopicName(topic.name),
+        })),
       // Without live search, competitors can't be verified. The review starts
       // with none so the user can add them instead of losing a paid run.
       ...(searchOutage ? { competitors: [] } : {}),
@@ -357,42 +373,42 @@ export async function researchWebsite(
         )
         .slice(0, MAX_SUGGESTED_KEYWORDS),
     });
-    const topicNames = research.suggestedTopics.map((topic) =>
-      normalizeAiSuggestion(topic.name),
-    );
-    const promptTexts = research.suggestedTopics.flatMap((topic) =>
-      topic.prompts.map(normalizeAiSuggestion),
-    );
-    if (
-      new Set(topicNames).size !== topicNames.length ||
-      new Set(promptTexts).size !== promptTexts.length
-    )
-      throw new AppError(
-        "INTERNAL_ERROR",
-        "Website research returned duplicate tracking suggestions. Please try again.",
-      );
+    // Recover from a weak suggestion instead of failing a run that is already
+    // billed: drop a topic that repeats a name or prompt, and a competitor that
+    // the pages read during this run don't verify.
+    const topicNames = new Set<string>();
+    const promptTexts = new Set<string>();
+    research.suggestedTopics = research.suggestedTopics.filter((topic) => {
+      const name = normalizeAiSuggestion(topic.name);
+      const prompts = topic.prompts.map(normalizeAiSuggestion);
+      if (
+        topicNames.has(name) ||
+        new Set(prompts).size !== prompts.length ||
+        prompts.some((prompt) => promptTexts.has(prompt))
+      )
+        return false;
+      topicNames.add(name);
+      for (const prompt of prompts) promptTexts.add(prompt);
+      return true;
+    });
     if (missingCompetitors && !searchSucceeded && !searchOutage)
       throw new AppError(
         "INTERNAL_ERROR",
         "Website research was incomplete. Please try again.",
       );
-    for (const competitor of research.competitors) {
+    research.competitors = research.competitors.filter((competitor) => {
       competitor.domain = normalizeBacklinksTarget(competitor.domain, {
         scope: "domain",
       }).apiTarget;
       const sourceDomain = normalizeBacklinksTarget(competitor.sourceUrl, {
         scope: "domain",
       }).apiTarget;
-      if (
-        !sources.has(competitor.sourceUrl) ||
-        sourceDomain !== competitor.domain ||
-        competitor.domain === domain
-      )
-        throw new AppError(
-          "INTERNAL_ERROR",
-          "A competitor could not be verified. Please try again.",
-        );
-    }
+      return (
+        sources.has(competitor.sourceUrl) &&
+        sourceDomain === competitor.domain &&
+        competitor.domain !== domain
+      );
+    });
     return research;
   } finally {
     if (contextUsage.contextCredits > 0)

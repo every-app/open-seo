@@ -47,6 +47,11 @@ export function localGridZoom(spacingKm: number, latitude: number) {
   );
 }
 
+/** The grid as a customer reads it, e.g. "9 points across 4 km". */
+export function localAreaLabel(grid: { gridSize: number; spacingKm: number }) {
+  return `${grid.gridSize * grid.gridSize} points across ${(grid.gridSize - 1) * grid.spacingKm} km`;
+}
+
 /** Row zero is the northern edge; points are in row-major order. */
 export function buildLocalGrid(
   center: { latitude: number; longitude: number },

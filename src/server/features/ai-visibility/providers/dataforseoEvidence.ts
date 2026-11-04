@@ -24,7 +24,7 @@ const aiOverviewSchema = z.object({
 });
 const sourceSchema = z.object({
   url: z.string().max(16_384),
-  title: z.string().max(10_000).nullish(),
+  title: z.string().max(10_000).transform(withoutNul).nullish(),
 });
 
 export interface AiCitation {
@@ -77,6 +77,7 @@ export function parseDataforseoAnswer(
     markdown = result.markdown ?? null;
     sources = result.sources ?? [];
   }
+  if (markdown) markdown = withoutNul(markdown);
   const answerText = markdown ? markdownToText(markdown) : "";
   return {
     answerMarkdown: answerText.trim() ? markdown : null,
@@ -96,10 +97,12 @@ export function parseLlmResponseAnswer(
   const sections = (result.items ?? [])
     .filter((item) => item.type === "message")
     .flatMap((item) => item.sections ?? []);
-  const markdown = sections
-    .map((section) => section.text ?? "")
-    .filter(Boolean)
-    .join("\n\n");
+  const markdown = withoutNul(
+    sections
+      .map((section) => section.text ?? "")
+      .filter(Boolean)
+      .join("\n\n"),
+  );
   const answerText = markdownToText(markdown);
   return {
     answerMarkdown: answerText.trim() ? markdown : null,
@@ -109,6 +112,11 @@ export function parseLlmResponseAnswer(
     ),
     collectedAt: null,
   };
+}
+
+/** Postgres text columns reject NUL, which scraped answers and titles can carry. */
+function withoutNul(text: string): string {
+  return text.replaceAll("\0", "");
 }
 
 function dateOrNull(value: string | null | undefined): string | null {

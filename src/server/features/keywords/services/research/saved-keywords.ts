@@ -1,4 +1,5 @@
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
+import { AppError } from "@/server/lib/errors";
 import { jsonCodec } from "@/shared/json";
 import type {
   DeleteSavedKeywordTagInput,
@@ -88,7 +89,10 @@ export async function saveKeywords(input: ResolvedSaveKeywordsInput) {
   if (input.tagMode === "replace") {
     const replacementTags = input.tags ?? [];
     if (replacementTags.length === 0) {
-      throw new Error("Replacement tags are required when tagMode is replace.");
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Replacement tags are required when tagMode is replace.",
+      );
     }
     await KeywordResearchRepository.replaceTagsForSavedKeywords({
       projectId: input.projectId,

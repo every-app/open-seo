@@ -1,6 +1,6 @@
 import { and, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { projects } from "@/db/schema";
+import { projects, samSessions } from "@/db/schema";
 import { AppError } from "@/server/lib/errors";
 
 async function listProjects(organizationId: string) {
@@ -228,6 +228,30 @@ async function archiveProject(projectId: string, organizationId: string) {
   }
 }
 
+// Permanently deletes an archived project; its database rows cascade. Returns
+// the ids of its chat sessions, whose transcripts live in Durable Objects the
+// cascade can't reach, or null when no such archived project exists.
+async function deleteArchivedProject(
+  projectId: string,
+  organizationId: string,
+) {
+  const sessions = await db
+    .select({ id: samSessions.id })
+    .from(samSessions)
+    .where(eq(samSessions.projectId, projectId));
+  const [row] = await db
+    .delete(projects)
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNotNull(projects.archivedAt),
+      ),
+    )
+    .returning({ id: projects.id });
+  return row ? sessions.map((session) => session.id) : null;
+}
+
 export const ProjectRepository = {
   listProjects,
   listArchivedProjects,
@@ -242,4 +266,5 @@ export const ProjectRepository = {
   tryCreateDefaultProject,
   archiveProject,
   restoreProject,
+  deleteArchivedProject,
 } as const;

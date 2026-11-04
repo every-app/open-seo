@@ -1,4 +1,4 @@
-import { and, eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, min, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   dashboardStepDismissals,
@@ -6,11 +6,12 @@ import {
   invitation,
   organizationActivationState,
   projectActivationState,
+  projects,
   userOnboardingAnswers,
 } from "@/db/schema";
 
 import type {
-  DashboardClickStep,
+  DashboardResearchStep,
   DashboardSetupStep,
 } from "@/types/schemas/dashboard";
 
@@ -56,9 +57,12 @@ async function recordFirstMcpAuthorized(organizationId: string): Promise<void> {
     });
 }
 
-async function recordFirstMcpToolCall(organizationId: string): Promise<void> {
+// Returns whether this was the organization's first call.
+async function recordFirstMcpToolCall(
+  organizationId: string,
+): Promise<boolean> {
   const now = new Date().toISOString();
-  await db
+  const [row] = await db
     .insert(organizationActivationState)
     .values({ organizationId, firstMcpToolCallAt: now, updatedAt: now })
     .onConflictDoUpdate({
@@ -67,7 +71,11 @@ async function recordFirstMcpToolCall(organizationId: string): Promise<void> {
         firstMcpToolCallAt: sql`coalesce(${organizationActivationState.firstMcpToolCallAt}, ${now})`,
         updatedAt: now,
       },
+    })
+    .returning({
+      firstMcpToolCallAt: organizationActivationState.firstMcpToolCallAt,
     });
+  return row?.firstMcpToolCallAt === now;
 }
 
 // An agent that creates a project through MCP has done the wizard's main job,
@@ -93,17 +101,20 @@ async function markOnboardingCompleted(
   return row?.completedAt === now;
 }
 
-const clickStepColumns = {
-  competitor: "competitorStepClickedAt",
-  keywords: "keywordStepClickedAt",
-} as const satisfies Record<DashboardClickStep, keyof ProjectActivationState>;
+const researchStepColumns = {
+  competitor: "competitorResearchedAt",
+  keywords: "keywordResearchedAt",
+} as const satisfies Record<
+  DashboardResearchStep,
+  keyof ProjectActivationState
+>;
 
-async function markStepClicked(
+async function recordResearch(
   projectId: string,
-  step: DashboardClickStep,
+  step: DashboardResearchStep,
 ): Promise<void> {
   const now = new Date().toISOString();
-  const key = clickStepColumns[step];
+  const key = researchStepColumns[step];
   await db
     .insert(projectActivationState)
     .values({ projectId, [key]: now, updatedAt: now })
@@ -130,46 +141,128 @@ async function markGa4CardDismissed(projectId: string): Promise<void> {
     });
 }
 
-async function getDismissedSteps(userId: string, projectId: string) {
-  return db
-    .select({ step: dashboardStepDismissals.step })
-    .from(dashboardStepDismissals)
+// The first research of each kind on any of the workspace's projects.
+async function getWorkspaceResearch(organizationId: string) {
+  const [row] = await db
+    .select({
+      competitorResearchedAt: min(
+        projectActivationState.competitorResearchedAt,
+      ),
+      keywordResearchedAt: min(projectActivationState.keywordResearchedAt),
+    })
+    .from(projectActivationState)
+    .innerJoin(projects, eq(projects.id, projectActivationState.projectId))
+    .where(eq(projects.organizationId, organizationId));
+  return {
+    competitorResearchedAt: row?.competitorResearchedAt ?? null,
+    keywordResearchedAt: row?.keywordResearchedAt ?? null,
+  };
+}
+
+// How dismissals are stored. Before the agent card and the checklist's agent
+// step were split, dismissing either one stored "mcp" (or, earlier, set the
+// project's mcp_card_dismissed_at), which still hides both. Since then the
+// step's skip stores "agent_step" and the card's X "agent_card"; every other
+// step stores its own id.
+const LEGACY_AGENT_DISMISSAL = "mcp";
+const AGENT_STEP_DISMISSAL = "agent_step";
+const AGENT_CARD_DISMISSAL = "agent_card";
+
+function storedStep(step: DashboardSetupStep) {
+  return step === "mcp" ? AGENT_STEP_DISMISSAL : step;
+}
+
+// A dismissal made on one project applies on every project in that
+// workspace. Each row keeps the project it was made from.
+async function getDismissals(input: {
+  userId: string;
+  organizationId: string;
+  projectId: string;
+}) {
+  const [rows, project] = await Promise.all([
+    db
+      .selectDistinct({ key: dashboardStepDismissals.step })
+      .from(dashboardStepDismissals)
+      .innerJoin(projects, eq(projects.id, dashboardStepDismissals.projectId))
+      .where(
+        and(
+          eq(dashboardStepDismissals.userId, input.userId),
+          eq(projects.organizationId, input.organizationId),
+        ),
+      ),
+    getProjectActivation(input.projectId),
+  ]);
+  const keys = rows.map((row) => row.key);
+  const legacyAgent =
+    keys.includes(LEGACY_AGENT_DISMISSAL) ||
+    project?.mcpCardDismissedAt != null;
+  const skippedSteps = keys.filter(
+    (key) =>
+      key !== AGENT_CARD_DISMISSAL &&
+      key !== AGENT_STEP_DISMISSAL &&
+      key !== LEGACY_AGENT_DISMISSAL,
+  );
+  return {
+    skippedSteps:
+      legacyAgent || keys.includes(AGENT_STEP_DISMISSAL)
+        ? [...skippedSteps, "mcp"]
+        : skippedSteps,
+    agentCardDismissed: legacyAgent || keys.includes(AGENT_CARD_DISMISSAL),
+  };
+}
+
+async function setStepDismissed(input: {
+  userId: string;
+  organizationId: string;
+  projectId: string;
+  step: DashboardSetupStep;
+  dismissed: boolean;
+}) {
+  const { userId, organizationId, projectId, step } = input;
+  if (input.dismissed) {
+    await db
+      .insert(dashboardStepDismissals)
+      .values({ userId, projectId, step: storedStep(step) })
+      .onConflictDoNothing();
+    return;
+  }
+  // Restoring the agent step also clears dismissals from before the agent card
+  // and step were split, which hid both.
+  if (step === "mcp") {
+    await db
+      .update(projectActivationState)
+      .set({ mcpCardDismissedAt: null })
+      .where(eq(projectActivationState.projectId, projectId));
+  }
+  // A restore clears the skip from every project in the workspace.
+  await db
+    .delete(dashboardStepDismissals)
     .where(
       and(
         eq(dashboardStepDismissals.userId, userId),
-        eq(dashboardStepDismissals.projectId, projectId),
+        inArray(
+          dashboardStepDismissals.step,
+          step === "mcp"
+            ? [AGENT_STEP_DISMISSAL, LEGACY_AGENT_DISMISSAL]
+            : [step],
+        ),
+        inArray(
+          dashboardStepDismissals.projectId,
+          db
+            .select({ id: projects.id })
+            .from(projects)
+            .where(eq(projects.organizationId, organizationId)),
+        ),
       ),
     );
 }
 
-async function setStepDismissed(
-  userId: string,
-  projectId: string,
-  step: DashboardSetupStep,
-  dismissed: boolean,
-) {
-  if (dismissed) {
-    await db
-      .insert(dashboardStepDismissals)
-      .values({ userId, projectId, step })
-      .onConflictDoNothing();
-  } else {
-    if (step === "mcp") {
-      await db
-        .update(projectActivationState)
-        .set({ mcpCardDismissedAt: null })
-        .where(eq(projectActivationState.projectId, projectId));
-    }
-    await db
-      .delete(dashboardStepDismissals)
-      .where(
-        and(
-          eq(dashboardStepDismissals.userId, userId),
-          eq(dashboardStepDismissals.projectId, projectId),
-          eq(dashboardStepDismissals.step, step),
-        ),
-      );
-  }
+// Hides only the agent card, never the checklist's agent step.
+async function dismissAgentCard(userId: string, projectId: string) {
+  await db
+    .insert(dashboardStepDismissals)
+    .values({ userId, projectId, step: AGENT_CARD_DISMISSAL })
+    .onConflictDoNothing();
 }
 
 // Return only the milestone, never member or invitee details to the dashboard.
@@ -196,14 +289,16 @@ async function hasTeammate(organizationId: string) {
 }
 
 export const ActivationRepository = {
-  getDismissedSteps,
+  getDismissals,
   setStepDismissed,
+  dismissAgentCard,
   hasTeammate,
   getOrganizationActivation,
   getProjectActivation,
+  getWorkspaceResearch,
   recordFirstMcpAuthorized,
   recordFirstMcpToolCall,
   markOnboardingCompleted,
-  markStepClicked,
+  recordResearch,
   markGa4CardDismissed,
 };

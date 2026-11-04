@@ -65,8 +65,8 @@
   // The site-audit engine lives in the open-seo-audit aux worker
   // (wrangler.audit.jsonc), including the scratchpad DO — the DO cannot be
   // bound cross-script here (the Cloudflare API rejects deleting the class
-  // below while any binding still references its name). Cancel + GDPR
-  // erasure go through this service binding's AuditEngine entrypoint.
+  // below while any binding still references its name). Cancel + account
+  // deletion go through this service binding's AuditEngine entrypoint.
   "services": [
     {
       "binding": "AUDIT_ENGINE",

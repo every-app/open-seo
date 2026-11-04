@@ -169,7 +169,7 @@ async function authenticateGa4(opts: {
   ga4AccountId: string;
 }): Promise<Authenticated> {
   if ((await getGoogleAccessMode()) === "gateway") {
-    const gatewayFetch = await getGatewayGoogleFetch();
+    const gatewayFetch = await getGatewayGoogleFetch(opts.userId);
     if (!gatewayFetch) {
       throw new Ga4TokenError(
         "Google isn't reachable through the Every App gateway here.",

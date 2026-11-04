@@ -2,8 +2,9 @@
  * OpenSEO on an Every App gateway (AUTH_MODE=everyapp). The gateway signs
  * people in and decides who may open OpenSEO, serves its MCP tools on the
  * gateway's one connector, and holds the DataForSEO, Context and OpenRouter
- * keys, so a deploy needs no OpenSEO settings to open (its own two,
- * CRAWLER_ACCESS_SECRET and OPENROUTER_MODEL, are optional, below). See
+ * keys, so a deploy needs no OpenSEO settings to open (its own two:
+ * CRAWLER_ACCESS_SECRET, which the deploy generates, and OPENROUTER_MODEL,
+ * an optional feature, below). See
  * docs/maintainers/every-app.md.
  *
  * D1 and KV, one organization (EVERY_APP_ORG_ID, set by the deploy).
@@ -55,9 +56,9 @@ export default {
     config: "drizzle/sqlite.config.ts",
     binding: "DB",
   },
-  // What the gateway must hold before OpenSEO opens (required, the default)
-  // or may hold (optional: the feature says what is missing where it is
-  // used). `why` is for whoever sets it.
+  // What the gateway must hold before OpenSEO opens. What it may hold
+  // (the feature says what is missing where it is used) is listed in an
+  // optional feature too, under `features`. `why` is for whoever sets it.
   // Through the gateway's AI proxy and its OPENROUTER_API_KEY.
   providers: [
     {
@@ -77,39 +78,64 @@ export default {
     // sets it (src/server/lib/audit/rendering-policy.ts).
     context: {
       access: "read",
-      optional: true,
       why: "Renders JavaScript-heavy pages when a site audit asks for it.",
     },
-    // The gateway holds the Google client and each member's connection
-    // (Every App → Settings → Connected accounts); Search Console and GA4
-    // reads go through it with the member's token (src/server/features/
-    // google/gatewayGoogle.ts). Without it the Google cards say so.
+    // The gateway holds the Google client and each member's connection to
+    // OpenSEO, made from OpenSEO's Connect button; Search Console and GA4
+    // reads go through it with a member's token (src/server/features/
+    // google/gatewayGoogle.ts). Google's own scopes, read only; the gateway
+    // adds the identity scopes and refuses a token carrying more. Without
+    // a Google client the Google cards say so.
     "google-workspace": {
-      // "read" is what OpenSEO needs (the three sets below are read-only and
-      // the gateway holds every call to them); the published CLI (0.3.0-rc.3)
-      // still lists the Google client as write-only, so "write" until rc.4.
-      access: "write",
-      optional: true,
-      scopes: ["identity", "search-console.read", "analytics.read"],
-      why: "Search Console and GA4 reads for your sites, with the Google account you connect in Every App.",
+      scopes: ["webmasters.readonly", "analytics.readonly"],
+      why: "Search Console and GA4 reads for your sites, with the Google account you connect in OpenSEO.",
     },
   },
   // OpenSEO's own, on its Workers (`pnpm everyapp secret set <NAME> --app
-  // openseo`). Without CRAWLER_ACCESS_SECRET the crawler-access form says so
-  // (src/client/features/crawler-access/CrawlerAccessForm.tsx); without
-  // OPENROUTER_MODEL the default in src/server/lib/openrouter.ts is used.
+  // openseo`). The deploy generates CRAWLER_ACCESS_SECRET when it's unset.
   secrets: [
     {
       name: "CRAWLER_ACCESS_SECRET",
-      optional: true,
-      why: "Encrypts the Shopify crawler-access signatures that audits of protected stores send. Any string of 32+ characters, e.g. `openssl rand -base64 32`.",
-    },
-    {
-      name: "OPENROUTER_MODEL",
-      optional: true,
-      why: "Picks the OpenRouter model for SAM, prompt suggestions and website research (default openai/gpt-5.6-luna). The key itself is the gateway's OPENROUTER_API_KEY.",
+      generate: true,
+      why: "Encrypts the Shopify crawler-access signatures that audits of protected stores send.",
     },
   ],
+  // Optional, each all or nothing: OpenSEO opens without them.
+  features: {
+    // Audits run without it: the "Render JavaScript" option says an admin
+    // sets it (src/server/lib/audit/rendering-policy.ts).
+    rendering: {
+      name: "JavaScript rendering",
+      why: "Renders JavaScript-heavy pages when a site audit asks for it.",
+      steps: [
+        "Create a Context account and copy its API key: https://www.context.dev",
+      ],
+      capabilities: ["context"],
+    },
+    // Without a Google client the Google cards say so.
+    google: {
+      name: "Search Console and GA4",
+      why: "Search Console and GA4 reads for your sites, with the Google account each member connects in OpenSEO.",
+      steps: [
+        "Enable the Search Console API: https://console.cloud.google.com/apis/library/searchconsole.googleapis.com",
+        "Enable the Analytics Admin and Data APIs: https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com and https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com",
+        "Create an OAuth client of type Web application: https://console.cloud.google.com/apis/credentials",
+        "Redirect URI: {gatewayUrl}/connect/google-workspace/callback. Consent screen scopes: webmasters.readonly and analytics.readonly.",
+      ],
+      capabilities: ["google-workspace"],
+    },
+    // Without it the default in src/server/lib/openrouter.ts is used.
+    model: {
+      name: "OpenRouter model",
+      why: "Picks the OpenRouter model for SAM, prompt suggestions and website research instead of the default (openai/gpt-5.6-luna).",
+      secrets: [
+        {
+          name: "OPENROUTER_MODEL",
+          how: "An OpenRouter model id, e.g. openai/gpt-5.6-luna: https://openrouter.ai/models",
+        },
+      ],
+    },
+  },
   // Both Workers, from cloudflare.config.ts and vite-plugin-every-app.ts.
   build: "pnpm build:report-widgets && AUTH_MODE=everyapp pnpm exec vite build",
   dev: "pnpm build:report-widgets && AUTH_MODE=everyapp pnpm exec vite dev --host 127.0.0.1",

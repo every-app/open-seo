@@ -18,9 +18,10 @@ import {
 import { asAppError } from "@/server/lib/errors";
 import {
   completeOnboardingFromAgent,
+  markMcpConnected,
   recordMcpAuthorized,
 } from "@/server/features/activation/mcpActivation";
-import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
+import { getWebChat } from "@/server/mcp/web-chat";
 import { captureServerEvent } from "@/server/lib/posthog";
 import {
   createWorkersOAuthMcpProps,
@@ -311,7 +312,10 @@ async function handleOAuthConsentResponse(
   // onboarding for people who paste the setup prompt and never return to the
   // wizard.
   await completeOnboardingFromAgent(context, "agent_connect");
-  await markOnboardingMilestone(context, "mcpConnected");
+  await markMcpConnected(
+    context,
+    getWebChat([authRequest.redirectUri]) ?? undefined,
+  );
 
   waitUntil(
     captureServerEvent({

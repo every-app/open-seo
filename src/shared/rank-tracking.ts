@@ -391,6 +391,11 @@ export function scheduleLabel(
   return "Manual";
 }
 
+/** Older failed runs stored "AppError: Insufficient credits for rank check". */
+export function isOutOfCreditsRunError(errorMessage: string | null): boolean {
+  return /insufficient.credits/i.test(errorMessage ?? "");
+}
+
 export function devicesCount(devices: RankTrackingConfig["devices"]): number {
   return devices === "both" ? 2 : 1;
 }

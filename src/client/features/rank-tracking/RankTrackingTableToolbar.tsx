@@ -49,7 +49,7 @@ export function RankTrackingTableToolbar({
 }) {
   // Once every keyword has had its first check, a running run is retrying the
   // ones that errored or came back missing. Retries wait on DataForSEO's task
-  // queue, so a full progress bar would sit there for up to an hour.
+  // queue, so a full progress bar would sit there for up to 3 hours.
   const isDoubleChecking =
     latestRun?.status === "running" &&
     latestRun.keywordsTotal > 0 &&
@@ -97,7 +97,7 @@ export function RankTrackingTableToolbar({
           <Spinner className="size-3.5 text-primary" />
           {isDoubleChecking ? (
             <span>
-              Double-checking some results. This can take up to an hour.
+              Double-checking some results. This can take up to 3 hours.
             </span>
           ) : (
             <>

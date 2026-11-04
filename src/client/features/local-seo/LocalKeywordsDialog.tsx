@@ -1,20 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { revalidateLogic } from "@tanstack/react-form";
-import { z } from "zod";
 import { FormDialog } from "@/client/components/FormDialog";
 import { useAppForm } from "@/client/components/form/useAppForm";
 import { QueryError } from "@/client/components/QueryState";
 import { Button } from "@/client/components/ui/button";
-import { parseKeywordInput } from "@/client/features/keywords/state/keywordControllerActions";
 import { updateLocalKeywords } from "@/serverFunctions/local-seo";
-import { localKeywordsSchema } from "@/types/schemas/local-seo";
-
-export const localKeywordsTextSchema = z
-  .string()
-  .refine(
-    (value) => localKeywordsSchema.safeParse(parseKeywordInput(value)).success,
-    "Enter up to 20 keywords, up to 120 characters each.",
-  );
+import { cleanKeywords, LocalKeywordFields } from "./LocalKeywordFields";
 
 export function LocalKeywordsDialog({
   projectId,
@@ -39,13 +29,11 @@ export function LocalKeywordsDialog({
     },
   });
   const form = useAppForm({
-    defaultValues: { keywords: keywords.map((row) => row.keyword).join("\n") },
-    validationLogic: revalidateLogic(),
-    validators: {
-      onDynamic: z.object({ keywords: localKeywordsTextSchema }),
+    defaultValues: {
+      keywords: keywords.length ? keywords.map((row) => row.keyword) : [""],
     },
     onSubmit: async ({ value }) => {
-      await save.mutateAsync(parseKeywordInput(value.keywords));
+      await save.mutateAsync(cleanKeywords(value.keywords));
     },
   });
   return (
@@ -65,16 +53,15 @@ export function LocalKeywordsDialog({
     >
       <form.AppForm>
         <form.Form id="local-keywords" className="space-y-4">
-          <form.AppField name="keywords">
+          <form.Field name="keywords">
             {(field) => (
-              <field.TextareaField
-                label="Keywords to track"
-                placeholder="One keyword per line"
-                rows={6}
-                description="Add, change, or remove search terms here. Each ranking check searches every keyword at each grid point. Saved results for removed terms are kept."
+              <LocalKeywordFields
+                value={field.state.value}
+                onChange={field.handleChange}
+                description="Each check searches every keyword at every point. Results for removed keywords are kept."
               />
             )}
-          </form.AppField>
+          </form.Field>
         </form.Form>
       </form.AppForm>
       {save.isError && (

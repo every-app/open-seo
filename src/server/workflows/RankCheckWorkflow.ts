@@ -5,6 +5,7 @@ import {
 } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import { withPgClient } from "@/db";
+import { yieldingStep } from "@/server/workflows/yieldingStep";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
@@ -13,6 +14,7 @@ import {
   runQueuedCheck,
 } from "@/server/workflows/rankCheckPaths";
 import { retryRankChecks } from "@/server/workflows/rankCheckRetries";
+import { resolveRunGotoUrls } from "@/server/workflows/rankCheckGotoUrls";
 import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -149,6 +151,7 @@ async function finalizeRankCheckRun(input: {
   billingCustomer: BillingCustomerContext;
   trigger: RankCheckParams["trigger"];
   devices: RankCheckParams["devices"];
+  keywords: Array<{ id: string; keyword: string }>;
   batchError: string | null;
 }) {
   // If stale-cleanup already marked our run failed, don't overwrite that
@@ -191,6 +194,10 @@ async function finalizeRankCheckRun(input: {
   const keywordError = run.errorMessage ?? input.batchError;
   const status =
     keywordsChecked === 0 && keywordsTotal > 0 ? "failed" : "completed";
+  // A bare code (UPSTREAM_UNAVAILABLE) is for the failed-run copy to
+  // translate; the partial message is shown as is, so it is left out there.
+  const partialReason =
+    keywordError && !isErrorCode(keywordError) ? keywordError : null;
   const checkedSummary =
     checkedByDevice.length > 1
       ? checkedByDevice
@@ -201,7 +208,15 @@ async function finalizeRankCheckRun(input: {
     status === "failed"
       ? (keywordError ?? "No keywords could be checked.")
       : isPartial
-        ? `Checked ${checkedSummary} keyword(s)${keywordError ? `: ${keywordError}` : ""}`
+        ? [
+            `Checked ${checkedSummary} keyword(s)${partialReason ? `: ${partialReason}` : ""}`.replace(
+              /\.?$/,
+              ".",
+            ),
+            describeUnchecked(input.keywords, devices, snapshots),
+          ]
+            .filter(Boolean)
+            .join(" ")
         : null;
 
   // Flipping status away from 'pending'/'running' is what releases the
@@ -245,6 +260,32 @@ async function finalizeRankCheckRun(input: {
     },
   });
 }
+
+/** Names a partial run's unchecked keywords, so users see which ones failed. */
+function describeUnchecked(
+  keywords: Array<{ id: string; keyword: string }>,
+  devices: Array<"desktop" | "mobile">,
+  snapshots: Array<{ trackingKeywordId: string; device: string }>,
+) {
+  const checked = new Set(
+    snapshots.map((s) => `${s.trackingKeywordId}:${s.device}`),
+  );
+  const unchecked = keywords.flatMap((kw) => {
+    const missing = devices.filter((d) => !checked.has(`${kw.id}:${d}`));
+    if (missing.length === 0) return [];
+    // Name the device only when the other one got a result.
+    return missing.length < devices.length
+      ? [`"${kw.keyword}" (${missing[0]})`]
+      : [`"${kw.keyword}"`];
+  });
+  if (unchecked.length === 0) return "";
+  const shown = unchecked.slice(0, UNCHECKED_KEYWORDS_SHOWN).join(", ");
+  const more = unchecked.length - UNCHECKED_KEYWORDS_SHOWN;
+  return `Not checked: ${shown}${more > 0 ? ` and ${more} more` : ""}.`;
+}
+
+/** Keeps a partial run's message readable on a large tracker. */
+const UNCHECKED_KEYWORDS_SHOWN = 10;
 
 async function markRankCheckRunFailed(input: {
   runId: string;
@@ -290,7 +331,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
     // Scope a per-request Postgres client for this workflow invocation (no-op in
     // D1 mode). The socket is reclaimed when the invocation ends, so there is
     // nothing to tear down here.
-    return withPgClient(() => this.runScoped(event, step));
+    return withPgClient(() => this.runScoped(event, yieldingStep(step)));
   }
 
   private async runScoped(
@@ -388,6 +429,18 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         console.warn(`[rank-check] ${runId} partial failure: ${batchError}`);
       }
 
+      try {
+        await pgStep(step, "resolve-goto-urls", FREE_STEP_CONFIG, () =>
+          resolveRunGotoUrls(runId),
+        );
+      } catch (error) {
+        // The positions are saved and the goto links still work, so this
+        // doesn't fail the run.
+        console.warn(
+          `[rank-check] ${runId} goto URLs not resolved: ${describeError(error)}`,
+        );
+      }
+
       await pgStep(step, "finalize", FREE_STEP_CONFIG, async () =>
         finalizeRankCheckRun({
           runId,
@@ -396,14 +449,25 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           billingCustomer,
           trigger,
           devices,
+          keywords,
           batchError,
         }),
       );
     } catch (error) {
-      console.error(
-        `Rank check ${runId} failed: ${describeError(error)}`,
-        error,
-      );
+      // Cloudflare resets the Workflow's Durable Object on a deploy or its own
+      // restarts. The engine replays the run from its last finished step and
+      // it completes normally, so this is a warning, not a failure.
+      if (
+        error instanceof Error &&
+        error.message.includes("Durable Object reset because its code")
+      ) {
+        console.warn(`Rank check ${runId} interrupted: ${error.message}`);
+      } else {
+        console.error(
+          `Rank check ${runId} failed: ${describeError(error)}`,
+          error,
+        );
+      }
       // A retry after the body finished (an engine storage failure) sends the
       // failed event again; harmless.
       await pgStep(step, "mark-failed", FREE_STEP_CONFIG, async () =>

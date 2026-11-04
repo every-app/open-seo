@@ -37,6 +37,64 @@ export const AJP_DEPLOYMENT_CHANGELOG_INTRO = {
 /** Newest first. */
 export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   {
+    version: "0.1.24",
+    deployedOn: "Pending production deploy",
+    upstream: {
+      label: "OpenSEO v0.1.21 through v0.1.24",
+      compareUrl:
+        "https://github.com/every-app/open-seo/compare/v0.1.20...v0.1.24",
+      sections: [
+        {
+          title: "v0.1.21",
+          items: [
+            "Local SEO (beta): Maps visibility around a business (optional GOOGLE_MAPS_API_KEY — not set on AJP).",
+            "Site audit crawl progress logging; AI visibility saves answers with null characters in sources.",
+          ],
+        },
+        {
+          title: "v0.1.22",
+          items: [
+            "Clears AI visibility and rank runs stuck 12+ hours so new checks are not blocked.",
+            "Docker workflow freeze fixes and Local SEO on Docker (not AJP Workers deploy path).",
+          ],
+        },
+        {
+          title: "v0.1.23",
+          items: [
+            "Import keyword lists; GSC Discover and News; striking-distance queries to rank tracker; MCP get_rank_history.",
+            "Permanently delete archived projects; hosted self-serve account deletion (replaces operator GDPR erasure upstream).",
+            "OPENROUTER_BASE_URL and OPENROUTER_MODEL for OpenAI-compatible endpoints.",
+            "Rank checks: google.com/goto resolution, clearer partial/failed messaging, provider timeout as outage.",
+            "Brand Lookup uses project market; Norwegian keyword research; backlink trailing-slash fix.",
+            "Rendered audits can read some pages blocked by non-HTML 403 responses.",
+          ],
+        },
+        {
+          title: "v0.1.24",
+          items: [
+            "Filter tracked prompts by branded / non-branded; show competitors named in AI answers.",
+            "Prompt Explorer and new projects default to project country.",
+          ],
+        },
+      ],
+    },
+    forkChanges: [
+      "Merged audit/crawler conflicts with AJP fetch diagnostics and render fallback retained.",
+      "DataForSEO-only prompt research and OpenRouter gate bypass unchanged.",
+      "Settings deployment log and self-host About/changelog preserved; hosted delete-account UI from upstream (inactive on cloudflare_access).",
+      "Notification webhooks parked on branch codex/notifications-wip — re-apply after deploy with migrations renumbered past 0063.",
+    ],
+    operations: [
+      "Integration branch only — not yet live in production.",
+      "When deploying: allowlisted D1 migration 0063 (account_deletion_requests); migration 0055 still skipped.",
+    ],
+    openFollowUps: [
+      "Re-merge notification webhooks from codex/notifications-wip (0064/0042) and upstream PR when ready.",
+      "Shopify crawler signature save/reliability.",
+      "Rank check cost estimate / notification delivery after webhooks ship.",
+    ],
+  },
+  {
     version: "0.1.20",
     deployedOn: "2026-10-29",
     pullRequest: {

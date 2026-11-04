@@ -174,6 +174,8 @@ export const deleteSavedKeywordTagSchema = z.object({
 
 export const refreshSavedKeywordMetricsSchema = z.object({
   projectId: z.string().min(1),
+  /** Only these saved keywords, e.g. a list just imported. Default: all. */
+  savedKeywordIds: z.array(z.string().min(1)).min(1).max(2000).optional(),
 });
 
 export type ResearchKeywordsInput = z.infer<typeof researchKeywordsSchema>;

@@ -42,6 +42,7 @@ vi.mock("@/middleware/ensure-user/hosted", () => ({
 vi.mock("@/server/features/activation/mcpActivation", () => ({
   recordMcpAuthorized: () => Promise.resolve(),
   completeOnboardingFromAgent: () => Promise.resolve(),
+  markMcpConnected: () => Promise.resolve(),
 }));
 
 vi.mock("@/server/lib/posthog", () => ({

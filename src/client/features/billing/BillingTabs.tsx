@@ -45,7 +45,8 @@ export function BillingTabs({
         ) : (
           <>
             <BillingUsageChart />
-            <BillingFeatureBreakdown />
+            <BillingFeatureBreakdown by="features" />
+            <BillingFeatureBreakdown by="projects" />
           </>
         )}
       </div>

@@ -46,9 +46,12 @@ const mocks = vi.hoisted(() => ({
     >(),
   customerHasPaidPlan: vi.fn<(organizationId: string) => Promise<boolean>>(),
   isHostedServerAuthMode: vi.fn<() => Promise<boolean>>(),
+  getFlag: vi.fn<(flag: string) => Promise<boolean>>(),
 }));
 
-vi.mock("cloudflare:workers", () => ({ env: {} }));
+vi.mock("cloudflare:workers", () => ({
+  env: { FLAGS: { getBooleanValue: mocks.getFlag } },
+}));
 vi.mock(
   "@/server/features/rank-tracking/repositories/RankTrackingRepository",
   () => ({
@@ -92,6 +95,7 @@ function dueConfig(overrides: Partial<DueConfigRow> = {}): DueConfigRow {
 describe("runScheduledRankChecks", () => {
   beforeEach(() => {
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
+    mocks.getFlag.mockResolvedValue(false);
     mocks.customerHasPaidPlan.mockResolvedValue(true);
     mocks.claimDueConfig.mockResolvedValue(true);
     mocks.beginRankCheckRun.mockResolvedValue({ ok: true, runId: "run_1" });
@@ -99,6 +103,16 @@ describe("runScheduledRankChecks", () => {
       new Map([["config_1", 5]]),
     );
     mocks.getDueConfigsWithOrganization.mockResolvedValue([dueConfig()]);
+  });
+
+  it("starts and claims nothing while the pause flag is on, so configs stay due", async () => {
+    mocks.getFlag.mockResolvedValue(true);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await runScheduledRankChecks(testEnv);
+
+    expect(mocks.claimDueConfig).not.toHaveBeenCalled();
+    expect(mocks.beginRankCheckRun).not.toHaveBeenCalled();
   });
 
   it("advances a free config with plan_required instead of starting a workflow", async () => {

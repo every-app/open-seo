@@ -157,6 +157,10 @@ export function SerpAnalysisCard({
                 <span className="text-xs text-muted-foreground">
                   {items.length} organic results
                 </span>
+              ) : loading ? (
+                <span className="text-xs text-muted-foreground" role="status">
+                  Fetching live results… This can take up to a minute.
+                </span>
               ) : null}
             </div>
           </DataTableToolbar>

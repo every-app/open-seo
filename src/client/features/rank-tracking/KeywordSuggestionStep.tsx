@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { isLabsLocationCode } from "@/client/features/keywords/locations";
+import { captureClientEvent } from "@/client/lib/posthog";
+import { getErrorCode } from "@/client/lib/error-messages";
+import { QueryError } from "@/client/components/QueryState";
 import { Spinner } from "@/client/components/Spinner";
 import {
   DataTable,
@@ -216,7 +219,16 @@ export function KeywordSuggestionStep({
   const addMutation = useMutation({
     mutationFn: (keywords: string[]) =>
       addTrackingKeywords({ data: { projectId, configId, keywords } }),
+    onError: (error) => {
+      captureClientEvent("rank_tracking:keyword_suggestions_save", {
+        outcome: "error",
+        error_code: getErrorCode(error) ?? "UNKNOWN",
+      });
+    },
     onSuccess: (result) => {
+      captureClientEvent("rank_tracking:keyword_suggestions_save", {
+        outcome: "success",
+      });
       toast.success(`Added ${result.added} keywords for tracking`);
       onDone(configId);
     },
@@ -302,6 +314,15 @@ export function KeywordSuggestionStep({
           row.toggleSelected();
         }}
       />
+
+      {addMutation.isError ? (
+        <QueryError
+          variant="inline"
+          error={addMutation.error}
+          fallback="Couldn't save these keywords."
+          onRetry={handleAdd}
+        />
+      ) : null}
 
       <DialogFooter className="items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">

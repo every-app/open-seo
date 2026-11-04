@@ -18,8 +18,10 @@ import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { sort } from "remeda";
 import { DashboardOnboarding } from "./DashboardOnboarding";
-import { DashboardAgentCard } from "./DashboardAgentCard";
-import { getStepStatus } from "./dashboardSteps";
+import {
+  DashboardAgentCard,
+  DashboardAgentPromptCard,
+} from "./DashboardAgentCard";
 import {
   AuditHealthCard,
   GscCard,
@@ -46,6 +48,9 @@ export function DashboardPage({
   const activationQuery = useQuery({
     queryKey: ["dashboardActivation", projectId],
     queryFn: () => getDashboardActivation({ data: { projectId } }),
+    // Setup steps complete from research pages and agents, so recheck on
+    // every return to the dashboard.
+    refetchOnMount: "always",
     refetchOnWindowFocus: "always",
   });
   const overviewQuery = useQuery({
@@ -93,6 +98,14 @@ export function DashboardPage({
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
   const ga4Connected = activation.ga4.connected;
+  const agentConnected =
+    activation.mcp.authorizedAt !== null ||
+    activation.mcp.firstToolCallAt !== null;
+  // An agent is connected, but no one in the organization has used OpenSEO
+  // from one yet.
+  const agentNeverUsed =
+    activation.mcp.authorizedAt !== null &&
+    activation.mcp.firstToolCallAt === null;
 
   // Search Console always renders: connected shows the report, otherwise the
   // connect pitch. It sits ahead of the optional GA4 pitch.
@@ -184,9 +197,18 @@ export function DashboardPage({
           </Button>
         </div>
 
-        {usesBetterAuthClient() &&
-        getStepStatus(activation, "mcp") === "todo" ? (
-          <DashboardAgentCard projectId={projectId} />
+        {/* The agent cards are separate from the checklist's agent step:
+            skipping the step leaves the cards, and dismissing the cards leaves
+            the step. */}
+        {usesBetterAuthClient() && !activation.mcp.cardDismissed ? (
+          !agentConnected ? (
+            <DashboardAgentCard projectId={projectId} />
+          ) : agentNeverUsed ? (
+            <DashboardAgentPromptCard
+              projectId={projectId}
+              domain={activation.domain}
+            />
+          ) : null
         ) : null}
 
         <WorkspaceMergeBanner />

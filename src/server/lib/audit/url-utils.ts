@@ -3,11 +3,36 @@
  */
 
 /**
+ * Click and campaign tracking params. They never change the document and every
+ * variant canonicalises to the clean URL, so keeping them makes the crawler
+ * fetch the same page again and spend its page budget on duplicates. Shopify's
+ * predictive search appends _pos/_sid/_ss/_kx to result links; srsltid is
+ * Google Merchant Center auto-tagging on product URLs.
+ */
+const TRACKING_PARAMS = new Set([
+  "_pos",
+  "_sid",
+  "_ss",
+  "_kx",
+  "srsltid",
+  "fbclid",
+  "gclid",
+  "gbraid",
+  "wbraid",
+  "dclid",
+  "msclkid",
+  "mc_cid",
+  "mc_eid",
+]);
+
+/**
  * Normalize a URL for deduplication:
  * - Resolve relative URLs against a base
  * - Strip fragments (#...)
  * - Sort query parameters
  * - Lowercase the hostname
+ * - Drop click and campaign tracking params (see TRACKING_PARAMS), unless
+ *   `keepTrackingParams` is set
  * - Preserve trailing slashes. A trailing slash is the canonical form on most
  *   CMS platforms (WordPress etc.), which 301-redirect the non-slash version to
  *   it. Stripping it here would rewrite the canonical URL into its own redirect
@@ -15,7 +40,13 @@
  *   forever — a 508 loop. Keeping /path and /path/ distinct lets the redirect
  *   resolve normally.
  */
-export function normalizeUrl(url: string, base?: string): string | null {
+export function normalizeUrl(
+  url: string,
+  base?: string,
+  // Canonical tags keep them, so a canonical that points at a tracked URL is
+  // still reported as pointing somewhere else.
+  { keepTrackingParams = false } = {},
+): string | null {
   try {
     const parsed = new URL(url, base);
 
@@ -26,6 +57,14 @@ export function normalizeUrl(url: string, base?: string): string | null {
 
     // Strip fragment
     parsed.hash = "";
+
+    if (!keepTrackingParams) {
+      for (const key of Array.from(parsed.searchParams.keys())) {
+        if (TRACKING_PARAMS.has(key) || key.startsWith("utm_")) {
+          parsed.searchParams.delete(key);
+        }
+      }
+    }
 
     // Sort query params for consistent dedup
     parsed.searchParams.sort();
