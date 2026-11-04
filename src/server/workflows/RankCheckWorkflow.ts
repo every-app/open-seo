@@ -117,7 +117,11 @@ async function prepareRankCheckKeywords(input: {
     );
     const available = credits.monthlyRemaining + credits.topupRemaining;
     if (available < costCredits) {
-      await sendCreditsExhaustedEvent(input.billingCustomer);
+      // A spent auto-reload budget is not running out: the credits are there,
+      // only held back.
+      if (!credits.topupBudgetReached) {
+        await sendCreditsExhaustedEvent(input.billingCustomer);
+      }
       // The code alone, so the run's saved error shows the credits card.
       throw new NonRetryableError("INSUFFICIENT_CREDITS");
     }

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowStep } from "cloudflare:workers";
+import { AUTUMN_SEO_DATA_BALANCE_FEATURE_ID } from "@/shared/billing";
 import { RankCheckWorkflow } from "./RankCheckWorkflow";
 
 const mocks = vi.hoisted(() => ({
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   failRunIfActive: vi.fn(),
   captureServerEvent: vi.fn(),
   isHostedServerAuthMode: vi.fn(),
+  sendCreditsExhaustedEvent: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({
@@ -71,7 +73,7 @@ vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
 }));
 vi.mock("@/server/email/onboarding-drip", () => ({
-  sendCreditsExhaustedEvent: vi.fn(),
+  sendCreditsExhaustedEvent: mocks.sendCreditsExhaustedEvent,
 }));
 
 const billingCustomer = {
@@ -158,6 +160,25 @@ describe("rank check workflow credit ceiling", () => {
     expect(mocks.updateConfig).toHaveBeenCalledWith("config_1", "project_1", {
       lastSkipReason: "insufficient_credits",
     });
+    expect(mocks.sendCreditsExhaustedEvent).toHaveBeenCalled();
+  });
+
+  it("refuses without the credits email when the auto-reload budget holds back top-up credits", async () => {
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(5));
+    mocks.autumnCheck.mockImplementation(
+      async ({ featureId }: { featureId: string }) =>
+        featureId === AUTUMN_SEO_DATA_BALANCE_FEATURE_ID
+          ? { allowed: false, balance: { remaining: 0 } }
+          : { allowed: false, balance: { remaining: 12_000 } },
+    );
+
+    await expect(runWorkflow({})).rejects.toThrow("INSUFFICIENT_CREDITS");
+
+    expect(mocks.failRunIfActive).toHaveBeenCalledWith(
+      "run_1",
+      "INSUFFICIENT_CREDITS",
+    );
+    expect(mocks.sendCreditsExhaustedEvent).not.toHaveBeenCalled();
   });
 
   it("does not refuse as out of credits when an Autumn read fails open", async () => {
