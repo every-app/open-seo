@@ -157,7 +157,7 @@ export function EngineResults({
   );
 }
 
-/** Favicons of the competitors these answers name, with every brand's count on hover. */
+/** Favicons of the competitors these answers name, with each named brand's count on hover. */
 export function CompetitorStack({
   rows,
   loading,
@@ -168,10 +168,10 @@ export function CompetitorStack({
   if (loading) return <Skeleton className="h-7 w-20 rounded-full" />;
   // Most named first. The sort is stable, so your brand leads a tie.
   const brands = sort(
-    summarizeAiBrands(rows ?? []),
+    summarizeAiBrands(rows ?? []).filter((brand) => brand.mentions > 0),
     (a, b) => b.mentions - a.mentions,
   );
-  const named = brands.filter((brand) => !brand.own && brand.mentions > 0);
+  const named = brands.filter((brand) => !brand.own);
   if (!named.length)
     return <span className="text-sm text-muted-foreground">—</span>;
   const shown = named.slice(0, MAX_COMPETITOR_FAVICONS);
