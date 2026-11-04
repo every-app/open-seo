@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed. Rank position alerts are the first rule type; the same channel store can later cover GSC digests and audit summaries from the public roadmap.
+Shipped on AJP fork (2026-11-04). Upstream PR pending.
 
 ## What it does
 
