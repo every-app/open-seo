@@ -101,7 +101,8 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<
     // Scope a per-request Postgres client for this workflow invocation (no-op in
     // D1 mode). The socket is reclaimed when the invocation ends, so there is
     // nothing to tear down here.
-    return withPgClient(() => this.runScoped(event, yieldingStep(step)));
+    const auditEvent = event as WorkflowEvent<AuditParams>;
+    return withPgClient(() => this.runScoped(auditEvent, yieldingStep(step)));
   }
 
   private async runScoped(

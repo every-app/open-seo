@@ -12,7 +12,11 @@ import {
   CardTitle,
 } from "@/client/components/ui/card";
 
-function ChangelogSectionList({ sections }: { sections: { title: string; items: string[] }[] }) {
+function ChangelogSectionList({
+  sections,
+}: {
+  sections: { title: string; items: string[] }[];
+}) {
   return (
     <div className="space-y-4">
       {sections.map((section) => (
@@ -65,7 +69,9 @@ function DeploymentEntry({ entry }: { entry: DeploymentChangelogEntry }) {
       <CardContent className="space-y-6">
         <section className="space-y-2">
           <h3 className="text-sm font-semibold">From upstream</h3>
-          <p className="text-sm text-muted-foreground">{entry.upstream.label}</p>
+          <p className="text-sm text-muted-foreground">
+            {entry.upstream.label}
+          </p>
           {entry.upstream.compareUrl ? (
             <a
               href={entry.upstream.compareUrl}
@@ -155,7 +161,10 @@ export function AjpDeploymentChangelog() {
       </div>
 
       {AJP_DEPLOYMENT_CHANGELOG.map((entry) => (
-        <DeploymentEntry key={`${entry.version}-${entry.deployedOn}`} entry={entry} />
+        <DeploymentEntry
+          key={`${entry.version}-${entry.deployedOn}`}
+          entry={entry}
+        />
       ))}
     </div>
   );

@@ -12,12 +12,12 @@ Merge upstream **v0.1.19** onto fork baseline **v0.1.14** (`ff093c2f`), preservi
 
 ## Droplet validation @ `b58deab3`
 
-| Check | Result |
-| ----- | ------ |
-| `pnpm ci:check` | Pass (`NODE_OPTIONS='--max-old-space-size=6144'`) |
+| Check            | Result                                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------- |
+| `pnpm ci:check`  | Pass (`NODE_OPTIONS='--max-old-space-size=6144'`)                                            |
 | Production build | Pass — `AUTH_MODE=cloudflare_access` from live binding snapshot; **no** preview `.env.local` |
-| Wrangler dry-run | Pass — app 43 bindings, audit 18 bindings |
-| Artifact | `openseo-release-review/v0.1.19/release-build-validation.json` (private) |
+| Wrangler dry-run | Pass — app 43 bindings, audit 18 bindings                                                    |
+| Artifact         | `openseo-release-review/v0.1.19/release-build-validation.json` (private)                     |
 
 Browser: local_noauth gate smoke documented in compatibility doc (not production auth).
 
