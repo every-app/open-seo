@@ -20,7 +20,11 @@ import {
 } from "@/client/components/ui/table";
 import { PromptActionsMenu } from "./PromptActions";
 import { RenameTopicDialog } from "./RenameTopicDialog";
-import { EngineResult, PromptRate } from "./PromptResultCells";
+import {
+  CompetitorStack,
+  EngineResults,
+  PromptRate,
+} from "./PromptResultCells";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
 
 export enum BrandedFilter {
@@ -88,6 +92,7 @@ export function PromptInventory({
           <TableRow>
             <TableHead className="w-full">Prompts by topic</TableHead>
             <TableHead>Engines</TableHead>
+            <TableHead>Competitors named</TableHead>
             <TableHead>Brand mentions</TableHead>
             <TableHead>Owned citations</TableHead>
             <TableHead>
@@ -133,6 +138,9 @@ export function PromptInventory({
                       </span>
                     </span>
                   </Button>
+                </TableCell>
+                <TableCell>
+                  <CompetitorStack rows={topicRows} loading={loading} />
                 </TableCell>
                 <TableCell>
                   <PromptRate
@@ -235,17 +243,10 @@ export function PromptInventory({
                         </p>
                       </TableCell>
                       <TableCell className={dim}>
-                        <div className="flex min-w-64 items-center gap-3">
-                          {engines.map((engine) => (
-                            <EngineResult
-                              key={engine}
-                              engine={engine}
-                              row={promptRows?.find(
-                                (row) => row.engine === engine,
-                              )}
-                            />
-                          ))}
-                        </div>
+                        <EngineResults engines={engines} rows={promptRows} />
+                      </TableCell>
+                      <TableCell className={dim}>
+                        <CompetitorStack rows={promptRows} loading={loading} />
                       </TableCell>
                       <TableCell className={dim}>
                         <PromptRate
