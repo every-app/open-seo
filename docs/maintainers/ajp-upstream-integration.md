@@ -2,79 +2,58 @@
 
 Secret-free progress record for the self-hosted fork. Private operational detail stays under `/home/geoffajp/openseo-handover/`.
 
-## Verified baseline (2026-10-27)
+## Verified baseline (2026-11-04)
 
-| Item                                     | Value                                                                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Last deployed integration**            | **v0.1.20** (PR #24); **v0.1.24** in PR [#27](https://github.com/alljigsawpuzzles/open-seo/pull/27) — not yet prod |
-| Previous production                      | v0.1.14 (PR #21), `ff093c2f`                                                                                       |
-| Fork `origin/main`                       | **`083904674f8b17fa5b2662ffe507c8b39e73eca9`**                                                                     |
-| Stale checkout (do not use for upgrades) | `/home/geoffajp/dev/open-seo` @ `3564a19f` (`codex/droplet-development`)                                           |
-| Integration worktree                     | `/home/geoffajp/dev/open-seo-v0.1.19` @ merge commit                                                               |
-| Merged PR                                | https://github.com/alljigsawpuzzles/open-seo/pull/22                                                               |
-| Upstream integrated tag                  | `v0.1.19` → `99d9a49c`                                                                                             |
-| Upstream v0.1.14 tag                     | `8713d753` (merge-base with fork)                                                                                  |
-| Commits upstream v0.1.14…v0.1.19         | 60 on linear release ancestry                                                                                      |
-| Production smoke (operator)              | Pass 2026-10-27 — see `ajp-v0.1.19-rollout.md` deployment record                                                   |
+| Item                          | Value                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Last deployed integration** | **v0.1.24** (PR [#27](https://github.com/alljigsawpuzzles/open-seo/pull/27)), merge **`6db472cc`**      |
+| Previous production           | v0.1.20 (PR #24), 2026-10-29                                                                            |
+| Fork `origin/main`            | **`6db472ccaa34e323170d8ed94a45e516f422496b`** @ OpenSEO **0.1.24**                                     |
+| D1 ledger                     | **63** rows; latest **`0063_account_deletion_requests.sql`**; **0055** still skipped                    |
+| Live Workers @ 100%           | app **`551da5fd-…`**, audit **`ace9519b-…`** (see private `v0.1.24-publication-*` JSON)                 |
+| Publication scripts           | `~/openseo-release-review/prepare-v19-build.mjs`, **`apply-migration-0063.mjs`**, **`publish-v24.mjs`** |
+| Canonical dev                 | **`~/dev/open-seo`** on droplet **`134.209.21.186`** only                                               |
 
-## Release scope (verified tags)
+## Release scope (verified tags — AJP deploy history)
 
-| Release | Tag SHA    | Notes for AJP fork                                                                                  |
-| ------- | ---------- | --------------------------------------------------------------------------------------------------- |
-| v0.1.15 | `0ca244b0` | MCP OAuth/org binding, rank recheck for never-ranked keywords, MCP sign-in refresh                  |
-| v0.1.16 | `236761ad` | **Shopify crawl continues past refused URLs**; dashboard scan without renderer; workflow resilience |
-| v0.1.17 | `307c9ec6` | **AUTH_MODE=password**, standalone Docker, team/org schema (keep **cloudflare_access** in prod)     |
-| v0.1.18 | `89ad06cf` | **OpenRouter gate** for AI visibility setup; Every App auth mode (not used on AJP)                  |
-| v0.1.19 | `99d9a49c` | Rendered-audit **>1k pages within one credit hold**; MCP rank keyword volume                        |
-| v0.1.20 | `f24a8334` | Colorblind charts; AI visibility late-answer + MCP routing fixes; rank “double-checking” copy       |
+| Release | Tag SHA    | Notes for AJP fork                                                                                                              |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| v0.1.15 | `0ca244b0` | MCP OAuth/org binding, rank recheck for never-ranked keywords, MCP sign-in refresh                                              |
+| v0.1.16 | `236761ad` | **Shopify crawl continues past refused URLs**; dashboard scan without renderer; workflow resilience                             |
+| v0.1.17 | `307c9ec6` | **AUTH_MODE=password**, standalone Docker, team/org schema (keep **cloudflare_access** in prod)                                 |
+| v0.1.18 | `89ad06cf` | **OpenRouter gate** for AI visibility setup; Every App auth mode (not used on AJP)                                              |
+| v0.1.19 | `99d9a49c` | Rendered-audit **>1k pages within one credit hold**; MCP rank keyword volume                                                    |
+| v0.1.20 | `f24a8334` | Colorblind charts; AI visibility late-answer + MCP routing fixes; rank “double-checking” copy                                   |
+| v0.1.24 | `0c04886f` | Integrates upstream **0.1.21–0.1.24** (Local SEO beta, rank/MCP fixes, **0063**, Prompt Tracking filters) — **live 2026-11-04** |
+
+Intermediate tags **0.1.21–0.1.23** shipped in the single **0.1.24** integration; see staff changelog and [compare v0.1.20…v0.1.24](https://github.com/every-app/open-seo/compare/v0.1.20...v0.1.24).
 
 ## New migrations after production (post–v0.1.14)
 
-SQLite journal adds **0060**, **0061**, **0062** (Postgres **0038–0040**). **0055 remains intentionally skipped** on AJP production; do not run generic `migrate` without an explicit allowlist. Rehearse 0060–0062 on a private restored backup before any prod apply.
+SQLite journal through **0063** on production (**0060–0062** in v0.1.19 deploy; **0063** in v0.1.24). Postgres **0041** equivalent for hosted/Postgres paths. **0055 remains intentionally skipped**; do not run generic `migrate` without an explicit allowlist.
 
 ## Merge conflict resolution (fork-specific)
 
-Resolved eight conflict regions by combining upstream v0.1.16–v0.19 crawler/auth improvements with fork behavior:
-
-- **Crawler:** `auditRequestHeaders` / `publicFetch`, upstream rate-limit pacing and Shopify `refuse`, plus fork fetch diagnostics and render HTML fallback.
-- **AI prompt research:** retained DataForSEO-only path when `OPENROUTER_API_KEY` is unset on self-host.
-- **Workflow:** both `renderHold` (metered rendered audits) and per-audit `diagnostics`.
+Same patterns as v0.1.19–20: crawler diagnostics + upstream Shopify/refuse; **OpenRouterKeyGate** bypass + DataForSEO-only research; Settings deployment changelog on self-host. v0.1.24 merge touched audit shared date exports, **`SiteAuditWorkflow`** + **`yieldingStep`**, crawl helper tests (403 non-HTML render).
 
 ## Material risks (unchanged constraints)
 
-1. **Auth:** v0.1.17 adds password/standalone paths; production must stay `cloudflare_access` until an explicit product decision.
-2. **OpenRouter:** v0.1.18 gate blocked DataForSEO-only UI; PR adds **bypass** when `generationAvailable === false`. Server manual research + `aiPromptResearchFallback` retained from fork.
-3. **Migrations:** 0055 skip + non-contiguous ledger; plan 0060–0062 explicitly.
-4. **Shopify signature:** save/re-encrypt still open; do not rotate secrets during integration testing.
-5. **Rank check:** upstream changes may help retries/UI; Oct 20 cost/queue findings are not automatically fixed—re-read code, no new paid runs without approval.
-6. **GitHub CI:** Actions are **disabled** on `alljigsawpuzzles/open-seo` (workflow dispatch returns HTTP 422). PR #22 shows no checks because nothing runs—not because checks failed. Droplet validation is the current gate unless Actions is re-enabled.
-7. **AI visibility UI:** see `ajp-v0.1.19-compatibility.md` §4 and acceptance checklist. Gate bypass + Vitest added; production smoke without OpenRouter still required.
-
-## Validation (droplet, 2026-10-27)
-
-**Publication prep revision:** `b58deab3574c1eea981be80ce5ce13b6a02b9f40`
-
-| Check                                | Result                                                                                      |
-| ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `pnpm ci:check`                      | **Passed** @ `b58deab3` (`NODE_OPTIONS='--max-old-space-size=6144'`)                        |
-| Vitest                               | **1852** @ `29c83fb4` (not part of `ci:check`; rerun optional before deploy)                |
-| Selfhost build (`cloudflare_access`) | **Passed** @ `b58deab3` via `prepare-v19-build.mjs` (no `.env.local`; prod `AUTH_MODE` env) |
-| Wrangler dry-run                     | **Passed** — app **43** bindings, audit **18** (see `release-build-validation.json`)        |
-| Auth bake-in                         | Client references `cloudflare_access`; `local_noauth` only in shared auth-mode enum strings |
-| Migration rehearsal                  | **0060–0062** on live export copy; **0055** excluded (ledger rehearsal unchanged)           |
-
-Private artifact: `/home/geoffajp/openseo-release-review/v0.1.19/release-build-validation.json`
-
-Preview-only env (not used for build): `/home/geoffajp/openseo-handover/2026-10-27-preview.env.local.bak`
-
-| v0.1.24 | `0c04886f` | Prompt Tracking branded filter + competitors; integrates 0.1.21–0.23 scope — PR **#27** pending deploy |
+1. **Auth:** production stays **`cloudflare_access`**.
+2. **OpenRouter:** gate bypass when `generationAvailable === false`; manual research paths retained.
+3. **Migrations:** 0055 skip + allowlisted apply only.
+4. **Shopify signature:** save/re-encrypt still open.
+5. **Rank check:** cost/alert UX — notification webhooks in progress on **`codex/notifications-wip`** (not prod).
+6. **GitHub CI:** disabled on fork; droplet **`pnpm ci:check`** / **`pnpm test:ci`** remain the gate (oxlint may OOM on 8GB — same as v0.1.19 notes).
 
 ## Next steps
 
-1. Merge PR **#27** after droplet **`pnpm ci:check`** and operator smoke; deploy Workers + allowlisted **0063**.
-2. Re-apply **`codex/notifications-wip`** on updated **main** (migrations **0064/0042**).
-3. Monitor production; Shopify signature and rank-cost follow-ups unchanged.
+1. Watch **[every-app/open-seo releases](https://github.com/every-app/open-seo/releases)** for **v0.1.25+**.
+2. Finish **rank notification webhooks** on **`codex/notifications-wip`** → renumber **0064/0042** on **`main`**, then upstream PR if desired.
+3. Optional: private handover note **`DEPLOYMENT-v0.1.24.md`** (publication dir, rollback Worker IDs, smoke notes).
+4. Optional: delete merged remote branch **`codex/upgrade-openseo-v0.1.24`**.
 
 ## Deployment state
 
-**Live** on Cloudflare @ merge `08390467` (2026-10-27). Private publication bundle and operator notes under `openseo-handover/2026-10-27/DEPLOYMENT-v0.1.19.md`.
+**Live** on Cloudflare @ **`6db472cc`** (2026-11-04). Private publication: `~/openseo-release-review/v0.1.24-publication-2026-11-04T14-33-55-147Z/publication.json`.
+
+Historical v0.1.19 record: `docs/maintainers/ajp-v0.1.19-rollout.md`, `openseo-handover/2026-10-27/DEPLOYMENT-v0.1.19.md`.

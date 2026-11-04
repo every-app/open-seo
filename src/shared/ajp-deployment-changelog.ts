@@ -38,7 +38,12 @@ export const AJP_DEPLOYMENT_CHANGELOG_INTRO = {
 export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   {
     version: "0.1.24",
-    deployedOn: "Pending production deploy",
+    deployedOn: "2026-11-04",
+    pullRequest: {
+      number: 27,
+      url: "https://github.com/alljigsawpuzzles/open-seo/pull/27",
+    },
+    mergeCommit: "6db472ccaa34e323170d8ed94a45e516f422496b",
     upstream: {
       label: "OpenSEO v0.1.21 through v0.1.24",
       compareUrl:
@@ -85,8 +90,8 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
       "Notification webhooks parked on branch codex/notifications-wip — re-apply after deploy with migrations renumbered past 0063.",
     ],
     operations: [
-      "Integration branch only — not yet live in production.",
-      "When deploying: allowlisted D1 migration 0063 (account_deletion_requests); migration 0055 still skipped.",
+      "D1 migration 0063 (account_deletion_requests) allowlisted; ledger 62→63; 0055 still skipped.",
+      "Worker pair activated via publish-v24.mjs (publication artifact under ~/openseo-release-review/v0.1.24-publication-*).",
     ],
     openFollowUps: [
       "Re-merge notification webhooks from codex/notifications-wip (0064/0042) and upstream PR when ready.",
