@@ -6,7 +6,10 @@ import {
 import { NonRetryableError } from "cloudflare:workflows";
 import { withPgClient } from "@/db";
 import { yieldingStep } from "@/server/workflows/yieldingStep";
-import type { BillingCustomerContext } from "@/server/billing/subscription";
+import {
+  getUsageCreditsRemaining,
+  type BillingCustomerContext,
+} from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import {
@@ -20,11 +23,6 @@ import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
 import { describeError } from "@/server/lib/errors";
-import { autumn } from "@/server/billing/autumn";
-import {
-  AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-  AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-} from "@/shared/billing";
 import {
   estimateRankCheckCredits,
   rankCheckCostApprovalError,
@@ -111,20 +109,13 @@ async function prepareRankCheckKeywords(input: {
   // Scheduled checks go through the cheaper task queue, so estimate at queued
   // pricing — a live-price estimate would skip checks the user can afford.
   // The estimate is the worst case, so it covers every retry.
+  // A timed-out Autumn read throws here instead of reading as 0 credits, so
+  // the step retries it rather than refusing a customer who has credits.
   if (await isHostedServerAuthMode()) {
-    const [monthlyCheck, topupCheck] = await Promise.all([
-      autumn.check({
-        customerId: input.billingCustomer.organizationId,
-        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-      }),
-      autumn.check({
-        customerId: input.billingCustomer.organizationId,
-        featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-      }),
-    ]);
-    const available =
-      (monthlyCheck.balance?.remaining ?? 0) +
-      (topupCheck.balance?.remaining ?? 0);
+    const credits = await getUsageCreditsRemaining(
+      input.billingCustomer.organizationId,
+    );
+    const available = credits.monthlyRemaining + credits.topupRemaining;
     if (available < costCredits) {
       await sendCreditsExhaustedEvent(input.billingCustomer);
       // The code alone, so the run's saved error shows the credits card.

@@ -129,7 +129,10 @@ describe("rank check workflow credit ceiling", () => {
     mocks.getSnapshotsForRun.mockResolvedValue([]);
     mocks.updateRun.mockResolvedValue(undefined);
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
-    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
+    mocks.autumnCheck.mockResolvedValue({
+      allowed: true,
+      balance: { remaining: 1_000 },
+    });
   });
 
   it("rejects a keyword-list race before balance or DataForSEO calls", async () => {
@@ -155,6 +158,20 @@ describe("rank check workflow credit ceiling", () => {
     expect(mocks.updateConfig).toHaveBeenCalledWith("config_1", "project_1", {
       lastSkipReason: "insufficient_credits",
     });
+  });
+
+  it("does not refuse as out of credits when an Autumn read fails open", async () => {
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(5));
+    // The SDK's response to a timed-out check.
+    mocks.autumnCheck.mockResolvedValue({ allowed: true, balance: null });
+
+    await expect(runWorkflow({})).rejects.toThrow("no usage_credits balance");
+
+    expect(mocks.failRunIfActive).not.toHaveBeenCalledWith(
+      "run_1",
+      "INSUFFICIENT_CREDITS",
+    );
+    expect(mocks.updateConfig).not.toHaveBeenCalled();
   });
 
   // Exactly at the ceiling is approved (the guard is strictly greater), and
@@ -191,7 +208,10 @@ describe("rank check finalization", () => {
     mocks.getSnapshotsForRun.mockResolvedValue([]);
     mocks.updateRun.mockResolvedValue(undefined);
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
-    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
+    mocks.autumnCheck.mockResolvedValue({
+      allowed: true,
+      balance: { remaining: 1_000 },
+    });
   });
 
   it("fails a run where no keyword produced a snapshot, keeping the recorded reason", async () => {
@@ -289,7 +309,10 @@ describe("rank check goto URLs", () => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(1));
     mocks.updateRun.mockResolvedValue(undefined);
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
-    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
+    mocks.autumnCheck.mockResolvedValue({
+      allowed: true,
+      balance: { remaining: 1_000 },
+    });
     mocks.resolveGotoUrls.mockResolvedValue(new Map());
   });
 
