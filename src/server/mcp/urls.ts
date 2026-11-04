@@ -16,3 +16,9 @@ export function buildDashboardUrl(
   }
   return url.toString();
 }
+
+// Search Performance hosts the connection card and the data the user came for,
+// so land them there rather than in settings.
+export function buildConnectGscUrl(baseUrl: string, projectId: string): string {
+  return buildDashboardUrl(baseUrl, `/p/${projectId}/search-performance`);
+}

@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createProjectTool } from "./create-project";
-import { makeToolContext } from "./tool-test-support";
+import { makeToolContext, textContent } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   createProject: vi.fn(),
   markOnboardingCompleted: vi.fn(),
   captureServerEvent: vi.fn(),
+  isHostedServerAuthMode: vi.fn(),
+}));
+
+vi.mock("@/server/lib/runtime-env", () => ({
+  isHostedServerAuthMode: mocks.isHostedServerAuthMode,
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -45,6 +50,7 @@ describe("create_project MCP tool", () => {
       languageCode: "en",
     });
     mocks.markOnboardingCompleted.mockResolvedValue(false);
+    mocks.isHostedServerAuthMode.mockResolvedValue(true);
   });
 
   it("creates a project in the credential's organization and returns it", async () => {
@@ -116,6 +122,43 @@ describe("create_project MCP tool", () => {
     });
     expect(mocks.markOnboardingCompleted).not.toHaveBeenCalled();
   });
+
+  it.each([
+    {
+      caller: "an external agent on the hosted app",
+      clientId: "client_123",
+      hostedMode: true,
+      offered: true,
+    },
+    {
+      caller: "an external agent on a self-host",
+      clientId: "client_123",
+      hostedMode: false,
+      offered: false,
+    },
+    {
+      caller: "the in-app agent on the hosted app",
+      clientId: null,
+      hostedMode: true,
+      offered: false,
+    },
+  ])(
+    "offers the Search Console link to $caller: $offered",
+    async ({ clientId, hostedMode, offered }) => {
+      mocks.isHostedServerAuthMode.mockResolvedValue(hostedMode);
+
+      const result = await createProjectTool.handler(
+        { name: "Acme" },
+        makeToolContext({ clientId }),
+      );
+
+      expect(
+        textContent(result).includes(
+          "https://open-seo.test/p/project_new/search-performance",
+        ),
+      ).toBe(offered);
+    },
+  );
 
   it("still returns the project when marking onboarding complete fails", async () => {
     mocks.markOnboardingCompleted.mockRejectedValue(new Error("db down"));

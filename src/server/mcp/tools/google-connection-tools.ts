@@ -10,6 +10,7 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { buildConnectGscUrl } from "@/server/mcp/urls";
 
 // MCP counterparts of the dashboard's "pick a Search Console property / GA4
 // property" screens, so an agent can finish project setup after the user has
@@ -71,7 +72,7 @@ export const listSearchConsoleSitesTool = {
   config: {
     title: "List Search Console sites",
     description:
-      "Lists the Search Console properties visible to each Google account the calling user has connected in the OpenSEO dashboard, and flags the one bound to the project. Use it to find the siteUrl (e.g. sc-domain:example.com or https://www.example.com/) and accountId to pass to set_search_console_site. Cannot connect a new Google account; that happens on the project's Integrations page. Uses no credits. Read-only.",
+      "Lists the Search Console properties visible to each Google account the calling user has connected in the OpenSEO dashboard, and flags the one bound to the project. Use it to find the siteUrl (e.g. sc-domain:example.com or https://www.example.com/) and accountId to pass to set_search_console_site. Cannot connect a new Google account; connectUrl is the page where the user does that. Uses no credits. Read-only.",
     inputSchema: { projectId: projectIdSchema } as const,
     outputSchema: z.looseObject({
       ok: z.boolean(),
@@ -88,11 +89,13 @@ export const listSearchConsoleSitesTool = {
           ),
         }),
       ),
+      connectUrl: z.string(),
       ...optionalMetaOutputSchema,
     }),
     annotations: listAnnotations,
   },
   handler: withMcpProjectAuth(async (args: { projectId: string }, context) => {
+    const connectUrl = buildConnectGscUrl(context.baseUrl, args.projectId);
     const [siteList, connection] = await Promise.all([
       GscService.listSitesForUserWithGrantStatus(context.auth.userId),
       GscService.getConnection(args.projectId),
@@ -111,7 +114,7 @@ export const listSearchConsoleSitesTool = {
     }));
     const text =
       accounts.length === 0
-        ? "No Google account with Search Console access is connected to this OpenSEO user. Connect one on the project's Integrations page in the dashboard."
+        ? `No Google account with Search Console access is connected to this OpenSEO user. Connect one here: ${connectUrl}`
         : accounts
             .map((grant) =>
               [
@@ -126,7 +129,7 @@ export const listSearchConsoleSitesTool = {
     return mcpResponse({
       text,
       meta: buildProjectMeta(context, args.projectId),
-      structuredContent: { ok: true, accounts },
+      structuredContent: { ok: true, accounts, connectUrl },
     });
   }),
 };

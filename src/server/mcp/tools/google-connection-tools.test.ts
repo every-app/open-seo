@@ -3,7 +3,7 @@ import {
   listSearchConsoleSitesTool,
   setSearchConsoleSiteTool,
 } from "./google-connection-tools";
-import { makeToolContext } from "./tool-test-support";
+import { makeToolContext, textContent } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
@@ -79,6 +79,21 @@ describe("Google connection MCP tools", () => {
         (account) => account.sites[0]?.isSelected,
       ),
     ).toEqual([false, true]);
+  });
+
+  it("gives the agent a connect link when no Google account is connected", async () => {
+    mocks.GscService.listSitesForUserWithGrantStatus.mockResolvedValue({
+      accounts: [],
+    });
+
+    const result = await listSearchConsoleSitesTool.handler(
+      { projectId: "project_1" },
+      toolContext,
+    );
+
+    expect(textContent(result)).toContain(
+      "https://open-seo.test/p/project_1/search-performance",
+    );
   });
 
   it("binds the project through the requested Google account", async () => {
