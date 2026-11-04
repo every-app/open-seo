@@ -23,11 +23,18 @@ import { RenameTopicDialog } from "./RenameTopicDialog";
 import { EngineResult, PromptRate } from "./PromptResultCells";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
 
+export enum BrandedFilter {
+  All = "all",
+  NonBranded = "neutral",
+  Branded = "branded",
+}
+
 export function PromptInventory({
   projectId,
   prompts,
   topics,
   search,
+  brandedFilter,
   engines,
   rows,
   loading,
@@ -42,6 +49,7 @@ export function PromptInventory({
   prompts: AiPrompt[];
   topics: string[];
   search: string;
+  brandedFilter: BrandedFilter;
   engines: AiEngine[];
   rows: AiObservationRow[] | undefined;
   /** The run's answers are still loading; prompts show before their rates. */
@@ -63,12 +71,14 @@ export function PromptInventory({
   } | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const matches = (prompt: AiPrompt) =>
-    !search ||
-    prompt.text.toLocaleLowerCase().includes(search.toLocaleLowerCase());
+    (brandedFilter === BrandedFilter.All ||
+      prompt.branded === (brandedFilter === BrandedFilter.Branded)) &&
+    (!search ||
+      prompt.text.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   if (!prompts.some(matches))
     return (
       <p className="p-8 text-center text-sm text-muted-foreground">
-        No matching prompts. Add prompts or adjust your search.
+        No matching prompts. Add prompts or adjust your search and filter.
       </p>
     );
   return (
