@@ -23,6 +23,7 @@ import {
 } from "@/server/features/activation/mcpActivation";
 import { getWebChat } from "@/server/mcp/web-chat";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { captureMetaSetupStep, MetaSetupEvent } from "@/server/referrals/meta";
 import {
   createWorkersOAuthMcpProps,
   MCP_AUTH_CONTEXT_PROP,
@@ -308,6 +309,11 @@ async function handleOAuthConsentResponse(
   });
 
   await recordMcpAuthorized(context.organizationId);
+  await captureMetaSetupStep(
+    MetaSetupEvent.AgentConnected,
+    context.organizationId,
+    request,
+  );
   // Connecting an agent is the last onboarding step, so this finishes
   // onboarding for people who paste the setup prompt and never return to the
   // wizard.

@@ -5,7 +5,10 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { queryClient } from "@/client/tanstack-db";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { hasOrgPermission } from "@/lib/org-permissions";
-import { createPlanCheckout } from "@/serverFunctions/billing";
+import {
+  createPlanCheckout,
+  reportCheckoutStart,
+} from "@/serverFunctions/billing";
 import type { CheckoutPlanId } from "@/shared/billing";
 
 const CHECKOUT_URL_KEY = ["billing", "checkout-url"] as const;
@@ -86,6 +89,12 @@ export async function openPlanCheckout(
     planId,
     link_ready: queryClient.getQueryData(options.queryKey) !== undefined,
   });
+  // Checkout must not wait on or fail with ad measurement, and keepalive
+  // carries the request past the redirect below.
+  void reportCheckoutStart({
+    data: { planId },
+    fetch: (input, init) => fetch(input, { ...init, keepalive: true }),
+  }).catch(() => undefined);
   window.location.assign(await queryClient.fetchQuery(options));
 }
 

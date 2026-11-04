@@ -1,4 +1,6 @@
+import { useLocation } from "@tanstack/react-router";
 import * as React from "react";
+import { trackMetaPageContent } from "@/lib/meta-pixel";
 import {
   effectivePrivacyChoices,
   hasGlobalPrivacyControl,
@@ -24,6 +26,11 @@ export function PrivacyChoices() {
   const [view, setView] = React.useState<"none" | "partner" | "ad" | "dialog">(
     "none",
   );
+  const { pathname } = useLocation();
+
+  // Moving between pages. The pixel isn't running yet for the page the visitor
+  // landed on, so loadMetaPixel reports that one when it loads.
+  React.useEffect(() => trackMetaPageContent(pathname), [pathname]);
 
   React.useEffect(() => {
     const savedChoices = readPrivacyCookie(document.cookie);
@@ -331,7 +338,8 @@ function loadMetaPixel() {
   // that tag keeps a save from reloading the page to stop a pixel that never
   // ran, and lets an Allow on this page request the pixel again.
   script.onload = () => {
-    if (!("fbq" in window)) script.remove();
+    if ("fbq" in window) trackMetaPageContent(location.pathname);
+    else script.remove();
   };
   document.head.appendChild(script);
 }

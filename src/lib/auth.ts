@@ -30,7 +30,11 @@ import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { assertStandaloneSignUpOpen } from "@/server/standalone/sign-up";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
-import { captureMetaSignup } from "@/server/referrals/meta";
+import {
+  captureMetaSetupStep,
+  captureMetaSignup,
+  MetaSetupEvent,
+} from "@/server/referrals/meta";
 import {
   captureSignUpCompleted,
   saveSignUpCampaign,
@@ -309,6 +313,11 @@ function createAuth() {
           userEmail: user.email,
           organizationId: metadata.organizationId,
         });
+        await captureMetaSetupStep(
+          MetaSetupEvent.AgentConnected,
+          metadata.organizationId,
+          ctx.request,
+        );
       }),
     },
     databaseHooks: {

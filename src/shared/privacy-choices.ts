@@ -10,8 +10,9 @@ export type PrivacyChoices = {
   analytics: boolean;
   /** Partner referral attribution (Dub's referral cookie). */
   referrals: boolean;
-  /** Meta ad measurement: the Meta Pixel on openseo.so and the app's signup
-   *  and subscription events to Meta's Conversions API. */
+  /** Meta ad measurement: the Meta Pixel and its events on openseo.so, and the
+   *  app's signup, setup, checkout and subscription events to Meta's Conversions
+   *  API. */
   advertising: boolean;
 };
 

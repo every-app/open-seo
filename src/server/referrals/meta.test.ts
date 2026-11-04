@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  captureMetaCheckoutStart,
   captureMetaPurchase,
+  captureMetaSetupStep,
   captureMetaSignup,
+  MetaSetupEvent,
   pinMetaCheckout,
 } from "./meta";
 
@@ -55,6 +58,61 @@ describe("captureMetaSignup", () => {
       }),
     );
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe("captureMetaSetupStep", () => {
+  it("reports each of an organization's steps once, from a fixed page", async () => {
+    const request = browserRequest({ "cf-ipcountry": "US" });
+    await captureMetaSetupStep(MetaSetupEvent.WebsiteAdded, "org-1", request);
+    await captureMetaSetupStep(MetaSetupEvent.WebsiteAdded, "org-1", request);
+    await captureMetaSetupStep(MetaSetupEvent.AgentConnected, "org-1", request);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toEqual(
+      expect.stringMatching(
+        /"event_name":"WebsiteAdded".*"event_source_url":"https:\/\/app\.openseo\.so\/onboarding"/,
+      ),
+    );
+  });
+
+  it("still reports the step later when advertising wasn't allowed at first", async () => {
+    await captureMetaSetupStep(
+      MetaSetupEvent.WebsiteAdded,
+      "org-1",
+      browserRequest({ "cf-ipcountry": "US", "sec-gpc": "1" }),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    await captureMetaSetupStep(
+      MetaSetupEvent.WebsiteAdded,
+      "org-1",
+      browserRequest({ "cf-ipcountry": "US" }),
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe("captureMetaCheckoutStart", () => {
+  it("reports the click at the plan's price", () => {
+    captureMetaCheckoutStart(
+      browserRequest({ "cf-ipcountry": "US" }),
+      "pro-plan",
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toEqual(
+      expect.stringMatching(/"event_name":"InitiateCheckout".*"value":30\b/),
+    );
+  });
+
+  it("sends nothing for a YC deal or without advertising permission", () => {
+    captureMetaCheckoutStart(
+      browserRequest({ "cf-ipcountry": "US" }),
+      "yc-plan",
+    );
+    captureMetaCheckoutStart(
+      browserRequest({ "cf-ipcountry": "US", "sec-gpc": "1" }),
+      "pro-plan",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

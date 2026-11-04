@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { MetaEvent, trackMetaEvent } from "@/lib/meta-pixel";
 import { buildPageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/_marketing/pricing")({
@@ -595,6 +596,7 @@ function Pricing() {
 }
 
 function PlanCard({ plan, yearly }: { plan: Plan; yearly: boolean }) {
+  const price = yearly ? plan.annualPriceUsd : plan.priceUsd;
   return (
     <div
       className={`flex flex-col rounded-xl border bg-white p-6 ${
@@ -608,7 +610,7 @@ function PlanCard({ plan, yearly }: { plan: Plan; yearly: boolean }) {
         {plan.audience}
       </p>
       <p className="mt-5 text-4xl font-semibold tabular-nums tracking-tight text-neutral-950">
-        ${(yearly ? plan.annualPriceUsd : plan.priceUsd).toLocaleString()}
+        ${price.toLocaleString()}
         <span className="text-base font-normal text-[var(--color-brand-muted)]">
           {yearly ? "/yr" : "/mo"}
         </span>
@@ -618,6 +620,15 @@ function PlanCard({ plan, yearly }: { plan: Plan; yearly: boolean }) {
       </p>
       <a
         href={signUpHref(plan.id, yearly)}
+        onClick={() =>
+          trackMetaEvent(MetaEvent.AddToCart, {
+            content_ids: [plan.id],
+            content_name: plan.name,
+            content_type: "product",
+            currency: "USD",
+            value: price,
+          })
+        }
         className={`mt-6 inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${
           plan.featured
             ? "bg-neutral-950 text-white hover:bg-neutral-800"

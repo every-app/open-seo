@@ -20,7 +20,10 @@ import {
 } from "@/server/billing/invoices";
 import { getOrganizationBillingUsage } from "@/server/billing/usage";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
-import { pinMetaCheckout } from "@/server/referrals/meta";
+import {
+  captureMetaCheckoutStart,
+  pinMetaCheckout,
+} from "@/server/referrals/meta";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 import { timeZoneSchema } from "@/types/schemas/schedule-time";
 
@@ -49,6 +52,15 @@ export const createPlanCheckout = createServerFn({ method: "POST" })
     // subscription, so the Meta ad conversion is set up now.
     await pinMetaCheckout(context.organizationId, request);
     return url;
+  });
+
+// The click on Subscribe. createPlanCheckout can't report it: the link is made
+// ahead of time, when /subscribe loads.
+export const reportCheckoutStart = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(z.object({ planId: z.enum(CHECKOUT_PLAN_IDS) }))
+  .handler(({ data }) => {
+    captureMetaCheckoutStart(getRequest(), data.planId);
   });
 
 export const createTopUpCheckout = createServerFn({ method: "POST" })
