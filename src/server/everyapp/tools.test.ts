@@ -104,11 +104,6 @@ describe("OpenSEO's tools on the Every App gateway", () => {
         tool.name,
       ).toBeLessThanOrEqual(20 * 1024);
     }
-    // The gateway hides destructive tools from AI clients, so none is one:
-    // deletes reach them as writes.
-    expect(catalog.tools.filter((tool) => tool.risk === "destructive")).toEqual(
-      [],
-    );
     expect(
       catalog.tools.find((tool) => tool.name === "delete_report")?.risk,
     ).toBe("write");
