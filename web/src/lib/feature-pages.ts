@@ -261,9 +261,10 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.siteAudit,
     eyebrow: "Site Audit",
     navDescription: "Audit page-level SEO signals.",
-    title: "SEO audit tool for finding technical issues fast",
+    title:
+      "SEO audit tool that crawls, renders and sorts every issue by severity",
     description:
-      "Crawl a site, collect page-level technical signals, and optionally run Lighthouse checks for performance, SEO, accessibility, and best-practice issues.",
+      "Crawl a site, check every page for 32 types of technical issue, and work through them in order: critical first, then warnings, then info. Optional Lighthouse checks add performance, accessibility and best-practice findings.",
     seoDescription:
       "Crawl your site and get every technical issue sorted by severity: broken links, blocked pages, missing titles, optional Lighthouse checks. Free up to 50 pages.",
     primaryKeyword: "seo audit tool",
@@ -279,42 +280,78 @@ export const featurePages = {
       {
         title: "Run a site crawl",
         description:
-          "Inspect pages for status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, response time, and optional Lighthouse findings.",
+          "Enter a URL and a page limit. The crawler follows robots.txt, stays on your domain, and checks status codes, titles, meta descriptions, headings, canonicals, links, image alt text and response time on every page.",
       },
       {
-        title: "Prioritize issues",
+        title: "Work the issues by severity",
         description:
-          "Review crawled pages and optional Lighthouse results so the team can focus on visible page and performance problems.",
+          "Critical issues come first: blocked pages, server errors, broken internal links and missing titles. Warnings and info follow, so the report reads as a queue instead of a score.",
       },
       {
         title: "Drill into affected URLs",
         description:
-          "Move into URLs with missing titles, metadata, heading and image-alt signals, status-code issues, response-time data, or optional Lighthouse findings.",
+          "Each issue opens to the exact URLs it affects, with the flagged title or meta description shown. Export the list for a developer or a content writer.",
       },
     ],
     metrics: [
       { label: "Crawled URLs", value: "Coverage" },
-      { label: "Page fields", value: "Checks" },
+      { label: "Issue severity", value: "Priority" },
       { label: "Affected pages", value: "Scope" },
       { label: "Audit history", value: "Progress" },
     ],
     showMetrics: true,
     useCases: [
       "Audit a new site before publishing SEO work.",
-      "Find technical issues after a migration or redesign.",
-      "Export crawled page data and Lighthouse findings for developers and content teams.",
+      "Find what broke after a migration or redesign.",
+      "Hand developers a list of URLs to fix instead of a generic score.",
     ],
     differentiators: [
-      "A practical crawler built into the same workspace as keyword and domain research.",
-      "Open-source implementation for teams that want to inspect or extend the audit flow.",
-      "Simple reports that expose page-level signals and optional Lighthouse findings instead of relying only on a generic score.",
+      "The crawler is built into the same workspace as keyword, rank and backlink research.",
+      "Your AI agent can run an audit and read the issues over MCP, then work through them with you.",
+      "Open source, so you can read exactly what each check looks for.",
     ],
-    featuredLink: {
-      title: "Free SERP simulator",
-      description:
-        "Preview how a title and meta description render on Google, with pixel widths. No signup required.",
-      href: "/serp-simulator",
+    headings: {
+      workflows: "Run a crawl, get a ranked work queue",
+      metrics: "What one audit covers",
+      useCases: "When to run an audit",
+      differentiators: "Why audit here",
+      related: "Tools to use alongside the audit",
+      faq: "Site audit questions",
     },
+    toolCallout: {
+      title: "Fix the title and meta issues the audit finds",
+      description: "A free tool from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free SERP simulator",
+          description:
+            "The audit flagged a title as too long? Paste it in and see where Google cuts it, on desktop and mobile.",
+          href: "/serp-simulator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "32 issue types, sorted by what to fix first",
+        body: "Every issue the crawler reports carries a severity. Four are critical: the crawler was blocked, a server error, a broken internal link, or a missing title. Nineteen are warnings, including duplicate titles and content, redirect chains and loops, conflicting canonicals, thin content and orphan pages. Three of those warnings tell you when the crawl itself stopped early, so a short report never passes for a clean one. The other nine are info, like title length and pages buried deep in the site. Each issue opens to the URLs it affects.",
+      },
+      {
+        title: "Audits that see JavaScript sites",
+        body: "A crawler that reads only raw HTML sees an empty shell on many modern sites. Turn on rendering and OpenSEO loads each page in a browser before checking it, up to your plan's page limit. Pages that come back as a bot challenge get a second try with a different renderer. Rendered audits use credits for the pages they render and stop after 22 hours. When a site rate-limits the crawl, the audit slows down and retries instead of marking every page blocked, and site owners can verify the OpenSEO-Audit crawler before letting it through.",
+      },
+      {
+        title: "Run an audit from your AI agent",
+        body: "Connect OpenSEO to Claude, Cursor or ChatGPT over MCP and the agent can start an audit, check its progress and read the issues by severity. Ask it which critical issues to fix first, or to draft new titles for every page flagged as too long, and it works from the same report you see in the app.",
+      },
+    ],
+    contextImage: {
+      src: "/features/site-audit/openseo-site-audit-issue-types-by-severity.png",
+      alt: "List of the 32 issue types an OpenSEO site audit checks, in three columns: 4 critical (crawler was blocked, server error, broken internal link, missing title tag), 19 warnings and 9 info.",
+      caption: "The full check list, grouped the way the report sorts it.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Domain Overview", href: "/features/domain-overview" },
       { label: "Backlinks", href: "/features/backlink-checker" },
@@ -324,7 +361,7 @@ export const featurePages = {
       {
         question: "What does the OpenSEO site audit tool check?",
         answer:
-          "Status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, and response time for every crawled page. Enable Lighthouse and each page also gets performance, SEO, accessibility, and best-practice issues.",
+          "32 issue types across every crawled page, including status codes, titles, meta descriptions, headings, canonicals, redirects, internal links, image alt text and response time. Enable Lighthouse and a sample of pages also gets performance, SEO, accessibility and best-practice findings.",
       },
       {
         question: "Is OpenSEO a free SEO audit tool?",
@@ -332,9 +369,19 @@ export const featurePages = {
           "For smaller sites, yes: the free plan includes site audits up to 50 pages per crawl. Larger crawls need a paid plan, starting at $10/month. OpenSEO is also open source and self-hostable.",
       },
       {
+        question: "How many pages can one audit crawl?",
+        answer:
+          "Up to 50 pages per audit on the free plan and up to 10,000 on a paid plan. Rendered audits follow the same page limit and stop after 22 hours.",
+      },
+      {
+        question: "Can OpenSEO audit a JavaScript site?",
+        answer:
+          "Yes. Turn on rendering and OpenSEO loads each page in a browser before checking it. Rendered audits use more credits than a plain crawl.",
+      },
+      {
         question: "Who should use OpenSEO Site Audit?",
         answer:
-          "It is useful for founders, marketers, agencies, and developers who need a shared crawl report and optional Lighthouse issue export.",
+          "Founders, marketers, agencies and developers who need a shared crawl report they can work through and export.",
       },
     ],
     guides: {
