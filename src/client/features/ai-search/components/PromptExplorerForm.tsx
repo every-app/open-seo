@@ -28,6 +28,7 @@ import {
 } from "@/client/components/ui/combobox";
 import {
   WEB_SEARCH_COUNTRY_CODES,
+  ignoresWebSearchCountry,
   supportsWebSearchCountry,
 } from "@/shared/prompt-search-countries";
 import { Textarea } from "@/client/components/ui/textarea";
@@ -103,6 +104,7 @@ export function PromptExplorerForm({
     form.webSearch && form.webSearchCountryCode !== "default"
       ? form.models.filter(
           (model) =>
+            !ignoresWebSearchCountry(model) &&
             !supportsWebSearchCountry(model, form.webSearchCountryCode),
         )
       : [];
@@ -163,22 +165,44 @@ export function PromptExplorerForm({
               <FieldTitle>Models</FieldTitle>
               <div className="flex flex-wrap items-start gap-x-5 gap-y-2 pt-1.5">
                 {PROMPT_EXPLORER_MODELS.map((model) => (
-                  <Label key={model} className="font-normal">
-                    <Checkbox
-                      checked={form.models.includes(model)}
-                      onCheckedChange={() => toggleModel(model)}
-                    />
-                    <span>
-                      {formatModelLabel(model)}
-                      {unsupportedModels.includes(model) &&
-                      form.webSearchCountryCode !== "default" ? (
-                        <span className="block text-xs text-muted-foreground">
-                          Skipped for{" "}
-                          {formatCountryLabel(form.webSearchCountryCode)}
-                        </span>
-                      ) : null}
-                    </span>
-                  </Label>
+                  <div key={model} className="flex items-center gap-1.5">
+                    <Label className="font-normal">
+                      <Checkbox
+                        checked={form.models.includes(model)}
+                        onCheckedChange={() => toggleModel(model)}
+                      />
+                      <span>
+                        {formatModelLabel(model)}
+                        {unsupportedModels.includes(model) &&
+                        form.webSearchCountryCode !== "default" ? (
+                          <span className="block text-xs text-muted-foreground">
+                            Skipped for{" "}
+                            {formatCountryLabel(form.webSearchCountryCode)}
+                          </span>
+                        ) : null}
+                      </span>
+                    </Label>
+                    {form.webSearch &&
+                    form.webSearchCountryCode !== "default" &&
+                    ignoresWebSearchCountry(model) ? (
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <button
+                              type="button"
+                              aria-label={`About ${formatModelLabel(model)} and country targeting`}
+                              className="text-muted-foreground"
+                            />
+                          }
+                        >
+                          <Info className="size-3.5" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {formatModelLabel(model)} can’t specify a country.
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </Field>

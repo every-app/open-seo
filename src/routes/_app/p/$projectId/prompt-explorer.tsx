@@ -5,7 +5,9 @@ import { AiResearchSetupGate } from "@/client/features/ai-visibility/AiResearchS
 import { aiResearchSetupQueryOptions } from "@/client/features/ai-visibility/shared";
 import { OpenRouterKeyGate } from "@/client/features/ai-visibility/OpenRouterKeyGate";
 import { ProjectWebsiteGate } from "@/client/features/projects/ProjectWebsiteGate";
+import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { queryClient } from "@/client/tanstack-db/queryClient";
+import { projectWebSearchCountry } from "@/shared/prompt-search-countries";
 import {
   promptExplorerSearchSchema,
   type PromptExplorerModel,
@@ -26,20 +28,24 @@ function PromptExplorerRoute() {
   const { projectId } = Route.useParams();
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
+  const market = useProjectMarket(projectId);
   // One object per URL, so the page's search tabs only react to real changes.
-  const urlState = useMemo(
-    () => ({
+  const urlState = useMemo(() => {
+    const models: PromptExplorerModel[] =
+      search.models && search.models.length > 0 ? search.models : ["chat_gpt"];
+    return {
       prompt: search.q ?? "",
       highlightBrand: search.hb ?? "",
-      models:
-        search.models && search.models.length > 0
-          ? search.models
-          : (["chat_gpt"] satisfies PromptExplorerModel[]),
+      models,
       webSearch: search.web ?? true,
-      webSearchCountryCode: search.cc,
-    }),
-    [search],
-  );
+      // The page renders behind ProjectWebsiteGate, so the market has loaded
+      // by the time this value reaches the form or a query.
+      webSearchCountryCode:
+        search.cc ??
+        (market && projectWebSearchCountry(market.locationCode, models)) ??
+        "default",
+    };
+  }, [search, market]);
 
   return (
     <div className="overflow-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">

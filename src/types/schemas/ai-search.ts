@@ -274,32 +274,22 @@ export const brandLookupSearchSchema = z.object({
  * encoded in the URL so a search is shareable and cmd+click on a history
  * item opens the same answer in a new tab.
  */
-export const promptExplorerSearchSchema = z
-  .object({
-    q: z.string().optional(),
-    models: z
-      .union([promptExplorerModelSchema, z.array(promptExplorerModelSchema)])
-      .optional()
-      .transform((value) =>
-        value === undefined
-          ? undefined
-          : Array.isArray(value)
-            ? value
-            : [value],
-      )
-      .catch(undefined),
-    web: z
-      .union([z.boolean(), z.enum(["true", "false"])])
-      .optional()
-      .transform((value) =>
-        value === undefined ? undefined : value === true || value === "true",
-      )
-      .catch(undefined),
-    cc: webSearchCountrySelectionSchema.optional().catch("default"),
-    hb: z.string().optional(),
-  })
-  .transform((search) => ({
-    ...search,
-    // Older prompt links omitted cc for US; a fresh form has no country preference.
-    cc: search.cc ?? (search.q ? "US" : "default"),
-  }));
+export const promptExplorerSearchSchema = z.object({
+  q: z.string().optional(),
+  models: z
+    .union([promptExplorerModelSchema, z.array(promptExplorerModelSchema)])
+    .optional()
+    .transform((value) =>
+      value === undefined ? undefined : Array.isArray(value) ? value : [value],
+    )
+    .catch(undefined),
+  web: z
+    .union([z.boolean(), z.enum(["true", "false"])])
+    .optional()
+    .transform((value) =>
+      value === undefined ? undefined : value === true || value === "true",
+    )
+    .catch(undefined),
+  cc: webSearchCountrySelectionSchema.optional().catch("default"),
+  hb: z.string().optional(),
+});
