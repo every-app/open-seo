@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import { AppError } from "@/server/lib/errors";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
@@ -70,7 +71,10 @@ export const saveKeywordsTool = {
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     if (args.tagMode === "replace" && (args.tags?.length ?? 0) === 0) {
-      throw new Error("Replacement tags are required when tagMode is replace.");
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Replacement tags are required when tagMode is replace.",
+      );
     }
 
     const { locationCode, languageCode } = resolveMarket(args, context.project);

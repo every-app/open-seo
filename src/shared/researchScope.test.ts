@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseResearchTarget, urlMatchesResearchTarget } from "./researchScope";
+import {
+  parseBacklinksTarget,
+  parseResearchTarget,
+  urlMatchesResearchTarget,
+} from "./researchScope";
 
 function parseOk(
   input: string,
@@ -59,6 +63,18 @@ describe("parseResearchTarget", () => {
     expect(parseResearchTarget("").ok).toBe(false);
     expect(parseResearchTarget("my_site.com").ok).toBe(false);
     expect(parseResearchTarget("https://user:pw@example.com/x").ok).toBe(false);
+  });
+});
+
+describe("parseBacklinksTarget", () => {
+  // The search card and the server share this rule, so the user sees it inline.
+  it("rejects a query string or fragment only on an exact page lookup", () => {
+    expect(
+      parseBacklinksTarget("https://example.com/page?ref=1", "exact_url"),
+    ).toMatchObject({ ok: false });
+    expect(
+      parseBacklinksTarget("https://example.com/page#top", "subfolder"),
+    ).toMatchObject({ ok: true });
   });
 });
 

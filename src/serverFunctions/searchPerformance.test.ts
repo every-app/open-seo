@@ -67,6 +67,29 @@ describe("Search Performance combined filters", () => {
     });
   });
 
+  it("reads Discover without queries: no striking-distance scan or query filter", async () => {
+    await getSearchPerformanceReport({
+      data: { ...data, searchType: "discover" },
+    });
+
+    expect(getPerformance).toHaveBeenCalledTimes(3);
+    // Totals for both periods, then the country list; the query filter is
+    // dropped everywhere.
+    const withoutQuery = [filters[0], filters[1], filters[3]];
+    for (const index of [0, 1]) {
+      expect(getPerformance.mock.calls[index][0]).toMatchObject({
+        type: "discover",
+        dimensions: ["date"],
+        filters: withoutQuery,
+      });
+    }
+    expect(getPerformance.mock.calls[2][0]).toMatchObject({
+      type: "discover",
+      dimensions: ["country"],
+      filters: withoutQuery.slice(0, 2),
+    });
+  });
+
   it.each(["query", "page"] as const)(
     "keeps %s pagination and exports on the same filtered dataset",
     async (dimension) => {

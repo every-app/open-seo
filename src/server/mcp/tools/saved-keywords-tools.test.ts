@@ -88,7 +88,10 @@ describe("saved keyword MCP tools", () => {
         },
         toolContext,
       ),
-    ).rejects.toThrow("Replacement tags are required");
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      message: "Replacement tags are required when tagMode is replace.",
+    });
     expect(mocks.saveKeywords).not.toHaveBeenCalled();
   });
 

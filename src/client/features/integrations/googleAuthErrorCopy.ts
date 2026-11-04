@@ -1,3 +1,5 @@
+import { ACCOUNT_DELETION_SCHEDULED_ERROR } from "@/shared/account-deletion";
+
 /**
  * Plain-language copy for Google OAuth failures, shared by the connect-surface
  * inline alert (GoogleLinkErrorAlert) and the /auth-error fallback page.
@@ -15,6 +17,12 @@ export function googleAuthErrorCopy(
   const what = providerLabel ? `${providerLabel} connection` : "Google sign-in";
 
   switch (code) {
+    case ACCOUNT_DELETION_SCHEDULED_ERROR:
+      return {
+        title: "This account is being deleted",
+        description:
+          "You asked us to delete this account, so it can't be signed in to. To keep it, email support@openseo.so before the deletion date.",
+      };
     case "state_mismatch":
       return {
         title: `${what} didn't finish`,

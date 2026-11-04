@@ -92,4 +92,35 @@ describe("beginRankCheckRun", () => {
     expect(create).not.toHaveBeenCalled();
     expect(mocks.tryCreateRun).toHaveBeenCalledTimes(1);
   });
+
+  it("terminates a run still active after 12 hours and starts the new one", async () => {
+    const blocker = {
+      id: "run_0",
+      status: "running" as const,
+      startedAt: "2026-01-01T00:00:00.000Z",
+    };
+    mocks.tryCreateRun.mockResolvedValueOnce(false).mockResolvedValue(true);
+    mocks.getActiveRunForConfig.mockResolvedValue(blocker);
+    const terminate = vi.fn();
+    mocks.getWorkflow.mockResolvedValue({
+      status: vi.fn().mockResolvedValue({ status: "running" }),
+      terminate,
+    });
+    const create = vi.fn();
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only create and get are exercised by this unit test
+    const workflow = {
+      create,
+      get: mocks.getWorkflow,
+    } as unknown as Env["RANK_CHECK_WORKFLOW"];
+
+    const result = await beginRankCheckRun({ ...input, workflow });
+
+    expect(result.ok).toBe(true);
+    expect(terminate).toHaveBeenCalled();
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_0",
+      expect.objectContaining({ status: "failed" }),
+    );
+    expect(create).toHaveBeenCalledTimes(1);
+  });
 });

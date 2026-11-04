@@ -77,7 +77,8 @@ export function aiBrands(
   for (const c of competitors)
     if (!brands.has(c.domain))
       brands.set(c.domain, {
-        name: c.name ?? c.domain,
+        // The settings form saves a blank name as "" so it can clear a stored one.
+        name: c.name || c.domain,
         domain: c.domain,
         own: false,
       });

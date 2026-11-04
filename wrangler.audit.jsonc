@@ -29,7 +29,7 @@
   ],
   // Per-audit crawl scratchpad: frontier, link edges, and a slim page mirror
   // in the DO's SQLite. Destroyed at finalize; self-cleans via alarm if the
-  // audit dies. The app worker binds cross-script for cancel + GDPR erasure.
+  // audit dies. The app worker binds cross-script for cancel + account-deletion erasure.
   "durable_objects": {
     "bindings": [
       {

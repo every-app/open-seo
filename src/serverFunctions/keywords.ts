@@ -12,6 +12,7 @@ import {
   updateSavedKeywordTagsSchema,
 } from "@/types/schemas/keywords";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import { recordResearchStep } from "@/server/features/activation/researchActivation";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import { resolveMarket } from "@/shared/keyword-locations";
 
@@ -37,7 +38,9 @@ export const researchKeywords = createServerFn({ method: "POST" })
       return fixtures.getKeywordResearchFixture(input);
     }
 
-    return KeywordResearchService.research(input, context);
+    const result = await KeywordResearchService.research(input, context);
+    await recordResearchStep(context.projectId, "keywords");
+    return result;
   });
 
 export const saveKeywords = createServerFn({ method: "POST" })
@@ -113,9 +116,9 @@ export const removeSavedKeywords = createServerFn({
 export const refreshSavedKeywordMetrics = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(refreshSavedKeywordMetricsSchema)
-  .handler(async ({ context }) => {
+  .handler(async ({ data, context }) => {
     return KeywordResearchService.refreshSavedKeywordMetrics(
-      { projectId: context.projectId },
+      { projectId: context.projectId, savedKeywordIds: data.savedKeywordIds },
       context,
     );
   });

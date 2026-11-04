@@ -33,6 +33,8 @@ export interface RankTrackingDeviceResult {
   previousPosition: number | null;
   rankingUrl: string | null;
   serpFeatures: string[];
+  /** When the shown position was checked; null before the first result. */
+  checkedAt: string | null;
 }
 
 export interface RankTrackingRow {

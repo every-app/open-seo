@@ -213,6 +213,55 @@ describe("rank check task queue", () => {
       },
     });
   });
+  it("credits results wrapped in a google.com/goto redirect to the site in their breadcrumb", async () => {
+    const goto = {
+      domain: "google.com",
+      url: "https://google.com/goto?url=CAES",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json({
+          status_code: 20000,
+          tasks: [
+            {
+              id: "task-a",
+              status_code: 20000,
+              cost: 0,
+              path: ["v3", "serp", "google", "organic", "task_get", "advanced"],
+              result: [
+                {
+                  items: [
+                    {
+                      type: "organic",
+                      rank_group: 1,
+                      ...goto,
+                      breadcrumb: "230+ comments · 2 years ago",
+                    },
+                    {
+                      type: "organic",
+                      rank_group: 2,
+                      ...goto,
+                      breadcrumb: "https://www.example.com › blog",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    );
+
+    const outcome = await fetchRankCheckTaskResult({
+      taskId: "task-a",
+      keywordId: "kw-1",
+      keyword: "alpha",
+      targetDomain: "example.com",
+    });
+
+    expect(outcome).toMatchObject({ result: { position: 2 } });
+  });
 });
 
 describe("Maps task queue", () => {

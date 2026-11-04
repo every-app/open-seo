@@ -32,5 +32,10 @@ COPY deploy/standalone/init.sh deploy/standalone/run.sh deploy/standalone/nginx.
 COPY scripts/celld/runtime/admin.mjs scripts/celld/runtime/configure.mjs scripts/celld/runtime/crawl-gateway.mjs scripts/celld/runtime/import.mjs /opt/standalone/
 RUN mkdir -p /config /data /web-config && chown -R node:node /config /data /web-config
 USER node
-ENV CELLD_WATCH=/data CELLD_IDLE_EVICT_S=300
+# celld stops any handler that runs past CELLD_HANDLER_BUDGET_S, including a
+# workflow's run of steps (denoland/celld#299). Workflows pause after two
+# minutes of steps (src/server/workflows/yieldingStep.ts), so the budget only
+# has to outlast that plus the longest step timeout, 10 minutes. With celld's
+# default of 300 s, a slow step was stopped before its own timeout could fail it.
+ENV CELLD_WATCH=/data CELLD_IDLE_EVICT_S=300 CELLD_HANDLER_BUDGET_S=900
 CMD ["sh", "/opt/standalone/run.sh"]

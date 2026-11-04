@@ -4,6 +4,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import { pgStep } from "./pgStep";
+import { yieldingStep } from "./yieldingStep";
 import {
   collectAiLiveBatch,
   collectAiModelBatch,
@@ -83,7 +84,11 @@ export class AiVisibilityWorkflow extends WorkflowEntrypoint<
   Env,
   AiVisibilityPayload
 > {
-  async run(event: WorkflowEvent<AiVisibilityPayload>, step: WorkflowStep) {
+  async run(
+    event: WorkflowEvent<AiVisibilityPayload>,
+    engineStep: WorkflowStep,
+  ) {
+    const step = yieldingStep(engineStep);
     const { payload } = event;
     if ("setupProjectId" in payload)
       // No retries: each attempt is a paid model call. The user can retry.

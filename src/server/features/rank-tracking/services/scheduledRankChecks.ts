@@ -2,6 +2,7 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { FeatureFlag, isFeatureFlagOn } from "@/server/lib/featureFlags";
 import {
   computeNextCheckAt,
   devicesCount,
@@ -15,11 +16,13 @@ import { describeError } from "@/server/lib/errors";
 // 2 devices = 2,000 units) can never starve. Sized against DataForSEO's
 // 2,000 requests/min account cap, where task_get polling is the binding
 // term: one call per unit per poll round, rounds wake synchronized per tick,
-// and up to three ticks' ~15-minute poll windows overlap the */5 cron — so a
-// full tick can burst ~1,000 polls into a single minute, stacking with the
-// residual rounds of the two prior ticks. Overruns aren't
-// loud failures: throttled polls leave tasks unfinished, which are retried
-// and billed to the customer again, so keep real headroom under the cap.
+// and up to three ticks' dense first 15 minutes of polling overlap the */5
+// cron — so a full tick can burst ~1,000 polls into a single minute, stacking
+// with the residual rounds of the two prior ticks and the sparse
+// (15-minute) rounds of tasks still pending from earlier ticks, up to an
+// hour back. Overruns aren't loud failures: throttled polls delay collection
+// and, past the hour, leave tasks unfinished, which are retried and billed to
+// the customer again, so keep real headroom under the cap.
 // 1,000/tick ≈ 288,000 units/day, ~45× steady-state demand — it only binds
 // during backlog catch-up.
 const SCHEDULED_TASK_UNIT_BUDGET = 1000;
@@ -37,6 +40,15 @@ const ALREADY_RUNNING_IDS_CAP = 20;
 // Cron body for the `scheduled` Worker handler: start a rank-check run for every
 // config that's due. Wrapped in `withPgClient` at the entrypoint (server.ts).
 export async function runScheduledRankChecks(env: Env) {
+  // Nothing is claimed while the pause flag is on, so every config stays due
+  // and the scheduler works through the backlog, oldest first and within the
+  // per-tick budget, once it's turned off. Runs already started keep going.
+  const pauseFlag = FeatureFlag.PauseScheduledRankChecks;
+  if (await isFeatureFlagOn(pauseFlag)) {
+    console.warn({ event: "rank_tracking_scheduler_paused", flag: pauseFlag });
+    return;
+  }
+
   const nowIso = new Date().toISOString();
   const dueConfigs =
     await RankTrackingRepository.getDueConfigsWithOrganization(nowIso);

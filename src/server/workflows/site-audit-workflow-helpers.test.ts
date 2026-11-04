@@ -25,6 +25,7 @@ function stubFetch(
     status: number;
     retryAfter?: string;
     mitigated?: boolean;
+    contentType?: string;
   }>
 ) {
   let index = 0;
@@ -33,7 +34,7 @@ function stubFetch(
     return new Response(PAGE_HTML, {
       status: reply.status,
       headers: {
-        "content-type": "text/html",
+        "content-type": reply.contentType ?? "text/html",
         ...(reply.mitigated ? { "cf-mitigated": "challenge" } : {}),
         ...(reply.retryAfter ? { "retry-after": reply.retryAfter } : {}),
       },
@@ -41,12 +42,13 @@ function stubFetch(
   });
 }
 
-function crawl() {
+function crawl(options?: Parameters<typeof crawlPage>[4]) {
   return crawlPage(
     PAGE_URL,
     0,
     false,
     createCrawlThrottle(Date.now() + 90_000),
+    options,
   );
 }
 
@@ -279,6 +281,21 @@ describe("crawlPage", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(page?.fetchClass).toBe("blocked");
+  });
+
+  it("renders a page blocked by a 403 that isn't HTML", async () => {
+    // Shared-host firewalls refuse before the site, often without an HTML page.
+    stubFetch({ status: 403, contentType: "text/plain" });
+
+    const page = await crawl({
+      render: async () => ({ html: PAGE_HTML, status: 200 }),
+    });
+
+    expect(page).toMatchObject({
+      statusCode: 200,
+      fetchClass: "ok",
+      title: "A page",
+    });
   });
 });
 

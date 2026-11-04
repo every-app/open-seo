@@ -30,6 +30,7 @@ describe("DataForSEO transport", () => {
     expect(new Headers(init?.headers).get("Authorization")).toBe(
       "Basic encoded-credentials",
     );
+    expect(new Headers(init?.headers).get("Accept-Encoding")).toBe("gzip");
   });
 
   // An unverified account answers with HTTP 403 (status_code 40104). Left as
@@ -69,4 +70,25 @@ describe("DataForSEO transport", () => {
       expect(fetchMock).toHaveBeenCalledOnce();
     },
   );
+
+  // Seen in production: headers arrive in time, then the deadline aborts
+  // while the body is still streaming in.
+  it("maps a timeout while reading the body to UPSTREAM_UNAVAILABLE", async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.error(new DOMException("aborted", "TimeoutError"));
+      },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(new Response(body)),
+    );
+
+    await expect(
+      dataforseoPost("/v3/dataforseo_labs/google/ranked_keywords/live", []),
+    ).rejects.toMatchObject({
+      code: "UPSTREAM_UNAVAILABLE",
+      name: "DataForSEOTimeoutError",
+    });
+  });
 });

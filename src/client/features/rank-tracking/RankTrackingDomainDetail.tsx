@@ -15,8 +15,8 @@ import { SkeletonCard } from "@/client/components/SkeletonPresets";
 import { useHostedPlanGate } from "@/client/features/billing/HostedPlanGate";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { FreePlanAlert } from "./FreePlanAlert";
-import { RankTrackingChangesAlert } from "./RankTrackingChangesAlert";
 import { RankRunAlerts } from "./RankRunAlerts";
+import { ScheduledChecksPausedAlert } from "./ScheduledChecksPausedAlert";
 import { RankTrackingDetailHeader } from "./RankTrackingDetailHeader";
 import { RankTrackingOverview } from "./RankTrackingOverview";
 import { RankTrackingTable } from "./RankTrackingTable";
@@ -27,6 +27,7 @@ import {
 import { RankTrackingTableToolbar } from "./RankTrackingTableToolbar";
 import { exportRankTracking } from "./RankTrackingTableParts";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
+import { isScheduledRankTrackingInterval } from "@/shared/rank-tracking";
 import {
   rankTrackingDetailSearchSchema,
   type ComparePeriod,
@@ -234,11 +235,15 @@ export function RankTrackingDomainDetail({
 
   return (
     <div className="space-y-3">
-      <RankTrackingChangesAlert />
-
       <RankRunAlerts run={latestRun} />
 
       <FreePlanAlert visible={planStatus === "free"} />
+
+      <ScheduledChecksPausedAlert
+        hasScheduledCheck={isScheduledRankTrackingInterval(
+          config.scheduleInterval,
+        )}
+      />
 
       {/* Results card */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">

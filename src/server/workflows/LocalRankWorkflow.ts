@@ -11,6 +11,7 @@ import {
   searchLocalPoints,
 } from "@/server/features/local-seo/services/localSeoCollection";
 import { pgStep } from "./pgStep";
+import { yieldingStep } from "./yieldingStep";
 import { describeError } from "@/server/lib/errors";
 
 type LocalRankPayload = {
@@ -29,7 +30,8 @@ export class LocalRankWorkflow extends WorkflowEntrypoint<
   Env,
   LocalRankPayload
 > {
-  async run(event: WorkflowEvent<LocalRankPayload>, step: WorkflowStep) {
+  async run(event: WorkflowEvent<LocalRankPayload>, engineStep: WorkflowStep) {
+    const step = yieldingStep(engineStep);
     const { checkId, customer } = event.payload;
     const projectId = customer.projectId;
     if (!projectId) return;

@@ -34,7 +34,11 @@ function IndexRedirect() {
     // getProjects always returns at least one project.
     const projectId = lastProjectId ?? data?.[0]?.id;
     if (!projectId) return;
-    void navigate({ to: "/p/$projectId", params: { projectId } });
+    void navigate({
+      to: "/p/$projectId",
+      params: { projectId },
+      replace: true,
+    });
   }, [lastProjectId, data, navigate]);
 
   useEffect(() => {
@@ -42,7 +46,7 @@ function IndexRedirect() {
       return;
     }
 
-    void navigate({ href: SUBSCRIBE_ROUTE });
+    void navigate({ href: SUBSCRIBE_ROUTE, replace: true });
   }, [error, navigate]);
 
   if (isError) {

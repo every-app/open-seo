@@ -86,6 +86,29 @@ async function gatewayRefusalError(response: Response) {
   return new AppError("AUTH_CONFIG_MISSING", refusal.message, details);
 }
 
+/** A request-deadline abort as UPSTREAM_UNAVAILABLE; any other error as is. */
+function asDataforseoTimeoutError(error: unknown, url: RequestInfo): unknown {
+  if (
+    !(error instanceof Error) ||
+    (error.name !== "TimeoutError" && error.name !== "AbortError")
+  )
+    return error;
+  const path = formatDataforseoRequestPath(url);
+  // Non-reportable, so the error handlers won't log it: warn to keep timeouts
+  // visible in Workers Observability.
+  console.warn("dataforseo.upstream-timeout", {
+    event: "dataforseo.upstream-timeout",
+    path,
+  });
+  const timeoutError = new AppError(
+    "UPSTREAM_UNAVAILABLE",
+    `DataForSEO request timed out on ${path}`,
+    { provider: "dataforseo", providerPath: path },
+  );
+  timeoutError.name = "DataForSEOTimeoutError";
+  return timeoutError;
+}
+
 /**
  * The single authenticated `fetch` used by every DataForSEO call. Throws on
  * non-2xx; task-level failures (which return HTTP 200) are handled downstream
@@ -102,11 +125,17 @@ function createAuthenticatedFetch(
     // rather than restarting a fresh 60s budget on each attempt.
     const signal =
       init?.signal ?? AbortSignal.timeout(DATAFORSEO_REQUEST_TIMEOUT_MS);
+    // Ask for gzip explicitly: standalone workerd (the Docker edition) sends
+    // no Accept-Encoding, so DataForSEO answers uncompressed (~9.9 MB vs
+    // ~0.6 MB for the US location list) and slow links hit the timeout. The
+    // runtime decodes the gzip body itself.
+    const headers = new Headers(init?.headers);
+    if (!headers.has("Accept-Encoding")) headers.set("Accept-Encoding", "gzip");
 
     for (let attempt = 0; ; attempt++) {
       let response: Response;
       try {
-        response = await providerFetch(url, { ...init, signal });
+        response = await providerFetch(url, { ...init, headers, signal });
       } catch (error) {
         // Both abort flavours mean "we ran out of time", and neither carries a
         // useful name of its own: the shared budget above rejects with
@@ -117,20 +146,7 @@ function createAuthenticatedFetch(
         // deadline may already be billed by DataForSEO, and because this is not
         // a DataforseoChargedTaskError the customer is metered nothing for it,
         // so replaying would be spend we eat twice.
-        if (
-          error instanceof Error &&
-          (error.name === "TimeoutError" || error.name === "AbortError")
-        ) {
-          const path = formatDataforseoRequestPath(url);
-          const timeoutError = new AppError(
-            "UPSTREAM_UNAVAILABLE",
-            `DataForSEO request timed out on ${path}`,
-            { provider: "dataforseo", providerPath: path },
-          );
-          timeoutError.name = "DataForSEOTimeoutError";
-          throw timeoutError;
-        }
-        throw error;
+        throw asDataforseoTimeoutError(error, url);
       }
       if (response.ok) return response;
 
@@ -210,7 +226,8 @@ async function requestDataforseo<TTask extends DataforseoTaskLike>(
     options.classify,
     options.maxServerErrorRetries,
   );
-  const response = await doFetch(`${options.baseUrl ?? API_BASE}${path}`, {
+  const url = `${options.baseUrl ?? API_BASE}${path}`;
+  const response = await doFetch(url, {
     method,
     headers: {
       Accept: "application/json",
@@ -219,7 +236,14 @@ async function requestDataforseo<TTask extends DataforseoTaskLike>(
     body: method === "POST" ? JSON.stringify(body) : undefined,
     signal: options.signal,
   });
-  const text = await response.text();
+  // The deadline also covers the body: a slow response can send its headers
+  // in time and still run out the clock while the body streams in.
+  let text: string;
+  try {
+    text = await response.text();
+  } catch (error) {
+    throw asDataforseoTimeoutError(error, url);
+  }
   if (text === "") return null;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the task type is the caller's claim about the payload; billing metadata and item fields are validated downstream (envelope.ts + section Zod schemas)
   const parsed = JSON.parse(text) as DataforseoResponseLike<TTask>;

@@ -1,8 +1,21 @@
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { isOutOfCreditsRunError } from "@/shared/rank-tracking";
 import type { useRankRunPolling } from "./useRankRunPolling";
+
+function ReadWhatChangedLink() {
+  return (
+    <a
+      href="https://openseo.so/blogs/rank-tracking-changes"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-medium underline underline-offset-4"
+    >
+      Read what changed
+    </a>
+  );
+}
 
 /** Warnings about the latest rank check: stale, failed, or incomplete. */
 export function RankRunAlerts({
@@ -17,43 +30,45 @@ export function RankRunAlerts({
       <Alert variant="warning">
         <AlertTriangle />
         <AlertDescription className="text-foreground">
-          This run may be unresponsive and will be cleaned up automatically.
+          This check stopped responding. You can start a new one to replace it.
         </AlertDescription>
       </Alert>
     );
   }
 
-  if (run.status === "failed" && run.errorMessage === "INSUFFICIENT_CREDITS") {
+  if (run.status === "failed" && isOutOfCreditsRunError(run.errorMessage)) {
     return <InsufficientCreditsError title="Your last rank check didn't run" />;
   }
 
   if (run.status === "failed") {
     return (
-      <Alert variant="destructive">
+      <Alert variant="warning">
         <AlertTriangle />
         <AlertDescription className="text-foreground">
           <p>
-            <span className="font-medium">Last check failed.</span>{" "}
-            {run.errorMessage &&
-              getStandardErrorMessage(new Error(run.errorMessage))}
+            <span className="font-medium">
+              We couldn't finish your last check.
+            </span>{" "}
+            Google's results have been unreliable for all rank trackers lately.
+            Please try again later. <ReadWhatChangedLink />
           </p>
         </AlertDescription>
       </Alert>
     );
   }
 
-  // A completed run only has an error message when some checks have no
-  // result. Most are misses that retries couldn't confirm, not provider
-  // errors, so the copy doesn't blame the provider.
+  // A completed run only has an error message when some checks have no result.
   if (run.status === "completed" && run.errorMessage) {
     return (
       <Alert variant="warning">
         <AlertTriangle />
         <AlertDescription className="text-foreground">
           <p>
-            <span className="font-medium">Your last check was incomplete.</span>{" "}
-            We couldn't confirm a result for some keywords, so they show their
-            previous position.
+            <span className="font-medium">
+              Some keywords couldn't be checked.
+            </span>{" "}
+            Google's results have been unreliable for all rank trackers lately,
+            so these show their last known position. <ReadWhatChangedLink />
           </p>
         </AlertDescription>
       </Alert>

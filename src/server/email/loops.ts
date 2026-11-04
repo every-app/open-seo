@@ -224,3 +224,21 @@ export async function sendHostedPasswordResetEmail({
     },
   });
 }
+
+/** Tells the person their account will be deleted and how to stop it, which
+ *  also warns them if someone else made the request. */
+export async function sendAccountDeletionScheduledEmail({
+  email,
+  deletionDate,
+}: {
+  email: string;
+  /** As the email shows it, e.g. "November 16, 2026". */
+  deletionDate: string;
+}) {
+  await sendLoopsTransactionalEmail({
+    apiKey: getRequiredEnv("LOOPS_API_KEY"),
+    email,
+    transactionalId: getRequiredEnv("LOOPS_TRANSACTIONAL_ACCOUNT_DELETION_ID"),
+    dataVariables: { deletionDate },
+  });
+}

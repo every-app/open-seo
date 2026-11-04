@@ -41,11 +41,18 @@ async function addKeywords(
   for (const raw of keywords) {
     if (rows.length >= available) break;
     const trimmed = raw.trim();
-    const normalized = matchCase ? trimmed : trimmed.toLowerCase();
+    // Lowercase with the tracker's language: Turkish "İstanbul" and "KIRMIZI"
+    // become "istanbul" and "kırmızı", not different words.
+    const normalized = matchCase
+      ? trimmed
+      : trimmed.toLocaleLowerCase(config.languageCode);
     if (
       normalized &&
       !seen.has(normalized) &&
-      !existingKeywords.has(normalized)
+      !existingKeywords.has(normalized) &&
+      // Rows added before language-aware lowercasing used toLowerCase(), so
+      // a Turkish re-add must not create a twin of that older row.
+      (matchCase || !existingKeywords.has(trimmed.toLowerCase()))
     ) {
       seen.add(normalized);
       rows.push({

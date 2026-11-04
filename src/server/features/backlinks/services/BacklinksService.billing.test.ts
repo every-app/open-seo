@@ -98,6 +98,20 @@ it("profiles only the summary and history for the overview and reuses cache on r
   expect(second).toEqual(first);
 });
 
+it("shows a subdomain's summary without trends when its history fails", async () => {
+  mockTarget({ apiTarget: "health.oregonstate.edu" });
+  backlinksSummaryMock.mockResolvedValue({ backlinks: 1200 });
+  backlinksHistoryMock.mockRejectedValue(new Error("history unavailable"));
+
+  const { overview } = await service.profileOverview(
+    { target: "health.oregonstate.edu" },
+    billingCustomer,
+  );
+
+  expect(overview.summary.backlinks).toBe(1200);
+  expect(overview.trends).toEqual([]);
+});
+
 it("profiles backlink rows per page with offset and total count", async () => {
   mockTarget();
   backlinksRowsMock.mockResolvedValue({

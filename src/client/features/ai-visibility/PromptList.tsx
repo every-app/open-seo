@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Info, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/client/components/ExportMenu";
+import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { DataTableToolbar } from "@/client/components/table/DataTableToolbar";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
@@ -12,8 +13,18 @@ import { safeHttpUrl } from "@/shared/safe-url";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { AiPrompt, AiRun, AiTrackerState } from "@/shared/ai-visibility";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
-import { PromptInventory, promptHasResults } from "./PromptInventory";
+import {
+  BrandedFilter,
+  PromptInventory,
+  promptHasResults,
+} from "./PromptInventory";
 import { AiQueryError, aiRunResultsQueryOptions } from "./shared";
+
+const BRANDED_FILTERS = [
+  { value: BrandedFilter.All, icon: null, label: "All" },
+  { value: BrandedFilter.NonBranded, icon: null, label: "Non-branded" },
+  { value: BrandedFilter.Branded, icon: null, label: "Branded" },
+];
 
 export function PromptList({
   projectId,
@@ -37,6 +48,9 @@ export function PromptList({
   reducePending: boolean;
 }) {
   const [search, setSearch] = useState("");
+  const [brandedFilter, setBrandedFilter] = useState<BrandedFilter>(
+    BrandedFilter.All,
+  );
   const results = useQuery(aiRunResultsQueryOptions(projectId, currentRun?.id));
   const exportMutation = useMutation({
     mutationFn: (format: "json" | "csv") =>
@@ -91,6 +105,12 @@ export function PromptList({
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
+        <SegmentedToggle
+          showLabels
+          items={BRANDED_FILTERS}
+          value={brandedFilter}
+          onChange={setBrandedFilter}
+        />
       </DataTableToolbar>
       {results.isError && (
         <AiQueryError
@@ -115,6 +135,7 @@ export function PromptList({
         prompts={prompts}
         topics={state.topics}
         search={search}
+        brandedFilter={brandedFilter}
         engines={state.engines}
         rows={results.data}
         loading={results.isLoading}

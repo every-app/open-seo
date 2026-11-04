@@ -24,6 +24,8 @@ Managed OAuth is required for MCP clients and is not enabled by default.
      and log in but expose no tools.
 7. Save.
 
+If the deploy created your Access application (you didn't set `TEAM_DOMAIN` and `POLICY_AUD`), each `pnpm deploy:selfhost` turns Managed OAuth off again, and MCP clients then fail with `Unexpected content type: text/html` (the Access login page). Repeat these steps after every deploy. To keep the setting, manage the Access application yourself: set `TEAM_DOMAIN` and `POLICY_AUD` in `.env.selfhost`, and the deploy leaves the application alone.
+
 MCP clients should connect to:
 
 ```text

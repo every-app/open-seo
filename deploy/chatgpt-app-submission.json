@@ -200,6 +200,18 @@
         "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
       }
     },
+    "get_rank_history": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves stored rank positions from a rank tracker's past checks.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
     "add_rank_tracking_keywords": {
       "annotations": {
         "readOnlyHint": false,

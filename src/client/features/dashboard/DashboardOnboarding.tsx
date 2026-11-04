@@ -113,9 +113,7 @@ export function DashboardOnboarding({
                       dismiss.mutate({ step: item.id, dismissed: true })
                     }
                   >
-                    {item.id === "project"
-                      ? "I only need one project"
-                      : "Skip for now"}
+                    {item.skipLabel}
                   </Button>
                 </div>
               </AccordionContent>

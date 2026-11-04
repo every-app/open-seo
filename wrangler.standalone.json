@@ -18,6 +18,11 @@
       "binding": "AI_VISIBILITY_WORKFLOW",
       "name": "ai-visibility-workflow",
       "class_name": "AiVisibilityWorkflow"
+    },
+    {
+      "binding": "LOCAL_RANK_WORKFLOW",
+      "name": "local-rank-workflow",
+      "class_name": "LocalRankWorkflow"
     }
   ],
   "durable_objects": {

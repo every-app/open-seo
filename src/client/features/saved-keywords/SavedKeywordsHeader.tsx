@@ -4,8 +4,10 @@ import { ConfirmDialog } from "@/client/components/ConfirmDialog";
 import { ExportMenu } from "@/client/components/ExportMenu";
 import { PageHeader } from "@/client/components/PageHeader";
 import { Button } from "@/client/components/ui/button";
+import { ImportKeywordsButton } from "./ImportKeywordsDialog";
 
 export function SavedKeywordsHeader({
+  projectId,
   totalCount,
   exporting,
   metricsRefreshing,
@@ -13,6 +15,7 @@ export function SavedKeywordsHeader({
   onExportSheets,
   onRefreshMetrics,
 }: {
+  projectId: string;
   totalCount: number;
   exporting: "csv" | "sheets" | null;
   metricsRefreshing: boolean;
@@ -30,6 +33,7 @@ export function SavedKeywordsHeader({
         description="Save keyword ideas from research, organize them with tags, and revisit when you're ready to act."
         actions={
           <>
+            <ImportKeywordsButton projectId={projectId} />
             <Button
               variant="outline"
               size="sm"

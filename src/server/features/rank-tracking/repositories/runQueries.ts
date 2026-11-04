@@ -143,6 +143,15 @@ export async function upsertSnapshots(
   );
 }
 
+/** Replace the ranking URL of saved snapshots. */
+export async function updateSnapshotUrls(
+  updates: Array<{ id: number; url: string }>,
+) {
+  await executeInBatches(updates, (tx, { id, url }) =>
+    tx.update(rankSnapshots).set({ url }).where(eq(rankSnapshots.id, id)),
+  );
+}
+
 /**
  * Delete "not found" snapshots, matched by run/keyword/device. A row that holds
  * a position is left alone.

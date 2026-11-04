@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   updateRun: vi.fn(),
   updateConfig: vi.fn(),
   getSnapshotsForRun: vi.fn(),
+  updateSnapshotUrls: vi.fn(),
+  resolveGotoUrls: vi.fn(),
   autumnCheck: vi.fn(),
   createDataforseoClient: vi.fn(),
   runLiveCheck: vi.fn(),
@@ -56,6 +58,8 @@ vi.mock("@/server/workflows/pgStep", () => ({
 }));
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
+  MAX_GOTO_URLS_PER_REQUEST: 2,
+  resolveGotoUrls: mocks.resolveGotoUrls,
 }));
 vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: mocks.captureServerEvent,
@@ -219,8 +223,125 @@ describe("rank check finalization", () => {
         status: "completed",
         keywordsChecked: 3,
         errorMessage:
-          "Checked 3 of 3 desktop and 0 of 3 mobile keyword(s): Invalid Field: 'location_name'.",
+          'Checked 3 of 3 desktop and 0 of 3 mobile keyword(s): Invalid Field: \'location_name\'. Not checked: "keyword 0" (mobile), "keyword 1" (mobile), "keyword 2" (mobile).',
       }),
+    );
+  });
+
+  it("leaves a bare error code out of a partial run's message", async () => {
+    mocks.getRunById.mockResolvedValue({
+      ...activeRun,
+      keywordsTotal: 2,
+      errorMessage: "UPSTREAM_UNAVAILABLE",
+    });
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(2));
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      { trackingKeywordId: "kw_0", device: "desktop" },
+    ]);
+
+    await runWorkflow({});
+
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({
+        status: "completed",
+        errorMessage: 'Checked 1 of 2 keyword(s). Not checked: "keyword 1".',
+      }),
+    );
+  });
+
+  it("names the keywords a partial run could not check", async () => {
+    mocks.getRunById.mockResolvedValue({
+      ...activeRun,
+      keywordsTotal: 12,
+      errorMessage: "Internal SE Server Error.",
+    });
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(12));
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      { trackingKeywordId: "kw_0", device: "desktop" },
+    ]);
+
+    await runWorkflow({});
+
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({
+        status: "completed",
+        errorMessage: `Checked 1 of 12 keyword(s): Internal SE Server Error. Not checked: "keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5", "keyword 6", "keyword 7", "keyword 8", "keyword 9", "keyword 10" and 1 more.`,
+      }),
+    );
+  });
+});
+
+const gotoUrl = (id: number) => `https://google.com/goto?url=${id}`;
+
+describe("rank check goto URLs", () => {
+  const gotoSnapshot = (id: number) => ({
+    id,
+    trackingKeywordId: `kw_${id}`,
+    device: "desktop",
+    url: gotoUrl(id),
+  });
+
+  beforeEach(() => {
+    mocks.getConfigById.mockResolvedValue({ isActive: true });
+    mocks.getRunById.mockResolvedValue({ ...activeRun, keywordsTotal: 1 });
+    mocks.getKeywordsForConfig.mockResolvedValue(keywords(1));
+    mocks.updateRun.mockResolvedValue(undefined);
+    mocks.isHostedServerAuthMode.mockResolvedValue(true);
+    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
+    mocks.resolveGotoUrls.mockResolvedValue(new Map());
+  });
+
+  it("saves the real page for a goto result, without Google's srsltid", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([
+      gotoSnapshot(1),
+      { ...gotoSnapshot(2), url: "https://example.com/direct" },
+      { ...gotoSnapshot(3), position: null, url: null },
+    ]);
+    mocks.resolveGotoUrls.mockResolvedValue(
+      new Map([[gotoUrl(1), "https://example.com/page?id=1&srsltid=abc"]]),
+    );
+
+    await runWorkflow({});
+
+    expect(mocks.resolveGotoUrls).toHaveBeenCalledExactlyOnceWith([gotoUrl(1)]);
+    expect(mocks.updateSnapshotUrls).toHaveBeenCalledExactlyOnceWith([
+      { id: 1, url: "https://example.com/page?id=1" },
+    ]);
+  });
+
+  it("keeps a goto link the converter can't resolve", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([gotoSnapshot(1)]);
+
+    await runWorkflow({});
+
+    expect(mocks.updateSnapshotUrls).toHaveBeenCalledExactlyOnceWith([]);
+  });
+
+  it("splits a large run across converter requests", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue(
+      [1, 2, 3].map((id) => gotoSnapshot(id)),
+    );
+
+    await runWorkflow({});
+
+    expect(mocks.resolveGotoUrls.mock.calls).toEqual([
+      [[gotoUrl(1), gotoUrl(2)]],
+      [[gotoUrl(3)]],
+    ]);
+  });
+
+  it("still finishes the run when the converter fails", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue([gotoSnapshot(1)]);
+    mocks.resolveGotoUrls.mockRejectedValue(new Error("converter down"));
+
+    await runWorkflow({});
+
+    expect(mocks.updateSnapshotUrls).not.toHaveBeenCalled();
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({ status: "completed", errorMessage: null }),
     );
   });
 });

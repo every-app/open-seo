@@ -31,9 +31,8 @@ export const CRAWL_WINDOW: CrawlWindowLimits = {
 
 /**
  * Limits for a chunk whose earlier attempt died mid-crawl — in production
- * almost always exceededMemory on a heavy-page site. The retry is the
- * chunk's last attempt (retry limit 1), so it must not re-run the exact
- * memory profile that just killed the isolate.
+ * often exceededMemory on a heavy-page site, so a retry must not re-run the
+ * exact memory profile that just killed the isolate.
  */
 export const RETRY_CRAWL_WINDOW: CrawlWindowLimits = {
   initial: 1,

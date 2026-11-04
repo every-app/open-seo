@@ -26,4 +26,4 @@ The **Personal → About** version label reads `package.json` only. That is the 
 
 ## Next integration
 
-**v0.1.20** — assess tag `v0.1.20` on upstream; add a changelog entry only after merge and production deploy.
+**v0.1.24** — integration branch **`codex/upgrade-openseo-v0.1.24`** (merged locally 2026-11-04); production deploy and **`deployedOn`** in staff changelog pending operator approval. Notifications WIP on **`codex/notifications-wip`** (`0146ebc7`).

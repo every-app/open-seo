@@ -6,13 +6,18 @@ import {
   eq,
   gte,
   inArray,
+  isNull,
   lte,
   max,
   min,
   sql,
 } from "drizzle-orm";
 import { db } from "@/db";
-import { rankCheckRuns, rankSnapshots } from "@/db/schema";
+import {
+  rankCheckRuns,
+  rankSnapshots,
+  rankTrackingKeywords,
+} from "@/db/schema";
 import { toRankTrackingTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
 
 function completedRunIdsForConfig(configId: string) {
@@ -119,15 +124,17 @@ export async function getConfigTrend(
 /**
  * Recent per-keyword positions for one device as a flat list, for the "by date"
  * history matrix. Bounded to the last `runLimit` completed runs; the client
- * pivots these into keyword rows × run (date) columns.
+ * pivots these into keyword rows × run (date) columns. A keyword tracked when
+ * a run started but with no snapshot in it gets a `checked: false` cell, so the
+ * table marks the same failed checks the distribution chart counts.
  */
 export async function getPositionMatrix(
   configId: string,
   device: "desktop" | "mobile",
   runLimit: number,
 ) {
-  const recentRunIds = db
-    .select({ id: rankCheckRuns.id })
+  const recentRuns = db
+    .select({ id: rankCheckRuns.id, startedAt: rankCheckRuns.startedAt })
     .from(rankCheckRuns)
     .where(
       and(
@@ -137,24 +144,49 @@ export async function getPositionMatrix(
       ),
     )
     .orderBy(desc(rankCheckRuns.startedAt))
-    .limit(runLimit);
+    .limit(runLimit)
+    .as("recent_runs");
 
-  return db
-    .select({
-      runId: rankSnapshots.runId,
-      checkedAt: rankCheckRuns.startedAt,
-      trackingKeywordId: rankSnapshots.trackingKeywordId,
-      position: rankSnapshots.position,
-    })
-    .from(rankSnapshots)
-    .innerJoin(rankCheckRuns, eq(rankSnapshots.runId, rankCheckRuns.id))
-    .where(
-      and(
-        inArray(rankSnapshots.runId, recentRunIds),
-        eq(rankSnapshots.device, device),
-      ),
-    )
-    .orderBy(asc(rankCheckRuns.startedAt));
+  const [checked, notChecked] = await Promise.all([
+    db
+      .select({
+        runId: rankSnapshots.runId,
+        checkedAt: recentRuns.startedAt,
+        trackingKeywordId: rankSnapshots.trackingKeywordId,
+        position: rankSnapshots.position,
+      })
+      .from(rankSnapshots)
+      .innerJoin(recentRuns, eq(rankSnapshots.runId, recentRuns.id))
+      .where(eq(rankSnapshots.device, device)),
+    db
+      .select({
+        runId: recentRuns.id,
+        checkedAt: recentRuns.startedAt,
+        trackingKeywordId: rankTrackingKeywords.id,
+      })
+      .from(recentRuns)
+      .innerJoin(
+        rankTrackingKeywords,
+        and(
+          eq(rankTrackingKeywords.configId, configId),
+          lte(rankTrackingKeywords.createdAt, recentRuns.startedAt),
+        ),
+      )
+      .leftJoin(
+        rankSnapshots,
+        and(
+          eq(rankSnapshots.runId, recentRuns.id),
+          eq(rankSnapshots.trackingKeywordId, rankTrackingKeywords.id),
+          eq(rankSnapshots.device, device),
+        ),
+      )
+      .where(isNull(rankSnapshots.id)),
+  ]);
+
+  return [
+    ...checked.map((cell) => ({ ...cell, checked: true })),
+    ...notChecked.map((cell) => ({ ...cell, position: null, checked: false })),
+  ];
 }
 
 /**

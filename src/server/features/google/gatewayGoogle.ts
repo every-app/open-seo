@@ -5,40 +5,43 @@ import {
   integrationStatus,
   type OAuthClientIntegrationStatus,
 } from "@every-app/sdk/server";
-
-/** The organization's own connection, whoever is asking. */
-const ORGANIZATION = { background: true } as const;
+import {
+  gatewayCallFor,
+  gatewayCallForUser,
+} from "@/server/lib/gateway-attribution";
 import { getWorkersEnv } from "@/server/lib/runtime-env";
 
 /**
  * Google through the Every App gateway (AUTH_MODE=everyapp): the gateway
- * holds the Google OAuth client and the organization's connection, which an
- * owner or admin makes once (the Connect button here, or Every App → Manage
- * workspace → Providers → Connect for the organization). Everyone in the
- * workspace reads Search Console and Analytics through it, as they share
- * one OpenSEO workspace. Calls go through `integrationFetch`, which puts the
- * organization's token on them; OpenSEO never sees a Google token, client
- * or secret (docs/design/2026-10-oauth-providers.md in the Every App repo).
+ * holds the Google OAuth client and each member's connection to OpenSEO,
+ * which the member makes once, here (the Connect button sends them to the
+ * gateway's `/connect/google-workspace` and back). The connection is that
+ * member's and OpenSEO's alone; another app's Google connection is a
+ * different one. Calls go through `integrationFetch`, which puts the
+ * member's token on them; OpenSEO never sees a Google token, client or
+ * secret (docs/design/2026-11-oauth-simplify.md in the Every App repo).
  *
- * The capability is `google-workspace` with the scope sets `identity`,
- * `search-console.read` and `analytics.read` (everyapp.config.ts). A
- * project's connection rows keep `connectedByUserId` as the member who
- * picked the property, and the sentinel
- * {@link GATEWAY_GOOGLE_ACCOUNT_ID} where OpenSEO's own mode keeps the
- * Google account id: the gateway, not OpenSEO, knows which Google account
- * was connected.
+ * The capability is `google-workspace` with Google's own scopes
+ * `webmasters.readonly` and `analytics.readonly` (everyapp.config.ts); the
+ * gateway adds the identity scopes. A project's connection rows keep
+ * `connectedByUserId`, the member who picked the property, and every read
+ * for that project goes out on that member's connection, whoever is
+ * looking, as OpenSEO's own mode reads with that member's Google grant.
+ * Where OpenSEO's own mode keeps the Google account id, the rows keep the
+ * sentinel {@link GATEWAY_GOOGLE_ACCOUNT_ID}: the gateway, not OpenSEO,
+ * knows which Google account was connected.
  */
 export const GATEWAY_GOOGLE_PROVIDER = "google-workspace";
 
-/** The one "account" in gateway mode: the organization's connection. */
+/** The one "account" a member has in gateway mode: their gateway connection. */
 export const GATEWAY_GOOGLE_ACCOUNT_ID = "everyapp";
 
 type GatewayGoogleStatus = {
   /** The app lists `google-workspace` and the gateway holds a Google client. */
   available: boolean;
-  /** The member behind the served request has a connection with every set OpenSEO declares. */
+  /** The member behind the served request has a working connection. */
   connected: boolean;
-  /** A connection exists but has expired or lacks a set: connect again. */
+  /** A connection exists but has expired or was revoked: connect again. */
   reconnect: boolean;
   /** Who connected, as the gateway labels it (an email). */
   label: string | null;
@@ -62,7 +65,7 @@ function statusOf(
 
 /**
  * The gateway's answer for Google: whether it holds a client, and the
- * organization's connection. Never calls Google.
+ * served request's member's connection. Never calls Google.
  */
 export async function getGatewayGoogleStatus(): Promise<GatewayGoogleStatus> {
   const env = await gatewayEnv();
@@ -70,7 +73,7 @@ export async function getGatewayGoogleStatus(): Promise<GatewayGoogleStatus> {
     const status = await integrationStatus({
       env,
       provider: GATEWAY_GOOGLE_PROVIDER,
-      for: ORGANIZATION,
+      for: gatewayCallFor(),
     });
     return statusOf(status);
   } catch (error) {
@@ -81,18 +84,21 @@ export async function getGatewayGoogleStatus(): Promise<GatewayGoogleStatus> {
 }
 
 /**
- * A fetch that reaches Google's APIs through the gateway with the
- * organization's token on it, or null without the gateway binding (local dev with no
- * GOOGLE_WORKSPACE_ACCESS_TOKEN in .dev.vars). Send Google's real URLs and
- * no Authorization header.
+ * A fetch that reaches Google's APIs through the gateway with `userId`'s
+ * token on it (the member listing their own properties, or the member who
+ * connected a project's property), or null without the gateway binding
+ * (local dev with no GOOGLE_WORKSPACE_ACCESS_TOKEN in .dev.vars). Send
+ * Google's real URLs and no Authorization header.
  */
-export async function getGatewayGoogleFetch(): Promise<typeof fetch | null> {
+export async function getGatewayGoogleFetch(
+  userId: string,
+): Promise<typeof fetch | null> {
   const env = await gatewayEnv();
   try {
     return integrationFetch({
       env,
       provider: GATEWAY_GOOGLE_PROVIDER,
-      for: ORGANIZATION,
+      for: gatewayCallForUser(userId),
     });
   } catch (error) {
     if (error instanceof ConfigurationError) return null;
@@ -101,9 +107,9 @@ export async function getGatewayGoogleFetch(): Promise<typeof fetch | null> {
 }
 
 /**
- * Where a Connect button sends an owner or admin: the gateway's page that
- * connects Google for the organization, which comes back to `returnTo` (the
- * OpenSEO page they were on) once Google has answered.
+ * Where a Connect button sends the member: the gateway's connect page for
+ * Google, which comes back to `returnTo` (the OpenSEO page the person was
+ * on) once Google has answered.
  */
 export async function getGatewayGoogleConnectUrl(
   returnTo: string,
@@ -112,6 +118,5 @@ export async function getGatewayGoogleConnectUrl(
     env: await gatewayEnv(),
     provider: GATEWAY_GOOGLE_PROVIDER,
     returnTo,
-    account: "organization",
   });
 }

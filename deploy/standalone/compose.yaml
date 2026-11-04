@@ -63,9 +63,12 @@ services:
       CONTEXT_API_KEY: ${CONTEXT_API_KEY:-}
       DATAFORSEO_API_KEY: ${DATAFORSEO_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      CRAWLER_ACCESS_SECRET: ${CRAWLER_ACCESS_SECRET:-}
     volumes: [config:/config, web-config:/web-config]
     depends_on:
       runtime: { condition: service_started }

@@ -10,7 +10,7 @@ import {
 import {
   archiveProjectSchema,
   createProjectSchema,
-  restoreProjectSchema,
+  archivedProjectSchema,
   setProjectWebsiteSchema,
   updateProjectSchema,
 } from "@/types/schemas/projects";
@@ -96,10 +96,18 @@ export const getArchivedProjects = createServerFn({ method: "POST" })
 
 export const restoreProject = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .validator(restoreProjectSchema)
+  .validator(archivedProjectSchema)
   .handler(async ({ data, context }) => {
     requireOrgPermission(context, { project: ["delete"] });
     return ProjectService.restoreProject(context.organizationId, data);
+  });
+
+export const deleteArchivedProject = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(archivedProjectSchema)
+  .handler(async ({ data, context }) => {
+    requireOrgPermission(context, { project: ["delete"] });
+    return ProjectService.deleteArchivedProject(context.organizationId, data);
   });
 
 export const getProjectAccess = createServerFn({ method: "POST" })

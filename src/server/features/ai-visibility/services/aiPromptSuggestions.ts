@@ -18,10 +18,12 @@ import {
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
-import { z } from "zod";
-import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
 import {
-  suggestedAiTopicSchema,
+  normalizeAiSuggestion,
+  toTopicName,
+} from "@/shared/ai-prompt-suggestions";
+import {
+  generatedAiTopicSchema,
   type GenerateAiPromptsInput,
 } from "@/types/schemas/aiPromptSuggestions";
 
@@ -71,16 +73,13 @@ export async function generateAiPrompts(
       "INSUFFICIENT_CREDITS",
       "You need usage credits to generate prompts.",
     );
-  const outputSchema = topicName
-    ? suggestedAiTopicSchema.extend({ name: z.string().trim().min(1).max(120) })
-    : suggestedAiTopicSchema;
   const result = await generateText({
     model: buildChatAgentModel(
       await requireOpenRouterAccess(),
       await getOptionalEnvValue("OPENROUTER_MODEL"),
       "low",
     ),
-    output: Output.object({ schema: outputSchema }),
+    output: Output.object({ schema: generatedAiTopicSchema }),
     maxOutputTokens: 2000,
     abortSignal: AbortSignal.timeout(60_000),
     system:
@@ -103,7 +102,7 @@ export async function generateAiPrompts(
     }),
     // Admitted above, so settle the actual cost even if credits ran out since.
     onStepFinish: async (step) => {
-      const costUsd = requireOpenRouterCostUsd(step.providerMetadata);
+      const costUsd = await requireOpenRouterCostUsd(step.providerMetadata);
       await billResearchSpend({ ...customer, projectId: input.projectId }, [
         {
           provider: "openrouter",
@@ -114,8 +113,9 @@ export async function generateAiPrompts(
       ]);
     },
   });
-  const generated = outputSchema.parse(result.output);
-  const name = topicName || (sameTopic(generated.name) ?? generated.name);
+  const generated = generatedAiTopicSchema.parse(result.output);
+  const generatedName = toTopicName(generated.name);
+  const name = topicName || (sameTopic(generatedName) ?? generatedName);
   // Read again after generation so suggestions also exclude concurrent saves.
   const latest = await repo.getConfiguration(input.projectId);
   const excluded = new Set(

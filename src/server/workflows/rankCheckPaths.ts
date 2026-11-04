@@ -177,10 +177,14 @@ export async function runLiveCheck(
   }
 }
 
-// Poll cadence for queued tasks. Standard-priority tasks complete in ~5
-// minutes on average, so the first check waits 4 minutes; cumulative waits are
-// 4 / 6 / 8 / 10 / 12 / 15 minutes, after which unfinished tasks are left for
-// retryRankChecks.
+// Poll cadence for queued tasks. Standard-priority tasks usually complete in
+// ~5 minutes, so the first check waits 4 minutes and polls are frequent up to
+// 15 minutes. Since Google started throttling google.com/goto redirects,
+// DataForSEO waits out those delays before finishing a task, and many take
+// longer than 15 minutes. Collecting a slow task is free while re-posting it
+// is billed again and just as slow, so polling continues every 15 minutes up
+// to an hour before unfinished tasks are left for retryRankChecks. Cumulative
+// waits: 4 / 6 / 8 / 10 / 12 / 15 / 30 / 45 / 60 minutes.
 const QUEUED_POLL_INTERVALS = [
   "4 minutes",
   "2 minutes",
@@ -188,6 +192,9 @@ const QUEUED_POLL_INTERVALS = [
   "2 minutes",
   "2 minutes",
   "3 minutes",
+  "15 minutes",
+  "15 minutes",
+  "15 minutes",
 ] as const;
 
 /** Concurrent task_get requests within a collect step. */
@@ -257,7 +264,7 @@ async function fetchQueuedRound(
 
 /**
  * Post tasks to DataForSEO's standard queue (~30% of live cost), one metered
- * step per 100, then poll task_get for ~15 minutes. `onCollected` runs inside
+ * step per 100, then poll task_get for up to an hour. `onCollected` runs inside
  * each collect step with that round's results. A task that's rejected, fails
  * or never finishes gets no result. Returns every collected result.
  */

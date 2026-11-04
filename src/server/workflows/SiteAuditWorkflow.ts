@@ -10,6 +10,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import { withPgClient } from "@/db";
+import { yieldingStep } from "@/server/workflows/yieldingStep";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import {
@@ -100,8 +101,8 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<
     // Scope a per-request Postgres client for this workflow invocation (no-op in
     // D1 mode). The socket is reclaimed when the invocation ends, so there is
     // nothing to tear down here.
-    const payload = event.payload;
-    return withPgClient(() => this.runScoped({ ...event, payload }, step));
+    const auditEvent = event as WorkflowEvent<AuditParams>;
+    return withPgClient(() => this.runScoped(auditEvent, yieldingStep(step)));
   }
 
   private async runScoped(

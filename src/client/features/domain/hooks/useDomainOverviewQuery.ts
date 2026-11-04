@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { getErrorCode } from "@/client/lib/error-messages";
 import { getDomainOverview } from "@/serverFunctions/domain";
 import type { ResearchScope } from "@/shared/researchScope";
 
@@ -31,5 +32,8 @@ export function useDomainOverviewQuery(input: Input) {
         },
       }),
     staleTime: 5 * 60_000,
+    // Out of credits, a retry cannot succeed, so show the get-credits card now.
+    retry: (failureCount, error) =>
+      failureCount < 3 && getErrorCode(error) !== "INSUFFICIENT_CREDITS",
   });
 }

@@ -8,6 +8,7 @@ import {
   Globe,
   LayoutDashboard,
   Link2,
+  MapPin,
   MessageSquare,
   Search,
   TrendingUp,
@@ -38,6 +39,11 @@ const projectNavItems = [
     to: "/p/$projectId/rank-tracking" as const,
     label: "Rank Tracking",
     icon: TrendingUp,
+  },
+  {
+    to: "/p/$projectId/local-seo" as const,
+    label: "Local SEO",
+    icon: MapPin,
   },
   {
     to: "/p/$projectId/search-performance" as const,
@@ -145,6 +151,7 @@ export function getProjectNavGroups(projectId: string) {
       items: [
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
+        byPath("/p/$projectId/local-seo"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
       ],

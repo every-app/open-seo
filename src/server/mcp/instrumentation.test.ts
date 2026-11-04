@@ -132,7 +132,7 @@ describe("instrumentMcpToolHandler", () => {
       },
     });
     expect(mocks.recordExternalMcpToolCall).toHaveBeenCalledExactlyOnceWith(
-      "org-1",
+      authContext,
     );
   });
 
