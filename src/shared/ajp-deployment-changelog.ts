@@ -100,7 +100,7 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   {
     version: "0.1.24",
     deployedOn: "2026-11-04",
-    mergeCommit: "PLACEHOLDER",
+    mergeCommit: "b7a96038daa754d139905264074b011e2bae848b",
     upstream: {
       label: "Fork-only feature (not an upstream OpenSEO release)",
       sections: [
