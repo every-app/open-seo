@@ -4,18 +4,18 @@ Secret-free progress record for the self-hosted fork. Private operational detail
 
 ## Verified baseline (2026-10-27)
 
-| Item                                     | Value                                                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------ |
-| **Last deployed integration**            | **v0.1.19** (PR #22), merge **`08390467`**                               |
-| Previous production                      | v0.1.14 (PR #21), `ff093c2f`                                             |
-| Fork `origin/main`                       | **`083904674f8b17fa5b2662ffe507c8b39e73eca9`**                           |
-| Stale checkout (do not use for upgrades) | `/home/geoffajp/dev/open-seo` @ `3564a19f` (`codex/droplet-development`) |
-| Integration worktree                     | `/home/geoffajp/dev/open-seo-v0.1.19` @ merge commit                     |
-| Merged PR                                | https://github.com/alljigsawpuzzles/open-seo/pull/22                     |
-| Upstream integrated tag                  | `v0.1.19` → `99d9a49c`                                                   |
-| Upstream v0.1.14 tag                     | `8713d753` (merge-base with fork)                                        |
-| Commits upstream v0.1.14…v0.1.19         | 60 on linear release ancestry                                            |
-| Production smoke (operator)              | Pass 2026-10-27 — see `ajp-v0.1.19-rollout.md` deployment record         |
+| Item                                     | Value                                                                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Last deployed integration**            | **v0.1.20** (PR #24); **v0.1.24** in PR [#27](https://github.com/alljigsawpuzzles/open-seo/pull/27) — not yet prod |
+| Previous production                      | v0.1.14 (PR #21), `ff093c2f`                                                                                       |
+| Fork `origin/main`                       | **`083904674f8b17fa5b2662ffe507c8b39e73eca9`**                                                                     |
+| Stale checkout (do not use for upgrades) | `/home/geoffajp/dev/open-seo` @ `3564a19f` (`codex/droplet-development`)                                           |
+| Integration worktree                     | `/home/geoffajp/dev/open-seo-v0.1.19` @ merge commit                                                               |
+| Merged PR                                | https://github.com/alljigsawpuzzles/open-seo/pull/22                                                               |
+| Upstream integrated tag                  | `v0.1.19` → `99d9a49c`                                                                                             |
+| Upstream v0.1.14 tag                     | `8713d753` (merge-base with fork)                                                                                  |
+| Commits upstream v0.1.14…v0.1.19         | 60 on linear release ancestry                                                                                      |
+| Production smoke (operator)              | Pass 2026-10-27 — see `ajp-v0.1.19-rollout.md` deployment record                                                   |
 
 ## Release scope (verified tags)
 
@@ -67,11 +67,13 @@ Private artifact: `/home/geoffajp/openseo-release-review/v0.1.19/release-build-v
 
 Preview-only env (not used for build): `/home/geoffajp/openseo-handover/2026-10-27-preview.env.local.bak`
 
+| v0.1.24 | `0c04886f` | Prompt Tracking branded filter + competitors; integrates 0.1.21–0.23 scope — PR **#27** pending deploy |
+
 ## Next steps
 
-1. Monitor production; use rollback pointers in `ajp-v0.1.19-rollout.md` if needed.
-2. Schedule work on **Shopify signature** reliability and **rank-check** UX/cost follow-ups (separate from v0.1.19 ship).
-3. Optional: exercise new schema-backed features (local rank, signup campaigns) when product-ready — migrations **0060–0062** are live.
+1. Merge PR **#27** after droplet **`pnpm ci:check`** and operator smoke; deploy Workers + allowlisted **0063**.
+2. Re-apply **`codex/notifications-wip`** on updated **main** (migrations **0064/0042**).
+3. Monitor production; Shopify signature and rank-cost follow-ups unchanged.
 
 ## Deployment state
 
