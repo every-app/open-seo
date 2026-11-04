@@ -210,6 +210,7 @@ export function KeywordResearchTable({
   return (
     <DataTable
       table={table}
+      className="flex flex-1 flex-col"
       toolbar={toolbar}
       footer={footer}
       empty={{ title: "No keywords" }}

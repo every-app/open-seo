@@ -158,6 +158,8 @@ export type DataTableFrameProps = {
   error?: ReactNode;
   toolbar?: ReactNode;
   footer?: ReactNode;
+  /** Layout classes for the card, for example to fill a column. */
+  className?: string;
 };
 
 /**
@@ -178,6 +180,7 @@ export function DataTable<TData>({
   error,
   toolbar,
   footer,
+  className,
   onRowClick,
   activeRowId,
   scrollClassName,
@@ -205,7 +208,7 @@ export function DataTable<TData>({
   const rows = table.getRowModel().rows;
 
   return (
-    <TableCard>
+    <TableCard className={className}>
       {toolbar}
       {error ? <div className="p-4">{error}</div> : null}
       {error && !isLoading && rows.length === 0 ? null : (

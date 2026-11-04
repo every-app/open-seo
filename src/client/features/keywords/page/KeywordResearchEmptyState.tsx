@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Globe, Search } from "lucide-react";
+import { Globe, Search, Tag } from "lucide-react";
+import { CountryFlag } from "@/client/components/CountryFlag";
 import { EmptyState } from "@/client/components/EmptyState";
 import { RecentSearches } from "@/client/components/RecentSearches";
 import { LOCATIONS } from "@/client/features/keywords/utils";
@@ -10,20 +11,9 @@ type Props = {
   projectId: string;
 };
 
-export function KeywordResearchEmptyState({ controller, projectId }: Props) {
-  // The page renders loading and error states before this component.
-  if (controller.hasSearched) {
-    return <NoResultsState controller={controller} />;
-  }
-
-  return <SearchHistoryState controller={controller} projectId={projectId} />;
-}
-
-function NoResultsState({
+export function KeywordResearchNoResults({
   controller,
-}: {
-  controller: KeywordResearchControllerState;
-}) {
+}: Pick<Props, "controller">) {
   const { lastSearchKeyword, lastSearchLocationCode } = controller;
 
   return (
@@ -50,40 +40,64 @@ function NoResultsState({
   );
 }
 
-function SearchHistoryState({
-  controller,
-  projectId,
-}: {
-  controller: KeywordResearchControllerState;
-  projectId: string;
-}) {
+/** What the search card shows before a search: past searches, or a first prompt. */
+export function KeywordSearchHistory({ controller, projectId }: Props) {
   return (
-    <div className="pt-1">
-      <RecentSearches
-        items={controller.history}
-        loaded={controller.historyLoaded}
-        onRemove={controller.removeHistoryItem}
-        emptyIcon={Search}
-        emptyTitle="Enter a keyword to get started"
-        emptyDescription="Search for any keyword to see volume, difficulty, CPC, and related keyword ideas."
-        getTitle={(item) => item.keyword}
-        getSubtitle={(item) => item.locationName}
-        renderLink={(item, props) => (
-          <Link
-            from="/p/$projectId/keywords"
-            to="/p/$projectId/keywords"
-            params={{ projectId }}
-            search={{
-              q: item.keyword,
-              loc: item.locationCode,
-              locName: item.localLocationName,
-              grp: controller.preferredGroupKeywords ? true : undefined,
-            }}
-            replace
-            {...props}
-          />
-        )}
-      />
+    <RecentSearches
+      embedded
+      items={controller.history}
+      loaded={controller.historyLoaded}
+      onRemove={controller.removeHistoryItem}
+      emptyIcon={Search}
+      emptyIllustration={<KeywordRowsIllustration />}
+      emptyTitle="Enter a keyword to get started"
+      emptyDescription="Search for any keyword to see volume, difficulty, CPC, and related keyword ideas."
+      getTitle={(item) => item.keyword}
+      getSubtitle={(item) => (
+        <span className="inline-flex items-center gap-1.5">
+          <CountryFlag locationCode={item.locationCode} />
+          {item.locationName}
+        </span>
+      )}
+      renderLink={(item, props) => (
+        <Link
+          from="/p/$projectId/keywords"
+          to="/p/$projectId/keywords"
+          params={{ projectId }}
+          search={{
+            q: item.keyword,
+            loc: item.locationCode,
+            locName: item.localLocationName,
+            grp: controller.preferredGroupKeywords ? true : undefined,
+          }}
+          replace
+          {...props}
+        />
+      )}
+    />
+  );
+}
+
+const ILLUSTRATION_ROWS = ["w-24", "w-32", "w-20", "w-28"];
+
+/** A keyword results list fading out, standing in for the results to come. */
+function KeywordRowsIllustration() {
+  return (
+    <div
+      aria-hidden
+      className="flex w-64 flex-col gap-2 py-4 mask-y-from-70% mask-y-to-100%"
+    >
+      {ILLUSTRATION_ROWS.map((width) => (
+        <div
+          key={width}
+          className="flex items-center gap-2 rounded-lg bg-foreground/5 px-3 py-3"
+        >
+          <Tag className="size-3.5 text-muted-foreground/50" />
+          <div className={`h-1.5 rounded-full bg-foreground/10 ${width}`} />
+          <div className="ml-auto h-1.5 w-5 rounded-full bg-foreground/10" />
+          <div className="h-1.5 w-8 rounded-full bg-foreground/10" />
+        </div>
+      ))}
     </div>
   );
 }

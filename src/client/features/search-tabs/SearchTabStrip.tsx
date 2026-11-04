@@ -25,6 +25,8 @@ type Props = {
   onSelect: (tab: SearchTab) => void;
   onClose: (tabId: string) => void;
   onViewed: (tabId: string, when?: number) => void;
+  /** Inside another card: no card of its own, just a divider above the tabs. */
+  embedded?: boolean;
 };
 
 type SearchTabQueryConfig = {
@@ -41,11 +43,18 @@ export function SearchTabStrip({
   onSelect,
   onClose,
   onViewed,
+  embedded = false,
 }: Props) {
   if (tabs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-1">
+    <div
+      className={
+        embedded
+          ? "border-t border-border pt-3"
+          : "rounded-xl border border-border bg-card p-1"
+      }
+    >
       <div
         role="tablist"
         aria-label="Search tabs"

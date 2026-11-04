@@ -57,6 +57,8 @@
     // export via wrangler (scripts/celld).
     "@better-auth/utils",
     "miniflare",
+    // Its SVG files are loaded through import.meta.glob (CountryFlag.tsx)
+    "country-flag-icons",
     // Tailwindcss used via @tailwindcss/vite plugin
     "tailwindcss",
     // Imported by app.css; shadcn is also the component CLI

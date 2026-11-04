@@ -117,6 +117,9 @@ export function SerpAnalysisCard({
   return (
     <DataTable
       table={table}
+      // Fills what the column has left, and its rows scroll inside.
+      className="flex min-h-0 flex-1 flex-col"
+      scrollClassName="min-h-0 flex-1 overflow-y-auto"
       isLoading={loading || (pageItems.length === 0 && loadingMore)}
       toolbar={
         <>
