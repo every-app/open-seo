@@ -90,10 +90,14 @@ export default defineConfig(
         "TURNSTILE_SITE_KEY",
       ],
       server: {
+        // Cursor/VS Code remote forwards to 127.0.0.1; Node may bind [::1] only
+        // without this, so the tunnel never reaches Vite.
+        host: "127.0.0.1",
         allowedHosts,
         port,
       },
       preview: {
+        host: "127.0.0.1",
         allowedHosts,
         port,
       },

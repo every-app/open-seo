@@ -87,16 +87,44 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
       "Merged audit/crawler conflicts with AJP fetch diagnostics and render fallback retained.",
       "DataForSEO-only prompt research and OpenRouter gate bypass unchanged.",
       "Settings deployment log and self-host About/changelog preserved; hosted delete-account UI from upstream (inactive on cloudflare_access).",
-      "Notification webhooks parked on branch codex/notifications-wip — re-apply after deploy with migrations renumbered past 0063.",
     ],
     operations: [
       "D1 migration 0063 (account_deletion_requests) allowlisted; ledger 62→63; 0055 still skipped.",
       "Worker pair activated via publish-v24.mjs (publication artifact under ~/openseo-release-review/v0.1.24-publication-*).",
     ],
     openFollowUps: [
-      "Re-merge notification webhooks from codex/notifications-wip (0064/0042) and upstream PR when ready.",
       "Shopify crawler signature save/reliability.",
-      "Rank check cost estimate / notification delivery after webhooks ship.",
+      "Rank check cost estimate / notification delivery (see notifications deploy entry when live).",
+    ],
+  },
+  {
+    version: "0.1.24",
+    deployedOn: "2026-11-04",
+    mergeCommit: "PLACEHOLDER",
+    upstream: {
+      label: "Fork-only feature (not an upstream OpenSEO release)",
+      sections: [
+        {
+          title: "Notification webhooks",
+          items: [
+            "Project Notifications page: Slack and Microsoft Teams incoming webhooks (encrypted at rest).",
+            "Rank tracking alert rules (position change threshold, optional weekly summary on scheduled weekly checks).",
+            "Spec: docs/maintainers/specs/0018-notification-webhooks.md.",
+          ],
+        },
+      ],
+    },
+    forkChanges: [
+      "Merged from codex/notifications-rebase-0.1.24; SQLite migration 0064 / Postgres 0042.",
+      "Vite dev server binds 127.0.0.1 for Cursor remote SSH port forwarding.",
+    ],
+    operations: [
+      "D1 migration 0064 allowlisted; ledger 63→64; 0055 still skipped.",
+      "Worker pair activated via publish-notifications.mjs (rollback targets v0.1.24 publication).",
+    ],
+    openFollowUps: [
+      "Upstream issue/PR to every-app/open-seo when ready.",
+      "Validate rank-triggered alerts on production trackers.",
     ],
   },
   {
