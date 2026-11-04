@@ -12,7 +12,7 @@ export type AutumnInvoice = {
   createdAt: number;
 };
 
-// The largest legitimate invoice today is the $2,000/yr Agency plan plus a $99
+// The largest legitimate invoice today is the $1,000/yr Agency plan plus a $99
 // top-up; anything near this cap means the dollars-vs-cents assumption below
 // broke.
 const MAX_PLAUSIBLE_INVOICE_TOTAL_USD = 2500;

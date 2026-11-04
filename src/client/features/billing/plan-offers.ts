@@ -40,8 +40,8 @@ export const PRO_PLAN_OFFER: PlanOffer = {
 export const AGENCY_PLAN_OFFER: PlanOffer = {
   planId: AUTUMN_AGENCY_PLAN_ID,
   name: "Agency Plan",
-  priceUsd: 200,
-  monthlyCreditsUsd: 240,
+  priceUsd: 100,
+  monthlyCreditsUsd: 120,
 };
 
 /** The tiers /subscribe offers, cheapest first. */

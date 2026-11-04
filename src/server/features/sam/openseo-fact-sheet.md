@@ -30,7 +30,7 @@ Paid managed plans start at $10/month:
 
 - Base: $10/month, with $10.00 of usage credits each billing cycle.
 - Pro: $30/month, with $36.00 of usage credits each billing cycle and priority email support.
-- Agency: $200/month, with $240.00 of usage credits each billing cycle, a dedicated Slack Connect channel, and AI enablement (hands-on help setting up agents and workflows for the team).
+- Agency: $100/month, with $120.00 of usage credits each billing cycle, a dedicated Slack Connect channel, and AI enablement (hands-on help setting up agents and workflows for the team).
 
 Every paid plan includes:
 

@@ -153,9 +153,9 @@ const PLANS: Plan[] = [
   {
     name: "Agency",
     id: "agency",
-    priceUsd: 200,
-    annualPriceUsd: 2000,
-    includedUsageUsd: 240,
+    priceUsd: 100,
+    annualPriceUsd: 1000,
+    includedUsageUsd: 120,
     audience: "For agencies with many clients.",
     features: [
       "Everything in Pro",

@@ -42,8 +42,8 @@ describe("buildDubSaleRequest", () => {
   });
 
   it("tracks the yearly Agency plan, the largest invoice we sell", () => {
-    expect(buildDubSaleRequest(invoice({ total: 2000 }), "org_1")?.amount).toBe(
-      200000,
+    expect(buildDubSaleRequest(invoice({ total: 1000 }), "org_1")?.amount).toBe(
+      100000,
     );
   });
 
