@@ -38,7 +38,12 @@ export const AJP_DEPLOYMENT_CHANGELOG_INTRO = {
 export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   {
     version: "0.1.24",
-    deployedOn: "Pending production deploy",
+    deployedOn: "2026-11-04",
+    pullRequest: {
+      number: 27,
+      url: "https://github.com/alljigsawpuzzles/open-seo/pull/27",
+    },
+    mergeCommit: "6db472ccaa34e323170d8ed94a45e516f422496b",
     upstream: {
       label: "OpenSEO v0.1.21 through v0.1.24",
       compareUrl:
@@ -82,16 +87,44 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
       "Merged audit/crawler conflicts with AJP fetch diagnostics and render fallback retained.",
       "DataForSEO-only prompt research and OpenRouter gate bypass unchanged.",
       "Settings deployment log and self-host About/changelog preserved; hosted delete-account UI from upstream (inactive on cloudflare_access).",
-      "Notification webhooks parked on branch codex/notifications-wip — re-apply after deploy with migrations renumbered past 0063.",
     ],
     operations: [
-      "Integration branch only — not yet live in production.",
-      "When deploying: allowlisted D1 migration 0063 (account_deletion_requests); migration 0055 still skipped.",
+      "D1 migration 0063 (account_deletion_requests) allowlisted; ledger 62→63; 0055 still skipped.",
+      "Worker pair activated via publish-v24.mjs (publication artifact under ~/openseo-release-review/v0.1.24-publication-*).",
     ],
     openFollowUps: [
-      "Re-merge notification webhooks from codex/notifications-wip (0064/0042) and upstream PR when ready.",
       "Shopify crawler signature save/reliability.",
-      "Rank check cost estimate / notification delivery after webhooks ship.",
+      "Rank check cost estimate / notification delivery (see notifications deploy entry when live).",
+    ],
+  },
+  {
+    version: "0.1.24",
+    deployedOn: "2026-11-04",
+    mergeCommit: "b7a96038daa754d139905264074b011e2bae848b",
+    upstream: {
+      label: "Fork-only feature (not an upstream OpenSEO release)",
+      sections: [
+        {
+          title: "Notification webhooks",
+          items: [
+            "Project Notifications page: Slack and Microsoft Teams incoming webhooks (encrypted at rest).",
+            "Rank tracking alert rules (position change threshold, optional weekly summary on scheduled weekly checks).",
+            "Spec: docs/maintainers/specs/0018-notification-webhooks.md.",
+          ],
+        },
+      ],
+    },
+    forkChanges: [
+      "Merged from codex/notifications-rebase-0.1.24; SQLite migration 0064 / Postgres 0042.",
+      "Vite dev server binds 127.0.0.1 for Cursor remote SSH port forwarding.",
+    ],
+    operations: [
+      "D1 migration 0064 allowlisted; notification tables on prod; ledger row 0064_spicy_black_queen (execute --file + ledger insert); 0055 still skipped.",
+      "Worker pair activated via publish-notifications.mjs — app c04703e8-…, audit 4d2f8c43-… (artifact ~/openseo-release-review/notifications-publication-2026-11-04T17-25-46-887Z).",
+    ],
+    openFollowUps: [
+      "Upstream issue/PR to every-app/open-seo when ready.",
+      "Validate rank-triggered alerts on production trackers.",
     ],
   },
   {

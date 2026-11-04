@@ -26,4 +26,8 @@ The **Personal → About** version label reads `package.json` only. That is the 
 
 ## Next integration
 
-**v0.1.24** — integration branch **`codex/upgrade-openseo-v0.1.24`** (merged locally 2026-11-04); production deploy and **`deployedOn`** in staff changelog pending operator approval. Notifications WIP on **`codex/notifications-wip`** (`0146ebc7`).
+**Shipped:** **v0.1.24** on **2026-11-04** (PR **#27**, merge **`6db472cc`**, D1 **0063**, **`publish-v24.mjs`**).
+
+**Watch:** upstream **v0.1.25+** on [every-app/open-seo releases](https://github.com/every-app/open-seo/releases).
+
+**In flight (not prod):** rank notification webhooks on branch **`codex/notifications-wip`** (`0146ebc7`) — re-apply on **`main`** with migrations **0064/0042** before deploy.

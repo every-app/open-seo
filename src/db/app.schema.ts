@@ -529,4 +529,84 @@ export const crawlerCredentials = sqliteTable(
   ],
 );
 
+// Outbound chat notifications (Slack / Microsoft Teams incoming webhooks).
+// Webhook URLs are encrypted at rest and never returned to the client.
+export const notificationChannels = sqliteTable(
+  "notification_channels",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    provider: text("provider", { enum: ["slack", "teams"] }).notNull(),
+    webhookCiphertext: text("webhook_ciphertext").notNull(),
+    webhookHost: text("webhook_host").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    index("notification_channels_project_idx").on(
+      table.projectId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const notificationRules = sqliteTable(
+  "notification_rules",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => notificationChannels.id, { onDelete: "cascade" }),
+    ruleType: text("rule_type", { enum: ["rank_position_change"] }).notNull(),
+    rankConfigId: text("rank_config_id").references(() => rankTrackingConfigs.id, {
+      onDelete: "cascade",
+    }),
+    positionThreshold: integer("position_threshold").notNull().default(3),
+    weeklySummary: integer("weekly_summary", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    index("notification_rules_project_idx").on(table.projectId, table.enabled),
+    index("notification_rules_config_idx").on(table.rankConfigId),
+  ],
+);
+
+export const notificationDeliveries = sqliteTable(
+  "notification_deliveries",
+  {
+    id: text("id").primaryKey(),
+    ruleId: text("rule_id")
+      .notNull()
+      .references(() => notificationRules.id, { onDelete: "cascade" }),
+    runId: text("run_id").notNull(),
+    deliveredAt: text("delivered_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("notification_deliveries_rule_run_idx").on(
+      table.ruleId,
+      table.runId,
+    ),
+  ],
+);
+
 export { dataRefreshClaims } from "./dashboard.schema";

@@ -295,6 +295,13 @@
       "when": 1793683955459,
       "tag": "0041_account_deletion_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793808954125,
+      "tag": "0042_exotic_unus",
+      "breakpoints": true
     }
   ]
 }
