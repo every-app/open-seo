@@ -119,8 +119,8 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
       "Vite dev server binds 127.0.0.1 for Cursor remote SSH port forwarding.",
     ],
     operations: [
-      "D1 migration 0064 allowlisted; ledger 63→64; 0055 still skipped.",
-      "Worker pair activated via publish-notifications.mjs (rollback targets v0.1.24 publication).",
+      "D1 migration 0064 allowlisted; notification tables on prod; ledger row 0064_spicy_black_queen (execute --file + ledger insert); 0055 still skipped.",
+      "Worker pair activated via publish-notifications.mjs — app c04703e8-…, audit 4d2f8c43-… (artifact ~/openseo-release-review/notifications-publication-2026-11-04T17-25-46-887Z).",
     ],
     openFollowUps: [
       "Upstream issue/PR to every-app/open-seo when ready.",

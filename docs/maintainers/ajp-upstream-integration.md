@@ -6,12 +6,12 @@ Secret-free progress record for the self-hosted fork. Private operational detail
 
 | Item                          | Value                                                                                                   |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Last deployed integration** | **v0.1.24** (PR [#27](https://github.com/alljigsawpuzzles/open-seo/pull/27)), merge **`6db472cc`**      |
-| Previous production           | v0.1.20 (PR #24), 2026-10-29                                                                            |
-| Fork `origin/main`            | **`6db472ccaa34e323170d8ed94a45e516f422496b`** @ OpenSEO **0.1.24**                                     |
-| D1 ledger                     | **63** rows; latest **`0063_account_deletion_requests.sql`**; **0055** still skipped                    |
-| Live Workers @ 100%           | app **`551da5fd-…`**, audit **`ace9519b-…`** (see private `v0.1.24-publication-*` JSON)                 |
-| Publication scripts           | `~/openseo-release-review/prepare-v19-build.mjs`, **`apply-migration-0063.mjs`**, **`publish-v24.mjs`** |
+| **Last deployed integration** | **v0.1.24** + fork **notification webhooks** (merge **`b7a96038`**, deploy **2026-11-04**)              |
+| Previous production           | v0.1.24 upstream-only (PR #27), 2026-11-04                                                            |
+| Fork `origin/main`            | **`10bf204c…`** @ OpenSEO **0.1.24** (notifications on `main`)                                        |
+| D1 ledger                     | **64** rows; latest **`0064_spicy_black_queen.sql`**; **0055** still skipped                          |
+| Live Workers @ 100%           | app **`c04703e8-…`**, audit **`4d2f8c43-…`** (see `notifications-publication-2026-11-04T17-25-46-887Z`) |
+| Publication scripts           | `prepare-v19-build.mjs`, **`apply-migration-0064.mjs`**, **`publish-notifications.mjs`**, plus v0.1.24 scripts |
 | Canonical dev                 | **`~/dev/open-seo`** on droplet **`134.209.21.186`** only                                               |
 
 ## Release scope (verified tags — AJP deploy history)
@@ -30,7 +30,7 @@ Intermediate tags **0.1.21–0.1.23** shipped in the single **0.1.24** integrati
 
 ## New migrations after production (post–v0.1.14)
 
-SQLite journal through **0063** on production (**0060–0062** in v0.1.19 deploy; **0063** in v0.1.24). Postgres **0041** equivalent for hosted/Postgres paths. **0055 remains intentionally skipped**; do not run generic `migrate` without an explicit allowlist.
+SQLite journal through **0064** on production (**0064** notification tables, 2026-11-04 fork deploy). Postgres **0042** for hosted/Postgres paths. **0055 remains intentionally skipped**; do not run generic `migrate` without an explicit allowlist.
 
 ## Merge conflict resolution (fork-specific)
 
@@ -42,15 +42,15 @@ Same patterns as v0.1.19–20: crawler diagnostics + upstream Shopify/refuse; **
 2. **OpenRouter:** gate bypass when `generationAvailable === false`; manual research paths retained.
 3. **Migrations:** 0055 skip + allowlisted apply only.
 4. **Shopify signature:** save/re-encrypt still open.
-5. **Rank check:** cost/alert UX — notification webhooks in progress on **`codex/notifications-wip`** (not prod).
+5. **Rank check:** notification webhooks **live** on fork (Slack/Teams); validate rank-triggered alerts on prod trackers; upstream PR when ready.
 6. **GitHub CI:** disabled on fork; droplet **`pnpm ci:check`** / **`pnpm test:ci`** remain the gate (oxlint may OOM on 8GB — same as v0.1.19 notes).
 
 ## Next steps
 
 1. Watch **[every-app/open-seo releases](https://github.com/every-app/open-seo/releases)** for **v0.1.25+**.
-2. Finish **rank notification webhooks** on **`codex/notifications-wip`** → renumber **0064/0042** on **`main`**, then upstream PR if desired.
-3. Optional: private handover note **`DEPLOYMENT-v0.1.24.md`** (publication dir, rollback Worker IDs, smoke notes).
-4. Optional: delete merged remote branch **`codex/upgrade-openseo-v0.1.24`**.
+2. **Upstream PR** for notification webhooks when rank-alert behavior is validated on prod.
+3. Reconnect Slack/Teams channels on prod (webhooks not migrated from local).
+4. Optional: delete merged branches **`codex/notifications-wip`**, **`codex/notifications-rebase-0.1.24`**, **`codex/upgrade-openseo-v0.1.24`**.
 
 ## Deployment state
 
