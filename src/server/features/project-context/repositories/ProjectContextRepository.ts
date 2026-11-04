@@ -6,6 +6,7 @@ import {
   projectContextSections,
   projectKeyPages,
   projectResearchLog,
+  projects,
 } from "@/db/schema";
 import type {
   ContextAuthor,
@@ -45,6 +46,22 @@ function chunk<T>(items: T[], size: number): T[][] {
     out.push(items.slice(i, i + size));
   }
   return out;
+}
+
+async function getBrandName(projectId: string) {
+  const [row] = await db
+    .select({ brandName: projects.brandName })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  return row?.brandName ?? null;
+}
+
+function setBrandName(tx: Tx, projectId: string, brandName: string | null) {
+  return tx
+    .update(projects)
+    .set({ brandName })
+    .where(eq(projects.id, projectId));
 }
 
 async function listSections(projectId: string) {
@@ -267,6 +284,8 @@ function pruneResearchLogBefore(tx: Tx, projectId: string, entryDate: string) {
 }
 
 export const ProjectContextRepository = {
+  getBrandName,
+  setBrandName,
   listSections,
   upsertSection,
   deleteSection,

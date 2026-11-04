@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -5,9 +6,14 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useAppForm } from "@/client/components/form/useAppForm";
+import { Button } from "@/client/components/ui/button";
 import { InlineConfirm } from "@/client/components/InlineConfirm";
 import { SectionHeader } from "@/client/components/PageHeader";
 import { QueryError, QueryState } from "@/client/components/QueryState";
+import {
+  aiTrackerQueryOptions,
+  aiVisibilityKey,
+} from "@/client/features/ai-visibility/shared";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import {
   clearLastProjectId,
@@ -16,6 +22,7 @@ import {
 import { toastInitialAudit } from "@/client/features/projects/initialAuditToast";
 import { archiveProject, updateProject } from "@/serverFunctions/projects";
 import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
+import { isDefaultProjectName } from "@/shared/ai-visibility";
 import type { ProjectSummary } from "./types";
 
 export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
@@ -51,6 +58,7 @@ const generalSchema = z.object({
 
 function GeneralSection({ project }: { project: ProjectSummary }) {
   const queryClient = useQueryClient();
+  const [keepBrand, setKeepBrand] = useState(false);
 
   const updateMutation = useMutation({
     mutationFn: (values: z.infer<typeof generalSchema>) =>
@@ -58,6 +66,11 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
         data: {
           projectId: project.id,
           name: values.name.trim(),
+          // Keep tracking saves the old name as the brand, with the rename.
+          brandName:
+            keepBrand && values.name.trim() !== project.name
+              ? project.name
+              : undefined,
           domain: values.domain.trim() || undefined,
           ...values.market,
         },
@@ -72,6 +85,10 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
       await queryClient.invalidateQueries({
         queryKey: ["dashboardOverview", project.id],
       });
+      await queryClient.invalidateQueries({
+        queryKey: aiVisibilityKey(project.id),
+      });
+      setKeepBrand(false);
       toast.success("Project updated");
       toastInitialAudit(saved.initialAudit);
     },
@@ -108,11 +125,17 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
             )}
           </form.AppField>
 
-          <p className="text-sm text-muted-foreground">
-            {isEveryAppClientAuthMode()
-              ? "Adding your website starts a 50-page site audit."
-              : "Adding your website starts a 50-page scan with JavaScript rendering. Rendering uses your credits."}
-          </p>
+          <form.Subscribe selector={(state) => state.values.name}>
+            {(name) => (
+              <BrandChangeNote
+                project={project}
+                name={name}
+                keeping={keepBrand}
+                onKeep={() => setKeepBrand(true)}
+              />
+            )}
+          </form.Subscribe>
+
           <form.AppField name="domain">
             {(field) => (
               <field.TextField
@@ -123,6 +146,11 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
                       (optional)
                     </span>
                   </>
+                }
+                description={
+                  isEveryAppClientAuthMode()
+                    ? "Adding your website starts a 50-page site audit."
+                    : "Adding your website starts a 50-page scan with JavaScript rendering. Rendering uses your credits."
                 }
                 placeholder="example.com"
                 maxLength={255}
@@ -157,6 +185,54 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
         </form.Form>
       </form.AppForm>
     </section>
+  );
+}
+
+/**
+ * With no brand name saved, Prompt Tracking follows the project name. This says
+ * so before a rename saves, for projects it would affect.
+ */
+function BrandChangeNote({
+  project,
+  name,
+  keeping,
+  onKeep,
+}: {
+  project: ProjectSummary;
+  name: string;
+  keeping: boolean;
+  onKeep: () => void;
+}) {
+  const renamed = name.trim();
+  const changing =
+    !project.brandName &&
+    !!renamed &&
+    renamed !== project.name &&
+    !isDefaultProjectName(project.name) &&
+    !isDefaultProjectName(renamed);
+  const tracker = useQuery({
+    ...aiTrackerQueryOptions(project.id),
+    enabled: changing,
+  });
+  if (!changing || !tracker.data?.configured) return null;
+  if (keeping)
+    return (
+      <p className="text-sm text-muted-foreground">
+        We’ll keep tracking “{project.name}”.
+      </p>
+    );
+  return (
+    <p className="text-sm text-muted-foreground">
+      We’ll start checking for “{renamed}” in AI search.{" "}
+      <Button
+        type="button"
+        variant="link"
+        className="h-auto p-0"
+        onClick={onKeep}
+      >
+        Keep tracking “{project.name}”
+      </Button>
+    </p>
   );
 }
 

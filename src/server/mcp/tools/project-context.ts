@@ -74,7 +74,7 @@ const updateInputSchema = {
   // The batch cap lives with the server function's schema so both entry points
   // accept exactly the same patch list.
   updates: updateProjectContextSchema.shape.updates.describe(
-    'Patch ops, applied in order. Clear a standard section with {section: "current_goal", content: ""}; delete a custom section with {deleteCustomSection: "slug"}; removeCompetitors takes domains, removeKeyPages takes URLs, and removeResearchLog takes entry IDs from the project context. Adds upsert by domain/url; research-log entries are date-stamped by the server.',
+    'Patch ops, applied in order. Set the name AI visibility looks for in answers with {brandName: "Acme"}, after the user confirms it; an empty string goes back to the project name. Clear a standard section with {section: "current_goal", content: ""}; delete a custom section with {deleteCustomSection: "slug"}; removeCompetitors takes domains, removeKeyPages takes URLs, and removeResearchLog takes entry IDs from the project context. Adds upsert by domain/url; research-log entries are date-stamped by the server.',
   ),
 } as const;
 

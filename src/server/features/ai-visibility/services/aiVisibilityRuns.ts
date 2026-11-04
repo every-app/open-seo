@@ -14,7 +14,7 @@ import {
 } from "@/server/billing/subscription";
 import { AppError } from "@/server/lib/errors";
 import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
-import type { AiRun } from "@/shared/ai-visibility";
+import { ownBrandName, type AiRun } from "@/shared/ai-visibility";
 import type { RunAiCheckInput } from "@/types/schemas/ai-visibility";
 import { requireConfiguration } from "./aiVisibilityMutation";
 import { aiPromptIsBranded } from "./aiVisibilityMatching";
@@ -133,7 +133,7 @@ export async function startRun(
       );
     }
   }
-  const own = { name: project.name, domain: project.domain };
+  const own = { name: ownBrandName(project), domain: project.domain };
   // Two attempts: once normally, once after failing a stale blocker.
   for (let attempt = 0; attempt < 2; attempt++) {
     const id = crypto.randomUUID();

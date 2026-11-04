@@ -2,6 +2,7 @@ import { sort } from "remeda";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
 import {
   AI_DEFAULT_TOPIC,
+  ownBrandName,
   type AiBrand,
   type AiEngine,
 } from "@/shared/ai-visibility";
@@ -67,12 +68,15 @@ export function aiScope(config: ConfigurationRows, promptIds?: string[]) {
 
 /** The project's own brand, then its competitors, from shared project context. */
 export function aiBrands(
-  project: { name: string; domain: string | null },
+  project: { name: string; brandName: string | null; domain: string | null },
   competitors: { name: string | null; domain: string }[],
 ): AiBrand[] {
   if (!project.domain) return [];
   const brands = new Map<string, AiBrand>([
-    [project.domain, { name: project.name, domain: project.domain, own: true }],
+    [
+      project.domain,
+      { name: ownBrandName(project), domain: project.domain, own: true },
+    ],
   ]);
   for (const c of competitors)
     if (!brands.has(c.domain))

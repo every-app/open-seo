@@ -57,6 +57,8 @@ export const updateProjectSchema = z
   .object({
     projectId: z.string().min(1),
     name: projectNameField,
+    // Saved with a rename to keep tracking the old name. Omitted leaves it as it is.
+    brandName: z.string().trim().min(1).max(120).optional(),
     domain: projectDomainField,
     locationCode: projectLocationCodeField,
     languageCode: projectLanguageCodeField,

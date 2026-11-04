@@ -65,7 +65,8 @@ import { customer } from "@/server/features/ai-visibility/services/aiVisibilityT
 
 const project = {
   id: "project",
-  name: "Saved brand",
+  name: "Saved project",
+  brandName: "Saved brand",
   domain: "saved.com",
   locationCode: 2840,
   languageCode: "en",
@@ -152,7 +153,7 @@ describe("researchWebsite", () => {
     expect(
       await researchWebsite("https://saved.com", project, customer),
     ).toMatchObject({
-      name: project.name,
+      name: project.brandName,
       domain: project.domain,
       overview,
       preserveCompetitors: true,
@@ -177,7 +178,7 @@ describe("researchWebsite", () => {
       );
 
       expect(result).toEqual({
-        name: project.name,
+        name: project.brandName,
         domain: project.domain,
         overview: field === "overview" ? "Researched overview" : overview,
         preserveCompetitors: field !== "competitors",
@@ -190,6 +191,16 @@ describe("researchWebsite", () => {
       if (field === "keywords") expect(readSite).not.toHaveBeenCalled();
     },
   );
+
+  it("suggests a brand name when none is saved", async () => {
+    listKeywords.mockResolvedValue([]);
+    const result = await researchWebsite(
+      "https://saved.com",
+      { ...project, brandName: null },
+      customer,
+    );
+    expect(result.name).toBe("Researched brand");
+  });
 
   it("drops malformed suggested keywords instead of failing the paid run", async () => {
     listKeywords.mockResolvedValue([]);

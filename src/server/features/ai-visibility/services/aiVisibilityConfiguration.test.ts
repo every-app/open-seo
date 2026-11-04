@@ -6,6 +6,7 @@ import {
   aiScope,
   projectAiConfiguration,
 } from "./aiVisibilityConfiguration";
+import { matchAiBrand } from "./aiVisibilityMatching";
 
 function project(
   patch: AiTrackerPatch = {},
@@ -166,9 +167,35 @@ describe("AI check scope", () => {
 
 describe("aiBrands", () => {
   it("names a competitor saved with a blank name by its domain", () => {
-    const [, competitor] = aiBrands({ name: "Acme", domain: "acme.com" }, [
-      { name: "", domain: "rival.com" },
-    ]);
+    const [, competitor] = aiBrands(
+      { name: "Acme", brandName: null, domain: "acme.com" },
+      [{ name: "", domain: "rival.com" }],
+    );
     expect(competitor.name).toBe("rival.com");
   });
+
+  it.each([
+    ["Default", null, "Use the default settings.", false],
+    ["Default", null, "Acme is popular.", true],
+    ["Default", null, "See acme.com for details.", true],
+    ["Acme", null, "Acme is popular.", true],
+    ["Acme UK", null, "Acme is popular.", false],
+    ["Acme UK", "Acme", "Acme is popular.", true],
+  ])(
+    "a project named %s with brand name %s, answer %j: mentioned %s",
+    (name, brandName, answerText, mentioned) => {
+      const [own] = aiBrands({ name, brandName, domain: "acme.com" }, []);
+      expect(
+        matchAiBrand(
+          {
+            answerMarkdown: answerText,
+            answerText,
+            citations: [],
+            collectedAt: null,
+          },
+          own,
+        ).mentioned,
+      ).toBe(mentioned);
+    },
+  );
 });

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- application table declarations */
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -95,6 +96,8 @@ export const projects = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    // The name AI visibility looks for in answers. Null uses the project name.
+    brandName: text("brand_name"),
     domain: text("domain"),
     // Default DataForSEO location/language for the project, set during
     // onboarding and reused by every project-scoped data call.

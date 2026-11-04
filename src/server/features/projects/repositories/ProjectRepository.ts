@@ -98,6 +98,8 @@ async function updateProject(
   organizationId: string,
   input: {
     name: string;
+    // Omitted leaves the brand name untouched.
+    brandName?: string;
     domain?: string;
     // Omitted leaves the market columns untouched.
     market?: { locationCode: number; languageCode: string };
@@ -105,7 +107,12 @@ async function updateProject(
 ) {
   const [row] = await db
     .update(projects)
-    .set({ name: input.name, domain: input.domain ?? null, ...input.market })
+    .set({
+      name: input.name,
+      brandName: input.brandName,
+      domain: input.domain ?? null,
+      ...input.market,
+    })
     .where(
       and(
         eq(projects.id, projectId),

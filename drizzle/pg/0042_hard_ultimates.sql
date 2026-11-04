@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "brand_name" text;

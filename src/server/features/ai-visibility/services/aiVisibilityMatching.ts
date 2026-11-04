@@ -1,6 +1,10 @@
 import { sort } from "remeda";
 import { parse } from "tldts";
-import type { AiBrand } from "@/shared/ai-visibility";
+import {
+  aiBrandLabel,
+  isDefaultProjectName,
+  type AiBrand,
+} from "@/shared/ai-visibility";
 import type { ParsedAiAnswer } from "../providers/dataforseoEvidence";
 
 export function ownedAiDomain(hostname: string, owned: string): boolean {
@@ -71,11 +75,12 @@ function rootDomainName(value: string) {
 }
 
 /** Answer text naming the brand. A brand named "acme.com" is written "Acme". */
-export function aiBrandNames(brand: Pick<AiBrand, "name" | "domain">) {
-  const stem = rootDomainName(brand.name);
+export function aiBrandNames(brand: Pick<AiBrand, "name" | "domain" | "own">) {
+  const name = aiBrandLabel(brand);
+  const stem = rootDomainName(name);
   return stem && stem === rootDomainName(brand.domain)
-    ? [brand.name, brand.domain, stem]
-    : [brand.name, brand.domain];
+    ? [name, brand.domain, stem]
+    : [name, brand.domain];
 }
 
 /**
@@ -85,7 +90,7 @@ export function aiBrandNames(brand: Pick<AiBrand, "name" | "domain">) {
  */
 export function matchAiBrand(
   answer: ParsedAiAnswer,
-  brand: Pick<AiBrand, "name" | "domain">,
+  brand: Pick<AiBrand, "name" | "domain" | "own">,
 ) {
   const spans = aiMentionSpans(answer.answerText, aiBrandNames(brand));
   return {
@@ -97,12 +102,16 @@ export function matchAiBrand(
   };
 }
 
-/** Prompt cohorts must include diagnostics that name the brand only by URL. */
+/** The project's own brand. Prompt cohorts must include diagnostics that name it only by URL. */
 export function aiPromptIsBranded(
   prompt: string,
   brand: Pick<AiBrand, "name" | "domain">,
 ): boolean {
-  if (aiMentionSpans(prompt, [brand.name]).length) return true;
+  if (
+    !isDefaultProjectName(brand.name) &&
+    aiMentionSpans(prompt, [brand.name]).length
+  )
+    return true;
   const domain = brand.domain
     .replace(/^www\./i, "")
     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

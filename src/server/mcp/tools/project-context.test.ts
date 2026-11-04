@@ -10,6 +10,7 @@ import { makeToolContext, textContent } from "./tool-test-support";
 // the read tool returns, and only the real service proves both.
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
+  getBrandName: vi.fn(),
   listSections: vi.fn(),
   upsertSection: vi.fn(),
   listCompetitors: vi.fn(),
@@ -45,6 +46,7 @@ vi.mock(
 
 beforeEach(() => {
   mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+  mocks.getBrandName.mockResolvedValue(null);
   mocks.listSections.mockResolvedValue([]);
   mocks.listCompetitors.mockResolvedValue([]);
   mocks.listKeyPages.mockResolvedValue([]);
@@ -117,6 +119,19 @@ describe("update_project_context", () => {
 });
 
 describe("get_project_context", () => {
+  // An agent reads this before it sets the brand name, or reports what AI
+  // visibility looks for.
+  it("shows a saved brand name", async () => {
+    mocks.getBrandName.mockResolvedValue("Acme");
+
+    const result = await getProjectContextTool.handler(
+      { projectId: "project_1" },
+      makeToolContext(),
+    );
+
+    expect(textContent(result)).toContain("## Brand name\n\nAcme");
+  });
+
   // Templates are discovered through the digest and nowhere else, so an agent
   // that cannot read the menu here will never follow a template.
   it("lists the project's report templates", async () => {

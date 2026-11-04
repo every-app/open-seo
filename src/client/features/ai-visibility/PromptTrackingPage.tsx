@@ -14,6 +14,7 @@ import {
 } from "@/serverFunctions/ai-visibility";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
+  aiBrandLabel,
   type AiPrompt,
   type AiRun,
   type AiTrackerState,
@@ -195,7 +196,9 @@ function PromptTrackingContent({
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold">{ownBrand?.name}</h2>
+                    <h2 className="text-lg font-semibold">
+                      {ownBrand && aiBrandLabel(ownBrand)}
+                    </h2>
                     <Badge variant={tracker?.enabled ? "success" : "secondary"}>
                       {tracker?.enabled
                         ? `${scheduleLabel(tracker.scheduleInterval)} tracking`

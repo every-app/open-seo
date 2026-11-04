@@ -11,6 +11,7 @@ import { saveWebsiteSetup } from "@/server/features/projects/repositories/Projec
 import { researchWebsite } from "@/server/features/projects/services/websiteResearch";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 import { AppError } from "@/server/lib/errors";
+import { isDefaultProjectName } from "@/shared/ai-visibility";
 import {
   prepareWebsiteTracking,
   startWebsiteTrackingRun,
@@ -63,7 +64,6 @@ async function save(
 ) {
   const accepted = saveProjectWebsiteSetupSchema.parse(input);
   const project = await requireProject(customer, accepted.projectId);
-  accepted.name = project.name;
   accepted.domain =
     project.domain ??
     normalizeBacklinksTarget(accepted.domain, {
@@ -90,7 +90,15 @@ async function save(
     ...new Map(accepted.competitors.map((row) => [row.domain, row])).values(),
   ];
   const tracking = await prepareWebsiteTracking(accepted, project);
-  await saveWebsiteSetup(customer.organizationId, accepted, author, tracking);
+  await saveWebsiteSetup(
+    customer.organizationId,
+    accepted,
+    // "Default" is never tracked, so an agent passing the project name back
+    // must not save it as the brand.
+    isDefaultProjectName(accepted.name) ? null : accepted.name,
+    author,
+    tracking,
+  );
   if (tracking && runSeededTracking)
     await startWebsiteTrackingRun(accepted.projectId, customer);
   return requireProject(customer, accepted.projectId);

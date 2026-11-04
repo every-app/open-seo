@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `brand_name` text;

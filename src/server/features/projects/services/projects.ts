@@ -14,6 +14,7 @@ import { getLanguageCode } from "@/shared/keyword-locations";
 function mapProject(project: {
   id: string;
   name: string;
+  brandName: string | null;
   domain: string | null;
   locationCode: number;
   languageCode: string;
@@ -22,6 +23,7 @@ function mapProject(project: {
   return {
     id: project.id,
     name: project.name,
+    brandName: project.brandName,
     domain: project.domain,
     // Default market for the project's data calls (MCP tools and the web UI
     // fall back to these when a call omits locationCode/languageCode).
@@ -136,6 +138,7 @@ export async function updateProject(
       organizationId,
       {
         name: input.name,
+        brandName: input.brandName,
         domain: normalizeProjectDomain(input.domain),
         market: resolveMarketInput(input),
       },
