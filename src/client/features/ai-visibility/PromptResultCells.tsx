@@ -18,7 +18,7 @@ import { DomainFavicon } from "./DomainFavicon";
 import { EngineIcon } from "./EngineIcon";
 import { aiRate } from "./shared";
 
-const MAX_COMPETITOR_FAVICONS = 4;
+const MAX_SHOWN_COMPETITORS = 4;
 
 export function PromptRate({
   rows,
@@ -61,26 +61,27 @@ export function PromptRate({
 /** The hover list behind the engine and competitor cells. */
 function ResultList({
   items,
+  more = 0,
 }: {
   items: {
     key: string;
     icon: ReactNode;
     label: string;
     value: string;
-    strong?: boolean;
   }[];
+  /** How many items were left out of the list. */
+  more?: number;
 }) {
   return (
     <div className="flex min-w-48 flex-col gap-1.5 py-0.5">
-      {items.map(({ key, icon, label, value, strong }) => (
+      {items.map(({ key, icon, label, value }) => (
         <div key={key} className="flex items-center gap-2">
           {icon}
-          <span className={cn("flex-1 pr-2", strong && "font-semibold")}>
-            {label}
-          </span>
+          <span className="flex-1 pr-2">{label}</span>
           <span className="tabular-nums opacity-80">{value}</span>
         </div>
       ))}
+      {more > 0 && <span className="pl-6 opacity-80">+{more} more</span>}
     </div>
   );
 }
@@ -157,7 +158,7 @@ export function EngineResults({
   );
 }
 
-/** Favicons of the competitors these answers name, with each named brand's count on hover. */
+/** Favicons of the competitors these answers name, with the same competitors' counts on hover. */
 export function CompetitorStack({
   rows,
   loading,
@@ -166,15 +167,17 @@ export function CompetitorStack({
   loading: boolean;
 }) {
   if (loading) return <Skeleton className="h-7 w-20 rounded-full" />;
-  // Most named first. The sort is stable, so your brand leads a tie.
-  const brands = sort(
-    summarizeAiBrands(rows ?? []).filter((brand) => brand.mentions > 0),
+  // Most named first.
+  const named = sort(
+    summarizeAiBrands(rows ?? []).filter(
+      (brand) => !brand.own && brand.mentions > 0,
+    ),
     (a, b) => b.mentions - a.mentions,
   );
-  const named = brands.filter((brand) => !brand.own);
   if (!named.length)
     return <span className="text-sm text-muted-foreground">—</span>;
-  const shown = named.slice(0, MAX_COMPETITOR_FAVICONS);
+  const shown = named.slice(0, MAX_SHOWN_COMPETITORS);
+  const more = named.length - shown.length;
   return (
     <Tooltip>
       <TooltipTrigger
@@ -192,21 +195,21 @@ export function CompetitorStack({
             <DomainFavicon domain={brand.domain} />
           </span>
         ))}
-        {named.length > shown.length && (
+        {more > 0 && (
           <span className="-ml-1.5 flex size-7 items-center justify-center rounded-full border border-border bg-muted text-[11px] font-medium tabular-nums text-muted-foreground">
-            +{named.length - shown.length}
+            +{more}
           </span>
         )}
       </TooltipTrigger>
       <TooltipContent className="max-w-none">
         <ResultList
-          items={brands.map((brand) => ({
+          items={shown.map((brand) => ({
             key: brand.domain,
             icon: <DomainFavicon domain={brand.domain} />,
             label: brand.name,
             value: `${brand.mentions} of ${brand.answers}`,
-            strong: brand.own,
           }))}
+          more={more}
         />
       </TooltipContent>
     </Tooltip>
