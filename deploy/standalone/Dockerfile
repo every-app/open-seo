@@ -1,6 +1,8 @@
 # The application is compiled once, at image build time. Runtime has no Vite,
 # Wrangler, Miniflare, package manager, or node_modules.
-FROM node:22-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS build
+# The output is the same on every platform, so compile on the build host. Vite
+# has hung for hours when run under arm64 emulation.
+FROM --platform=$BUILDPLATFORM node:22-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS build
 WORKDIR /build
 RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
