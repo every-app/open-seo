@@ -1,6 +1,7 @@
 import {
   createRootRoute,
   HeadContent,
+  Link,
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
@@ -8,6 +9,18 @@ import * as React from "react";
 import appCss from "@/styles/app.css?url";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 import { PrivacyChoices } from "@/components/privacy-choices";
+
+// Fumadocs' default Link hands every href to TanStack's `to`, which resolves a
+// bare "#section" to the current page and drops the hash. Same-page links stay
+// plain anchors so they scroll to their section.
+function ContentLink({
+  href,
+  prefetch = true,
+  ...props
+}: React.ComponentProps<"a"> & { prefetch?: boolean }) {
+  if (href?.startsWith("#")) return <a href={href} {...props} />;
+  return <Link to={href} preload={prefetch ? "intent" : false} {...props} />;
+}
 
 export const Route = createRootRoute({
   head: () => ({
@@ -70,7 +83,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body className="flex flex-col min-h-screen bg-fd-background text-fd-foreground">
-        <RootProvider search={{ enabled: false }}>{children}</RootProvider>
+        <RootProvider
+          search={{ enabled: false }}
+          components={{ Link: ContentLink }}
+        >
+          {children}
+        </RootProvider>
         <PrivacyChoices />
         <Scripts />
       </body>

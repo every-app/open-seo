@@ -33,3 +33,7 @@ New DataForSEO accounts include $1 of free credit to test with, and the minimum 
 ### Google Search Console
 
 Search Console is optional and works in self-hosted deployments using your own Google OAuth client. It takes about 10 minutes of one-time setup. See the [Google Search Console guide on GitHub](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md).
+
+### Google Analytics
+
+Google Analytics is optional too and uses your own Google OAuth client. See the [Google Analytics guide on GitHub](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_GOOGLE_ANALYTICS.md).

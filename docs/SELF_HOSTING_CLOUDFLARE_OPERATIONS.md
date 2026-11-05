@@ -73,7 +73,7 @@ Rendering uses [Cloudflare Browser Run](https://developers.cloudflare.com/browse
 
 Some sites block Cloudflare's browser. To render those pages through [Context.dev](https://www.context.dev) instead, create a Context account, set `CONTEXT_API_KEY` in `.env.selfhost`, and redeploy. OpenSEO calls Context only for pages that Browser Run could not render, and for Shopify store pages that Shopify rate limits while project setup or AI Visibility setup reads your site. Each of those pages uses one Context credit on your Context account.
 
-Docker deployments have no browser. On Docker, set `CONTEXT_API_KEY` in `.env.local` to render every page through Context. Until the key is set, the **Render JavaScript** toggle stays disabled with a setup note.
+Docker deployments have no browser. On Docker, set `CONTEXT_API_KEY` in `deploy/standalone/.env` and apply it as described in [Enable features](./SELF_HOSTING_DOCKER.md#enable-features) to render every page through Context. On the [older Docker image](./SELF_HOSTING_DOCKER_LEGACY.md), set it in `.env` and run `docker compose up -d --force-recreate open-seo`. Until the key is set, the **Render JavaScript** toggle stays disabled with a setup note.
 
 ## Telemetry
 

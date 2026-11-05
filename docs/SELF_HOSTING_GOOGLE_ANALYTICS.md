@@ -66,8 +66,8 @@ openssl rand -base64 32
 
 ## 5) Connect a property
 
-Open a project dashboard or **Project settings → Analytics**, click **Connect
-with Google**, approve read-only Analytics access, and choose a GA4 property.
+Open a project dashboard or **Project settings → Integrations**, click
+**Connect**, approve read-only Analytics access, and choose a GA4 property.
 
 OpenSEO stores the OAuth tokens encrypted in Better Auth's account table. The
 project mapping stores only the selected property metadata and connector

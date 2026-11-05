@@ -69,7 +69,7 @@ const comparison: ComparisonTableProps = {
       label: "Rank tracking",
       cells: [
         {
-          text: "Daily, weekly, or monthly. 100 keywords weekly is about $1/month",
+          text: "Daily, weekly, or monthly. 100 keywords weekly is up to $6/month",
           tone: "positive",
         },
         {

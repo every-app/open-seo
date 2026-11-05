@@ -27,7 +27,6 @@ const MARKUP = 1.28; // OpenSEO's flat 28% premium over raw DataForSEO cost
 const CREDIT_USD = 0.001; // $ value of a single credit
 const BASE_PRICE_USD = 10; // Base Plan / month
 const BASE_INCLUDED_CREDIT_USD = 10; // $10 of usage credits included, reset monthly
-const WEEKS_PER_MONTH = 4.345; // 52 / 12
 const DEFAULT_RANK_DEPTH = 40;
 const DEFAULT_LOCAL_SERP_DEPTH = 20;
 const BACKLINK_HISTORY_DAYS = 365;
@@ -38,10 +37,16 @@ const RANK_CHECK_LABELS: Record<number, string> = {
   7: "Daily",
 };
 
+// Priced like the app's "up to" estimate: a check reads each keyword up to 6
+// times, weekly is 4 checks a month and daily is 30 (MAX_READS_PER_CHECK and
+// scheduledChecksPerMonth in src/shared/rank-tracking.ts).
+const RANK_MAX_READS_PER_CHECK = 6;
+const RANK_CHECKS_PER_MONTH: Record<number, number> = { 0: 0, 1: 4, 7: 30 };
+
 // Raw DataForSEO per-call cost in USD (NOT including OpenSEO's markup).
 const RAW_COST_USD = {
-  // Scheduled checks use the queued API. The app defaults to one device and
-  // the top 40 results: $0.0006 for page one + $0.00045 per extra page.
+  // Rank checks use the queued API. The app defaults to one device and the top
+  // 40 results: $0.0006 for page one + $0.00045 per extra page, per read.
   rankCheck: 0.0006 + (DEFAULT_RANK_DEPTH / 10 - 1) * 0.00045,
   // Labs live costs $0.012/task + $0.00012/row (measured Sep 2026). Auto mode
   // blends two half-limit calls (suggestions + ideas), so the default
@@ -183,7 +188,7 @@ type Inputs = {
 };
 
 const PRESETS: Record<"business" | "freelancer", Inputs> = {
-  // About $8/mo of usage: one site with weekly rank tracking and regular research.
+  // About $10/mo of usage: one site with weekly rank tracking and regular research.
   business: {
     sites: 1,
     keywordsPerSite: 50,
@@ -193,7 +198,7 @@ const PRESETS: Record<"business" | "freelancer", Inputs> = {
     backlinks: 20,
     aiPromptChecks: 0,
   },
-  // About $27/mo of usage: an agency checking 15 client sites weekly.
+  // About $41/mo of usage: an agency checking 15 client sites weekly.
   freelancer: {
     sites: 15,
     keywordsPerSite: 20,
@@ -224,10 +229,8 @@ function Pricing() {
 
   const estimate = useMemo(() => {
     const scheduledRunsPerMonth =
-      inputs.sites * inputs.checksPerWeek * WEEKS_PER_MONTH;
-    const rankChecksPerMonth = Math.round(
-      scheduledRunsPerMonth * inputs.keywordsPerSite,
-    );
+      inputs.sites * RANK_CHECKS_PER_MONTH[inputs.checksPerWeek];
+    const rankChecksPerMonth = scheduledRunsPerMonth * inputs.keywordsPerSite;
 
     const lines = [
       {
@@ -262,11 +265,11 @@ function Pricing() {
         key: "rank",
         label: "Rank tracking",
         detail: `${rankChecksPerMonth.toLocaleString()} checks this month`,
-        // The app bills each site's scheduled run as one keyword batch.
-        credits: Math.round(
+        // The app bills each read of a site's keywords as one batch.
+        credits:
           scheduledRunsPerMonth *
-            creditsForRaw(inputs.keywordsPerSite * RAW_COST_USD.rankCheck),
-        ),
+          RANK_MAX_READS_PER_CHECK *
+          creditsForRaw(inputs.keywordsPerSite * RAW_COST_USD.rankCheck),
       },
     ];
 
@@ -342,7 +345,7 @@ function Pricing() {
             audits, and AI visibility checks. Each action costs what the data
             costs us plus a flat {Math.round((MARKUP - 1) * 100)}%, rounded up
             to the nearest tenth of a cent, so a keyword search is about $0.05
-            and a rank check is a fraction of a cent.
+            and a rank check is up to 1.5 cents per keyword.
           </p>
           <p>
             Your projects, saved results, exports, and Google Search Console
@@ -502,6 +505,7 @@ function Pricing() {
                       </span>
                     </dt>
                     <dd className="shrink-0 text-sm font-medium tabular-nums text-neutral-950">
+                      {line.key === "rank" && line.credits > 0 ? "Up to " : null}
                       {usd(line.credits * CREDIT_USD)}
                     </dd>
                   </div>
@@ -585,8 +589,10 @@ function Pricing() {
               Do I need a subscription or just usage credits?
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
-              While top-up Usage Credits roll over and don&apos;t expire, you
-              need an active subscription in order to use OpenSEO.
+              You can try OpenSEO on the $0.50 of free trial credits. To keep
+              going after that, or to use rank checks and Prompt Research, you
+              need an active subscription. Top-up Usage Credits roll over and
+              don&apos;t expire, but you can only buy them on a paid plan.
             </dd>
           </div>
         </dl>

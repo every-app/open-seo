@@ -33,7 +33,7 @@ const faqs = [
   {
     question: "How much does rank tracking cost in OpenSEO?",
     answer:
-      "It depends on keywords, devices, depth, and schedule, and the app shows the estimate before anything runs. As a reference point, 100 keywords on mobile, checking the top 40 results weekly, comes to about a dollar a month in credits. Rank checks on the hosted app need the $10/month plan, which includes $10 of credits; self-hosted deployments pay their data provider directly.",
+      "It depends on keywords, devices, depth, and schedule, and the app shows the estimate before anything runs. As a reference point, 100 keywords on mobile, checking the top 40 results weekly, can cost up to $6 a month in credits. Rank checks on the hosted app need the $10/month plan, which includes $10 of credits; self-hosted deployments pay their data provider directly.",
   },
   {
     question: "Can I track local rankings for a specific city?",
@@ -176,12 +176,11 @@ function RankTrackingLibraryPage() {
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           Creating a tracker and adding keywords cost nothing. Checks cost
-          credits, and the app shows an estimate before every scheduled add and
-          every live run. Scheduled checks go through a queue that is much
-          cheaper per keyword than a one-off live check. The keyword count,
-          devices, depth, and schedule multiply, so 100 keywords on mobile at
-          depth 40, weekly, is about a dollar a month; both devices doubles it
-          and daily checks multiply it by about seven.
+          credits, and the app shows the most a check can cost before every
+          scheduled add and every run. The keyword count, devices, depth, and
+          schedule multiply, so 100 keywords on mobile at depth 40, weekly, can
+          cost up to $6 a month; both devices doubles it and daily checks
+          multiply it by about seven.
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           On the hosted app, rank checks need the $10/month plan, which includes

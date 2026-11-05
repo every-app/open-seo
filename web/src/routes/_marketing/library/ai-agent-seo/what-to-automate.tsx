@@ -29,7 +29,7 @@ const faqs = [
   {
     question: "How much does scheduled rank tracking cost in OpenSEO?",
     answer:
-      "The app estimates before anything runs. As a reference, 25 keywords on mobile checking the top 40 results weekly comes to about $0.25 a month in credits; 100 keywords about a dollar. Scheduled checks go through a queue that is cheaper than one-off live checks. Rank checks on the hosted app need the $10/month plan.",
+      "The app estimates before anything runs. As a reference, 25 keywords on mobile checking the top 40 results weekly can cost up to $1.50 a month in credits; 100 keywords up to $6. Rank checks on the hosted app need the $10/month plan.",
   },
   {
     question: "Should I automate content production?",

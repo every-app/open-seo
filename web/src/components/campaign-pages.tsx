@@ -504,7 +504,7 @@ export function AgencyLandingPage() {
         heading="Priced for client work"
         body="Starting from $10/mo with $10 of usage included. Every plan has every feature, so more clients just means more usage."
         openSeo={{
-          price: "~$27",
+          price: "~$41",
           caption:
             "15 client sites with rankings checked weekly, plus regular keyword research.",
         }}
