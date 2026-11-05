@@ -79,6 +79,39 @@ describe("get_serp_results", () => {
     expect(textContent(result)).toContain('"seo tools" (30 results)');
   });
 
+  it("shows the website name when a wrapped result has no URL breadcrumb", async () => {
+    const live = mockLiveSerp(1);
+    live.mockResolvedValueOnce([
+      {
+        type: "organic",
+        rank_absolute: 1,
+        rank_group: 1,
+        title: "Discussion thread",
+        url: "https://google.com/goto?url=CAES",
+        domain: null,
+        website_name: "Reddit",
+        description: null,
+      },
+    ]);
+
+    const result = await getSerpResultsTool.handler(
+      {
+        projectId: "project_1",
+        queries: [{ keyword: "example query" }],
+      },
+      toolContext,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      results: [
+        {
+          items: [{ domain: null, websiteName: "Reddit" }],
+        },
+      ],
+    });
+    expect(textContent(result)).toContain("Reddit");
+  });
+
   it("answers a repeated query from the saved rows without another paid call", async () => {
     const live = mockLiveSerp(20);
     const args = {
