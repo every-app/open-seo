@@ -86,6 +86,26 @@ async function gatewayRefusalError(response: Response) {
   return new AppError("AUTH_CONFIG_MISSING", refusal.message, details);
 }
 
+/** Standalone workerd returns gzip bytes without decoding; Cloudflare Workers do not. */
+async function readDataforseoResponseText(
+  response: Response,
+  url: RequestInfo,
+): Promise<string> {
+  let buffer: ArrayBuffer;
+  try {
+    buffer = await response.arrayBuffer();
+  } catch (error) {
+    throw asDataforseoTimeoutError(error, url);
+  }
+  const bytes = new Uint8Array(buffer);
+  if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    return new Response(
+      new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip")),
+    ).text();
+  }
+  return new TextDecoder().decode(bytes);
+}
+
 /** A request-deadline abort as UPSTREAM_UNAVAILABLE; any other error as is. */
 function asDataforseoTimeoutError(error: unknown, url: RequestInfo): unknown {
   if (
@@ -236,14 +256,7 @@ async function requestDataforseo<TTask extends DataforseoTaskLike>(
     body: method === "POST" ? JSON.stringify(body) : undefined,
     signal: options.signal,
   });
-  // The deadline also covers the body: a slow response can send its headers
-  // in time and still run out the clock while the body streams in.
-  let text: string;
-  try {
-    text = await response.text();
-  } catch (error) {
-    throw asDataforseoTimeoutError(error, url);
-  }
+  const text = await readDataforseoResponseText(response, url);
   if (text === "") return null;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the task type is the caller's claim about the payload; billing metadata and item fields are validated downstream (envelope.ts + section Zod schemas)
   const parsed = JSON.parse(text) as DataforseoResponseLike<TTask>;
