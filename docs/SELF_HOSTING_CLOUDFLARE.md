@@ -70,6 +70,10 @@ If something fails, see Troubleshooting below.
 
 Invite them from Team settings. The app copies an invitation link; the invited address creates its own account from that link and joins your workspace. There is no email delivery, so send the link yourself. Everyone works in one shared workspace and sees the same projects.
 
+## Using your own domain
+
+To serve OpenSEO on your own domain (a zone on the same Cloudflare account), set `BETTER_AUTH_URL=https://seo.example.com` in `.env.selfhost` and redeploy. The deploy attaches the domain to the Worker and signs people in there. Set it in `.env.selfhost` rather than adding the domain in the dashboard: each deploy detaches custom domains it doesn't know about.
+
 ## Connecting MCP clients
 
 MCP clients connect to `https://YOUR_WORKER_HOSTNAME/mcp` and sign in with your OpenSEO account, the same way they connect to the hosted service. Follow the [MCP setup guide](https://openseo.so/docs/mcp) with your Worker URL in place of the hosted one.

@@ -353,6 +353,7 @@ export default Alchemy.Stack(
     // previews always derive it from the deterministic worker name — a wrong
     // WORKERS_SUBDOMAIN surfaces in CI's post-deploy Access verify step.
     let authUrl: string;
+    let customDomain: string | undefined;
     if (prod) {
       authUrl = yield* optionalVar("BETTER_AUTH_URL");
       if (!authUrl) {
@@ -367,9 +368,18 @@ export default Alchemy.Stack(
     } else if (authMode === "password") {
       // Password accounts need the real public URL (session cookies, the
       // OAuth callbacks MCP clients use). The self-host env file sets no
-      // WORKERS_SUBDOMAIN, so read it from the account.
-      const subdomain = yield* resolveWorkersSubdomain(workersSubdomain, "");
-      authUrl = `https://${workerName(stage)}.${subdomain}`;
+      // WORKERS_SUBDOMAIN, so read it from the account — unless the
+      // self-hoster serves the Worker on a custom domain and sets
+      // BETTER_AUTH_URL to it.
+      authUrl = yield* optionalVar("BETTER_AUTH_URL");
+      if (authUrl) {
+        // Declared so the deploy keeps the domain attached: alchemy detaches
+        // any custom domain the Worker config doesn't list.
+        customDomain = new URL(authUrl).hostname;
+      } else {
+        const subdomain = yield* resolveWorkersSubdomain(workersSubdomain, "");
+        authUrl = `https://${workerName(stage)}.${subdomain}`;
+      }
     } else if (authMode === "hosted") {
       return yield* Effect.die(
         new Error(
@@ -477,7 +487,7 @@ export default Alchemy.Stack(
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : customDomain,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under
