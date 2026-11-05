@@ -100,7 +100,7 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   {
     version: "0.1.24",
     deployedOn: "2026-11-05",
-    mergeCommit: "PLACEHOLDER_PR29",
+    mergeCommit: "5ba13eb5aa2aeab9e18015ed28023761b76d2f73",
     upstream: {
       label: "Fork-only notification UX",
       sections: [
@@ -117,7 +117,7 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
       "Shared rank notification content builder for Slack text and Teams cards.",
     ],
     operations: [
-      "No D1 change; Worker pair via publish-notifications.mjs (rollback prior notifications deploy).",
+      "No D1 change; Worker pair via publish-notifications.mjs — app 8ed77e53-…, audit 95561881-… (artifact ~/openseo-release-review/notifications-publication-2026-11-05T12-52-59-305Z).",
     ],
   },
   {
