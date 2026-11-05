@@ -115,7 +115,7 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
     },
     forkChanges: ["Shared rank trend helpers aligned with rank-tracking matrix UI."],
     operations: [
-      "No D1 change; Worker pair via publish-notifications.mjs.",
+      "No D1 change; Worker pair via publish-notifications.mjs — app d58da05b-…, audit 8d2e4919-… (artifact ~/openseo-release-review/notifications-publication-2026-11-05T13-25-48-970Z).",
     ],
   },
   {
