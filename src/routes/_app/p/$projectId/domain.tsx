@@ -10,6 +10,7 @@ import {
 } from "@/types/schemas/domain";
 import { getDomainRouteState } from "@/client/features/domain/domainRouteState";
 import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
+import { pageHead } from "@/client/lib/pageHead";
 
 const DEFAULT_DOMAIN_SEARCH = {
   domain: "",
@@ -39,6 +40,7 @@ const DEFAULT_DOMAIN_SEARCH = {
 } as const;
 
 export const Route = createFileRoute("/_app/p/$projectId/domain")({
+  head: () => pageHead("Domain Overview"),
   validateSearch: domainSearchSchema,
   search: {
     middlewares: [stripSearchParams(DEFAULT_DOMAIN_SEARCH)],

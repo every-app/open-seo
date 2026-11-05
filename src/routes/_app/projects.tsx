@@ -16,8 +16,10 @@ import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
 import { getLastProjectId } from "@/client/lib/active-project";
 import { CreateProjectModal } from "@/client/features/projects/CreateProjectModal";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_app/projects")({
+  head: () => pageHead("Projects"),
   component: ProjectsPage,
 });
 

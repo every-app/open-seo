@@ -8,8 +8,10 @@ import {
   TurnstileWidget,
 } from "@/client/features/auth/TurnstileWidget";
 import { getSignInHref, OAUTH_AUTHORIZE_PATH } from "@/lib/auth-redirect";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/connect")({
+  head: () => pageHead("Connect"),
   // Reads the authorize params from window.location, which only the browser
   // has; the page has nothing worth server-rendering anyway.
   ssr: false,

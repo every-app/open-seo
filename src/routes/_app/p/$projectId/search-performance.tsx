@@ -8,8 +8,10 @@ import {
   SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   searchPerformanceSearchSchema,
 } from "@/types/schemas/search-performance";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_app/p/$projectId/search-performance")({
+  head: () => pageHead("GSC Insights"),
   validateSearch: searchPerformanceSearchSchema,
   search: {
     middlewares: [

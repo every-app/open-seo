@@ -19,8 +19,10 @@ import {
   listReportTemplates,
 } from "@/serverFunctions/reportTemplates";
 import type { ReportTemplate } from "@/types/schemas/report-templates";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_app/p/$projectId/reports/templates")({
+  head: () => pageHead("Report templates"),
   component: ReportTemplatesPage,
 });
 

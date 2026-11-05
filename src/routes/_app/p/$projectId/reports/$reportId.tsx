@@ -36,12 +36,14 @@ import { usesBetterAuthClient } from "@/lib/auth-mode";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getReport } from "@/serverFunctions/reports";
+import { pageHead } from "@/client/lib/pageHead";
 
 // Expand lives in the URL, not in state, so a refresh (or a link someone
 // pasted) comes back expanded.
 const reportDetailSearchSchema = z.object({ full: z.boolean().optional() });
 
 export const Route = createFileRoute("/_app/p/$projectId/reports/$reportId")({
+  head: () => pageHead("Reports"),
   validateSearch: reportDetailSearchSchema,
   component: ReportDetailPage,
 });

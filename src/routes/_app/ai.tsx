@@ -27,6 +27,7 @@ import {
 } from "@/client/features/ai-mcp/agentSetupPrompt";
 import { CopyButton } from "@/client/components/CopyButton";
 import { AgentList } from "@/client/features/ai-mcp/AgentList";
+import { pageHead } from "@/client/lib/pageHead";
 
 const DOCS_URL = "https://openseo.so/docs/agent-setup";
 
@@ -71,6 +72,7 @@ const aiSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_app/ai")({
+  head: () => pageHead("Agent setup"),
   validateSearch: aiSearchSchema,
   component: AiPage,
 });

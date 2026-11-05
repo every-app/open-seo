@@ -30,6 +30,7 @@ import {
   toAuthCallbackURL,
 } from "@/lib/auth-redirect";
 import { z } from "zod";
+import { pageHead } from "@/client/lib/pageHead";
 
 const UTM_PARAMS = [
   "utm_source",
@@ -50,6 +51,7 @@ const signUpSchema = z
   });
 
 export const Route = createFileRoute("/_auth/sign-up")({
+  head: () => pageHead("Sign up"),
   validateSearch: authRedirectSearchSchema.extend({
     // A site checked with the marketing site's free tool; onboarding
     // prefills it, and the website step validates it on save.

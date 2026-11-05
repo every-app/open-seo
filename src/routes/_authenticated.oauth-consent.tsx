@@ -23,8 +23,10 @@ import {
 } from "@/client/components/ui/select";
 import { organizationContextQueryOptions } from "@/client/features/team/organizationQueries";
 import { switchOrganization } from "@/serverFunctions/organization";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_authenticated/oauth-consent")({
+  head: () => pageHead("Authorize MCP access"),
   component: OAuthConsentPage,
 });
 

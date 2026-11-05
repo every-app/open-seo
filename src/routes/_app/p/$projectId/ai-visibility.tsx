@@ -7,8 +7,10 @@ import {
 import { OpenRouterKeyGate } from "@/client/features/ai-visibility/OpenRouterKeyGate";
 import { ProjectWebsiteGate } from "@/client/features/projects/ProjectWebsiteGate";
 import { queryClient } from "@/client/tanstack-db/queryClient";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_app/p/$projectId/ai-visibility")({
+  head: () => pageHead("Prompt Tracking"),
   // The setup gate below mounts only after the website gate, and each page
   // here only after setup. Start setup and the tracker every page reads
   // together on link intent and on a full load, without holding up navigation.

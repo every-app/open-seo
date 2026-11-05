@@ -37,6 +37,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/client/components/ui/toggle-group";
+import { pageHead } from "@/client/lib/pageHead";
 
 // How long the post-checkout "finalizing" screen polls Autumn before giving
 // up and letting the user through anyway, and how often it polls.
@@ -44,6 +45,7 @@ const FINALIZING_TIMEOUT_MS = 30_000;
 const FINALIZING_POLL_MS = 1000;
 
 export const Route = createFileRoute("/_authenticated/subscribe")({
+  head: () => pageHead("Choose a plan"),
   // The loader fills the module-scoped query client, so keep it out of server
   // requests: one worker isolate must not cache another account's billing.
   ssr: false,

@@ -4,10 +4,12 @@ import {
   helpLinkClassName,
   SecretHelpPage,
 } from "@/client/features/help/SecretHelpPage";
+import { pageHead } from "@/client/lib/pageHead";
 
 const OPENROUTER_KEYS_URL = "https://openrouter.ai/settings/keys";
 
 export const Route = createFileRoute("/_app/help/openrouter-api-key")({
+  head: () => pageHead("OpenRouter API key"),
   component: OpenrouterApiKeyHelpPage,
 });
 

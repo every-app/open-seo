@@ -4,10 +4,12 @@ import {
   helpLinkClassName,
   SecretHelpPage,
 } from "@/client/features/help/SecretHelpPage";
+import { pageHead } from "@/client/lib/pageHead";
 
 const DATAFORSEO_API_ACCESS_URL = "https://app.dataforseo.com/api-access";
 
 export const Route = createFileRoute("/_app/help/dataforseo-api-key")({
+  head: () => pageHead("DataForSEO API key"),
   component: DataforseoApiKeyHelpPage,
 });
 

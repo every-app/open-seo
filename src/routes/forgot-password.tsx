@@ -12,12 +12,14 @@ import { authClient } from "@/lib/auth-client";
 import { isHostedClientAuthMode, usesBetterAuthClient } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
+import { pageHead } from "@/client/lib/pageHead";
 
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
 });
 
 export const Route = createFileRoute("/forgot-password")({
+  head: () => pageHead("Forgot password"),
   validateSearch: authRedirectSearchSchema,
   component: ForgotPasswordPage,
 });

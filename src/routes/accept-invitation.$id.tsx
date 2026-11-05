@@ -9,8 +9,10 @@ import { clearLastProjectId } from "@/client/lib/active-project";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient, signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { usesBetterAuthClient } from "@/lib/auth-mode";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/accept-invitation/$id")({
+  head: () => pageHead("Accept invitation"),
   beforeLoad: () => {
     if (!usesBetterAuthClient()) {
       throw notFound();

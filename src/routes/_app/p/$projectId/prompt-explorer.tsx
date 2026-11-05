@@ -12,8 +12,10 @@ import {
   promptExplorerSearchSchema,
   type PromptExplorerModel,
 } from "@/types/schemas/ai-search";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_app/p/$projectId/prompt-explorer")({
+  head: () => pageHead("Prompt Explorer"),
   validateSearch: promptExplorerSearchSchema,
   // Start the setup gate's read on link intent, as AI visibility does.
   loader: ({ params }) => {
