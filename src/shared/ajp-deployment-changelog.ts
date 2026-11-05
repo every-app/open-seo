@@ -100,7 +100,7 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   {
     version: "0.1.24",
     deployedOn: "2026-11-05",
-    mergeCommit: "PLACEHOLDER_PR31",
+    mergeCommit: "e311031c480b600b6c691f28b62b7975c10e7584",
     upstream: {
       label: "Fork-only notification UX",
       sections: [
