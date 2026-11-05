@@ -33,6 +33,31 @@ describe("DataForSEO transport", () => {
     expect(new Headers(init?.headers).get("Accept-Encoding")).toBe("gzip");
   });
 
+  // Standalone celld/workerd does not transparently decode gzip bodies; the
+  // transport asks for gzip but must decompress before JSON.parse.
+  it("parses a gzip-compressed JSON body", async () => {
+    const payload = { status_code: 20000, tasks: [] };
+    const gzipBody = await new Response(
+      new Blob([JSON.stringify(payload)]).stream().pipeThrough(
+        new CompressionStream("gzip"),
+      ),
+    ).arrayBuffer();
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      new Response(gzipBody, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Encoding": "gzip",
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      dataforseoPost("/v3/backlinks/summary/live", []),
+    ).resolves.toEqual(payload);
+  });
+
   // An unverified account answers with HTTP 403 (status_code 40104). Left as
   // INTERNAL_ERROR it reached self-hosters as "an unexpected error occurred".
   it("maps a 403 to DATAFORSEO_AUTH_FAILED", async () => {
