@@ -102,6 +102,7 @@ export async function notifyRankCheckComplete(input: {
         domain: config.domain,
         trigger: input.trigger,
         positionThreshold: rule.positionThreshold,
+        serpDepth: config.serpDepth,
         changes,
         weeklySummaryOnly: shouldSendWeekly && !shouldSendAlert,
         weeklySummaryNote: shouldSendWeekly && shouldSendAlert,

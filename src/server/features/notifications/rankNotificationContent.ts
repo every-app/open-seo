@@ -1,6 +1,7 @@
+import type { RankPositionChange } from "@/server/features/notifications/rankPositionChanges";
 import {
-  formatRankChangeLine,
   formatRankPosition,
+  formatRankTrendLabel,
 } from "@/server/features/notifications/rankPositionChanges";
 
 export const RANK_NOTIFICATION_CHANGE_CAP = 12;
@@ -9,6 +10,8 @@ export type RankNotificationContent = {
   domain: string;
   trigger: "manual" | "scheduled";
   positionThreshold: number;
+  /** Used to label improved vs worsened when positions include "not in results". */
+  serpDepth: number;
   changes: RankPositionChange[];
   omittedChangeCount: number;
   weeklySummaryOnly: boolean;
@@ -22,6 +25,7 @@ export function buildRankNotificationContent(input: {
   domain: string;
   trigger: "manual" | "scheduled";
   positionThreshold: number;
+  serpDepth: number;
   changes: RankPositionChange[];
   weeklySummaryOnly: boolean;
   weeklySummaryNote: boolean;
@@ -33,6 +37,7 @@ export function buildRankNotificationContent(input: {
     domain: input.domain,
     trigger: input.trigger,
     positionThreshold: input.positionThreshold,
+    serpDepth: input.serpDepth,
     changes: capped,
     omittedChangeCount: Math.max(
       0,
@@ -59,7 +64,11 @@ export function formatRankNotificationPlainText(
   if (content.changes.length > 0) {
     lines.push(
       `Keywords moved by ${content.positionThreshold}+ positions:`,
-      ...content.changes.map(formatRankChangeLine),
+      ...content.changes.map((change) => {
+        const trend = formatRankTrendLabel(change, content.serpDepth);
+        const verb = trend.direction === "improved" ? "Improved" : "Dropped";
+        return `${change.keyword} (${change.device}): ${formatRankPosition(change.previousPosition)} → ${formatRankPosition(change.position)} · ${trend.arrow} ${verb} ${change.delta}`;
+      }),
     );
     if (content.omittedChangeCount > 0) {
       lines.push(`…and ${content.omittedChangeCount} more`);
@@ -132,6 +141,7 @@ export function sampleRankNotificationContent(input?: {
     domain: input?.domain ?? "example.com",
     trigger: "manual",
     positionThreshold: 10,
+    serpDepth: 100,
     changes,
     weeklySummaryOnly: false,
     weeklySummaryNote: false,

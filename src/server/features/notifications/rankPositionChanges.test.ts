@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   computeRankPositionChanges,
   rankDistance,
+  rankMovementDirection,
+  formatRankTrendLabel,
 } from "./rankPositionChanges";
 
 describe("rankPositionChanges", () => {
@@ -59,5 +61,53 @@ describe("rankPositionChanges", () => {
     });
 
     expect(changes).toHaveLength(0);
+  });
+
+  it("labels improved vs worsened movement", () => {
+    const improved = computeRankPositionChanges({
+      serpDepth: 100,
+      positionThreshold: 1,
+      previous: [
+        {
+          trackingKeywordId: "kw1",
+          keyword: "a",
+          device: "desktop",
+          position: 79,
+        },
+      ],
+      current: [
+        {
+          trackingKeywordId: "kw1",
+          keyword: "a",
+          device: "desktop",
+          position: 16,
+        },
+      ],
+    })[0]!;
+    expect(rankMovementDirection(improved, 100)).toBe("improved");
+    expect(formatRankTrendLabel(improved, 100).arrow).toBe("▲");
+
+    const worsened = computeRankPositionChanges({
+      serpDepth: 100,
+      positionThreshold: 1,
+      previous: [
+        {
+          trackingKeywordId: "kw2",
+          keyword: "b",
+          device: "mobile",
+          position: 2,
+        },
+      ],
+      current: [
+        {
+          trackingKeywordId: "kw2",
+          keyword: "b",
+          device: "mobile",
+          position: 43,
+        },
+      ],
+    })[0]!;
+    expect(rankMovementDirection(worsened, 100)).toBe("worsened");
+    expect(formatRankTrendLabel(worsened, 100).arrow).toBe("▼");
   });
 });

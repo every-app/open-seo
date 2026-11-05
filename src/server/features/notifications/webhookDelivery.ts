@@ -1,5 +1,6 @@
 import type { RankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
 import { formatRankNotificationPlainText } from "@/server/features/notifications/rankNotificationContent";
+import { buildSlackRankNotificationPayload } from "@/server/features/notifications/slackRankBlocks";
 import { buildTeamsWebhookBody } from "@/server/features/notifications/teamsAdaptiveCard";
 import type { NotificationProvider } from "@/types/schemas/notifications";
 
@@ -32,9 +33,10 @@ export async function postRankNotificationWebhook(input: {
   content: RankNotificationContent;
 }) {
   if (input.provider === "slack") {
-    await postWebhookJson(input.webhookUrl, {
-      text: formatRankNotificationPlainText(input.content),
-    });
+    await postWebhookJson(
+      input.webhookUrl,
+      buildSlackRankNotificationPayload(input.content),
+    );
     return;
   }
 
