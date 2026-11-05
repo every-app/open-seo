@@ -369,13 +369,14 @@ export default Alchemy.Stack(
       // Password accounts need the real public URL (session cookies, the
       // OAuth callbacks MCP clients use). The self-host env file sets no
       // WORKERS_SUBDOMAIN, so read it from the account — unless the
-      // self-hoster serves the Worker on a custom domain and sets
-      // BETTER_AUTH_URL to it.
-      authUrl = yield* optionalVar("BETTER_AUTH_URL");
-      if (authUrl) {
-        // Declared so the deploy keeps the domain attached: alchemy detaches
-        // any custom domain the Worker config doesn't list.
-        customDomain = new URL(authUrl).hostname;
+      // self-hoster serves the Worker on CUSTOM_DOMAIN. Only password mode
+      // attaches it: the Access application covers the workers.dev hostname
+      // alone, so a custom domain there would bypass Cloudflare Access.
+      customDomain = (yield* optionalVar("CUSTOM_DOMAIN")) || undefined;
+      if (customDomain) {
+        // Listed on the Worker so the deploy keeps it attached: alchemy
+        // detaches any custom domain the Worker config doesn't list.
+        authUrl = `https://${customDomain}`;
       } else {
         const subdomain = yield* resolveWorkersSubdomain(workersSubdomain, "");
         authUrl = `https://${workerName(stage)}.${subdomain}`;

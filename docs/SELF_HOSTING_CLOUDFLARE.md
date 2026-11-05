@@ -72,7 +72,7 @@ Invite them from Team settings. The app copies an invitation link; the invited a
 
 ## Using your own domain
 
-To serve OpenSEO on your own domain (a zone on the same Cloudflare account), set `BETTER_AUTH_URL=https://seo.example.com` in `.env.selfhost` and redeploy. The deploy attaches the domain to the Worker and signs people in there. Set it in `.env.selfhost` rather than adding the domain in the dashboard: each deploy detaches custom domains it doesn't know about.
+To serve OpenSEO on your own domain (a zone on the same Cloudflare account), set `CUSTOM_DOMAIN=seo.example.com` in `.env.selfhost` and redeploy. The deploy attaches the domain to the Worker and signs people in there. Set it in `.env.selfhost` rather than adding the domain in the dashboard: each deploy detaches custom domains it doesn't know about. This works with password accounts; with Cloudflare Access, the Access application covers only the `workers.dev` address.
 
 ## Connecting MCP clients
 
