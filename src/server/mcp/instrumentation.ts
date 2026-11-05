@@ -1,11 +1,19 @@
 import { waitUntil } from "cloudflare:workers";
-import type { CallToolResult } from "@modelcontextprotocol/server";
+import type {
+  CallToolResult,
+  StandardSchemaV1,
+  StandardSchemaWithJSON,
+} from "@modelcontextprotocol/server";
 import type { z } from "zod";
 import { AppError, asAppError, describeError } from "@/server/lib/errors";
 import { recordExternalMcpToolCall } from "@/server/features/activation/mcpActivation";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
-import { type ToolContext } from "@/server/mcp/context";
+import {
+  createMcpToolContext,
+  type McpProps,
+  type ToolContext,
+} from "@/server/mcp/context";
 import { incrementSelfHostMcpToolCallCount } from "@/server/lib/self-host-telemetry";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
 import { buildDashboardUrl } from "@/server/mcp/urls";
@@ -43,6 +51,7 @@ function captureMcpToolCall(
     projectId?: string;
     rowCount?: number;
     quotaRemaining?: number;
+    invalidFields?: string[];
   },
 ) {
   waitUntil(incrementSelfHostMcpToolCallCount());
@@ -64,9 +73,62 @@ function captureMcpToolCall(
         project_id: outcome.projectId,
         row_count: outcome.rowCount,
         quota_remaining: outcome.quotaRemaining,
+        invalid_fields: outcome.invalidFields,
       },
     }),
   );
+}
+
+// Issue paths only: messages can quote what the caller sent (Zod names unknown
+// keys in them). Input schemas have no z.record, so a path holds schema keys and
+// array indexes, never caller data. Indexes collapse to `*` so paths group by
+// field and a 2,000-keyword list with bad rows stays one entry.
+function invalidFieldPaths(issues: readonly StandardSchemaV1.Issue[]) {
+  const paths = issues.map((issue) => {
+    const segments = (issue.path ?? []).map((segment) => {
+      const key = typeof segment === "object" ? segment.key : segment;
+      return typeof key === "number" ? "*" : String(key);
+    });
+    return segments.join(".") || "root";
+  });
+  return [...new Set(paths)];
+}
+
+/**
+ * Reports calls the SDK rejects on input validation. It validates before the
+ * tool handler runs and turns a failure into an isError result, so
+ * instrumentMcpToolHandler never sees them, and the schema's validate is the
+ * only hook on that path. It takes no request context, so auth comes from the
+ * props, which is also where hosted credentials get their client id today.
+ */
+export function instrumentMcpToolInput(
+  toolName: string,
+  schema: StandardSchemaWithJSON,
+  authProps: McpProps,
+): StandardSchemaWithJSON {
+  const standard = schema["~standard"];
+  return {
+    "~standard": {
+      ...standard,
+      validate: async (value, options) => {
+        const result = await standard.validate(value, options);
+        if (result.issues) {
+          const invalidFields = invalidFieldPaths(result.issues);
+          console.warn("mcp.tool-input-rejected", {
+            event: "mcp.tool-input-rejected",
+            tool: toolName,
+            fields: invalidFields,
+          });
+          captureMcpToolCall(toolName, createMcpToolContext({}, authProps), {
+            success: false,
+            errorCode: "INPUT_VALIDATION",
+            invalidFields,
+          });
+        }
+        return result;
+      },
+    },
+  };
 }
 
 /**

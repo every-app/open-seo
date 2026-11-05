@@ -28,7 +28,10 @@ import {
 } from "@/server/mcp/context";
 import { objectSchema } from "@/server/mcp/output-schemas";
 import { memoizeJsonSchema } from "@/server/mcp/json-schema-memo";
-import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
+import {
+  instrumentMcpToolHandler,
+  instrumentMcpToolInput,
+} from "@/server/mcp/instrumentation";
 import { submitIndexNowUrlsTool } from "@/server/mcp/tools/submit-indexnow-urls";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
@@ -215,7 +218,13 @@ function registerOpenSeoTool<Input extends ToolSchema>(
     tool.name,
     {
       ...tool.config,
-      inputSchema: schemas.inputSchema,
+      // Wrapped per request, outside the isolate-wide cache: a rejection is
+      // reported against this request's caller.
+      inputSchema: instrumentMcpToolInput(
+        tool.name,
+        schemas.inputSchema,
+        authProps,
+      ),
       outputSchema: schemas.outputSchema,
     },
     async (args, context) => {

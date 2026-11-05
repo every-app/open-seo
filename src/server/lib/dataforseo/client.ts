@@ -11,6 +11,7 @@ import {
   DataforseoChargedTaskError,
   type DataforseoApiCallCost,
   type DataforseoApiResponse,
+  invalidFieldName,
 } from "@/server/lib/dataforseo/envelope";
 import { dataforseoPricing } from "@/server/lib/dataforseo/pricing";
 import {
@@ -413,6 +414,13 @@ async function meterDataforseoCalls<T>(
           // DataForSEO still billed us (costUsd > 0), charge that cost so the
           // spend stays metered and visible instead of silently eaten.
           if (error.isInvalidField && error.billing.costUsd <= 0) {
+            // Non-reportable, so this is the only record. The field name, not
+            // the message, which quotes the value that was sent.
+            console.warn("dataforseo.invalid-field", {
+              event: "dataforseo.invalid-field",
+              path: `/${error.billing.path.join("/")}`,
+              field: invalidFieldName(error.message),
+            });
             throw new AppError("VALIDATION_ERROR", error.message);
           }
           billed[index] = error.billing;

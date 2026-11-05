@@ -263,12 +263,13 @@ describe("meterDataforseoCall", () => {
     });
   });
 
-  it("releases the hold for an unbilled invalid-field failure and throws VALIDATION_ERROR", async () => {
+  it("releases the hold for an unbilled invalid-field failure, logs the field but not its value, and throws VALIDATION_ERROR", async () => {
     setupHostedMode();
     mockMonthlyBalance(5000);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.mocked(fetchBacklinksSummary).mockRejectedValue(
       new DataforseoChargedTaskError(
-        "Invalid Field: 'target'.",
+        `Invalid Field: 'target'. (sent target="customer.example")`,
         { costUsd: 0, path: backlinksPath },
         true,
       ),
@@ -280,6 +281,12 @@ describe("meterDataforseoCall", () => {
     ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
 
     expect(finalizeMock.mock.calls[0][0]).toMatchObject({ action: "release" });
+    expect(warn).toHaveBeenCalledWith("dataforseo.invalid-field", {
+      event: "dataforseo.invalid-field",
+      path: "/v3/backlinks/summary/live",
+      field: "target",
+    });
+    warn.mockRestore();
   });
 
   it("releases the hold when the provider call fails before billing", async () => {
