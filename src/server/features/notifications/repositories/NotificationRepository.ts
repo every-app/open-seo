@@ -93,6 +93,35 @@ export async function listEnabledProjectWideRankRules(projectId: string) {
     );
 }
 
+export async function getRuleForProject(input: {
+  projectId: string;
+  ruleId: string;
+}) {
+  const rows = await db
+    .select({
+      rule: notificationRules,
+      channel: notificationChannels,
+      config: rankTrackingConfigs,
+    })
+    .from(notificationRules)
+    .innerJoin(
+      notificationChannels,
+      eq(notificationRules.channelId, notificationChannels.id),
+    )
+    .leftJoin(
+      rankTrackingConfigs,
+      eq(notificationRules.rankConfigId, rankTrackingConfigs.id),
+    )
+    .where(
+      and(
+        eq(notificationRules.id, input.ruleId),
+        eq(notificationRules.projectId, input.projectId),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function insertRule(data: typeof notificationRules.$inferInsert) {
   await db.insert(notificationRules).values(data);
 }
@@ -113,10 +142,7 @@ export async function updateRule(input: {
     );
 }
 
-export async function deleteRule(input: {
-  projectId: string;
-  ruleId: string;
-}) {
+export async function deleteRule(input: { projectId: string; ruleId: string }) {
   await db
     .delete(notificationRules)
     .where(
@@ -171,6 +197,7 @@ export const NotificationRepository = {
   deleteChannel,
   listRulesForProject,
   listEnabledProjectWideRankRules,
+  getRuleForProject,
   insertRule,
   updateRule,
   deleteRule,

@@ -4,7 +4,9 @@ import { buildTeamsWebhookBody } from "@/server/features/notifications/teamsAdap
 
 describe("teamsAdaptiveCard", () => {
   it("builds an adaptive card attachment for rank alerts", () => {
-    const content = sampleRankNotificationContent({ domain: "alljigsawpuzzles.co.uk" });
+    const content = sampleRankNotificationContent({
+      domain: "alljigsawpuzzles.co.uk",
+    });
     const body = buildTeamsWebhookBody(content);
 
     expect(body.type).toBe("message");
@@ -20,7 +22,9 @@ describe("teamsAdaptiveCard", () => {
     };
 
     expect(card.type).toBe("AdaptiveCard");
-    expect(card.body.some((b) => b.text?.includes("sample preview"))).toBe(true);
+    expect(card.body.some((b) => b.text?.includes("sample preview"))).toBe(
+      true,
+    );
     expect(card.body.some((b) => b.type === "FactSet")).toBe(true);
     expect(
       card.body.filter((b) => b.type === "ColumnSet").length,

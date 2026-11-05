@@ -1,5 +1,8 @@
 import type { RankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
-import { RANK_NOTIFICATION_CHANGE_CAP } from "@/server/features/notifications/rankNotificationContent";
+import {
+  RANK_NOTIFICATION_CHANGE_CAP,
+  rankNotificationMetadataFacts,
+} from "@/server/features/notifications/rankNotificationContent";
 import {
   formatRankPosition,
   formatRankTrendLabel,
@@ -36,14 +39,10 @@ export function buildTeamsAdaptiveCardAttachment(
   body.push({
     type: "FactSet",
     spacing: "Medium",
-    facts: [
-      { title: "Domain", value: content.domain },
-      { title: "Trigger", value: content.trigger },
-      {
-        title: "Threshold",
-        value: `${content.positionThreshold}+ positions`,
-      },
-    ],
+    facts: rankNotificationMetadataFacts(content).map((fact) => ({
+      title: fact.title,
+      value: fact.value,
+    })),
   });
 
   if (content.changes.length > 0) {

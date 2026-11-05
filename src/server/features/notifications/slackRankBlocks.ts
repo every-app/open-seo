@@ -1,5 +1,8 @@
 import type { RankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
-import { formatRankNotificationPlainText } from "@/server/features/notifications/rankNotificationContent";
+import {
+  formatRankNotificationPlainText,
+  rankNotificationMetadataFacts,
+} from "@/server/features/notifications/rankNotificationContent";
 import {
   formatRankPosition,
   formatRankTrendLabel,
@@ -29,7 +32,9 @@ function keywordChangesHeading(count: number): string {
  * @see https://api.slack.com/messaging/webhooks
  * @see https://api.slack.com/reference/block-kit/blocks
  */
-export function buildSlackRankNotificationPayload(content: RankNotificationContent): {
+export function buildSlackRankNotificationPayload(
+  content: RankNotificationContent,
+): {
   text: string;
   blocks: SlackBlock[];
   attachments: Array<{ color: string; blocks: SlackBlock[] }>;
@@ -50,14 +55,10 @@ export function buildSlackRankNotificationPayload(content: RankNotificationConte
 
   blocks.push({
     type: "section",
-    fields: [
-      { type: "mrkdwn", text: `*Domain*\n${content.domain}` },
-      { type: "mrkdwn", text: `*Trigger*\n${content.trigger}` },
-      {
-        type: "mrkdwn",
-        text: `*Threshold*\n${content.positionThreshold}+ positions`,
-      },
-    ],
+    fields: rankNotificationMetadataFacts(content).map((fact) => ({
+      type: "mrkdwn",
+      text: `*${fact.title}*\n${fact.value}`,
+    })),
   });
 
   const cardBlocks: SlackBlock[] = [];

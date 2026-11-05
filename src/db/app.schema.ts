@@ -572,6 +572,11 @@ export const notificationRules = sqliteTable(
       onDelete: "cascade",
     }),
     positionThreshold: integer("position_threshold").notNull().default(3),
+    positionChangeDirection: text("position_change_direction", {
+      enum: ["either", "improved", "worsened"],
+    })
+      .notNull()
+      .default("either"),
     weeklySummary: integer("weekly_summary", { mode: "boolean" })
       .notNull()
       .default(false),

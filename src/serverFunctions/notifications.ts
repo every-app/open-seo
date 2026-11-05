@@ -8,6 +8,7 @@ import {
   deleteNotificationRuleSchema,
   notificationProjectSchema,
   testNotificationChannelSchema,
+  testSampleRankNotificationSchema,
   updateNotificationRuleSchema,
 } from "@/types/schemas/notifications";
 
@@ -39,7 +40,7 @@ export const testNotificationChannel = createServerFn({ method: "POST" })
 
 export const testSampleRankNotification = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(testNotificationChannelSchema)
+  .validator(testSampleRankNotificationSchema)
   .handler(async ({ data, context }) =>
     NotificationService.testSampleRankAlert(context, data),
   );

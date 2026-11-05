@@ -1,15 +1,21 @@
+import type { RankPositionChangeDirection } from "@/types/schemas/notifications";
+import { filterRankChangesByDirection } from "@/server/features/notifications/rankPositionChanges";
 import type { RankPositionChange } from "@/server/features/notifications/rankPositionChanges";
 import {
   formatRankPosition,
   formatRankTrendLabel,
 } from "@/server/features/notifications/rankPositionChanges";
+import { rankDirectionLabel } from "@/shared/rank-notification-direction";
 
 export const RANK_NOTIFICATION_CHANGE_CAP = 12;
 
 export type RankNotificationContent = {
   domain: string;
+  /** Country / market for the rank tracker (when known). */
+  marketLabel: string | null;
   trigger: "manual" | "scheduled";
   positionThreshold: number;
+  positionChangeDirection: RankPositionChangeDirection;
   /** Used to label improved vs worsened when positions include "not in results". */
   serpDepth: number;
   changes: RankPositionChange[];
@@ -23,8 +29,10 @@ export type RankNotificationContent = {
 
 export function buildRankNotificationContent(input: {
   domain: string;
+  marketLabel?: string | null;
   trigger: "manual" | "scheduled";
   positionThreshold: number;
+  positionChangeDirection?: RankPositionChangeDirection;
   serpDepth: number;
   changes: RankPositionChange[];
   weeklySummaryOnly: boolean;
@@ -35,8 +43,10 @@ export function buildRankNotificationContent(input: {
   const capped = input.changes.slice(0, RANK_NOTIFICATION_CHANGE_CAP);
   return {
     domain: input.domain,
+    marketLabel: input.marketLabel ?? null,
     trigger: input.trigger,
     positionThreshold: input.positionThreshold,
+    positionChangeDirection: input.positionChangeDirection ?? "either",
     serpDepth: input.serpDepth,
     changes: capped,
     omittedChangeCount: Math.max(
@@ -50,6 +60,31 @@ export function buildRankNotificationContent(input: {
   };
 }
 
+export function rankNotificationMetadataFacts(
+  content: RankNotificationContent,
+): Array<{ title: string; value: string }> {
+  const facts: Array<{ title: string; value: string }> = [
+    { title: "Domain", value: content.domain },
+  ];
+  if (content.marketLabel) {
+    facts.push({ title: "Market", value: content.marketLabel });
+  }
+  facts.push(
+    { title: "Trigger", value: content.trigger },
+    {
+      title: "Threshold",
+      value: `${content.positionThreshold}+ positions`,
+    },
+  );
+  if (content.positionChangeDirection !== "either") {
+    facts.push({
+      title: "Direction",
+      value: rankDirectionLabel(content.positionChangeDirection),
+    });
+  }
+  return facts;
+}
+
 /** Plain text for Slack incoming webhooks (mrkdwn-friendly). */
 export function formatRankNotificationPlainText(
   content: RankNotificationContent,
@@ -59,7 +94,15 @@ export function formatRankNotificationPlainText(
     lines.push("_Sample rank alert (preview — not from a live check)._");
   }
   lines.push(`*OpenSEO rank update* — ${content.domain}`);
+  if (content.marketLabel) {
+    lines.push(`Market: ${content.marketLabel}`);
+  }
   lines.push(`Trigger: ${content.trigger}`);
+  if (content.positionChangeDirection !== "either") {
+    lines.push(
+      `Direction: ${rankDirectionLabel(content.positionChangeDirection)}`,
+    );
+  }
 
   if (content.changes.length > 0) {
     lines.push(
@@ -76,9 +119,7 @@ export function formatRankNotificationPlainText(
   }
 
   if (content.weeklySummaryOnly) {
-    lines.push(
-      "Weekly check completed — no keywords crossed your threshold.",
-    );
+    lines.push("Weekly check completed — no keywords crossed your threshold.");
   } else if (content.weeklySummaryNote) {
     lines.push("(Weekly summary enabled for this rule.)");
   }
@@ -93,8 +134,16 @@ export function formatRankNotificationPlainText(
 export function sampleRankNotificationContent(input?: {
   domain?: string;
   trackerUrl?: string | null;
+  positionThreshold?: number;
+  positionChangeDirection?: RankPositionChangeDirection;
+  weeklySummary?: boolean;
+  marketLabel?: string | null;
 }): RankNotificationContent {
-  const changes: RankPositionChange[] = [
+  const serpDepth = 100;
+  const positionThreshold = input?.positionThreshold ?? 3;
+  const direction = input?.positionChangeDirection ?? "either";
+
+  const allChanges: RankPositionChange[] = [
     {
       trackingKeywordId: "sample-1",
       keyword: "ravensburger",
@@ -137,14 +186,22 @@ export function sampleRankNotificationContent(input?: {
     },
   ];
 
+  const changes = filterRankChangesByDirection({
+    changes: allChanges.filter((change) => change.delta >= positionThreshold),
+    serpDepth,
+    direction,
+  });
+
   return buildRankNotificationContent({
-    domain: input?.domain ?? "example.com",
+    domain: input?.domain ?? "alljigsawpuzzles.co.uk",
+    marketLabel: input?.marketLabel ?? "United Kingdom",
     trigger: "manual",
-    positionThreshold: 10,
-    serpDepth: 100,
+    positionThreshold,
+    positionChangeDirection: direction,
+    serpDepth,
     changes,
     weeklySummaryOnly: false,
-    weeklySummaryNote: false,
+    weeklySummaryNote: input?.weeklySummary ?? true,
     trackerUrl: input?.trackerUrl ?? null,
     isSample: true,
   });

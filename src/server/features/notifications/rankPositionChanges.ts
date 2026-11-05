@@ -15,7 +15,10 @@ export type RankPositionChange = {
 };
 
 /** Maps "not in SERP" to one step beyond depth so movement off-page counts. */
-export function rankDistance(position: number | null, serpDepth: number): number {
+export function rankDistance(
+  position: number | null,
+  serpDepth: number,
+): number {
   return position ?? serpDepth + 1;
 }
 
@@ -53,6 +56,18 @@ export function computeRankPositionChanges(input: {
   }
 
   return changes.sort((a, b) => b.delta - a.delta);
+}
+
+export function filterRankChangesByDirection(input: {
+  changes: RankPositionChange[];
+  serpDepth: number;
+  direction: "either" | "improved" | "worsened";
+}): RankPositionChange[] {
+  if (input.direction === "either") return input.changes;
+  const want = input.direction;
+  return input.changes.filter(
+    (change) => rankMovementDirection(change, input.serpDepth) === want,
+  );
 }
 
 export function formatRankPosition(position: number | null): string {

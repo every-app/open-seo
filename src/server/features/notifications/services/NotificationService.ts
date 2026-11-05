@@ -6,7 +6,10 @@ import {
   openWebhookUrl,
   sealWebhookUrl,
 } from "@/server/features/notifications/webhookSecrets";
-import { postNotificationWebhook, postRankNotificationWebhook } from "@/server/features/notifications/webhookDelivery";
+import {
+  postNotificationWebhook,
+  postRankNotificationWebhook,
+} from "@/server/features/notifications/webhookDelivery";
 import {
   sampleRankNotificationContent,
   type RankNotificationContent,
@@ -16,7 +19,9 @@ import { AppError } from "@/server/lib/errors";
 import type {
   NotificationChannelSummary,
   NotificationRuleSummary,
+  RankPositionChangeDirection,
 } from "@/types/schemas/notifications";
+import { rankTrackerLocationDisplay } from "@/shared/rank-tracker-location-display";
 
 type ProjectContext = { projectId: string };
 
@@ -35,7 +40,9 @@ function toChannelSummary(
 }
 
 function toRuleSummary(
-  row: Awaited<ReturnType<typeof NotificationRepository.listRulesForProject>>[number],
+  row: Awaited<
+    ReturnType<typeof NotificationRepository.listRulesForProject>
+  >[number],
 ): NotificationRuleSummary {
   return {
     id: row.rule.id,
@@ -45,7 +52,10 @@ function toRuleSummary(
     ruleType: row.rule.ruleType,
     rankConfigId: row.rule.rankConfigId,
     rankConfigDomain: row.config?.domain ?? null,
+    rankConfigLocationCode: row.config?.locationCode ?? null,
+    rankConfigLocationName: row.config?.locationName ?? null,
     positionThreshold: row.rule.positionThreshold,
+    positionChangeDirection: row.rule.positionChangeDirection,
     weeklySummary: row.rule.weeklySummary,
     enabled: row.rule.enabled,
     createdAt: row.rule.createdAt,
@@ -62,7 +72,10 @@ async function assertRankConfigInProject(input: {
     projectId: input.projectId,
   });
   if (!config) {
-    throw new AppError("INTERNAL_ERROR", "Rank tracker not found in this project.");
+    throw new AppError(
+      "INTERNAL_ERROR",
+      "Rank tracker not found in this project.",
+    );
   }
 }
 
@@ -104,10 +117,7 @@ export const NotificationService = {
     return { id };
   },
 
-  async deleteChannel(
-    context: ProjectContext,
-    input: { channelId: string },
-  ) {
+  async deleteChannel(context: ProjectContext, input: { channelId: string }) {
     await NotificationRepository.deleteChannel({
       projectId: context.projectId,
       channelId: input.channelId,
@@ -132,7 +142,7 @@ export const NotificationService = {
 
   async testSampleRankAlert(
     context: ProjectContext & { project: { domain: string | null } },
-    input: { channelId: string },
+    input: { channelId: string; ruleId?: string },
   ) {
     const channel = await NotificationRepository.getChannelForProject({
       projectId: context.projectId,
@@ -142,16 +152,53 @@ export const NotificationService = {
       throw new AppError("INTERNAL_ERROR", "Notification channel not found.");
     }
 
+    let sampleInput: Parameters<typeof sampleRankNotificationContent>[0] = {
+      domain: context.project.domain ?? "alljigsawpuzzles.co.uk",
+      marketLabel: "United Kingdom",
+      positionThreshold: 3,
+      positionChangeDirection: "either",
+      weeklySummary: true,
+    };
+    let rankConfigId: string | null = null;
+
+    if (input.ruleId) {
+      const row = await NotificationRepository.getRuleForProject({
+        projectId: context.projectId,
+        ruleId: input.ruleId,
+      });
+      if (!row || row.rule.channelId !== input.channelId) {
+        throw new AppError("INTERNAL_ERROR", "Notification rule not found.");
+      }
+      rankConfigId = row.config?.id ?? null;
+      const domain =
+        row.config?.domain ??
+        context.project.domain ??
+        "alljigsawpuzzles.co.uk";
+      const market = row.config
+        ? rankTrackerLocationDisplay({
+            locationCode: row.config.locationCode,
+            locationName: row.config.locationName,
+          }).label
+        : null;
+      sampleInput = {
+        domain,
+        marketLabel: market,
+        positionThreshold: row.rule.positionThreshold,
+        positionChangeDirection: row.rule.positionChangeDirection,
+        weeklySummary: row.rule.weeklySummary,
+      };
+    }
+
     const baseUrl = (await getOptionalEnvValue("BETTER_AUTH_URL"))?.replace(
       /\/$/,
       "",
     );
     const trackerUrl = baseUrl
-      ? `${baseUrl}/p/${context.projectId}/rank-tracking/sample-config-id`
+      ? `${baseUrl}/p/${context.projectId}/rank-tracking/${rankConfigId ?? "sample-config-id"}`
       : null;
 
     const content: RankNotificationContent = sampleRankNotificationContent({
-      domain: context.project.domain ?? "example.com",
+      ...sampleInput,
       trackerUrl,
     });
 
@@ -169,6 +216,7 @@ export const NotificationService = {
       channelId: string;
       rankConfigId: string | null;
       positionThreshold: number;
+      positionChangeDirection: "either" | "improved" | "worsened";
       weeklySummary: boolean;
     },
   ) {
@@ -193,6 +241,7 @@ export const NotificationService = {
       ruleType: "rank_position_change",
       rankConfigId: input.rankConfigId,
       positionThreshold: input.positionThreshold,
+      positionChangeDirection: input.positionChangeDirection,
       weeklySummary: input.weeklySummary,
       enabled: true,
       createdAt: now,
@@ -205,18 +254,46 @@ export const NotificationService = {
     context: ProjectContext,
     input: {
       ruleId: string;
+      channelId?: string;
+      rankConfigId?: string | null;
       enabled?: boolean;
       positionThreshold?: number;
+      positionChangeDirection?: RankPositionChangeDirection;
       weeklySummary?: boolean;
     },
   ) {
+    if (input.channelId !== undefined) {
+      const channel = await NotificationRepository.getChannelForProject({
+        projectId: context.projectId,
+        channelId: input.channelId,
+      });
+      if (!channel) {
+        throw new AppError("INTERNAL_ERROR", "Notification channel not found.");
+      }
+    }
+    if (input.rankConfigId !== undefined) {
+      await assertRankConfigInProject({
+        projectId: context.projectId,
+        rankConfigId: input.rankConfigId,
+      });
+    }
+
     await NotificationRepository.updateRule({
       projectId: context.projectId,
       ruleId: input.ruleId,
       patch: {
+        ...(input.channelId !== undefined
+          ? { channelId: input.channelId }
+          : {}),
+        ...(input.rankConfigId !== undefined
+          ? { rankConfigId: input.rankConfigId }
+          : {}),
         ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
         ...(input.positionThreshold !== undefined
           ? { positionThreshold: input.positionThreshold }
+          : {}),
+        ...(input.positionChangeDirection !== undefined
+          ? { positionChangeDirection: input.positionChangeDirection }
           : {}),
         ...(input.weeklySummary !== undefined
           ? { weeklySummary: input.weeklySummary }

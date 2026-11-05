@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeRankPositionChanges,
+  filterRankChangesByDirection,
   rankDistance,
   rankMovementDirection,
   formatRankTrendLabel,
@@ -109,5 +110,55 @@ describe("rankPositionChanges", () => {
     })[0]!;
     expect(rankMovementDirection(worsened, 100)).toBe("worsened");
     expect(formatRankTrendLabel(worsened, 100).arrow).toBe("▼");
+  });
+
+  it("filters changes by improved or worsened direction", () => {
+    const changes = computeRankPositionChanges({
+      serpDepth: 100,
+      positionThreshold: 1,
+      previous: [
+        {
+          trackingKeywordId: "kw1",
+          keyword: "up",
+          device: "desktop",
+          position: 20,
+        },
+        {
+          trackingKeywordId: "kw2",
+          keyword: "down",
+          device: "desktop",
+          position: 5,
+        },
+      ],
+      current: [
+        {
+          trackingKeywordId: "kw1",
+          keyword: "up",
+          device: "desktop",
+          position: 10,
+        },
+        {
+          trackingKeywordId: "kw2",
+          keyword: "down",
+          device: "desktop",
+          position: 15,
+        },
+      ],
+    });
+    expect(changes).toHaveLength(2);
+
+    const improvedOnly = filterRankChangesByDirection({
+      changes,
+      serpDepth: 100,
+      direction: "improved",
+    });
+    expect(improvedOnly.map((c) => c.keyword)).toEqual(["up"]);
+
+    const worsenedOnly = filterRankChangesByDirection({
+      changes,
+      serpDepth: 100,
+      direction: "worsened",
+    });
+    expect(worsenedOnly.map((c) => c.keyword)).toEqual(["down"]);
   });
 });

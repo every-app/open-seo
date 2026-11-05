@@ -302,6 +302,13 @@
       "when": 1793808954125,
       "tag": "0042_exotic_unus",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793889406626,
+      "tag": "0043_silent_warlock",
+      "breakpoints": true
     }
   ]
 }

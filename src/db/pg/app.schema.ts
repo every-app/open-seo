@@ -549,6 +549,11 @@ export const notificationRules = pgTable(
       onDelete: "cascade",
     }),
     positionThreshold: integer("position_threshold").notNull().default(3),
+    positionChangeDirection: text("position_change_direction", {
+      enum: ["either", "improved", "worsened"],
+    })
+      .notNull()
+      .default("either"),
     weeklySummary: boolean("weekly_summary").notNull().default(false),
     enabled: boolean("enabled").notNull().default(true),
     createdAt: timestampColumn("created_at").notNull().default(isoNow),

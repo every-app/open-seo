@@ -1,0 +1,1 @@
+ALTER TABLE "notification_rules" ADD COLUMN "position_change_direction" text DEFAULT 'either' NOT NULL;

@@ -8,7 +8,7 @@ Shipped on AJP fork (2026-11-04). Upstream PR pending.
 
 - Each project can save one or more **notification channels**: a display name, platform (`slack` or `teams`), and an incoming webhook URL.
 - Webhook URLs are validated against an HTTPS host allowlist, encrypted at rest with `BETTER_AUTH_SECRET`, and never returned to the browser after save.
-- **Rules** attach a channel to a rank-tracking alert: optional single tracker or all trackers in the project, a minimum position change (per keyword and device, comparing the latest completed run to the previous one), and an optional “weekly summary” ping after a **weekly scheduled** check completes even when nothing crossed the threshold.
+- **Rules** attach a channel to a rank-tracking alert: optional single tracker or all trackers in the project, a minimum position change (per keyword and device, comparing the latest completed run to the previous one), an optional filter for **improvements only** or **drops only** (default: any direction), and an optional “weekly summary” ping after a **weekly scheduled** check completes even when nothing crossed the threshold. Rules can be edited in the UI; the tracker picker shows each config’s country (flag + tooltip). Live alerts and **Preview rule** samples include market, threshold, direction (when not “any”), and weekly-summary flags where relevant.
 - When a rank check run completes successfully, the app evaluates matching rules once per run (deduped in `notification_deliveries`) and POSTs to the webhook. Slack uses plain text with line breaks; Teams uses an **Adaptive Card** attachment (column layout per keyword). **Sample rank alert** on a channel sends the same payload shape with fixed sample data for preview without a live check.
 
 ## How it works

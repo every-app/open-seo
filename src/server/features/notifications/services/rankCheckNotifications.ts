@@ -2,12 +2,14 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { NotificationRepository } from "@/server/features/notifications/repositories/NotificationRepository";
 import {
   computeRankPositionChanges,
+  filterRankChangesByDirection,
   type RankSnapshotPoint,
 } from "@/server/features/notifications/rankPositionChanges";
 import { buildRankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
 import { openWebhookUrl } from "@/server/features/notifications/webhookSecrets";
 import { postRankNotificationWebhook } from "@/server/features/notifications/webhookDelivery";
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
+import { rankTrackerLocationDisplay } from "@/shared/rank-tracker-location-display";
 
 function snapshotPoints(
   rows: Awaited<ReturnType<typeof RankTrackingRepository.getSnapshotsForRun>>,
@@ -68,21 +70,27 @@ export async function notifyRankCheckComplete(input: {
     const current = snapshotPoints(currentSnaps);
     const previous = snapshotPoints(previousSnaps);
 
-    const rules =
-      await NotificationRepository.listEnabledProjectWideRankRules(
-        input.projectId,
-      );
+    const rules = await NotificationRepository.listEnabledProjectWideRankRules(
+      input.projectId,
+    );
 
     const trackerUrl = await buildTrackerUrl(input.projectId, input.configId);
 
     for (const { rule, channel } of rules) {
       if (!ruleAppliesToConfig(rule, input.configId)) continue;
 
-      const changes = computeRankPositionChanges({
+      const allChanges = computeRankPositionChanges({
         current,
         previous,
         serpDepth: config.serpDepth,
         positionThreshold: rule.positionThreshold,
+      });
+
+      const direction = rule.positionChangeDirection ?? "either";
+      const changes = filterRankChangesByDirection({
+        changes: allChanges,
+        serpDepth: config.serpDepth,
+        direction,
       });
 
       const shouldSendAlert = changes.length > 0;
@@ -98,10 +106,17 @@ export async function notifyRankCheckComplete(input: {
       });
       if (!recorded) continue;
 
+      const market = rankTrackerLocationDisplay({
+        locationCode: config.locationCode,
+        locationName: config.locationName,
+      });
+
       const content = buildRankNotificationContent({
         domain: config.domain,
+        marketLabel: market.label,
         trigger: input.trigger,
         positionThreshold: rule.positionThreshold,
+        positionChangeDirection: direction,
         serpDepth: config.serpDepth,
         changes,
         weeklySummaryOnly: shouldSendWeekly && !shouldSendAlert,

@@ -1,10 +1,12 @@
 import type { RankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
-import { formatRankNotificationPlainText } from "@/server/features/notifications/rankNotificationContent";
 import { buildSlackRankNotificationPayload } from "@/server/features/notifications/slackRankBlocks";
 import { buildTeamsWebhookBody } from "@/server/features/notifications/teamsAdaptiveCard";
 import type { NotificationProvider } from "@/types/schemas/notifications";
 
-function buildConnectionTestPayload(provider: NotificationProvider, text: string) {
+function buildConnectionTestPayload(
+  provider: NotificationProvider,
+  text: string,
+) {
   if (provider === "slack") {
     return { text };
   }
