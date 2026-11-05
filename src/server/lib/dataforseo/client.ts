@@ -43,9 +43,10 @@ import {
   fetchAdsSearchVolume,
 } from "@/server/lib/dataforseo/google-ads";
 import {
-  fetchLiveSerp,
   fetchLocalSerp,
   postLocalSerpTasks,
+  postSerpReadTasks,
+  type SerpQuery,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
@@ -216,22 +217,16 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       ),
     },
     serp: {
-      live: meter(
-        customer,
-        fetchLiveSerp,
-        dataforseoPricing.serp.live,
-        "keyword_research",
-      ),
-      // Settles only after every live SERP has answered: a Worker request
-      // queues its 7th fetch still waiting for response headers, so a per-call
-      // settle sent while other live SERPs are still running can time out
-      // before it reaches Autumn. Resolves per call, in order.
-      liveBatch: (inputs: Parameters<typeof fetchLiveSerp>[0][]) =>
+      // Posts each query's reads; one credit hold covers the batch, and each
+      // query is placed and refused as its own hold would be (see
+      // meterDataforseoCalls). DataForSEO bills task_post, collection is free.
+      // Resolves per query, in order.
+      readsTaskPostBatch: (inputs: SerpQuery[]) =>
         meterDataforseoCalls(
           customer,
-          inputs.map((input) => () => fetchLiveSerp(input)),
+          inputs.map((input) => () => postSerpReadTasks(input)),
           inputs.map((input) =>
-            creditsForProviderUsd(dataforseoPricing.serp.live(input)),
+            creditsForProviderUsd(dataforseoPricing.serp.readsTaskPost(input)),
           ),
           "keyword_research",
         ),

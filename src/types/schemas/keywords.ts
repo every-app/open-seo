@@ -218,10 +218,10 @@ export const serpAnalysisSchema = z.object({
   languageCode: z.string().min(2).max(8).optional(),
   // Same area as the research it belongs to, for a local SERP.
   locationName: z.string().trim().min(1).max(200).optional(),
-  // Only the two depths the app offers: the default top-20 snapshot, and the
+  // Only the two depths the app offers: the default page 1 snapshot, and the
   // full 100 the SERP panel buys when a user pages past the loaded results.
-  // Each 10 of depth is another crawled Google page (~2.5 credits).
-  depth: z.union([z.literal(20), z.literal(100)]).default(20),
+  // Each 10 of depth is another crawled Google page (~3.5 credits).
+  depth: z.union([z.literal(10), z.literal(100)]).default(10),
 });
 
 /* ------------------------------------------------------------------ */

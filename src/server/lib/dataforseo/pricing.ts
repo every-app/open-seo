@@ -29,11 +29,12 @@ import {
 } from "@/server/lib/dataforseo/google-ads";
 import {
   clampSerpDepth,
-  fetchLiveSerp,
   fetchLocalSerp,
   postLocalSerpTasks,
   postRankCheckTasks,
+  postSerpReadTasks,
   SERP_ANALYSIS_DEPTH,
+  SERP_READS_PER_QUERY,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
 import {
@@ -171,9 +172,9 @@ function backlinksUsd(rows: number) {
 }
 
 /** SERP endpoints bill per page of 10; a partial page is a full page. */
-function serpUsd(depth: number, method: "live" | "queued", keyword: string) {
+function serpUsd(depth: number, keyword: string) {
   return (
-    costPerSerpAtDepth(Math.ceil(depth / 10) * 10, method) *
+    costPerSerpAtDepth(Math.ceil(depth / 10) * 10) *
     serpKeywordCostMultiplier(keyword)
   );
 }
@@ -251,17 +252,20 @@ export const dataforseoPricing = {
     relevantPages: priced(fetchRelevantPages, (input) => labsUsd(input.limit)),
   },
   serp: {
-    live: priced(fetchLiveSerp, (input) =>
-      serpUsd(
-        clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
-        "live",
-        input.keyword,
-      ),
+    // High priority (priority 2) doubles the standard-queue rate.
+    readsTaskPost: priced(
+      postSerpReadTasks,
+      (input) =>
+        SERP_READS_PER_QUERY *
+        2 *
+        serpUsd(
+          clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
+          input.keyword,
+        ),
     ),
     rankCheckTaskPost: priced(postRankCheckTasks, (input) =>
       input.tasks.reduce(
-        (sum, task) =>
-          sum + serpUsd(clampSerpDepth(input.depth), "queued", task.keyword),
+        (sum, task) => sum + serpUsd(clampSerpDepth(input.depth), task.keyword),
         0,
       ),
     ),

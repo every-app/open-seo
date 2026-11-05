@@ -157,7 +157,7 @@ export function SerpWidget({
                         />
                       </TableCell>
                       <TableCell className="text-center align-middle text-sm tabular-nums text-muted-foreground">
-                        {item.organicRank ?? "—"}
+                        {item.rank ?? "—"}
                       </TableCell>
                       <TableCell className="min-w-40 space-y-1 whitespace-normal break-words">
                         {item.type !== "organic" && (

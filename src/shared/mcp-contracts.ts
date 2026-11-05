@@ -68,9 +68,12 @@ export type SearchConsoleData = z.infer<typeof searchConsoleSchema>;
 
 export const serpItemSchema = z.looseObject({
   type: z.string().nullish(),
+  // The organic row's place in the merged list, not a Google position.
   rank: z.number().nullable(),
-  // Older cached SERPs may not include an organic rank.
-  organicRank: z.number().nullish(),
+  // The best organic position any read gave this site.
+  bestPosition: z.number().nullable(),
+  // How many of the merged reads showed this row.
+  seenIn: z.number(),
   title: z.string().nullable(),
   url: z.string().nullable(),
   domain: z.string().nullable(),

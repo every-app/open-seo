@@ -33,6 +33,7 @@ export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget
 export {
   fetchLocalSerpTaskResult,
   fetchRankCheckTaskResult,
+  fetchSerpTaskResult,
 } from "@/server/lib/dataforseo/serp";
 export {
   MAX_GOTO_URLS_PER_REQUEST,
@@ -61,6 +62,7 @@ export type { AdsKeywordIdeaItem } from "@/server/lib/dataforseo/google-ads";
 export type {
   LocalSerpTaskOutcome,
   SerpLiveItem,
+  SerpQuery,
   RankCheckResult,
   RankCheckTaskInput,
   PostedRankCheckTask,

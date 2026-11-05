@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- one file per DataForSEO section (see index.ts); SERP spans live, rank-check and Maps queue calls */
+/* eslint-disable max-lines -- one file per DataForSEO section (see index.ts); SERP spans live, rank-check, merged-read and Maps queue calls */
 import { z } from "zod";
 import { isGoogleRedirect } from "@/shared/google-serp-url";
 import { dataforseoGet, dataforseoPost } from "@/server/lib/dataforseo/core";
@@ -18,14 +18,17 @@ import {
 } from "@/server/lib/dataforseo/envelope";
 import { AppError } from "@/server/lib/errors";
 
-// Default depth for keyword SERP analysis. DataForSEO crawls (and bills) one
-// Google page of 10 results at a time, and the crawls are sequential, so depth
-// is the single lever on both latency and cost here: every 10 results is
-// another page fetch against the shared 60s request budget. Keep this low —
-// callers that need to see deeper ranks pass an explicit depth. There is no
-// offset/cursor: a deeper request re-crawls pages 1..N/10 from the top, so it
-// replaces the shallow snapshot rather than extending it.
-export const SERP_ANALYSIS_DEPTH = 20;
+// Default depth for a single SERP. DataForSEO crawls (and bills) one Google
+// page of 10 results at a time, so depth is a lever on both latency and cost.
+// Page 1 keeps three merged reads at about the price of one two-page read, and
+// the merge returns about as many sites. Callers that need to see deeper ranks
+// pass an explicit depth. There is no offset/cursor: a deeper request re-crawls
+// pages 1..N/10 from the top, so it replaces the shallow snapshot rather than
+// extending it.
+export const SERP_ANALYSIS_DEPTH = 10;
+
+/** High priority finishes in ~10-40 s; the normal queue takes minutes. */
+const TASK_PRIORITY_HIGH = 2;
 
 /** DataForSEO bills SERPs in pages of 10; depth outside 10-100 is rejected. */
 export function clampSerpDepth(depth: number): number {
@@ -96,7 +99,7 @@ function breadcrumbHost(breadcrumb: string | null | undefined): string | null {
 
 export type SerpLiveItem = z.infer<typeof serpSnapshotItemSchema>;
 
-export async function fetchLiveSerp(input: {
+export interface SerpQuery {
   keyword: string;
   locationCode: number;
   languageCode: string;
@@ -104,23 +107,29 @@ export async function fetchLiveSerp(input: {
   /** Canonical DataForSEO name of a city, county, or region for a local SERP. */
   locationName?: string;
   device?: "desktop" | "mobile";
-}): Promise<DataforseoApiResponse<SerpLiveItem[]>> {
+}
+
+function serpQueryParams(input: SerpQuery) {
   const device = input.device ?? "desktop";
   const locationParams = input.locationName
     ? { location_name: input.locationName }
     : { location_code: input.locationCode };
+  return {
+    keyword: input.keyword,
+    ...locationParams,
+    language_code: input.languageCode,
+    device,
+    os: device === "desktop" ? "windows" : "android",
+    depth: clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
+  };
+}
+
+export async function fetchLiveSerp(
+  input: SerpQuery,
+): Promise<DataforseoApiResponse<SerpLiveItem[]>> {
   const response = await dataforseoPost(
     "/v3/serp/google/organic/live/advanced",
-    [
-      {
-        keyword: input.keyword,
-        ...locationParams,
-        language_code: input.languageCode,
-        device,
-        os: device === "desktop" ? "windows" : "android",
-        depth: clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
-      },
-    ],
+    [serpQueryParams(input)],
   );
   // DataForSEO uses a task error for a valid empty SERP. Keep the charged
   // response in the normal billing path and return an empty item list.
@@ -271,8 +280,27 @@ export async function fetchRankCheckTaskResult(input: {
   keyword: string;
   targetDomain: string;
 }): Promise<RankCheckTaskOutcome> {
+  const outcome = await fetchSerpTaskResult(input.taskId);
+  if (outcome.status !== "completed") return outcome;
+  return {
+    status: "completed",
+    result: buildRankCheckResult(input, outcome.items),
+  };
+}
+
+type SerpTaskOutcome =
+  | { status: "pending" }
+  | { status: "failed"; message: string }
+  | { status: "completed"; items: SerpLiveItem[] };
+
+/** Collects one queued organic SERP task. Free, so not metered (see above). */
+export async function fetchSerpTaskResult(
+  taskId: string,
+  signal?: AbortSignal,
+): Promise<SerpTaskOutcome> {
   const response = await dataforseoGet(
-    `/v3/serp/google/organic/task_get/advanced/${encodeURIComponent(input.taskId)}`,
+    `/v3/serp/google/organic/task_get/advanced/${encodeURIComponent(taskId)}`,
+    { signal },
   );
   const task = response?.tasks?.[0];
   if (!response || response.status_code !== 20000 || !task) {
@@ -293,18 +321,79 @@ export async function fetchRankCheckTaskResult(input: {
           task.status_message || `DataForSEO task failed (${task.status_code})`,
       };
     }
-    return {
-      status: "completed",
-      result: buildRankCheckResult(input, []),
-    };
+    return { status: "completed", items: [] };
   }
 
-  const items = parseTaskItems(
-    "google-organic-task-get-advanced",
-    task,
-    serpSnapshotItemSchema,
+  return {
+    status: "completed",
+    items: parseTaskItems(
+      "google-organic-task-get-advanced",
+      task,
+      serpSnapshotItemSchema,
+    ),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Merged single SERPs. Google serves scrapers poisoned pages, and nothing in a
+// response marks one, so a single SERP request reads the page several times
+// and merges the reads. All reads go out in one high-priority task_post, so
+// DataForSEO runs them in parallel; collection through task_get is free.
+// ---------------------------------------------------------------------------
+
+export const SERP_READS_PER_QUERY = 3;
+
+/**
+ * Posts one query's reads and returns the accepted task ids. Not retried on a
+ * 5xx, which does not prove the post went unbilled.
+ */
+export async function postSerpReadTasks(
+  input: SerpQuery,
+): Promise<DataforseoApiResponse<string[]>> {
+  const response = await dataforseoPost<
+    DataforseoTaskLike & { id?: string; data?: Record<string, unknown> }
+  >(
+    "/v3/serp/google/organic/task_post",
+    Array.from({ length: SERP_READS_PER_QUERY }, () => ({
+      ...serpQueryParams(input),
+      priority: TASK_PRIORITY_HIGH,
+    })),
+    { maxServerErrorRetries: 0 },
   );
-  return { status: "completed", result: buildRankCheckResult(input, items) };
+  if (!response || response.status_code !== 20000) {
+    throw failedResponseError(response, "DataForSEO task_post failed");
+  }
+
+  // Cost is summed over every entry, accepted or not, so anything DataForSEO
+  // charged is metered.
+  const taskIds: string[] = [];
+  let costUsd = 0;
+  for (const entry of response.tasks ?? []) {
+    costUsd += entry.cost ?? 0;
+    if (entry.status_code === 20100 && entry.id) {
+      taskIds.push(entry.id);
+    } else {
+      console.warn(
+        `dataforseo.task_post.rejected-entry (${entry.status_code}): ${entry.status_message}`,
+      );
+    }
+  }
+  const billing = {
+    path: ["v3", "serp", "google", "organic", "task_post"],
+    costUsd,
+  };
+  if (taskIds.length === 0) {
+    // Charged-task error, so the meter still bills whatever DataForSEO
+    // charged, and an uncharged invalid request reads as a validation error.
+    const message =
+      response.tasks?.[0]?.status_message || "DataForSEO created no tasks";
+    throw new DataforseoChargedTaskError(
+      message,
+      billing,
+      invalidFieldName(message) !== null,
+    );
+  }
+  return { data: taskIds, billing };
 }
 
 export async function fetchLocalSerp(input: {
@@ -371,9 +460,6 @@ export async function fetchLocalSerp(input: {
 // Collection through task_get is free.
 // ---------------------------------------------------------------------------
 
-/** High priority finishes in ~10-40 s; the normal queue takes minutes. */
-const LOCAL_TASK_PRIORITY_HIGH = 2;
-
 /**
  * Posts one Maps task per coordinate and returns the task ids in input
  * order, null where DataForSEO rejected an entry. Not retried on a 5xx,
@@ -398,7 +484,7 @@ export async function postLocalSerpTasks(input: {
       os: input.device === "desktop" ? "windows" : "android",
       depth: input.depth,
       search_places: false,
-      priority: LOCAL_TASK_PRIORITY_HIGH,
+      priority: TASK_PRIORITY_HIGH,
       // Echoed back on each entry, so ids map to points without relying on
       // response order.
       tag: String(index),

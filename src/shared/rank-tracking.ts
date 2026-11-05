@@ -12,23 +12,11 @@ import type {
 // Cost constants
 // ---------------------------------------------------------------------------
 
-/** DataForSEO Live API: cost of first page (10 results) */
-const LIVE_BASE_PAGE_COST_USD = 0.002;
-
-/** DataForSEO Live API: cost of each additional page (75% of base) */
-const LIVE_EXTRA_PAGE_COST_USD = 0.0015;
-
 /** DataForSEO task queue (standard priority): cost of first page (10 results) */
 const QUEUED_BASE_PAGE_COST_USD = 0.0006;
 
 /** DataForSEO task queue (standard priority): cost of each additional page (75% of base) */
 const QUEUED_EXTRA_PAGE_COST_USD = 0.00045;
-
-/**
- * How a SERP read reaches DataForSEO: "live" is the instant endpoint used for
- * SERP analysis; "queued" is the cheaper task queue used for rank checks.
- */
-type SerpReadMethod = "live" | "queued";
 
 /** Reads every rank check gives each keyword/device. */
 export const MIN_READS_PER_CHECK = 3;
@@ -63,15 +51,10 @@ export const rankCheckCostApprovalError = (
 // Cost estimation
 // ---------------------------------------------------------------------------
 
-/** DataForSEO cost for a single SERP request at the given depth. */
-export function costPerSerpAtDepth(
-  depth: number,
-  method: SerpReadMethod,
-): number {
+/** DataForSEO cost for a single standard-queue SERP read at the given depth. */
+export function costPerSerpAtDepth(depth: number): number {
   const pages = depth / 10;
-  return method === "queued"
-    ? QUEUED_BASE_PAGE_COST_USD + (pages - 1) * QUEUED_EXTRA_PAGE_COST_USD
-    : LIVE_BASE_PAGE_COST_USD + (pages - 1) * LIVE_EXTRA_PAGE_COST_USD;
+  return QUEUED_BASE_PAGE_COST_USD + (pages - 1) * QUEUED_EXTRA_PAGE_COST_USD;
 }
 
 export function pagesToDepth(pages: number): number {
@@ -126,7 +109,7 @@ function meteredCost(checkMultipliers: number[], depth: number) {
     const callMultiplier = checkMultipliers
       .slice(offset, offset + MAX_TASKS_PER_POST)
       .reduce((sum, multiplier) => sum + multiplier, 0);
-    const callRawUsd = callMultiplier * costPerSerpAtDepth(depth, "queued");
+    const callRawUsd = callMultiplier * costPerSerpAtDepth(depth);
     costUsd += applyBillingMarkupUsd(callRawUsd);
     costCredits += creditsForProviderUsd(callRawUsd);
   }

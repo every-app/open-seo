@@ -96,8 +96,8 @@ export function SerpAnalysisCard({
   const table = useDataTable({ data: pageItems, columns });
   const hasItems = !loading && items.length > 0;
 
-  // Out of credits, a retry can't help, but "Show top 20" still brings back
-  // the results already paid for.
+  // Out of credits, a retry can't help, but "Show top results" still brings
+  // back the results already paid for.
   const errorAction = (
     <>
       {outOfCredits && <GetCreditsButton />}
@@ -108,7 +108,7 @@ export function SerpAnalysisCard({
           pending={retrying}
           onClick={onRetry}
         >
-          {deepFetchFailed ? "Show top 20" : "Retry"}
+          {deepFetchFailed ? "Show top results" : "Retry"}
         </Button>
       )}
     </>
