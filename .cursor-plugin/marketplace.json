@@ -5,7 +5,7 @@
     "email": "support@openseo.so"
   },
   "metadata": {
-    "description": "OpenSEO's official Cursor plugin marketplace."
+    "description": "OpenSEO's official plugin marketplace for Grok Bot and Cursor."
   },
   "plugins": [
     {
