@@ -74,6 +74,7 @@ export const serpItemSchema = z.looseObject({
   title: z.string().nullable(),
   url: z.string().nullable(),
   domain: z.string().nullable(),
+  websiteName: z.string().nullish(),
   description: z.string().nullable(),
 });
 

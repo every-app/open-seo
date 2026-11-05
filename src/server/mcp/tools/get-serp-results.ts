@@ -38,7 +38,7 @@ const SERP_ITEM_COLUMNS: McpTableColumn<SerpItem>[] = [
   { header: "rank", value: (item) => item.rank },
   { header: "type", value: (item) => item.type },
   { header: "organic rank", value: (item) => item.organicRank },
-  { header: "domain", value: (item) => item.domain },
+  { header: "site", value: (item) => item.domain ?? item.websiteName },
   { header: "title", value: (item) => item.title },
   { header: "url", value: (item) => item.url },
   {
@@ -205,6 +205,7 @@ export const getSerpResultsTool = {
         title: item.title ?? null,
         url: item.url ?? null,
         domain: item.domain ?? null,
+        websiteName: item.website_name ?? null,
         description: item.description ?? null,
       }));
       // DataForSEO reports "no results" transiently; don't pin that for the

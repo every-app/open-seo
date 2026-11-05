@@ -46,6 +46,7 @@ const serpSnapshotItemSchema = z
     url: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     breadcrumb: z.string().nullable().optional(),
+    website_name: z.string().nullable().optional(),
     etv: z.number().nullable().optional(),
     estimated_paid_traffic_cost: z.number().nullable().optional(),
     backlinks_info: z
