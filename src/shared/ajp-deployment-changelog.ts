@@ -114,7 +114,9 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
       ],
     },
     forkChanges: ["Teams heading aligned to Keyword changes."],
-    operations: ["No D1 change; Worker pair via publish-notifications.mjs."],
+    operations: [
+      "No D1 change; Worker pair via publish-notifications.mjs — app b9b1b32b-…, audit ba9813aa-… (artifact ~/openseo-release-review/notifications-publication-2026-11-05T13-51-57-550Z).",
+    ],
   },
   {
     version: "0.1.24",
