@@ -117,6 +117,7 @@ function BlogPost() {
 // Keyed by the `author` name in blog frontmatter.
 const authorXUrls = new Map([
   ["Ben Senescu", "https://x.com/bensenescu"],
+  ["Carter Smith", "https://x.com/carterwsmith"],
   ["Jeremy Rivera", "https://x.com/JeremyRiveraSEO"],
   ["Sohan Bhat", "https://x.com/sohanbhat2324"],
 ]);

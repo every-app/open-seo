@@ -7,7 +7,7 @@ import type { useRankRunPolling } from "./useRankRunPolling";
 function ReadWhatChangedLink() {
   return (
     <a
-      href="https://openseo.so/blogs/rank-tracking-changes"
+      href="https://openseo.so/blogs/state-of-rank-tracking-november-2026"
       target="_blank"
       rel="noopener noreferrer"
       className="font-medium underline underline-offset-4"
