@@ -99,6 +99,29 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   },
   {
     version: "0.1.24",
+    deployedOn: "2026-11-05",
+    mergeCommit: "PLACEHOLDER_PR29",
+    upstream: {
+      label: "Fork-only notification UX",
+      sections: [
+        {
+          title: "Teams Adaptive Card rank alerts",
+          items: [
+            "Teams rank alerts use Adaptive Card layout (readable keyword rows).",
+            "Sample rank alert button sends fixed preview data without a live rank check.",
+          ],
+        },
+      ],
+    },
+    forkChanges: [
+      "Shared rank notification content builder for Slack text and Teams cards.",
+    ],
+    operations: [
+      "No D1 change; Worker pair via publish-notifications.mjs (rollback prior notifications deploy).",
+    ],
+  },
+  {
+    version: "0.1.24",
     deployedOn: "2026-11-04",
     mergeCommit: "b7a96038daa754d139905264074b011e2bae848b",
     upstream: {

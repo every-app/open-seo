@@ -37,6 +37,13 @@ export const testNotificationChannel = createServerFn({ method: "POST" })
     NotificationService.testChannel(context, data),
   );
 
+export const testSampleRankNotification = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(testNotificationChannelSchema)
+  .handler(async ({ data, context }) =>
+    NotificationService.testSampleRankAlert(context, data),
+  );
+
 export const createRankNotificationRule = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(createRankNotificationRuleSchema)

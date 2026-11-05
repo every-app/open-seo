@@ -2,14 +2,12 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { NotificationRepository } from "@/server/features/notifications/repositories/NotificationRepository";
 import {
   computeRankPositionChanges,
-  formatRankChangeLine,
   type RankSnapshotPoint,
 } from "@/server/features/notifications/rankPositionChanges";
+import { buildRankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
 import { openWebhookUrl } from "@/server/features/notifications/webhookSecrets";
-import { postNotificationWebhook } from "@/server/features/notifications/webhookDelivery";
+import { postRankNotificationWebhook } from "@/server/features/notifications/webhookDelivery";
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
-
-const SUMMARY_LINE_CAP = 12;
 
 function snapshotPoints(
   rows: Awaited<ReturnType<typeof RankTrackingRepository.getSnapshotsForRun>>,
@@ -100,36 +98,21 @@ export async function notifyRankCheckComplete(input: {
       });
       if (!recorded) continue;
 
-      const lines: string[] = [
-        `*OpenSEO rank update* — ${config.domain}`,
-        `Trigger: ${input.trigger}`,
-      ];
-
-      if (shouldSendAlert) {
-        lines.push(
-          `Keywords moved by ${rule.positionThreshold}+ positions:`,
-          ...changes.slice(0, SUMMARY_LINE_CAP).map(formatRankChangeLine),
-        );
-        if (changes.length > SUMMARY_LINE_CAP) {
-          lines.push(`…and ${changes.length - SUMMARY_LINE_CAP} more`);
-        }
-      }
-
-      if (shouldSendWeekly && !shouldSendAlert) {
-        lines.push("Weekly check completed — no keywords crossed your threshold.");
-      } else if (shouldSendWeekly) {
-        lines.push("(Weekly summary enabled for this rule.)");
-      }
-
-      if (trackerUrl) {
-        lines.push(`View tracker: ${trackerUrl}`);
-      }
+      const content = buildRankNotificationContent({
+        domain: config.domain,
+        trigger: input.trigger,
+        positionThreshold: rule.positionThreshold,
+        changes,
+        weeklySummaryOnly: shouldSendWeekly && !shouldSendAlert,
+        weeklySummaryNote: shouldSendWeekly && shouldSendAlert,
+        trackerUrl,
+      });
 
       const webhookUrl = await openWebhookUrl(channel.webhookCiphertext);
-      await postNotificationWebhook({
+      await postRankNotificationWebhook({
         provider: channel.provider,
         webhookUrl,
-        text: lines.join("\n"),
+        content,
       });
     }
   } catch (error) {
