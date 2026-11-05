@@ -86,9 +86,11 @@ export function DashboardPage({
         <div className="mx-auto flex max-w-7xl flex-col gap-5">
           <Skeleton className="h-8 w-52" />
           <Skeleton className="h-36" />
-          <div className="grid gap-5 lg:grid-cols-2">
-            <Skeleton className="h-44" />
-            <Skeleton className="h-44" />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-72" />
+            <Skeleton className="h-72" />
+            <Skeleton className="h-52" />
+            <Skeleton className="h-52" />
           </div>
         </div>
       </div>
@@ -177,9 +179,6 @@ export function DashboardPage({
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Your website
-            </p>
             <h1 className="text-2xl font-semibold">
               {activation.domain || "Dashboard"}
             </h1>
@@ -262,7 +261,7 @@ export function DashboardPage({
           {/* Base UI unmounts inactive panels, so paid detail queries load only on opening their tab. */}
           <TabsContent
             value="overview"
-            className="grid gap-5 lg:grid-cols-2"
+            className="grid gap-4 lg:grid-cols-2 lg:[&>*:last-child:nth-child(odd)]:col-span-2"
             keepMounted={false}
           >
             {sort(cards, (a, b) => Number(b.hasData) - Number(a.hasData)).map(

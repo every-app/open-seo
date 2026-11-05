@@ -38,6 +38,8 @@ const STRIKING_DISTANCE_MIN_POSITION = 5;
 const STRIKING_DISTANCE_MAX_POSITION = 20;
 const STRIKING_DISTANCE_ROW_LIMIT = 100;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export function sumSearchTotals(
   rows: GscSearchAnalyticsRow[],
 ): SearchPerformanceTotals {
@@ -122,17 +124,43 @@ export function buildStrikingDistanceRows(
   ).slice(0, limit);
 }
 
+/** One point per day across the range, oldest first, from `["date"]` rows.
+ *  GSC omits days with no impressions, which would silently shrink a chart's
+ *  x-axis. Dates are YYYY-MM-DD in UTC. */
+export function buildDailyTrend(
+  rows: GscSearchAnalyticsRow[],
+  startDate: string,
+  endDate: string,
+): { date: string; clicks: number; impressions: number }[] {
+  const rowsByDate = new Map(rows.map((row) => [row.keys?.[0], row]));
+  const days: { date: string; clicks: number; impressions: number }[] = [];
+  const end = Date.parse(`${endDate}T00:00:00Z`);
+  for (
+    let day = Date.parse(`${startDate}T00:00:00Z`);
+    day <= end;
+    day += DAY_MS
+  ) {
+    const date = formatUtcDate(day);
+    const row = rowsByDate.get(date);
+    days.push({
+      date,
+      clicks: row?.clicks ?? 0,
+      impressions: row?.impressions ?? 0,
+    });
+  }
+  return days;
+}
+
 /** The same-length period immediately before [startDate, endDate], for the
  *  totals comparison. Dates are YYYY-MM-DD in UTC. */
 export function previousPeriod(
   startDate: string,
   endDate: string,
 ): { startDate: string; endDate: string } {
-  const dayMs = 24 * 60 * 60 * 1000;
   const start = Date.parse(`${startDate}T00:00:00Z`);
   const end = Date.parse(`${endDate}T00:00:00Z`);
   const lengthMs = Math.max(end - start, 0);
-  const prevEnd = start - dayMs;
+  const prevEnd = start - DAY_MS;
   const prevStart = prevEnd - lengthMs;
   return {
     startDate: formatUtcDate(prevStart),

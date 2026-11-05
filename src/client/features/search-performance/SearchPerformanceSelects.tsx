@@ -157,29 +157,46 @@ export function SearchPerformanceSelects({
           ))}
         </SelectContent>
       </Select>
-      <Select
-        items={RANGE_OPTIONS}
+      <DateRangeSelect
         value={range}
-        onValueChange={(value) => {
-          if (value != null && isDateRange(value)) {
-            onSearchChange({
-              page: undefined,
-              range: value,
-            });
-          }
-        }}
-      >
-        <SelectTrigger size="sm" className="w-36" aria-label="Date range">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {RANGE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        onChange={(value) => onSearchChange({ page: undefined, range: value })}
+        triggerClassName="w-36"
+      />
     </div>
+  );
+}
+
+export function DateRangeSelect({
+  value,
+  onChange,
+  triggerClassName,
+}: {
+  value: SearchPerformanceDateRange;
+  onChange: (value: SearchPerformanceDateRange) => void;
+  triggerClassName?: string;
+}) {
+  return (
+    <Select
+      items={RANGE_OPTIONS}
+      value={value}
+      onValueChange={(next) => {
+        if (next != null && isDateRange(next)) onChange(next);
+      }}
+    >
+      <SelectTrigger
+        size="sm"
+        className={triggerClassName}
+        aria-label="Date range"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {RANGE_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

@@ -49,7 +49,7 @@ export function DashboardKeywords({
     retry: false,
   });
   const striking = useQuery({
-    queryKey: ["dashboardGscReport", projectId, siteUrl],
+    queryKey: ["dashboardGscReport", projectId, siteUrl, "last_28_days"],
     queryFn: () =>
       getSearchPerformanceReport({
         data: { projectId, dateRange: "last_28_days" },

@@ -9,6 +9,7 @@ import {
   type GscPerformanceFilter,
 } from "@/server/features/gsc/searchAnalytics";
 import {
+  buildDailyTrend,
   buildStrikingDistanceRows,
   previousPeriod,
   sumSearchTotals,
@@ -139,6 +140,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
         },
         totals: sumSearchTotals(current.rows),
         prevTotals: sumSearchTotals(previous.rows),
+        trend: buildDailyTrend(current.rows, startDate, endDate),
         strikingDistance: buildStrikingDistanceRows(queryPages.rows),
         countries: toDimensionRows(countries.rows),
       };
