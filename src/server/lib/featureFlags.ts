@@ -11,6 +11,9 @@ export enum FeatureFlag {
   // Stops the cron starting scheduled rank checks during a DataForSEO outage.
   // Rank tracking pages warn paid users with a scheduled tracker while it's on.
   PauseScheduledRankChecks = "pause-scheduled-rank-checks",
+  // Stops new guest accounts for MCP connections; people get the normal
+  // sign-in page instead (src/server/auth/guest-accounts.ts).
+  PauseMcpGuestAccounts = "pause-mcp-guest-accounts",
 }
 
 /**

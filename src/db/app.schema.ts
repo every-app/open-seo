@@ -55,6 +55,24 @@ export const userSignupCampaigns = sqliteTable("user_signup_campaigns", {
   utmContent: text("utm_content"),
 });
 
+// A guest account created when someone connects an AI agent over MCP without
+// signing up (src/server/auth/guest-accounts.ts). The row outlives the guest
+// user on purpose: user_id is not a foreign key, so claiming or deleting the
+// guest keeps the row, and the per-IP guest limit keeps counting it. ip_hash
+// is a keyed hash of the client IP, never the raw address.
+export const guestAccounts = sqliteTable(
+  "guest_accounts",
+  {
+    userId: text("user_id").primaryKey(),
+    ipHash: text("ip_hash").notNull(),
+    // Random secret behind the guest's "create your account" link, which
+    // hands the guest's organization to whoever signs in with it.
+    claimToken: text("claim_token").notNull().unique(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [index("guest_accounts_ip_hash_idx").on(table.ipHash)],
+);
+
 // A self-serve account deletion the user asked for. Sign-in is blocked while
 // the row exists; the daily cron erases the account once deleteAfter passes
 // (src/server/account-deletion). Both timestamps are ISO strings written by

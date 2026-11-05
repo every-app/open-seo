@@ -17,8 +17,31 @@ export function buildDashboardUrl(
   return url.toString();
 }
 
+/**
+ * A guest account's link to a real one: it signs the person up (or in) and
+ * hands them the guest's organization, then lands them on `next`.
+ */
+export function buildGuestClaimUrl(
+  baseUrl: string,
+  guestClaimToken: string,
+  next?: string,
+): string {
+  return buildDashboardUrl(baseUrl, "/api/guest-claim", {
+    token: guestClaimToken,
+    next,
+  });
+}
+
 // Search Performance hosts the connection card and the data the user came for,
-// so land them there rather than in settings.
-export function buildConnectGscUrl(baseUrl: string, projectId: string): string {
-  return buildDashboardUrl(baseUrl, `/p/${projectId}/search-performance`);
+// so land them there rather than in settings. A guest has no account to
+// connect Google to yet, so its link creates one first.
+export function buildConnectGscUrl(
+  baseUrl: string,
+  projectId: string,
+  guestClaimToken: string | undefined,
+): string {
+  const path = `/p/${projectId}/search-performance`;
+  return guestClaimToken
+    ? buildGuestClaimUrl(baseUrl, guestClaimToken, path)
+    : buildDashboardUrl(baseUrl, path);
 }

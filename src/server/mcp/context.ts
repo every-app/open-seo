@@ -27,6 +27,9 @@ export type ToolAuthContext = {
   // on the MCP path; absent on hand-built contexts (SAM), which name
   // themselves at the tool instead.
   clientLabel?: string;
+  // Set only for a guest account (src/server/auth/guest-accounts.ts): the
+  // secret behind its "create your account" link (buildGuestClaimUrl).
+  guestClaimToken?: string;
 };
 
 export type ToolContext = {
@@ -61,6 +64,8 @@ const applicationAuthContextSchema = z.object({
   // visible on a later tools/call, and this transport never populates
   // ServerContext.http.req.
   userAgent: z.string().optional(),
+  // Baked into a guest account's grant when it is created; see ToolAuthContext.
+  guestClaimToken: z.string().min(1).optional(),
 });
 
 type ApplicationAuthContext = z.infer<typeof applicationAuthContextSchema>;

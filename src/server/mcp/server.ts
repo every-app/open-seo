@@ -23,6 +23,7 @@ import {
 import { z } from "zod";
 import {
   createMcpToolContext,
+  MCP_AUTH_CONTEXT_PROP,
   type McpProps,
   type ToolContext,
 } from "@/server/mcp/context";
@@ -373,7 +374,10 @@ export function createOpenSeoMcpServer(
         (supportsApps
           ? "Search Console and SERP research return data without opening UI. Optional interactive views use show_search_console_performance or show_serp_results with an existing resultId; reuse that result rather than fetching it again. show_search_console_performance also provides the Google connection prompt when needed. "
           : "") +
-        "Tools cannot purchase credits or charge payment cards. If a tool reports depleted credits, its billing URL is available for the user to open.",
+        "Tools cannot purchase credits or charge payment cards. If a tool reports depleted credits, its billing URL is available for the user to open." +
+        (authProps[MCP_AUTH_CONTEXT_PROP].guestClaimToken
+          ? " This connection uses a guest OpenSEO account: the user connected without signing up. It has the same free credits as a new account. Adding credits, connecting Google Search Console or Google Analytics, and using the OpenSEO web app need a full account; whoami gives the link that creates one and keeps the user's projects."
+          : ""),
     },
   );
 

@@ -3,6 +3,7 @@ import {
   getUsageCreditsRemaining,
 } from "@/server/billing/subscription";
 import { mcpResponse } from "@/server/mcp/formatters";
+import { buildGuestClaimUrl } from "@/server/mcp/urls";
 import { type ToolContext } from "@/server/mcp/context";
 import {
   isEveryAppServerAuthMode,
@@ -54,7 +55,7 @@ export const whoamiTool = {
         ? "every-app"
         : "self-hosted";
     const lines = [
-      `Account: ${auth.userEmail}`,
+      `Account: ${auth.guestClaimToken ? "guest (no sign-up yet)" : auth.userEmail}`,
       `Mode: ${mode === "every-app" ? "Every App" : mode}`,
       `Scopes: ${auth.scopes.length > 0 ? auth.scopes.join(", ") : "none"}`,
     ];
@@ -67,6 +68,11 @@ export const whoamiTool = {
           "Top-up credits: paused until the owner raises the monthly auto-reload budget on the Billing page.",
         );
       }
+    }
+    if (auth.guestClaimToken) {
+      lines.push(
+        `Guest account: the user connected without signing up. To add credits, connect Google Search Console or Google Analytics, or use the OpenSEO web app, they need a full account. They can create one, or sign in to an existing one, at ${buildGuestClaimUrl(auth.baseUrl, auth.guestClaimToken)}. Their projects move to that account, and afterwards they reconnect OpenSEO in this app.`,
+      );
     }
     return mcpResponse({
       text: lines.join("\n"),

@@ -45,6 +45,7 @@ import {
 } from "@/shared/privacy-choices";
 import { markMcpConnected } from "@/server/features/activation/mcpActivation";
 import { assertNotScheduledForDeletion } from "@/server/account-deletion/signInBlock";
+import { claimGuestFromCookie } from "@/server/auth/guest-accounts";
 import {
   sendHostedPasswordResetEmail,
   sendHostedVerificationEmail,
@@ -377,15 +378,21 @@ function createAuth() {
       },
       session: {
         create: {
-          before: async (session) => {
+          before: async (session, ctx) => {
             // Runs on every sign-in (each sign-in mints a session row). Refuses
-            // an account waiting to be deleted, then resolves the active org:
+            // an account waiting to be deleted, claims a guest account whose
+            // claim link this browser opened (its org then counts as a
+            // membership below), then resolves the active org:
             // last-active org while still a member → most recently joined → a
             // new default one — except a membership-less user with a pending
             // invitation gets none (null active org), so accepting leaves them
             // in exactly the inviter's org. createOrganization is injected so
             // the helper needn't import auth.ts and create a cycle.
             await assertNotScheduledForDeletion(session.userId);
+            await claimGuestFromCookie(
+              ctx?.request?.headers ?? ctx?.headers,
+              session.userId,
+            );
             const resolved = await resolveSignInHostedOrganization(
               session.userId,
               (body) => auth.api.createOrganization({ body }),

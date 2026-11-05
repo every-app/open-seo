@@ -266,7 +266,11 @@ export const getSearchConsolePerformanceTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = buildConnectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      context.auth.guestClaimToken,
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,
@@ -513,7 +517,11 @@ export const inspectUrlsTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = buildConnectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      context.auth.guestClaimToken,
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,

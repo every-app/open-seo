@@ -95,7 +95,11 @@ export const listSearchConsoleSitesTool = {
     annotations: listAnnotations,
   },
   handler: withMcpProjectAuth(async (args: { projectId: string }, context) => {
-    const connectUrl = buildConnectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      context.auth.guestClaimToken,
+    );
     const [siteList, connection] = await Promise.all([
       GscService.listSitesForUserWithGrantStatus(context.auth.userId),
       GscService.getConnection(args.projectId),

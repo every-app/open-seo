@@ -16,7 +16,7 @@ import {
 } from "@/server/mcp/context";
 import { incrementSelfHostMcpToolCallCount } from "@/server/lib/self-host-telemetry";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
-import { buildDashboardUrl } from "@/server/mcp/urls";
+import { buildDashboardUrl, buildGuestClaimUrl } from "@/server/mcp/urls";
 import { BILLING_ROUTE } from "@/shared/billing";
 
 type ToolHandler<TArgs> = (
@@ -264,7 +264,7 @@ export function instrumentMcpToolHandler<TArgs>(
           ),
         );
       }
-      throw agentFacingError(error, appError, context.auth.baseUrl);
+      throw agentFacingError(error, appError, context.auth);
     }
   };
 }
@@ -277,15 +277,23 @@ export function instrumentMcpToolHandler<TArgs>(
 function agentFacingError(
   error: unknown,
   appError: AppError | null,
-  baseUrl: string,
+  auth: Pick<ToolContext["auth"], "baseUrl" | "guestClaimToken">,
 ): unknown {
   if (appError?.code === "UPSTREAM_UNAVAILABLE")
     return new AppError("UPSTREAM_UNAVAILABLE", toolErrorMessage(appError));
   if (appError?.code !== "INSUFFICIENT_CREDITS") return error;
   const detail =
     appError.message === appError.code ? "" : `${appError.message} `;
+  // A guest can't buy credits until it has a real account, so its link
+  // creates one (keeping the guest's projects) and then opens Billing.
+  if (auth.guestClaimToken) {
+    return new AppError(
+      "INSUFFICIENT_CREDITS",
+      `${detail}This guest OpenSEO account has used its free credits. Retrying won't help. To add credits, the user needs a full OpenSEO account: they can create one, or sign in to an existing one, at ${buildGuestClaimUrl(auth.baseUrl, auth.guestClaimToken, BILLING_ROUTE)}. Their projects move to that account, and afterwards they reconnect OpenSEO in this app.`,
+    );
+  }
   return new AppError(
     "INSUFFICIENT_CREDITS",
-    `${detail}This OpenSEO organization doesn't have enough credits for this request. Retrying won't help until the organization has more credits. The organization owner can add credits at ${buildDashboardUrl(baseUrl, BILLING_ROUTE)}`,
+    `${detail}This OpenSEO organization doesn't have enough credits for this request. Retrying won't help until the organization has more credits. The organization owner can add credits at ${buildDashboardUrl(auth.baseUrl, BILLING_ROUTE)}`,
   );
 }

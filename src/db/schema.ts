@@ -90,6 +90,7 @@ export const {
   userOnboardingAnswers,
   userSignupCampaigns,
   accountDeletionRequests,
+  guestAccounts,
   projects,
   savedKeywords,
   savedKeywordTags,

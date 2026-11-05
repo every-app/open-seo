@@ -13,6 +13,7 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthErrorRouteImport } from './routes/auth-error'
+import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
@@ -30,6 +31,7 @@ import { Route as AuthenticatedOauthConsentRouteImport } from './routes/_authent
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated.subscribe'
 import { Route as AuthenticatedYcRouteImport } from './routes/_authenticated.yc'
 import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation.$id'
+import { Route as ApiGuestClaimRouteImport } from './routes/api/guest-claim'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
 import { Route as ApiSignUpStatusRouteImport } from './routes/api/sign-up-status'
@@ -96,6 +98,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const AuthErrorRoute = AuthErrorRouteImport.update({
   id: '/auth-error',
   path: '/auth-error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectRoute = ConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -184,6 +191,11 @@ const AuthenticatedYcRoute = AuthenticatedYcRouteImport.update({
 const AcceptInvitationIdRoute = AcceptInvitationIdRouteImport.update({
   id: '/accept-invitation/$id',
   path: '/accept-invitation/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGuestClaimRoute = ApiGuestClaimRouteImport.update({
+  id: '/api/guest-claim',
+  path: '/api/guest-claim',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -461,6 +473,7 @@ const ApiLocalSeoMapsProjectIdZXYRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/auth-error': typeof AuthErrorRoute
+  '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -477,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/yc': typeof AuthenticatedYcRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/api/guest-claim': typeof ApiGuestClaimRoute
   '/api/health': typeof ApiHealthRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/sign-up-status': typeof ApiSignUpStatusRoute
@@ -531,6 +545,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/auth-error': typeof AuthErrorRoute
+  '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -546,6 +561,7 @@ export interface FileRoutesByTo {
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/yc': typeof AuthenticatedYcRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/api/guest-claim': typeof ApiGuestClaimRoute
   '/api/health': typeof ApiHealthRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/sign-up-status': typeof ApiSignUpStatusRoute
@@ -598,6 +614,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth-error': typeof AuthErrorRoute
+  '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -614,6 +631,7 @@ export interface FileRoutesById {
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
   '/_authenticated/yc': typeof AuthenticatedYcRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/api/guest-claim': typeof ApiGuestClaimRoute
   '/api/health': typeof ApiHealthRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
   '/api/sign-up-status': typeof ApiSignUpStatusRoute
@@ -671,6 +689,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth-error'
+    | '/connect'
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
@@ -687,6 +706,7 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/yc'
     | '/accept-invitation/$id'
+    | '/api/guest-claim'
     | '/api/health'
     | '/api/privacy-region'
     | '/api/sign-up-status'
@@ -741,6 +761,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth-error'
+    | '/connect'
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
@@ -756,6 +777,7 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/yc'
     | '/accept-invitation/$id'
+    | '/api/guest-claim'
     | '/api/health'
     | '/api/privacy-region'
     | '/api/sign-up-status'
@@ -807,6 +829,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_authenticated'
     | '/auth-error'
+    | '/connect'
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
@@ -823,6 +846,7 @@ export interface FileRouteTypes {
     | '/_authenticated/subscribe'
     | '/_authenticated/yc'
     | '/accept-invitation/$id'
+    | '/api/guest-claim'
     | '/api/health'
     | '/api/privacy-region'
     | '/api/sign-up-status'
@@ -881,12 +905,14 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthErrorRoute: typeof AuthErrorRoute
+  ConnectRoute: typeof ConnectRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute: typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute: typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
+  ApiGuestClaimRoute: typeof ApiGuestClaimRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
   ApiSignUpStatusRoute: typeof ApiSignUpStatusRoute
@@ -931,6 +957,13 @@ declare module '@tanstack/react-router' {
       path: '/auth-error'
       fullPath: '/auth-error'
       preLoaderRoute: typeof AuthErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connect': {
+      id: '/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof ConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -1050,6 +1083,13 @@ declare module '@tanstack/react-router' {
       path: '/accept-invitation/$id'
       fullPath: '/accept-invitation/$id'
       preLoaderRoute: typeof AcceptInvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/guest-claim': {
+      id: '/api/guest-claim'
+      path: '/api/guest-claim'
+      fullPath: '/api/guest-claim'
+      preLoaderRoute: typeof ApiGuestClaimRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -1601,6 +1641,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthErrorRoute: AuthErrorRoute,
+  ConnectRoute: ConnectRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,
@@ -1609,6 +1650,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute:
     Char91DotwellKnownChar93OpenaiAppsChallengeRoute,
   AcceptInvitationIdRoute: AcceptInvitationIdRoute,
+  ApiGuestClaimRoute: ApiGuestClaimRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
   ApiSignUpStatusRoute: ApiSignUpStatusRoute,
