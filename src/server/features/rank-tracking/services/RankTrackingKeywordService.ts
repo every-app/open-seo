@@ -166,7 +166,6 @@ async function estimateCost(
     keywords,
     config.devices,
     config.serpDepth,
-    "live",
   );
   const scheduleInterval = isScheduledRankTrackingInterval(
     config.scheduleInterval,
@@ -179,7 +178,6 @@ async function estimateCost(
     keywordCount,
     devicesCount: devicesCount(config.devices),
     totalChecks: keywordCount * devicesCount(config.devices),
-    method: "live" as const,
     existingKeywordCount,
     additionalKeywordCount: keywordCount - existingKeywordCount,
     scheduledEstimate: scheduleInterval

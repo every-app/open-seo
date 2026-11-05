@@ -16,16 +16,16 @@ import { describeError } from "@/server/lib/errors";
 // 2 devices = 2,000 units) can never starve. Sized against DataForSEO's
 // 2,000 requests/min account cap, where task_get polling is the binding
 // term: one call per unit per poll round, rounds wake synchronized per tick,
-// and up to three ticks' dense first 15 minutes of polling overlap the */5
-// cron — so a full tick can burst ~1,000 polls into a single minute, stacking
-// with the residual rounds of the two prior ticks and the sparse
-// (15-minute) rounds of tasks still pending from earlier ticks, up to an
-// hour back. Overruns aren't loud failures: throttled polls delay collection
-// and, past the hour, leave tasks unfinished, which are retried and billed to
-// the customer again, so keep real headroom under the cap.
-// 1,000/tick ≈ 288,000 units/day, ~45× steady-state demand — it only binds
-// during backlog catch-up.
-const SCHEDULED_TASK_UNIT_BUDGET = 1000;
+// and a unit gets up to six reads, so polling from about six ticks overlaps
+// the */5 cron — a full tick can burst ~500 polls into a single minute,
+// stacking with the rounds of the ticks before it. Overruns aren't loud
+// failures: throttled polls delay collection and, past the hour, leave tasks
+// unfinished, which are read again and billed to the customer, so keep real
+// headroom under the cap.
+// 500/tick ≈ 144,000 units/day, a few times steady-state demand — it binds
+// during backlog catch-up and briefly during the 04:00–10:00 UTC default
+// schedule window.
+const SCHEDULED_TASK_UNIT_BUDGET = 500;
 
 // Wall-clock guard for the per-config loop: sub-hourly crons are killed at 15
 // minutes, and a skip-heavy tick pays serial Autumn round-trips per distinct

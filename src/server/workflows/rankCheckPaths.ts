@@ -10,9 +10,7 @@ import type {
   RankCheckResult,
   RankCheckTaskInput,
 } from "@/server/lib/dataforseo";
-import { AppError } from "@/server/lib/errors";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
-import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
 import { pgStep } from "@/server/workflows/pgStep";
 
 const SINGLE_ATTEMPT_STEP_CONFIG = {
@@ -69,122 +67,13 @@ export function expandToTaskInputs(
   );
 }
 
-// ---------------------------------------------------------------------------
-// Step bodies. Each runs inside a single step.do: inputs are its parameters,
-// the return value is what the workflow engine persists and replays. They must
-// not touch any mutable state outside their arguments.
-// ---------------------------------------------------------------------------
-
-/**
- * Check keyword/device pairs against the live endpoint and persist snapshots.
- * The batch is billed with one credit hold and one settle. Per-call failures
- * are logged and skipped; if the hold itself fails, no call runs and every
- * pair fails with that error. Returns the snapshot count written.
- */
-async function checkBatchLive(
-  ctx: CheckContext,
-  tasks: RankCheckTaskInput[],
-): Promise<number> {
-  let settled: PromiseSettledResult<RankCheckResult>[];
-  try {
-    settled = await ctx.client.serp.rankCheckBatch(
-      tasks.map((task) => ({
-        keyword: task.keyword,
-        keywordId: task.keywordId,
-        locationCode: ctx.locationCode,
-        languageCode: ctx.languageCode,
-        locationName: ctx.locationName,
-        device: task.device,
-        targetDomain: ctx.domain,
-        depth: ctx.serpDepth,
-      })),
-    );
-  } catch (error) {
-    settled = tasks.map(() => ({ status: "rejected", reason: error }));
-  }
-  const results: RankCheckResultWithDevice[] = [];
-  let firstError: string | null = null;
-  settled.forEach((outcome, index) => {
-    if (outcome.status === "fulfilled") {
-      results.push({ ...outcome.value, device: tasks[index].device });
-      return;
-    }
-    const reason: unknown = outcome.reason;
-    const code = reason instanceof AppError ? reason.code : "UNKNOWN";
-    const message = reason instanceof Error ? reason.message : String(reason);
-    // Store the bare code so the app shows its provider-unavailable copy;
-    // DataForSEO's raw outage text ("Internal Server Error.") reads like our
-    // server broke.
-    firstError ??= code === "UPSTREAM_UNAVAILABLE" ? code : message;
-    // DataForSEO erring on its own side is a provider flake, not our bug: the
-    // keyword just misses this run and finalize reports it to the user. Every
-    // other rejection (no credits, bad API key) is ours and stays at error.
-    const log = code === "UPSTREAM_UNAVAILABLE" ? console.warn : console.error;
-    const task = tasks[index];
-    log(
-      `[rank-check] ${ctx.runId} live call failed (${code}) keyword="${task.keyword}" device=${task.device}: ${message}`,
-    );
-  });
-  if (firstError) {
-    await RankTrackingRepository.setRunErrorIfEmpty(ctx.runId, firstError);
-  }
-  if (results.length > 0) {
-    await RankTrackingRepository.insertSnapshots(
-      mapResultsToSnapshotRows(ctx.runId, results),
-    );
-  }
-  return results.length;
-}
-
-/**
- * Check keywords via Live API, parallel devices per keyword, real-time progress.
- * Snapshots are written incrementally after each batch so partial results
- * survive batch failures. ~6s per keyword batch.
- * Each batch is billed with one credit hold and one settle (checkBatchLive).
- * A failed batch step doesn't stop the run; its pairs are retried by
- * retryRankChecks.
- */
-export async function runLiveCheck(
-  step: WorkflowStep,
-  ctx: CheckContext,
-): Promise<void> {
-  for (let i = 0; i < ctx.keywords.length; i += KEYWORDS_PER_BATCH) {
-    const keywordBatch = ctx.keywords.slice(i, i + KEYWORDS_PER_BATCH);
-    const batchTasks = expandToTaskInputs(keywordBatch, ctx.devices);
-    const batchIndex = Math.floor(i / KEYWORDS_PER_BATCH);
-    const keywordsChecked = i + keywordBatch.length;
-
-    try {
-      await pgStep(
-        step,
-        `live-batch-${batchIndex}`,
-        SINGLE_ATTEMPT_STEP_CONFIG,
-        async () => {
-          const written = await checkBatchLive(ctx, batchTasks);
-          // Progress for the UI; finalize recounts from the DB anyway.
-          await RankTrackingRepository.updateRun(ctx.runId, {
-            keywordsChecked,
-          });
-          return written;
-        },
-      );
-    } catch (error) {
-      console.warn(
-        `[rank-check] ${ctx.runId} live-batch-${batchIndex} failed:`,
-        error,
-      );
-    }
-  }
-}
-
 // Poll cadence for queued tasks. Standard-priority tasks usually complete in
 // ~5 minutes, so the first check waits 4 minutes and polls are frequent up to
-// 15 minutes. Since Google started throttling google.com/goto redirects,
-// DataForSEO waits out those delays before finishing a task, and many take
-// longer than 15 minutes. Collecting a slow task is free while re-posting it
-// is billed again and just as slow, so polling continues every 15 minutes up
-// to an hour before unfinished tasks are left for retryRankChecks. Cumulative
-// waits: 4 / 6 / 8 / 10 / 12 / 15 / 30 / 45 / 60 minutes.
+// 15 minutes, every 5 minutes up to 30 so slow rounds still leave time for more
+// reads inside READ_WINDOW_MS, then sparse up to an hour. Collecting a slow
+// task is free while re-posting it is billed again, so unfinished tasks are only
+// left for the next read after that. Cumulative waits: 4 / 6 / 8 / 10 / 12 / 15 /
+// 20 / 25 / 30 / 45 / 60 minutes.
 const QUEUED_POLL_INTERVALS = [
   "4 minutes",
   "2 minutes",
@@ -192,7 +81,9 @@ const QUEUED_POLL_INTERVALS = [
   "2 minutes",
   "2 minutes",
   "3 minutes",
-  "15 minutes",
+  "5 minutes",
+  "5 minutes",
+  "5 minutes",
   "15 minutes",
   "15 minutes",
 ] as const;
@@ -290,7 +181,6 @@ export async function runQueuedTasks(
             languageCode: ctx.languageCode,
             locationName: ctx.locationName,
             depth: ctx.serpDepth,
-            targetDomain: ctx.domain,
           }),
         )),
       );
@@ -340,9 +230,9 @@ export async function runQueuedTasks(
 }
 
 /**
- * Check every keyword/device pair through the task queue (scheduled runs),
- * writing snapshots as tasks complete. Billing happens at task_post. Pairs
- * left without a result are retried by retryRankChecks.
+ * Read every keyword/device pair once through the task queue, writing snapshots
+ * as tasks complete. Billing happens at task_post. Further reads are made by
+ * retryRankChecks.
  */
 export async function runQueuedCheck(
   step: WorkflowStep,

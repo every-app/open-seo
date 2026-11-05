@@ -1,7 +1,10 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import type { RankCheckTaskInput } from "@/server/lib/dataforseo";
-import { RETRY_ROUNDS } from "@/shared/rank-tracking";
+import {
+  MAX_READS_PER_CHECK,
+  MIN_READS_PER_CHECK,
+} from "@/shared/rank-tracking";
 import { pgStep } from "@/server/workflows/pgStep";
 import {
   COLLECT_STEP_CONFIG,
@@ -13,124 +16,90 @@ import {
 } from "@/server/workflows/rankCheckPaths";
 
 // ---------------------------------------------------------------------------
-// Retries. A check that errors gets retried, and so does one that reads far
-// worse than the keyword's known position: Google serves some scraped searches
-// a fake results page that looks normal but leaves out sites that really rank.
-// A keyword that never ranked has no known position, so its miss is rechecked
-// up to RETRY_ROUNDS times on its first check, and on any manual check: a user
-// running a check by hand wants another look at keywords stuck on not found.
-// Retries are billed like any other check, and the best position found wins.
+// Further reads. Google serves some scraped searches a fake results page that
+// looks normal but leaves out or reshuffles sites that really rank, so one read
+// can't be trusted. Every keyword/device pair gets MIN_READS_PER_CHECK reads,
+// and up to MAX_READS_PER_CHECK while a read missed the site or the positions
+// disagree. Reads are billed like any other check, and the best position wins.
 // ---------------------------------------------------------------------------
 
-/** A result this many positions below the keyword's known rank is retried. */
-const RETRY_DROP_POSITIONS = 10;
+/** Positions this close together count as the reads agreeing. */
+const READS_AGREE_WITHIN_POSITIONS = 2;
 
-type RankCheckTrigger = "manual" | "scheduled";
+/**
+ * No new round of reads starts after this long. One round polls for up to an
+ * hour, so a check ends in about two hours. Slow rounds get fewer reads.
+ */
+export const READ_WINDOW_MS = 60 * 60_000;
 
-interface RetryPair extends RankCheckTaskInput {
-  /** Best position saved for this run; null if not found or never answered. */
-  position: number | null;
-  /** Whether any try got a results page back. */
+interface ReadPair extends RankCheckTaskInput {
+  /** One entry per read: the position, or null with no page or no site on it. */
+  reads: Array<number | null>;
+  /** Whether any read got a results page back. */
   answered: boolean;
-  /**
-   * Best position the keyword has had: on either device in an earlier check,
-   * or on its other device in this run. Null if it never ranked.
-   */
-  knownPosition: number | null;
-  /**
-   * No earlier check, or a manual check of a keyword that never ranked, so a
-   * miss gets rechecked through all retry rounds.
-   */
-  recheckMiss: boolean;
-}
-
-function needsRetry(pair: RetryPair): boolean {
-  if (!pair.answered) return true;
-  if (pair.knownPosition === null) {
-    return pair.recheckMiss && pair.position === null;
-  }
-  return (
-    pair.position === null ||
-    pair.position - pair.knownPosition >= RETRY_DROP_POSITIONS
-  );
 }
 
 function key(keywordId: string, device: string) {
   return `${keywordId}:${device}`;
 }
 
-function otherDevice(device: "desktop" | "mobile") {
-  return device === "desktop" ? "mobile" : "desktop";
+function foundPositions(pair: ReadPair) {
+  return pair.reads.filter((position) => position !== null);
 }
 
-/**
- * Find the keywords to retry: ones with a device the first check got no answer
- * for, that misses or falls far below the keyword's known position, or that
- * misses with no earlier check (or, on a manual check, after never ranking).
- * Both devices of each are returned, so a position a retry finds on one can
- * make the other's miss suspect.
- */
-async function findRetryPairs(
-  ctx: CheckContext,
-  configId: string,
-  trigger: RankCheckTrigger,
-): Promise<RetryPair[]> {
-  // The run is still active, so completed runs are all earlier checks.
-  const [current, previous] = await Promise.all([
-    RankTrackingRepository.getSnapshotsForRun(ctx.runId),
-    RankTrackingRepository.getBestPositionsForKeywords(configId),
-  ]);
-  const previousPositions = new Map(
-    previous.map((s) => [s.trackingKeywordId, s.position]),
-  );
-  const currentPositions = new Map(
-    current.map((s) => [key(s.trackingKeywordId, s.device), s.position]),
-  );
+function bestPosition(pair: ReadPair): number | null {
+  const found = foundPositions(pair);
+  return found.length > 0 ? Math.min(...found) : null;
+}
 
-  const pairs = expandToTaskInputs(ctx.keywords, ctx.devices).map((task) => {
-    const known = [
-      previousPositions.get(task.keywordId),
-      currentPositions.get(key(task.keywordId, otherDevice(task.device))),
-    ].filter((position) => position != null);
+function needsAnotherRead(pair: ReadPair): boolean {
+  if (pair.reads.length < MIN_READS_PER_CHECK) return true;
+  const found = foundPositions(pair);
+  if (found.length < pair.reads.length) return true;
+  return Math.max(...found) - Math.min(...found) > READS_AGREE_WITHIN_POSITIONS;
+}
+
+/** Every pair, with the first read's saved result. A pair with no row errored. */
+async function loadFirstReads(ctx: CheckContext): Promise<ReadPair[]> {
+  const snapshots = await RankTrackingRepository.getSnapshotsForRun(ctx.runId);
+  const saved = new Map(
+    snapshots.map((s) => [key(s.trackingKeywordId, s.device), s.position]),
+  );
+  return expandToTaskInputs(ctx.keywords, ctx.devices).map((task) => {
+    const pairKey = key(task.keywordId, task.device);
     return {
       ...task,
-      position: currentPositions.get(key(task.keywordId, task.device)) ?? null,
-      answered: currentPositions.has(key(task.keywordId, task.device)),
-      knownPosition: known.length > 0 ? Math.min(...known) : null,
-      recheckMiss:
-        trigger === "manual" || !previousPositions.has(task.keywordId),
+      reads: [saved.get(pairKey) ?? null],
+      answered: saved.has(pairKey),
     };
   });
-  const retryKeywords = new Set(
-    pairs.filter(needsRetry).map((pair) => pair.keywordId),
-  );
-  return pairs.filter((pair) => retryKeywords.has(pair.keywordId));
 }
 
 /**
- * Save any position that beats a pair's saved one, plus the first answer for
- * a keyword that never ranked, and return each pair updated.
+ * Add this round's result to each pair that was read, saving any position that
+ * beats its best and the first answer for a pair that had none.
  */
-async function saveRetryResults(
+async function saveReads(
   runId: string,
-  pairs: RetryPair[],
+  pairs: ReadPair[],
   collected: RankCheckResultWithDevice[],
-): Promise<RetryPair[]> {
+): Promise<ReadPair[]> {
   const results = new Map(
     collected.map((result) => [key(result.keywordId, result.device), result]),
   );
   const toSave: RankCheckResultWithDevice[] = [];
   const updated = pairs.map((pair) => {
+    if (!needsAnotherRead(pair)) return pair;
     const result = results.get(key(pair.keywordId, pair.device));
-    if (!result) return pair;
-    const answered = { ...pair, answered: true };
-    const isBetter =
-      result.position !== null &&
-      (pair.position === null || result.position < pair.position);
-    const isFirstForNewKeyword = !pair.answered && pair.knownPosition === null;
-    if (!isBetter && !isFirstForNewKeyword) return answered;
-    toSave.push(result);
-    return { ...answered, position: result.position };
+    const position = result?.position ?? null;
+    const best = bestPosition(pair);
+    const isBetter = position !== null && (best === null || position < best);
+    if (result && (isBetter || !pair.answered)) toSave.push(result);
+    return {
+      ...pair,
+      reads: [...pair.reads, position],
+      answered: pair.answered || result !== undefined,
+    };
   });
   if (toSave.length > 0) {
     await RankTrackingRepository.upsertSnapshots(
@@ -141,71 +110,82 @@ async function saveRetryResults(
 }
 
 /**
- * Add a position a retry just found to the known position of the keyword's
- * other device, as findRetryPairs does for the first check, so a miss on one
- * device isn't saved as not found while the other ranks in the same run.
+ * Remove the "not found" of a keyword that ranked in an earlier check or on its
+ * other device in this run, so it reads as not checked and keeps its previous
+ * position.
  */
-function withOtherDevicePositions(pairs: RetryPair[]): RetryPair[] {
-  const positions = new Map(
-    pairs.map((pair) => [key(pair.keywordId, pair.device), pair.position]),
+async function dropUnconfirmedMisses(
+  runId: string,
+  configId: string,
+  pairs: ReadPair[],
+) {
+  // The run is still active, so completed runs are all earlier checks.
+  const earlier =
+    await RankTrackingRepository.getBestPositionsForKeywords(configId);
+  const rankedKeywords = new Set([
+    ...earlier.flatMap((s) =>
+      s.position === null ? [] : [s.trackingKeywordId],
+    ),
+    ...pairs.flatMap((pair) =>
+      bestPosition(pair) === null ? [] : [pair.keywordId],
+    ),
+  ]);
+  const unconfirmed = pairs.filter(
+    (pair) => bestPosition(pair) === null && rankedKeywords.has(pair.keywordId),
   );
-  return pairs.map((pair) => {
-    const other = positions.get(key(pair.keywordId, otherDevice(pair.device)));
-    if (other == null) return pair;
-    return {
-      ...pair,
-      knownPosition: Math.min(pair.knownPosition ?? other, other),
-    };
-  });
+  if (unconfirmed.length === 0) return;
+  await RankTrackingRepository.deleteNotFoundSnapshots(
+    unconfirmed.map((pair) => ({
+      runId,
+      trackingKeywordId: pair.keywordId,
+      device: pair.device,
+    })),
+  );
 }
 
 /**
- * Retry each keyword/device pair whose check errored, reads far worse than
- * its known position, or missed on its first check ever or on a manual check
- * after never ranking, up to RETRY_ROUNDS more times through the task queue
- * (queue price, for manual runs too), stopping once a retry settles it. A
- * keyword that ranked before is never saved as not found: if no try found it,
- * its miss is removed, so it reads as not checked and keeps its previous
- * position.
+ * Read each pair again through the task queue until it has enough reads that
+ * agree, it reaches MAX_READS_PER_CHECK, or `readsEndAt` passes. The clock is
+ * read inside the steps, so a replay makes the same decision.
  */
 export async function retryRankChecks(
   step: WorkflowStep,
   ctx: CheckContext,
   configId: string,
-  trigger: RankCheckTrigger,
+  readsEndAt: number,
 ): Promise<void> {
-  let pairs = await pgStep(step, "find-retries", COLLECT_STEP_CONFIG, () =>
-    findRetryPairs(ctx, configId, trigger),
+  let { pairs, canReadAgain } = await pgStep(
+    step,
+    "find-reads",
+    COLLECT_STEP_CONFIG,
+    async () => ({
+      pairs: await loadFirstReads(ctx),
+      canReadAgain: Date.now() < readsEndAt,
+    }),
   );
 
-  for (let round = 0; round < RETRY_ROUNDS; round++) {
-    const toRetry = pairs.filter(needsRetry);
-    if (toRetry.length === 0) break;
+  for (let read = 2; read <= MAX_READS_PER_CHECK && canReadAgain; read++) {
+    const toRead = pairs.filter(needsAnotherRead);
+    if (toRead.length === 0) break;
     console.log(
-      `[rank-check] ${ctx.runId} retry ${round + 1}: ${toRetry.length} check(s)`,
+      `[rank-check] ${ctx.runId} read ${read}: ${toRead.length} check(s)`,
     );
-    const label = `retry-${round}-`;
-    const collected = await runQueuedTasks(step, ctx, toRetry, label);
-    const updated = await pgStep(
+    const label = `read-${read}-`;
+    const collected = await runQueuedTasks(step, ctx, toRead, label);
+    const readPairs = pairs;
+    ({ pairs, canReadAgain } = await pgStep(
       step,
       `${label}save`,
       COLLECT_STEP_CONFIG,
-      () => saveRetryResults(ctx.runId, pairs, collected),
-    );
-    pairs = withOtherDevicePositions(updated);
+      async () => ({
+        pairs: await saveReads(ctx.runId, readPairs, collected),
+        canReadAgain: Date.now() < readsEndAt,
+      }),
+    ));
   }
 
-  const unconfirmed = pairs.filter(
-    (pair) => pair.position === null && pair.knownPosition !== null,
-  );
-  if (unconfirmed.length === 0) return;
+  const finalPairs = pairs;
   await pgStep(step, "drop-unconfirmed-misses", COLLECT_STEP_CONFIG, () =>
-    RankTrackingRepository.deleteNotFoundSnapshots(
-      unconfirmed.map((pair) => ({
-        runId: ctx.runId,
-        trackingKeywordId: pair.keywordId,
-        device: pair.device,
-      })),
-    ),
+    dropUnconfirmedMisses(ctx.runId, configId, finalPairs),
   );
 }

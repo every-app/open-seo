@@ -31,7 +31,6 @@ import {
   clampSerpDepth,
   fetchLiveSerp,
   fetchLocalSerp,
-  fetchRankCheckSerp,
   postLocalSerpTasks,
   postRankCheckTasks,
   SERP_ANALYSIS_DEPTH,
@@ -258,9 +257,6 @@ export const dataforseoPricing = {
         "live",
         input.keyword,
       ),
-    ),
-    rankCheck: priced(fetchRankCheckSerp, (input) =>
-      serpUsd(clampSerpDepth(input.depth), "live", input.keyword),
     ),
     rankCheckTaskPost: priced(postRankCheckTasks, (input) =>
       input.tasks.reduce(

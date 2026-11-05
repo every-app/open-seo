@@ -44,7 +44,6 @@ import {
 import {
   fetchLiveSerp,
   fetchLocalSerp,
-  fetchRankCheckSerp,
   postLocalSerpTasks,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
@@ -234,17 +233,6 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
             creditsForProviderUsd(dataforseoPricing.serp.live(input)),
           ),
           "keyword_research",
-        ),
-      // A rank check batch shares one credit hold and one settle across its
-      // live calls (see meterDataforseoCalls). Resolves per call, in order.
-      rankCheckBatch: (inputs: Parameters<typeof fetchRankCheckSerp>[0][]) =>
-        meterDataforseoCalls(
-          customer,
-          inputs.map((input) => () => fetchRankCheckSerp(input)),
-          inputs.map((input) =>
-            creditsForProviderUsd(dataforseoPricing.serp.rankCheck(input)),
-          ),
-          "rank_tracking",
         ),
       // Posts up to 100 queued rank check tasks; one metered charge covers the
       // whole batch (DataForSEO bills task_post at post time, collection is

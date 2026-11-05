@@ -192,11 +192,6 @@ export function RankTrackingDomainDetail({
     useMetricsRefresh(projectId, config.id);
 
   const requestCheck = (count: number, keywordIds?: string[]) => {
-    if (count < 50) {
-      startCheck({ keywordIds });
-      return;
-    }
-
     if (isBusy) return;
     setPendingCheck({ count, keywordIds });
   };
@@ -383,6 +378,7 @@ export function RankTrackingDomainDetail({
           keywordCount={pendingCheck.count}
           devices={config.devices}
           costUsd={costEstimate?.costUsd}
+          isScheduled={isScheduledRankTrackingInterval(config.scheduleInterval)}
           isPending={isPending}
           onRunNow={() =>
             startCheck({

@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 import { isOutOfCreditsRunError } from "@/shared/rank-tracking";
@@ -17,7 +17,7 @@ function ReadWhatChangedLink() {
   );
 }
 
-/** Warnings about the latest rank check: stale, failed, or incomplete. */
+/** The latest rank check's state: running, stale, failed, or incomplete. */
 export function RankRunAlerts({
   run,
 }: {
@@ -31,6 +31,21 @@ export function RankRunAlerts({
         <AlertTriangle />
         <AlertDescription className="text-foreground">
           This check stopped responding. You can start a new one to replace it.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (run.status === "pending" || run.status === "running") {
+    return (
+      <Alert variant="info">
+        <Clock />
+        <AlertDescription className="text-foreground">
+          <p>
+            <span className="font-medium">This check takes about an hour</span>{" "}
+            because Google's results have been unreliable lately. You can leave
+            this page while it's running. <ReadWhatChangedLink />
+          </p>
         </AlertDescription>
       </Alert>
     );

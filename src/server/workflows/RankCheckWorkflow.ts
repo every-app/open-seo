@@ -12,11 +12,11 @@ import {
 } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
+import { runQueuedCheck } from "@/server/workflows/rankCheckPaths";
 import {
-  runLiveCheck,
-  runQueuedCheck,
-} from "@/server/workflows/rankCheckPaths";
-import { retryRankChecks } from "@/server/workflows/rankCheckRetries";
+  READ_WINDOW_MS,
+  retryRankChecks,
+} from "@/server/workflows/rankCheckRetries";
 import { resolveRunGotoUrls } from "@/server/workflows/rankCheckGotoUrls";
 import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
@@ -97,7 +97,6 @@ async function prepareRankCheckKeywords(input: {
     trackingKeywords.map((kw) => kw.keyword),
     input.devices,
     input.serpDepth,
-    input.trigger === "scheduled" ? "queued" : "live",
   );
   if (input.maxCostCredits != null && costCredits > input.maxCostCredits) {
     throw new NonRetryableError(
@@ -106,9 +105,7 @@ async function prepareRankCheckKeywords(input: {
   }
 
   // Verify the user has enough credits for the full check before starting.
-  // Scheduled checks go through the cheaper task queue, so estimate at queued
-  // pricing — a live-price estimate would skip checks the user can afford.
-  // The estimate is the worst case, so it covers every retry.
+  // The estimate is the worst case, so it covers every read.
   // A timed-out Autumn read throws here instead of reading as 0 credits, so
   // the step retries it rather than refusing a customer who has credits.
   if (await isHostedServerAuthMode()) {
@@ -136,6 +133,7 @@ async function prepareRankCheckKeywords(input: {
       id: kw.id,
       keyword: kw.keyword,
     })),
+    readsEndAt: Date.now() + READ_WINDOW_MS,
   };
 }
 
@@ -184,15 +182,8 @@ async function finalizeRankCheckRun(input: {
   const keywordsTotal = run.keywordsTotal || keywordsChecked;
   const isPartial = checkedByDevice.some((d) => d.count < keywordsTotal);
 
-  // Batch steps record the first per-keyword rejection on the run as it
-  // happens, so a failed run shows the vendor's reason rather than a count.
-  const keywordError = run.errorMessage ?? input.batchError;
   const status =
     keywordsChecked === 0 && keywordsTotal > 0 ? "failed" : "completed";
-  // A bare code (UPSTREAM_UNAVAILABLE) is for the failed-run copy to
-  // translate; the partial message is shown as is, so it is left out there.
-  const partialReason =
-    keywordError && !isErrorCode(keywordError) ? keywordError : null;
   const checkedSummary =
     checkedByDevice.length > 1
       ? checkedByDevice
@@ -201,13 +192,10 @@ async function finalizeRankCheckRun(input: {
       : `${keywordsChecked} of ${keywordsTotal}`;
   const errorMessage =
     status === "failed"
-      ? (keywordError ?? "No keywords could be checked.")
+      ? (input.batchError ?? "No keywords could be checked.")
       : isPartial
         ? [
-            `Checked ${checkedSummary} keyword(s)${partialReason ? `: ${partialReason}` : ""}`.replace(
-              /\.?$/,
-              ".",
-            ),
+            `Checked ${checkedSummary} keyword(s).`,
             describeUnchecked(input.keywords, devices, snapshots),
           ]
             .filter(Boolean)
@@ -408,15 +396,13 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           locationName,
           runId,
         };
-        // Scheduled checks use DataForSEO's task queue (~30% of live cost);
-        // manual checks stay on the live endpoint for instant results.
-        // Retries always go through the queue.
-        if (trigger === "scheduled") {
-          await runQueuedCheck(step, checkContext);
-        } else {
-          await runLiveCheck(step, checkContext);
-        }
-        await retryRankChecks(step, checkContext, configId, trigger);
+        await runQueuedCheck(step, checkContext);
+        await retryRankChecks(
+          step,
+          checkContext,
+          configId,
+          prepareResult.readsEndAt,
+        );
       } catch (error) {
         // Batch failure — snapshots for completed batches are already
         // persisted incrementally. Continue to finalization.

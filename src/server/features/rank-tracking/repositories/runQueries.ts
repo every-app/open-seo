@@ -38,20 +38,6 @@ export async function updateRun(
   await db.update(rankCheckRuns).set(data).where(eq(rankCheckRuns.id, runId));
 }
 
-/**
- * Record why a keyword failed, first reason wins. Batch steps call this on
- * each rejection so finalize can show the vendor's actual message instead of
- * a generic "could not be checked".
- */
-export async function setRunErrorIfEmpty(runId: string, errorMessage: string) {
-  await db
-    .update(rankCheckRuns)
-    .set({ errorMessage })
-    .where(
-      and(eq(rankCheckRuns.id, runId), isNull(rankCheckRuns.errorMessage)),
-    );
-}
-
 export async function getRunById(runId: string) {
   const rows = await db
     .select()

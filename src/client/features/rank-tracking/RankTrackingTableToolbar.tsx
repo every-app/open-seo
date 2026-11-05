@@ -1,11 +1,37 @@
+import { useEffect, useState } from "react";
 import { CalendarDays, SlidersHorizontal, Table } from "lucide-react";
+import { clamp } from "remeda";
 import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { ExportMenu } from "@/client/components/ExportMenu";
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
 import { Progress } from "@/client/components/ui/progress";
 import { Spinner } from "@/client/components/ui/spinner";
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 import { MoreMenu } from "./ToolbarMenus";
+
+const USUAL_CHECK_MS = 60 * 60_000;
+
+/**
+ * An estimate, not a measure: the bar follows the time since the check started
+ * against how long one usually takes, and stops short of full for slower ones.
+ */
+function RankCheckProgress({ startedAt }: { startedAt: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const elapsedMs = now - parseDbTimestamp(startedAt).getTime();
+  return (
+    <Progress
+      className="ml-1 w-36"
+      aria-label="Rank check progress"
+      value={clamp(elapsedMs / USUAL_CHECK_MS, { min: 0.03, max: 0.95 })}
+      max={1}
+    />
+  );
+}
 
 export function RankTrackingTableToolbar({
   showFilters,
@@ -31,7 +57,7 @@ export function RankTrackingTableToolbar({
   activeFilterCount: number;
   isRunning: boolean;
   latestRun:
-    | { status: string; keywordsChecked: number; keywordsTotal: number }
+    | { status: string; keywordsTotal: number; startedAt: string }
     | null
     | undefined;
   keywordCount: number;
@@ -47,14 +73,6 @@ export function RankTrackingTableToolbar({
   checkDisabled: boolean;
   hasData: boolean;
 }) {
-  // Once every keyword has had its first check, a running run is retrying the
-  // ones that errored or came back missing. Retries wait on DataForSEO's task
-  // queue, so a full progress bar would sit there for up to 3 hours.
-  const isDoubleChecking =
-    latestRun?.status === "running" &&
-    latestRun.keywordsTotal > 0 &&
-    latestRun.keywordsChecked >= latestRun.keywordsTotal;
-
   return (
     <div className="shrink-0 flex flex-wrap items-center gap-2 px-4 py-2 border-y border-border">
       {/* History needs at least two checks to compare; until then the toggle
@@ -93,29 +111,15 @@ export function RankTrackingTableToolbar({
       </Button>
 
       {isRunning && latestRun ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner className="size-3.5 text-primary" />
-          {isDoubleChecking ? (
-            <span>
-              Double-checking some results. This can take up to 3 hours.
-            </span>
-          ) : (
-            <>
-              <span>
-                {latestRun.status === "pending"
-                  ? "Preparing..."
-                  : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}{" "}
-                {latestRun.keywordsChecked}/{latestRun.keywordsTotal || "?"}
-              </span>
-              {latestRun.keywordsTotal > 0 && (
-                <Progress
-                  className="w-24"
-                  aria-label="Rank check progress"
-                  value={latestRun.keywordsChecked}
-                  max={latestRun.keywordsTotal}
-                />
-              )}
-            </>
+        <div className="ml-2 flex items-center gap-2.5 text-sm font-medium text-foreground">
+          <Spinner className="text-primary" />
+          <span>
+            {latestRun.status === "pending"
+              ? "Preparing..."
+              : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}
+          </span>
+          {latestRun.status === "running" && (
+            <RankCheckProgress startedAt={latestRun.startedAt} />
           )}
         </div>
       ) : (

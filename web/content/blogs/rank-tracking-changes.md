@@ -19,31 +19,26 @@ The "poisoned" page isn't served every time. When we checked the same keyword ag
 
 ## What changed
 
-After every check, OpenSEO looks for out of place results:
+OpenSEO now reads every keyword at least three times, a few minutes apart. If a read misses your page, or the positions differ by more than two places, it keeps reading, up to six times. Then:
 
-- the check failed with an error, or
-- a keyword that has ranked before now shows as not found, or sits 10 or more positions below its best.
-
-Each of those keywords gets checked up to two more times. Then:
-
-- **The best result wins.** If any of the three checks finds your page, that position is saved.
-- **No false "lost".** If a keyword has ranked before and none of the checks find it, OpenSEO doesn't record it as lost. It shows as **Not checked** for that run, keeps its last known position, and the run is marked incomplete.
+- **The best result wins.** If any read finds your page, that position is saved.
+- **No false "lost".** If a keyword has ranked before and no read finds it, OpenSEO doesn't record it as lost. It shows as **Not checked** for that run, keeps its last known position, and the run is marked incomplete.
 
 ## How it's different from before
 
-Now every check, manual or scheduled, goes through the same retries, and a page has to be missing on three separate looks before OpenSEO treats it as anything other than missing data.
+Now every check, manual or scheduled, goes through the same reads, and a page has to be missing on every read before OpenSEO treats it as anything other than missing data.
 
-On a manual check, keywords that need a retry can take up to about 30 minutes longer to fill in.
+A check can take up to 2 hours to finish, and that includes manual checks.
 
 If a page really does fall out of the results you track, it shows as **Not checked** instead of lost. If a keyword shows Not checked on several checks in a row, look it up in [Google Search Console](/blogs/google-search-console-setup). Search Console data comes straight from Google and isn't affected by any of this.
 
 ## What it costs
 
-The price shown before a check is now the most it can cost: the check itself plus two retries for every keyword on every device. That's why it now reads "up to". Most runs cost far less.
+The price shown before a check is now the most it can cost: six reads of every keyword on every device. That's why it reads "up to". Keywords whose first three reads agree stop there, but most runs cost close to the price shown.
 
 The same highest number is what your AI agent sees through [OpenSEO MCP](/docs/mcp). A check never costs more than the spending limit you approved.
 
-If you self-host, the same retries run against your own DataForSEO account.
+If you self-host, the same reads run against your own DataForSEO account.
 
 ## Do I need to do anything?
 

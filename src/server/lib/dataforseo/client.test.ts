@@ -89,7 +89,6 @@ vi.mock("@/server/lib/dataforseo/labs", () => ({
 }));
 vi.mock("@/server/lib/dataforseo/serp", () => ({
   fetchLiveSerp: vi.fn(),
-  fetchRankCheckSerp: vi.fn(),
   postRankCheckTasks: vi.fn(),
   fetchLocalSerp: vi.fn(),
   postLocalSerpTasks: vi.fn(),
@@ -139,7 +138,7 @@ import { dataforseoPricing } from "@/server/lib/dataforseo/pricing";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { AppError } from "@/server/lib/errors";
 import { fetchBacklinksSummary } from "@/server/lib/dataforseo/backlinks";
-import { fetchRankCheckSerp } from "@/server/lib/dataforseo/serp";
+import { fetchLiveSerp } from "@/server/lib/dataforseo/serp";
 import { postAiTrackingTasks } from "@/server/lib/dataforseo/ai-tracking";
 
 const billingCustomer = {
@@ -357,29 +356,21 @@ describe("AI visibility queued posts", () => {
   });
 });
 
-describe("rankCheckBatch", () => {
+describe("liveBatch", () => {
   const input = {
     keyword: "running shoes",
-    keywordId: "kw_1",
     locationCode: 2840,
     languageCode: "en",
     device: "desktop" as const,
-    targetDomain: "example.com",
     depth: 10,
   };
   const callEstimate = creditsForProviderUsd(
-    dataforseoPricing.serp.rankCheck(input),
+    dataforseoPricing.serp.live(input),
   );
   // 2 * ceil(1.28) = 4 credits for two calls, not ceil(2.56) = 3 for their
   // summed cost: each call is credited as it would be unbatched.
   const billed = {
-    data: {
-      keywordId: "kw_1",
-      keyword: "running shoes",
-      position: 3,
-      url: null,
-      serpFeatures: [],
-    },
+    data: [],
     billing: {
       costUsd: 0.001,
       path: ["v3", "serp", "google", "organic", "live", "advanced"],
@@ -389,7 +380,7 @@ describe("rankCheckBatch", () => {
   it("bills the batch with one hold on the summed estimate and one confirm on the billed calls", async () => {
     setupHostedMode();
     mockMonthlyBalance(5000);
-    vi.mocked(fetchRankCheckSerp)
+    vi.mocked(fetchLiveSerp)
       .mockResolvedValueOnce(billed)
       .mockRejectedValueOnce(
         new AppError("UPSTREAM_UNAVAILABLE", "DataForSEO timed out"),
@@ -397,7 +388,7 @@ describe("rankCheckBatch", () => {
       .mockResolvedValueOnce(billed);
 
     const client = createDataforseoClient(billingCustomer);
-    const settled = await client.serp.rankCheckBatch([input, input, input]);
+    const settled = await client.serp.liveBatch([input, input, input]);
 
     expect(settled.map((outcome) => outcome.status)).toEqual([
       "fulfilled",
@@ -428,10 +419,10 @@ describe("rankCheckBatch", () => {
         balance: { remaining: balance },
       };
     });
-    vi.mocked(fetchRankCheckSerp).mockResolvedValue(billed);
+    vi.mocked(fetchLiveSerp).mockResolvedValue(billed);
 
     const client = createDataforseoClient(billingCustomer);
-    const settled = await client.serp.rankCheckBatch([input, input, input]);
+    const settled = await client.serp.liveBatch([input, input, input]);
 
     expect(settled.every((outcome) => outcome.status === "fulfilled")).toBe(
       true,

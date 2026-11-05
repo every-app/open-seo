@@ -159,35 +159,10 @@ describe("dataforseoPricing", () => {
       })),
       ...location,
       depth: 20,
-      targetDomain: "example.com",
     });
-    // The estimate is the worst case: this post plus two queued retries.
-    expect(3 * creditsForProviderUsd(estimateUsd)).toBe(
-      estimateRankCheckCredits(keywords, "desktop", 20, "queued").costCredits,
-    );
-  });
-
-  it("prices a live operator rank check the way the rank check estimate does", () => {
-    const keyword = "site:example.com seo";
-    const liveUsd = dataforseoPricing.serp.rankCheck({
-      keyword,
-      keywordId: "id",
-      ...location,
-      device: "desktop",
-      depth: 20,
-      targetDomain: "example.com",
-    });
-    const retryUsd = dataforseoPricing.serp.rankCheckTaskPost({
-      tasks: [{ keyword, keywordId: "id", device: "desktop" }],
-      ...location,
-      depth: 20,
-      targetDomain: "example.com",
-    });
-    // The estimate is the worst case: the live call plus two queued retries.
-    expect(
-      creditsForProviderUsd(liveUsd) + 2 * creditsForProviderUsd(retryUsd),
-    ).toBe(
-      estimateRankCheckCredits([keyword], "desktop", 20, "live").costCredits,
+    // The estimate is the worst case: six reads.
+    expect(6 * creditsForProviderUsd(estimateUsd)).toBe(
+      estimateRankCheckCredits(keywords, "desktop", 20).costCredits,
     );
   });
 });

@@ -30,7 +30,7 @@ export const runRankTrackerTool = {
   config: {
     title: "Run rank tracker",
     description:
-      "Start an explicit live rank check for every keyword and configured device. This spends credits: call estimate_rank_tracker_cost, show the estimate to the user, and pass the approved credit amount as maxCostCredits. A fresh estimate above that ceiling is rejected. Hosted accounts require a paid plan, while self-hosted deployments are not plan-gated. If a run is already in progress, its blocking run ID is reported without starting or charging another check. The schedule is unchanged.",
+      "Start an explicit rank check for every keyword and configured device. This spends credits: call estimate_rank_tracker_cost, show the estimate to the user, and pass the approved credit amount as maxCostCredits. A fresh estimate above that ceiling is rejected. Hosted accounts require a paid plan, while self-hosted deployments are not plan-gated. If a run is already in progress, its blocking run ID is reported without starting or charging another check. The schedule is unchanged.",
     inputSchema,
     outputSchema: z
       .object({
@@ -83,7 +83,7 @@ export const runRankTrackerTool = {
     );
 
     return mcpResponse({
-      text: `Rank check ${result.runId} started for tracker ${args.trackerId}. It retries keywords that error or come back missing, so it can take up to 3 hours. Poll get_rank_tracker until lastCheckedAt advances, then read the updated positions.`,
+      text: `Rank check ${result.runId} started for tracker ${args.trackerId}. It reads every keyword several times, so it can take up to 2 hours. Poll get_rank_tracker until lastCheckedAt advances, then read the updated positions.`,
       meta: buildProjectMeta(context, args.projectId, trackerPath),
       structuredContent: {
         trackerId: args.trackerId,

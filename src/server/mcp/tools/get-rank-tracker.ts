@@ -103,7 +103,7 @@ function formatLatestRun(
     return `Latest run: partial${finishedAt ? ` (${finishedAt})` : ""} — ${run.errorMessage.replace(/\.$/, "")}. Google's results have been unreliable lately, so some keywords show their previous position.`;
   if (run.status === "completed")
     return `Latest run: ${finishedAt ?? "completed"}`;
-  return `Latest run: ${run.status}. A check retries keywords that error or come back missing, so it can take up to 3 hours. Positions below are from the last completed check until then.`;
+  return `Latest run: ${run.status}. A check reads every keyword several times, so it can take up to 2 hours. Positions below are from the last completed check until then.`;
 }
 
 const inputSchema = {
