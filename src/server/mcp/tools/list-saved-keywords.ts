@@ -94,7 +94,9 @@ export const listSavedKeywordsTool = {
         });
       const text =
         rows.length === 0
-          ? "No saved keywords yet."
+          ? args.search || args.tags?.length
+            ? "No saved keywords match this search or tag filter. Call again without it to see every saved keyword."
+            : "No saved keywords yet."
           : `Saved keywords (${rows.length} of ${totalCount}):\n` +
             rows
               .map((row) => {

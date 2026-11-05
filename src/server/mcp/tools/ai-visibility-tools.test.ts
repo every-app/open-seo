@@ -222,6 +222,20 @@ describe("AI visibility assistant tools", () => {
     ).toBe(true);
     expect(mocks.service.runCheck).toHaveBeenCalledTimes(1);
   });
+  it("doesn't send a prompt-cap refusal to the cost estimate", async () => {
+    mocks.service.saveTracker.mockRejectedValue(
+      new AiVisibilityError(
+        "PROMPT_LIMIT",
+        "Tracking supports up to 100 unarchived prompts per project. Archive unused prompts first.",
+      ),
+    );
+    const result = await definitions.saveAiVisibilityTrackerTool.handler(
+      { projectId },
+      context,
+    );
+    expect(textContent(result)).not.toContain("cost estimate");
+    expect(textContent(result)).toContain("get_ai_visibility_tracker");
+  });
   it("keeps gap-only source scope visible in structured and text-only MCP clients", async () => {
     const sourceData = {
       runId,

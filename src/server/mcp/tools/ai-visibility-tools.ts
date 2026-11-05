@@ -49,7 +49,7 @@ function runNextAction(run: {
 function recoveryFor(error: AiVisibilityError) {
   if (error.runId)
     return `Read get_ai_visibility_run for run ${error.runId}. Do not start another check to poll it.`;
-  if (/cost|credit|limit/i.test(error.reason))
+  if (error.reason === "COST_LIMIT_EXCEEDED")
     return "Request a fresh cost estimate and get the user's approval for any increased spend before retrying.";
   return "Read get_ai_visibility_tracker and resolve the reported issue before retrying.";
 }

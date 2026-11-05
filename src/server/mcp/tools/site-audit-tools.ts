@@ -140,7 +140,7 @@ export const runSiteAuditTool = {
       // no audit started, so there is no auditId to report.
       const refusalText =
         error instanceof AppError && error.code === "AUDIT_CAPACITY_REACHED"
-          ? "Audit capacity reached for this account — delete old audits in the dashboard to free capacity, then try again."
+          ? "Audit capacity reached for this account. list_site_audits shows a project's audits, and delete_site_audit frees capacity, but deleting permanently removes an audit's results and needs an owner or admin. Confirm with the user which audit to delete, then try again."
           : error instanceof AppError && error.code === "AUDIT_ALREADY_RUNNING"
             ? "This account is at its limit of concurrently running audits. Poll get_audit_status until one finishes, then try again."
             : // startAudit refuses only rendering with FORBIDDEN; its message
@@ -406,7 +406,9 @@ export const getAuditIssuesTool = {
           ? `No issues found for audit ${audit.id} matching the given filters.`
           : audit.status === "running"
             ? `Audit ${audit.id} is still running; issues are recorded when it finishes. Poll get_audit_status.`
-            : `Audit ${audit.id} found no issues across ${audit.pagesCrawled} crawled page${audit.pagesCrawled === 1 ? "" : "s"}.`
+            : audit.status === "failed" && audit.pagesCrawled === 0
+              ? `Audit ${audit.id} failed before crawling any pages, so it has no results. get_audit_status shows the error; call run_site_audit to try again.`
+              : `Audit ${audit.id} found no issues across ${audit.pagesCrawled} crawled page${audit.pagesCrawled === 1 ? "" : "s"}.`
         : [
             `Audit ${audit.id} (${audit.startUrl}): ${rows.length} issues across ${summary.length} issue type${summary.length === 1 ? "" : "s"}.`,
             ...sections,

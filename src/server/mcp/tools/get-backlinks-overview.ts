@@ -161,7 +161,9 @@ export const getBacklinksOverviewTool = {
       refDomains === null
         ? "Referring-domains breakdown unavailable for subfolder scope."
         : topDomains.length === 0
-          ? "No referring domains found."
+          ? spamOptions.hideSpam && (summary.referringDomains ?? 0) > 0
+            ? `No referring domains are left after hiding spam, though the summary counts ${formatMcpCell(summary.referringDomains)}. Call again with hideSpam: false to list them.`
+            : "No referring domains found."
           : `Referring domains (top ${topDomains.length} of ${formatMcpCell(summary.referringDomains)}):\n${formatMcpTable(topDomains, REFERRING_DOMAIN_COLUMNS)}`,
     ].join("\n");
     return mcpResponse({

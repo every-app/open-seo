@@ -146,4 +146,20 @@ describe("saved keyword MCP tools", () => {
     expect(result.structuredContent?.rows?.[0]).toHaveProperty("id", "saved_1");
     expect(textContent(result)).toContain("id:saved_1");
   });
+
+  it("says a filter matched nothing instead of that no keywords are saved", async () => {
+    mocks.getSavedKeywords.mockResolvedValue({
+      totalCount: 0,
+      tags: [],
+      rows: [],
+    });
+
+    const result = await listSavedKeywordsTool.handler(
+      { projectId: "project_1", tags: ["Content"] },
+      toolContext,
+    );
+
+    expect(textContent(result)).toContain("match this search or tag filter");
+    expect(textContent(result)).not.toContain("No saved keywords yet");
+  });
 });

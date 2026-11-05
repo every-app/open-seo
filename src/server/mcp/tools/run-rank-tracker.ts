@@ -58,7 +58,7 @@ export const runRankTrackerTool = {
 
     if (!result.ok) {
       return mcpResponse({
-        text: `A rank check is already running for tracker ${args.trackerId}${result.blockingRunId ? ` (run ${result.blockingRunId})` : ""}. No new run was created and no additional check was charged. Poll get_rank_tracker until lastCheckedAt advances.`,
+        text: `A rank check is already running for tracker ${args.trackerId}${result.blockingRunId ? ` (run ${result.blockingRunId})` : ""}. No new run was created and no additional check was charged. Poll get_rank_tracker with this trackerId until its Latest run line no longer says pending or running.`,
         meta: buildProjectMeta(context, args.projectId, trackerPath),
         structuredContent: {
           trackerId: args.trackerId,
@@ -83,7 +83,7 @@ export const runRankTrackerTool = {
     );
 
     return mcpResponse({
-      text: `Rank check ${result.runId} started for tracker ${args.trackerId}. It reads every keyword several times, so it can take up to 2 hours. Poll get_rank_tracker until lastCheckedAt advances, then read the updated positions.`,
+      text: `Rank check ${result.runId} started for tracker ${args.trackerId}. It reads every keyword several times, so it can take up to 2 hours. Poll get_rank_tracker with this trackerId until its Latest run line no longer says pending or running, then read the updated positions.`,
       meta: buildProjectMeta(context, args.projectId, trackerPath),
       structuredContent: {
         trackerId: args.trackerId,
