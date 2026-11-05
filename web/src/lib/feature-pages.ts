@@ -261,9 +261,10 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.siteAudit,
     eyebrow: "Site Audit",
     navDescription: "Audit page-level SEO signals.",
-    title: "SEO audit tool for finding technical issues fast",
+    title:
+      "SEO audit tool that crawls, renders and sorts every issue by severity",
     description:
-      "Crawl a site, collect page-level technical signals, and optionally run Lighthouse checks for performance, SEO, accessibility, and best-practice issues.",
+      "Crawl a site, check every page for 32 types of technical issue, and work through them in order: critical first, then warnings, then info. Optional Lighthouse checks add performance, accessibility and best-practice findings.",
     seoDescription:
       "Crawl your site and get every technical issue sorted by severity: broken links, blocked pages, missing titles, optional Lighthouse checks. Free up to 50 pages.",
     primaryKeyword: "seo audit tool",
@@ -279,42 +280,78 @@ export const featurePages = {
       {
         title: "Run a site crawl",
         description:
-          "Inspect pages for status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, response time, and optional Lighthouse findings.",
+          "Enter a URL and a page limit. The crawler follows robots.txt, stays on your domain, and checks status codes, titles, meta descriptions, headings, canonicals, links, image alt text and response time on every page.",
       },
       {
-        title: "Prioritize issues",
+        title: "Work the issues by severity",
         description:
-          "Review crawled pages and optional Lighthouse results so the team can focus on visible page and performance problems.",
+          "Critical issues come first: blocked pages, server errors, broken internal links and missing titles. Warnings and info follow, so the report reads as a queue instead of a score.",
       },
       {
         title: "Drill into affected URLs",
         description:
-          "Move into URLs with missing titles, metadata, heading and image-alt signals, status-code issues, response-time data, or optional Lighthouse findings.",
+          "Each issue opens to the exact URLs it affects, with the flagged title or meta description shown. Export the list for a developer or a content writer.",
       },
     ],
     metrics: [
       { label: "Crawled URLs", value: "Coverage" },
-      { label: "Page fields", value: "Checks" },
+      { label: "Issue severity", value: "Priority" },
       { label: "Affected pages", value: "Scope" },
       { label: "Audit history", value: "Progress" },
     ],
     showMetrics: true,
     useCases: [
       "Audit a new site before publishing SEO work.",
-      "Find technical issues after a migration or redesign.",
-      "Export crawled page data and Lighthouse findings for developers and content teams.",
+      "Find what broke after a migration or redesign.",
+      "Hand developers a list of URLs to fix instead of a generic score.",
     ],
     differentiators: [
-      "A practical crawler built into the same workspace as keyword and domain research.",
-      "Open-source implementation for teams that want to inspect or extend the audit flow.",
-      "Simple reports that expose page-level signals and optional Lighthouse findings instead of relying only on a generic score.",
+      "The crawler is built into the same workspace as keyword, rank and backlink research.",
+      "Your AI agent can run an audit and read the issues over MCP, then work through them with you.",
+      "Open source, so you can read exactly what each check looks for.",
     ],
-    featuredLink: {
-      title: "Free SERP simulator",
-      description:
-        "Preview how a title and meta description render on Google, with pixel widths. No signup required.",
-      href: "/serp-simulator",
+    headings: {
+      workflows: "Run a crawl, get a ranked work queue",
+      metrics: "What one audit covers",
+      useCases: "When to run an audit",
+      differentiators: "Why audit here",
+      related: "Tools to use alongside the audit",
+      faq: "Site audit questions",
     },
+    toolCallout: {
+      title: "Fix the title and meta issues the audit finds",
+      description: "A free tool from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free SERP simulator",
+          description:
+            "The audit flagged a title as too long? Paste it in and see where Google cuts it, on desktop and mobile.",
+          href: "/serp-simulator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "32 issue types, sorted by what to fix first",
+        body: "Every issue the crawler reports carries a severity. Four are critical: the crawler was blocked, a server error, a broken internal link, or a missing title. Nineteen are warnings, including duplicate titles and content, redirect chains and loops, conflicting canonicals, thin content and orphan pages. Three of those warnings tell you when the crawl itself stopped early, so a short report never passes for a clean one. The other nine are info, like title length and pages buried deep in the site. Each issue opens to the URLs it affects.",
+      },
+      {
+        title: "Audits that see JavaScript sites",
+        body: "A crawler that reads only raw HTML sees an empty shell on many modern sites. Turn on rendering and OpenSEO loads each page in a browser before checking it, up to your plan's page limit. Pages that come back as a bot challenge get a second try with a different renderer. Rendered audits use credits for the pages they render and stop after 22 hours. When a site rate-limits the crawl, the audit slows down and retries instead of marking every page blocked, and site owners can verify the OpenSEO-Audit crawler before letting it through.",
+      },
+      {
+        title: "Run an audit from your AI agent",
+        body: "Connect OpenSEO to Claude, Cursor or ChatGPT over MCP and the agent can start an audit, check its progress and read the issues by severity. Ask it which critical issues to fix first, or to draft new titles for every page flagged as too long, and it works from the same report you see in the app.",
+      },
+    ],
+    contextImage: {
+      src: "/features/site-audit/openseo-site-audit-issue-types-by-severity.png",
+      alt: "List of the 32 issue types an OpenSEO site audit checks, in three columns: 4 critical (crawler was blocked, server error, broken internal link, missing title tag), 19 warnings and 9 info.",
+      caption: "The full check list, grouped the way the report sorts it.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Domain Overview", href: "/features/domain-overview" },
       { label: "Backlinks", href: "/features/backlink-checker" },
@@ -324,7 +361,7 @@ export const featurePages = {
       {
         question: "What does the OpenSEO site audit tool check?",
         answer:
-          "Status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, and response time for every crawled page. Enable Lighthouse and each page also gets performance, SEO, accessibility, and best-practice issues.",
+          "32 issue types across every crawled page, including status codes, titles, meta descriptions, headings, canonicals, redirects, internal links, image alt text and response time. Enable Lighthouse and a sample of pages also gets performance, SEO, accessibility and best-practice findings.",
       },
       {
         question: "Is OpenSEO a free SEO audit tool?",
@@ -332,9 +369,19 @@ export const featurePages = {
           "For smaller sites, yes: the free plan includes site audits up to 50 pages per crawl. Larger crawls need a paid plan, starting at $10/month. OpenSEO is also open source and self-hostable.",
       },
       {
+        question: "How many pages can one audit crawl?",
+        answer:
+          "Up to 50 pages per audit on the free plan and up to 10,000 on a paid plan. Rendered audits follow the same page limit and stop after 22 hours.",
+      },
+      {
+        question: "Can OpenSEO audit a JavaScript site?",
+        answer:
+          "Yes. Turn on rendering and OpenSEO loads each page in a browser before checking it. Rendered audits use more credits than a plain crawl.",
+      },
+      {
         question: "Who should use OpenSEO Site Audit?",
         answer:
-          "It is useful for founders, marketers, agencies, and developers who need a shared crawl report and optional Lighthouse issue export.",
+          "Founders, marketers, agencies and developers who need a shared crawl report they can work through and export.",
       },
     ],
     guides: {
@@ -605,7 +652,7 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.rankTracking,
     eyebrow: "Rank Tracking",
     navDescription: "Monitor keyword positions.",
-    title: "Rank tracker for monitoring keyword positions",
+    title: "Rank tracker for keyword positions on desktop and mobile",
     description:
       "Track the keywords that matter, optionally compare desktop and mobile results, and keep ranking changes connected to your research workflow.",
     seoDescription:
@@ -623,7 +670,7 @@ export const featurePages = {
       {
         title: "Add tracked domains",
         description:
-          "Create rank tracking configurations for the domains and locations you care about.",
+          "Create a tracker for each domain, country or city, and language you sell in.",
       },
       {
         title: "Track important keywords",
@@ -653,12 +700,55 @@ export const featurePages = {
       "Optional desktop and mobile tracking helps teams avoid one-dimensional rank reports.",
       "OpenSEO can expose ranking data to AI agents through MCP.",
     ],
-    featuredLink: {
-      title: "Free competitor keyword finder",
-      description:
-        "Find the keywords a competitor ranks for before choosing what to track. No signup required.",
-      href: "/competitor-keyword-finder",
+    headings: {
+      workflows: "Set up a tracker, add keywords, read the movement",
+      metrics: "What each check records",
+      useCases: "When to track rankings",
+      differentiators: "Why track where you research",
+      related: "Where to find keywords worth tracking",
+      faq: "Rank tracking questions",
     },
+    toolCallout: {
+      title: "Pick what to track before you pay to track it",
+      description: "Two free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free competitor keyword finder",
+          description:
+            "See up to 20 keywords a competitor ranks for, with search demand, difficulty and the pages that rank.",
+          href: "/competitor-keyword-finder",
+        },
+        {
+          title: "Free SERP simulator",
+          description:
+            "Holding a position but not getting clicks? Preview your title and description on desktop and mobile.",
+          href: "/serp-simulator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Schedules, limits and what a check costs",
+        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords, on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. 100 keywords on both devices, checked weekly, comes to about $2. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
+      },
+      {
+        title: "Track a city, not just a country",
+        body: 'A national rank says little to a plumber in Pittsburgh. Set a tracker to a city, county or region and every check reads the results a searcher there sees. Search volume switches to the local number too. "rv storage near me" gets about 135,000 searches a month nationally and about 70 in Pittsburgh, so a national figure on a local tracker overstates demand. Language is set per tracker, so you can track Spanish searches in the US next to English ones.',
+      },
+      {
+        title: "Why Search Console's average position isn't a rank",
+        body: "Search Console averages every impression across countries, devices and personalized results into one number. That number can hold steady while your result in the one market you sell to moves. A tracker checks a fixed country or city, on a fixed device, on a schedule, so a drop shows up as a drop. Use Search Console to find the keywords worth tracking, and the tracker to watch them.",
+      },
+    ],
+    contextImage: {
+      src: "/features/rank-tracking/openseo-rank-tracker-monthly-cost.png",
+      alt: "Grid of monthly rank tracking costs for 100, 250, 500 and 1,000 keywords checked on desktop and mobile at top 40. Monthly checks cost $0.50 to $4.99, weekly $2.00 to $19.97, daily $14.98 to $149.76. Every monthly cell, and weekly up to 500 keywords, fits inside the $10 of usage in the Base plan.",
+      caption:
+        "Monthly cost by keyword count and schedule, before retries. Most weekly trackers fit inside the Base plan's included usage.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Keyword Clustering", href: "/docs/skills/keyword-clustering" },
       {
@@ -682,6 +772,21 @@ export const featurePages = {
         question: "How should I choose keywords to track?",
         answer:
           "Start with keywords tied to important pages, active content work, and competitor opportunities discovered in keyword research.",
+      },
+      {
+        question: "How often does OpenSEO check rankings?",
+        answer:
+          "Daily, weekly or monthly, set per tracker, or only when you run a check yourself. Monthly checks run at the end of the month.",
+      },
+      {
+        question: "How much does rank tracking cost?",
+        answer:
+          "It depends on the number of keywords, devices, result depth and how often you check. 100 keywords on desktop and mobile, checked weekly, is about $2 a month. The app shows the monthly cost before you save a tracker, and checks draw from the usage included in your plan.",
+      },
+      {
+        question: "Can I track rankings in a specific city?",
+        answer:
+          "Yes. Pick a city, county or region when you set up the tracker. Positions come from that location's results, and search volume shows the local figure.",
       },
     ],
     guides: {
