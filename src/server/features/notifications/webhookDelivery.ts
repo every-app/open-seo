@@ -1,6 +1,9 @@
+import type { RankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
+import { formatRankNotificationPlainText } from "@/server/features/notifications/rankNotificationContent";
+import { buildTeamsWebhookBody } from "@/server/features/notifications/teamsAdaptiveCard";
 import type { NotificationProvider } from "@/types/schemas/notifications";
 
-function buildPayload(provider: NotificationProvider, text: string) {
+function buildConnectionTestPayload(provider: NotificationProvider, text: string) {
   if (provider === "slack") {
     return { text };
   }
@@ -19,10 +22,30 @@ export async function postNotificationWebhook(input: {
   webhookUrl: string;
   text: string;
 }) {
-  const response = await fetch(input.webhookUrl, {
+  const body = buildConnectionTestPayload(input.provider, input.text);
+  await postWebhookJson(input.webhookUrl, body);
+}
+
+export async function postRankNotificationWebhook(input: {
+  provider: NotificationProvider;
+  webhookUrl: string;
+  content: RankNotificationContent;
+}) {
+  if (input.provider === "slack") {
+    await postWebhookJson(input.webhookUrl, {
+      text: formatRankNotificationPlainText(input.content),
+    });
+    return;
+  }
+
+  await postWebhookJson(input.webhookUrl, buildTeamsWebhookBody(input.content));
+}
+
+async function postWebhookJson(webhookUrl: string, body: unknown) {
+  const response = await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(buildPayload(input.provider, input.text)),
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(10_000),
   });
 
@@ -30,8 +53,8 @@ export async function postNotificationWebhook(input: {
     return;
   }
 
-  const body = await response.text().catch(() => "");
+  const responseBody = await response.text().catch(() => "");
   throw new Error(
-    `Webhook returned ${response.status}${body ? `: ${body.slice(0, 200)}` : ""}`,
+    `Webhook returned ${response.status}${responseBody ? `: ${responseBody.slice(0, 200)}` : ""}`,
   );
 }

@@ -6,7 +6,12 @@ import {
   openWebhookUrl,
   sealWebhookUrl,
 } from "@/server/features/notifications/webhookSecrets";
-import { postNotificationWebhook } from "@/server/features/notifications/webhookDelivery";
+import { postNotificationWebhook, postRankNotificationWebhook } from "@/server/features/notifications/webhookDelivery";
+import {
+  sampleRankNotificationContent,
+  type RankNotificationContent,
+} from "@/server/features/notifications/rankNotificationContent";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
 import type {
   NotificationChannelSummary,
@@ -122,6 +127,39 @@ export const NotificationService = {
       provider: channel.provider,
       webhookUrl,
       text: "OpenSEO test notification — your webhook is connected.",
+    });
+  },
+
+  async testSampleRankAlert(
+    context: ProjectContext & { project: { domain: string | null } },
+    input: { channelId: string },
+  ) {
+    const channel = await NotificationRepository.getChannelForProject({
+      projectId: context.projectId,
+      channelId: input.channelId,
+    });
+    if (!channel) {
+      throw new AppError("INTERNAL_ERROR", "Notification channel not found.");
+    }
+
+    const baseUrl = (await getOptionalEnvValue("BETTER_AUTH_URL"))?.replace(
+      /\/$/,
+      "",
+    );
+    const trackerUrl = baseUrl
+      ? `${baseUrl}/p/${context.projectId}/rank-tracking/sample-config-id`
+      : null;
+
+    const content: RankNotificationContent = sampleRankNotificationContent({
+      domain: context.project.domain ?? "example.com",
+      trackerUrl,
+    });
+
+    const webhookUrl = await openWebhookUrl(channel.webhookCiphertext);
+    await postRankNotificationWebhook({
+      provider: channel.provider,
+      webhookUrl,
+      content,
     });
   },
 

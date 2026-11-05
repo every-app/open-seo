@@ -24,6 +24,7 @@ import {
   deleteNotificationRule,
   getNotificationSetup,
   testNotificationChannel,
+  testSampleRankNotification,
   updateNotificationRule,
 } from "@/serverFunctions/notifications";
 import { getRankTrackingConfigSummaries } from "@/serverFunctions/rank-tracking";
@@ -73,6 +74,12 @@ export function NotificationsPage({ projectId }: { projectId: string }) {
   const testChannelMutation = useMutation({
     mutationFn: testNotificationChannel,
     onSuccess: () => toast.success("Test message sent"),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const testSampleRankMutation = useMutation({
+    mutationFn: testSampleRankNotification,
+    onSuccess: () => toast.success("Sample rank alert sent"),
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -172,7 +179,9 @@ export function NotificationsPage({ projectId }: { projectId: string }) {
       <p className="text-muted-foreground text-sm">
         Connect Slack or Microsoft Teams, then create rules that post to a
         channel when rank positions move. Webhook URLs are encrypted and never
-        shown again after you save them.
+        shown again after you save them. Microsoft Teams rank alerts use an
+        Adaptive Card layout; use <strong className="font-medium">Sample rank alert</strong>{" "}
+        to preview without running a check.
       </p>
 
       {!setup?.canStoreWebhooks && (
@@ -282,7 +291,7 @@ export function NotificationsPage({ projectId }: { projectId: string }) {
                     {channel.webhookHost}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -295,6 +304,19 @@ export function NotificationsPage({ projectId }: { projectId: string }) {
                     }
                   >
                     Send test
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={testSampleRankMutation.isPending}
+                    onClick={() =>
+                      testSampleRankMutation.mutate({
+                        data: { projectId, channelId: channel.id },
+                      })
+                    }
+                  >
+                    Sample rank alert
                   </Button>
                   <Button
                     type="button"
