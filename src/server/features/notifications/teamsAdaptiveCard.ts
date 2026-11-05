@@ -49,7 +49,7 @@ export function buildTeamsAdaptiveCardAttachment(
   if (content.changes.length > 0) {
     body.push({
       type: "TextBlock",
-      text: "Keyword movement",
+      text: "Keyword changes",
       weight: "Bolder",
       spacing: "Medium",
     });

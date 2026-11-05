@@ -7,14 +7,33 @@ import {
 
 type SlackBlock = Record<string, unknown>;
 
+/** Slack Block Kit has no text colours; emoji distinguish direction. */
+function slackTrendLine(
+  change: RankNotificationContent["changes"][number],
+  serpDepth: number,
+): string {
+  const trend = formatRankTrendLabel(change, serpDepth);
+  const marker =
+    trend.direction === "improved" ? ":large_green_circle:" : ":red_circle:";
+  const word = trend.direction === "improved" ? "Improved" : "Dropped";
+  return `${marker} ${trend.arrow} *${word}* by ${change.delta}`;
+}
+
+function keywordChangesHeading(count: number): string {
+  return `*Keyword changes* (${count} that match this rule's conditions)`;
+}
+
 /**
  * Slack incoming webhooks support Block Kit (`blocks`) plus a plain `text` fallback.
+ * Attachments add a coloured left border (“card”) around the keyword table.
  * @see https://api.slack.com/messaging/webhooks
  * @see https://api.slack.com/reference/block-kit/blocks
  */
-export function buildSlackRankNotificationPayload(
-  content: RankNotificationContent,
-): { text: string; blocks: SlackBlock[] } {
+export function buildSlackRankNotificationPayload(content: RankNotificationContent): {
+  text: string;
+  blocks: SlackBlock[];
+  attachments: Array<{ color: string; blocks: SlackBlock[] }>;
+} {
   const blocks: SlackBlock[] = [];
 
   if (content.isSample) {
@@ -30,15 +49,6 @@ export function buildSlackRankNotificationPayload(
   }
 
   blocks.push({
-    type: "header",
-    text: {
-      type: "plain_text",
-      text: "OpenSEO rank update",
-      emoji: true,
-    },
-  });
-
-  blocks.push({
     type: "section",
     fields: [
       { type: "mrkdwn", text: `*Domain*\n${content.domain}` },
@@ -50,39 +60,51 @@ export function buildSlackRankNotificationPayload(
     ],
   });
 
+  const cardBlocks: SlackBlock[] = [];
+
   if (content.changes.length > 0) {
-    blocks.push({ type: "divider" });
-    blocks.push({
+    cardBlocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*Keyword movement* (${content.changes.length} shown)`,
+        text: keywordChangesHeading(content.changes.length),
       },
     });
 
+    cardBlocks.push({
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: "*Keyword*" },
+        { type: "mrkdwn", text: "*Rank change*" },
+      ],
+    });
+
     for (const change of content.changes) {
-      const trend = formatRankTrendLabel(change, content.serpDepth);
-      const trendWord = trend.direction === "improved" ? "Improved" : "Dropped";
-      blocks.push({
+      cardBlocks.push({
         type: "section",
-        text: {
-          type: "mrkdwn",
-          text: [
-            `*${change.keyword}* · ${change.device}`,
-            `${formatRankPosition(change.previousPosition)} → ${formatRankPosition(change.position)}`,
-            `${trend.arrow} *${trendWord}* by ${change.delta} positions`,
-          ].join("\n"),
-        },
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*${change.keyword}*\n_${change.device}_`,
+          },
+          {
+            type: "mrkdwn",
+            text: [
+              `${formatRankPosition(change.previousPosition)} → ${formatRankPosition(change.position)}`,
+              slackTrendLine(change, content.serpDepth),
+            ].join("\n"),
+          },
+        ],
       });
     }
 
     if (content.omittedChangeCount > 0) {
-      blocks.push({
+      cardBlocks.push({
         type: "context",
         elements: [
           {
             type: "mrkdwn",
-            text: `_…and ${content.omittedChangeCount} more_`,
+            text: `_…and ${content.omittedChangeCount} more that match this rule's conditions_`,
           },
         ],
       });
@@ -90,7 +112,7 @@ export function buildSlackRankNotificationPayload(
   }
 
   if (content.weeklySummaryOnly) {
-    blocks.push({
+    cardBlocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
@@ -98,7 +120,7 @@ export function buildSlackRankNotificationPayload(
       },
     });
   } else if (content.weeklySummaryNote) {
-    blocks.push({
+    cardBlocks.push({
       type: "context",
       elements: [
         {
@@ -110,7 +132,7 @@ export function buildSlackRankNotificationPayload(
   }
 
   if (content.trackerUrl) {
-    blocks.push({
+    cardBlocks.push({
       type: "actions",
       elements: [
         {
@@ -123,8 +145,18 @@ export function buildSlackRankNotificationPayload(
     });
   }
 
+  const attachments: Array<{ color: string; blocks: SlackBlock[] }> = [];
+  if (cardBlocks.length > 0) {
+    blocks.push({ type: "divider" });
+    attachments.push({
+      color: "#1264A3",
+      blocks: cardBlocks,
+    });
+  }
+
   return {
     text: formatRankNotificationPlainText(content),
     blocks,
+    attachments,
   };
 }
