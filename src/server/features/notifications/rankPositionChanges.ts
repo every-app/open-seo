@@ -62,3 +62,26 @@ export function formatRankPosition(position: number | null): string {
 export function formatRankChangeLine(change: RankPositionChange): string {
   return `${change.keyword} (${change.device}): ${formatRankPosition(change.previousPosition)} → ${formatRankPosition(change.position)} (Δ${change.delta})`;
 }
+
+/** Lower rank distance = better Google position (matches rank-tracking matrix). */
+export function rankMovementDirection(
+  change: RankPositionChange,
+  serpDepth: number,
+): "improved" | "worsened" {
+  const previousDistance = rankDistance(change.previousPosition, serpDepth);
+  const currentDistance = rankDistance(change.position, serpDepth);
+  return currentDistance < previousDistance ? "improved" : "worsened";
+}
+
+export function formatRankTrendLabel(
+  change: RankPositionChange,
+  serpDepth: number,
+): { arrow: string; direction: "improved" | "worsened"; text: string } {
+  const direction = rankMovementDirection(change, serpDepth);
+  const arrow = direction === "improved" ? "▲" : "▼";
+  return {
+    arrow,
+    direction,
+    text: `${arrow} ${change.delta}`,
+  };
+}

@@ -1,6 +1,9 @@
 import type { RankNotificationContent } from "@/server/features/notifications/rankNotificationContent";
 import { RANK_NOTIFICATION_CHANGE_CAP } from "@/server/features/notifications/rankNotificationContent";
-import { formatRankPosition } from "@/server/features/notifications/rankPositionChanges";
+import {
+  formatRankPosition,
+  formatRankTrendLabel,
+} from "@/server/features/notifications/rankPositionChanges";
 
 type AdaptiveElement = Record<string, unknown>;
 
@@ -52,6 +55,9 @@ export function buildTeamsAdaptiveCardAttachment(
     });
 
     for (const change of content.changes) {
+      const trend = formatRankTrendLabel(change, content.serpDepth);
+      const trendColor = trend.direction === "improved" ? "Good" : "Attention";
+
       body.push({
         type: "ColumnSet",
         columns: [
@@ -85,9 +91,10 @@ export function buildTeamsAdaptiveCardAttachment(
               },
               {
                 type: "TextBlock",
-                text: `Δ${change.delta}`,
+                text: trend.text,
                 horizontalAlignment: "Right",
-                isSubtle: true,
+                color: trendColor,
+                weight: "Bolder",
                 spacing: "None",
               },
             ],

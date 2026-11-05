@@ -25,5 +25,9 @@ describe("teamsAdaptiveCard", () => {
     expect(
       card.body.filter((b) => b.type === "ColumnSet").length,
     ).toBeGreaterThan(0);
+
+    const cardJson = JSON.stringify(card);
+    expect(cardJson).toContain('"color":"Good"');
+    expect(cardJson).toContain('"color":"Attention"');
   });
 });
