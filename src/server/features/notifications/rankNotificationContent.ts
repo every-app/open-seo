@@ -63,7 +63,7 @@ export function formatRankNotificationPlainText(
 
   if (content.changes.length > 0) {
     lines.push(
-      `Keywords moved by ${content.positionThreshold}+ positions:`,
+      `Keywords changed by ${content.positionThreshold}+ positions (${content.changes.length} that match this rule's conditions):`,
       ...content.changes.map((change) => {
         const trend = formatRankTrendLabel(change, content.serpDepth);
         const verb = trend.direction === "improved" ? "Improved" : "Dropped";

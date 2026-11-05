@@ -100,6 +100,25 @@ export const AJP_DEPLOYMENT_CHANGELOG: DeploymentChangelogEntry[] = [
   {
     version: "0.1.24",
     deployedOn: "2026-11-05",
+    mergeCommit: "PLACEHOLDER_PR33",
+    upstream: {
+      label: "Fork-only notification UX",
+      sections: [
+        {
+          title: "Slack rank alert layout",
+          items: [
+            "Three-column metadata, attachment card for keyword table, rule-aware copy.",
+            "Green/red circle emoji for improved vs dropped (Slack has no text colours).",
+          ],
+        },
+      ],
+    },
+    forkChanges: ["Teams heading aligned to Keyword changes."],
+    operations: ["No D1 change; Worker pair via publish-notifications.mjs."],
+  },
+  {
+    version: "0.1.24",
+    deployedOn: "2026-11-05",
     mergeCommit: "e311031c480b600b6c691f28b62b7975c10e7584",
     upstream: {
       label: "Fork-only notification UX",
