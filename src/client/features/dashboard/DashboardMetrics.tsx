@@ -131,6 +131,7 @@ export function TrendChart({
               stroke={`var(--color-${key})`}
               strokeWidth={2}
               dot={false}
+              isAnimationActive={false}
             />
           ))}
         </LineChart>
