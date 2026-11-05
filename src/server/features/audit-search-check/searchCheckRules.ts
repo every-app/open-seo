@@ -6,6 +6,7 @@
 import type { UrlInspectionResult } from "@/server/lib/gscClient";
 import { canonicalUrlKey, normalizeUrl } from "@/server/lib/audit/url-utils";
 import { stripTrackingParams } from "@/server/lib/trackingParams";
+import { NOINDEX_CRITICAL_IMPRESSIONS } from "@/server/features/audit-search-check/searchCheckThresholds";
 import { ISSUE_SEVERITY_ORDER } from "@/shared/audit-issues";
 import type { SearchCheckFinding } from "@/types/schemas/auditSearchCheck";
 
@@ -57,6 +58,28 @@ function urlKey(rawUrl: string): string {
   return canonicalUrlKey(normalizeUrl(cleaned) ?? cleaned);
 }
 
+/** Like urlKey but keeps `www.`, so the www and non-www versions of a page stay
+ *  separate when the audit crawled both. */
+function exactKey(rawUrl: string): string {
+  const cleaned = stripTrackingParams(rawUrl);
+  const normalized = normalizeUrl(cleaned) ?? cleaned;
+  try {
+    const parsed = new URL(normalized);
+    parsed.protocol = "https:";
+    return parsed.toString();
+  } catch {
+    return normalized.toLowerCase();
+  }
+}
+
+function pathOf(rawUrl: string): string {
+  try {
+    return new URL(rawUrl).pathname;
+  } catch {
+    return "";
+  }
+}
+
 function hostOf(key: string): string | null {
   try {
     return new URL(key).hostname;
@@ -84,12 +107,12 @@ function gatherDemand(
   const weightedPosition = new Map<string, number>();
 
   function entryFor(rawUrl: string): Demand | null {
-    const key = urlKey(rawUrl);
-    const host = hostOf(key);
+    const host = hostOf(urlKey(rawUrl));
     if (host !== auditHost) {
       skippedHosts.add(host ?? rawUrl);
       return null;
     }
+    const key = exactKey(rawUrl);
     let entry = demand.get(key);
     if (!entry) {
       entry = {
@@ -107,7 +130,7 @@ function gatherDemand(
   for (const row of gscRows) {
     const entry = entryFor(row.url);
     if (!entry) continue;
-    const key = urlKey(row.url);
+    const key = exactKey(row.url);
     entry.clicks += row.clicks;
     entry.impressions += row.impressions;
     weightedPosition.set(
@@ -169,7 +192,13 @@ export function findSearchIssues(input: {
   trackedUrls: TrackedRankingUrl[];
   inspections: InspectedUrl[];
   minImpressions: number;
-}): { findings: SearchCheckFinding[]; notes: string[] } {
+  /** Path prefixes (e.g. "/teams/") whose pages are left out entirely. */
+  ignorePaths: string[];
+}): {
+  findings: SearchCheckFinding[];
+  notes: string[];
+  ignoredPages: number;
+} {
   const notes: string[] = [];
   const skippedHosts = new Set<string>();
   const auditHost = hostOf(urlKey(input.auditStartUrl));
@@ -181,26 +210,42 @@ export function findSearchIssues(input: {
   );
   const inspectionByKey = new Map(
     input.inspections.map((inspected) => [
-      urlKey(inspected.url),
+      exactKey(inspected.url),
       inspected.result,
     ]),
   );
+  // Exact (www-sensitive) lookup first; the merged key is the fallback for a
+  // page the audit only reached under the other host.
+  const pageByExactKey = new Map<string, SearchCheckAuditPage>();
   const pageByKey = new Map<string, SearchCheckAuditPage>();
   for (const page of input.pages) {
+    if (!pageByExactKey.has(exactKey(page.url))) {
+      pageByExactKey.set(exactKey(page.url), page);
+    }
     const key = urlKey(page.url);
     if (!pageByKey.has(key)) pageByKey.set(key, page);
   }
+  const ignorePrefixes = input.ignorePaths.map((prefix) =>
+    prefix.startsWith("/") ? prefix : `/${prefix}`,
+  );
+  let ignoredPages = 0;
 
   const findings: SearchCheckFinding[] = [];
   let skippedUnreadable = 0;
 
-  for (const [key, demand] of demandByKey) {
+  for (const [exact, demand] of demandByKey) {
     if (
       demand.impressions < input.minImpressions &&
       demand.tracked.length === 0
     ) {
       continue;
     }
+    const path = pathOf(demand.url);
+    if (ignorePrefixes.some((prefix) => path.startsWith(prefix))) {
+      ignoredPages += 1;
+      continue;
+    }
+    const key = urlKey(demand.url);
     const base = {
       url: demand.url,
       impressions: demand.impressions,
@@ -213,12 +258,12 @@ export function findSearchIssues(input: {
       })),
     };
     const demandText = describeDemand(demand);
-    const page = pageByKey.get(key);
+    const page = pageByExactKey.get(exact) ?? pageByKey.get(key);
 
     if (!page) {
       // An inspection finding replaces the not-crawled warning: it says more.
       const inspected: SearchCheckFinding[] = [];
-      const inspection = inspectionByKey.get(key) ?? null;
+      const inspection = inspectionByKey.get(exact) ?? null;
       const userCanonical = inspection?.indexStatusResult?.userCanonical;
       if (userCanonical && urlKey(userCanonical) !== key) {
         inspected.push({
@@ -275,6 +320,8 @@ export function findSearchIssues(input: {
 
     const redirectsTo = page.redirectUrl;
     if (redirectsTo || (page.statusCode ?? 0) >= 300) {
+      // The Search Console URL is the redirect's destination, not its source.
+      if (redirectsTo && exactKey(redirectsTo) === exact) continue;
       findings.push({
         ...base,
         type: "redirect-with-search-demand",
@@ -295,7 +342,11 @@ export function findSearchIssues(input: {
       findings.push({
         ...base,
         type: "noindex-page-with-search-demand",
-        severity: "critical",
+        severity:
+          demand.tracked.length > 0 ||
+          demand.impressions >= NOINDEX_CRITICAL_IMPRESSIONS
+            ? "critical"
+            : "warning",
         evidence: `${demandText}. The page is set to noindex (${noindexSource}).`,
         howToFix: NOT_INDEXED_FIXES,
       });
@@ -332,5 +383,47 @@ export function findSearchIssues(input: {
       ISSUE_SEVERITY_ORDER[a.severity] - ISSUE_SEVERITY_ORDER[b.severity] ||
       b.impressions - a.impressions,
   );
-  return { findings, notes };
+  return { findings, notes, ignoredPages };
+}
+
+/** "/glossary/term" -> "/glossary/"; a page directly under the root -> "/". */
+function firstFolder(url: string): string {
+  try {
+    const segments = new URL(url).pathname.split("/").filter(Boolean);
+    return segments.length > 1 ? `/${segments[0]}/` : "/";
+  } catch {
+    return "/";
+  }
+}
+
+/** Keeps the highest-impression not-crawled findings and groups the rest by
+ *  folder. Findings arrive sorted by impressions within each severity. */
+export function trimNotCrawled(findings: SearchCheckFinding[], limit: number) {
+  const kept: SearchCheckFinding[] = [];
+  const folders = new Map<
+    string,
+    { count: number; impressions: number; clicks: number }
+  >();
+  let seen = 0;
+  for (const finding of findings) {
+    if (finding.type !== "search-page-not-crawled" || seen++ < limit) {
+      kept.push(finding);
+      continue;
+    }
+    const folder = firstFolder(finding.url);
+    const group = folders.get(folder) ?? {
+      count: 0,
+      impressions: 0,
+      clicks: 0,
+    };
+    group.count += 1;
+    group.impressions += finding.impressions;
+    group.clicks += finding.clicks;
+    folders.set(folder, group);
+  }
+  const notCrawledByFolder = [...folders]
+    .map(([folder, group]) => ({ folder, ...group }))
+    // eslint-disable-next-line unicorn/no-array-sort -- the TS lib target lacks toSorted, and this is our own copy
+    .sort((a, b) => b.impressions - a.impressions);
+  return { kept, notCrawledByFolder };
 }

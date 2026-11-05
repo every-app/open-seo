@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   findSearchIssues,
+  trimNotCrawled,
   type SearchCheckAuditPage,
   type SearchConsolePageRow,
   type TrackedRankingUrl,
@@ -51,6 +52,7 @@ function check(input: {
   gscRows?: SearchConsolePageRow[];
   trackedUrls?: TrackedRankingUrl[];
   inspections?: { url: string; result: object | null }[];
+  ignorePaths?: string[];
 }) {
   return findSearchIssues({
     auditStartUrl: `${SITE}/`,
@@ -59,6 +61,7 @@ function check(input: {
     trackedUrls: [],
     inspections: [],
     minImpressions: 10,
+    ignorePaths: [],
     ...input,
   });
 }
@@ -78,6 +81,18 @@ describe("findSearchIssues", () => {
         trackedKeywords: [{ keyword: "home equity nz", position: 41 }],
       },
     ]);
+  });
+
+  it("makes noindex critical only from 100 impressions or when tracked", () => {
+    const noindex = { robotsMeta: "noindex" };
+    const severityFor = (impressions: number) =>
+      check({
+        pages: [page("/a", noindex)],
+        gscRows: [gscRow("/a", { impressions })],
+      }).findings[0].severity;
+
+    expect(severityFor(99)).toBe("warning");
+    expect(severityFor(100)).toBe("critical");
   });
 
   it("ignores a deliberately noindexed page nobody searches for", () => {
@@ -201,6 +216,48 @@ describe("findSearchIssues", () => {
     expect(findings).toMatchObject([{ impressions: 12, clicks: 3 }]);
   });
 
+  it("does not report the www homepage as redirecting to itself", () => {
+    // The audit crawled the bare domain, which 301s to www. Search Console
+    // reports the www URL: it is the redirect's destination, not its source.
+    const { findings } = check({
+      pages: [
+        page("/", {
+          statusCode: 301,
+          redirectUrl: "https://www.staircase.co.nz/",
+        }),
+      ],
+      gscRows: [{ ...gscRow("/"), url: "https://www.staircase.co.nz/" }],
+    });
+
+    expect(findings).toEqual([]);
+  });
+
+  it("matches the exact host when the audit crawled both www and bare", () => {
+    const { findings } = check({
+      pages: [
+        page("/", {
+          statusCode: 301,
+          redirectUrl: "https://www.staircase.co.nz/",
+        }),
+        { ...page("/"), url: "https://www.staircase.co.nz/" },
+      ],
+      gscRows: [{ ...gscRow("/"), url: "https://www.staircase.co.nz/" }],
+    });
+
+    expect(findings).toEqual([]);
+  });
+
+  it("leaves out pages under ignorePaths and counts them", () => {
+    const result = check({
+      pages: [page("/teams/a", { robotsMeta: "noindex" })],
+      gscRows: [gscRow("/teams/a"), gscRow("/glossary/x"), gscRow("/other")],
+      ignorePaths: ["/teams/", "/glossary/"],
+    });
+
+    expect(result.ignoredPages).toBe(2);
+    expect(result.findings.map((f) => f.url)).toEqual([`${SITE}/other`]);
+  });
+
   it("skips URLs on another host and says so", () => {
     const { findings, notes } = check({
       gscRows: [
@@ -210,5 +267,28 @@ describe("findSearchIssues", () => {
 
     expect(findings).toEqual([]);
     expect(notes[0]).toContain("blog.staircase.co.nz");
+  });
+});
+
+describe("trimNotCrawled", () => {
+  it("keeps the top findings and groups the rest by first folder", () => {
+    const { findings } = check({
+      gscRows: [
+        gscRow("/a/1", { impressions: 300, clicks: 3 }),
+        gscRow("/glossary/x", { impressions: 200, clicks: 2 }),
+        gscRow("/glossary/y", { impressions: 100, clicks: 1 }),
+        gscRow("/about", { impressions: 50, clicks: 0 }),
+      ],
+    });
+    const { kept, notCrawledByFolder } = trimNotCrawled(findings, 2);
+
+    expect(kept.map((f) => f.url)).toEqual([
+      `${SITE}/a/1`,
+      `${SITE}/glossary/x`,
+    ]);
+    expect(notCrawledByFolder).toEqual([
+      { folder: "/glossary/", count: 1, impressions: 100, clicks: 1 },
+      { folder: "/", count: 1, impressions: 50, clicks: 0 },
+    ]);
   });
 });

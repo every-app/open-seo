@@ -9,12 +9,14 @@ import { AuditSearchCheckQueries } from "@/server/features/audit-search-check/au
 import {
   findSearchIssues,
   type InspectedUrl,
+  trimNotCrawled,
   type SearchConsolePageRow,
   type TrackedRankingUrl,
 } from "@/server/features/audit-search-check/searchCheckRules";
 import {
   DEFAULT_DATE_RANGE,
   DEFAULT_MAX_INSPECTIONS,
+  DEFAULT_MAX_NOT_CRAWLED_SHOWN,
   DEFAULT_MIN_IMPRESSIONS,
 } from "@/server/features/audit-search-check/searchCheckThresholds";
 import type {
@@ -37,6 +39,9 @@ function emptyResult(notes: string[], auditId: string | null = null) {
       searchConsoleWindow: null,
       rankCheckDate: null,
       inspectedCount: 0,
+      notCrawledByFolder: [],
+      ignoredPages: 0,
+      ignoredPaths: [],
     },
     notes,
   } satisfies AuditSearchCheck;
@@ -172,7 +177,9 @@ async function getSearchChecks(
     loadTrackedUrls(input.projectId),
   ]);
 
+  const ignorePaths = input.ignorePaths ?? [];
   const ruleInput = {
+    ignorePaths,
     auditStartUrl: audit.startUrl,
     pages,
     gscRows: searchConsole.data?.rows ?? [],
@@ -203,8 +210,24 @@ async function getSearchChecks(
   for (const finding of result.findings) {
     countsByType[finding.type] = (countsByType[finding.type] ?? 0) + 1;
   }
+  const notCrawledShown = input.maxNotCrawled ?? DEFAULT_MAX_NOT_CRAWLED_SHOWN;
+  const { kept, notCrawledByFolder } = trimNotCrawled(
+    result.findings,
+    notCrawledShown,
+  );
+  const trimmedCount = notCrawledByFolder.reduce((n, g) => n + g.count, 0);
+  if (trimmedCount > 0) {
+    notes.push(
+      `Showing the top ${notCrawledShown} of ${notCrawledShown + trimmedCount} not-crawled pages by impressions; the other ${trimmedCount} are grouped by folder in summary.notCrawledByFolder.`,
+    );
+  }
+  if (result.ignoredPages > 0) {
+    notes.push(
+      `${result.ignoredPages} page(s) with search demand were left out under ignorePaths (${ignorePaths.join(", ")}).`,
+    );
+  }
   return {
-    findings: result.findings,
+    findings: kept,
     summary: {
       auditId: audit.id,
       auditDate: audit.completedAt ?? audit.startedAt,
@@ -212,6 +235,9 @@ async function getSearchChecks(
       searchConsoleWindow: searchConsole.data?.window ?? null,
       rankCheckDate: tracking.rankCheckDate,
       inspectedCount,
+      notCrawledByFolder,
+      ignoredPages: result.ignoredPages,
+      ignoredPaths: result.ignoredPages > 0 ? ignorePaths : [],
     },
     notes: [...notes, ...result.notes],
   };

@@ -15,3 +15,16 @@ export const DEFAULT_MAX_INSPECTIONS = 20;
 
 /** Hard ceiling on `maxInspections`, so one call can't burn the daily quota. */
 export const MAX_INSPECTIONS_CAP = 50;
+
+/** A noindexed page is a critical finding only with this many impressions in the
+ *  window (or when it is a tracked ranking URL). Below that, noindex is more
+ *  often deliberate than a mistake, so it is a warning. */
+export const NOINDEX_CRITICAL_IMPRESSIONS = 100;
+
+/** How many `search-page-not-crawled` findings are returned in full by default.
+ *  Sites can have hundreds (a glossary, a blog archive); the rest are grouped
+ *  by folder in the summary so one call stays readable. */
+export const DEFAULT_MAX_NOT_CRAWLED_SHOWN = 25;
+
+/** Hard ceiling on `maxNotCrawled`, to keep the result a reasonable size. */
+export const MAX_NOT_CRAWLED_SHOWN_CAP = 200;
