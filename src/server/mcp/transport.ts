@@ -22,6 +22,7 @@ import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
 import { supportsMcpApps } from "@/server/mcp/ui-capabilities";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
+import { GuestAccountRepository } from "@/server/auth/repositories/GuestAccountRepository";
 import { describeError } from "@/server/lib/errors";
 
 // Mirrors the agents SDK's DEFAULT_CORS_OPTIONS so legacy responses carry the
@@ -163,6 +164,30 @@ function createRequestHandler(
   };
 }
 
+// A guest's token keeps naming the guest after someone signs up or signs in
+// in the browser that connected it (claimGuestFromCookie). The guest user is
+// deleted then and its organization is the claiming account's, so the token
+// acts as that account and the agent keeps working without a reconnect.
+async function actAsClaimingUser<
+  Context extends {
+    userId: string;
+    userEmail: string;
+    guestClaimToken?: string;
+  },
+>(authContext: Context): Promise<Context> {
+  if (!authContext.guestClaimToken) return authContext;
+  const claimer = await GuestAccountRepository.findClaimingUser(
+    authContext.userId,
+  );
+  if (!claimer) return authContext;
+  return {
+    ...authContext,
+    userId: claimer.userId,
+    userEmail: claimer.email,
+    guestClaimToken: undefined,
+  };
+}
+
 export async function handleAuthenticatedOpenSeoMcpRequest(
   request: Request,
   props: unknown,
@@ -194,7 +219,9 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
   // is gone the credential is dead, with no fallback to another org. The 401
   // pushes compliant clients back through OAuth, and the new grant binds to
   // whichever org is active at that consent.
-  const authContext = result.data[MCP_AUTH_CONTEXT_PROP];
+  const authContext = await actAsClaimingUser(
+    result.data[MCP_AUTH_CONTEXT_PROP],
+  );
   // The uncaught exception log shows drizzle's "Failed query" message only;
   // the database error that caused it lives on error.cause.
   const membership = await AuthRepository.getMembership(

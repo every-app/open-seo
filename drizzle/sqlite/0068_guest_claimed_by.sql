@@ -1,0 +1,1 @@
+ALTER TABLE `guest_accounts` ADD `claimed_by_user_id` text REFERENCES user(id) ON DELETE set null;

@@ -20,8 +20,9 @@ import { FeatureFlag, isFeatureFlagOn } from "@/server/lib/featureFlags";
 // Someone connecting an AI agent over MCP without an OpenSEO session gets a
 // guest account instead of a sign-up form: a user with a placeholder email and
 // its own organization, which starts on the free plan like any new account.
-// The guest later signs up or signs in through its claim link, which hands the
-// organization (projects, remaining credits) to the real account.
+// The connect page leaves a claim cookie in the browser, and the next sign-up
+// or sign-in there hands the guest's organization (projects, remaining
+// credits) and the agent's connection to the real account.
 
 const MAX_GUESTS_PER_IP = 2;
 
@@ -223,14 +224,13 @@ function randomToken() {
 }
 
 /**
- * Hands the guest's organization to `userId`. Returns the organization to
- * open next: the guest's for someone with no workspace of their own, null for
- * an existing account (they stay in their own workspace, which holds their
- * plan) or when the token names no unclaimed guest.
+ * Hands the guest's organization, and with it the agent's connection, to
+ * `userId`. Someone with no workspace of their own opens the guest's next; an
+ * existing account stays in its own workspace, which holds its plan.
  */
-export async function claimGuestAccount(claimToken: string, userId: string) {
+async function claimGuestAccount(claimToken: string, userId: string) {
   const guest = await GuestAccountRepository.findUnclaimedGuest(claimToken);
-  if (!guest || guest.userId === userId) return null;
+  if (!guest || guest.userId === userId) return;
   const hadWorkspace = await GuestAccountRepository.hasMembership(userId);
   await GuestAccountRepository.transferToUser(guest.userId, userId);
   // The guest's agent already set up this organization, and the guest's own
@@ -256,19 +256,18 @@ export async function claimGuestAccount(claimToken: string, userId: string) {
         console.error("guest.claim billing email update failed", error),
       );
   }
-  return hadWorkspace ? null : guest.organizationId;
 }
 
-/** Runs at every sign-in: a browser that opened a guest's claim link hands
- *  that guest's organization to the account signing in. */
+/** Runs at every sign-in: a browser where an agent connected as a guest hands
+ *  that guest to the account signing in. */
 export async function claimGuestFromCookie(
   headers: Headers | undefined,
   userId: string,
 ) {
   const claimToken = readClaimCookie(headers);
   if (!claimToken) return;
-  // Never let a failed claim block the sign-in itself; the link still works
-  // once they're signed in.
+  // Never let a failed claim block the sign-in itself; the cookie stays, so
+  // the next sign-in tries again.
   await claimGuestAccount(claimToken, userId).catch((error: unknown) =>
     console.error("guest.claim at sign-in failed", error),
   );

@@ -13,7 +13,8 @@ import { projectIdSchema } from "@/server/mcp/schemas";
 import {
   buildConnectGscUrl,
   buildDashboardUrl,
-  buildGuestClaimUrl,
+  buildGuestSignUpUrl,
+  GUEST_SIGN_UP_NOTE,
 } from "@/server/mcp/urls";
 
 // MCP counterparts of the dashboard's "pick a Search Console property / GA4
@@ -102,7 +103,7 @@ export const listSearchConsoleSitesTool = {
     const connectUrl = buildConnectGscUrl(
       context.baseUrl,
       args.projectId,
-      context.auth.guestClaimToken,
+      Boolean(context.auth.guestClaimToken),
     );
     const [siteList, connection] = await Promise.all([
       GscService.listSitesForUserWithGrantStatus(context.auth.userId),
@@ -260,15 +261,9 @@ export const listGoogleAnalyticsPropertiesTool = {
     const integrationsPath = `/p/${args.projectId}/settings/integrations`;
     const text =
       accounts.length === 0
-        ? `No Google account with Google Analytics access is connected to this OpenSEO user. Connect one here: ${
-            context.auth.guestClaimToken
-              ? buildGuestClaimUrl(
-                  context.baseUrl,
-                  context.auth.guestClaimToken,
-                  integrationsPath,
-                )
-              : buildDashboardUrl(context.baseUrl, integrationsPath)
-          }`
+        ? context.auth.guestClaimToken
+          ? `No Google account with Google Analytics access is connected to this OpenSEO user. Connecting one needs a full OpenSEO account, which the user can create (or sign in to) here: ${buildGuestSignUpUrl(context.baseUrl, integrationsPath)}. ${GUEST_SIGN_UP_NOTE}`
+          : `No Google account with Google Analytics access is connected to this OpenSEO user. Connect one here: ${buildDashboardUrl(context.baseUrl, integrationsPath)}`
         : accounts
             .map((grant) =>
               [

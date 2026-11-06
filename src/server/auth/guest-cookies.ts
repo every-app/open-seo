@@ -4,6 +4,9 @@ import { z } from "zod";
 // the sign-up hook and its tests can use them.
 
 export const GUEST_CLAIM_COOKIE = "openseo_guest_claim";
+// Long enough that someone who connects an agent and signs up a few weeks
+// later still brings the guest's work along.
+const GUEST_CLAIM_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 // Set at every real sign-in (auth.ts). A browser that has signed in before
 // belongs to someone with an account, so it gets the sign-in page instead of
 // an empty guest workspace when their session has lapsed.
@@ -26,7 +29,7 @@ export function agentFromRedirectUri(redirectUri: string | null) {
   return url.protocol.slice(0, -1).slice(0, 100);
 }
 
-export function parseClaimToken(value: unknown) {
+function parseClaimToken(value: unknown) {
   const parsed = claimTokenSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
@@ -43,4 +46,14 @@ export function readCookie(headers: Headers | undefined, cookieName: string) {
 
 export function readClaimCookie(headers: Headers | undefined) {
   return parseClaimToken(readCookie(headers, GUEST_CLAIM_COOKIE));
+}
+
+/**
+ * Left by the connect page when it creates a guest, so the next sign-up or
+ * sign-in in this browser claims the guest (claimGuestFromCookie). Only this
+ * response sets it: a claim moves the agent's connection to the account, so a
+ * claim must come from the browser that connected the agent.
+ */
+export function guestClaimCookie(claimToken: string) {
+  return `${GUEST_CLAIM_COOKIE}=${claimToken}; Path=/; Max-Age=${GUEST_CLAIM_COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Lax`;
 }

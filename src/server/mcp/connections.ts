@@ -1,5 +1,6 @@
 import { sortBy } from "remeda";
 import { z } from "zod";
+import { GuestAccountRepository } from "@/server/auth/repositories/GuestAccountRepository";
 import { getCapturedOAuthHelpers } from "@/server/mcp/oauth-provider";
 import { getWebChat } from "@/server/mcp/web-chat";
 
@@ -11,10 +12,26 @@ const grantMetadataSchema = z.looseObject({
   organizationId: z.string().optional(),
 });
 
+// A claimed guest's grant stays filed under the deleted guest user while it
+// acts as the account that claimed it (transport.ts), so that account owns it
+// too: it lists and revokes it like its own.
+async function grantOwnerIds(userId: string) {
+  return [
+    userId,
+    ...(await GuestAccountRepository.listClaimedGuestUserIds(userId)),
+  ];
+}
+
 async function listMcpConnections(userId: string) {
   const oauth = getCapturedOAuthHelpers();
-  // One page: a person has a handful of agents, and a page holds a thousand.
-  const { items: grants } = await oauth.listUserGrants(userId);
+  // One page each: a person has a handful of agents, and a page holds a
+  // thousand.
+  const pages = await Promise.all(
+    (await grantOwnerIds(userId)).map((ownerId) =>
+      oauth.listUserGrants(ownerId),
+    ),
+  );
+  const grants = pages.flatMap((page) => page.items);
 
   const connections = await Promise.all(
     grants.map(async (grant) => {
@@ -40,7 +57,14 @@ async function listMcpConnections(userId: string) {
 // Deletes the grant and every access token under it; the client's next call
 // gets 401 and it has to authorize again.
 async function revokeMcpConnection(userId: string, grantId: string) {
-  await getCapturedOAuthHelpers().revokeGrant(grantId, userId);
+  const oauth = getCapturedOAuthHelpers();
+  // The grant id names one grant under one owner; revoking it under the
+  // others finds nothing to delete.
+  await Promise.all(
+    (await grantOwnerIds(userId)).map((ownerId) =>
+      oauth.revokeGrant(grantId, ownerId),
+    ),
+  );
 }
 
 export const McpConnectionsService = {

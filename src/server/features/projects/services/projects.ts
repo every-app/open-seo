@@ -201,6 +201,14 @@ export async function getProjectForOrganization(
   return mapProject(project);
 }
 
+/** The organization a live project belongs to, without scoping to one. Only
+ *  for picking which of the caller's organizations to open; access to the
+ *  project itself is still checked against that organization. */
+export async function getProjectOrganizationId(projectId: string) {
+  const project = await ProjectRepository.getProjectById(projectId);
+  return project?.organizationId ?? null;
+}
+
 export async function setProjectWebsite(
   organizationId: string,
   input: SetProjectWebsiteInput,

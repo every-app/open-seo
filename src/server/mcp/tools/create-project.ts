@@ -103,7 +103,7 @@ export const createProjectTool = {
     // client alone doesn't mean hosted, because password self-hosts have them.
     if (isHostedMcpClient(auth) && (await isHostedServerAuthMode())) {
       lines.push(
-        `Search Console isn't connected to this project yet. Offer the user this link to connect it, so you can use the site's real Google data: ${buildConnectGscUrl(baseUrl, project.id, auth.guestClaimToken)}`,
+        `Search Console isn't connected to this project yet. Offer the user this link to connect it, so you can use the site's real Google data: ${buildConnectGscUrl(baseUrl, project.id, Boolean(auth.guestClaimToken))}`,
       );
     }
     return mcpResponse({

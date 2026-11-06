@@ -27,8 +27,9 @@ export type ToolAuthContext = {
   // on the MCP path; absent on hand-built contexts (SAM), which name
   // themselves at the tool instead.
   clientLabel?: string;
-  // Set only for a guest account (src/server/auth/guest-accounts.ts): the
-  // secret behind its "create your account" link (buildGuestClaimUrl).
+  // Set only for a guest account that nobody has claimed yet
+  // (src/server/auth/guest-accounts.ts). Tools read it as "this is a guest";
+  // the value is the claim cookie's secret and never goes in a response.
   guestClaimToken?: string;
 };
 

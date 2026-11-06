@@ -16,7 +16,11 @@ import {
 } from "@/server/mcp/context";
 import { incrementSelfHostMcpToolCallCount } from "@/server/lib/self-host-telemetry";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
-import { buildDashboardUrl, buildGuestClaimUrl } from "@/server/mcp/urls";
+import {
+  buildDashboardUrl,
+  buildGuestSignUpUrl,
+  GUEST_SIGN_UP_NOTE,
+} from "@/server/mcp/urls";
 import { BILLING_ROUTE } from "@/shared/billing";
 
 type ToolHandler<TArgs> = (
@@ -289,7 +293,7 @@ function agentFacingError(
   if (auth.guestClaimToken) {
     return new AppError(
       "INSUFFICIENT_CREDITS",
-      `${detail}This guest OpenSEO account has used its free credits. Retrying won't help. To add credits, the user needs a full OpenSEO account: they can create one, or sign in to an existing one, at ${buildGuestClaimUrl(auth.baseUrl, auth.guestClaimToken, BILLING_ROUTE)}. Their projects move to that account, and afterwards they reconnect OpenSEO in this app.`,
+      `${detail}This guest OpenSEO account has used its free credits. Retrying won't help. To add credits, the user needs a full OpenSEO account: they can create one, or sign in to an existing one, at ${buildGuestSignUpUrl(auth.baseUrl, BILLING_ROUTE)}. ${GUEST_SIGN_UP_NOTE}`,
     );
   }
   return new AppError(

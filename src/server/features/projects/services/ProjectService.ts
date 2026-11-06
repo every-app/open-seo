@@ -2,6 +2,7 @@ import {
   archiveProject,
   createProject,
   getProjectForOrganization,
+  getProjectOrganizationId,
   listArchivedProjects,
   listProjects,
   listProjectsEnsuringOne,
@@ -22,4 +23,5 @@ export const ProjectService = {
   deleteArchivedProject,
   listArchivedProjects,
   getProjectForOrganization,
+  getProjectOrganizationId,
 } as const;

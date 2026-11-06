@@ -269,7 +269,7 @@ export const getSearchConsolePerformanceTool = {
     const connectUrl = buildConnectGscUrl(
       context.baseUrl,
       args.projectId,
-      context.auth.guestClaimToken,
+      Boolean(context.auth.guestClaimToken),
     );
     const meta = buildProjectMeta(
       context,
@@ -520,7 +520,7 @@ export const inspectUrlsTool = {
     const connectUrl = buildConnectGscUrl(
       context.baseUrl,
       args.projectId,
-      context.auth.guestClaimToken,
+      Boolean(context.auth.guestClaimToken),
     );
     const meta = buildProjectMeta(
       context,

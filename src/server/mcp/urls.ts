@@ -18,19 +18,18 @@ export function buildDashboardUrl(
 }
 
 /**
- * A guest account's link to a real one: it signs the person up (or in) and
- * hands them the guest's organization, then lands them on `next`.
+ * A guest's way to a full account. Signing up, or in, from the browser that
+ * connected the agent claims the guest (claimGuestFromCookie); then they land
+ * on `next`.
  */
-export function buildGuestClaimUrl(
-  baseUrl: string,
-  guestClaimToken: string,
-  next?: string,
-): string {
-  return buildDashboardUrl(baseUrl, "/api/guest-claim", {
-    token: guestClaimToken,
-    next,
-  });
+export function buildGuestSignUpUrl(baseUrl: string, next?: string): string {
+  return buildDashboardUrl(baseUrl, "/sign-up", { redirect: next });
 }
+
+// Follows a buildGuestSignUpUrl link in what the agent tells the user: the
+// claim only happens in the browser that holds the guest's claim cookie.
+export const GUEST_SIGN_UP_NOTE =
+  "They need to open it in the same browser they used to connect OpenSEO: their projects then move to the new account, and this connection keeps working as that account.";
 
 // Search Performance hosts the connection card and the data the user came for,
 // so land them there rather than in settings. A guest has no account to
@@ -38,10 +37,10 @@ export function buildGuestClaimUrl(
 export function buildConnectGscUrl(
   baseUrl: string,
   projectId: string,
-  guestClaimToken: string | undefined,
+  isGuest: boolean,
 ): string {
   const path = `/p/${projectId}/search-performance`;
-  return guestClaimToken
-    ? buildGuestClaimUrl(baseUrl, guestClaimToken, path)
+  return isGuest
+    ? buildGuestSignUpUrl(baseUrl, path)
     : buildDashboardUrl(baseUrl, path);
 }

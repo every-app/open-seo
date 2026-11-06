@@ -81,11 +81,11 @@ async function findUnclaimedGuest(claimToken: string) {
 }
 
 /**
- * Hands the guest's organization to `toUserId`, then deletes the guest user.
- * Projects and credits belong to the organization, so nothing else moves; the
- * per-user rows that cascade from the guest (sessions, onboarding answers)
- * mean nothing once claimed. Nobody else can join a guest's organization, so
- * `toUserId` is never already a member of it.
+ * Hands the guest's organization to `toUserId`, records the claim, then
+ * deletes the guest user. Projects and credits belong to the organization, so
+ * nothing else moves; the per-user rows that cascade from the guest (sessions,
+ * onboarding answers) mean nothing once claimed. Nobody else can join a
+ * guest's organization, so `toUserId` is never already a member of it.
  */
 async function transferToUser(guestUserId: string, toUserId: string) {
   await runBatch((tx) => [
@@ -93,14 +93,40 @@ async function transferToUser(guestUserId: string, toUserId: string) {
       .update(member)
       .set({ userId: toUserId })
       .where(eq(member.userId, guestUserId)),
+    tx
+      .update(guestAccounts)
+      .set({ claimedByUserId: toUserId })
+      .where(eq(guestAccounts.userId, guestUserId)),
     tx.delete(authUser).where(eq(authUser.id, guestUserId)),
   ]);
+}
+
+/** The account that claimed this guest, while that account exists. */
+async function findClaimingUser(guestUserId: string) {
+  const [row] = await db
+    .select({ userId: authUser.id, email: authUser.email })
+    .from(guestAccounts)
+    .innerJoin(authUser, eq(authUser.id, guestAccounts.claimedByUserId))
+    .where(eq(guestAccounts.userId, guestUserId))
+    .limit(1);
+  return row ?? null;
+}
+
+/** The guests this account claimed: their agent connections are its now. */
+async function listClaimedGuestUserIds(userId: string) {
+  const rows = await db
+    .select({ userId: guestAccounts.userId })
+    .from(guestAccounts)
+    .where(eq(guestAccounts.claimedByUserId, userId));
+  return rows.map((row) => row.userId);
 }
 
 export const GuestAccountRepository = {
   countForIpHash,
   createGuestUser,
+  findClaimingUser,
   findUnclaimedGuest,
   hasMembership,
+  listClaimedGuestUserIds,
   transferToUser,
 } as const;

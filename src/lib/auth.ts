@@ -425,8 +425,8 @@ function createAuth() {
         create: {
           before: async (session, ctx) => {
             // Runs on every sign-in (each sign-in mints a session row). Refuses
-            // an account waiting to be deleted, claims a guest account whose
-            // claim link this browser opened (its org then counts as a
+            // an account waiting to be deleted, claims the guest account an
+            // agent connected as in this browser (its org then counts as a
             // membership below), then resolves the active org:
             // last-active org while still a member → most recently joined → a
             // new default one — except a membership-less user with a pending

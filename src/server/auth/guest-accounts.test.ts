@@ -66,7 +66,8 @@ beforeAll(async () => {
     CREATE TABLE guest_accounts (
       user_id TEXT PRIMARY KEY, ip_hash TEXT NOT NULL,
       slot INTEGER NOT NULL DEFAULT 0, agent TEXT,
-      claim_token TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL
+      claim_token TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL,
+      claimed_by_user_id TEXT REFERENCES user(id) ON DELETE SET NULL
     );
     CREATE UNIQUE INDEX guest_accounts_ip_hash_slot_idx
       ON guest_accounts (ip_hash, slot);
@@ -272,9 +273,12 @@ describe("guest accounts", () => {
       customerId: guest.organizationId,
       email: "ana@example.com",
     });
-    // The IP row stays, so claiming doesn't free up a guest slot.
-    const ipRows = await client.execute("SELECT user_id FROM guest_accounts");
-    expect(ipRows.rows).toHaveLength(1);
+    // The IP row stays, so claiming doesn't free up a guest slot, and it
+    // names the account the agent's connection now acts as.
+    const ipRows = await client.execute(
+      "SELECT claimed_by_user_id FROM guest_accounts",
+    );
+    expect(ipRows.rows).toEqual([{ claimed_by_user_id: "real" }]);
 
     // The cookie outlives the claim; a later sign-in finds nothing to take.
     mocks.updateCustomer.mockClear();
@@ -292,9 +296,10 @@ describe("guest accounts", () => {
         VALUES ('m-paying', 'own-org', 'paying', 'owner');
     `);
 
-    await expect(
-      guests.claimGuestAccount(guest.claimToken, "paying"),
-    ).resolves.toBeNull();
+    await guests.claimGuestFromCookie(
+      new Headers({ cookie: `${GUEST_CLAIM_COOKIE}=${guest.claimToken}` }),
+      "paying",
+    );
 
     const claimer = await client.execute(
       "SELECT last_active_organization_id FROM user WHERE id = 'paying'",

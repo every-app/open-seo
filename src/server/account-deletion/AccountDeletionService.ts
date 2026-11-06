@@ -10,6 +10,7 @@ import { formatDeletionDate } from "@/shared/account-deletion";
 import { AUTUMN_PAID_PLAN_FEATURE_ID } from "@/shared/billing";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { AccountDeletionRepository } from "./AccountDeletionRepository";
+import { GuestAccountRepository } from "@/server/auth/repositories/GuestAccountRepository";
 import { deleteOauthGrants, eraseAccountStorage } from "./storage";
 import {
   deleteAutumnCustomers,
@@ -200,8 +201,14 @@ async function requestDeletion(input: {
     soloOrganizationIds: soloOrganizations.map((org) => org.id),
   });
   // MCP OAuth grants live in KV, outside the batch that ended the sessions
-  // and API keys.
-  await deleteOauthGrants(env.OAUTH_KV, input.userId);
+  // and API keys. A guest's grant the user claimed acts as the user too.
+  const grantOwnerIds = [
+    input.userId,
+    ...(await GuestAccountRepository.listClaimedGuestUserIds(input.userId)),
+  ];
+  for (const ownerId of grantOwnerIds) {
+    await deleteOauthGrants(env.OAUTH_KV, ownerId);
+  }
 
   // The account is already scheduled; a failed email must not undo that or
   // show the user an error, so it is reported instead.

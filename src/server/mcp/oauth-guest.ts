@@ -10,6 +10,7 @@ import {
   createGuestAccount,
   verifyGuestTurnstile,
 } from "@/server/auth/guest-accounts";
+import { guestClaimCookie } from "@/server/auth/guest-cookies";
 import {
   buildAuthorizeRequestFromConsentQuery,
   completeMcpGrant,
@@ -103,5 +104,8 @@ export async function handleOAuthGuestRequest(
     context: guest,
     guestClaimToken: guest.claimToken,
   });
-  return jsonResponse({ redirectTo });
+  return jsonResponse(
+    { redirectTo },
+    { headers: { "Set-Cookie": guestClaimCookie(guest.claimToken) } },
+  );
 }

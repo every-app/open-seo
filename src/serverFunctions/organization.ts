@@ -11,6 +11,7 @@ import { requireOrgPermission } from "@/server/auth/org-gate";
 import { transferOrganizationOwnership } from "@/server/auth/ownership-transfer";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { sendHostedInvitationEmail } from "@/server/email/loops";
+import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { AppError } from "@/server/lib/errors";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 
@@ -100,31 +101,44 @@ const switchOrganizationSchema = z.object({
   organizationId: z.string().min(1),
 });
 
-// Switch the active organization and persist the choice so the next sign-in
-// lands in the same org (session hook reads user.lastActiveOrganizationId).
+// Make one of the user's organizations active and persist the choice so the
+// next sign-in lands in the same org (session hook reads
+// user.lastActiveOrganizationId).
+async function activateOrganization(userId: string, organizationId: string) {
+  refuseBehindEveryAppGateway();
+  const membership = await AuthRepository.getMembership(userId, organizationId);
+  if (!membership) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  await getAuth().api.setActiveOrganization({
+    headers: getRequest().headers,
+    body: { organizationId },
+  });
+  await AuthRepository.setLastActiveOrganization(userId, organizationId);
+}
+
 export const switchOrganization = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(switchOrganizationSchema)
   .handler(async ({ data, context }) => {
-    refuseBehindEveryAppGateway();
-    const membership = await AuthRepository.getMembership(
-      context.userId,
-      data.organizationId,
-    );
-    if (!membership) {
-      throw new AppError("NOT_FOUND");
-    }
-
-    await getAuth().api.setActiveOrganization({
-      headers: getRequest().headers,
-      body: { organizationId: data.organizationId },
-    });
-    await AuthRepository.setLastActiveOrganization(
-      context.userId,
-      data.organizationId,
-    );
-
+    await activateOrganization(context.userId, data.organizationId);
     return { organizationId: data.organizationId };
+  });
+
+// A link to a project in another of the user's organizations (one an agent
+// set up as a guest, then claimed, or a teammate's) opens it in that
+// organization instead of bouncing to the active one's home page.
+export const switchToProjectOrganization = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(z.object({ projectId: z.string().min(1) }))
+  .handler(async ({ data, context }) => {
+    const organizationId = await ProjectService.getProjectOrganizationId(
+      data.projectId,
+    );
+    if (!organizationId) throw new AppError("NOT_FOUND");
+    await activateOrganization(context.userId, organizationId);
+    return { organizationId };
   });
 
 const sendInvitationSchema = z.object({ email: z.string().email() });

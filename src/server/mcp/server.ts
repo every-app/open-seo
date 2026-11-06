@@ -376,7 +376,7 @@ export function createOpenSeoMcpServer(
           : "") +
         "Tools cannot purchase credits or charge payment cards. If a tool reports depleted credits, its billing URL is available for the user to open." +
         (authProps[MCP_AUTH_CONTEXT_PROP].guestClaimToken
-          ? " This connection uses a guest OpenSEO account: the user connected without signing up. It has the same free credits as a new account. Adding credits, connecting Google Search Console or Google Analytics, and using the OpenSEO web app need a full account; whoami gives the link that creates one and keeps the user's projects."
+          ? " This connection uses a guest OpenSEO account: the user connected without signing up. It has the same free credits as a new account. Adding credits, connecting Google Search Console or Google Analytics, and using the OpenSEO web app need a full account; whoami gives the link that creates one; signing up in the browser that connected OpenSEO keeps the user's projects and this connection."
           : ""),
     },
   );

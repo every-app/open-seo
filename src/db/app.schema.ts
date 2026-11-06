@@ -81,11 +81,16 @@ export const guestAccounts = sqliteTable(
     userId: text("user_id").primaryKey(),
     ipHash: text("ip_hash").notNull(),
     slot: integer("slot").notNull().default(0),
-    // Random secret behind the guest's "create your account" link, which
-    // hands the guest's organization to whoever signs in with it.
+    // Random secret in the claim cookie that the connect page leaves in the
+    // browser, which hands the guest's organization to whoever signs in there.
     claimToken: text("claim_token").notNull().unique(),
     // The agent that made the guest, as in user_signup_campaigns.agent.
     agent: text("agent"),
+    // The account that claimed the guest. The guest user is deleted then, so
+    // the agent's connection, still issued to the guest, acts as this user.
+    claimedByUserId: text("claimed_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     createdAt: text("created_at").notNull(),
   },
   (table) => [
