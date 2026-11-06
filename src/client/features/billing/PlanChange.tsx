@@ -39,7 +39,7 @@ export function PlanChangeAction({
 }) {
   if (offer.planId === currentPlanId) {
     return (
-      <Button className="w-full" variant="secondary" disabled>
+      <Button className="w-full" variant="outline" disabled>
         Current plan
       </Button>
     );
@@ -48,7 +48,7 @@ export function PlanChangeAction({
     return (
       <Button
         className="w-full"
-        variant={highlighted ? "default" : "secondary"}
+        variant={highlighted ? "default" : "outline"}
         onClick={onUpgrade}
       >
         Upgrade

@@ -15,10 +15,7 @@ import {
   PlanGuarantee,
   PlanOfferCard,
 } from "@/client/features/billing/PlanOfferCard";
-import {
-  YC_PLAN_OFFER,
-  monthlyCreditsFeature,
-} from "@/client/features/billing/plan-offers";
+import { YC_PLAN_OFFER } from "@/client/features/billing/plan-offers";
 import { openPlanCheckout } from "@/client/features/billing/checkout";
 import { useCanManageBilling } from "@/client/features/team/organizationQueries";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -32,7 +29,6 @@ const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
   "MCP server and agent skills for Claude, Cursor, and ChatGPT",
   "Google Search Console Integration",
-  monthlyCreditsFeature(YC_PLAN_OFFER),
 ];
 
 export const Route = createFileRoute("/_authenticated/yc")({

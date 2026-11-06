@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
+import { Check } from "lucide-react";
 import { cn } from "cn";
-import type { PlanOffer } from "@/client/features/billing/plan-offers";
+import {
+  monthlyCreditsFeature,
+  type PlanOffer,
+} from "@/client/features/billing/plan-offers";
 import { Card, CardContent } from "@/client/components/ui/card";
 import {
   Tooltip,
@@ -14,42 +18,55 @@ import { SUPPORT_EMAIL } from "@/client/lib/support";
 export function PlanOfferCard({
   offer,
   description,
-  priceLabel = `$${offer.priceUsd}/month`,
+  priceUsd = offer.priceUsd,
+  period = "month",
   features,
   highlighted = false,
   children,
 }: {
   offer: PlanOffer;
   description?: string;
-  priceLabel?: string;
+  priceUsd?: number;
+  period?: "month" | "year";
   features: string[];
   highlighted?: boolean;
   children: ReactNode;
 }) {
   return (
-    <Card className={cn(highlighted && "ring-2 ring-primary")}>
-      <CardContent className="flex flex-1 flex-col gap-4">
-        <div>
-          <div className="flex items-baseline justify-between gap-4">
-            <span className="font-semibold">{offer.name}</span>
-            <span className="text-lg font-semibold tabular-nums">
-              {priceLabel}
-            </span>
+    <Card
+      size="lg"
+      className={cn(highlighted && "border-primary ring-1 ring-primary")}
+    >
+      <CardContent className="flex flex-1 flex-col gap-6">
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold">{offer.name}</h2>
+            {description ? (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            ) : null}
           </div>
-          {description ? (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          ) : null}
+          {/* The credits are what sets the plans apart, so they sit with
+              the price instead of at the end of the list. */}
+          <div className="space-y-1">
+            <p className="flex items-baseline gap-1">
+              <span className="text-3xl font-semibold tracking-tight tabular-nums">
+                ${priceUsd.toLocaleString()}
+              </span>
+              <span className="text-sm text-muted-foreground">/{period}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {monthlyCreditsFeature(offer)}
+            </p>
+          </div>
         </div>
 
-        <ul className="flex-1 space-y-2">
+        <ul className="flex-1 space-y-2.5">
           {features.map((item) => (
-            <li
-              key={item}
-              className="flex gap-2.5 text-sm text-muted-foreground"
-            >
-              <span className="text-muted-foreground/60 mt-[2px] shrink-0">
-                &mdash;
-              </span>
+            <li key={item} className="flex gap-2.5 text-sm">
+              <Check
+                aria-hidden
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              />
               {item}
             </li>
           ))}
@@ -61,11 +78,15 @@ export function PlanOfferCard({
   );
 }
 
+/** The one underline for the links and the tooltip under the plan cards. */
+export const PLAN_FOOTER_LINK_CLASS =
+  "underline underline-offset-2 transition-colors hover:text-foreground";
+
 export function PlanGuarantee() {
   return (
     <p className="text-center text-xs text-muted-foreground">
       <Tooltip>
-        <TooltipTrigger className="cursor-help underline decoration-dotted">
+        <TooltipTrigger className={cn(PLAN_FOOTER_LINK_CLASS, "cursor-help")}>
           30-day money-back guarantee
         </TooltipTrigger>
         <TooltipContent>
