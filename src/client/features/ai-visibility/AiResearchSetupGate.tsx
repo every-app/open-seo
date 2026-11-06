@@ -185,9 +185,12 @@ export function AiResearchSetupGate({
                 <AlertDescription>
                   {unreadable
                     ? "We couldn’t read this website. Its bot protection may be blocking us. Describe your business below and try again, or check the URL in project settings."
-                    : isEveryAppClientAuthMode()
-                      ? "We couldn’t finish setting up AI visibility. It needs DataForSEO and OpenRouter on your Every App gateway: if they aren’t set up yet, an owner or admin runs pnpm everyapp secret set DATAFORSEO_API_KEY OPENROUTER_API_KEY. Then try again."
-                      : "We couldn’t finish setting up AI visibility. Try again."}
+                    : !start.isError &&
+                        setup.data.failure === "subrequest_limit"
+                      ? "Setup needs more outgoing requests than Cloudflare Workers Free allows (50). Upgrade to Workers Paid or run the Docker edition, then try again."
+                      : isEveryAppClientAuthMode()
+                        ? "We couldn’t finish setting up AI visibility. It needs DataForSEO and OpenRouter on your Every App gateway: if they aren’t set up yet, an owner or admin runs pnpm everyapp secret set DATAFORSEO_API_KEY OPENROUTER_API_KEY. Then try again."
+                        : "We couldn’t finish setting up AI visibility. Try again."}
                 </AlertDescription>
               </Alert>
             )

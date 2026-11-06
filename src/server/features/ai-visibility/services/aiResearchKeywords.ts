@@ -68,14 +68,20 @@ async function readSetupRun(projectId: string) {
   if (RUNNING.includes(status.status))
     return { instance, status: "running" as const };
   // Only a known cause leaves the server; other workflow errors stay generic.
-  if (status.status !== "complete")
+  if (status.status !== "complete") {
+    const message = status.error?.message ?? "";
     return {
       instance,
       status: "failed" as const,
-      failure: status.error?.message.includes(WEBSITE_UNREADABLE_MESSAGE)
+      failure: message.includes(WEBSITE_UNREADABLE_MESSAGE)
         ? ("website_unreadable" as const)
-        : null,
+        : // Setup can make more outgoing requests than the 50
+          // Cloudflare Workers Free allows, so self-hosts there fail here.
+          message.includes("Too many subrequests")
+          ? ("subrequest_limit" as const)
+          : null,
     };
+  }
   const review = setupOutputSchema.safeParse(status.output).data?.review;
   return review
     ? { instance, status: "review" as const, review }

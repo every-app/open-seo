@@ -145,6 +145,7 @@ describe("getAiResearchSetup", () => {
       "AppError: We couldn't read this website. Check the URL and try again.",
       "website_unreadable",
     ],
+    ["Error: Too many subrequests.", "subrequest_limit"],
     ["Error: connect ECONNREFUSED 10.0.0.5:5432", null],
   ])("surfaces only a known failure cause for %s", async (message, failure) => {
     listResearchKeywords.mockResolvedValue([]);
