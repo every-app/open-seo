@@ -14,6 +14,8 @@ import {
   prefetchUpgradeCheckout,
 } from "@/client/features/billing/checkout";
 import { AnnualPlanDialog } from "@/client/features/billing/AnnualPlanDialog";
+import { PlanChangeAction } from "@/client/features/billing/PlanChange";
+import { UpgradePlanDialog } from "@/client/features/billing/UpgradePlanDialog";
 import { PlanPageAccountMenu } from "@/client/features/billing/PlanPageAccountMenu";
 import {
   PlanGuarantee,
@@ -38,6 +40,7 @@ import {
   ToggleGroupItem,
 } from "@/client/components/ui/toggle-group";
 import { pageHead } from "@/client/lib/pageHead";
+import { isMonthlyPlan } from "@/shared/billing";
 
 // How long the post-checkout "finalizing" screen polls Autumn before giving
 // up and letting the user through anyway, and how often it polls.
@@ -94,7 +97,6 @@ function SubscribePage() {
     plan: requestedPlan,
     billing,
   } = Route.useSearch();
-  const highlightedPlan = requestedPlan ?? "base";
   const { data: session } = useSession();
   // The plan whose checkout is opening, so only its button spins.
   const [attachingPlan, setAttachingPlan] = useState<Tier | null>(null);
@@ -104,6 +106,9 @@ function SubscribePage() {
   // it animates closed.
   const [annualPlan, setAnnualPlan] = useState<Tier>("base");
   const [annualDialogOpen, setAnnualDialogOpen] = useState(false);
+  // Kept after closing, like the yearly dialog's plan.
+  const [upgradeTier, setUpgradeTier] = useState<Tier>("pro");
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [finalizingTimedOut, setFinalizingTimedOut] = useState(false);
   const checkoutCompleted = checkout === "success";
@@ -135,9 +140,14 @@ function SubscribePage() {
     hasManagedAccess: account?.hasManagedAccess ?? false,
     planStatus: account?.planStatus ?? "free",
     isUpgradeFlow: isUpgradeFlow === true,
+    isPlanChange:
+      isMonthlyPlan(paidPlanId) &&
+      (isUpgradeFlow === true || requestedPlan !== undefined),
     checkoutCompleted,
     finalizingTimedOut,
   });
+  const isChangingPlan = subscribeRouteState === "changePlan";
+  const highlightedPlan = requestedPlan ?? (isChangingPlan ? null : "base");
 
   // Armed once on landing with checkout=success (not on the finalizing state,
   // which a refetch with no cached data can leave for "loading" and re-enter)
@@ -156,9 +166,9 @@ function SubscribePage() {
       if (checkoutCompleted) {
         captureClientEvent("billing:checkout_success");
       } else if (requestedPlan && paidPlanId) {
-        // A paying customer followed a pricing-page plan link. Switching
-        // plans goes through support for now; say so instead of a silent
-        // redirect.
+        // A paying customer whose plan changes through support (yearly, or
+        // granted by hand) followed a pricing-page plan link; say so
+        // instead of a silent redirect.
         const wanted = TIERS[requestedPlan].offer;
         toast.info(
           paidPlanId === wanted.planId
@@ -263,6 +273,7 @@ function SubscribePage() {
 
   const firstName = session?.user?.name?.split(" ")[0] || "";
   const annual = TIERS[annualPlan];
+  const showYearly = yearly && !isChangingPlan;
 
   return (
     <div className="w-full max-w-5xl space-y-6">
@@ -275,41 +286,45 @@ function SubscribePage() {
           className="mx-auto size-10 rounded-lg"
         />
         <h1 className="text-xl font-semibold">
-          {isUpgradeFlow
-            ? "Upgrade your plan"
-            : firstName
-              ? `Welcome to OpenSEO, ${firstName}!`
-              : "Welcome to OpenSEO!"}
+          {isChangingPlan
+            ? "Change your plan"
+            : isUpgradeFlow
+              ? "Upgrade your plan"
+              : firstName
+                ? `Welcome to OpenSEO, ${firstName}!`
+                : "Welcome to OpenSEO!"}
         </h1>
         <p className="text-sm text-muted-foreground">
           SEO on your terms. All your SEO tools in one place at a fair price.
         </p>
       </div>
 
-      <ToggleGroup
-        variant="outline"
-        spacing={0}
-        value={[yearly ? "yearly" : "monthly"]}
-        onValueChange={(next) => {
-          // A press on the active item empties the group. Keep one item on.
-          if (next[0]) setYearly(next[0] === "yearly");
-        }}
-        className="mx-auto"
-        aria-label="Billing period"
-      >
-        <ToggleGroupItem
-          value="monthly"
-          className="px-4 aria-pressed:bg-primary/15 aria-pressed:text-primary"
+      {isChangingPlan ? null : (
+        <ToggleGroup
+          variant="outline"
+          spacing={0}
+          value={[yearly ? "yearly" : "monthly"]}
+          onValueChange={(next) => {
+            // A press on the active item empties the group. Keep one item on.
+            if (next[0]) setYearly(next[0] === "yearly");
+          }}
+          className="mx-auto"
+          aria-label="Billing period"
         >
-          Monthly
-        </ToggleGroupItem>
-        <ToggleGroupItem
-          value="yearly"
-          className="px-4 aria-pressed:bg-primary/15 aria-pressed:text-primary"
-        >
-          Yearly (2 months free)
-        </ToggleGroupItem>
-      </ToggleGroup>
+          <ToggleGroupItem
+            value="monthly"
+            className="px-4 aria-pressed:bg-primary/15 aria-pressed:text-primary"
+          >
+            Monthly
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="yearly"
+            className="px-4 aria-pressed:bg-primary/15 aria-pressed:text-primary"
+          >
+            Yearly (2 months free)
+          </ToggleGroupItem>
+        </ToggleGroup>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         {Object.keys(TIERS)
@@ -323,14 +338,25 @@ function SubscribePage() {
                 offer={offer}
                 description={description}
                 priceLabel={
-                  yearly
+                  showYearly
                     ? `$${annualPriceUsd.toLocaleString()}/year`
                     : undefined
                 }
                 features={[...features, monthlyCreditsFeature(offer)]}
                 highlighted={tier === highlightedPlan}
               >
-                {canManageBilling ? (
+                {!canManageBilling ? null : isChangingPlan ? (
+                  // Yearly billing is set up by email, so this is monthly.
+                  <PlanChangeAction
+                    offer={offer}
+                    currentPlanId={paidPlanId}
+                    highlighted={tier === highlightedPlan}
+                    onUpgrade={() => {
+                      setUpgradeTier(tier);
+                      setUpgradeDialogOpen(true);
+                    }}
+                  />
+                ) : (
                   <Button
                     className="w-full"
                     variant={tier === highlightedPlan ? "default" : "secondary"}
@@ -345,7 +371,7 @@ function SubscribePage() {
                   >
                     {attachingPlan === tier ? "Redirecting..." : "Subscribe"}
                   </Button>
-                ) : null}
+                )}
               </PlanOfferCard>
             );
           })}
@@ -359,8 +385,9 @@ function SubscribePage() {
         ) : null}
         {canManageBilling ? null : (
           <p className="text-center text-sm text-muted-foreground">
-            Only the organization owner can subscribe. Ask them to upgrade this
-            organization.
+            {isChangingPlan
+              ? "Only the organization owner can change the plan. Ask them if you need a bigger one."
+              : "Only the organization owner can subscribe. Ask them to upgrade this organization."}
           </p>
         )}
         <PlanGuarantee />
@@ -409,6 +436,14 @@ function SubscribePage() {
         annualPriceUsd={annual.annualPriceUsd}
         onSubscribeMonthly={() => void handleSubscribe(annualPlan)}
       />
+
+      {isChangingPlan ? (
+        <UpgradePlanDialog
+          open={upgradeDialogOpen}
+          onOpenChange={setUpgradeDialogOpen}
+          offer={TIERS[upgradeTier].offer}
+        />
+      ) : null}
     </div>
   );
 }

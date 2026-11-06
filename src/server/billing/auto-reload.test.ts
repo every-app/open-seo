@@ -4,6 +4,7 @@ import {
   AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
+import type * as AutumnModule from "@/server/billing/autumn";
 
 const { attachMock, getMock, updateMock, sendLoopsEventMock, contactsMock } =
   vi.hoisted(() => ({
@@ -14,7 +15,8 @@ const { attachMock, getMock, updateMock, sendLoopsEventMock, contactsMock } =
     contactsMock: vi.fn(),
   }));
 
-vi.mock("@/server/billing/autumn", () => ({
+vi.mock("@/server/billing/autumn", async (importOriginal) => ({
+  ...(await importOriginal<typeof AutumnModule>()),
   autumn: {
     billing: { attach: attachMock },
     customers: { get: getMock, update: updateMock },

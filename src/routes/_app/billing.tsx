@@ -25,6 +25,7 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { prefetchBillingAccount } from "@/client/features/billing/billingAccountQuery";
 import { AutoReloadSettings } from "@/client/features/billing/AutoReloadSettings";
 import { BillingRow } from "@/client/features/billing/BillingRow";
+import { ChangePlanButton } from "@/client/features/billing/PlanChange";
 import { BillingTabs } from "@/client/features/billing/BillingTabs";
 import { parseTopUpAmount } from "@/client/features/billing/HostedBillingContentUtils";
 import { billingUsageQueryOptions } from "@/client/features/billing/useBillingUsage";
@@ -244,23 +245,26 @@ function BillingPage() {
                     Upgrade Plan
                   </Button>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    pending={pendingAction === "plan"}
-                    disabled={pendingAction !== null}
-                    onClick={() =>
-                      void runAction(
-                        "plan",
-                        openPortal,
-                        "We couldn't open the billing portal. Please try again.",
-                      )
-                    }
-                  >
-                    {pendingAction === "plan"
-                      ? "Redirecting to Stripe..."
-                      : "Manage subscription"}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <ChangePlanButton planId={account.paidPlanId} />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      pending={pendingAction === "plan"}
+                      disabled={pendingAction !== null}
+                      onClick={() =>
+                        void runAction(
+                          "plan",
+                          openPortal,
+                          "We couldn't open the billing portal. Please try again.",
+                        )
+                      }
+                    >
+                      {pendingAction === "plan"
+                        ? "Redirecting to Stripe..."
+                        : "Manage subscription"}
+                    </Button>
+                  </div>
                 )
               }
             >

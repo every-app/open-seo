@@ -24,7 +24,7 @@ type BillingAccount = {
   /** The paid plan's display name from Autumn; its ID when Autumn has no
    *  subscription to name it from. */
   paidPlanName: string | null;
-  /** What the plan grants each month, in USD. */
+  /** What the paid plan grants each month, in USD. 0 on the free plan. */
   monthlyCreditsUsd: number;
   monthlyRemainingUsd: number;
   topUpRemainingUsd: number;
@@ -72,6 +72,11 @@ export async function getOrganizationBillingAccount(
     (s) => s.planId === paidFlag?.planId,
   );
   const monthly = customer.balances[AUTUMN_SEO_DATA_BALANCE_FEATURE_ID];
+  // The plan's own grant: after an upgrade the balance also holds the credits
+  // left from the old plan until the next refill.
+  const planCredits = monthly?.breakdown?.find(
+    (part) => part.planId === paidFlag?.planId,
+  );
   const topUp = customer.balances[AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID];
 
   return {
@@ -80,7 +85,9 @@ export async function getOrganizationBillingAccount(
     planStatus: paidFlag ? "paid" : "free",
     paidPlanId: paidFlag?.planId ?? null,
     paidPlanName: paidSubscription?.plan?.name ?? paidFlag?.planId ?? null,
-    monthlyCreditsUsd: autumnSeoDataCreditsToUsd(monthly?.granted ?? 0),
+    monthlyCreditsUsd: autumnSeoDataCreditsToUsd(
+      planCredits?.includedGrant ?? 0,
+    ),
     monthlyRemainingUsd: autumnSeoDataCreditsToUsd(monthly?.remaining ?? 0),
     topUpRemainingUsd: autumnSeoDataCreditsToUsd(topUp?.remaining ?? 0),
     hasManagedAccess: Boolean(customer.flags[AUTUMN_MANAGED_ACCESS_FEATURE_ID]),

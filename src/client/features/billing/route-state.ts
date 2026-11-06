@@ -7,6 +7,9 @@ export function getSubscribeRouteState(args: {
   hasManagedAccess: boolean;
   planStatus: PlanStatus;
   isUpgradeFlow: boolean;
+  /** A paying customer on a monthly plan who came to change it, from
+   *  Billing or a pricing-page plan link. */
+  isPlanChange: boolean;
   checkoutCompleted: boolean;
   finalizingTimedOut: boolean;
 }) {
@@ -34,8 +37,11 @@ export function getSubscribeRouteState(args: {
     return "error" as const;
   }
 
+  // The return from checkout goes into the app even for a plan change.
   if (args.planStatus === "paid") {
-    return "redirectToApp" as const;
+    return args.isPlanChange && !args.checkoutCompleted
+      ? ("changePlan" as const)
+      : ("redirectToApp" as const);
   }
 
   // Back from Stripe but Autumn hasn't reflected the subscription yet — poll

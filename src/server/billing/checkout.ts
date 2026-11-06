@@ -2,6 +2,7 @@ import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 import type { EnsuredUserContext } from "@/middleware/ensure-user/types";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { autumn } from "@/server/billing/autumn";
+import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { AppError } from "@/server/lib/errors";
 import {
   AUTUMN_AGENCY_PLAN_ID,
@@ -54,10 +55,24 @@ async function createCheckoutUrl(
   return paymentUrl;
 }
 
-export function createPlanCheckoutUrl(
+export async function createPlanCheckoutUrl(
   caller: BillingCaller,
   args: { planId: CheckoutPlanId; redirectTo: string; origin: string },
 ) {
+  // A paying organization changes tiers through upgradeOrganizationPlan,
+  // whose terms are priced by credits; a checkout here would apply Autumn's
+  // default proration. The YC deal is the one plan sold to subscribers
+  // through checkout, from /yc.
+  if (
+    args.planId !== AUTUMN_YC_PLAN_ID &&
+    (await customerHasPaidPlan(caller.organizationId))
+  ) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `${caller.organizationId} already pays for a plan`,
+    );
+  }
+
   // /subscribe waits for Autumn to show the new plan, then forwards to
   // redirectTo.
   const successUrl = new URL(SUBSCRIBE_ROUTE, args.origin);

@@ -8,6 +8,10 @@ import {
   TOP_UP_MIN_USD,
 } from "@/shared/billing";
 import { setOrganizationAutoReload } from "@/server/billing/auto-reload";
+import {
+  previewOrganizationPlanUpgrade,
+  upgradeOrganizationPlan,
+} from "@/server/billing/plan-upgrade";
 import { getOrganizationBillingAccount } from "@/server/billing/billing-account";
 import {
   createBillingPortalUrl,
@@ -62,6 +66,27 @@ export const reportCheckoutStart = createServerFn({ method: "POST" })
   .handler(({ data }) => {
     captureMetaCheckoutStart(getRequest(), data.planId);
   });
+
+const upgradePlanInput = z.object({ planId: z.enum(CHECKOUT_PLAN_IDS) });
+
+export const previewPlanUpgrade = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(upgradePlanInput)
+  .handler(({ data, context }) =>
+    previewOrganizationPlanUpgrade(context, data),
+  );
+
+// Charges the saved card at once, unlike the checkouts above: the page shows
+// the preview's charge before the click.
+export const upgradePlan = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(upgradePlanInput)
+  .handler(({ data, context }) =>
+    upgradeOrganizationPlan(context, {
+      ...data,
+      origin: getPublicOrigin(getRequest()),
+    }),
+  );
 
 export const createTopUpCheckout = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
