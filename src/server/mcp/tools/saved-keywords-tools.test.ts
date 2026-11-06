@@ -69,6 +69,7 @@ describe("saved keyword MCP tools", () => {
     );
 
     expect(mocks.saveKeywords).toHaveBeenCalledWith({
+      organizationId: "org_123",
       projectId: "project_1",
       keywords: ["technical seo"],
       tags: ["Content"],

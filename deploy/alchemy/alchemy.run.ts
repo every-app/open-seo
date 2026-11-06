@@ -548,6 +548,14 @@ export default Alchemy.Stack(
           simple: { limit: 20, period: 60 },
         }),
 
+        // Per-organization throttle on saving keywords (see
+        // src/server/features/keywords/services/research/saved-keywords.ts).
+        // One call per 50 keywords: 60 a minute is 3,000 keywords a minute.
+        SAVE_KEYWORDS_RATE_LIMIT: Cloudflare.RateLimit(
+          "SAVE_KEYWORDS_RATE_LIMIT",
+          { namespaceId: 1003, simple: { limit: 60, period: 60 } },
+        ),
+
         // Durable Objects (the chat agents; the audit scratchpad lives
         // privately in the open-seo-audit worker). Alchemy backs new DO
         // classes with SQLite storage; wrangler.jsonc's `migrations` only

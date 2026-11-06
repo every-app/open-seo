@@ -42,8 +42,13 @@ async function getProjectActivation(
 }
 
 // First-occurrence timestamps only: concurrent writers race harmlessly because
-// COALESCE keeps whichever value landed first.
+// COALESCE keeps whichever value landed first. These run on every MCP request
+// from a fresh isolate, so they read first and skip the write once the value is
+// set: a write there waits on the primary's synchronous commit, and a lagging
+// replica once stalled these until the connection pool filled.
 async function recordFirstMcpAuthorized(organizationId: string): Promise<void> {
+  const existing = await getOrganizationActivation(organizationId);
+  if (existing?.firstMcpAuthorizedAt) return;
   const now = new Date().toISOString();
   await db
     .insert(organizationActivationState)
@@ -61,6 +66,8 @@ async function recordFirstMcpAuthorized(organizationId: string): Promise<void> {
 async function recordFirstMcpToolCall(
   organizationId: string,
 ): Promise<boolean> {
+  const existing = await getOrganizationActivation(organizationId);
+  if (existing?.firstMcpToolCallAt) return false;
   const now = new Date().toISOString();
   const [row] = await db
     .insert(organizationActivationState)

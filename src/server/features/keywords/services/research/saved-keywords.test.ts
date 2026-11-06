@@ -1,10 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveKeywords } from "./saved-keywords";
 
 const mocks = vi.hoisted(() => ({
   addTagsToSavedKeywords: vi.fn(),
   replaceTagsForSavedKeywords: vi.fn(),
   saveKeywordsToProject: vi.fn(),
+  countSavedKeywordsForOrganization: vi.fn(),
+  listSavedKeywordRowsByKeywords: vi.fn(),
+}));
+const isHosted = vi.hoisted(() => vi.fn());
+
+vi.mock("cloudflare:workers", () => ({ env: {} }));
+vi.mock("@/server/lib/runtime-env", () => ({
+  isHostedServerAuthMode: isHosted,
 }));
 
 vi.mock(
@@ -23,6 +31,10 @@ const savedKeywordRow = {
   createdAt: "2026-05-11T00:00:00.000Z",
 };
 
+beforeEach(() => {
+  isHosted.mockResolvedValue(false);
+});
+
 describe("saved keyword service", () => {
   it("attaches tags to saved keyword rows after saving", async () => {
     mocks.saveKeywordsToProject.mockResolvedValue([
@@ -35,6 +47,7 @@ describe("saved keyword service", () => {
     });
 
     await saveKeywords({
+      organizationId: "org_1",
       projectId: "project_1",
       keywords: [" Technical SEO ", "technical seo", "Content SEO"],
       locationCode: 2840,
@@ -67,6 +80,7 @@ describe("saved keyword service", () => {
     });
 
     const result = await saveKeywords({
+      organizationId: "org_1",
       projectId: "project_1",
       keywords: ["technical seo"],
       locationCode: 2840,
@@ -89,6 +103,7 @@ describe("saved keyword service", () => {
 
     await expect(
       saveKeywords({
+        organizationId: "org_1",
         projectId: "project_1",
         keywords: ["technical seo"],
         locationCode: 2840,
@@ -97,5 +112,26 @@ describe("saved keyword service", () => {
       }),
     ).rejects.toThrow("Replacement tags are required");
     expect(mocks.replaceTagsForSavedKeywords).not.toHaveBeenCalled();
+  });
+
+  it("refuses new keywords past the hosted workspace cap but allows re-saves", async () => {
+    isHosted.mockResolvedValue(true);
+    mocks.countSavedKeywordsForOrganization.mockResolvedValue(25_000);
+    mocks.listSavedKeywordRowsByKeywords.mockResolvedValue([savedKeywordRow]);
+    mocks.saveKeywordsToProject.mockResolvedValue([savedKeywordRow]);
+    const input = {
+      organizationId: "org_1",
+      projectId: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+    };
+
+    await expect(
+      saveKeywords({ ...input, keywords: ["technical seo", "content seo"] }),
+    ).rejects.toThrow("the limit is 25,000");
+    expect(mocks.saveKeywordsToProject).not.toHaveBeenCalled();
+
+    await saveKeywords({ ...input, keywords: ["technical seo"] });
+    expect(mocks.saveKeywordsToProject).toHaveBeenCalled();
   });
 });

@@ -51,6 +51,7 @@ export const saveKeywords = createServerFn({ method: "POST" })
       ...data,
       ...resolveMarket(data, context.project),
       projectId: context.projectId,
+      organizationId: context.organizationId,
     });
   });
 

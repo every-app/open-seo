@@ -81,6 +81,7 @@ export const saveKeywordsTool = {
     const { locationCode, languageCode } = resolveMarket(args, context.project);
 
     await KeywordResearchService.saveKeywords({
+      organizationId: context.auth.organizationId,
       projectId: args.projectId,
       keywords: args.keywords,
       metrics: args.metrics,
