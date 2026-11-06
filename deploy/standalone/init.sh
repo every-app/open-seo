@@ -26,7 +26,15 @@ for attempt in $(seq 1 90); do
   sleep 1
 done
 [ "$ready" = 1 ] || { echo 'Runtime did not load the deployment' >&2; exit 1; }
-celld d1 migrations apply openseo-standalone /config/app
+# Right after a runtime restart, the bucket's node lease can still name the
+# previous runtime session, which the new one rejects with a 409 until the
+# lease expires. Applied migrations are skipped, so retrying is safe.
+ready=0
+for attempt in $(seq 1 30); do
+  if celld d1 migrations apply openseo-standalone /config/app; then ready=1; break; fi
+  sleep 2
+done
+[ "$ready" = 1 ] || { echo 'Database migrations did not apply' >&2; exit 1; }
 curl -fsS -X POST http://127.0.0.1:8081/reload >/dev/null
 for attempt in $(seq 1 90); do
   if curl -fsS http://127.0.0.1:8080/api/health >/dev/null; then
