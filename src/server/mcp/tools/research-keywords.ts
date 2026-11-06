@@ -34,7 +34,12 @@ const LOCAL_VOLUME_CREDITS = Math.ceil(
 );
 
 const seedSchema = z.object({
-  seed: z.string().min(1).describe("Seed keyword to research."),
+  seed: z
+    .string()
+    .min(1)
+    .describe(
+      'Seed keyword to research. Use * as a wildcard for any word or words: "best * for dogs" returns only keywords matching that pattern (e.g. "best flea treatment for dogs"), one request at about the same cost. Wildcards need at least one other word and are unavailable for countries served from Google Ads data.',
+    ),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
   locationName: z

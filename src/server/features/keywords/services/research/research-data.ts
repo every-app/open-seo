@@ -20,6 +20,8 @@ type FetchResearchRowsParams = {
   source: KeywordSource;
   includeClickstreamData?: boolean;
   ignoreSynonyms?: boolean;
+  /** DataForSEO filters; only the suggestions source sends them. */
+  filters?: unknown[];
   // Attribute the DataForSEO spend to a specific feature (e.g. "agent");
   // defaults to the path-derived feature when omitted.
   creditFeature?: CreditFeature;
@@ -159,6 +161,7 @@ export async function fetchResearchRowsBySource(
         limit: params.resultLimit,
         includeClickstreamData: params.includeClickstreamData,
         ignoreSynonyms: params.ignoreSynonyms,
+        filters: params.filters,
         creditFeature: params.creditFeature,
       }),
     );

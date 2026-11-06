@@ -183,6 +183,7 @@ export async function fetchKeywordSuggestions(input: {
   limit: number;
   includeClickstreamData?: boolean;
   ignoreSynonyms?: boolean;
+  filters?: unknown[];
 }): Promise<DataforseoApiResponse<LabsKeywordDataItem[]>> {
   const response = await dataforseoPost<
     DataforseoItemsTask<LabsKeywordDataItem>
@@ -197,6 +198,7 @@ export async function fetchKeywordSuggestions(input: {
       include_seed_keyword: true,
       ignore_synonyms: input.ignoreSynonyms ?? false,
       exact_match: false,
+      filters: input.filters,
     },
   ]);
   const task = assertOk(response);

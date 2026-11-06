@@ -1,3 +1,4 @@
+import { hasKeywordWildcard } from "@/shared/keyword-wildcard";
 import {
   useCallback,
   useEffect,
@@ -186,12 +187,17 @@ export function useKeywordResearchController(
     if (handledSerpSearchKeyRef.current === activeSearchKey) return;
 
     handledSerpSearchKeyRef.current = activeSearchKey;
-    setSerpKeyword(rows.length > 0 ? searchedKeyword : null);
+    // A wildcard pattern isn't a real query; show the top match's SERP.
+    const firstRow = rows.at(0);
+    if (!firstRow) setSerpKeyword(null);
+    else if (hasKeywordWildcard(searchedKeyword))
+      setSerpKeyword(firstRow.keyword);
+    else setSerpKeyword(searchedKeyword);
     setSerpPage(0);
   }, [
     activeSearchKey,
     researchQuery.isSuccess,
-    rows.length,
+    rows,
     searchedKeyword,
     setSerpKeyword,
     setSerpPage,

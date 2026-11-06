@@ -64,7 +64,7 @@ export function KeywordResearchSearchBar({ controller, children }: Props) {
                       compact ? "py-[7px]" : "py-[11px] md:text-base",
                     )}
                     rows={rows}
-                    placeholder="Enter a keyword"
+                    placeholder="Enter a keyword, or a pattern like best * for dogs"
                     aria-label="Keywords"
                     aria-invalid={keywordError ? true : undefined}
                     value={field.state.value}

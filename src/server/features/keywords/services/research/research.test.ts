@@ -9,6 +9,7 @@ import type * as ResearchData from "./research-data";
 const mocks = vi.hoisted(() => ({
   cache: new Map<string, string>(),
   fetchRows: vi.fn(),
+  fetchAdsRows: vi.fn(),
   adsSearchVolume: vi.fn(),
   upsertKeywordMetric: vi.fn().mockResolvedValue(undefined),
 }));
@@ -38,7 +39,7 @@ vi.mock("./research-data", async (importOriginal) => ({
   mapAdsKeywordItems: (await importOriginal<typeof ResearchData>())
     .mapAdsKeywordItems,
   fetchResearchRowsBySource: mocks.fetchRows,
-  fetchGoogleAdsResearchRows: vi.fn(),
+  fetchGoogleAdsResearchRows: mocks.fetchAdsRows,
 }));
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: () => ({
@@ -264,4 +265,52 @@ it("rejects a location outside the country's registry before any paid call", asy
   ).rejects.toMatchObject({ code: "UNKNOWN_LOCATION" });
   expect(mocks.fetchRows).not.toHaveBeenCalled();
   expect(mocks.adsSearchVolume).not.toHaveBeenCalled();
+});
+
+it("researches a wildcard seed as one suggestions call filtered on word boundaries", async () => {
+  mocks.fetchRows.mockResolvedValue([]);
+
+  await research(
+    {
+      ...localInput,
+      keywords: ["Best * for dogs"],
+      locationName: undefined,
+      mode: "auto",
+    },
+    customer,
+  );
+
+  expect(mocks.fetchRows).toHaveBeenCalledTimes(1);
+  expect(mocks.fetchRows.mock.calls[0][0]).toMatchObject({
+    source: "suggestions",
+    seedKeyword: "for dogs",
+    filters: [
+      ["keyword", "like", "best % for dogs"],
+      "or",
+      ["keyword", "like", "best % for dogs %"],
+      "or",
+      ["keyword", "like", "% best % for dogs"],
+      "or",
+      ["keyword", "like", "% best % for dogs %"],
+    ],
+  });
+});
+
+it("rejects a wildcard seed in a Google Ads country before any paid call", async () => {
+  await expect(
+    research(
+      {
+        ...localInput,
+        keywords: ["best * for dogs"],
+        locationCode: 2352, // Iceland is served from Google Ads data.
+        languageCode: "is",
+        locationName: undefined,
+      },
+      customer,
+    ),
+  ).rejects.toMatchObject({
+    code: "VALIDATION_ERROR",
+    message: "Wildcard search isn't available for this country.",
+  });
+  expect(mocks.fetchAdsRows).not.toHaveBeenCalled();
 });
