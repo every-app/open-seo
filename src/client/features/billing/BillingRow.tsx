@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 /**
- * One line of the billing summary: a label, what is set now, and the action
- * that changes it. A form opened by the action goes in `children`, under the
- * summary, so the list stays short until someone edits.
+ * One setting in the billing card: its name over what is set now, and the
+ * action that changes it on the right. A form opened by the action goes in
+ * `children`, under the row, so the card stays short until someone edits.
  */
 export function BillingRow({
   label,
@@ -17,12 +17,17 @@ export function BillingRow({
   children?: ReactNode;
 }) {
   return (
-    <div className="grid gap-x-6 gap-y-3 px-4 py-4 sm:grid-cols-[10rem_1fr_auto] sm:items-center">
-      <p className="text-sm font-medium">{label}</p>
-      <div className="min-w-0 text-sm text-muted-foreground">{summary}</div>
-      {action ? <div className="sm:justify-self-end">{action}</div> : null}
+    // Gaps, not margins, so an empty `children` adds no space.
+    <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="min-w-0 space-y-1">
+          <h3 className="text-sm font-medium">{label}</h3>
+          <div className="text-sm text-muted-foreground">{summary}</div>
+        </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
       {children ? (
-        <div className="min-w-0 space-y-3 empty:hidden sm:col-span-2 sm:col-start-2">
+        <div className="flex min-w-0 flex-col gap-3 empty:hidden">
           {children}
         </div>
       ) : null}

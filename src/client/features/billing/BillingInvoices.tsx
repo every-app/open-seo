@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { Download, ReceiptText } from "lucide-react";
+import { EmptyState } from "@/client/components/EmptyState";
 import { QueryError } from "@/client/components/QueryState";
 import { buttonVariants } from "@/client/components/ui/button";
 import {
@@ -139,7 +140,14 @@ function InvoiceTable() {
   const { invoices, hasMore } = invoicesQuery.data;
 
   if (invoices.length === 0) {
-    return <p className="text-sm text-muted-foreground">No invoices yet.</p>;
+    return (
+      <EmptyState
+        variant="plain"
+        icon={ReceiptText}
+        title="No invoices yet"
+        description="Invoices for your plan and credit purchases show up here."
+      />
+    );
   }
 
   return (

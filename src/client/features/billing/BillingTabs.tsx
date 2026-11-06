@@ -1,9 +1,8 @@
 import { DataTableTabs } from "@/client/components/table/DataTableToolbar";
 import { TableCard } from "@/client/components/ui/table";
 import { TabsTrigger } from "@/client/components/ui/tabs";
-import { BillingFeatureBreakdown } from "@/client/features/billing/BillingFeatureBreakdown";
 import { BillingInvoices } from "@/client/features/billing/BillingInvoices";
-import { BillingUsageChart } from "@/client/features/billing/BillingUsageChart";
+import { BillingUsage } from "@/client/features/billing/BillingUsage";
 import { BILLING_TABS, type BillingTab } from "@/shared/billing";
 
 /**
@@ -39,15 +38,11 @@ export function BillingTabs({
           ))}
         </DataTableTabs>
       ) : null}
-      <div className="space-y-6 p-4">
+      <div className="p-4">
         {showInvoices ? (
           <BillingInvoices invoiceEmailsEnabled={invoiceEmailsEnabled} />
         ) : (
-          <>
-            <BillingUsageChart />
-            <BillingFeatureBreakdown by="features" />
-            <BillingFeatureBreakdown by="projects" />
-          </>
+          <BillingUsage />
         )}
       </div>
     </TableCard>
