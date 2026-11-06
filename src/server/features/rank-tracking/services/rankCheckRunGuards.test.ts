@@ -69,29 +69,41 @@ describe("beginRankCheckRun", () => {
     },
   );
 
-  it("does not create another workflow when a run is already active", async () => {
-    const blocker = {
-      id: "run_0",
-      status: "running" as const,
-      startedAt: new Date().toISOString(),
-    };
-    mocks.tryCreateRun.mockResolvedValue(false);
-    mocks.getActiveRunForConfig.mockResolvedValue(blocker);
-    mocks.getWorkflow.mockResolvedValue({
-      status: vi.fn().mockResolvedValue({ status: "running" }),
-    });
-    const create = vi.fn();
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- no workflow methods should run on the blocked path
-    const workflow = { create } as unknown as Env["RANK_CHECK_WORKFLOW"];
+  // A failed lookup is no proof the workflow stopped; failing the run would
+  // start a second paid check beside it.
+  it.each([
+    ["is running", () => ({ status: async () => ({ status: "running" }) })],
+    [
+      "can't be looked up",
+      () => {
+        throw new Error("internal error");
+      },
+    ],
+  ])(
+    "does not create another workflow when the active run's workflow %s",
+    async (_case, getWorkflow) => {
+      const blocker = {
+        id: "run_0",
+        status: "running" as const,
+        startedAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+      };
+      mocks.tryCreateRun.mockResolvedValue(false);
+      mocks.getActiveRunForConfig.mockResolvedValue(blocker);
+      mocks.getWorkflow.mockImplementation(async () => getWorkflow());
+      const create = vi.fn();
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- no workflow methods should run on the blocked path
+      const workflow = { create } as unknown as Env["RANK_CHECK_WORKFLOW"];
 
-    await expect(beginRankCheckRun({ ...input, workflow })).resolves.toEqual({
-      ok: false,
-      reason: "already_running",
-      blockingRunId: "run_0",
-    });
-    expect(create).not.toHaveBeenCalled();
-    expect(mocks.tryCreateRun).toHaveBeenCalledTimes(1);
-  });
+      await expect(beginRankCheckRun({ ...input, workflow })).resolves.toEqual({
+        ok: false,
+        reason: "already_running",
+        blockingRunId: "run_0",
+      });
+      expect(create).not.toHaveBeenCalled();
+      expect(mocks.updateRun).not.toHaveBeenCalled();
+      expect(mocks.tryCreateRun).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("terminates a run still active after 12 hours and starts the new one", async () => {
     const blocker = {

@@ -131,7 +131,7 @@ describe("rank check workflow credit ceiling", () => {
     mocks.getConfigById.mockResolvedValue({ isActive: true });
     mocks.getRunById.mockResolvedValue(activeRun);
     mocks.getSnapshotsForRun.mockResolvedValue([]);
-    mocks.updateRun.mockResolvedValue(undefined);
+    mocks.updateRun.mockResolvedValue(true);
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
     mocks.autumnCheck.mockResolvedValue({
       allowed: true,
@@ -224,7 +224,7 @@ describe("rank check finalization", () => {
     mocks.getRunById.mockResolvedValue({ ...activeRun, keywordsTotal: 3 });
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(3));
     mocks.getSnapshotsForRun.mockResolvedValue([]);
-    mocks.updateRun.mockResolvedValue(undefined);
+    mocks.updateRun.mockResolvedValue(true);
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
     mocks.autumnCheck.mockResolvedValue({
       allowed: true,
@@ -242,6 +242,24 @@ describe("rank check finalization", () => {
         errorMessage: "No keywords could be checked.",
       }),
     );
+    expect(mocks.updateConfig).not.toHaveBeenCalled();
+  });
+
+  it("keeps the failure when stale cleanup fails the run before it finalizes", async () => {
+    mocks.getSnapshotsForRun.mockResolvedValue(
+      keywords(3).map((kw) => ({
+        trackingKeywordId: kw.id,
+        device: "desktop",
+      })),
+    );
+    // The run is active until the finalize write, which finds it failed.
+    mocks.updateRun.mockImplementation(
+      async (_id: string, data: { status?: string }) =>
+        data.status !== "completed",
+    );
+
+    await runWorkflow({});
+
     expect(mocks.updateConfig).not.toHaveBeenCalled();
   });
 
@@ -299,7 +317,7 @@ describe("rank check goto URLs", () => {
     mocks.getConfigById.mockResolvedValue({ isActive: true });
     mocks.getRunById.mockResolvedValue({ ...activeRun, keywordsTotal: 1 });
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(1));
-    mocks.updateRun.mockResolvedValue(undefined);
+    mocks.updateRun.mockResolvedValue(true);
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
     mocks.autumnCheck.mockResolvedValue({
       allowed: true,

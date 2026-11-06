@@ -33,27 +33,44 @@ export async function startWorkflow<P>(
 }
 
 /**
- * `get` throws for an unknown id. Only an instance still in flight counts: a
- * finished one under the same id (the research setup reuses its id) was not
- * started by this call.
+ * Only an instance still in flight counts: a finished one under the same id
+ * (the research setup reuses its id) was not started by this call.
  */
 async function instanceExists<P>(workflow: Workflow<P>, id: string) {
+  const status = await readWorkflowStatus(workflow, id);
+  return status !== null && status !== "missing" && isWorkflowActive(status);
+}
+
+export type WorkflowStatus = Awaited<ReturnType<WorkflowInstance["status"]>>;
+
+/** Whether an instance with this status may still write to its run. */
+export function isWorkflowActive({ status }: WorkflowStatus) {
+  return ["queued", "running", "waiting", "waitingForPause", "paused"].includes(
+    status,
+  );
+}
+
+/**
+ * An instance's status, "missing" when the engine says there is no such
+ * instance, or null when the lookup itself failed. Reconcilers fail a run only
+ * on a status or a confirmed miss: a passing control-plane error is not proof
+ * the workflow stopped, and failing a live run frees its slot for a second,
+ * paid run while the first one keeps going.
+ */
+export async function readWorkflowStatus<P>(
+  workflow: Workflow<P>,
+  id: string,
+): Promise<WorkflowStatus | "missing" | null> {
   try {
-    const { status } = await (await workflow.get(id)).status();
-    return [
-      "queued",
-      "running",
-      "waiting",
-      "waitingForPause",
-      "paused",
-    ].includes(status);
-  } catch {
-    return false;
+    return await (await workflow.get(id)).status();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return /not[ _]?found/i.test(message) ? "missing" : null;
   }
 }
 
 /**
- * An AI visibility or rank check run still active after this long is stuck:
+ * An AI visibility, rank or local rank check still active after this long is stuck:
  * the slowest that finished on hosted took under 6 hours. Its instance may
  * still report "running" (a frozen step on the Docker edition stays
  * "running" for good), so the run would otherwise block its tracker forever.

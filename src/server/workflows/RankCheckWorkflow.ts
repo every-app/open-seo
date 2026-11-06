@@ -67,16 +67,12 @@ async function prepareRankCheckKeywords(input: {
 }) {
   // If stale-cleanup marked our run failed before we got here, bail out
   // rather than resurrecting a superseded run.
-  const run = await RankTrackingRepository.getRunById(input.runId);
-  if (!run || run.status === "failed" || run.status === "completed") {
-    throw new NonRetryableError(
-      `Run ${input.runId} is no longer active (status=${run?.status ?? "missing"})`,
-    );
-  }
-
-  await RankTrackingRepository.updateRun(input.runId, {
+  const started = await RankTrackingRepository.updateRun(input.runId, {
     status: "running",
   });
+  if (!started) {
+    throw new NonRetryableError(`Run ${input.runId} is no longer active`);
+  }
 
   let trackingKeywords = await RankTrackingRepository.getKeywordsForConfig(
     input.configId,
@@ -151,14 +147,24 @@ async function finalizeRankCheckRun(input: {
   // decision with a completed status — a replacement run may already be
   // underway.
   const run = await RankTrackingRepository.getRunById(input.runId);
-  if (!run || run.status === "failed" || run.status === "completed") {
+  const nowIso = new Date().toISOString();
+  const markConfigChecked = () =>
+    RankTrackingRepository.updateConfig(input.configId, input.projectId, {
+      lastCheckedAt: nowIso,
+      lastSkipReason: null,
+    });
+  // Only this workflow completes its run, so "completed" here means an earlier
+  // attempt of this step got that far and then failed: finish its config write.
+  if (run?.status === "completed") {
+    await markConfigChecked();
+    return;
+  }
+  if (!run || run.status === "failed") {
     console.warn(
       `[rank-check] ${input.runId} no longer active (status=${run?.status ?? "missing"}), skipping finalization`,
     );
     return;
   }
-
-  const nowIso = new Date().toISOString();
 
   // Snapshots were written incrementally by each batch step. Count from the
   // DB: a keyword is checked when any device has a snapshot, but the run is
@@ -203,24 +209,21 @@ async function finalizeRankCheckRun(input: {
         : null;
 
   // Flipping status away from 'pending'/'running' is what releases the
-  // partial-index slot for the next run.
-  await RankTrackingRepository.updateRun(input.runId, {
+  // partial-index slot for the next run. Stale-cleanup can still fail the run
+  // between the read above and this write; its decision stands.
+  const finalized = await RankTrackingRepository.updateRun(input.runId, {
     status,
     keywordsChecked,
     completedAt: nowIso,
     errorMessage,
   });
+  if (!finalized) return;
 
   // Clear any previous skip reason on success. A failed run must not advance
   // lastCheckedAt — nothing was actually checked.
   // Note: nextCheckAt is NOT set here — the cron handler advances it eagerly
   // before starting the workflow to prevent retry storms.
-  if (status === "completed") {
-    await RankTrackingRepository.updateConfig(input.configId, input.projectId, {
-      lastCheckedAt: nowIso,
-      lastSkipReason: null,
-    });
-  }
+  if (status === "completed") await markConfigChecked();
 
   // One-line summary per run, visible in Workers Logs.
   // Error text can echo vendor/user content — keep it one line and bounded.
@@ -337,25 +340,25 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       maxCostCredits,
     } = event.payload;
 
-    // Guard: skip if config was archived after the workflow was triggered
-    const configCheck = await pgStep(
-      step,
-      "check-active",
-      FREE_STEP_CONFIG,
-      async () => {
-        const cfg = await RankTrackingRepository.getConfigById({
-          configId,
-          projectId,
-        });
-        return { isActive: cfg?.isActive ?? false };
-      },
-    );
-    if (!configCheck.isActive) {
-      await failRunIfActive(runId, "Config has been archived");
-      return;
-    }
-
     try {
+      // Guard: skip if config was archived after the workflow was triggered
+      const configCheck = await pgStep(
+        step,
+        "check-active",
+        FREE_STEP_CONFIG,
+        async () => {
+          const cfg = await RankTrackingRepository.getConfigById({
+            configId,
+            projectId,
+          });
+          return { isActive: cfg?.isActive ?? false };
+        },
+      );
+      if (!configCheck.isActive) {
+        await failRunIfActive(runId, "Config has been archived");
+        return;
+      }
+
       console.log(
         `[rank-check] ${runId} starting (trigger=${trigger}, devices=${devices})`,
       );

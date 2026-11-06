@@ -6,9 +6,12 @@ import type {
   RankTrackingConfig,
 } from "@/types/schemas/rank-tracking";
 import {
+  isWorkflowActive,
+  readWorkflowStatus,
   startWorkflow,
   STUCK_RUN_AFTER_MS,
   terminateStuckWorkflow,
+  type WorkflowStatus,
 } from "@/server/lib/startWorkflow";
 
 type RunRow = Awaited<ReturnType<typeof RankTrackingRepository.getRunById>>;
@@ -25,22 +28,6 @@ type RunRow = Awaited<ReturnType<typeof RankTrackingRepository.getRunById>>;
 // - A run still active after STUCK_RUN_AFTER_MS is stuck: the next start
 //   terminates its workflow and fails it. Reads only report it.
 
-type RankCheckWorkflowStatus = {
-  status:
-    | "queued"
-    | "running"
-    | "paused"
-    | "errored"
-    | "terminated"
-    | "complete"
-    | "waiting"
-    | "waitingForPause"
-    | "unknown";
-  error?: {
-    message: string;
-  };
-};
-
 type RankCheckConfigForStart = Pick<
   RankTrackingConfig,
   | "id"
@@ -52,29 +39,10 @@ type RankCheckConfigForStart = Pick<
   | "serpDepth"
 >;
 
-const ACTIVE_WORKFLOW_STATUSES = new Set<RankCheckWorkflowStatus["status"]>([
-  "queued",
-  "running",
-  "waiting",
-  "waitingForPause",
-  "paused",
-]);
-
 const RANK_CHECK_STARTUP_GRACE_MS = 60 * 1000;
 
-async function getRankCheckWorkflowStatus(
-  runId: string,
-): Promise<RankCheckWorkflowStatus | null> {
-  try {
-    const instance = await env.RANK_CHECK_WORKFLOW.get(runId);
-    return (await instance.status()) as RankCheckWorkflowStatus;
-  } catch {
-    return null;
-  }
-}
-
 function getStaleReason(
-  workflowStatus: RankCheckWorkflowStatus | null,
+  workflowStatus: WorkflowStatus | null,
   run: RunRow,
 ): string {
   if (run?.status === "completed" || run?.status === "failed") {
@@ -100,9 +68,16 @@ async function getStaleRankCheckRunReason(input: {
   runId: string;
   ageMs: number;
 }) {
-  const workflowStatus = await getRankCheckWorkflowStatus(input.runId);
+  const workflowStatus = await readWorkflowStatus(
+    env.RANK_CHECK_WORKFLOW,
+    input.runId,
+  );
 
-  if (workflowStatus && ACTIVE_WORKFLOW_STATUSES.has(workflowStatus.status)) {
+  // A failed lookup says nothing about the workflow: treat it as still active.
+  if (
+    workflowStatus === null ||
+    (workflowStatus !== "missing" && isWorkflowActive(workflowStatus))
+  ) {
     if (input.ageMs < STUCK_RUN_AFTER_MS) return null;
     return `Workflow did not finish within ${STUCK_RUN_AFTER_MS / 3_600_000} hours`;
   }
@@ -112,32 +87,23 @@ async function getStaleRankCheckRunReason(input: {
     (!input.run ||
       input.run.status === "pending" ||
       input.run.status === "running") &&
-    (!workflowStatus || workflowStatus.status === "unknown");
+    (workflowStatus === "missing" || workflowStatus.status === "unknown");
 
   if (startupWindow) {
     return null;
   }
 
-  return getStaleReason(workflowStatus, input.run);
+  return getStaleReason(
+    workflowStatus === "missing" ? null : workflowStatus,
+    input.run,
+  );
 }
 
 /**
  * Mark a run as failed if it's still in an active state. Idempotent — safe to
- * call on runs that are already completed/failed.
+ * call on runs that are already completed/failed (updateRun skips them).
  */
-export async function failRunIfActive(
-  runId: string,
-  reason: string,
-  run?: RunRow,
-) {
-  const current = run ?? (await RankTrackingRepository.getRunById(runId));
-  if (
-    !current ||
-    current.status === "completed" ||
-    current.status === "failed"
-  ) {
-    return;
-  }
+export async function failRunIfActive(runId: string, reason: string) {
   await RankTrackingRepository.updateRun(runId, {
     status: "failed",
     errorMessage: reason,
@@ -222,7 +188,7 @@ export async function beginRankCheckRun(input: {
         // A stuck instance may still be running: stop it before freeing the
         // slot, so it can no longer post paid calls.
         await terminateStuckWorkflow(input.workflow, blocker.id);
-        await failRunIfActive(blocker.id, staleReason, blocker);
+        await failRunIfActive(blocker.id, staleReason);
         continue; // slot is free now — retry insert
       }
     }

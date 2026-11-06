@@ -32,7 +32,13 @@ import {
 } from "../repositories/LocalSeoRepository";
 import { finalizeLocalCheck, localPointSearch } from "./localSeoCollection";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import { startWorkflow } from "@/server/lib/startWorkflow";
+import {
+  isWorkflowActive,
+  readWorkflowStatus,
+  startWorkflow,
+  STUCK_RUN_AFTER_MS,
+  terminateStuckWorkflow,
+} from "@/server/lib/startWorkflow";
 
 // A Google Maps result. Ads and results without coordinates fail the parse
 // and are left out.
@@ -174,24 +180,21 @@ function checkCostCredits(tracker: LocalTrackerRow, keywords: number) {
 
 async function reconcileCheck(check: LocalCheckRow) {
   if (!isLocalScanActive(check.status)) return check;
-  let status: { status: string } | null = null;
-  try {
-    status = await (await env.LOCAL_RANK_WORKFLOW.get(check.id)).status();
-  } catch {
-    /* Startup and a missing workflow share this grace period. */
+  const status = await readWorkflowStatus(env.LOCAL_RANK_WORKFLOW, check.id);
+  const ageMs = Date.now() - new Date(check.createdAt).getTime();
+  // A failed lookup says nothing about the workflow: treat it as still active.
+  if (status === null || (status !== "missing" && isWorkflowActive(status))) {
+    // An instance can report "running" forever (a frozen step), which would
+    // block the tracker for good. Past the stuck limit, stop it and finish.
+    if (ageMs < STUCK_RUN_AFTER_MS) return check;
+    await terminateStuckWorkflow(env.LOCAL_RANK_WORKFLOW, check.id);
+  } else if (
+    (status === "missing" || status.status === "unknown") &&
+    ageMs < 60_000
+  ) {
+    // Startup and a missing workflow share this grace period.
+    return check;
   }
-  if (
-    status &&
-    ["running", "queued", "waiting", "waitingForPause", "paused"].includes(
-      status.status,
-    )
-  )
-    return check;
-  if (
-    (!status || status.status === "unknown") &&
-    Date.now() - new Date(check.createdAt).getTime() < 60_000
-  )
-    return check;
   const error =
     "The check stopped before all results were saved. Completed points remain available; a new check uses credits.";
   await finalizeLocalCheck(check.projectId, check.id, error);

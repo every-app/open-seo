@@ -104,6 +104,7 @@ export function useKeywordSerpAnalysis(
   const setSerpKeyword = useCallback((keyword: string | null) => {
     setSerpKeywordState(keyword);
     setRequestedDepth(SERP_INITIAL_DEPTH);
+    setSerpPageState(0);
   }, []);
 
   const loadedPages = Math.max(

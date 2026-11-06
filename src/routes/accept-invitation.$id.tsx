@@ -117,10 +117,13 @@ function InvitationCard({
 
       // Accepting updates the session row but not the session cookie cache;
       // setActive refreshes the cookie so the app opens in the joined org
-      // immediately instead of after the cache expires.
-      await authClient.organization.setActive({
-        organizationId: accepted.data.invitation.organizationId,
-      });
+      // immediately instead of after the cache expires. The invitation is
+      // already accepted here, so a failed refresh must not report otherwise.
+      await authClient.organization
+        .setActive({
+          organizationId: accepted.data.invitation.organizationId,
+        })
+        .catch(() => undefined);
       captureClientEvent("team:invitation_accept");
       // Full navigation: every cached query in this tab, and the remembered
       // project, belong to the old workspace.

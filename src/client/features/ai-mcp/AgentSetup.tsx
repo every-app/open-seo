@@ -29,7 +29,9 @@ export function AgentSetup({
   const { data } = useQuery({
     queryKey: ["mcpAuthorizedAt"],
     queryFn: () => getMcpAuthorizedAt(),
-    refetchInterval: 3_000,
+    // Stop once connected: the step is done and moves on by itself.
+    refetchInterval: (query) =>
+      query.state.data?.authorizedAt ? false : 3_000,
   });
   const connected = Boolean(data?.authorizedAt);
 

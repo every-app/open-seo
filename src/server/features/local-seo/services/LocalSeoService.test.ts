@@ -313,6 +313,18 @@ describe("saved local SEO scans", () => {
     expect(mocks.createWorkflow).not.toHaveBeenCalled();
   });
 
+  it("keeps a running check when its workflow lookup fails", async () => {
+    const scan = await startedScan();
+    // Past the startup grace, where a missing workflow would end the check.
+    await client.execute({
+      sql: "UPDATE local_rank_checks SET created_at = ?",
+      args: [new Date(Date.now() - 5 * 60_000).toISOString()],
+    });
+    mocks.workflowStatus.mockRejectedValue(new Error("internal error"));
+    const saved = await LocalSeoService.getScan(customer.projectId, scan.id);
+    expect(saved.scan.status).toBe(LocalScanStatus.Queued);
+  });
+
   it("marks unfinished points as failed when the workflow stops", async () => {
     const scan = await startedScan();
     mocks.workflowStatus.mockResolvedValue({ status: "errored" });

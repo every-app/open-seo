@@ -28,6 +28,7 @@ import {
 import { resolveSignInHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
+import { GoogleAccountService } from "@/server/features/google/GoogleAccountService";
 import { assertStandaloneSignUpOpen } from "@/server/standalone/sign-up";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
 import {
@@ -68,6 +69,12 @@ const createdApiKeySchema = z.object({
   referenceId: z.string(),
   // Bound by the api-key/create before hook.
   metadata: z.looseObject({ organizationId: z.string().min(1) }),
+});
+
+// The member row /organization/leave returns once it has been deleted.
+const leftMemberSchema = z.object({
+  userId: z.string().min(1),
+  organizationId: z.string().min(1),
 });
 
 function createAuth() {
@@ -140,6 +147,16 @@ function createAuth() {
                       "The owner role can't be granted from here. Use Transfer ownership in organization settings.",
                   });
                 }
+              },
+              // Before, not after: a failed disconnect then fails the removal,
+              // which the admin can retry, instead of leaving a removed
+              // member's Google grant serving the organization. Leaving on
+              // one's own skips these hooks; the after hook below covers it.
+              beforeRemoveMember: async ({ member: removedMember }) => {
+                await GoogleAccountService.disconnectMember(
+                  removedMember.userId,
+                  removedMember.organizationId,
+                );
               },
               afterAcceptInvitation: async ({ member: acceptedMember }) => {
                 await onInvitationAccepted({
@@ -303,6 +320,15 @@ function createAuth() {
       // memory, so every one would re-send it and hit Loops' team-wide rate
       // limit.
       after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/organization/leave") {
+          const left = leftMemberSchema.safeParse(ctx.context.returned);
+          if (left.success)
+            await GoogleAccountService.disconnectMember(
+              left.data.userId,
+              left.data.organizationId,
+            );
+          return;
+        }
         if (ctx.path !== "/api-key/create") return;
         const created = createdApiKeySchema.safeParse(ctx.context.returned);
         if (!created.success) return;

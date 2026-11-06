@@ -66,6 +66,12 @@ beforeAll(async () => {
       user_id TEXT PRIMARY KEY, ip_hash TEXT NOT NULL,
       claim_token TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL
     );
+    CREATE TABLE user_onboarding_answers (
+      user_id TEXT PRIMARY KEY, organization_id TEXT,
+      interested_features TEXT, work_for TEXT, client_website_count TEXT,
+      found_via TEXT, mcp_setup_intent TEXT, completed_at TEXT,
+      gsc_nudge_dismissed_at TEXT, created_at TEXT, updated_at TEXT
+    );
   `);
 
   guests = await import("./guest-accounts");
@@ -82,6 +88,7 @@ beforeEach(async () => {
     DELETE FROM member;
     DELETE FROM organization;
     DELETE FROM guest_accounts;
+    DELETE FROM user_onboarding_answers;
     DELETE FROM user;
   `);
 });
@@ -210,6 +217,11 @@ describe("guest accounts", () => {
     expect(claimer.rows).toEqual([
       { last_active_organization_id: guest.organizationId },
     ]);
+    // The agent already set the organization up, so the wizard is skipped.
+    const onboarding = await client.execute(
+      "SELECT completed_at FROM user_onboarding_answers WHERE user_id = 'real'",
+    );
+    expect(onboarding.rows[0]?.completed_at).toEqual(expect.any(String));
     const guestUser = await client.execute({
       sql: "SELECT id FROM user WHERE id = ?",
       args: [guest.userId],

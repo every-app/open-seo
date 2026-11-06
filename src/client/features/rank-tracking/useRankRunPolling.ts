@@ -35,9 +35,14 @@ export function useRankRunPolling(projectId: string, configId: string) {
         });
       }
 
-      // Keep polling active runs, including stale ones (they'll be cleaned up
-      // by the cron handler and we want to show the transition).
-      if (run?.status === "pending" || run?.status === "running") return 3000;
+      // A stale run stays active until the next start fails it (no cron
+      // reconciles rank runs), so it only needs the slow poll; the page
+      // already says it stopped responding.
+      if (
+        (run?.status === "pending" || run?.status === "running") &&
+        !run.maybeStale
+      )
+        return 3000;
       // Discover scheduled checks and checks started from another client.
       return 30_000;
     },

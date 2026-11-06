@@ -6,6 +6,7 @@ import { guestEmail } from "@/shared/guest-account";
 import { requestPrivacyChoices } from "@/shared/privacy-choices";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { GuestAccountRepository } from "@/server/auth/repositories/GuestAccountRepository";
+import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
 import { toHex } from "@/server/auth/org-slug";
 import { autumn } from "@/server/billing/autumn";
 import { FeatureFlag, isFeatureFlagOn } from "@/server/lib/featureFlags";
@@ -223,6 +224,13 @@ export async function claimGuestAccount(claimToken: string, userId: string) {
   const guest = await GuestAccountRepository.findUnclaimedGuest(claimToken);
   if (!guest || guest.userId === userId) return null;
   await GuestAccountRepository.transferToUser(guest.userId, userId);
+  // The guest's agent already set up this organization, and the guest's own
+  // onboarding answers went with it. Without this a new account lands in the
+  // wizard, which edits the agent's project and can start a paid audit.
+  await ActivationRepository.markOnboardingCompleted(
+    userId,
+    guest.organizationId,
+  );
   // Open the guest's organization next, even for someone who already had
   // their own: it holds the projects, and its link may lead to its Billing.
   await AuthRepository.setLastActiveOrganization(userId, guest.organizationId);

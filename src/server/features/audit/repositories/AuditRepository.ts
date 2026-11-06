@@ -91,6 +91,8 @@ async function completeAudit(
     pagesTotal: number;
   },
 ) {
+  // Like failAudit, only a running audit can finish: a reconciler that already
+  // failed it keeps its error instead of showing "completed" beside it.
   await db
     .update(audits)
     .set({
@@ -103,6 +105,7 @@ async function completeAudit(
       and(
         eq(audits.id, auditId),
         eq(audits.workflowInstanceId, workflowInstanceId),
+        eq(audits.status, "running"),
       ),
     );
 }

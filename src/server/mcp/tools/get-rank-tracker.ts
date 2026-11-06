@@ -88,7 +88,8 @@ const SKIP_REASON_TEXT = new Map<string, string>(
     plan_required:
       "Scheduled checks are being skipped because rank checks need a paid OpenSEO plan, and this account doesn't have one.",
     insufficient_credits:
-      "Scheduled checks are being skipped because the account ran out of credits; whoami shows the balance.",
+      // A refused manual check sets this too, so it can't say "scheduled".
+      "Rank checks are being refused because the account ran out of credits; whoami shows the balance.",
     no_keywords:
       "Scheduled checks are being skipped because the tracker has no keywords; add them with add_rank_tracking_keywords.",
   } satisfies Record<RankTrackingSkipReason, string>),

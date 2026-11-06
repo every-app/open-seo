@@ -91,14 +91,14 @@ export async function prepareAiRun(
   )
 > {
   const run = await repo.getRunInternal(runId);
-  // Stale-run cleanup failed it already; a retry would find the same.
-  if (!run || (run.status !== "queued" && run.status !== "running"))
+  // Stale-run cleanup failed it already; a retry would find the same. The
+  // guarded write also catches a cleanup that lands after this read.
+  if (!run || !(await repo.updateActiveRun(runId, { status: "running" })))
     throw new NonRetryableError(`Run ${runId} is no longer active.`);
   const pending = (await repo.getObservations([runId])).filter(
     (row) => row.status === "pending",
   );
   const live = run.trigger !== "scheduled";
-  await repo.updateRun(runId, { status: "running" });
   const market = {
     locationCode: run.locationCode,
     languageCode: run.languageCode,

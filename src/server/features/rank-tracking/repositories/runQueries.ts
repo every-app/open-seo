@@ -31,11 +31,26 @@ export async function tryCreateRun(data: {
   return Boolean(inserted[0]);
 }
 
+/**
+ * Updates a run that is still pending or running, and reports whether it did.
+ * A completed or failed run is final: the stale-run cleanup and the workflow
+ * can race, and the loser must not bring a finished run back to life.
+ */
 export async function updateRun(
   runId: string,
   data: Partial<InferInsertModel<typeof rankCheckRuns>>,
 ) {
-  await db.update(rankCheckRuns).set(data).where(eq(rankCheckRuns.id, runId));
+  const updated = await db
+    .update(rankCheckRuns)
+    .set(data)
+    .where(
+      and(
+        eq(rankCheckRuns.id, runId),
+        inArray(rankCheckRuns.status, ["pending", "running"]),
+      ),
+    )
+    .returning({ id: rankCheckRuns.id });
+  return updated.length > 0;
 }
 
 export async function getRunById(runId: string) {

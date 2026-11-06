@@ -81,8 +81,23 @@ async function purgeUnusedGrants(updatedBefore: Date, deadline = Infinity) {
   return purged;
 }
 
+/**
+ * A member leaving an organization takes their Google grant with them: the
+ * organization's Search Console and GA4 mappings read their account, not the
+ * organization's, so they stop, along with the data cached from them.
+ */
+async function disconnectMember(userId: string, organizationId: string) {
+  const gscProjectIds = await GoogleAccountRepository.removeMemberConnections(
+    userId,
+    organizationId,
+  );
+  for (const projectId of gscProjectIds)
+    await DashboardCacheService.deleteGscCache(projectId);
+}
+
 export const GoogleAccountService = {
   getRemovalImpact,
   remove,
+  disconnectMember,
   purgeUnusedGrants,
 };

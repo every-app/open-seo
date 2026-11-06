@@ -302,6 +302,20 @@ export const AiVisibilityRepository = {
     )[0] ?? null,
   updateRun: (id: string, values: Partial<RunRow>) =>
     db.update(aiRuns).set(values).where(eq(aiRuns.id, id)),
+  /**
+   * Updates a run only while it is queued or running, and reports whether it
+   * did, so a failed run can't be restarted by a workflow that read it first.
+   */
+  updateActiveRun: async (id: string, values: Partial<RunRow>) =>
+    (
+      await db
+        .update(aiRuns)
+        .set(values)
+        .where(
+          and(eq(aiRuns.id, id), inArray(aiRuns.status, ACTIVE_RUN_STATUSES)),
+        )
+        .returning({ id: aiRuns.id })
+    ).length > 0,
   getObservations,
   getObservation,
   listAnsweredPromptIds,

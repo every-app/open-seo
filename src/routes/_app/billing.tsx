@@ -338,7 +338,11 @@ function BillingPage() {
                         variant="ghost"
                         className="h-10"
                         disabled={pendingAction !== null}
-                        onClick={() => setBuyingCredits(false)}
+                        onClick={() => {
+                          setBuyingCredits(false);
+                          // A failed top-up's error belongs to that attempt.
+                          setError((e) => (e?.action === "topUp" ? null : e));
+                        }}
                       >
                         Cancel
                       </Button>
