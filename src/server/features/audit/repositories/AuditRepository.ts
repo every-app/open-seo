@@ -8,7 +8,6 @@ import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   audits,
-  auditIssues,
   auditLighthouseResults,
   auditPages,
   projects,
@@ -264,21 +263,6 @@ async function getLatestAuditForProject(projectId: string) {
   });
 }
 
-async function getIssuesForAudit(
-  auditId: string,
-  filters: { severity?: "critical" | "warning" | "info"; issueType?: string },
-) {
-  return db.query.auditIssues.findMany({
-    where: and(
-      eq(auditIssues.auditId, auditId),
-      filters.severity ? eq(auditIssues.severity, filters.severity) : undefined,
-      filters.issueType
-        ? eq(auditIssues.issueType, filters.issueType)
-        : undefined,
-    ),
-  });
-}
-
 async function getPagesForAudit(auditId: string) {
   return db
     .select({
@@ -368,27 +352,6 @@ async function hasAuditInOrganization(organizationId: string) {
   return rows.length > 0;
 }
 
-async function getAuditResultsForProject(auditId: string, projectId: string) {
-  const audit = await getAuditForProject(auditId, projectId);
-  if (!audit) {
-    return { audit: null, pages: [], lighthouse: [], issues: [] };
-  }
-
-  const [pages, lighthouse, issues] = await Promise.all([
-    db.query.auditPages.findMany({
-      where: eq(auditPages.auditId, auditId),
-    }),
-    db.query.auditLighthouseResults.findMany({
-      where: eq(auditLighthouseResults.auditId, auditId),
-    }),
-    db.query.auditIssues.findMany({
-      where: eq(auditIssues.auditId, auditId),
-    }),
-  ]);
-
-  return { audit, pages, lighthouse, issues };
-}
-
 async function getLighthouseResultById(input: {
   lighthouseResultId: string;
   projectId: string;
@@ -442,14 +405,12 @@ export const AuditRepository = {
   insertLighthouseResults,
   getAuditForProject,
   getLatestAuditForProject,
-  getIssuesForAudit,
   getPagesForAudit,
   countPagesByFetchClass,
   hasPagesForAudit,
   getAuditsByProject,
   getAuditUsageForOrganization,
   hasAuditInOrganization,
-  getAuditResultsForProject,
   getLighthouseResultById,
   deleteAuditForProject,
 } as const;

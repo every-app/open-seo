@@ -9,12 +9,10 @@ import type { AuditResultsData } from "@/client/features/audit/results/types";
 /** Report notices about JavaScript: app shells, and pages a render missed. */
 export function RenderingWarnings({ data }: { data: AuditResultsData }) {
   const rendered = data.audit.config.renderJavaScript;
-  const hasShells = data.issues.some(
-    (issue) => issue.issueType === "javascript-rendering-suspected",
+  const hasShells = data.issueGroups.some(
+    (group) => group.issueType === "javascript-rendering-suspected",
   );
-  const unreadCount = data.pages.filter(
-    (page) => page.fetchClass === "error",
-  ).length;
+  const unreadCount = data.fetchClassCounts.error;
 
   return (
     <>

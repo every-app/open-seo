@@ -13,7 +13,7 @@ import {
   extractPathname,
   LighthouseScoreBadge,
 } from "@/client/features/audit/shared";
-import type { AuditResultsData } from "@/client/features/audit/results/types";
+import type { AuditLighthouseRow } from "@/client/features/audit/results/types";
 import {
   countActiveFilters,
   PerformanceFilterBar,
@@ -37,13 +37,11 @@ export function PerformanceTable({
   auditId,
   projectId,
   lighthouse,
-  pages,
   tabs,
 }: {
   auditId: string;
   projectId: string;
-  lighthouse: AuditResultsData["lighthouse"];
-  pages: AuditResultsData["pages"];
+  lighthouse: AuditLighthouseRow[];
   tabs: ReactNode;
 }) {
   const [filters, setFilters] = useState<PerformanceFilters>(
@@ -55,16 +53,11 @@ export function PerformanceTable({
   ]);
   const rows = useMemo(
     () =>
-      lighthouse.map((result) => {
-        const page = pages.find((candidate) => candidate.id === result.pageId);
-        const pageUrl = page?.url ?? null;
-        return {
-          ...result,
-          pageUrl,
-          pagePath: pageUrl ? extractPathname(pageUrl) : null,
-        };
-      }),
-    [lighthouse, pages],
+      lighthouse.map((result) => ({
+        ...result,
+        pagePath: result.pageUrl ? extractPathname(result.pageUrl) : null,
+      })),
+    [lighthouse],
   );
   const filteredRows = useMemo(
     () => filterPerformanceRows(rows, filters),

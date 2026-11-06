@@ -1,10 +1,12 @@
-import type { AuditResultsData } from "@/client/features/audit/results/types";
+import type {
+  AuditLighthouseRow,
+  AuditPageRow,
+} from "@/client/features/audit/results/types";
 import type { PageFetchClass } from "@/shared/audit-fetch-class";
+import type { GetAuditPagesInput } from "@/types/schemas/audit";
 
-export type PageRow = AuditResultsData["pages"][number];
-type PerformanceResultRow = AuditResultsData["lighthouse"][number];
-export type PerformanceRowData = PerformanceResultRow & {
-  pageUrl: string | null;
+export type PageRow = AuditPageRow;
+export type PerformanceRowData = AuditLighthouseRow & {
   pagePath: string | null;
 };
 
@@ -73,40 +75,20 @@ export function isLighthouseFailure(row: LighthouseFailureFields) {
   return !!row.errorMessage || hasMissingLighthouseScores(row);
 }
 
-export function filterPages(rows: PageRow[], filters: PagesFilters) {
-  const query = filters.query.trim().toLowerCase();
-  return rows.filter((row) => {
-    if (query) {
-      const haystack = [row.url, row.title, row.metaDescription]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      if (!haystack.includes(query)) return false;
-    }
-    if (!matchesStatus(row.statusCode, filters.status)) return false;
-    if (filters.fetchClass !== "all" && row.fetchClass !== filters.fetchClass) {
-      return false;
-    }
-    if (!matchesRange(row.wordCount, filters.minWords, filters.maxWords)) {
-      return false;
-    }
-    if (
-      !matchesRange(
-        row.responseTimeMs,
-        filters.minResponseMs,
-        filters.maxResponseMs,
-      )
-    ) {
-      return false;
-    }
-    if (filters.missingAlt === "yes" && row.imagesMissingAlt <= 0) {
-      return false;
-    }
-    if (filters.missingAlt === "no" && row.imagesMissingAlt > 0) {
-      return false;
-    }
-    return true;
-  });
+/** The pages filters as the server's query: blank bounds are left out. */
+export function toPagesQuery(
+  filters: PagesFilters,
+): Omit<GetAuditPagesInput, "projectId" | "auditId" | "pageSize"> {
+  return {
+    query: filters.query.trim() || undefined,
+    status: filters.status,
+    fetchClass: filters.fetchClass,
+    minWords: parseFilterNumber(filters.minWords),
+    maxWords: parseFilterNumber(filters.maxWords),
+    minResponseMs: parseFilterNumber(filters.minResponseMs),
+    maxResponseMs: parseFilterNumber(filters.maxResponseMs),
+    missingAlt: filters.missingAlt,
+  };
 }
 
 export function filterPerformanceRows(
@@ -139,18 +121,6 @@ export function filterPerformanceRows(
     }
     return true;
   });
-}
-
-function matchesStatus(
-  statusCode: number | null,
-  status: PagesFilters["status"],
-) {
-  if (status === "all") return true;
-  if (status === "missing") return statusCode == null;
-  if (statusCode == null) return false;
-  if (status === "ok") return statusCode >= 200 && statusCode < 300;
-  if (status === "redirect") return statusCode >= 300 && statusCode < 400;
-  return statusCode >= 400;
 }
 
 function matchesRange(value: number | null, minRaw: string, maxRaw: string) {
