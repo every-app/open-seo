@@ -1,5 +1,6 @@
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
+import { publicFetch } from "@/server/lib/public-fetch";
 import { AppError } from "@/server/lib/errors";
 import { readBoundedText } from "@/server/lib/scrape";
 
@@ -79,7 +80,9 @@ async function checkKeyFile(host: string, key: string): Promise<KeyFileStatus> {
   const url = `https://${host}/${key}.txt`;
   let response: Response;
   try {
-    response = await fetch(await normalizeAndValidateStartUrl(url), {
+    // publicFetch, not fetch: the standalone edition's gateway pins the
+    // address it checked, so a domain can't rebind to an internal host.
+    response = await publicFetch(await normalizeAndValidateStartUrl(url), {
       headers: { "user-agent": "OpenSEO-IndexNow/1.0 (+https://openseo.so)" },
       redirect: "manual",
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),

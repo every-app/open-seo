@@ -11,6 +11,17 @@ export function createBaseAuthConfig(options?: {
 }) {
   return {
     ...baseAuthOptions,
+    // These list invitations, with the ids that accept them, to any member or
+    // to anyone signed in with an invited address. Where sign-up doesn't
+    // verify the email (password mode), a member could sign up as an invitee
+    // and accept an admin invitation. The team tab reads invitations through
+    // getTeam, which shows them only to members who can invite; server-side
+    // auth.api calls don't go through these routes.
+    disabledPaths: [
+      "/organization/get-full-organization",
+      "/organization/list-invitations",
+      "/organization/list-user-invitations",
+    ],
     advanced: {
       ipAddress: {
         // On Cloudflare Workers the client IP arrives in CF-Connecting-IP;
