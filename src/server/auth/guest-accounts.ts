@@ -33,7 +33,7 @@ export const GUEST_CLAIM_COOKIE = "openseo_guest_claim";
 const claimTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 
 type GuestEligibility =
-  | { eligible: true; ipHash: string }
+  | { eligible: true; ipHash: string; slot: number }
   | { eligible: false; reason: string };
 
 const AI_APP_HOSTS = new Set(["claude.ai", "claude.com", "chatgpt.com"]);
@@ -80,12 +80,14 @@ export async function checkGuestEligibility(
     return { eligible: false, reason: "cloud_network" };
   }
   const ipHash = await hashIp(limitKey(ip));
-  if (
-    (await GuestAccountRepository.countForIpHash(ipHash)) >= MAX_GUESTS_PER_IP
-  ) {
+  // Guests are never deleted, so an IP's slots run 0, 1, ... and the next free
+  // one is the count. The unique (ip_hash, slot) index refuses a concurrent
+  // request that read the same count.
+  const slot = await GuestAccountRepository.countForIpHash(ipHash);
+  if (slot >= MAX_GUESTS_PER_IP) {
     return { eligible: false, reason: "ip_limit" };
   }
-  return { eligible: true, ipHash };
+  return { eligible: true, ipHash, slot };
 }
 
 // One home connection on IPv6 gets a whole /64 and can pick any address in
@@ -163,9 +165,10 @@ export async function verifyGuestTurnstile(
 
 // createOrganization is injected (Better Auth's endpoint) so this module
 // needn't import auth.ts, which imports it back for the sign-in claim.
+// Returns null when a concurrent request from the same IP took the slot.
 export async function createGuestAccount(
   request: Request,
-  ipHash: string,
+  { ipHash, slot }: { ipHash: string; slot: number },
   createOrganization: (body: {
     name: string;
     slug: string;
@@ -175,14 +178,16 @@ export async function createGuestAccount(
   const userId = crypto.randomUUID().replaceAll("-", "");
   const claimToken = randomToken();
   const userEmail = guestEmail(userId);
-  await GuestAccountRepository.createGuestUser({
+  const created = await GuestAccountRepository.createGuestUser({
     userId,
     email: userEmail,
     ipHash,
+    slot,
     claimToken,
     // The analytics choice that applies to this browser, as at sign-up.
     analyticsOptedOut: !requestPrivacyChoices(request).analytics,
   });
+  if (!created) return null;
   const organization = await createOrganization({
     name: "My organization",
     slug: `org-${toHex(userId)}`,

@@ -6,6 +6,7 @@ import {
   type SerpLiveItem,
   type SerpQuery,
 } from "@/server/lib/dataforseo";
+import { serpSnapshotItemSchema } from "@/server/lib/dataforseo/serp";
 import { AppError } from "@/server/lib/errors";
 import { getCached, setCached } from "@/server/lib/r2-cache";
 
@@ -17,9 +18,15 @@ const READ_POLL_INTERVAL_MS = 3000;
 const READ_POLL_MIN_MS = 1000;
 // The posted task ids are the receipt: the same query again within this window
 // collects those reads instead of buying them twice, so a caller that lost the
-// response, or got "processing", can simply call again.
+// response, or got "processing", can simply call again. Once every read has
+// finished, the receipt holds the reads themselves, so a repeat is answered
+// from the cache without asking DataForSEO again: repeats cost the caller
+// nothing, and must not cost the shared DataForSEO account requests either.
 const READ_RECEIPT_TTL_SECONDS = 12 * 60 * 60;
-const readReceiptSchema = z.array(z.string()).min(1);
+const readReceiptSchema = z.union([
+  z.array(z.string()).min(1),
+  z.object({ reads: z.array(z.array(serpSnapshotItemSchema)) }),
+]);
 
 // Reciprocal rank fusion's usual constant. It's large enough that a site on
 // another read beats any move up the page, so one poisoned read can't put its
@@ -95,8 +102,8 @@ function mergeSerpReads(reads: SerpLiveItem[][]): MergedSerpItem[] {
   }));
 }
 
-/** Polls one read until it finishes or the deadline passes. */
-async function collectRead(taskId: string, deadline: number) {
+/** Polls one read until it finishes or the deadline passes, or just once. */
+async function collectRead(taskId: string, deadline: number, once: boolean) {
   for (;;) {
     // A slow poll must not hold back the reads already in. A failed one says
     // nothing about the read, which is already paid for.
@@ -108,6 +115,7 @@ async function collectRead(taskId: string, deadline: number) {
       return { status: "pending" as const };
     });
     if (
+      once ||
       outcome.status !== "pending" ||
       Date.now() + READ_POLL_INTERVAL_MS > deadline
     ) {
@@ -127,17 +135,32 @@ async function collectMergedSerp(
   taskIds: string[],
   receiptKey: string,
   deadline: number,
+  { replay }: { replay: boolean },
 ): Promise<MergedSerpOutcome> {
+  // The call that posted the reads waits for them. A repeat checks each once:
+  // repeats are free, so a caller looping on them must not turn each one into
+  // a run of polls against the shared DataForSEO account.
   const reads = await Promise.all(
-    taskIds.map((taskId) => collectRead(taskId, deadline)),
+    taskIds.map((taskId) => collectRead(taskId, deadline, replay)),
   );
-  const items = mergeSerpReads(
-    reads.flatMap((read) => (read.status === "completed" ? [read.items] : [])),
+  const completed = reads.flatMap((read) =>
+    read.status === "completed" ? [read.items] : [],
   );
-  if (items.length > 0) return { status: "completed", items };
-  if (reads.some((read) => read.status === "pending")) {
-    return { status: "processing" };
+  const items = mergeSerpReads(completed);
+  const pending = reads.some((read) => read.status === "pending");
+  if (items.length > 0) {
+    if (!pending) {
+      await setCached(
+        receiptKey,
+        { reads: completed },
+        READ_RECEIPT_TTL_SECONDS,
+      ).catch((error) => {
+        console.error("serp-reads.result-write failed:", error);
+      });
+    }
+    return { status: "completed", items };
   }
+  if (pending) return { status: "processing" };
 
   // Forget the receipt so a retry posts fresh reads instead of replaying this
   // for the rest of the window: DataForSEO also reports "no results" transiently.
@@ -188,8 +211,13 @@ export async function readMergedSerps(
   return Promise.all(
     requests.map(async (request, index): Promise<MergedSerpOutcome> => {
       const receipt = receipts[index];
+      if (receipt && "reads" in receipt) {
+        return { status: "completed", items: mergeSerpReads(receipt.reads) };
+      }
       if (receipt) {
-        return collectMergedSerp(receipt, request.receiptKey, deadline);
+        return collectMergedSerp(receipt, request.receiptKey, deadline, {
+          replay: true,
+        });
       }
       const outcome = posted[toPost.indexOf(request)];
       if (outcome.status === "rejected") {
@@ -204,7 +232,9 @@ export async function readMergedSerps(
       ).catch((error) => {
         console.error("serp-reads.receipt-write failed:", error);
       });
-      return collectMergedSerp(outcome.value, request.receiptKey, deadline);
+      return collectMergedSerp(outcome.value, request.receiptKey, deadline, {
+        replay: false,
+      });
     }),
   );
 }

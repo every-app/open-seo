@@ -88,11 +88,13 @@ export async function handleOAuthGuestRequest(
     return jsonResponse(signIn);
   }
 
-  const guest = await createGuestAccount(
-    request,
-    eligibility.ipHash,
-    (organization) => getAuth().api.createOrganization({ body: organization }),
+  const guest = await createGuestAccount(request, eligibility, (organization) =>
+    getAuth().api.createOrganization({ body: organization }),
   );
+  if (!guest) {
+    console.log("mcp.guest refused: ip_limit (concurrent)");
+    return jsonResponse(signIn);
+  }
   const redirectTo = await completeMcpGrant({
     request,
     oauth,

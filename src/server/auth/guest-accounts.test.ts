@@ -64,8 +64,11 @@ beforeAll(async () => {
     );
     CREATE TABLE guest_accounts (
       user_id TEXT PRIMARY KEY, ip_hash TEXT NOT NULL,
+      slot INTEGER NOT NULL DEFAULT 0,
       claim_token TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL
     );
+    CREATE UNIQUE INDEX guest_accounts_ip_hash_slot_idx
+      ON guest_accounts (ip_hash, slot);
     CREATE TABLE user_onboarding_answers (
       user_id TEXT PRIMARY KEY, organization_id TEXT,
       interested_features TEXT, work_for TEXT, client_website_count TEXT,
@@ -103,25 +106,41 @@ function connectRequest(ip: string, asn = 7922) {
   return request;
 }
 
-async function createGuest(ip: string) {
-  const request = connectRequest(ip);
+async function checkEligible(ip: string) {
   const eligibility = await guests.checkGuestEligibility(
-    request,
+    connectRequest(ip),
     CLAUDE_CALLBACK,
   );
   if (!eligibility.eligible) throw new Error(eligibility.reason);
-  return guests.createGuestAccount(request, eligibility.ipHash, async (org) => {
-    const id = `org-${org.userId}`;
-    await client.execute({
-      sql: "INSERT INTO organization (id, name) VALUES (?, ?)",
-      args: [id, org.name],
-    });
-    await client.execute({
-      sql: "INSERT INTO member (id, organization_id, user_id, role) VALUES (?, ?, ?, 'owner')",
-      args: [`m-${org.userId}`, id, org.userId],
-    });
-    return { id };
-  });
+  return eligibility;
+}
+
+function insertGuest(
+  ip: string,
+  eligibility: { ipHash: string; slot: number },
+) {
+  return guests.createGuestAccount(
+    connectRequest(ip),
+    eligibility,
+    async (org) => {
+      const id = `org-${org.userId}`;
+      await client.execute({
+        sql: "INSERT INTO organization (id, name) VALUES (?, ?)",
+        args: [id, org.name],
+      });
+      await client.execute({
+        sql: "INSERT INTO member (id, organization_id, user_id, role) VALUES (?, ?, ?, 'owner')",
+        args: [`m-${org.userId}`, id, org.userId],
+      });
+      return { id };
+    },
+  );
+}
+
+async function createGuest(ip: string) {
+  const guest = await insertGuest(ip, await checkEligible(ip));
+  if (!guest) throw new Error("slot taken");
+  return guest;
 }
 
 describe("guest accounts", () => {
@@ -141,6 +160,18 @@ describe("guest accounts", () => {
         CLAUDE_CALLBACK,
       ),
     ).resolves.toMatchObject({ eligible: true });
+  });
+
+  it("refuses a guest whose slot a concurrent request from the same IP took", async () => {
+    await createGuest("203.0.113.7");
+    // Both requests count one guest before either inserts.
+    const first = await checkEligible("203.0.113.7");
+    const second = await checkEligible("203.0.113.7");
+
+    await expect(insertGuest("203.0.113.7", first)).resolves.not.toBeNull();
+    await expect(insertGuest("203.0.113.7", second)).resolves.toBeNull();
+    const users = await client.execute("SELECT id FROM user");
+    expect(users.rows).toHaveLength(2);
   });
 
   it("counts an IPv6 home connection's whole /64 as one IP", async () => {

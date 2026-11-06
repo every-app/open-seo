@@ -153,14 +153,28 @@ describe("get_serp_results", () => {
     expect(textContent(result)).toContain('"seo tools" (4 results)');
   });
 
-  it("collects the same reads on a repeat instead of paying again", async () => {
+  it("answers a repeat of a finished search from the cache instead of paying or polling again", async () => {
     const post = mockReads({ t1: completed(organic(1, "a.com")) });
 
     const first = await getSerpResultsTool.handler(args, toolContext);
     const repeat = await getSerpResultsTool.handler(args, toolContext);
 
     expect(post).toHaveBeenCalledTimes(1);
+    expect(mocks.fetchSerpTaskResult).toHaveBeenCalledTimes(1);
     expect(repeat.structuredContent).toEqual(first.structuredContent);
+  });
+
+  it("checks a still-running read once on a repeat instead of polling it", async () => {
+    vi.useFakeTimers();
+    mockReads({ t1: { status: "pending" } });
+    await untilAnswered(getSerpResultsTool.handler(args, toolContext));
+    const polls = mocks.fetchSerpTaskResult.mock.calls.length;
+
+    // No fake time passes: a repeat that waited to poll again would hang.
+    const repeat = await getSerpResultsTool.handler(args, toolContext);
+
+    expect(textContent(repeat)).toContain("still running");
+    expect(mocks.fetchSerpTaskResult).toHaveBeenCalledTimes(polls + 1);
   });
 
   it("posts a mobile SERP separately from a desktop one", async () => {

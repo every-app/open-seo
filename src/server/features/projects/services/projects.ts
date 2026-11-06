@@ -7,6 +7,7 @@ import type {
 } from "@/types/schemas/projects";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
+import { isUniqueViolation } from "@/db/isUniqueViolation";
 import { AppError } from "@/server/lib/errors";
 import { assertLanguageForLocation } from "@/server/lib/market";
 import { getLanguageCode } from "@/shared/keyword-locations";
@@ -47,15 +48,6 @@ function resolveMarketInput(input: {
   const languageCode = input.languageCode ?? getLanguageCode(locationCode);
   assertLanguageForLocation(locationCode, languageCode);
   return { locationCode, languageCode };
-}
-
-// Drizzle wraps the driver error in a "Failed query" error, so check the cause
-// chain. SQLite reports the violation in the message, Postgres as code 23505.
-function isUniqueViolation(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  if (error.message.includes("UNIQUE constraint failed")) return true;
-  if ("code" in error && error.code === "23505") return true;
-  return isUniqueViolation(error.cause);
 }
 
 // The projects table's only unique index guards the auto-created ("Default",

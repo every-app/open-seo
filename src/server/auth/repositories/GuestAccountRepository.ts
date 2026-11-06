@@ -1,5 +1,6 @@
 import { count, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { isUniqueViolation } from "@/db/isUniqueViolation";
 import { runBatch } from "@/db/runBatch";
 import { guestAccounts, member, user as authUser } from "@/db/schema";
 
@@ -11,31 +12,46 @@ async function countForIpHash(ipHash: string) {
   return row?.value ?? 0;
 }
 
+/**
+ * Inserts the guest user into `slot` for its IP. Returns false, inserting
+ * nothing, when another guest already took that slot: a concurrent request
+ * that counted the same guests won the race.
+ */
 async function createGuestUser(input: {
   userId: string;
   email: string;
   ipHash: string;
+  slot: number;
   claimToken: string;
   analyticsOptedOut: boolean;
 }) {
   const now = new Date();
-  await runBatch((tx) => [
-    tx.insert(authUser).values({
-      id: input.userId,
-      name: "Guest",
-      email: input.email,
-      emailVerified: false,
-      createdAt: now,
-      updatedAt: now,
-      analyticsOptedOut: input.analyticsOptedOut,
-    }),
-    tx.insert(guestAccounts).values({
-      userId: input.userId,
-      ipHash: input.ipHash,
-      claimToken: input.claimToken,
-      createdAt: now.toISOString(),
-    }),
-  ]);
+  try {
+    await runBatch((tx) => [
+      tx.insert(guestAccounts).values({
+        userId: input.userId,
+        ipHash: input.ipHash,
+        slot: input.slot,
+        claimToken: input.claimToken,
+        createdAt: now.toISOString(),
+      }),
+      tx.insert(authUser).values({
+        id: input.userId,
+        name: "Guest",
+        email: input.email,
+        emailVerified: false,
+        createdAt: now,
+        updatedAt: now,
+        analyticsOptedOut: input.analyticsOptedOut,
+      }),
+    ]);
+    return true;
+  } catch (error) {
+    // The ids, email, and claim token are random, so the slot is the only
+    // unique key this insert can collide on.
+    if (isUniqueViolation(error)) return false;
+    throw error;
+  }
 }
 
 /** The guest behind a claim token, while its user and organization exist. */

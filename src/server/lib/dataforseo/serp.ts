@@ -39,7 +39,7 @@ export function clampSerpDepth(depth: number): number {
 // etv / estimated_paid_traffic_cost / backlinks_info / rank_changes, which we
 // rely on. The fields survive deserialization (the SDK copies unknown keys), so
 // validating here is both our type-safety guard and how we read those fields.
-const serpSnapshotItemSchema = z
+export const serpSnapshotItemSchema = z
   .object({
     type: z.string(),
     rank_group: z.number().nullable().optional(),

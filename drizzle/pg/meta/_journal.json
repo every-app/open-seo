@@ -309,6 +309,13 @@
       "when": 1793842519859,
       "tag": "0043_guest_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793943059414,
+      "tag": "0044_guest_account_slots",
+      "breakpoints": true
     }
   ]
 }
