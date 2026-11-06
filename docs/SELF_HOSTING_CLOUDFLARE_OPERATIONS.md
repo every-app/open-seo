@@ -9,7 +9,9 @@ With password accounts (`AUTH_MODE=password`, the default for new deployments), 
 ### Through Cloudflare Access
 
 With `AUTH_MODE=cloudflare_access`, use the same Cloudflare Access application that protects your OpenSEO Worker.
-Managed OAuth is required for MCP clients and is not enabled by default.
+Managed OAuth is required for MCP clients.
+
+If the deploy created your Access application (you didn't set `TEAM_DOMAIN` and `POLICY_AUD`), each `pnpm deploy:selfhost` turns Managed OAuth on and allows `localhost` and loopback redirect URIs, which CLI and desktop agents (Codex CLI, Claude Code) use. For web connectors, add their HTTPS redirect URIs with step 6 below; later deploys keep them. If you manage the Access application yourself, Managed OAuth is off by default; turn it on:
 
 1. Open Cloudflare Zero Trust.
 2. Go to `Access controls` -> `Applications`.
@@ -23,8 +25,6 @@ Managed OAuth is required for MCP clients and is not enabled by default.
    - Without this, clients can't finish [Dynamic Client Registration](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/managed-oauth/)
      and log in but expose no tools.
 7. Save.
-
-If the deploy created your Access application (you didn't set `TEAM_DOMAIN` and `POLICY_AUD`), each `pnpm deploy:selfhost` turns Managed OAuth off again, and MCP clients then fail with `Unexpected content type: text/html` (the Access login page). Repeat these steps after every deploy. To keep the setting, manage the Access application yourself: set `TEAM_DOMAIN` and `POLICY_AUD` in `.env.selfhost`, and the deploy leaves the application alone.
 
 MCP clients should connect to:
 

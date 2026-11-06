@@ -11,6 +11,9 @@ patchedDependencies:
   '@distilled.cloud/cloudflare@0.28.2':
     hash: a8fbc099fe517a0fd8c7fe2dda6d74f8fbf5fe381e0880f7641586b09f9609ba
     path: patches/@distilled.cloud__cloudflare@0.28.2.patch
+  alchemy@2.0.0-beta.61:
+    hash: 0afadf1f3698b6e611c6e55d676c63dae758c8b7e088c00b3b4c582e55fa579b
+    path: patches/alchemy@2.0.0-beta.61.patch
 
 importers:
 
@@ -226,7 +229,7 @@ importers:
         version: 6.1.2(@rolldown/plugin-babel@0.2.3(@babel/core@7.29.7)(@babel/runtime@7.29.7)(rolldown@1.2.14)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))
       alchemy:
         specifier: 2.0.0-beta.61
-        version: 2.0.0-beta.61(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0)
+        version: 2.0.0-beta.61(patch_hash=0afadf1f3698b6e611c6e55d676c63dae758c8b7e088c00b3b4c582e55fa579b)(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0)
       cf:
         specifier: 1.0.0-beta.14
         version: 1.0.0-beta.14(@types/node@22.19.11)
@@ -10664,7 +10667,7 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
-  alchemy@2.0.0-beta.61(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0):
+  alchemy@2.0.0-beta.61(patch_hash=0afadf1f3698b6e611c6e55d676c63dae758c8b7e088c00b3b4c582e55fa579b)(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1))(vitest@5.0.4(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))(workerd@1.20261012.1)(ws@8.21.0):
     dependencies:
       '@alchemy.run/node-utils': 0.0.5
       '@aws-sdk/credential-providers': 3.1080.0
