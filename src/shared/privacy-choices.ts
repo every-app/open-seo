@@ -16,8 +16,8 @@ export type PrivacyChoices = {
   advertising: boolean;
 };
 
-/** Choices as saved in the cookie. A cookie saved before Meta had its own
- *  choice has no `advertising`, so the region default applies to it. */
+/** Choices as saved in the cookie. A cookie with no current Meta choice has
+ *  no `advertising`, so the region default applies to it. */
 type SavedPrivacyChoices = Omit<PrivacyChoices, "advertising"> & {
   advertising?: boolean;
 };
@@ -69,14 +69,17 @@ export function readPrivacyCookie(
     .map((part) => part.trim())
     .find((part) => part.startsWith(`${PRIVACY_COOKIE}=`))
     ?.slice(PRIVACY_COOKIE.length + 1);
-  // Format: "a1.d0.m1" — analytics, Dub referrals, Meta advertising. Cookies
-  // saved before the Meta choice existed stop after the "d" flag.
-  const match = /^a([01])\.d([01])(?:\.m([01]))?$/.exec(raw ?? "");
+  // Format: "a1.d0.m2" — analytics, Dub referrals, Meta advertising. Cookies
+  // saved before the Meta choice existed stop after the "d" flag. "m2" is a
+  // yes to Meta measuring sign-ups, setup steps and subscriptions; "m1" was a
+  // yes when the choice only named sign-ups and subscriptions, so it no longer
+  // counts and the visitor is asked again. "m0" is a no under either wording.
+  const match = /^a([01])\.d([01])(?:\.m([012]))?$/.exec(raw ?? "");
   if (!match) return null;
   return {
     analytics: match[1] === "1",
     referrals: match[2] === "1",
-    advertising: match[3] ? match[3] === "1" : undefined,
+    advertising: match[3] === "2" ? true : match[3] === "0" ? false : undefined,
   };
 }
 
@@ -138,7 +141,7 @@ const flag = (value: boolean) => (value ? "1" : "0");
 export function savePrivacyChoices(choices: PrivacyChoices) {
   writeCookie(
     PRIVACY_COOKIE,
-    `a${flag(choices.analytics)}.d${flag(choices.referrals)}.m${flag(choices.advertising)}`,
+    `a${flag(choices.analytics)}.d${flag(choices.referrals)}.m${choices.advertising ? "2" : "0"}`,
     PRIVACY_COOKIE_MAX_AGE_SECONDS,
   );
   // Withdrawing referral permission removes Dub's cookies so a later signup

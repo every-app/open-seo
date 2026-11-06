@@ -119,7 +119,8 @@ export function PrivacyChoices() {
     return (
       <Prompt onAnswer={(advertising) => save({ ...choices, advertising })}>
         You came from one of our ads on Facebook or Instagram. Can Meta measure
-        whether it led to a sign-up or subscription?
+        whether it led to a sign-up, a setup step (adding a website, connecting
+        Search Console or an AI agent) or a subscription?
       </Prompt>
     );
   }
@@ -191,7 +192,7 @@ function ChoicesForm({
           description={
             gpc
               ? "Off because your browser sends Global Privacy Control."
-              : "Lets Meta measure which of our ads lead to sign-ups and subscriptions (Meta Pixel)."
+              : "Lets Meta measure which of our ads lead to sign-ups, setup steps (adding a website, connecting Search Console or an AI agent) and subscriptions (Meta Pixel)."
           }
           checked={draft.advertising && !gpc}
           disabled={gpc}

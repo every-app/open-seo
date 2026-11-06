@@ -54,10 +54,20 @@ describe("captureMetaSignup", () => {
     captureMetaSignup(
       browserRequest({
         "cf-ipcountry": "DE",
-        cookie: "_fbp=fb.1.1.1; openseo_privacy=a0.d0.m1",
+        cookie: "_fbp=fb.1.1.1; openseo_privacy=a0.d0.m2",
       }),
     );
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("sends nothing on a yes given before the choice named setup steps", () => {
+    captureMetaSignup(
+      browserRequest({
+        "cf-ipcountry": "DE",
+        cookie: "_fbp=fb.1.1.1; openseo_privacy=a0.d0.m1",
+      }),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
