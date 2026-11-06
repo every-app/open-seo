@@ -13,13 +13,14 @@ A browser qualifies when:
 - the deployment is the hosted app, and the kill switch (a feature flag) is off;
 - the authorization code goes to a known AI chat app or back to the person's own computer (a loopback address or an app's own URL scheme). Without a click, any other destination would let a website send its visitors through our authorize URL and collect a free account from each one;
 - the request doesn't come from a large cloud or hosting provider's network;
+- the browser has never signed in to a real account. A sign-in leaves a long-lived cookie, so someone whose session lapsed gets the sign-in page instead of an empty guest workspace;
 - the IP address has made fewer than two guests, ever. Only a keyed hash of the address is stored.
 
 ## Becoming a real account
 
 A guest can't add credits, connect Google Search Console or Google Analytics, or use the web app. When the agent hits one of those (the out-of-credits error, `whoami`, a Search Console connect link), the response gives a link that creates the account. The server instructions also tell the agent it's working with a guest.
 
-The link carries a random claim token. Opening it signed out stores the token in a cookie and opens the sign-up page, which also offers sign-in. At the next sign-in from that browser, before the default organization would be created, the guest's organization moves to the signing-in user and the guest user is deleted. A new user ends up with exactly the guest's organization, projects and remaining credits, not a second empty one with fresh free credits. An existing user gains it as another organization. Opening the link while signed in claims it at once. The billing customer's email switches to the real account's address.
+The link carries a random claim token. Opening it signed out stores the token in a cookie and opens the sign-up page, which also offers sign-in. At the next sign-in from that browser, before the default organization would be created, the guest's organization moves to the signing-in user and the guest user is deleted. A new user ends up with exactly the guest's organization, projects and remaining credits, not a second empty one with fresh free credits. An existing user gains it as another organization but stays in their own, which holds their plan; a new user opens the guest's. Opening the link while signed in claims it at once. The billing customer's email switches to the real account's address.
 
 Deleting the guest invalidates its MCP connection, so the AI app asks the person to reconnect, now as their real account. The per-IP record outlives the claim, so claiming doesn't free a guest slot.
 

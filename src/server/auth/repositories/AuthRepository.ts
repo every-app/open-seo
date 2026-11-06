@@ -311,6 +311,10 @@ async function isAnalyticsOptedOut(userId: string) {
 async function saveSignupCampaign(
   userId: string,
   campaign: {
+    entry: "mcp" | "app";
+    wasGuest: boolean;
+    agent: string | null;
+    utmMedium: string | null;
     utmSource: string | null;
     utmCampaign: string | null;
     utmContent: string | null;

@@ -10,6 +10,7 @@ import {
   vi,
 } from "vitest";
 import type * as GuestAccountsModule from "./guest-accounts";
+import { GUEST_CLAIM_COOKIE, RETURNING_BROWSER_COOKIE } from "./guest-cookies";
 
 // Real in-memory SQLite: the per-IP count and the claim handover (move the
 // membership, delete the guest, keep the IP row) are the parts that matter.
@@ -64,7 +65,7 @@ beforeAll(async () => {
     );
     CREATE TABLE guest_accounts (
       user_id TEXT PRIMARY KEY, ip_hash TEXT NOT NULL,
-      slot INTEGER NOT NULL DEFAULT 0,
+      slot INTEGER NOT NULL DEFAULT 0, agent TEXT,
       claim_token TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL
     );
     CREATE UNIQUE INDEX guest_accounts_ip_hash_slot_idx
@@ -98,9 +99,9 @@ beforeEach(async () => {
 
 const CLAUDE_CALLBACK = "https://claude.ai/api/mcp/auth_callback";
 
-function connectRequest(ip: string, asn = 7922) {
+function connectRequest(ip: string, asn = 7922, cookie = "") {
   const request = new Request("https://app.openseo.so/api/oauth/guest", {
-    headers: { "cf-connecting-ip": ip },
+    headers: { "cf-connecting-ip": ip, cookie },
   });
   Object.defineProperty(request, "cf", { value: { asn } });
   return request;
@@ -117,7 +118,7 @@ async function checkEligible(ip: string) {
 
 function insertGuest(
   ip: string,
-  eligibility: { ipHash: string; slot: number },
+  eligibility: { ipHash: string; slot: number; agent: string | null },
 ) {
   return guests.createGuestAccount(
     connectRequest(ip),
@@ -224,13 +225,22 @@ describe("guest accounts", () => {
     ).resolves.toEqual({ eligible: false, reason: "paused" });
   });
 
+  it("sends a browser that has signed in before to the sign-in page", async () => {
+    await expect(
+      guests.checkGuestEligibility(
+        connectRequest("203.0.113.7", 7922, `${RETURNING_BROWSER_COOKIE}=1`),
+        CLAUDE_CALLBACK,
+      ),
+    ).resolves.toEqual({ eligible: false, reason: "returning_browser" });
+  });
+
   it("hands the guest's organization to the account that signs in with the claim cookie", async () => {
     const guest = await createGuest("203.0.113.7");
     await client.execute(
       "INSERT INTO user (id, name, email, created_at, updated_at) VALUES ('real', 'Ana', 'ana@example.com', 0, 0)",
     );
     const headers = new Headers({
-      cookie: `other=1; ${guests.GUEST_CLAIM_COOKIE}=${guest.claimToken}`,
+      cookie: `other=1; ${GUEST_CLAIM_COOKIE}=${guest.claimToken}`,
     });
 
     await guests.claimGuestFromCookie(headers, "real");
@@ -241,7 +251,7 @@ describe("guest accounts", () => {
     expect(members.rows).toEqual([
       { organization_id: guest.organizationId, user_id: "real" },
     ]);
-    // The guest's organization opens next, even for an existing account.
+    // With no workspace of their own, the guest's organization opens next.
     const claimer = await client.execute(
       "SELECT last_active_organization_id FROM user WHERE id = 'real'",
     );
@@ -270,5 +280,29 @@ describe("guest accounts", () => {
     mocks.updateCustomer.mockClear();
     await guests.claimGuestFromCookie(headers, "someone-else");
     expect(mocks.updateCustomer).not.toHaveBeenCalled();
+  });
+
+  it("keeps an existing account in its own workspace after a claim", async () => {
+    const guest = await createGuest("203.0.113.7");
+    await client.executeMultiple(`
+      INSERT INTO user (id, name, email, created_at, updated_at, last_active_organization_id)
+        VALUES ('paying', 'Bo', 'bo@example.com', 0, 0, 'own-org');
+      INSERT INTO organization (id, name) VALUES ('own-org', 'Bo''s org');
+      INSERT INTO member (id, organization_id, user_id, role)
+        VALUES ('m-paying', 'own-org', 'paying', 'owner');
+    `);
+
+    await expect(
+      guests.claimGuestAccount(guest.claimToken, "paying"),
+    ).resolves.toBeNull();
+
+    const claimer = await client.execute(
+      "SELECT last_active_organization_id FROM user WHERE id = 'paying'",
+    );
+    expect(claimer.rows).toEqual([{ last_active_organization_id: "own-org" }]);
+    const orgs = await client.execute(
+      "SELECT organization_id FROM member WHERE user_id = 'paying' ORDER BY organization_id",
+    );
+    expect(orgs.rows).toHaveLength(2);
   });
 });

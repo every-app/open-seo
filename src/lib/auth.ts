@@ -38,7 +38,7 @@ import {
 } from "@/server/referrals/meta";
 import {
   captureSignUpCompleted,
-  saveSignUpCampaign,
+  saveSignUpSource,
 } from "@/server/auth/sign-up-analytics";
 import {
   productUpdatesOnByDefault,
@@ -47,6 +47,8 @@ import {
 import { markMcpConnected } from "@/server/features/activation/mcpActivation";
 import { assertNotScheduledForDeletion } from "@/server/account-deletion/signInBlock";
 import { claimGuestFromCookie } from "@/server/auth/guest-accounts";
+import { RETURNING_BROWSER_COOKIE } from "@/server/auth/guest-cookies";
+import { isGuestEmail } from "@/shared/guest-account";
 import {
   sendHostedPasswordResetEmail,
   sendHostedVerificationEmail,
@@ -296,6 +298,10 @@ function createAuth() {
         // gains nothing: a key pointed at an org they are not in fails the
         // membership check on its next /mcp call, and one pointed at an org
         // they are in is no different from a key created there.
+        // Marked when the user creates an MCP API key, the API-key counterpart
+        // of OAuth's authorize step. Not on each /mcp request: isolates share
+        // no memory, so every one would re-send it and hit Loops' team-wide
+        // rate limit.
         if (ctx.path !== "/api-key/create") return;
         // Minting a credential must see the stored session, not the cookie
         // cache: a cookie from a session revoked minutes ago must not mint a
@@ -315,11 +321,20 @@ function createAuth() {
         }
         return { context: { body: { metadata: { organizationId } } } };
       }),
-      // Marked when the user creates an MCP API key, the API-key counterpart
-      // of OAuth's authorize step. Not on each /mcp request: isolates share no
-      // memory, so every one would re-send it and hit Loops' team-wide rate
-      // limit.
       after: createAuthMiddleware(async (ctx) => {
+        // Remember that this browser has signed in to a real account, so a
+        // lapsed session later gets the sign-in page instead of a guest
+        // (checkGuestEligibility).
+        const newSession = ctx.context.newSession;
+        if (newSession && !isGuestEmail(newSession.user.email)) {
+          ctx.setCookie(RETURNING_BROWSER_COOKIE, "1", {
+            path: "/",
+            maxAge: 400 * 24 * 60 * 60,
+            httpOnly: true,
+            secure: true,
+            sameSite: "lax",
+          });
+        }
         if (ctx.path === "/organization/leave") {
           const left = leftMemberSchema.safeParse(ctx.context.returned);
           if (left.success)
@@ -329,6 +344,10 @@ function createAuth() {
             );
           return;
         }
+        // Marked when the user creates an MCP API key, the API-key counterpart
+        // of OAuth's authorize step. Not on each /mcp request: isolates share
+        // no memory, so every one would re-send it and hit Loops' team-wide
+        // rate limit.
         if (ctx.path !== "/api-key/create") return;
         const created = createdApiKeySchema.safeParse(ctx.context.returned);
         if (!created.success) return;
@@ -392,8 +411,8 @@ function createAuth() {
               }
               // Sent only if the separate advertising (Meta) choice allows it.
               captureMetaSignup(ctx?.request);
-              await saveSignUpCampaign(user.id, ctx).catch((error) =>
-                console.error("sign-up campaign save failed", error),
+              await saveSignUpSource(user.id, ctx).catch((error) =>
+                console.error("sign-up source save failed", error),
               );
               await captureSignUpCompleted(user, ctx).catch((error) =>
                 console.error("sign-up analytics failed", error),

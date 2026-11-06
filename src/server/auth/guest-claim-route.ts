@@ -1,11 +1,11 @@
 import { getAuth } from "@/lib/auth";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { BILLING_ROUTE } from "@/shared/billing";
+import { claimGuestAccount } from "@/server/auth/guest-accounts";
 import {
-  claimGuestAccount,
   GUEST_CLAIM_COOKIE,
   parseClaimToken,
-} from "@/server/auth/guest-accounts";
+} from "@/server/auth/guest-cookies";
 
 const CLAIM_COOKIE_MAX_AGE_SECONDS = 24 * 60 * 60;
 

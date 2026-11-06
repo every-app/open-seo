@@ -316,6 +316,13 @@
       "when": 1793943059414,
       "tag": "0044_guest_account_slots",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793947511819,
+      "tag": "0045_signup_sources",
+      "breakpoints": true
     }
   ]
 }

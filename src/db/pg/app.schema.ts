@@ -56,14 +56,26 @@ export const userOnboardingAnswers = pgTable(
   ],
 );
 
-// The paid-social ad (utm_medium=paid_social) a hosted signup came from, read
-// from the UTM tags the marketing site carries onto the sign-up link.
-// Campaign-level tags only: no click ids or other per-person ad identifiers.
-// No row = not from a paid-social ad.
+// Where a hosted signup came from: whether an AI agent sent them, and the UTM
+// tags (paid ads, AI chat links, shared reports) carried onto the sign-up
+// link. Campaign-level tags only: no click ids or other per-person ad
+// identifiers. One row per hosted signup since this was recorded; older rows
+// exist only for paid-social ads.
 export const userSignupCampaigns = pgTable("user_signup_campaigns", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
+  // Where the sign-up started: "mcp" when an AI agent's connection drove it
+  // (straight from its connect window, or by claiming a guest account an
+  // agent made), else "app". Null on rows saved before it was recorded.
+  entry: text("entry"),
+  // Whether an mcp sign-up used a guest account first.
+  wasGuest: boolean("was_guest"),
+  // The agent behind an mcp sign-up, from where its connection sends the code
+  // back: a host (claude.ai, chatgpt.com), "localhost" for a CLI, or a desktop
+  // app's URL scheme (cursor).
+  agent: text("agent"),
+  utmMedium: text("utm_medium"),
   utmSource: text("utm_source"),
   utmCampaign: text("utm_campaign"),
   utmContent: text("utm_content"),
@@ -86,6 +98,8 @@ export const guestAccounts = pgTable(
     // Random secret behind the guest's "create your account" link, which
     // hands the guest's organization to whoever signs in with it.
     claimToken: text("claim_token").notNull().unique(),
+    // The agent that made the guest, as in user_signup_campaigns.agent.
+    agent: text("agent"),
     createdAt: text("created_at").notNull(),
   },
   (table) => [

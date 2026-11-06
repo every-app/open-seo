@@ -22,6 +22,7 @@ async function createGuestUser(input: {
   email: string;
   ipHash: string;
   slot: number;
+  agent: string | null;
   claimToken: string;
   analyticsOptedOut: boolean;
 }) {
@@ -32,6 +33,7 @@ async function createGuestUser(input: {
         userId: input.userId,
         ipHash: input.ipHash,
         slot: input.slot,
+        agent: input.agent,
         claimToken: input.claimToken,
         createdAt: now.toISOString(),
       }),
@@ -54,10 +56,23 @@ async function createGuestUser(input: {
   }
 }
 
+async function hasMembership(userId: string) {
+  const [row] = await db
+    .select({ id: member.id })
+    .from(member)
+    .where(eq(member.userId, userId))
+    .limit(1);
+  return Boolean(row);
+}
+
 /** The guest behind a claim token, while its user and organization exist. */
 async function findUnclaimedGuest(claimToken: string) {
   const [row] = await db
-    .select({ userId: member.userId, organizationId: member.organizationId })
+    .select({
+      userId: member.userId,
+      organizationId: member.organizationId,
+      agent: guestAccounts.agent,
+    })
     .from(guestAccounts)
     .innerJoin(member, eq(member.userId, guestAccounts.userId))
     .where(eq(guestAccounts.claimToken, claimToken))
@@ -86,5 +101,6 @@ export const GuestAccountRepository = {
   countForIpHash,
   createGuestUser,
   findUnclaimedGuest,
+  hasMembership,
   transferToUser,
 } as const;

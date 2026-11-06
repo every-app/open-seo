@@ -1,13 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  captureSignUpCompleted,
-  saveSignUpCampaign,
-} from "./sign-up-analytics";
+import { captureSignUpCompleted, saveSignUpSource } from "./sign-up-analytics";
 
 const mocks = vi.hoisted(() => ({
   captureServerEvent: vi.fn(),
   getOAuthState: vi.fn(),
   saveSignupCampaign: vi.fn(),
+  findUnclaimedGuest: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({
@@ -19,6 +17,9 @@ vi.mock("@/server/lib/posthog", () => ({
 }));
 vi.mock("@/server/auth/repositories/AuthRepository", () => ({
   AuthRepository: { saveSignupCampaign: mocks.saveSignupCampaign },
+}));
+vi.mock("@/server/auth/repositories/GuestAccountRepository", () => ({
+  GuestAccountRepository: { findUnclaimedGuest: mocks.findUnclaimedGuest },
 }));
 
 const user = { id: "user_1", analyticsOptedOut: false };
@@ -69,12 +70,17 @@ describe("captureSignUpCompleted", () => {
   });
 });
 
-describe("saveSignUpCampaign", () => {
-  it("saves an ad's campaign tags from behind email verification", async () => {
-    const onboarding =
-      "/onboarding?utm_source=ig&utm_medium=paid_social&utm_campaign=Sales&fbclid=abc";
+describe("saveSignUpSource", () => {
+  beforeEach(() => {
+    mocks.getOAuthState.mockResolvedValue(null);
+    mocks.findUnclaimedGuest.mockResolvedValue(null);
+  });
 
-    await saveSignUpCampaign("user_1", {
+  it("saves the tags of a link from behind email verification", async () => {
+    const onboarding =
+      "/onboarding?utm_source=chatgpt.com&utm_medium=referral&fbclid=abc";
+
+    await saveSignUpSource("user_1", {
       path: "/sign-up/email",
       body: {
         callbackURL: `https://openseo.so/verify-email?redirect=${encodeURIComponent(onboarding)}`,
@@ -82,19 +88,48 @@ describe("saveSignUpCampaign", () => {
     });
 
     expect(mocks.saveSignupCampaign).toHaveBeenCalledWith("user_1", {
-      utmSource: "ig",
-      utmCampaign: "Sales",
+      entry: "app",
+      wasGuest: false,
+      agent: null,
+      utmMedium: "referral",
+      utmSource: "chatgpt.com",
+      utmCampaign: null,
       utmContent: null,
     });
   });
 
-  it("saves nothing for a tagged link that isn't a paid-social ad", async () => {
-    mocks.getOAuthState.mockResolvedValue({
-      newUserURL: "https://openseo.so/onboarding?utm_source=shared_report",
+  it("names the agent whose connect window sent them to sign up", async () => {
+    const authorize = `/api/auth/oauth2/authorize?response_type=code&client_id=c&redirect_uri=${encodeURIComponent("https://claude.ai/api/mcp/auth_callback")}&sig=s`;
+    mocks.getOAuthState.mockResolvedValue({ callbackURL: authorize });
+
+    await saveSignUpSource("user_1", { path: "/callback/google" });
+
+    expect(mocks.saveSignupCampaign).toHaveBeenCalledWith(
+      "user_1",
+      expect.objectContaining({
+        entry: "mcp",
+        wasGuest: false,
+        agent: "claude.ai",
+      }),
+    );
+  });
+
+  it("credits a guest claim to the agent that made the guest", async () => {
+    mocks.findUnclaimedGuest.mockResolvedValue({ agent: "localhost" });
+
+    await saveSignUpSource("user_1", {
+      path: "/callback/google",
+      headers: new Headers({ cookie: `openseo_guest_claim=${"a".repeat(43)}` }),
     });
 
-    await saveSignUpCampaign("user_1", { path: "/callback/google" });
-
-    expect(mocks.saveSignupCampaign).not.toHaveBeenCalled();
+    expect(mocks.findUnclaimedGuest).toHaveBeenCalledWith("a".repeat(43));
+    expect(mocks.saveSignupCampaign).toHaveBeenCalledWith(
+      "user_1",
+      expect.objectContaining({
+        entry: "mcp",
+        wasGuest: true,
+        agent: "localhost",
+      }),
+    );
   });
 });

@@ -2,12 +2,25 @@ import { waitUntil } from "cloudflare:workers";
 import { getOAuthState } from "better-auth/api";
 import { z } from "zod";
 import { OAUTH_AUTHORIZE_PATH } from "@/lib/auth-redirect";
+import {
+  agentFromRedirectUri,
+  readClaimCookie,
+} from "@/server/auth/guest-cookies";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
+import { GuestAccountRepository } from "@/server/auth/repositories/GuestAccountRepository";
 import { captureServerEvent } from "@/server/lib/posthog";
 
 const emailSignUpBodySchema = z.object({ callbackURL: z.string() });
 
-type SignUpContext = { path?: string; body?: unknown } | null | undefined;
+type SignUpContext =
+  | {
+      path?: string;
+      body?: unknown;
+      headers?: Headers;
+      request?: Request;
+    }
+  | null
+  | undefined;
 
 /**
  * `auth:sign_up_completed`, sent once the user row exists. Google sign-ups end
@@ -42,17 +55,32 @@ export async function captureSignUpCompleted(
 }
 
 /**
- * Saves the paid-social ad campaign a signup came from. The sign-up page
- * carries the landing page's UTM tags into the post-signup redirect, so they
- * survive the Google round trip and email verification without a cookie.
- * Other tagged links (shared reports, AI referrals) aren't ads and aren't saved.
+ * Saves where a hosted signup came from. `entry` is "mcp" when an AI agent's
+ * connection drove it: they're claiming a guest account an agent made, or the
+ * agent's connect window sent them to sign up (the authorize URL rides along
+ * as the sign-up redirect). Otherwise "app". The sign-up page carries the landing page's UTM tags into
+ * the post-signup redirect, so they survive the Google round trip and email
+ * verification without a cookie.
  */
-export async function saveSignUpCampaign(userId: string, ctx: SignUpContext) {
-  const params = (await signUpTarget(ctx))?.searchParams;
-  if (params?.get("utm_medium") !== "paid_social") return;
+export async function saveSignUpSource(userId: string, ctx: SignUpContext) {
+  const target = await signUpTarget(ctx);
+  const claimToken = readClaimCookie(ctx?.headers ?? ctx?.request?.headers);
+  const guest = claimToken
+    ? await GuestAccountRepository.findUnclaimedGuest(claimToken)
+    : null;
+  const fromAgent = target?.pathname === OAUTH_AUTHORIZE_PATH;
   // Untrusted URL input: cap what lands in the row.
-  const tag = (name: string) => params.get(name)?.slice(0, 200) || null;
+  const tag = (name: string) =>
+    target?.searchParams.get(name)?.slice(0, 200) || null;
   await AuthRepository.saveSignupCampaign(userId, {
+    entry: guest || fromAgent ? "mcp" : "app",
+    wasGuest: Boolean(guest),
+    agent: guest
+      ? guest.agent
+      : fromAgent
+        ? agentFromRedirectUri(target.searchParams.get("redirect_uri"))
+        : null,
+    utmMedium: tag("utm_medium"),
     utmSource: tag("utm_source"),
     utmCampaign: tag("utm_campaign"),
     utmContent: tag("utm_content"),
