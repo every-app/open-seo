@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as ResearchSpendModule from "@/server/billing/researchSpend";
 
 vi.mock("cloudflare:workers", () => ({ waitUntil: vi.fn() }));
 
@@ -40,9 +41,14 @@ vi.mock("@/server/lib/runtime-env", () => ({
   getOptionalEnvValue: vi.fn(),
   isHostedServerAuthMode: isHosted,
 }));
-vi.mock("@/server/billing/researchSpend", () => ({ billResearchSpend }));
+vi.mock("@/server/billing/researchSpend", async (importOriginal) => ({
+  ...(await importOriginal<typeof ResearchSpendModule>()),
+  billResearchSpend,
+}));
 vi.mock("@/server/billing/subscription", () => ({
   checkUsageCreditsDepleted: creditsDepleted,
+  holdTaskCredits: async () => ({ lockId: "task_hold" }),
+  releaseTaskCredits: async () => undefined,
 }));
 vi.mock("@/server/lib/dataforseo", () => ({
   CHATGPT_LANGUAGE_CODE: "en",

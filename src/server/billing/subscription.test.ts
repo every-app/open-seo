@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- the org billing seam's tests: credit gates, holds, and their settlement */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTUMN_PAID_PLAN_FEATURE_ID,
@@ -66,6 +67,8 @@ import {
   customerHasPaidPlan,
   getOrCreateOrganizationCustomer,
   checkUsageCreditsDepleted,
+  holdTaskCredits,
+  releaseTaskCredits,
   reserveUsageCredits,
   settleUsageCredits,
 } from "./subscription";
@@ -134,6 +137,7 @@ describe("subscription billing", () => {
     await expect(result).resolves.toEqual({
       depleted: false,
       monthlyRemaining: 250,
+      topupRemaining: 0,
       budgetReached: false,
     });
     expect(monthlyChecks).toBe(2);
@@ -205,6 +209,37 @@ describe("subscription billing", () => {
       });
     },
   );
+});
+
+describe("holdTaskCredits", () => {
+  it("lets tasks admitted on one balance reading run only while the balance covers their holds", async () => {
+    // Autumn takes a hold atomically, so each one sees the holds before it.
+    let monthly = 30;
+    checkMock.mockImplementation(async ({ requiredBalance = 0 }) => {
+      const allowed = monthly >= requiredBalance;
+      if (allowed) monthly -= requiredBalance;
+      return { allowed, balance: { remaining: monthly } };
+    });
+    finalizeMock.mockResolvedValue({ success: true });
+    const reading = { monthlyRemaining: 30, topupRemaining: 0 };
+
+    const first = await holdTaskCredits(customer, reading);
+    const second = await holdTaskCredits(customer, reading);
+
+    expect(first).toMatchObject({ estimatedCredits: 25 });
+    expect(second).toBeNull();
+
+    await releaseTaskCredits(customer, first!);
+    expect(finalizeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ lockId: first!.lockId, action: "release" }),
+      AUTUMN_TRACK_RETRY_OPTIONS,
+    );
+    // A balance smaller than a hold still admits one task.
+    monthly = 5;
+    await expect(
+      holdTaskCredits(customer, { monthlyRemaining: 5, topupRemaining: 0 }),
+    ).resolves.toMatchObject({ estimatedCredits: 5 });
+  });
 });
 
 describe("reserveUsageCredits", () => {

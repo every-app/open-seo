@@ -2,11 +2,11 @@ import { waitUntil } from "cloudflare:workers";
 import { generateText, Output } from "ai";
 import { sortBy } from "remeda";
 import { z } from "zod";
-import { billResearchSpend } from "@/server/billing/researchSpend";
 import {
-  checkUsageCreditsDepleted,
-  type BillingCustomerContext,
-} from "@/server/billing/subscription";
+  billResearchSpend,
+  withResearchAdmission,
+} from "@/server/billing/researchSpend";
+import { type BillingCustomerContext } from "@/server/billing/subscription";
 import { assertPaidAiSearchPlan } from "@/server/features/ai-search/services/access";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
@@ -16,17 +16,13 @@ import {
   CHATGPT_LOCATION_CODE,
   createDataforseoClient,
 } from "@/server/lib/dataforseo";
-import { AppError } from "@/server/lib/errors";
 import {
   buildChatAgentModel,
   requireOpenRouterAccess,
   type OpenRouterAccess,
 } from "@/server/lib/openrouter";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
-import {
-  getOptionalEnvValue,
-  isHostedServerAuthMode,
-} from "@/server/lib/runtime-env";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
 import {
   AI_DEFAULT_TOPIC,
@@ -90,43 +86,42 @@ export async function researchAiPrompts(
   customer: BillingCustomerContext,
 ): Promise<AiPromptResearchResult> {
   await assertPaidAiSearchPlan(customer.organizationId, "Prompt Research");
-  // Admit the whole search before buying prompt data, so a search that pays
-  // for questions can always finish the relevance check that shows them.
-  if (
-    (await isHostedServerAuthMode()) &&
-    (await checkUsageCreditsDepleted(customer)).depleted
-  )
-    throw new AppError(
-      "INSUFFICIENT_CREDITS",
-      "You need usage credits to research prompts.",
-    );
-  const openRouter = await requireOpenRouterAccess();
   const state = await getTracker({ projectId: input.projectId });
   const keyword = normalizeAiSuggestion(input.keyword);
-  // DataForSEO has ChatGPT prompt data only in US English.
-  const loaded = await loadPrompts(
-    {
-      topic: keyword,
-      platform: "chat_gpt",
-      locationCode: CHATGPT_LOCATION_CODE,
-      languageCode: CHATGPT_LANGUAGE_CODE,
-    },
+  // Admit the whole search before buying prompt data, so a search that pays
+  // for questions can always finish the relevance check that shows them.
+  const { loaded, relevant } = await withResearchAdmission(
     customer,
+    "You need usage credits to research prompts.",
+    async () => {
+      const openRouter = await requireOpenRouterAccess();
+      // DataForSEO has ChatGPT prompt data only in US English.
+      const found = await loadPrompts(
+        {
+          topic: keyword,
+          platform: "chat_gpt",
+          locationCode: CHATGPT_LOCATION_CODE,
+          languageCode: CHATGPT_LANGUAGE_CODE,
+        },
+        customer,
+      );
+      const matched = await relevantQuestions(
+        {
+          projectId: input.projectId,
+          keyword,
+          prompts: found.prompts,
+          openRouter,
+        },
+        customer,
+      );
+      return { loaded: found, relevant: matched };
+    },
   );
   const ownBrand = state.brands.find((brand) => brand.own);
   const tracked = new Set(
     state.prompts
       .filter((prompt) => !prompt.archived)
       .map((prompt) => normalizeAiSuggestion(prompt.text)),
-  );
-  const relevant = await relevantQuestions(
-    {
-      projectId: input.projectId,
-      keyword,
-      prompts: loaded.prompts,
-      openRouter,
-    },
-    customer,
   );
   const prompts = mergeNearDuplicates(
     loaded.prompts.filter((item) => relevant.has(item.question)),
