@@ -3,17 +3,33 @@ import {
   startGoogleLink,
   useGoogleLinkPending,
 } from "@/client/features/integrations/startGoogleLink";
+import type { GoogleLinkProvider } from "@/shared/google-link";
+
+const pickerKey = (provider: GoogleLinkProvider, projectId: string) =>
+  `google-property-picker:${provider}:${projectId}`;
+
+/** True on the page Google returns to, until useGooglePickerResume reopens the picker. */
+export function googlePickerPending(
+  provider: GoogleLinkProvider,
+  projectId: string,
+) {
+  try {
+    return sessionStorage.getItem(pickerKey(provider, projectId)) !== null;
+  } catch {
+    return false;
+  }
+}
 
 /** Restore the picker after Google's full-page redirect, scoped to this project. */
 export function useGooglePickerResume(
-  provider: "gsc" | "ga4",
+  provider: GoogleLinkProvider,
   projectId: string,
 ) {
   // null lets the card derive unfinished setup from the saved authorization.
   // false means the user explicitly closed the picker during this visit.
   const [picking, setPicking] = useState<boolean | null>(null);
   const linking = useGoogleLinkPending();
-  const key = `google-property-picker:${provider}:${projectId}`;
+  const key = pickerKey(provider, projectId);
   useEffect(() => {
     setPicking(null);
     try {

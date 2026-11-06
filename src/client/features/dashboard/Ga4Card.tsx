@@ -55,10 +55,10 @@ export function Ga4Card({
   // period would otherwise render an all-zero flatline chart in an empty box.
   return (
     <CardShell
-      title="Organic traffic"
+      title="Google Analytics"
       icon={<GoogleAnalyticsLogo className="size-5" />}
       titleInfo={
-        <span className={cardMetaClass}>Google Analytics · Last 28 days</span>
+        <span className={cardMetaClass}>Organic search · Last 28 days</span>
       }
       action={
         <Link

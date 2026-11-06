@@ -14,9 +14,7 @@ import { DashboardNewQueries } from "./DashboardNewQueries";
 import { DashboardLinkActivity } from "./DashboardLinkActivity";
 import { dashboardSiteTabSchema } from "@/types/schemas/dashboard";
 import type { z } from "zod";
-import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { sort } from "remeda";
 import { DashboardOnboarding } from "./DashboardOnboarding";
 import {
   DashboardAgentCard,
@@ -77,9 +75,9 @@ export function DashboardPage({
   }
 
   // Wait for the overview too: rendering cards from `overview === undefined`
-  // flashes their empty states (and reshuffles the data-first sort) once the
-  // real data lands. An overview error falls through so the page still loads,
-  // with the error in place of the audit card.
+  // flashes their empty states once the real data lands. An overview error
+  // falls through so the page still loads, with the error in place of the
+  // audit card.
   if (!activation || overviewQuery.isPending) {
     return (
       <div className="px-4 py-4 md:px-6 md:py-6" aria-busy>
@@ -108,71 +106,6 @@ export function DashboardPage({
   const agentNeverUsed =
     activation.mcp.authorizedAt !== null &&
     activation.mcp.firstToolCallAt === null;
-
-  // Search Console always renders: connected shows the report, otherwise the
-  // connect pitch. It sits ahead of the optional GA4 pitch.
-  const cards = [
-    {
-      key: "newQueries",
-      hasData: gscConnected,
-      node: (
-        <DashboardNewQueries
-          projectId={projectId}
-          connected={gscConnected}
-          siteUrl={activation.gsc.siteUrl}
-        />
-      ),
-    },
-    {
-      key: "gsc",
-      hasData: gscConnected,
-      node: (
-        <GscCard
-          projectId={projectId}
-          connected={gscConnected}
-          siteUrl={activation.gsc.siteUrl}
-        />
-      ),
-    },
-    ...(ga4Connected || !activation.ga4.cardDismissedAt
-      ? [
-          {
-            key: "ga4",
-            hasData: ga4Connected,
-            node: <Ga4Card projectId={projectId} connected={ga4Connected} />,
-          },
-        ]
-      : []),
-    ...(overview
-      ? [
-          {
-            key: "audit",
-            hasData: overview.audit != null,
-            node: (
-              <AuditHealthCard
-                projectId={projectId}
-                audit={overview.audit}
-                domain={activation.domain}
-              />
-            ),
-          },
-        ]
-      : []),
-    ...(showBacklinks
-      ? [
-          {
-            key: "backlinks",
-            hasData: true,
-            node: (
-              <DashboardLinkActivity
-                projectId={projectId}
-                domain={activation.domain!}
-              />
-            ),
-          },
-        ]
-      : []),
-  ];
 
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
@@ -264,11 +197,35 @@ export function DashboardPage({
             className="grid gap-4 lg:grid-cols-2 lg:[&>*:last-child:nth-child(odd)]:col-span-2"
             keepMounted={false}
           >
-            {sort(cards, (a, b) => Number(b.hasData) - Number(a.hasData)).map(
-              (card) => (
-                <Fragment key={card.key}>{card.node}</Fragment>
-              ),
-            )}
+            {/* One fixed order for every project, so connecting or scanning
+                fills a card in place. Search Console always renders:
+                connected shows the report, otherwise the connect pitch. */}
+            <DashboardNewQueries
+              projectId={projectId}
+              connected={gscConnected}
+              siteUrl={activation.gsc.siteUrl}
+            />
+            <GscCard
+              projectId={projectId}
+              connected={gscConnected}
+              siteUrl={activation.gsc.siteUrl}
+            />
+            {ga4Connected || !activation.ga4.cardDismissedAt ? (
+              <Ga4Card projectId={projectId} connected={ga4Connected} />
+            ) : null}
+            {overview ? (
+              <AuditHealthCard
+                projectId={projectId}
+                audit={overview.audit}
+                domain={activation.domain}
+              />
+            ) : null}
+            {showBacklinks ? (
+              <DashboardLinkActivity
+                projectId={projectId}
+                domain={activation.domain!}
+              />
+            ) : null}
           </TabsContent>
 
           <TabsContent value="keywords" keepMounted={false}>

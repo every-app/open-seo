@@ -7,6 +7,7 @@ import { Button } from "@/client/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { GoogleAnalyticsLogo } from "@/client/features/integrations/GoogleProductLogos";
+import { googlePickerPending } from "@/client/features/integrations/useGooglePickerResume";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { dismissDashboardGa4Card } from "@/serverFunctions/dashboard";
 
@@ -18,7 +19,11 @@ export function Ga4ConnectCard({
   connected: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [usesGa4, setUsesGa4] = useState(false);
+  // Back from Google's consent screen, the person already said yes: open
+  // the property picker instead of asking again.
+  const [usesGa4, setUsesGa4] = useState(() =>
+    googlePickerPending("ga4", projectId),
+  );
   const dismissMutation = useMutation({
     mutationFn: () => dismissDashboardGa4Card({ data: { projectId } }),
     onSuccess: () => {
