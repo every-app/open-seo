@@ -891,7 +891,7 @@ const GRID_POINT_COLUMNS: McpTableColumn<GridPointResult>[] = [
 
 function formatMatchedBusiness(business: MatchedBusiness | null): string {
   if (!business) {
-    return "Matched business: none — the target was not found at any point, so no point has a rank.";
+    return "Matched business: none — the target was not found at any point, so no point has a rank. If its name may not match the Maps listing, get its cid from get_local_serp_results at the center, then call get_local_rank_grid again with target.cid and the same other arguments within an hour; that re-reads these searches at no extra charge.";
   }
   return `Matched business: ${formatMcpCell(business.title)} (cid ${formatMcpCell(business.cid)}, place_id ${formatMcpCell(business.placeId)}).`;
 }

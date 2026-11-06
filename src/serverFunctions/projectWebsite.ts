@@ -18,7 +18,7 @@ export const saveProjectWebsiteSetup = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(saveProjectWebsiteSetupSchema)
   .handler(async ({ data, context }) => {
-    const project = await ProjectWebsiteService.save(
+    const { project } = await ProjectWebsiteService.save(
       { ...data, projectId: context.projectId },
       context,
       "user",

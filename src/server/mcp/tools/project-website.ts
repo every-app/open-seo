@@ -43,7 +43,11 @@ export const researchProjectWebsiteTool = {
         context.billing,
       );
       return mcpResponse({
-        text: JSON.stringify(research),
+        text:
+          JSON.stringify(research) +
+          (research.suggestedTopics.length > 0
+            ? "\nSaving suggestedTopics with save_project_website_setup also starts weekly paid AI tracking of the first three topics, unless the project already tracks prompts. Mention this when the user confirms setup."
+            : ""),
         structuredContent: research,
         meta: buildProjectMeta(
           context,
@@ -73,13 +77,15 @@ export const saveProjectWebsiteSetupTool = {
   },
   handler: withMcpProjectAuth(
     async (args: z.infer<typeof saveProjectWebsiteSetupSchema>, context) => {
-      const project = await ProjectWebsiteService.save(
+      const { project, seededTracking } = await ProjectWebsiteService.save(
         args,
         context.billing,
         "mcp",
       );
       return mcpResponse({
-        text: "Saved reviewed website setup to project context.",
+        text: seededTracking
+          ? "Saved reviewed website setup to project context. Weekly AI tracking now covers the first three suggested topics on ChatGPT, and its first paid check runs in about a week. Tell the user; set_ai_visibility_schedule pauses it if they don't want it."
+          : "Saved reviewed website setup to project context.",
         structuredContent: { project },
         meta: buildProjectMeta(
           context,

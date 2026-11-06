@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { AppError } from "@/server/lib/errors";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
@@ -94,9 +95,14 @@ export const saveKeywordsTool = {
         ? ` with tag(s): ${args.tags.join(", ")}`
         : "";
     const modeText = args.tagMode === "replace" ? " Replaced tags." : "";
+    const trackers = await RankTrackingService.getConfigs(args.projectId);
+    const trackingText =
+      trackers.length === 0
+        ? " If the user wants their rankings tracked, create_rank_tracker sets up a tracker."
+        : " If the user wants their rankings tracked, add_rank_tracking_keywords adds them to a tracker.";
 
     return mcpResponse({
-      text: `Saved ${args.keywords.length} keyword(s)${tagText} to project ${args.projectId}.${modeText}`,
+      text: `Saved ${args.keywords.length} keyword(s)${tagText} to project ${args.projectId}.${modeText}${trackingText}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

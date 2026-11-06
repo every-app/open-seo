@@ -207,7 +207,7 @@ export const researchKeywordsTool = {
             : "";
           const header = `## "${r.seed}" — ${r.rowCount} keywords (source: ${r.source}${r.usedFallback ? ", fallback" : ""}${scope})`;
           if (r.rowCount === 0) {
-            return `${header}\n(no keywords returned)`;
+            return `${header}\n(no keywords returned) Try a shorter, broader seed, or get_keyword_metrics for this seed's own volume.`;
           }
           return `${header}\n${formatMcpTable(r.rows, RESEARCH_COLUMNS, budget)}`;
         })

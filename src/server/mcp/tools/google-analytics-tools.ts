@@ -422,7 +422,19 @@ function overviewText(result: Ga4OverviewResult) {
     { header: "current", value: (row) => row.current },
     { header: "previous", value: (row) => row.previous },
   ]);
-  return `${summary}\n${totals}${diagnosticsSection(result.diagnostics)}${trendSection(result)}`;
+  const sessions = result.current.sessions;
+  const previousSessions = result.previous?.sessions;
+  const sessionDrop =
+    typeof sessions === "number" &&
+    typeof previousSessions === "number" &&
+    previousSessions > 0
+      ? (previousSessions - sessions) / previousSessions
+      : 0;
+  const dropHint =
+    sessionDrop >= 0.2
+      ? `\nOrganic sessions fell ${Math.round(sessionDrop * 100)}% from the previous period. Call get_google_analytics_organic_landing_pages with each period's startDate and endDate to find the pages that lost them.`
+      : "";
+  return `${summary}\n${totals}${dropHint}${diagnosticsSection(result.diagnostics)}${trendSection(result)}`;
 }
 
 const OPPORTUNITY_COLUMNS: McpTableColumn<SearchOpportunityRow>[] = [

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   getSavedKeywords: vi.fn(),
   saveKeywords: vi.fn(),
+  getRankTrackers: vi.fn(),
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -22,6 +23,10 @@ vi.mock("@/server/features/keywords/services/KeywordResearchService", () => ({
   },
 }));
 
+vi.mock("@/server/features/rank-tracking/services/RankTrackingService", () => ({
+  RankTrackingService: { getConfigs: mocks.getRankTrackers },
+}));
+
 const toolContext = makeToolContext();
 
 describe("saved keyword MCP tools", () => {
@@ -31,6 +36,7 @@ describe("saved keyword MCP tools", () => {
       locationCode: 2840,
       languageCode: "en",
     });
+    mocks.getRankTrackers.mockResolvedValue([]);
   });
 
   // Appending is the default: a replace default would silently wipe the

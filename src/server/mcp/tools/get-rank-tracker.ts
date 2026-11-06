@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { sortBy } from "remeda";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
-import { isOutOfCreditsRunError } from "@/shared/rank-tracking";
+import {
+  isOutOfCreditsRunError,
+  type RankTrackingSkipReason,
+} from "@/shared/rank-tracking";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import {
@@ -77,6 +80,26 @@ const CONFIG_COLUMNS: McpTableColumn<unknown>[] = [
   { header: "skip reason", value: (row) => readPath(row, "lastSkipReason") },
   { header: "trackerId", value: (row) => readPath(row, "id") },
 ];
+
+// The stored skip reason is free-form text; every value the writers use has
+// a line here.
+const SKIP_REASON_TEXT = new Map<string, string>(
+  Object.entries({
+    plan_required:
+      "Scheduled checks are being skipped because rank checks need a paid OpenSEO plan, and this account doesn't have one.",
+    insufficient_credits:
+      "Scheduled checks are being skipped because the account ran out of credits; whoami shows the balance.",
+    no_keywords:
+      "Scheduled checks are being skipped because the tracker has no keywords; add them with add_rank_tracking_keywords.",
+  } satisfies Record<RankTrackingSkipReason, string>),
+);
+
+/** Why scheduled checks stopped running, since the run line can't show a
+ *  check that never started. */
+function formatSkipReason(reason: string | null): [string] | null {
+  const text = reason ? SKIP_REASON_TEXT.get(reason) : undefined;
+  return text ? [text] : null;
+}
 
 /**
  * `lastCheckedAt` comes from the newest snapshot, so a run that finished
@@ -224,6 +247,14 @@ export const getRankTrackerTool = {
       `Keyword page: offset=${offset}, limit=${limit}, ${rows.length} of ${totalCount} rows.${nextOffset !== null ? ` Next page: offset=${nextOffset}.` : ""} If text is truncated, repeat offset=${offset} with a smaller limit.`,
       `Schedule: ${config.scheduleInterval}, devices: ${config.devices}, depth: ${config.serpDepth}, location: ${formatLocation(config.locationCode, config.locationName)}, lang: ${config.languageCode}`,
       formatLatestRun(results.run),
+      ...(formatSkipReason(config.lastSkipReason) ??
+        (totalCount > 0 && !results.run
+          ? [
+              config.scheduleInterval === "manual"
+                ? "No check has run yet, so blank positions don't mean unranked; they fill in after a check with run_rank_tracker."
+                : "No check has run yet, so blank positions don't mean unranked; the first scheduled check fills them in.",
+            ]
+          : [])),
       `Keywords (${totalCount}):`,
       totalCount === 0
         ? "No keywords tracked yet."

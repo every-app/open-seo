@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { waitUntil } from "cloudflare:workers";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
+import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -53,6 +54,13 @@ export const runRankTrackerTool = {
       projectId: args.projectId,
       billingCustomer: context.billing,
       maxCostCredits: args.maxCostCredits,
+    }).catch((error: unknown) => {
+      if (error instanceof AppError && error.code === "PAYMENT_REQUIRED")
+        throw new AppError(
+          "PAYMENT_REQUIRED",
+          "Rank checks need a paid OpenSEO plan, and this account doesn't have one. If Search Console is connected, get_search_console_performance shows the site's average positions for free; get_serp_results checks one keyword's live results for credits.",
+        );
+      throw error;
     });
     const trackerPath = `/p/${args.projectId}/rank-tracking/${args.trackerId}`;
 

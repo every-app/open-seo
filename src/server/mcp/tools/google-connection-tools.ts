@@ -10,7 +10,11 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
-import { buildConnectGscUrl } from "@/server/mcp/urls";
+import {
+  buildConnectGscUrl,
+  buildDashboardUrl,
+  buildGuestClaimUrl,
+} from "@/server/mcp/urls";
 
 // MCP counterparts of the dashboard's "pick a Search Console property / GA4
 // property" screens, so an agent can finish project setup after the user has
@@ -129,7 +133,10 @@ export const listSearchConsoleSitesTool = {
                 ),
               ].join("\n"),
             )
-            .join("\n");
+            .join("\n") +
+          (accounts.every((grant) => grant.sites.length === 0)
+            ? `\nNo Search Console property is available from these accounts. The user can reconnect Google or connect another account here: ${connectUrl}`
+            : "");
     return mcpResponse({
       text,
       meta: buildProjectMeta(context, args.projectId),
@@ -250,9 +257,18 @@ export const listGoogleAnalyticsPropertiesTool = {
           connection.propertyId === property.propertyId,
       })),
     }));
+    const integrationsPath = `/p/${args.projectId}/settings/integrations`;
     const text =
       accounts.length === 0
-        ? "No Google account with Google Analytics access is connected to this OpenSEO user. Connect one on the project's Integrations page in the dashboard."
+        ? `No Google account with Google Analytics access is connected to this OpenSEO user. Connect one here: ${
+            context.auth.guestClaimToken
+              ? buildGuestClaimUrl(
+                  context.baseUrl,
+                  context.auth.guestClaimToken,
+                  integrationsPath,
+                )
+              : buildDashboardUrl(context.baseUrl, integrationsPath)
+          }`
         : accounts
             .map((grant) =>
               [

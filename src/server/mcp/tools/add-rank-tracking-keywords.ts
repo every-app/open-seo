@@ -108,7 +108,7 @@ export const addRankTrackingKeywordsTool = {
     const metricsNote =
       result.added > 0 ? await fetchKeywordMetrics(args, context.billing) : "";
     return mcpResponse({
-      text: `Added ${result.added} of ${requested} requested keyword${requested === 1 ? "" : "s"} to tracker ${args.trackerId}. No check was started.${metricsNote}${result.scheduledEstimate ? ` Future ${result.scheduledEstimate.scheduleInterval} checks cost at most ${result.scheduledEstimate.costCredits} credits each, including retries (up to ~${result.scheduledEstimate.monthlyCostCredits} credits/month).` : ""}`,
+      text: `Added ${result.added} of ${requested} requested keyword${requested === 1 ? "" : "s"} to tracker ${args.trackerId}. No check was started.${metricsNote}${result.scheduledEstimate ? ` Future ${result.scheduledEstimate.scheduleInterval} checks cost at most ${result.scheduledEstimate.costCredits} credits each, including retries (up to ~${result.scheduledEstimate.monthlyCostCredits} credits/month).` : result.added > 0 ? " This tracker is manual, so positions appear only after a check with run_rank_tracker." : ""}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

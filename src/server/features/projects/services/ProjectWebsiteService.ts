@@ -101,6 +101,9 @@ async function save(
   );
   if (tracking && runSeededTracking)
     await startWebsiteTrackingRun(accepted.projectId, customer);
-  return requireProject(customer, accepted.projectId);
+  return {
+    project: await requireProject(customer, accepted.projectId),
+    seededTracking: tracking !== null,
+  };
 }
 export const ProjectWebsiteService = { research, save };

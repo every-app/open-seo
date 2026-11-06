@@ -989,7 +989,9 @@ export const searchLocalBusinessesTool = {
       return mcpResponse({
         text:
           businesses.length === 0
-            ? header
+            ? args.query
+              ? `${header} Missing from the listings database doesn't mean the business has no Google Business Profile: get_business_profile with the name and \`near\` checks Google directly, for fewer credits.`
+              : header
             : `${header}\n${formatMcpTable(businesses, LOCAL_BUSINESS_COLUMNS)}`,
         meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
         structuredContent: { businesses },
@@ -1136,7 +1138,9 @@ export const findSerpCompetitorsTool = {
       return mcpResponse({
         text:
           sorted.length === 0
-            ? header
+            ? competitors.length === 0
+              ? `${header} There's no competitor data for these keywords in this market: get_keyword_metrics shows whether they have search volume, and get_serp_results reads one keyword's results live.`
+              : header
             : `${header}\n${formatMcpTable(sorted, SERP_COMPETITOR_COLUMNS)}`,
         meta: buildProjectMeta(
           context,
@@ -1190,7 +1194,14 @@ export const getKeywordMetricsTool = {
         : row,
     );
 
-    const header = `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, trend = search volume for the last 3 months, oldest → newest, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.`;
+    const missingCount =
+      new Set(args.keywords.map((keyword) => keyword.trim().toLowerCase()))
+        .size - rows.length;
+    const header =
+      `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, trend = search volume for the last 3 months, oldest → newest, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.` +
+      (missingCount > 0
+        ? ` ${missingCount} requested keyword${missingCount === 1 ? "" : "s"} returned no data, usually because the search volume is too low to measure; research_keywords on a broader seed finds measurable variants.`
+        : "");
     return mcpResponse({
       text:
         rows.length === 0

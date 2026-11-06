@@ -178,7 +178,9 @@ export const completeAiResearchSetupTool = defineAiTool({
         : "AI research is set up: Prompt Research lists the tracker's topics."
       : d.status === "review"
         ? "Setup research is ready for review. Save it with save_project_website_setup after the user confirms."
-        : `Setup is ${d.status}.`,
+        : d.status === "running"
+          ? "Setup is running. Call complete_ai_research_setup again in about 20 seconds."
+          : `Setup is ${d.status}.`,
 });
 
 export const researchAiVisibilityPromptsTool = defineAiTool({
@@ -206,10 +208,30 @@ export const getAiVisibilityTrackerTool = defineAiTool({
     "Read AI tracking setup, topics, exact prompts, the project-context brand and competitors that answers are matched against, engine/country capabilities, and recent runs. Returns configured=false when absent. Uses no collection credits; never starts or polls a provider task.",
   execute: (s, a) => s.getTracker(a),
   summarize: (d) =>
-    d.configured
+    (d.configured
       ? `AI tracking is ${d.tracker?.enabled ? "enabled" : "paused"}: ${d.prompts.filter((p) => !p.archived && !p.paused).length} active prompts across ${d.engines.length} engines.`
-      : "AI tracking is not configured. Save prompts to begin.",
+      : "AI tracking is not configured.") + trackerNextStep(d),
 });
+
+/** What the agent should do next, from the tracker state it just read. */
+function trackerNextStep(d: z.infer<typeof aiTrackerOutput>): string {
+  if (d.brands.length === 0)
+    return " This project has no website yet, so tracking can't start: set it with save_project_website_setup or in the project's settings.";
+  if (!d.configured)
+    return " To set it up, draft prompts with research_ai_visibility_prompts or generate_ai_visibility_prompts, show the user estimate_ai_visibility_cost, then call save_ai_visibility_tracker once they approve the recurring checks.";
+  const [latest] = d.recentRuns;
+  if (latest?.status === "queued" || latest?.status === "running")
+    return ` Run ${latest.id} is collecting answers; follow it with get_ai_visibility_run.`;
+  if (d.tracker?.lastSkipReason)
+    return d.tracker.lastSkipReason === "INSUFFICIENT_CREDITS"
+      ? " The last check was skipped because the account ran out of credits."
+      : ` The last check reported: ${d.tracker.lastSkipReason}`;
+  if (!latest)
+    return ` No answers yet${d.tracker?.enabled && d.tracker.nextCheckAt ? `; the first scheduled check runs at ${d.tracker.nextCheckAt}` : ""}. To get answers now, call run_ai_visibility_check with the runNowCostUsd the user approved from estimate_ai_visibility_cost.`;
+  if (d.recentRuns.every((run) => run.trigger === "manual"))
+    return ` Only manual checks have run, and get_ai_visibility_results skips them by default: pass runId ${latest.id}.`;
+  return "";
+}
 export const saveAiVisibilityTrackerTool = defineAiTool({
   name: "save_ai_visibility_tracker",
   title: "Save AI visibility tracker",
@@ -226,7 +248,13 @@ export const saveAiVisibilityTrackerTool = defineAiTool({
     "Bulk create or patch AI tracking prompts, their topics, engines, country, and language. Pause or archive a topic by pausing or archiving each of its prompts. Brand name/domain and competitors come from shared Project context; manage them there. Read the tracker first and edit prompts by ID. New trackers start on a weekly schedule; saving uses no credits, and the first paid check runs about a week later. Show the user the estimate before creating a tracker or adding prompts or engines, and pause with set_ai_visibility_schedule if they do not want scheduled checks. Do not rewrite customer prompts without direction.",
   execute: (s, a) => s.saveTracker(a),
   summarize: (d) =>
-    `Saved AI tracking: ${d.created} created, ${d.updated} updated, ${d.skipped} skipped.`,
+    `Saved AI tracking: ${d.created} created, ${d.updated} updated, ${d.skipped} skipped.${
+      d.created > 0 &&
+      d.state.recentRuns.length === 0 &&
+      d.state.tracker?.enabled
+        ? ` Paid ${d.state.tracker.scheduleInterval} checks start at ${d.state.tracker.nextCheckAt}; set_ai_visibility_schedule pauses them. To get answers now, call run_ai_visibility_check with the runNowCostUsd the user approved.`
+        : ""
+    }`,
 });
 export const estimateAiVisibilityCostTool = defineAiTool({
   name: "estimate_ai_visibility_cost",
@@ -254,7 +282,7 @@ export const setAiVisibilityScheduleTool = defineAiTool({
     "Enable daily, weekly, or monthly AI tracking, change the cadence or run time, or pause future checks. Enabling spends credits on every check; show the user the estimate from estimate_ai_visibility_cost and get approval first. Checks stop when credits run out. First enable queues one baseline and returns its run: read that run instead of buying another check. Pausing lets a running check finish.",
   execute: (s, a, b) => s.setSchedule(a, b),
   summarize: (d) =>
-    `AI tracking ${d.state.tracker?.enabled ? `enabled ${d.state.tracker.scheduleInterval}, next check ${d.state.tracker.nextCheckAt}` : "paused"}.${d.run ? ` Run ${d.run.id}: ${d.run.completed}/${d.run.expected} completed. ${runNextAction(d.run)}` : ""}`,
+    `AI tracking ${d.state.tracker?.enabled ? `enabled ${d.state.tracker.scheduleInterval}, next check ${d.state.tracker.nextCheckAt}` : "paused"}.${d.run ? ` Run ${d.run.id}: ${d.run.completed}/${d.run.expected} completed. ${runNextAction(d.run)}` : d.state.tracker?.enabled && d.state.tracker.lastSkipReason === "INSUFFICIENT_CREDITS" ? " No baseline check ran because the account is out of credits, and scheduled checks are skipped until credits are added." : ""}`,
 });
 export const runAiVisibilityCheckTool = defineAiTool({
   name: "run_ai_visibility_check",
@@ -299,7 +327,7 @@ export const getAiVisibilityResultsTool = defineAiTool({
     "For a normal review make one run-wide call with these top-level arguments (there is no filters object): runId null (or a manual run's runId), topic null, engines null, promptId null, cursor null, competitorGap false; never enumerate every engine or prompt. Use engines to request one or more engines in a single filtered call. Then read sources once for its returned runId and inspect 2-3 answer examples. Derive competitor gaps from returned rows or make a separate gap query; never carry competitorGap=true into overall source or branded-diagnostic reads. Read paginated prompt/engine observations and brand comparison counts over answered collections. Defaults to neutral prompts in the latest baseline/scheduled run, excluding manual checks; request branded=all to include branded diagnostics. Reuse the returned runId and filters for source analysis. No full answers or collection; use observation IDs with get_ai_visibility_answer. Supports prompt history and competitor gaps.",
   execute: (s, a) => s.getResults(a),
   summarize: (d) =>
-    `${resultScopeNotice(d.appliedFilters.branded)} ${d.appliedFilters.competitorGap ? "Gap-only results" : "Results"}: ${d.rows.length}/${d.totalCount} result rows; ${d.coverage.completed}/${d.coverage.expected} valid answers, ${d.coverage.noAnswer} no-answer collections, ${d.coverage.failed} failed.${d.nextCursor ? ` Next cursor ${d.nextCursor}.` : ""}${d.totalCount === 0 && d.coverage.completed > 0 ? " No answers matched the selected filters; this does not mean answer details are missing. Remove restrictive filters to read all retained answers." : ""}`,
+    `${resultScopeNotice(d.appliedFilters.branded)} ${d.appliedFilters.competitorGap ? "Gap-only results" : "Results"}: ${d.rows.length}/${d.totalCount} result rows; ${d.coverage.completed}/${d.coverage.expected} valid answers, ${d.coverage.noAnswer} no-answer collections, ${d.coverage.failed} failed.${d.nextCursor ? ` Next cursor ${d.nextCursor}.` : ""}${d.totalCount === 0 && d.coverage.completed > 0 ? " No answers matched the selected filters; this does not mean answer details are missing. Remove restrictive filters to read all retained answers." : ""}${d.run === null ? " There is no baseline or scheduled run to read yet. If a manual check ran, pass its runId from get_ai_visibility_tracker; otherwise wait for the first scheduled check." : ""}`,
 });
 export const getAiVisibilityAnswerTool = defineAiTool({
   name: "get_ai_visibility_answer",

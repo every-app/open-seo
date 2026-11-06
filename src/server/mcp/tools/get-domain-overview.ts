@@ -94,6 +94,11 @@ export const getDomainOverviewTool = {
       `Target: ${result.displayTarget} (scope: ${result.scope})`,
       `Organic traffic: ${result.organicTraffic ?? "?"}`,
       `Organic keywords: ${result.organicKeywords ?? "?"}`,
+      ...(result.hasData
+        ? []
+        : [
+            "No ranked keywords found for this domain in this market. Check the domain and market; for a new site, research_keywords on its main topics finds keywords to target.",
+          ]),
       ...(result.scope === "subdomains"
         ? []
         : [
