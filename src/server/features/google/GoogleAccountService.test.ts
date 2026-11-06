@@ -81,7 +81,7 @@ beforeAll(async () => {
 
 afterAll(() => {
   client.close();
-  rmSync(directory, { recursive: true });
+  rmSync(directory, { recursive: true, force: true, maxRetries: 3 });
 });
 beforeEach(async () => {
   oauth.getGoogleAccessToken.mockImplementation(
