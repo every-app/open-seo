@@ -4,8 +4,8 @@ import { SIGNUP_URL } from "@/components/landing-page";
 import { PrivacyChoicesLink } from "@/components/privacy-choices";
 
 /**
- * Layout for paid-traffic landing pages. No site navigation: the only way out
- * is the page's own calls to action.
+ * Layout for paid-traffic landing pages. No site navigation: each page brings
+ * its own header, and the only way out is the page's own calls to action.
  */
 export const Route = createFileRoute("/_campaign")({
   head: () => ({
@@ -31,28 +31,17 @@ function CampaignLayout() {
 
   return (
     <div className="itc itc-campaign">
-      <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 md:pt-8">
-        <nav className="itc-campaign-nav mx-auto flex min-h-14 max-w-5xl items-center justify-between gap-3 rounded-full border border-[var(--color-border-subtle)] bg-white/90 py-2 pl-5 pr-2 shadow-sm shadow-neutral-900/5">
-          <span className="text-sm font-semibold">OpenSEO</span>
-          <a
-            href={SIGNUP_URL}
-            className="inline-flex h-9 items-center rounded-full bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-          >
-            Start free trial
-          </a>
-        </nav>
-      </div>
-
       <Outlet />
 
       <footer className="itc-campaign-footer itc-caption itc-subtle">
         <div className="itc-container">
           <p style={{ margin: 0 }}>© 2026 Every App, Inc.</p>
           <nav aria-label="Legal">
+            {/* The only links that leave the page besides sign-up. The pixel
+                can load here, and Meta's Business Tools Terms want every page
+                it runs on to link to how it's used and how to opt out. Terms
+                are agreed to on the sign-up page. */}
             <a href="/privacy">Privacy</a>
-            <a href="/terms-and-conditions">Terms</a>
-            {/* Ads land here, and the pixel can load here, so the opt-out
-                must be reachable without the site footer. */}
             <PrivacyChoicesLink />
           </nav>
         </div>

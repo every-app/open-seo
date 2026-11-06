@@ -58,6 +58,7 @@ import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as GuidesSplatRouteImport } from './routes/guides/$'
 import { Route as JsMetaDotjsRouteImport } from './routes/js/meta[.]js'
 import { Route as JsScriptDotjsRouteImport } from './routes/js/script[.]js'
+import { Route as CampaignStartAngleRouteImport } from './routes/_campaign/start.$angle'
 import { Route as MarketingFeaturesIndexRouteImport } from './routes/_marketing/features/index'
 import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes/_marketing/features/ai-brand-visibility'
 import { Route as MarketingFeaturesAiSearchPromptsRouteImport } from './routes/_marketing/features/ai-search-prompts'
@@ -359,6 +360,11 @@ const JsScriptDotjsRoute = JsScriptDotjsRouteImport.update({
   id: '/js/script.js',
   path: '/js/script.js',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CampaignStartAngleRoute = CampaignStartAngleRouteImport.update({
+  id: '/start/$angle',
+  path: '/start/$angle',
+  getParentRoute: () => CampaignRoute,
 } as any)
 const MarketingFeaturesIndexRoute = MarketingFeaturesIndexRouteImport.update({
   id: '/features/',
@@ -674,6 +680,7 @@ export interface FileRoutesByFullPath {
   '/blogs/': typeof BlogsIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/start/$angle': typeof CampaignStartAngleRoute
   '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
   '/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
   '/features/backlink-checker': typeof MarketingFeaturesBacklinkCheckerRoute
@@ -767,6 +774,7 @@ export interface FileRoutesByTo {
   '/blogs': typeof BlogsIndexRoute
   '/docs': typeof DocsIndexRoute
   '/guides': typeof GuidesIndexRoute
+  '/start/$angle': typeof CampaignStartAngleRoute
   '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
   '/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
   '/features/backlink-checker': typeof MarketingFeaturesBacklinkCheckerRoute
@@ -863,6 +871,7 @@ export interface FileRoutesById {
   '/blogs/': typeof BlogsIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/_campaign/start/$angle': typeof CampaignStartAngleRoute
   '/_marketing/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
   '/_marketing/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
   '/_marketing/features/backlink-checker': typeof MarketingFeaturesBacklinkCheckerRoute
@@ -958,6 +967,7 @@ export interface FileRouteTypes {
     | '/blogs/'
     | '/docs/'
     | '/guides/'
+    | '/start/$angle'
     | '/features/ai-brand-visibility'
     | '/features/ai-search-prompts'
     | '/features/backlink-checker'
@@ -1051,6 +1061,7 @@ export interface FileRouteTypes {
     | '/blogs'
     | '/docs'
     | '/guides'
+    | '/start/$angle'
     | '/features/ai-brand-visibility'
     | '/features/ai-search-prompts'
     | '/features/backlink-checker'
@@ -1146,6 +1157,7 @@ export interface FileRouteTypes {
     | '/blogs/'
     | '/docs/'
     | '/guides/'
+    | '/_campaign/start/$angle'
     | '/_marketing/features/ai-brand-visibility'
     | '/_marketing/features/ai-search-prompts'
     | '/_marketing/features/backlink-checker'
@@ -1562,6 +1574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JsScriptDotjsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_campaign/start/$angle': {
+      id: '/_campaign/start/$angle'
+      path: '/start/$angle'
+      fullPath: '/start/$angle'
+      preLoaderRoute: typeof CampaignStartAngleRouteImport
+      parentRoute: typeof CampaignRoute
+    }
     '/_marketing/features/': {
       id: '/_marketing/features/'
       path: '/features'
@@ -1876,11 +1895,13 @@ declare module '@tanstack/react-router' {
 interface CampaignRouteChildren {
   CampaignAgenciesRoute: typeof CampaignAgenciesRoute
   CampaignAgentsRoute: typeof CampaignAgentsRoute
+  CampaignStartAngleRoute: typeof CampaignStartAngleRoute
 }
 
 const CampaignRouteChildren: CampaignRouteChildren = {
   CampaignAgenciesRoute: CampaignAgenciesRoute,
   CampaignAgentsRoute: CampaignAgentsRoute,
+  CampaignStartAngleRoute: CampaignStartAngleRoute,
 }
 
 const CampaignRouteWithChildren = CampaignRoute._addFileChildren(

@@ -1064,3 +1064,585 @@ body:has(.itc-campaign) {
 .itc-campaign-footer button:hover {
   color: var(--ink);
 }
+
+/* ── /start/<angle>: the Meta ads' landing page ──
+   Mobile first. Inside Instagram's browser the first screen is about
+   390 × 664, and the headline, product shot, Google button and proof all fit
+   inside it. Two columns from 960px. */
+.itc-start {
+  --start-muted: var(--color-brand-muted);
+  --start-border: var(--color-border-subtle);
+}
+.itc-start-bar {
+  max-width: 1120px;
+  min-height: 52px;
+  margin: 0 auto;
+  padding: 12px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.itc-start-logo {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.itc-start-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--start-border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.itc-start-badge img {
+  border-radius: 3px;
+}
+
+.itc-start-hero {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 18px 20px 28px;
+  display: grid;
+  gap: 18px;
+}
+.itc-start-copy {
+  display: grid;
+  gap: 12px;
+}
+.itc-start-title {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.itc-start-sub {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--start-muted);
+}
+
+.itc-start-card {
+  margin: 0;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--start-border);
+  border-radius: 16px;
+}
+.itc-start-card-ask {
+  align-self: flex-end;
+  max-width: 90%;
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 13.5px;
+  line-height: 1.35;
+  border-radius: 14px 14px 4px 14px;
+}
+.itc-start-card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.itc-start-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.itc-start-card li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--hairline-soft);
+}
+.itc-start-card li:last-child {
+  padding-bottom: 2px;
+}
+.itc-start-card li > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--start-muted);
+}
+.itc-start-card li strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.itc-start-card-rank {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--canvas);
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.itc-start-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.itc-start-google {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+.itc-start-google:hover {
+  background: #2b2b2b;
+}
+.itc-start-google-mark {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ffffff;
+}
+.itc-start-cta-note {
+  margin: 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--start-muted);
+}
+.itc-start-cta-note a {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.itc-start-proof {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13.5px;
+}
+.itc-start-proof strong {
+  font-weight: 600;
+}
+.itc-start-avatars {
+  display: inline-flex;
+}
+.itc-start-avatars img {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--canvas);
+  border-radius: 999px;
+  object-fit: cover;
+}
+.itc-start-avatars img + img {
+  margin-left: -8px;
+}
+
+.itc-start-section {
+  padding: 40px 0;
+}
+.itc-start-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.itc-start-h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.itc-start-h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.itc-start-body {
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--start-muted);
+}
+.itc-start-fine {
+  margin: 18px 0 0;
+  font-size: 13.5px;
+  color: var(--start-muted);
+}
+
+.itc-start-steps {
+  padding: 36px 0 44px;
+  border-top: 1px solid var(--start-border);
+}
+.itc-start-steps ol {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 18px;
+}
+.itc-start-steps li {
+  display: flex;
+  gap: 14px;
+}
+.itc-start-steps li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--start-muted);
+}
+.itc-start-steps strong {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.itc-start-step-number {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.itc-start-quotes {
+  padding: 36px 0 40px;
+  background: var(--ink);
+  color: #ffffff;
+}
+.itc-start-quote-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 16px;
+}
+.itc-start-quote-list figure {
+  margin: 0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 14px;
+  background: var(--inverse-surface);
+}
+.itc-start-quote-list blockquote {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.itc-start-quote-list figcaption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+}
+.itc-start-quote-list img {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.itc-start-quote-list strong {
+  font-weight: 600;
+}
+.itc-start-quote-role {
+  color: #b5b3ae;
+}
+
+.itc-start-columns {
+  display: grid;
+  gap: 40px;
+}
+.itc-start-price-cards {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.itc-start-price-cards > div {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--start-border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.itc-start-price-cards .itc-start-price-muted {
+  background: var(--surface-2);
+  color: var(--start-muted);
+}
+.itc-start-price-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.itc-start-price-amount {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.itc-start-price-amount s {
+  text-decoration-thickness: 2px;
+}
+.itc-start-price-amount span {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--start-muted);
+}
+.itc-start-price-note {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--start-muted);
+}
+
+.itc-start-faq .itc-start-h3 {
+  margin-bottom: 8px;
+}
+.itc-start-faq details {
+  border-top: 1px solid var(--start-border);
+}
+.itc-start-faq details:last-child {
+  border-bottom: 1px solid var(--start-border);
+}
+.itc-start-faq summary {
+  padding: 14px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.itc-start-faq summary::-webkit-details-marker {
+  display: none;
+}
+.itc-start-faq summary::after {
+  content: "+";
+  color: var(--start-muted);
+  font-weight: 500;
+}
+.itc-start-faq details[open] summary::after {
+  content: "−";
+}
+.itc-start-faq details p {
+  margin: -4px 0 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--start-muted);
+}
+
+.itc-start-closing {
+  padding: 44px 0;
+  background: var(--surface-2);
+  text-align: center;
+}
+.itc-start-closing .itc-start-inner {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+.itc-start-closing-title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.itc-start-closing .itc-start-cta {
+  width: 100%;
+  max-width: 24rem;
+}
+
+/* Fixed to the bottom of the screen between the hero's button and the
+   closing one. Hidden while a privacy prompt sits in the same spot, and on
+   wide screens, where the hero's button stays in reach. */
+.itc-start-sticky {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 40;
+  padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border-top: 1px solid var(--start-border);
+  box-shadow: 0 -8px 24px rgba(17, 17, 17, 0.08);
+  transform: translateY(110%);
+  transition: transform 0.2s ease;
+}
+.itc-start-sticky[data-shown="true"] {
+  transform: none;
+}
+.itc-start-sticky .itc-start-google {
+  height: 50px;
+  font-size: 16px;
+}
+.itc-start-sticky p {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--start-muted);
+}
+html[data-privacy-panel] .itc-start-sticky {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .itc-start-bar {
+    padding: 20px 24px 0;
+  }
+  .itc-start-logo {
+    font-size: 18px;
+  }
+  .itc-start-badge {
+    height: 30px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .itc-start-hero {
+    max-width: 1120px;
+    padding: 72px 24px 80px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* The outer rows soak up the difference, so the shorter side centers on
+       the taller one. */
+    grid-template-rows: 1fr auto auto auto 1fr;
+    grid-template-areas: ". card" "copy card" "cta card" "proof card" ". card";
+    column-gap: 56px;
+    row-gap: 24px;
+  }
+  .itc-start-copy {
+    grid-area: copy;
+    gap: 24px;
+  }
+  .itc-start-title {
+    font-size: 60px;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+  }
+  .itc-start-sub {
+    max-width: 30rem;
+    font-size: 19px;
+    line-height: 1.5;
+  }
+  .itc-start-card {
+    grid-area: card;
+    align-self: center;
+    padding: 24px;
+    gap: 14px;
+    border-radius: 20px;
+    box-shadow: 0 24px 48px -24px rgba(17, 17, 17, 0.18);
+  }
+  .itc-start-card-ask {
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+  .itc-start-card-title {
+    font-size: 15px;
+  }
+  .itc-start-card li {
+    padding: 12px 0;
+  }
+  .itc-start-card li > span:first-child {
+    font-size: 13px;
+  }
+  .itc-start-card li strong {
+    font-size: 16px;
+  }
+  .itc-start-card-rank {
+    padding: 5px 10px;
+    font-size: 14px;
+  }
+  .itc-start-hero .itc-start-cta {
+    grid-area: cta;
+    max-width: 24rem;
+  }
+  .itc-start-google {
+    height: 56px;
+  }
+  .itc-start-proof {
+    grid-area: proof;
+    justify-content: flex-start;
+    font-size: 14px;
+  }
+  .itc-start-section,
+  .itc-start-steps,
+  .itc-start-quotes,
+  .itc-start-closing {
+    padding: 64px 0;
+  }
+  .itc-start-inner {
+    padding: 0 24px;
+  }
+  .itc-start-h2 {
+    font-size: 36px;
+    line-height: 1.1;
+  }
+  .itc-start-h3 {
+    font-size: 28px;
+  }
+  .itc-start-steps ol {
+    margin-top: 32px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+  }
+  .itc-start-quote-list {
+    margin-top: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .itc-start-quote-list figure {
+    padding: 24px;
+    gap: 18px;
+  }
+  .itc-start-quote-list blockquote {
+    font-size: 18px;
+  }
+  .itc-start-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 56px;
+  }
+  .itc-start-closing-title {
+    font-size: 44px;
+    line-height: 1.08;
+  }
+  .itc-start-sticky {
+    display: none;
+  }
+}

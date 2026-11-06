@@ -267,7 +267,7 @@ function Hero() {
 // ─── Testimonial (true-black inverse strip) ──────────────────────────
 
 export function Testimonials({
-  title = "Trusted by 3,000+ entrepreneurs",
+  title = "Trusted by 90,000+ entrepreneurs",
   items = TESTIMONIALS,
 }: {
   title?: string;

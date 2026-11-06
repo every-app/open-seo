@@ -87,6 +87,13 @@ export function PrivacyChoices() {
         })
       : null;
 
+  // Panels open at the bottom of the screen, where /start keeps its sticky
+  // sign-up bar. The bar hides while this attribute is set.
+  const panelOpen = choices !== null && view !== "none";
+  React.useEffect(() => {
+    document.documentElement.toggleAttribute("data-privacy-panel", panelOpen);
+  }, [panelOpen]);
+
   function save(next: Choices) {
     // A loaded script can't be unloaded; a reload stops it.
     const stopScripts =
