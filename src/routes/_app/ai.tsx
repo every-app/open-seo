@@ -209,7 +209,7 @@ function AiPage() {
                       If a client gets a login page instead of connecting, check
                       that Managed OAuth is on.{" "}
                       <a
-                        href="https://openseo.so/docs/self-hosting/cloudflare#connect-the-mcp-server-through-cloudflare-access"
+                        href="https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md#through-cloudflare-access"
                         target="_blank"
                         rel="noreferrer"
                         className="font-medium"

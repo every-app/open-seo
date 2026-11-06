@@ -155,7 +155,7 @@ const optionalSecret = (name: string) =>
   Config.redacted(name).pipe(Config.withDefault(Redacted.make("")));
 
 const accessScopeHint =
-  " (if this is a permissions error, re-run `pnpm alchemy login --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
+  " (if this is a permissions error, re-run `pnpm alchemy login deploy/alchemy/alchemy.run.ts --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
 
 /**
  * The account's workers.dev subdomain (`<name>.workers.dev`): the configured
@@ -217,7 +217,11 @@ const resolveSelfHostAccess = (
         Effect.catch((error) =>
           Effect.die(
             new Error(
-              `Could not read the Zero Trust organization: ${String(error)}${accessScopeHint}`,
+              // A 403 access.api.error.not_enabled means Zero Trust was never
+              // turned on for the account, not a missing login scope.
+              String(error).includes("not_enabled")
+                ? "Zero Trust isn't enabled on this Cloudflare account yet. Open https://one.dash.cloudflare.com once and pick the Free plan (Cloudflare creates the team for you), then redeploy."
+                : `Could not read the Zero Trust organization: ${String(error)}${accessScopeHint}`,
             ),
           ),
         ),

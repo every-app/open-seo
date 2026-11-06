@@ -7,8 +7,7 @@ New DataForSEO accounts include $1 of free credit to test with, and the minimum 
 ## Get your API key
 
 1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access?aff=255379) (create an account if you don't have one).
-2. Click "Send by email" to get your credentials.
-3. Copy the longer credentials labelled "Base64" credentials. This is the base64 encoded value of your DataForSEO email and API password in the format `email:password`.
+2. Copy the API credential labelled "Base64" from the API Access page. This is the base64 encoded value of your DataForSEO email and API password in the format `email:password`.
 
 ## Where to set it
 
