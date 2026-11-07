@@ -4,6 +4,7 @@ import { DocsBody } from "fumadocs-ui/page";
 import GoogleSearchConsoleMcpContent, {
   frontmatter,
 } from "../../../content/marketing/google-search-console-mcp.mdx";
+import { AddToAgentButtons } from "@/components/add-to-agent-links";
 import {
   ComparisonTable,
   type ComparisonTableProps,
@@ -151,6 +152,7 @@ function GoogleSearchConsoleMcpPage() {
         <GoogleSearchConsoleMcpContent
           components={{
             ...defaultMdxComponents,
+            AddToAgentButtons,
             ComparisonTable: () => <ComparisonTable {...comparison} />,
           }}
         />

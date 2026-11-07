@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AddToAgentLinks } from "@/components/add-to-agent-links";
 import { aiAgentSeoStrategies } from "@/lib/strategy-libraries";
 import { buildPageSeo } from "@/lib/seo";
 
@@ -118,6 +119,7 @@ function McpPage() {
         >
           Set up OpenSEO MCP
         </a>
+        <AddToAgentLinks className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-neutral-300 px-5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900" />
         <a
           href="/docs/skills"
           className="inline-flex h-10 items-center justify-center rounded-md border border-neutral-300 px-5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"

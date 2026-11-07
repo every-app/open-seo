@@ -11,7 +11,11 @@ Most Google Search Console (GSC) MCP servers are open source, but they take a lo
 2. Go through the onboarding. When prompted, click **Connect Search Console** and pick your property.
 3. Add the OpenSEO MCP endpoint to your client (steps below) and approve the OpenSEO login when prompted.
 
-The hosted MCP server URL is:
+In ChatGPT or Claude, add OpenSEO from their directories:
+
+<AddToAgentButtons />
+
+For other clients, the hosted MCP server URL is:
 
 ```txt
 https://app.openseo.so/mcp
@@ -23,11 +27,9 @@ https://app.openseo.so/mcp
 claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
 ```
 
-### Claude Desktop
+### Claude
 
-1. Open Customize → Connectors.
-2. Click **Add** (or **+**), then choose **Add custom connector**.
-3. Paste `https://app.openseo.so/mcp`.
+Add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo) from Claude's directory and sign in. It works in Claude on the web, desktop and mobile. You can also open **Customize → Connectors** in Claude, search for OpenSEO, and select **Connect to Claude**.
 
 ### Cursor
 

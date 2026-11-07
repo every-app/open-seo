@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { AddToAgentLinks } from "@/components/add-to-agent-links";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { ProductHuntLaurel } from "@/components/product-hunt-laurel";
 import { SiteFooter } from "@/components/site-footer";
@@ -558,8 +559,11 @@ function McpSection() {
             <h2 className="itc-display-lg">Get superpowers with the MCP</h2>
             <SkillsList />
             <AgentIcons />
-            <div className="itc-mcp-ctas">
-              <CopySetupPrompt />
+            <div className="itc-mcp-ctas itc-mcp-ctas-stack">
+              <div className="itc-mcp-actions">
+                <CopySetupPrompt />
+                <AddToAgentLinks className="itc-btn itc-btn-secondary" />
+              </div>
               <a href="/docs/agent-setup" className="itc-textlink">
                 Setup guide <IconArrowRight size={15} className="itc-arrow" />
               </a>

@@ -14,7 +14,7 @@ export const ONE_CLICK_INSTALLS = [
   {
     agent: "claude",
     name: "Claude",
-    href: "https://claude.com/marketplace/connectors/openseo",
+    href: "https://claude.ai/directory/connectors/openseo",
     newChatUrl: (prompt: string) =>
       `https://claude.ai/new?q=${encodeURIComponent(prompt)}`,
     Icon: ClaudeIcon,

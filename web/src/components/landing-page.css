@@ -682,6 +682,28 @@
   gap: 20px;
   margin-top: 32px;
 }
+/* Copy setup prompt across the top, the two Add buttons as equal halves below. */
+.itc-mcp-ctas-stack {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.itc-mcp-actions {
+  display: inline-grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.itc-mcp-actions > .itc-btn:first-child {
+  grid-column: 1 / -1;
+}
+@media (max-width: 479px) {
+  .itc-mcp-ctas-stack {
+    align-items: stretch;
+  }
+  .itc-mcp-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
 .itc-toast-region {
   position: fixed;
   left: 50%;

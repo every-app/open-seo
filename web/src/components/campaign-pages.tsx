@@ -21,6 +21,7 @@ import {
   type Testimonial,
   Testimonials,
 } from "@/components/landing-page";
+import { AddToAgentLinks } from "@/components/add-to-agent-links";
 import { MoneyBackGuarantee } from "@/components/money-back-guarantee";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/free-tools/countries";
 import { FIELD_CLASS, SubmitButton, ToolForm } from "@/lib/free-tools/form";
@@ -603,6 +604,9 @@ export function AgentLandingPage() {
               <SkillsList />
               <AgentIcons />
               <div className="itc-mcp-ctas">
+                <div className="flex flex-wrap gap-3">
+                  <AddToAgentLinks className="itc-btn itc-btn-secondary" />
+                </div>
                 <a href="/docs/agent-setup" className="itc-textlink">
                   Setup guide <IconArrowRight size={15} className="itc-arrow" />
                 </a>
