@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "openseo",
+  "version": "1.0.26",
+  "description": "Research keywords and competitors, audit sites, track rankings and AI visibility, and use connected Search Console data from your AI assistant.",
+  "author": {
+    "name": "OpenSEO",
+    "url": "https://openseo.so"
+  },
+  "homepage": "https://openseo.so",
+  "repository": "https://github.com/every-app/open-seo",
+  "license": "MIT",
+  "keywords": [
+    "seo",
+    "keyword-research",
+    "serp",
+    "site-audit",
+    "backlinks",
+    "search-console",
+    "rank-tracking",
+    "local-seo",
+    "ai-visibility"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "openseo": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@0.1.49",
+        "https://app.openseo.so/mcp",
+        "--transport",
+        "http-only",
+        "--static-oauth-client-metadata",
+        "{\"client_name\":\"Hermes Agent (OpenSEO)\",\"token_endpoint_auth_method\":\"none\",\"grant_types\":[\"authorization_code\",\"refresh_token\"],\"response_types\":[\"code\"]}"
+      ]
+    }
+  }
+}
