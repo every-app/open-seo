@@ -41,7 +41,7 @@ const frontmatterSchema = z.looseObject({
 });
 
 function parseSkill(path: string, raw: string): SamSkill | null {
-  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(raw);
+  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(raw);
   if (!match) throw new Error(`Skill has no frontmatter: ${path}`);
   const parsed = frontmatterSchema.safeParse(parseYaml(match[1]));
   if (!parsed.success) {

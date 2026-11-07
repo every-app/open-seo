@@ -26,4 +26,11 @@ describe("buildSamSkillSource", () => {
     const loaded = await source.load("seo-project-setup");
     expect(loaded?.body).toContain("Surface note: you are SAM");
   });
+
+  it("parses skills formatted with CRLF line endings", async () => {
+    const source = buildSamSkillSource();
+    const skill = await source.load("seo-audit");
+    expect(skill?.name).toBe("seo-audit");
+    expect(skill?.description).toBeTruthy();
+  });
 });
