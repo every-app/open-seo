@@ -19,32 +19,16 @@ For setup prompts, plugin commands, and skill updates, see [Agent setup](/docs/a
 
 No account yet? Try the [free SEO tools](/tools).
 
-## ChatGPT web and desktop
+## Choose your client
 
-Install the [OpenSEO plugin for ChatGPT](https://chatgpt.com/plugins/plugin_asdk_app_6abddd2c7e4c819191f1398c4bd8e9b3). It adds MCP and the SEO skills together. If the plugin isn't available for your account, or you self-host OpenSEO, add a [custom connection](/docs/chatgpt#custom-connection) instead. The [ChatGPT setup guide](/docs/chatgpt) covers both.
-
-## Claude Code
-
-The [OpenSEO plugin](/docs/claude-code-plugin) is the preferred way to connect Claude Code — one install adds MCP and the public SEO skills together. Use the steps below only if you want MCP on its own.
-
-Use user scope to make OpenSEO available across projects. Use local scope for the current repository.
-
-```bash
-claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
-```
-
-After adding the server, approve the OpenSEO login when prompted.
-
-## Claude Desktop
-
-On a paid Claude plan, prefer the [OpenSEO plugin](/docs/claude-code-plugin#install-in-claude-cowork), which adds MCP and the SEO skills in one install. Use the custom connector below for MCP only or on the Free plan.
-
-1. Open Customize -> Connectors.
-2. Click Add (or +), then choose Add custom connector.
-3. Paste `https://app.openseo.so/mcp`.
-4. Approve the OpenSEO login when prompted.
-
-Claude Desktop custom connectors are available on Free, Pro, Max, Team, and Enterprise plans. Free plans support one custom connector.
+| Client | How to connect |
+| --- | --- |
+| ChatGPT on the web or desktop | [ChatGPT guide](/docs/chatgpt): the OpenSEO plugin, or a custom connection |
+| Claude on the web, desktop or mobile, Claude Code, Claude Cowork | [Claude guide](/docs/claude-code-plugin): the connector, the plugin, or a custom connector |
+| Codex in the ChatGPT desktop app or the CLI | [Codex guide](/docs/codex-plugin): the plugin, or MCP only |
+| Cursor | [Below](#cursor) |
+| Hermes or Grok Bot | Agent setup: [Hermes](/docs/agent-setup#hermes), [Grok Bot](/docs/agent-setup#grok-bot) |
+| Any other MCP client | Add the server URL above and approve the login, or [connect with an API key](#connect-with-an-api-key) |
 
 ## Cursor
 
@@ -63,30 +47,6 @@ Claude Desktop custom connectors are available on Free, Pro, Max, Team, and Ente
 ```
 
 4. Approve the OpenSEO login when prompted.
-
-## Codex CLI
-
-The [OpenSEO plugin](/docs/codex-plugin) is the preferred way to connect Codex CLI — one install adds MCP and the public SEO skills together. Use the steps below only if you want MCP on its own.
-
-Run this in your terminal:
-
-```bash
-codex mcp add openseo --url https://app.openseo.so/mcp
-```
-
-Approve the login when prompted.
-
-## Codex in the ChatGPT desktop app
-
-The [OpenSEO plugin](/docs/codex-plugin#desktop-app) includes MCP and SEO skills. For MCP alone:
-
-1. Open **Codex**, then **Settings → MCP servers → Add server**.
-2. Name it `openseo`, choose **Streamable HTTP**, and enter `https://app.openseo.so/mcp`.
-3. Save and select **Restart** when prompted.
-4. Select **Authenticate** for OpenSEO and approve sign-in when prompted. Skip this step for a local server configured without authentication.
-5. Start a new Codex chat and ask: “Use OpenSEO to check my connection and list my projects.”
-
-This local connection is separate from ChatGPT web. See [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp).
 
 ## Connect with an API key
 
@@ -130,36 +90,7 @@ An OAuth connection or API key is tied to the workspace that was active when you
 
 ## Available tools
 
-OpenSEO MCP exposes tools for SEO research workflows:
-
-- Research keywords with volume, difficulty, and CPC.
-- Fetch live Google organic SERP results for keywords.
-- Find exact keyword, page, rank, volume, CPC, intent, and traffic rows for a domain or page.
-- Compare SERP competitors across a supplied keyword set.
-- Search local businesses near a coordinate, filtering by rating, review count, or claimed status.
-- Fetch one Maps or Local Finder SERP, and read Google Business Q&A when needed.
-- Audit a Google Business Profile: categories, rating, hours, photos, and claim status.
-- Collect Google reviews (including reviews from other sites) and Google Business posts.
-- Look up valid Google Business category slugs.
-- Check Google Maps rank at each point of a grid around a business.
-- Hydrate keywords with search volume, difficulty, intent, CPC, and trends.
-- List saved keywords from an OpenSEO project.
-- Save useful keywords back to OpenSEO.
-- Create and run rank trackers, add or remove keywords, and read the latest positions and rank history. Estimating a check's cost is free; running one uses credits.
-- Summarize a domain's organic footprint.
-- Find keywords a domain already ranks for.
-- Check backlink and referring-domain overview data.
-- Explore a prompt in ChatGPT or compare answers and available citations across selected AI models. ChatGPT is the default; uncached answers use credits.
-- Research questions about a keyword with ChatGPT's answers and cited sources (uses credits).
-- Configure AI prompt tracking, preview cost, and start or pause scheduled checks.
-- Read and export saved AI answers, trends, citations, and competitor appearances without using credits.
-- List the Search Console sites and Google Analytics properties your connected Google accounts can see, and bind one to a project (free, no credits). Connecting a Google account itself still happens in Settings > Integrations.
-- Read first-party Google Search Console performance (clicks, impressions, CTR, position).
-- Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
-- Tell Bing and other IndexNow search engines which pages on your site were added, changed, or removed (free, no credits). Your site hosts the project's key file, shown in Settings > Integrations. Google doesn't use IndexNow.
-- Read and update a project's shared context: business, goal, positioning, writing preferences, competitors, key pages, and a research log (free, no credits).
-- Save and read HTML reports on a project (free, no credits). New reports are private. On hosted OpenSEO, explicitly ask the agent to publish with `set_report_sharing` (`public: true`) or revoke the link (`public: false`). `get_report` returns `report.shareUrl` for an existing public link, or `null` when unavailable.
-- List a project's report templates, and save a reusable report brief to the project (free, no credits).
+See [OpenSEO MCP tools](/docs/mcp-tools) for everything your agent can do through OpenSEO MCP, and which tools use credits.
 
 ## What to do after setup
 
@@ -183,8 +114,8 @@ Start with one focused workflow instead of asking your agent to "do SEO" broadly
 
 If your client cannot connect, check that the server URL is exactly `https://app.openseo.so/mcp`.
 
-If Codex reports `Authorization server response missing required issuer: expected https://app.openseo.so`, upgrade Codex CLI or the Codex desktop app to 0.147.0 or later. Codex 0.143 through 0.146 drop the issuer from the OAuth callback. You can also [connect with an API key](#connect-with-an-api-key) instead of OAuth.
-
 If authorization fails, disconnect the OpenSEO server in your client, add it again, and repeat the login flow.
 
 If your agent cannot find a project, ask it to list OpenSEO projects first and use the returned project ID in later tool calls.
+
+For client-specific errors, see the troubleshooting sections for [ChatGPT](/docs/chatgpt#troubleshooting), [Claude](/docs/claude-code-plugin#troubleshooting) and [Codex](/docs/codex-plugin#troubleshooting).

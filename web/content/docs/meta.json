@@ -1,13 +1,22 @@
 {
   "pages": [
+    "---Get started---",
     "agent-setup",
     "chatgpt",
-    "mcp",
-    "ai-visibility",
     "claude-code-plugin",
     "codex-plugin",
+    "mcp",
+    "[Install skills without a plugin](/docs/skills/setup)",
+    "---Guides---",
+    "ai-visibility",
     "skills",
+    "---Reference---",
+    "mcp-tools",
     "crawler",
-    "self-hosting"
+    "troubleshooting",
+    "---Self-hosting---",
+    "[Overview](/docs/self-hosting)",
+    "[Docker](/docs/self-hosting/docker)",
+    "[Cloudflare](/docs/self-hosting/cloudflare)"
   ]
 }

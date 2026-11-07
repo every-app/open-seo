@@ -24,7 +24,7 @@ Pick the option that matches how you want to install the files.
 Use this if you want the installer to show the available skills and agents.
 
 ```bash
-npx skills add every-app/open-seo
+npx skills add https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills
 ```
 
 ### Option 2: Install all OpenSEO skills
@@ -32,7 +32,7 @@ npx skills add every-app/open-seo
 Use this if you want every OpenSEO skill.
 
 ```bash
-npx skills add every-app/open-seo --skill '*'
+npx skills add https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills --skill '*'
 ```
 
 ### Option 3: Install all skills for Claude Code only
@@ -40,7 +40,7 @@ npx skills add every-app/open-seo --skill '*'
 Use this if the skills should be available in Claude Code only.
 
 ```bash
-npx skills add every-app/open-seo --skill '*' --agent claude-code
+npx skills add https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills --skill '*' --agent claude-code
 ```
 
 ### Option 4: Install all skills for OpenAI Codex only
@@ -48,7 +48,7 @@ npx skills add every-app/open-seo --skill '*' --agent claude-code
 Use this if the skills should be available in Codex only.
 
 ```bash
-npx skills add every-app/open-seo --skill '*' --agent codex
+npx skills add https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills --skill '*' --agent codex
 ```
 
 ### Option 5: Copy the skill files manually
@@ -69,7 +69,7 @@ cp -R open-seo/plugins/openseo/skills/* ~/.claude/skills/
 
 You can also review the source skills on GitHub:
 
-- [OpenSEO Agent Skills on GitHub](https://github.com/every-app/open-seo/tree/main/.agents/skills)
+- [OpenSEO Agent Skills on GitHub](https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills)
 
 Each skill page also links to its source `SKILL.md`.
 
@@ -77,19 +77,39 @@ Each skill page also links to its source `SKILL.md`.
 
 Use the [update prompt or commands for your installation method](/docs/agent-setup#update-your-skills). Update the OpenSEO plugin if it supplies your skills; otherwise use the installer you originally chose or update your manual copies.
 
+### Skills installed with the skills CLI
+
+List your installations, then update the OpenSEO skills by name. For example:
+
+```bash
+npx skills list
+npx skills update seo-coach seo-audit
+```
+
+Use the names you actually installed and choose the same project or global scope. Pass `-g` for global skills or `-p` for project skills. Back up personal edits before updating. Run the setup command to select any newly added workflows separately. See the [skills CLI documentation](https://github.com/vercel-labs/skills#skills-update).
+
+### Manually copied skills
+
+Compare your installed copies with the [public OpenSEO skill folders](https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills). Preserve personal edits and replace the complete skill folder, including supporting files. Use your agent's skill manager for uploaded skills, such as Claude's **Customize → Skills**.
+
+After updating, reload the skills or start a new session if needed.
+
 ## Run a skill
 
 Use your agent's skill picker or ask for a workflow by name. In Codex, type `$`; Claude Code plugin skills use `/openseo:skill-name`. Other clients have their own invocation syntax. The available workflows include:
 
 - `seo-project-setup`
 - `seo-coach`
+- `seo-audit`
+- `ai-visibility-audit`
+- `ai-prompt-research`
 - `keyword-research`
 - `keyword-clustering`
 - `competitive-landscape`
 - `competitor-analysis`
-- `link-prospecting`
 - `local-seo`
-- `seo-audit`
+- `link-prospecting`
+- `seo-report`
 
 ## Next step
 

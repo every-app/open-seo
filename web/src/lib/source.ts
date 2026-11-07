@@ -14,10 +14,9 @@ export const docsSource = loader({
     {
       transformPageTree: {
         folder(node, folderPath) {
-          // Folders whose meta.json lists an explicit "[Overview](...)" link;
-          // drop the index node so the folder title doesn't duplicate it.
-          if (folderPath !== "skills" && folderPath !== "self-hosting")
-            return node;
+          // skills/meta.json lists an explicit "[Overview](...)" link; drop the
+          // index node so the folder title doesn't duplicate it.
+          if (folderPath !== "skills") return node;
 
           return {
             ...node,

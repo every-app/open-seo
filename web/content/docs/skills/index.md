@@ -61,4 +61,4 @@ OpenSEO uses the same `SKILL.md` pattern supported by modern AI agents. To learn
 
 These pages explain what each skill is for. The source instructions live in GitHub:
 
-- [OpenSEO Agent Skills on GitHub](https://github.com/every-app/open-seo/tree/main/.agents/skills)
+- [OpenSEO Agent Skills on GitHub](https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills)

@@ -53,6 +53,8 @@ import { Route as BlogsIndexRouteImport } from './routes/blogs/index'
 import { Route as BlogsSplatRouteImport } from './routes/blogs/$'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
+import { Route as DocsClaudeRouteImport } from './routes/docs/claude'
+import { Route as DocsCodexRouteImport } from './routes/docs/codex'
 import { Route as DocsLlmsDottxtRouteImport } from './routes/docs/llms[.]txt'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as GuidesSplatRouteImport } from './routes/guides/$'
@@ -334,6 +336,16 @@ const DocsIndexRoute = DocsIndexRouteImport.update({
 const DocsSplatRoute = DocsSplatRouteImport.update({
   id: '/docs/$',
   path: '/docs/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsClaudeRoute = DocsClaudeRouteImport.update({
+  id: '/docs/claude',
+  path: '/docs/claude',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsCodexRoute = DocsCodexRouteImport.update({
+  id: '/docs/codex',
+  path: '/docs/codex',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsLlmsDottxtRoute = DocsLlmsDottxtRouteImport.update({
@@ -673,6 +685,8 @@ export interface FileRoutesByFullPath {
   '/api/website-traffic-checker': typeof ApiWebsiteTrafficCheckerRoute
   '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
+  '/docs/claude': typeof DocsClaudeRoute
+  '/docs/codex': typeof DocsCodexRoute
   '/docs/llms.txt': typeof DocsLlmsDottxtRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/meta.js': typeof JsMetaDotjsRoute
@@ -767,6 +781,8 @@ export interface FileRoutesByTo {
   '/api/website-traffic-checker': typeof ApiWebsiteTrafficCheckerRoute
   '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
+  '/docs/claude': typeof DocsClaudeRoute
+  '/docs/codex': typeof DocsCodexRoute
   '/docs/llms.txt': typeof DocsLlmsDottxtRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/meta.js': typeof JsMetaDotjsRoute
@@ -863,6 +879,8 @@ export interface FileRoutesById {
   '/api/website-traffic-checker': typeof ApiWebsiteTrafficCheckerRoute
   '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
+  '/docs/claude': typeof DocsClaudeRoute
+  '/docs/codex': typeof DocsCodexRoute
   '/docs/llms.txt': typeof DocsLlmsDottxtRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/meta.js': typeof JsMetaDotjsRoute
@@ -960,6 +978,8 @@ export interface FileRouteTypes {
     | '/api/website-traffic-checker'
     | '/blogs/$'
     | '/docs/$'
+    | '/docs/claude'
+    | '/docs/codex'
     | '/docs/llms.txt'
     | '/guides/$'
     | '/js/meta.js'
@@ -1054,6 +1074,8 @@ export interface FileRouteTypes {
     | '/api/website-traffic-checker'
     | '/blogs/$'
     | '/docs/$'
+    | '/docs/claude'
+    | '/docs/codex'
     | '/docs/llms.txt'
     | '/guides/$'
     | '/js/meta.js'
@@ -1149,6 +1171,8 @@ export interface FileRouteTypes {
     | '/api/website-traffic-checker'
     | '/blogs/$'
     | '/docs/$'
+    | '/docs/claude'
+    | '/docs/codex'
     | '/docs/llms.txt'
     | '/guides/$'
     | '/js/meta.js'
@@ -1220,6 +1244,8 @@ export interface RootRouteChildren {
   ApiWebsiteTrafficCheckerRoute: typeof ApiWebsiteTrafficCheckerRoute
   BlogsSplatRoute: typeof BlogsSplatRoute
   DocsSplatRoute: typeof DocsSplatRoute
+  DocsClaudeRoute: typeof DocsClaudeRoute
+  DocsCodexRoute: typeof DocsCodexRoute
   DocsLlmsDottxtRoute: typeof DocsLlmsDottxtRoute
   GuidesSplatRoute: typeof GuidesSplatRoute
   JsMetaDotjsRoute: typeof JsMetaDotjsRoute
@@ -1537,6 +1563,20 @@ declare module '@tanstack/react-router' {
       path: '/docs/$'
       fullPath: '/docs/$'
       preLoaderRoute: typeof DocsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/claude': {
+      id: '/docs/claude'
+      path: '/docs/claude'
+      fullPath: '/docs/claude'
+      preLoaderRoute: typeof DocsClaudeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/codex': {
+      id: '/docs/codex'
+      path: '/docs/codex'
+      fullPath: '/docs/codex'
+      preLoaderRoute: typeof DocsCodexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/llms.txt': {
@@ -2103,6 +2143,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWebsiteTrafficCheckerRoute: ApiWebsiteTrafficCheckerRoute,
   BlogsSplatRoute: BlogsSplatRoute,
   DocsSplatRoute: DocsSplatRoute,
+  DocsClaudeRoute: DocsClaudeRoute,
+  DocsCodexRoute: DocsCodexRoute,
   DocsLlmsDottxtRoute: DocsLlmsDottxtRoute,
   GuidesSplatRoute: GuidesSplatRoute,
   JsMetaDotjsRoute: JsMetaDotjsRoute,
