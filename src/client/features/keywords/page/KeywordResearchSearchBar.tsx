@@ -87,7 +87,9 @@ export function KeywordResearchSearchBar({ controller, children }: Props) {
           <Button
             type="submit"
             size={compact ? "default" : "lg"}
-            className={compact ? "xl:order-last" : undefined}
+            // transition-all would animate the size and order switch between
+            // layouts, so the button swells and briefly drops to its own row.
+            className={cn("transition", compact && "xl:order-last")}
           >
             Search
           </Button>
