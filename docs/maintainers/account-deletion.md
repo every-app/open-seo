@@ -41,7 +41,9 @@ passed, oldest first, for up to five minutes a day. For each one, in order:
    KV progress and referral keys, and MCP OAuth grants.
 3. Delete the PostHog person and queue deletion of their events and session
    recordings.
-4. Delete the Loops contact, by user id and by email.
+4. Delete the Loops contact, by user id and by email, and the review
+   invitation data Trustpilot holds for the email (skipped where Trustpilot
+   isn't configured).
 5. In one database batch: delete the user and their solo workspaces (project
    data cascades), delete their Google connections and API keys, and
    re-attribute audits, reports, and report templates they created in shared

@@ -47,6 +47,9 @@ jobs:
       POSTHOG_PROJECT_ID: ${{ vars.POSTHOG_PROJECT_ID }}
       OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
       OPENSEO_TELEMETRY_DISABLED: ${{ vars.OPENSEO_TELEMETRY_DISABLED }}
+      TRUSTPILOT_BUSINESS_UNIT_ID: ${{ vars.TRUSTPILOT_BUSINESS_UNIT_ID }}
+      TRUSTPILOT_BUSINESS_USER_ID: ${{ vars.TRUSTPILOT_BUSINESS_USER_ID }}
+      TRUSTPILOT_TEMPLATE_ID: ${{ vars.TRUSTPILOT_TEMPLATE_ID }}
 
     steps:
       - name: Checkout dispatched commit
@@ -75,6 +78,8 @@ jobs:
           META_CONVERSIONS_API_TOKEN: ${{ secrets.META_CONVERSIONS_API_TOKEN }}
           POSTHOG_ACCOUNT_DELETION_API_KEY: ${{ secrets.POSTHOG_ACCOUNT_DELETION_API_KEY }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          TRUSTPILOT_API_KEY: ${{ secrets.TRUSTPILOT_API_KEY }}
+          TRUSTPILOT_API_SECRET: ${{ secrets.TRUSTPILOT_API_SECRET }}
         run: |
           # Alchemy replaces the worker's complete var/secret set on every
           # deploy, and most values are optional-with-empty-default in the
@@ -96,7 +101,10 @@ jobs:
             WEB_BOT_AUTH_JWK
             LOOPS_PRODUCT_UPDATES_LIST_ID META_PIXEL_ID
             POSTHOG_PUBLIC_KEY OPENROUTER_MODEL
-            OPENSEO_TELEMETRY_DISABLED)
+            OPENSEO_TELEMETRY_DISABLED
+            TRUSTPILOT_API_KEY TRUSTPILOT_API_SECRET
+            TRUSTPILOT_BUSINESS_UNIT_ID TRUSTPILOT_BUSINESS_USER_ID
+            TRUSTPILOT_TEMPLATE_ID)
           failed=0
           for name in "${required[@]}"; do
             if [[ -z "${!name}" ]]; then
@@ -175,3 +183,5 @@ jobs:
           META_CONVERSIONS_API_TOKEN: ${{ secrets.META_CONVERSIONS_API_TOKEN }}
           POSTHOG_ACCOUNT_DELETION_API_KEY: ${{ secrets.POSTHOG_ACCOUNT_DELETION_API_KEY }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          TRUSTPILOT_API_KEY: ${{ secrets.TRUSTPILOT_API_KEY }}
+          TRUSTPILOT_API_SECRET: ${{ secrets.TRUSTPILOT_API_SECRET }}

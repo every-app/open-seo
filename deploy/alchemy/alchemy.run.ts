@@ -338,6 +338,12 @@ const dataEnv = {
   ),
   TURNSTILE_SECRET_KEY: optionalSecret("TURNSTILE_SECRET_KEY"),
   TURNSTILE_SITE_KEY: optionalVar("TURNSTILE_SITE_KEY"),
+  // Trustpilot review invitations (src/server/trustpilot). Unset = inert.
+  TRUSTPILOT_API_KEY: optionalSecret("TRUSTPILOT_API_KEY"),
+  TRUSTPILOT_API_SECRET: optionalSecret("TRUSTPILOT_API_SECRET"),
+  TRUSTPILOT_BUSINESS_UNIT_ID: optionalVar("TRUSTPILOT_BUSINESS_UNIT_ID"),
+  TRUSTPILOT_BUSINESS_USER_ID: optionalVar("TRUSTPILOT_BUSINESS_USER_ID"),
+  TRUSTPILOT_TEMPLATE_ID: optionalVar("TRUSTPILOT_TEMPLATE_ID"),
   // Alchemy reconciles worker vars and secrets on every deploy, so every value
   // must come from the env file / GitHub environment — a dashboard-set one
   // would be wiped.

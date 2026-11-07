@@ -4,6 +4,7 @@ import { billingCustomerStatus } from "@/db/schema";
 import { autumn } from "@/server/billing/autumn";
 import { disableAutoReloadIfUnpaid } from "@/server/billing/auto-reload";
 import { captureMetaPurchase } from "@/server/referrals/meta";
+import { inviteNewSubscriberToReview } from "@/server/trustpilot/invitations";
 import {
   deriveBillingCustomerStatusSnapshot,
   type BillingCustomerStatusSnapshot,
@@ -48,6 +49,7 @@ export async function syncAutumnCustomerStatus(customerId: string) {
   const started = events.find((event) => event.name === "subscription_started");
   if (started) {
     await captureMetaPurchase(customerId, started.planId);
+    await inviteNewSubscriberToReview(customerId);
   }
   return snapshot;
 }

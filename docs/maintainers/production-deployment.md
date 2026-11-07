@@ -35,6 +35,8 @@ deployment branches to `main`. Then add the following.
 | `POSTHOG_ACCOUNT_DELETION_API_KEY` | Account deletion: deletes the PostHog person (person read + write) |
 | `GOOGLE_MAPS_API_KEY`              | Local SEO basemap tiles (optional)                                 |
 | `WEB_BOT_AUTH_JWK`                 | Private Ed25519 JWK that signs site audit requests (optional)      |
+| `TRUSTPILOT_API_KEY`               | Trustpilot review invitations (optional)                           |
+| `TRUSTPILOT_API_SECRET`            | Trustpilot review invitations (optional)                           |
 
 `WEB_BOT_AUTH_JWK` is one line of JSON (the whitespace check below rejects a
 pretty-printed key). Generate it once with:
@@ -80,6 +82,9 @@ binding authorization failed".
 | `POSTHOG_HOST`                            | Existing analytics ingestion host              |
 | `OPENROUTER_MODEL`                        | Optional model override                        |
 | `OPENSEO_TELEMETRY_DISABLED`              | Optional telemetry setting                     |
+| `TRUSTPILOT_BUSINESS_UNIT_ID`             | Trustpilot business unit; optional             |
+| `TRUSTPILOT_BUSINESS_USER_ID`             | Trustpilot business user; optional             |
+| `TRUSTPILOT_TEMPLATE_ID`                  | Trustpilot invitation template; optional       |
 
 How to create the account deletion keys is in
 [account-deletion.md](account-deletion.md#setting-it-up-in-github).

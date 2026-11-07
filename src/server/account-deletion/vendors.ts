@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { autumn } from "@/server/billing/autumn";
-import { getRequiredEnvValue } from "@/server/lib/runtime-env";
+import {
+  getOptionalEnvValue,
+  getRequiredEnvValue,
+} from "@/server/lib/runtime-env";
+import {
+  deleteTrustpilotInvitationData,
+  getTrustpilotAccessToken,
+} from "@/server/trustpilot/client";
+import { getTrustpilotConfig } from "@/server/trustpilot/config";
 
 // Erasure of the person's records at the hosted services. Each call is safe
 // to repeat: a record that is already gone counts as deleted.
@@ -91,4 +99,13 @@ export async function deleteAutumnCustomers(organizationIds: string[]) {
       if (!isNotFound(error)) throw error;
     }
   }
+}
+
+/** Deletes the review invitation data Trustpilot holds for the address.
+ *  Skipped where Trustpilot isn't configured (it was never sent anything). */
+export async function deleteTrustpilotInvitations(email: string) {
+  const config = await getTrustpilotConfig(getOptionalEnvValue);
+  if (!config) return;
+  const accessToken = await getTrustpilotAccessToken(config);
+  await deleteTrustpilotInvitationData(config, accessToken, [email]);
 }

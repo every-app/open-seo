@@ -16,6 +16,7 @@ import {
   deleteAutumnCustomers,
   deleteLoopsContact,
   deletePostHogPerson,
+  deleteTrustpilotInvitations,
 } from "./vendors";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -264,6 +265,7 @@ async function eraseAccount(userId: string) {
   });
   await deletePostHogPerson(userId);
   await deleteLoopsContact(userId, user.email);
+  await deleteTrustpilotInvitations(user.email);
   await AccountDeletionRepository.eraseUser({
     userId,
     email: user.email,
