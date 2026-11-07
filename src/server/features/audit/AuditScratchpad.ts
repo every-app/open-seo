@@ -22,6 +22,7 @@ import { DurableObject, env } from "cloudflare:workers";
 import type { CrawlThrottleState } from "@/server/lib/audit/crawl-throttle";
 import {
   BROKEN_LINKS_SQL,
+  FRONTIER_CLAIM_SQL,
   FRONTIER_DISCOVER_SQL,
   ORPHAN_PAGES_SQL,
   SCRATCHPAD_SCHEMA_SQL,
@@ -144,8 +145,8 @@ export class AuditScratchpad extends DurableObject {
   /**
    * Lease the next batch of pending URLs for one crawl chunk. Idempotent per
    * chunkNo: a retried step gets back exactly the URLs its failed attempt
-   * had leased (link-discovered URLs drain before sitemap-only ones, FIFO
-   * within each class — same ordering as the old in-memory queues).
+   * had leased (breadth-first, one depth per chunk, then URLs with no
+   * depth; see FRONTIER_CLAIM_SQL).
    */
   async claimChunk(chunkNo: number, limit: number): Promise<ClaimedChunk> {
     const existing = this.selectClaimed(
@@ -167,11 +168,7 @@ export class AuditScratchpad extends DurableObject {
     if (done.n > 0) return { urls: [], isRetry: true };
     if (limit <= 0) return { urls: [], isRetry: false };
 
-    const fresh = this.selectClaimed(
-      `SELECT url, depth, in_sitemap FROM frontier WHERE state = 'pending'
-       ORDER BY CASE source WHEN 'link' THEN 0 ELSE 1 END, rowid LIMIT ?`,
-      limit,
-    );
+    const fresh = this.selectClaimed(FRONTIER_CLAIM_SQL, limit);
     for (const row of fresh) {
       this.ctx.storage.sql.exec(
         `UPDATE frontier SET state = 'leased', chunk_no = ? WHERE url = ?`,
