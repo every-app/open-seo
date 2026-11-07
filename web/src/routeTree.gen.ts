@@ -21,6 +21,7 @@ import { Route as MarketingAhrefsPricingRouteImport } from './routes/_marketing/
 import { Route as MarketingBacklinkCheckerRouteImport } from './routes/_marketing/backlink-checker'
 import { Route as MarketingCompetitorAnalysisRouteImport } from './routes/_marketing/competitor-analysis'
 import { Route as MarketingCompetitorKeywordFinderRouteImport } from './routes/_marketing/competitor-keyword-finder'
+import { Route as MarketingDemoRouteImport } from './routes/_marketing/demo'
 import { Route as MarketingDomainAgeCheckerRouteImport } from './routes/_marketing/domain-age-checker'
 import { Route as MarketingGoogleSearchConsoleMcpRouteImport } from './routes/_marketing/google-search-console-mcp'
 import { Route as MarketingKeywordGeneratorRouteImport } from './routes/_marketing/keyword-generator'
@@ -166,6 +167,11 @@ const MarketingCompetitorKeywordFinderRoute =
     path: '/competitor-keyword-finder',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingDemoRoute = MarketingDemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => MarketingRoute,
+} as any)
 const MarketingDomainAgeCheckerRoute =
   MarketingDomainAgeCheckerRouteImport.update({
     id: '/domain-age-checker',
@@ -643,6 +649,7 @@ export interface FileRoutesByFullPath {
   '/backlink-checker': typeof MarketingBacklinkCheckerRoute
   '/competitor-analysis': typeof MarketingCompetitorAnalysisRoute
   '/competitor-keyword-finder': typeof MarketingCompetitorKeywordFinderRoute
+  '/demo': typeof MarketingDemoRoute
   '/domain-age-checker': typeof MarketingDomainAgeCheckerRoute
   '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/keyword-generator': typeof MarketingKeywordGeneratorRoute
@@ -737,6 +744,7 @@ export interface FileRoutesByTo {
   '/backlink-checker': typeof MarketingBacklinkCheckerRoute
   '/competitor-analysis': typeof MarketingCompetitorAnalysisRoute
   '/competitor-keyword-finder': typeof MarketingCompetitorKeywordFinderRoute
+  '/demo': typeof MarketingDemoRoute
   '/domain-age-checker': typeof MarketingDomainAgeCheckerRoute
   '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/keyword-generator': typeof MarketingKeywordGeneratorRoute
@@ -833,6 +841,7 @@ export interface FileRoutesById {
   '/_marketing/backlink-checker': typeof MarketingBacklinkCheckerRoute
   '/_marketing/competitor-analysis': typeof MarketingCompetitorAnalysisRoute
   '/_marketing/competitor-keyword-finder': typeof MarketingCompetitorKeywordFinderRoute
+  '/_marketing/demo': typeof MarketingDemoRoute
   '/_marketing/domain-age-checker': typeof MarketingDomainAgeCheckerRoute
   '/_marketing/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/_marketing/keyword-generator': typeof MarketingKeywordGeneratorRoute
@@ -930,6 +939,7 @@ export interface FileRouteTypes {
     | '/backlink-checker'
     | '/competitor-analysis'
     | '/competitor-keyword-finder'
+    | '/demo'
     | '/domain-age-checker'
     | '/google-search-console-mcp'
     | '/keyword-generator'
@@ -1024,6 +1034,7 @@ export interface FileRouteTypes {
     | '/backlink-checker'
     | '/competitor-analysis'
     | '/competitor-keyword-finder'
+    | '/demo'
     | '/domain-age-checker'
     | '/google-search-console-mcp'
     | '/keyword-generator'
@@ -1119,6 +1130,7 @@ export interface FileRouteTypes {
     | '/_marketing/backlink-checker'
     | '/_marketing/competitor-analysis'
     | '/_marketing/competitor-keyword-finder'
+    | '/_marketing/demo'
     | '/_marketing/domain-age-checker'
     | '/_marketing/google-search-console-mcp'
     | '/_marketing/keyword-generator'
@@ -1313,6 +1325,13 @@ declare module '@tanstack/react-router' {
       path: '/competitor-keyword-finder'
       fullPath: '/competitor-keyword-finder'
       preLoaderRoute: typeof MarketingCompetitorKeywordFinderRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/demo': {
+      id: '/_marketing/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof MarketingDemoRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/domain-age-checker': {
@@ -1915,6 +1934,7 @@ interface MarketingRouteChildren {
   MarketingBacklinkCheckerRoute: typeof MarketingBacklinkCheckerRoute
   MarketingCompetitorAnalysisRoute: typeof MarketingCompetitorAnalysisRoute
   MarketingCompetitorKeywordFinderRoute: typeof MarketingCompetitorKeywordFinderRoute
+  MarketingDemoRoute: typeof MarketingDemoRoute
   MarketingDomainAgeCheckerRoute: typeof MarketingDomainAgeCheckerRoute
   MarketingGoogleSearchConsoleMcpRoute: typeof MarketingGoogleSearchConsoleMcpRoute
   MarketingKeywordGeneratorRoute: typeof MarketingKeywordGeneratorRoute
@@ -1987,6 +2007,7 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingBacklinkCheckerRoute: MarketingBacklinkCheckerRoute,
   MarketingCompetitorAnalysisRoute: MarketingCompetitorAnalysisRoute,
   MarketingCompetitorKeywordFinderRoute: MarketingCompetitorKeywordFinderRoute,
+  MarketingDemoRoute: MarketingDemoRoute,
   MarketingDomainAgeCheckerRoute: MarketingDomainAgeCheckerRoute,
   MarketingGoogleSearchConsoleMcpRoute: MarketingGoogleSearchConsoleMcpRoute,
   MarketingKeywordGeneratorRoute: MarketingKeywordGeneratorRoute,

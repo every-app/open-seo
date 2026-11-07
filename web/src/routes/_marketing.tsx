@@ -53,6 +53,7 @@ function getMobileNavItems(githubStarCount: string) {
       label: "Product",
       links: [
         { label: "Features", href: "/features" },
+        { label: "Demo", href: "/demo" },
         { label: "Pricing", href: "/pricing" },
       ],
     },
@@ -192,6 +193,12 @@ function MarketingLayout() {
             <div className="hidden items-center gap-7 md:flex">
               <FeatureDropdown />
               <ResourcesDropdown />
+              <Link
+                to="/demo"
+                className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+              >
+                Demo
+              </Link>
               <Link
                 to="/pricing"
                 className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
