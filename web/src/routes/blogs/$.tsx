@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { createClientLoader } from "fumadocs-mdx/runtime/vite";
 import { DocsBody } from "fumadocs-ui/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { SiteFooter } from "@/components/site-footer";
@@ -7,7 +6,7 @@ import { BlogLayout, PostDate } from "@/components/blog-layout";
 import type { ComponentPropsWithoutRef } from "react";
 import { Suspense } from "react";
 import { getBlogPost } from "@/lib/content.functions";
-import { blog } from "../../../.source/index";
+import browserCollections from "fumadocs-mdx:collections/browser";
 import { buildPageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/blogs/$")({
@@ -34,7 +33,7 @@ export const Route = createFileRoute("/blogs/$")({
   component: BlogPost,
 });
 
-const clientMdxLoader = createClientLoader(blog, {
+const clientMdxLoader = browserCollections.blog.createClientLoader({
   id: "blog",
   component({ default: MDX }) {
     return (
@@ -89,7 +88,6 @@ function BlogPost() {
     author: string;
     date: string;
   };
-  const Content = clientMdxLoader.getComponent(data.path);
 
   return (
     <BlogLayout>
@@ -100,9 +98,7 @@ function BlogPost() {
           author={data.author}
           date={data.date}
         />
-        <Suspense>
-          <Content />
-        </Suspense>
+        <Suspense>{clientMdxLoader.useContent(data.path)}</Suspense>
       </article>
 
       <div className="mx-auto max-w-5xl px-6 pb-12">

@@ -45,16 +45,6 @@ const publicPromptFiles = [
   return [file, `${file}?raw`];
 });
 
-const mdxPlugin = await mdx(await import("./source.config"));
-const transformMdx = mdxPlugin.transform;
-if (typeof transformMdx === "function") {
-  mdxPlugin.transform = function (code, id, options) {
-    // Leave raw prompt files to Vite instead of compiling them as MDX pages.
-    if (new URLSearchParams(id.split("?")[1]).has("raw")) return;
-    return transformMdx.call(this, code, id, options);
-  };
-}
-
 export default defineConfig(async ({ mode }) => {
   // Same resolution order Vite uses for import.meta.env, so a key in web/.env
   // counts and the guard doesn't fire on a correctly configured deploy.
@@ -80,7 +70,7 @@ export default defineConfig(async ({ mode }) => {
     },
     plugins: [
       requireTurnstileSiteKey(turnstileSiteKey),
-      mdxPlugin,
+      mdx(await import("./source.config")),
       tailwindcss(),
       tsConfigPaths({
         projects: ["./tsconfig.json"],
