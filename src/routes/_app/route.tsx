@@ -4,7 +4,6 @@ import { useHostedAuthRouteGuard } from "@/client/features/auth/useHostedAuthRou
 import { prefetchBillingAccount } from "@/client/features/billing/billingAccountQuery";
 import { FreePlanBanner } from "@/client/features/billing/FreePlanBanner";
 import { TermsUpdateBanner } from "@/client/features/auth/TermsUpdateBanner";
-import { SkeletonPage } from "@/client/components/SkeletonPresets";
 import { PageLoading } from "@/client/components/Spinner";
 import { getLastProjectId } from "@/client/lib/active-project";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
@@ -21,15 +20,19 @@ function AppRouteLayout() {
   const authGate = useHostedAuthRouteGuard();
   const isOnboarded = useOnboardingRedirect();
   const { projectId } = useParams({ strict: false });
-  // The shell paints at once, and only the page waits for the session check,
-  // so a full load shows the sidebar and a page skeleton instead of a spinner.
+  // The page and banners render while the session check runs, so a page shows
+  // its own skeleton from the first frame and loads its data alongside the
+  // check. The check only redirects (signed out, unverified email): every
+  // data call enforces auth on the server.
   const ready = authGate.canRenderAuthenticatedContent;
 
   // Billing, fix-payment, and the upgrade page all read this one cached
-  // account, so loading it once here lets them open without waiting.
+  // account, so loading it once here lets them open without waiting. The free
+  // plan banner reads it too; starting it with the page's own data keeps the
+  // banner from landing after the page and pushing it down.
   useEffect(() => {
-    if (ready) prefetchBillingAccount();
-  }, [ready]);
+    prefetchBillingAccount();
+  }, []);
 
   // Until onboarding is known to be done, show a plain spinner, so a user on
   // their way to /onboarding never sees the dashboard flash first. A browser
@@ -43,7 +46,7 @@ function AppRouteLayout() {
       projectId={projectId}
       ready={ready}
       banner={
-        ready && authGate.isHostedMode ? (
+        authGate.isHostedMode ? (
           <>
             <TermsUpdateBanner />
             {projectId ? <FreePlanBanner /> : null}
@@ -51,7 +54,7 @@ function AppRouteLayout() {
         ) : undefined
       }
     >
-      {ready ? <Outlet /> : <SkeletonPage />}
+      <Outlet />
     </AuthenticatedAppLayout>
   );
 }

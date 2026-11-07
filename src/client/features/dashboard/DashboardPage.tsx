@@ -79,20 +79,7 @@ export function DashboardPage({
   // falls through so the page still loads, with the error in place of the
   // audit card.
   if (!activation || overviewQuery.isPending) {
-    return (
-      <div className="px-4 py-4 md:px-6 md:py-6" aria-busy>
-        <div className="mx-auto flex max-w-7xl flex-col gap-5">
-          <Skeleton className="h-8 w-52" />
-          <Skeleton className="h-36" />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Skeleton className="h-72" />
-            <Skeleton className="h-72" />
-            <Skeleton className="h-52" />
-            <Skeleton className="h-52" />
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const showBacklinks = activation.domain !== null;
@@ -266,6 +253,24 @@ export function DashboardPage({
             )}
           </TabsContent>
         </Tabs>
+      </div>
+    </div>
+  );
+}
+
+/** The dashboard before its data arrives; the landing redirect shows it too. */
+export function DashboardSkeleton() {
+  return (
+    <div className="px-4 py-4 md:px-6 md:py-6" aria-busy>
+      <div className="mx-auto flex max-w-7xl flex-col gap-5">
+        <Skeleton className="h-8 w-52" />
+        <Skeleton className="h-36" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+          <Skeleton className="h-52" />
+          <Skeleton className="h-52" />
+        </div>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import {
 } from "@/client/lib/error-messages";
 import { AuthErrorCard } from "@/client/components/AuthErrorCard";
 import { QueryError } from "@/client/components/QueryState";
-import { SkeletonPage } from "@/client/components/SkeletonPresets";
+import { DashboardSkeleton } from "@/client/features/dashboard/DashboardPage";
 import { StatusScreen } from "@/client/components/StatusScreen";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
@@ -79,6 +79,6 @@ function IndexRedirect() {
     );
   }
 
-  // Shaped like the page it is about to open.
-  return <SkeletonPage />;
+  // The dashboard's own skeleton, so opening it changes nothing on screen.
+  return <DashboardSkeleton />;
 }
