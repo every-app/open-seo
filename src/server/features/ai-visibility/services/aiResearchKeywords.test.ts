@@ -97,13 +97,34 @@ describe("runAiResearchSetup", () => {
     });
   });
 
-  it("does nothing when keywords were saved meanwhile", async () => {
-    listResearchKeywords.mockResolvedValue(["rank tracker"]);
+  it("does nothing when a tracker was created meanwhile", async () => {
+    getTracker.mockResolvedValueOnce({ id: "tracker" });
 
     await expect(
       runAiResearchSetup({ projectId: "project" }, customer),
     ).resolves.toEqual({ review: null });
     expect(research).not.toHaveBeenCalled();
+  });
+
+  it("seeds tracking from saved keywords instead of generating new ones", async () => {
+    listResearchKeywords.mockResolvedValue(["rank tracker", "seo tool"]);
+    listCompetitors.mockResolvedValue([{ domain: "ahrefs.com" }]);
+
+    await runAiResearchSetup({ projectId: "project" }, customer);
+
+    expect(research).toHaveBeenCalledWith(
+      "openseo.so",
+      expect.objectContaining({ id: "project" }),
+      { ...customer, projectId: "project" },
+      { promptSavedTopics: true },
+    );
+    expect(prepareWebsiteTracking).toHaveBeenCalledWith(
+      {
+        projectId: "project",
+        suggestedTopics: ["rank tracker", "seo tool"].map(topic),
+      },
+      expect.objectContaining({ id: "project" }),
+    );
   });
 
   it("runs newly seeded tracking once only for in-app setup", async () => {
@@ -129,6 +150,17 @@ describe("runAiResearchSetup", () => {
 });
 
 describe("getAiResearchSetup", () => {
+  it("does not count saved keywords without a tracker as set up", async () => {
+    listResearchKeywords.mockResolvedValue(["rank tracker"]);
+    listCompetitors.mockResolvedValue([]);
+    workflow.get.mockRejectedValue(new Error("not found"));
+
+    await expect(getAiResearchSetup("project")).resolves.toMatchObject({
+      keywords: ["rank tracker"],
+      status: "none",
+    });
+  });
+
   it("counts a tracker saved without research keywords as set up", async () => {
     listResearchKeywords.mockResolvedValue([]);
     listCompetitors.mockResolvedValue([]);

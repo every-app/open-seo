@@ -33,9 +33,13 @@ import {
 } from "@/types/schemas/projectWebsite";
 import { generatedAiTopicSchema } from "@/types/schemas/aiPromptSuggestions";
 import {
-  normalizeAiSuggestion,
+  SEEDED_TRACKING_TOPICS,
   toTopicName,
 } from "@/shared/ai-prompt-suggestions";
+import {
+  dropRepeatedTopics,
+  keepVerifiedCompetitors,
+} from "./websiteResearchSuggestions";
 import { ownBrandName } from "@/shared/ai-visibility";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
 import { AiVisibilityRepository } from "@/server/features/ai-visibility/repositories/AiVisibilityRepository";
@@ -89,6 +93,15 @@ export async function researchWebsite(
   website: string,
   project: ResearchedProject,
   customer: BillingCustomerContext,
+  {
+    // Keyword suggestions only need topics. Competitor research is the costly
+    // part and needs the user's review, so it stays with project setup.
+    skipCompetitors = false,
+    // AI visibility setup seeds tracking with topic prompts. Saved keywords,
+    // such as keyword research suggestions, are those topics: only their
+    // prompts are written, so the keywords are never generated twice.
+    promptSavedTopics = false,
+  } = {},
 ) {
   const domain =
     project.domain ??
@@ -108,8 +121,12 @@ export async function researchWebsite(
     (section) => section.key === "business_overview",
   )?.content;
   const missingOverview = overview === undefined;
-  const missingCompetitors = !competitors.length;
+  const missingCompetitors = !skipCompetitors && !competitors.length;
   const missingTopics = !keywords.length;
+  const savedTopics = promptSavedTopics
+    ? keywords.slice(0, SEEDED_TRACKING_TOPICS)
+    : [];
+  const needsTopics = missingTopics || savedTopics.length > 0;
   const preserved = {
     name: ownBrandName(project),
     domain,
@@ -119,7 +136,7 @@ export async function researchWebsite(
     suggestedTopics: [],
     suggestedKeywords: [],
   };
-  if (!missingOverview && !missingCompetitors && !missingTopics)
+  if (!missingOverview && !missingCompetitors && !needsTopics)
     return websiteResearchSchema.parse(preserved);
   // Each field is independent: saved context supplies the evidence, and the
   // model only receives output fields and tools for the missing information.
@@ -151,9 +168,15 @@ export async function researchWebsite(
             .max(5),
         }
       : {}),
+    ...(needsTopics
+      ? {
+          suggestedTopics: z
+            .array(generatedAiTopicSchema)
+            .length(missingTopics ? 5 : savedTopics.length),
+        }
+      : {}),
     ...(missingTopics
       ? {
-          suggestedTopics: z.array(generatedAiTopicSchema).length(5),
           // Checked after generation, so a malformed extra keyword is dropped
           // instead of failing a run that is already billed.
           suggestedKeywords: z.array(z.string()),
@@ -200,6 +223,9 @@ export async function researchWebsite(
           missingTopics
             ? 'Generate five suggested topics, most important first, each with exactly five distinct natural-language prompts, based on the supplied business context and customer needs. Name each topic with a short head term of one to three words, such as "rank tracker" or "backlink checker", because the names also serve as keyword research terms. Use buyer questions people would ask AI when comparing or finding these products/services. Do not insert the brand into neutral prompts. Write for the supplied country and language. These suggestions are drafts, not tracked prompts. Also suggest up to fifteen more short head-term keywords of one to three words, different from the topic names, covering other products/services, use cases, and categories buyers would ask AI about.'
             : "",
+          savedTopics.length
+            ? "Write exactly five distinct natural-language prompts for each saved topic, in the given order, using each saved topic unchanged as its name. Use buyer questions people would ask AI when comparing or finding these products/services. Do not insert the brand into neutral prompts. Write for the supplied country and language. These suggestions are drafts, not tracked prompts."
+            : "",
         ]
           .filter(Boolean)
           .join("\n"),
@@ -219,6 +245,7 @@ export async function researchWebsite(
             }),
           ),
           websitePages: site?.pages,
+          savedTopics: savedTopics.length ? savedTopics : undefined,
         }),
         tools: missingCompetitors
           ? {
@@ -360,9 +387,10 @@ export async function researchWebsite(
       suggestedTopics: z
         .array(generatedAiTopicSchema)
         .parse(output.suggestedTopics ?? [])
-        .map((topic) => ({
+        .map((topic, index) => ({
           ...topic,
-          name: toTopicName(topic.name),
+          // Saved topics keep their names, whatever the model wrote.
+          name: savedTopics[index] ?? toTopicName(topic.name),
         })),
       // Without live search, competitors can't be verified. The review starts
       // with none so the user can add them instead of losing a paid run.
@@ -379,39 +407,17 @@ export async function researchWebsite(
     // Recover from a weak suggestion instead of failing a run that is already
     // billed: drop a topic that repeats a name or prompt, and a competitor that
     // the pages read during this run don't verify.
-    const topicNames = new Set<string>();
-    const promptTexts = new Set<string>();
-    research.suggestedTopics = research.suggestedTopics.filter((topic) => {
-      const name = normalizeAiSuggestion(topic.name);
-      const prompts = topic.prompts.map(normalizeAiSuggestion);
-      if (
-        topicNames.has(name) ||
-        new Set(prompts).size !== prompts.length ||
-        prompts.some((prompt) => promptTexts.has(prompt))
-      )
-        return false;
-      topicNames.add(name);
-      for (const prompt of prompts) promptTexts.add(prompt);
-      return true;
-    });
+    research.suggestedTopics = dropRepeatedTopics(research.suggestedTopics);
     if (missingCompetitors && !searchSucceeded && !searchOutage)
       throw new AppError(
         "INTERNAL_ERROR",
         "Website research was incomplete. Please try again.",
       );
-    research.competitors = research.competitors.filter((competitor) => {
-      competitor.domain = normalizeBacklinksTarget(competitor.domain, {
-        scope: "domain",
-      }).apiTarget;
-      const sourceDomain = normalizeBacklinksTarget(competitor.sourceUrl, {
-        scope: "domain",
-      }).apiTarget;
-      return (
-        sources.has(competitor.sourceUrl) &&
-        sourceDomain === competitor.domain &&
-        competitor.domain !== domain
-      );
-    });
+    research.competitors = keepVerifiedCompetitors(
+      research.competitors,
+      sources,
+      domain,
+    );
     return research;
   } finally {
     if (contextUsage.contextCredits > 0)

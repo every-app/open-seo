@@ -92,6 +92,10 @@ export const removeSavedKeywordsSchema = z.object({
   savedKeywordIds: z.array(z.string().min(1)).min(1).max(2000),
 });
 
+export const keywordSuggestionsSchema = z.object({
+  projectId: z.string().min(1),
+});
+
 export const getSavedKeywordsSchema = z.object({
   projectId: z.string().min(1),
   search: z.string().trim().max(200).optional(),

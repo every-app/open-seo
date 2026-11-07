@@ -1,6 +1,9 @@
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import { projectAiConfiguration } from "./aiVisibilityConfiguration";
-import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
+import {
+  normalizeAiSuggestion,
+  SEEDED_TRACKING_TOPICS,
+} from "@/shared/ai-prompt-suggestions";
 import { aiEnginesWithoutLocation } from "@/shared/ai-visibility";
 import { DEFAULT_LOCATION_CODE } from "@/shared/keyword-locations";
 import type { SaveProjectWebsiteSetup } from "@/types/schemas/projectWebsite";
@@ -22,26 +25,28 @@ export async function prepareWebsiteTracking(
     return null;
   const names = new Set<string>();
   const texts = new Set<string>();
-  // The first three topics seed tracking; the rest stay research keywords.
-  const prompts = input.suggestedTopics.slice(0, 3).flatMap((topic) => {
-    const name = normalizeAiSuggestion(topic.name);
-    if (names.has(name))
-      throw new AppError(
-        "VALIDATION_ERROR",
-        "Generated topics must be unique.",
-      );
-    names.add(name);
-    return topic.prompts.map((text) => {
-      const normalized = normalizeAiSuggestion(text);
-      if (texts.has(normalized))
+  // The first topics seed tracking; the rest stay research keywords.
+  const prompts = input.suggestedTopics
+    .slice(0, SEEDED_TRACKING_TOPICS)
+    .flatMap((topic) => {
+      const name = normalizeAiSuggestion(topic.name);
+      if (names.has(name))
         throw new AppError(
           "VALIDATION_ERROR",
-          "Generated prompts must be unique.",
+          "Generated topics must be unique.",
         );
-      texts.add(normalized);
-      return { text, topic: topic.name };
+      names.add(name);
+      return topic.prompts.map((text) => {
+        const normalized = normalizeAiSuggestion(text);
+        if (texts.has(normalized))
+          throw new AppError(
+            "VALIDATION_ERROR",
+            "Generated prompts must be unique.",
+          );
+        texts.add(normalized);
+        return { text, topic: topic.name };
+      });
     });
-  });
   return projectAiConfiguration({
     previous: null,
     projectId: input.projectId,

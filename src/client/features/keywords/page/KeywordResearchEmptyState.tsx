@@ -1,10 +1,15 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Globe, Search, Tag } from "lucide-react";
 import { CountryFlag } from "@/client/components/CountryFlag";
 import { EmptyState } from "@/client/components/EmptyState";
 import { RecentSearches } from "@/client/components/RecentSearches";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { KeywordResearchControllerState } from "./types";
+import {
+  KeywordSuggestions,
+  keywordSuggestionsQueryOptions,
+} from "./KeywordSuggestions";
 
 type Props = {
   controller: KeywordResearchControllerState;
@@ -40,8 +45,46 @@ export function KeywordResearchNoResults({
   );
 }
 
-/** What the search card shows before a search: past searches, or a first prompt. */
+/**
+ * What the search card shows before a search: past searches and suggested
+ * ones. With neither, a first prompt.
+ */
 export function KeywordSearchHistory({ controller, projectId }: Props) {
+  const suggestionsQuery = useQuery(keywordSuggestionsQueryOptions(projectId));
+  const searched = new Set(
+    controller.history.map((item) => item.keyword.trim().toLowerCase()),
+  );
+  const suggestions = (suggestionsQuery.data?.suggestions ?? []).filter(
+    (suggestion) => !searched.has(suggestion.keyword),
+  );
+  const hasHistory = controller.history.length > 0;
+  const showSuggestions =
+    suggestionsQuery.isError ||
+    suggestions.length > 0 ||
+    Boolean(suggestionsQuery.data?.canGenerate);
+  // Until suggestions load, a first visit can't tell which prompt to show.
+  const showRecentSearches =
+    hasHistory || (suggestionsQuery.isSuccess && !showSuggestions);
+
+  return (
+    <>
+      {showRecentSearches ? (
+        <RecentSearchList controller={controller} projectId={projectId} />
+      ) : null}
+      {showSuggestions ? (
+        <KeywordSuggestions
+          projectId={projectId}
+          query={suggestionsQuery}
+          suggestions={suggestions}
+          groupKeywords={controller.preferredGroupKeywords}
+          afterRecentSearches={hasHistory}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function RecentSearchList({ controller, projectId }: Props) {
   return (
     <RecentSearches
       embedded

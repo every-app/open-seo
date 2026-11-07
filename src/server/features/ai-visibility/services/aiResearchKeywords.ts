@@ -27,14 +27,16 @@ import {
 import { startWorkflow } from "@/server/lib/startWorkflow";
 
 /**
- * Prompt Research needs saved keywords or a tracker's topics. Website setup
- * writes both; a project with neither, set up before that or with a website
- * saved another way, gets them here after the user confirms the spend. The
- * paid work runs in the AI visibility workflow under one instance per project,
- * so a page reload reads the same run instead of starting another. Without an
- * overview or competitors, the website research result waits in the instance
- * output for the same competitor review as onboarding; saving that review
- * writes the keywords.
+ * AI visibility is set up once the project has a tracker. Website setup
+ * creates one with the Prompt Research keywords; a project without one, set up
+ * before that or with a website saved another way, gets it here after the user
+ * confirms the spend. Keywords saved without a tracker, such as keyword
+ * research suggestions, are reused as its topics instead of generated again.
+ * The paid work runs in the AI visibility workflow under one instance per
+ * project, so a page reload reads the same run instead of starting another.
+ * Without an overview or competitors, the website research result waits in
+ * the instance output for the same competitor review as onboarding; saving
+ * that review creates the tracker.
  */
 const setupOutputSchema = z.object({
   // Reviews saved before suggested keywords existed still load.
@@ -96,11 +98,11 @@ export async function getAiResearchSetup(projectId: string) {
     ProjectContextRepository.listCompetitors(projectId),
   ]);
   // A tracker saved through the MCP has no research keywords. Prompt Research
-  // lists its topics instead, so the project is already set up.
-  const run =
-    keywords.length || tracker
-      ? { status: "ready" as const }
-      : await readSetupRun(projectId);
+  // lists its topics instead, so the project is already set up. Keywords alone
+  // don't set it up.
+  const run = tracker
+    ? { status: "ready" as const }
+    : await readSetupRun(projectId);
   return {
     keywords,
     ...missingContext(sections, competitors),
@@ -171,17 +173,19 @@ export async function runAiResearchSetup(
       "VALIDATION_ERROR",
       "Set your project's website before generating keywords.",
     );
-  const [keywords, sections, competitors] = await Promise.all([
-    repo.listResearchKeywords(input.projectId),
+  const [tracker, sections, competitors] = await Promise.all([
+    repo.getTracker(input.projectId),
     ProjectContextRepository.listSections(input.projectId),
     ProjectContextRepository.listCompetitors(input.projectId),
   ]);
-  // Website setup may have saved keywords since this run started.
-  if (keywords.length) return { review: null };
-  const review = await researchWebsite(project.domain, project, {
-    ...customer,
-    projectId: input.projectId,
-  });
+  // Website setup may have created a tracker since this run started.
+  if (tracker) return { review: null };
+  const review = await researchWebsite(
+    project.domain,
+    project,
+    { ...customer, projectId: input.projectId },
+    { promptSavedTopics: true },
+  );
   // Only newly researched basics/competitors need review. Existing context
   // stays authoritative; a topics-only result can be saved directly.
   const missing = missingContext(sections, competitors);

@@ -105,6 +105,7 @@ import {
   listReportTemplatesTool,
   saveReportTemplateTool,
 } from "@/server/mcp/tools/report-template-tools";
+import { getSuggestedKeywordsTool } from "@/server/mcp/tools/get-suggested-keywords";
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import {
@@ -265,6 +266,7 @@ export function registerOpenSeoTools(
   register(updateProjectContextTool);
   register(listSavedKeywordsTool);
   register(removeSavedKeywordsTool);
+  register(getSuggestedKeywordsTool);
   register(researchKeywordsTool);
   register(saveKeywordsTool);
   register(getDomainOverviewTool);

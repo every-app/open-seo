@@ -70,6 +70,7 @@ import {
   getLocalRankGridTool,
   listBusinessCategoriesTool,
 } from "@/server/mcp/tools/local-seo-tools";
+import { getSuggestedKeywordsTool } from "@/server/mcp/tools/get-suggested-keywords";
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import {
@@ -384,6 +385,7 @@ export function buildSamMcpTools(
     update_project_context: adaptTool(buildUpdateProjectContextTool("sam")),
     list_saved_keywords: adaptTool(listSavedKeywordsTool),
     remove_saved_keywords: adaptTool(removeSavedKeywordsTool),
+    get_suggested_keywords: adaptTool(getSuggestedKeywordsTool),
     research_keywords: adaptTool(researchKeywordsTool),
     save_keywords: adaptTool(saveKeywordsTool),
     get_domain_overview: adaptTool(getDomainOverviewTool),

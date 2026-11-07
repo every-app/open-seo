@@ -80,6 +80,18 @@
         "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
       }
     },
+    "get_suggested_keywords": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves the project's saved topics and rows from a user-authorized Search Console property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
     "research_keywords": {
       "annotations": {
         "readOnlyHint": false,

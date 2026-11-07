@@ -255,6 +255,34 @@ describe("researchWebsite", () => {
     expect(result.suggestedTopics[0].name).toBe("best rank tracker for small");
   });
 
+  it("writes prompts for saved topics instead of generating keywords", async () => {
+    const names = topics.map((topic) => topic.name);
+    listKeywords.mockResolvedValue(names);
+    const renamed = topics.map((topic) => ({
+      ...topic,
+      name: `best ${topic.name}`,
+    }));
+    generateText.mockResolvedValueOnce({
+      output: { suggestedTopics: renamed.slice(0, 3) },
+    });
+
+    const result = await researchWebsite(
+      "https://saved.com",
+      project,
+      customer,
+      { promptSavedTopics: true },
+    );
+
+    const schema = generateText.mock.calls[0]?.[0].output.schema;
+    if (!(schema instanceof z.ZodObject)) throw new Error("Expected a schema");
+    expect(Object.keys(schema.shape)).toEqual(["suggestedTopics"]);
+    // The first three seed tracking, under their saved names.
+    expect(result.suggestedTopics.map((topic) => topic.name)).toEqual(
+      names.slice(0, 3),
+    );
+    expect(result.suggestedKeywords).toEqual([]);
+  });
+
   it("drops topics that repeat a name or prompt instead of failing the paid run", async () => {
     listKeywords.mockResolvedValue([]);
     const [first, second, third, fourth] = topics;

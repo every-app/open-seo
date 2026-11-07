@@ -29,12 +29,12 @@ import {
 } from "./shared";
 
 /**
- * AI visibility needs research keywords or a tracker. A project with a website
- * but neither confirms the spend here, then the server runs setup once: website
- * research and the onboarding competitor review when the overview or
- * competitors are missing, otherwise one keyword and prompt generation. The
- * run lives on the server, so leaving or reloading the page finds it again.
- * Both paths end on the page that started setup.
+ * AI visibility needs a tracker. A project with a website but none confirms
+ * the spend here, then the server runs setup once: website research and the
+ * onboarding competitor review when the overview or competitors are missing,
+ * otherwise one keyword and prompt generation, reusing keywords already saved.
+ * The run lives on the server, so leaving or reloading the page finds it
+ * again. Both paths end on the page that started setup.
  */
 export function AiResearchSetupGate({
   projectId,

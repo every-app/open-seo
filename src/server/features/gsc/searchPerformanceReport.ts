@@ -78,18 +78,13 @@ export function toDimensionRows(
   return output;
 }
 
-/** Reduce `["query","page"]` rows to one striking-distance row per query.
+/** Collapse `["query","page"]` rows to each query's best-ranking page.
  *
  *  GSC returns a row per page that ranks for a query, so a query fans out across
- *  every page it appears on. A query only belongs in "striking distance" when
- *  the site's BEST-ranking page for it sits in the 5..20 band — if any page
- *  already ranks above position 5, the site effectively ranks near the top and
- *  improving a secondary page won't move traffic. So we collapse each query to
- *  its top page (lowest average position; ties broken by impressions) and keep
- *  it only when that top page is in band. Result is sorted by impressions. */
-export function buildStrikingDistanceRows(
+ *  every page it appears on. The site ranks for a query where its best page
+ *  does (lowest average position; ties broken by impressions). */
+export function bestPagePerQuery(
   rows: GscSearchAnalyticsRow[],
-  limit: number = STRIKING_DISTANCE_ROW_LIMIT,
 ): StrikingDistanceRow[] {
   const topPageByQuery = new Map<string, StrikingDistanceRow>();
   for (const row of rows) {
@@ -113,9 +108,21 @@ export function buildStrikingDistanceRows(
       position: row.position,
     });
   }
+  return Array.from(topPageByQuery.values());
+}
 
+/** Reduce `["query","page"]` rows to one striking-distance row per query.
+ *
+ *  A query only belongs in "striking distance" when the site's BEST-ranking
+ *  page for it sits in the 5..20 band — if any page already ranks above
+ *  position 5, the site effectively ranks near the top and improving a
+ *  secondary page won't move traffic. Result is sorted by impressions. */
+export function buildStrikingDistanceRows(
+  rows: GscSearchAnalyticsRow[],
+  limit: number = STRIKING_DISTANCE_ROW_LIMIT,
+): StrikingDistanceRow[] {
   return sort(
-    Array.from(topPageByQuery.values()).filter(
+    bestPagePerQuery(rows).filter(
       (row) =>
         row.position >= STRIKING_DISTANCE_MIN_POSITION &&
         row.position <= STRIKING_DISTANCE_MAX_POSITION,
