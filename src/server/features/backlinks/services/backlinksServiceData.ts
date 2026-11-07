@@ -127,13 +127,23 @@ export async function profileBacklinksOverview(
     }),
     // history/live only accepts a hostname and has no include_subdomains field,
     // so trends are unavailable for a page and subdomain-inclusive otherwise.
+    // If history fails (e.g. for subdomains unsupported by history/live),
+    // fall back to empty trends so the summary still loads.
     normalizedTarget.scope === "exact_url"
       ? Promise.resolve([])
-      : dataforseo.backlinks.history({
-          target: normalizedTarget.apiTarget,
-          ...dateRange,
-          creditFeature,
-        }),
+      : dataforseo.backlinks
+          .history({
+            target: normalizedTarget.apiTarget,
+            ...dateRange,
+            creditFeature,
+          })
+          .catch((err) => {
+            console.warn(
+              "dataforseo.backlinks.history failed, continuing without history:",
+              err,
+            );
+            return [];
+          }),
   ]);
 
   const overview = buildOverviewResult({

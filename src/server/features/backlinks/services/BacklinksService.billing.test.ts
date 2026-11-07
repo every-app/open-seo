@@ -255,3 +255,29 @@ it("shows the provider's last_seen timestamp in backlink results", async () => {
   );
   expect(result.rows[0]?.lastSeen).toBe("2026-10-06 10:00:00 +00:00");
 });
+
+it("gracefully falls back to empty trends when backlinks history fails (e.g. for subdomains)", async () => {
+  mockTarget({
+    apiTarget: "sub.example.com",
+    displayTarget: "sub.example.com",
+    scope: "domain",
+  });
+  backlinksSummaryMock.mockResolvedValue({
+    target: "sub.example.com",
+    backlinks: 50,
+    referring_domains: 10,
+    rank: 15,
+  });
+  backlinksHistoryMock.mockRejectedValue(
+    new Error("DataForSEO error: invalid target for history"),
+  );
+
+  const { overview } = await service.profileOverview(
+    { target: "sub.example.com", scope: "domain" },
+    billingCustomer,
+  );
+
+  expect(overview.summary.backlinks).toBe(50);
+  expect(overview.summary.referringDomains).toBe(10);
+  expect(overview.trends).toEqual([]);
+});
