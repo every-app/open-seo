@@ -8,6 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   BROKEN_LINKS_SQL,
+  FRONTIER_CLAIM_SQL,
   FRONTIER_DISCOVER_SQL,
   ORPHAN_PAGES_SQL,
   SCRATCHPAD_SCHEMA_SQL,
@@ -251,5 +252,86 @@ describe("frontier link discovery", () => {
         .prepare(`SELECT depth, source, in_sitemap FROM frontier WHERE url = ?`)
         .get(url),
     ).toEqual({ depth: 2, source: "link", in_sitemap: 1 });
+  });
+
+  it("keeps the smallest depth a link gives a pending URL", () => {
+    const url = "https://site.test/post";
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, 4);
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, 2);
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, 3);
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, null);
+
+    expect(
+      db.prepare(`SELECT depth FROM frontier WHERE url = ?`).get(url),
+    ).toEqual({ depth: 2 });
+  });
+
+  it("leaves leased and crawled rows alone", () => {
+    for (const state of ["leased", "crawled"]) {
+      const url = `https://site.test/${state}`;
+      db.prepare(
+        `INSERT INTO frontier (url, depth, source, in_sitemap, state) VALUES (?, 5, 'link', 0, ?)`,
+      ).run(url, state);
+      db.prepare(FRONTIER_DISCOVER_SQL).run(url, 1);
+      expect(
+        db.prepare(`SELECT depth FROM frontier WHERE url = ?`).get(url),
+      ).toEqual({ depth: 5 });
+    }
+  });
+});
+
+describe("frontier claim order", () => {
+  function claim(limit = 200): string[] {
+    const urls = db
+      .prepare(FRONTIER_CLAIM_SQL)
+      .all(limit)
+      .map((row) => String(row["url"]));
+    for (const url of urls) {
+      db.prepare(`UPDATE frontier SET state = 'crawled' WHERE url = ?`).run(
+        url,
+      );
+    }
+    return urls.map((url) => url.replace("https://site.test", ""));
+  }
+
+  function seedSitemap(...paths: string[]) {
+    for (const path of paths) {
+      db.prepare(
+        `INSERT INTO frontier (url, depth, source, in_sitemap) VALUES (?, NULL, 'sitemap', 1)`,
+      ).run(`https://site.test${path}`);
+    }
+  }
+
+  function link(path: string, depth: number | null) {
+    db.prepare(FRONTIER_DISCOVER_SQL).run(`https://site.test${path}`, depth);
+  }
+
+  it("leases the start URL alone, before any sitemap seed", () => {
+    db.prepare(
+      `INSERT INTO frontier (url, depth, source, in_sitemap) VALUES (?, 0, 'link', 0)`,
+    ).run(START);
+    seedSitemap("/about", "/blog");
+
+    expect(claim()).toEqual(["/"]);
+  });
+
+  it("leases one depth per chunk, shallowest first, then URLs with no depth", () => {
+    // Sitemap seeds that a link reached keep their early rowid.
+    seedSitemap("/old-post", "/index", "/index/2", "/sitemap-only");
+    link("/old-post", 4);
+    link("/index", 1);
+    link("/about", 1);
+
+    expect(claim()).toEqual(["/index", "/about"]);
+    // The index page's links come back before its sitemap-listed page 2
+    // can be leased, so page 2 gets depth 2, not null.
+    link("/index/2", 2);
+    link("/new-post", 2);
+    link("/from-seed", null);
+    expect(claim()).toEqual(["/index/2", "/new-post"]);
+    link("/old-post", 3);
+    expect(claim()).toEqual(["/old-post"]);
+    expect(claim()).toEqual(["/from-seed", "/sitemap-only"]);
+    expect(claim()).toEqual([]);
   });
 });

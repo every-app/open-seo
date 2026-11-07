@@ -2,6 +2,7 @@ import type { RobotsResult } from "@/server/lib/audit/discovery";
 import type { AuditConfig, CrawledPageResult } from "@/server/lib/audit/types";
 import { isAuditablePageUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
 import { isCrawlableUrl } from "@/server/lib/audit/url-policy";
+import { isShallowerLink } from "@/server/lib/audit/link-depth";
 import { deterministicAuditRowId } from "@/server/lib/audit/ids";
 import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
@@ -87,8 +88,9 @@ export async function persistCrawledPages(input: {
         targets.push(link.targetUrl);
       }
       if (
-        discovered.size < MAX_DISCOVERED_PER_BATCH &&
-        !discovered.has(link.targetUrl) &&
+        (discovered.has(link.targetUrl) ||
+          discovered.size < MAX_DISCOVERED_PER_BATCH) &&
+        isShallowerLink(discovered.get(link.targetUrl), childDepth) &&
         shouldQueueCrawlLink(link.targetUrl, origin, robots, sitePlatform)
       ) {
         discovered.set(link.targetUrl, childDepth);
@@ -101,7 +103,7 @@ export async function persistCrawledPages(input: {
     // Redirect targets continue the same navigation path: same depth.
     if (
       page.redirectUrl &&
-      !discovered.has(page.redirectUrl) &&
+      isShallowerLink(discovered.get(page.redirectUrl), pageDepth) &&
       shouldQueueCrawlLink(page.redirectUrl, origin, robots, sitePlatform)
     ) {
       discovered.set(page.redirectUrl, pageDepth);

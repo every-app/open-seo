@@ -52,16 +52,37 @@ export const SCRATCHPAD_SCHEMA_SQL = `
 /**
  * Queue one link-discovered URL. Already-seen URLs keep their row (the
  * global dedup), except that a pending row with no click depth yet — almost
- * always a sitemap seed — takes the link's depth and link-queue priority
- * while keeping its in-sitemap flag. Sitemap seeding covers the whole
- * sitemap, so without this every linked sitemap page would crawl in sitemap
- * order with no depth. Takes (url, depth).
+ * always a sitemap seed — or a deeper one takes the link's depth and
+ * link-queue priority while keeping its in-sitemap flag. Sitemap seeding
+ * covers the whole sitemap, so without this every linked sitemap page would
+ * crawl in sitemap order with no depth, and a page first found from a deep
+ * page would keep that depth. Takes (url, depth).
  */
 export const FRONTIER_DISCOVER_SQL = `
   INSERT INTO frontier (url, depth, source, in_sitemap) VALUES (?, ?, 'link', 0)
   ON CONFLICT(url) DO UPDATE SET source = 'link', depth = excluded.depth
-  WHERE frontier.state = 'pending' AND frontier.depth IS NULL
-    AND excluded.depth IS NOT NULL
+  WHERE frontier.state = 'pending' AND excluded.depth IS NOT NULL
+    AND (frontier.depth IS NULL OR excluded.depth < frontier.depth)
+`;
+
+/**
+ * Lease order for a crawl chunk, taking (limit). Breadth-first, one depth
+ * per chunk: only URLs at the shallowest pending depth, so every page one
+ * level up has been crawled, and its links recorded, before a URL is leased
+ * (its depth is fixed from then on). The start URL (depth 0) goes alone;
+ * a sitemap seed leased beside it would miss its depth-1 links. URLs with
+ * no depth come once no URL with one is pending: link-discovered ones
+ * first, then sitemap-only ones, FIFO.
+ */
+export const FRONTIER_CLAIM_SQL = `
+  SELECT url, depth, in_sitemap FROM frontier
+  WHERE state = 'pending'
+    AND (depth = (SELECT MIN(depth) FROM frontier WHERE state = 'pending')
+      OR NOT EXISTS (
+        SELECT 1 FROM frontier WHERE state = 'pending' AND depth IS NOT NULL
+      ))
+  ORDER BY CASE source WHEN 'link' THEN 0 ELSE 1 END, rowid
+  LIMIT ?
 `;
 
 /**
