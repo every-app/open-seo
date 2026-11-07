@@ -42,6 +42,15 @@ Working with OpenSEO:
 - [MCP tools](https://openseo.so/docs/mcp-tools): What the agent can do through MCP, including local SEO, reports, and project context.
 - [Google Search Console MCP](https://openseo.so/google-search-console-mcp): Read-only Search Console performance and URL inspection that use no credits. Hosted OpenSEO needs no Google Cloud project.
 - [AI visibility](https://openseo.so/docs/ai-visibility): Prompt Research, Prompt Explorer, and Prompt Tracking. Tracking covers ChatGPT, Gemini, Google AI Overviews, Claude, and Perplexity.
+- [Rank tracking](https://openseo.so/docs/rank-tracking): Trackers, schedules, the most a check can cost, and why a keyword marked "Not checked" hasn't lost its ranking.
+- [Site audits](https://openseo.so/docs/site-audits): Starting an audit, plan page limits, what Lighthouse and JavaScript rendering cost, and blocked or partial crawls.
+- [Reports](https://openseo.so/docs/reports): Finding saved reports, public share links, PDF export, and report templates.
+- [Search Console and Analytics](https://openseo.so/docs/google-integrations): Connecting Google to a project, changing or removing it, and the data available in the app and through MCP.
+
+## Account
+
+- [Plans, credits and billing](https://openseo.so/docs/billing): Plans, what uses credits and what doesn't, running out, top-ups and auto-reload, plan changes, and invoices.
+- [Teams](https://openseo.so/docs/teams): Inviting teammates, what owners and admins can do, what the organization shares, and which organization an agent works in.
 
 ## Skills
 

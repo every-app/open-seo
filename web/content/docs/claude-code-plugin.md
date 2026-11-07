@@ -9,12 +9,12 @@ The connector doesn't include the SEO skills. To get them in Claude Code or Clau
 
 ## Choose your setup path
 
-| Where you want to work                        | How to connect                                                                          |
-| --------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Claude on the web, desktop or mobile          | Add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo)          |
-| Claude Code                                   | [Install the plugin](#install-in-claude-code)                                           |
-| Claude Cowork                                 | [Install the plugin](#install-in-claude-cowork)                                         |
-| Self-hosted, or the connector isn't available | [Add a custom connector](#custom-connector)                                             |
+| Where you want to work                        | How to connect                                                              |
+| --------------------------------------------- | --------------------------------------------------------------------------- |
+| Claude on the web, desktop or mobile          | Add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo) |
+| Claude Code                                   | [Install the plugin](#install-in-claude-code)                               |
+| Claude Cowork                                 | [Install the plugin](#install-in-claude-cowork)                             |
+| Self-hosted, or the connector isn't available | [Add a custom connector](#custom-connector)                                 |
 
 The OpenSEO plugin bundles OpenSEO MCP and all twelve SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Claude Code and in Claude Cowork.
 

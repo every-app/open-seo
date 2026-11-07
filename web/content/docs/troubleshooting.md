@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting"
-description: "Where to find fixes for connection, sign-in, site audit and self-hosting problems."
+description: "Where to find fixes for connection, sign-in, site audit, rank tracking, Google, credit and self-hosting problems."
 ---
 
 ## Connecting an agent
@@ -12,7 +12,21 @@ description: "Where to find fixes for connection, sign-in, site audit and self-h
 
 ## Site audits
 
+- [When an audit looks wrong](/docs/site-audits#when-an-audit-looks-wrong): blocked, rate-limited or partial crawls, and audits that find no issues.
 - [OpenSEO-Audit crawler](/docs/crawler): how the crawler identifies itself, and how to allow it through robots.txt or a firewall.
+
+## Rank tracking
+
+- [Keywords marked "Not checked"](/docs/rank-tracking#keywords-marked-not-checked): why a keyword has no new position, and how to tell it apart from a ranking loss.
+
+## Search Console and Analytics
+
+- [If your site isn't listed](/docs/google-integrations#if-your-site-isnt-listed): missing sites, properties you can't select, missing permissions and expired connections.
+
+## Credits and teammates
+
+- [When you run out](/docs/billing#when-you-run-out): what stops when credits run out, and how to get more.
+- [Invite a teammate](/docs/teams#invite-a-teammate): invitations that don't arrive, and how to resend them.
 
 ## Self-hosting
 
