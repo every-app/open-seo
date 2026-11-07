@@ -4,7 +4,7 @@
   "sideEffects": [
     "./src/standalone-server.ts"
   ],
-  "version": "0.1.25",
+  "version": "0.1.26",
   "type": "module",
   "packageManager": "pnpm@10.30.1",
   "scripts": {
