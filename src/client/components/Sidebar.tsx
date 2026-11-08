@@ -183,7 +183,7 @@ export function Sidebar({
           >
             {navGroups.map((group) => (
               <SidebarGroup key={group.label} className="py-1">
-                <SidebarGroupLabel className="h-7 uppercase tracking-wider text-sidebar-foreground/40">
+                <SidebarGroupLabel className="h-7 uppercase tracking-wider">
                   {group.label}
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
