@@ -167,8 +167,8 @@ function TrendSummary({ trend }: { trend: AiTrend }) {
       <TableHeader>
         <TableRow>
           <TableHead />
-          <TableHead>Brand mentions</TableHead>
-          <TableHead>Owned citations</TableHead>
+          <TableHead className="text-right">Brand mentions</TableHead>
+          <TableHead className="text-right">Owned citations</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -176,8 +176,8 @@ function TrendSummary({ trend }: { trend: AiTrend }) {
           <TableRow key={row.key}>
             <TableCell>{row.label}</TableCell>
             {[row.mentions, row.citations].map((metric, index) => (
-              <TableCell key={index}>
-                <span className="flex items-baseline gap-2 tabular-nums">
+              <TableCell key={index} className="text-right">
+                <span className="flex items-baseline justify-end gap-2 tabular-nums">
                   <span
                     className={cn(
                       row.key === "all"

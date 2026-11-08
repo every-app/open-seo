@@ -71,7 +71,7 @@ function AuditHistoryTable({
             <TableHead>Date</TableHead>
             <TableHead>URL</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Pages</TableHead>
+            <TableHead className="text-right">Pages</TableHead>
             <TableHead>Lighthouse</TableHead>
             <TableHead />
           </TableRow>
@@ -88,7 +88,9 @@ function AuditHistoryTable({
               <TableCell>
                 <StatusBadge status={audit.status} />
               </TableCell>
-              <TableCell>{audit.pagesTotal || audit.pagesCrawled}</TableCell>
+              <TableCell className="text-right tabular-nums">
+                {audit.pagesTotal || audit.pagesCrawled}
+              </TableCell>
               <TableCell>
                 {audit.ranLighthouse ? (
                   <Badge variant="outline" size="sm">
