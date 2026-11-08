@@ -226,14 +226,18 @@ const getRankedKeywordsInputSchema = {
     .describe("Rows to skip for pagination."),
 } as const;
 
-const searchLocalBusinessesInputSchema = {
+// Strict: the sibling local tools take `keyword`, and a stripped `keyword`
+// here returned every nearby business (hotels, hair salons) for "plumber".
+const searchLocalBusinessesInputSchema = z.strictObject({
   projectId: projectIdSchema,
   query: z
     .string()
     .min(1)
     .max(200)
     .optional()
-    .describe("Business name or title text to match."),
+    .describe(
+      "Text the business name must contain, such as a trade word. For a business type, use categories.",
+    ),
   near: nearSchema,
   categories: z
     .array(z.string().min(1).max(120))
@@ -277,7 +281,7 @@ const searchLocalBusinessesInputSchema = {
     .max(1000)
     .optional()
     .describe("Rows to skip for pagination."),
-} as const;
+});
 
 const localSearchTypeSchema = z.enum(["maps", "local_finder"]);
 
@@ -420,7 +424,7 @@ type GetKeywordMetricsArgs = z.infer<
   z.ZodObject<typeof getKeywordMetricsInputSchema>
 >;
 type SearchLocalBusinessesArgs = z.infer<
-  z.ZodObject<typeof searchLocalBusinessesInputSchema>
+  typeof searchLocalBusinessesInputSchema
 >;
 type GetLocalSerpResultsArgs = z.infer<
   z.ZodObject<typeof getLocalSerpResultsInputSchema>

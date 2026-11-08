@@ -419,7 +419,7 @@ export function buildSamMcpTools(
     run_rank_tracker: adaptTool(runRankTrackerTool),
     get_ranked_keywords: adaptTool(getRankedKeywordsTool),
     find_serp_competitors: adaptTool(findSerpCompetitorsTool),
-    search_local_businesses: adaptTool(searchLocalBusinessesTool),
+    search_local_businesses: adaptObjectTool(searchLocalBusinessesTool),
     get_local_serp_results: adaptTool(getLocalSerpResultsTool),
     get_google_business_questions: adaptTool(getGoogleBusinessQuestionsTool),
     get_business_profile: adaptTool(getBusinessProfileTool),
