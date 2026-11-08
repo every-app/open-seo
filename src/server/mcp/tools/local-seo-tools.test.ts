@@ -372,6 +372,21 @@ describe("get_local_rank_grid", () => {
     });
   });
 
+  it("never matches by name when a cid is given", async () => {
+    // A similarly named business must not count as the target's rank.
+    completeTasks([{ rank_absolute: 1, title: "Acme Cafe", cid: "999" }]);
+
+    const result = await getLocalRankGridTool.handler(
+      { ...gridArgs, target: { cid: "123", name: "acme cafe" } },
+      toolContext,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      summary: { pointsFound: 0 },
+      matchedBusiness: null,
+    });
+  });
+
   it("keeps the grid when DataForSEO refuses one point's search", async () => {
     mocks.localTaskPost.mockImplementation(async ({ locationCoordinates }) =>
       locationCoordinates.map((_, index) =>

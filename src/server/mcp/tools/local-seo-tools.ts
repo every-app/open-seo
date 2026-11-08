@@ -739,7 +739,7 @@ const getLocalRankGridInputSchema = {
         .max(200)
         .optional()
         .describe(
-          "Match rows whose title contains this text (case-insensitive). Used only when cid/placeId do not match.",
+          "Match rows whose title contains this text (case-insensitive). Used only when neither cid nor placeId is given.",
         ),
     })
     .describe(
@@ -814,7 +814,12 @@ function matchGridItem(
   items: unknown[],
   target: { cid?: string; placeId?: string; name?: string },
 ) {
-  const name = target.name?.toLowerCase();
+  // A name only identifies the business when no id was given: with an id, a
+  // title match can be a different business with a similar name.
+  const name =
+    target.cid == null && target.placeId == null
+      ? target.name?.toLowerCase()
+      : undefined;
   return items.find((item) => {
     if (target.cid != null && readPath(item, "cid") === target.cid) return true;
     if (target.placeId != null && readPath(item, "place_id") === target.placeId)
