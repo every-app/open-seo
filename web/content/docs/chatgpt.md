@@ -77,7 +77,7 @@ Once the check succeeds, try:
 Use OpenSEO to help me choose one SEO task for my website. Ask about my goal before starting paid research.
 ```
 
-The OpenSEO plugin also includes SEO skills, such as SEO Audit. Use the available skill picker or ask for a workflow by name.
+The OpenSEO plugin also includes SEO skills, such as SEO Audit. The `@` menu shows OpenSEO itself, not its skills. Select OpenSEO and ask for a workflow by name, for example: "Use the OpenSEO SEO Audit skill on example.com."
 
 ## Troubleshooting
 
@@ -97,7 +97,7 @@ If setup still fails, contact [support@openseo.so](mailto:support@openseo.so) wi
 
 ## Update OpenSEO
 
-For the OpenSEO plugin, start a new chat to load the latest tools and skills. Reconnect if ChatGPT reports that sign-in needs attention. Local Codex update commands do not update ChatGPT web.
+For the OpenSEO plugin, start a new chat to load the latest tools. The plugin's skills update when OpenSEO publishes a new version of the plugin. Reconnect if ChatGPT reports that sign-in needs attention. Local Codex update commands do not update ChatGPT web.
 
 For a custom MCP connection, open its details under **Plugins**, select **Refresh** to reload the tools, and start a new chat. Refresh updates tool definitions; it does not add repository skills. If sign-in has expired, authenticate again.
 

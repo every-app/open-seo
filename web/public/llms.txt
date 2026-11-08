@@ -23,7 +23,7 @@ Working with OpenSEO:
 - [ChatGPT setup](https://openseo.so/docs/chatgpt): Plugin install steps, and a custom connection for accounts without the plugin or for self-hosted instances.
 - [Codex setup](https://openseo.so/docs/codex-plugin): The plugin installs MCP and all twelve skills in Codex, in the ChatGPT desktop app or the CLI. Type `$` to pick a skill.
 - [MCP setup](https://openseo.so/docs/mcp): Connect `https://app.openseo.so/mcp` in Cursor or another MCP client, or use an API key for headless agents.
-- [Install skills without a plugin](https://openseo.so/docs/skills/setup): Add the skills to agents that don't support the plugin.
+- [Install skills](https://openseo.so/docs/skills/setup): The OpenSEO plugins include the skills; connectors and MCP connections don't. How to check what an agent has and add the skills to any agent.
 - [Run SEO from your AI assistant](https://openseo.so/library/ai-agent-seo/run-seo-from-your-ai-assistant): What to run first after connecting, five starter prompts, and which calls cost credits.
 
 ## Why OpenSEO

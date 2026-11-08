@@ -5,7 +5,7 @@ description: "Add the OpenSEO connector to Claude, or install the plugin to get 
 
 **Quickest way:** add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo) from Claude's directory. It gives Claude OpenSEO's tools on the web, desktop and mobile, and in Cowork and Claude Code when you're signed in to the same Claude account. Sign in with your OpenSEO account when Claude asks. If the link doesn't open the listing, open **Customize → Connectors** in Claude, search for OpenSEO, and select **Connect to Claude**.
 
-The connector doesn't include the SEO skills. To get them in Claude Code or Claude Cowork, install the OpenSEO plugin below instead. It includes the same tools, so you don't need both.
+The connector doesn't include the SEO skills. To get them, install the OpenSEO plugin below instead. It includes the same tools, so you don't need both. Added under **Customize → Plugins**, it works in Claude chat, Cowork and Claude Code. On the Free plan, keep the connector and [upload the skills](/docs/skills/setup#claude) instead.
 
 ## Choose your setup path
 
@@ -90,7 +90,7 @@ Claude Cowork and the Claude desktop app install plugins through the Customize m
 
 If Claude can list your projects but no OpenSEO skills appear under `/`, you have a connector, not the plugin. Install the plugin, then remove the OpenSEO connector under **Customize → Connectors** so you keep one connection.
 
-Plugins need a paid Claude plan (Pro, Max, Team, or Enterprise). Your organization can limit which marketplaces you can add. On the Free plan, add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo) and upload the skills under **Customize → Skills**. With a self-hosted instance, [add a custom connector](#custom-connector) instead. The plugin connects only to hosted OpenSEO. See [Anthropic's plugin guide](https://support.claude.com/en/articles/13837440-use-plugins-in-claude).
+Plugins need a paid Claude plan (Pro, Max, Team, or Enterprise). Your organization can limit which marketplaces you can add. On the Free plan, add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo) and [upload the skills](/docs/skills/setup#claude) under **Customize → Skills**. With a self-hosted instance, [add a custom connector](#custom-connector) instead. The plugin connects only to hosted OpenSEO. See [Anthropic's plugin guide](https://support.claude.com/en/articles/13837440-use-plugins-in-claude).
 
 ## Custom connector
 
@@ -101,7 +101,7 @@ Use a custom connector to connect a self-hosted instance, or if the OpenSEO conn
 3. Paste `https://app.openseo.so/mcp`. For a self-hosted instance, use your instance's address followed by `/mcp`.
 4. Approve the OpenSEO login when prompted.
 
-Claude Desktop custom connectors are available on Free, Pro, Max, Team, and Enterprise plans. Free plans support one custom connector. To add the skills without the plugin, upload them under **Customize → Skills**.
+Claude Desktop custom connectors are available on Free, Pro, Max, Team, and Enterprise plans. Free plans support one custom connector. To add the skills without the plugin, [upload them](/docs/skills/setup#claude) under **Customize → Skills**.
 
 ## Update
 

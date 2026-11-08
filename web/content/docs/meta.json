@@ -2,11 +2,11 @@
   "pages": [
     "---Get started---",
     "agent-setup",
+    "[Install skills](/docs/skills/setup)",
     "chatgpt",
     "claude-code-plugin",
     "codex-plugin",
     "mcp",
-    "[Install skills without a plugin](/docs/skills/setup)",
     "---Guides---",
     "ai-visibility",
     "rank-tracking",
