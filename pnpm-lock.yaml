@@ -35,8 +35,8 @@ importers:
         specifier: ^1.2.3
         version: 1.2.3
       '@every-app/sdk':
-        specifier: 0.3.0-rc.14
-        version: 0.3.0-rc.14(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))
+        specifier: 0.3.0
+        version: 0.3.0(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))
       '@modelcontextprotocol/client':
         specifier: 2.3.1
         version: 2.3.1
@@ -246,8 +246,8 @@ importers:
         specifier: 4.0.0-beta.93
         version: 4.0.0-beta.93
       everyapp:
-        specifier: 0.3.0-rc.14
-        version: 0.3.0-rc.14(@types/node@22.19.11)
+        specifier: 0.3.0
+        version: 0.3.0(@types/node@22.19.11)
       knip:
         specifier: ^5.88.1
         version: 5.88.1(@types/node@22.19.11)(typescript@5.9.3)
@@ -1689,8 +1689,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@every-app/sdk@0.3.0-rc.14':
-    resolution: {integrity: sha512-k0YKXi3XopWX5QTm/Ejopra4XpBGsz99HVUz8EGsIMGxzEXeJqlTubjXqDwSlYyEDZgIS+99/yT+2nG6HNZ0NQ==}
+  '@every-app/sdk@0.3.0':
+    resolution: {integrity: sha512-TvVkVsBk7+fZXesnjENoxFx+ZlmyINwrrM6xRUxSXt46ZCi5QWylPu5pjWlx2Ufn89RGdVDy+tWbOKJ/w3VjJw==}
     peerDependencies:
       '@tanstack/react-start': ^1.168.61
     peerDependenciesMeta:
@@ -4895,8 +4895,8 @@ packages:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
     engines: {node: '>=18.0.0'}
 
-  everyapp@0.3.0-rc.14:
-    resolution: {integrity: sha512-OZPDhXc4K6DsEsF6m0SXNMKC14Qr1YV9karPmOBwk5woOpZrbSAbx2LB2TvmvRRxklGAqOtJAK7LtfhPPDMV5w==}
+  everyapp@0.3.0:
+    resolution: {integrity: sha512-dyfs9+NP1USZZoPkSyQiT17KeG+Y0kk7A2AHHMepPt1mh3lMpAn/VzeTHt8bE7GcBRXNcVR9oBBtJ+iR821Z+w==}
     engines: {node: '>=22.18.0'}
     hasBin: true
 
@@ -8742,7 +8742,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@every-app/sdk@0.3.0-rc.14(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))':
+  '@every-app/sdk@0.3.0(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.2.14)(rollup@4.59.0)(vite@8.3.4(@types/node@22.19.11)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.1)))':
     dependencies:
       jose: 6.2.12
     optionalDependencies:
@@ -11521,7 +11521,7 @@ snapshots:
     dependencies:
       eventsource-parser: 3.0.8
 
-  everyapp@0.3.0-rc.14(@types/node@22.19.11):
+  everyapp@0.3.0(@types/node@22.19.11):
     dependencies:
       '@cloudflare/config': 0.24.1
       '@inquirer/prompts': 8.7.5(@types/node@22.19.11)
