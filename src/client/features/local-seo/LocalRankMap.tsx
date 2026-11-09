@@ -10,7 +10,12 @@ import { LocalPointStatus } from "@/shared/local-seo";
 import { GoogleMapsTiles } from "./GoogleMapsTiles";
 import type { LocalGridDisplayPoint } from "./LocalRankGrid";
 
-const GRID_PADDING = { padding: [38, 38] as [number, number] };
+// Room around the pin centers. The bottom clears the Google Maps logo (31px)
+// plus a pin's 20px radius, so a narrow map's corner pins aren't covered.
+const GRID_PADDING = {
+  paddingTopLeft: [38, 28] as [number, number],
+  paddingBottomRight: [38, 52] as [number, number],
+};
 
 /** Keeps the whole grid in view when the map's container changes size. */
 function FitGridOnResize({ bounds }: { bounds: LatLngBoundsExpression }) {
@@ -41,6 +46,9 @@ export default function LocalRankMap({
     <MapContainer
       bounds={bounds}
       boundsOptions={GRID_PADDING}
+      // Whole zoom steps double the grid's size, so the next step often
+      // doesn't fit and the pins overlap. Any zoom lets the grid fill the map.
+      zoomSnap={0}
       dragging={false}
       zoomControl={false}
       scrollWheelZoom={false}

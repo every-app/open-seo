@@ -12,7 +12,8 @@ function readViewport(map: Map): GoogleMapsViewport {
   const southWest = map.wrapLatLng(bounds.getSouthWest());
   const northEast = map.wrapLatLng(bounds.getNorthEast());
   return {
-    zoom: map.getZoom(),
+    // Tiles are drawn at the nearest whole zoom, which is what the copyright covers.
+    zoom: Math.round(map.getZoom()),
     north: Math.min(85.0511287798, northEast.lat),
     south: Math.max(-85.0511287798, southWest.lat),
     east: northEast.lng,
