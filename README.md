@@ -80,7 +80,7 @@ See [`docs/LOCAL_DEVELOPMENT.md`](./docs/LOCAL_DEVELOPMENT.md).
 
 Creating clear issues is the best way to contribute.
 
-Read more here: [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md)
+Read more here: [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md)
 
 We have this skill: `/simple-issue-description` which helps.
 
