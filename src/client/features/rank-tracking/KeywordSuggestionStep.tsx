@@ -180,6 +180,8 @@ export function KeywordSuggestionStep({
         data: { projectId, domain, locationCode },
       }),
     enabled: labsSupported,
+    // A failed lookup may already be billed, and this step can be skipped.
+    retry: false,
   });
 
   const data = suggestionsQuery.data ?? [];

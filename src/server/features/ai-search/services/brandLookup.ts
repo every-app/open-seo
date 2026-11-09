@@ -168,12 +168,13 @@ export async function getBrandLookup(
   // Only cache when every call succeeded — a platform bundle that swallowed a
   // failed sub-call into empty fallback data is renderable but must not be
   // frozen for 24h with no way to retry; same for a partial SoV miss when
-  // competitors were requested.
+  // competitors were requested. A complete lookup that found no mentions is
+  // cached like any other: each of its calls was billed.
   const allSucceeded =
     platformBundles.every(
       (b) => b.status === "success" && b.bundle?.complete,
     ) && crossOutcomes.every((c) => c.status === "success");
-  if (allSucceeded && result.hasData) {
+  if (allSucceeded) {
     waitUntil(
       setCached(cacheKey, result, BRAND_LOOKUP_TTL_SECONDS).catch((err) => {
         console.error("ai-search.brand-lookup.cache-write failed:", err);

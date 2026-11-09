@@ -105,6 +105,8 @@ export function useBacklinksPageData({
     queryKey: ["backlinksOverview", ...baseQueryKeyParts],
     enabled: targetReady,
     staleTime: BACKLINKS_QUERY_STALE_TIME_MS,
+    // A failed call may already be billed; each section offers a retry.
+    retry: false,
     queryFn: () => getBacklinksOverview({ data: { projectId, target, scope } }),
   });
 
@@ -137,6 +139,7 @@ export function useBacklinksPageData({
     ],
     enabled: targetReady && tab === "backlinks" && !rowsFilterError,
     staleTime: BACKLINKS_QUERY_STALE_TIME_MS,
+    retry: false,
     // Over-budget filters never run the query, so no rows (and no export) may
     // stand in for them.
     placeholderData: rowsFilterError ? undefined : keepSameTarget,
@@ -175,6 +178,7 @@ export function useBacklinksPageData({
     ],
     enabled: targetReady && tab === "domains",
     staleTime: BACKLINKS_QUERY_STALE_TIME_MS,
+    retry: false,
     placeholderData: keepSameTarget,
     queryFn: () =>
       getBacklinksReferringDomains({
@@ -209,6 +213,7 @@ export function useBacklinksPageData({
     ],
     enabled: targetReady && tab === "pages",
     staleTime: BACKLINKS_QUERY_STALE_TIME_MS,
+    retry: false,
     placeholderData: keepSameTarget,
     queryFn: () =>
       getBacklinksTopPages({

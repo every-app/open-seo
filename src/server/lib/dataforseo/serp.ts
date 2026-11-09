@@ -226,6 +226,8 @@ export async function postRankCheckTasks(input: {
       // DataForSEO task id back to our keyword without relying on order.
       tag: `${task.keywordId}:${task.device}`,
     })),
+    // Billed at post: a 5xx doesn't prove the tasks weren't created.
+    { maxServerErrorRetries: 0 },
   );
 
   if (!response || response.status_code !== 20000) {

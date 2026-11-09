@@ -119,6 +119,26 @@ describe("getBrandLookup", () => {
     consoleError.mockRestore();
   });
 
+  it("caches a complete lookup that found no mentions", async () => {
+    dataforseoClientMock.aiSearch.aggregatedMetrics.mockResolvedValue({});
+    dataforseoClientMock.aiSearch.topPages.mockResolvedValue([]);
+    dataforseoClientMock.aiSearch.mentionsSearch.mockResolvedValue([]);
+
+    const result = await getBrandLookup(
+      {
+        projectId: "project_123",
+        query: "unknown brand",
+        competitors: [],
+        locationCode: 2840,
+        languageCode: "en",
+      },
+      billingCustomer,
+    );
+
+    expect(result.hasData).toBe(false);
+    expect(cacheMock.setCached).toHaveBeenCalledTimes(1);
+  });
+
   it("uses semantic cache keys and reapplies the current display query", async () => {
     cacheMock.getCached.mockResolvedValueOnce({
       ...cachedResult,

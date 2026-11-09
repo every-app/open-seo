@@ -63,7 +63,8 @@ async function getOverview(
 
   const cachedRaw = await getCached(cacheKey);
   const cached = domainOverviewResultSchema.safeParse(cachedRaw);
-  if (cached.success && cached.data.hasData) {
+  // A domain with no data is still a paid answer; re-fetching it bills again.
+  if (cached.success) {
     return {
       ...cached.data,
       scope: target.scope,
@@ -100,17 +101,13 @@ async function getOverview(
     fetchedAt: nowIso,
   };
 
-  if (stored.hasData) {
-    // waitUntil, not void: workerd cancels unregistered pending I/O once the
-    // response is sent, so a fire-and-forget put never persists the cache.
-    waitUntil(
-      setCached(cacheKey, stored, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
-        (error) => {
-          console.error("domain.overview.cache-write failed:", error);
-        },
-      ),
-    );
-  }
+  // waitUntil, not void: workerd cancels unregistered pending I/O once the
+  // response is sent, so a fire-and-forget put never persists the cache.
+  waitUntil(
+    setCached(cacheKey, stored, DOMAIN_OVERVIEW_TTL_SECONDS).catch((error) => {
+      console.error("domain.overview.cache-write failed:", error);
+    }),
+  );
 
   return { ...stored, scope: target.scope, displayTarget: target.display };
 }
@@ -162,7 +159,7 @@ async function getSuggestedKeywords(
       }),
     )
     .safeParse(cachedRaw);
-  if (cached.success && cached.data.length > 0) {
+  if (cached.success) {
     return cached.data;
   }
 
@@ -196,18 +193,13 @@ async function getSuggestedKeywords(
       keywordDifficulty: item.keywordDifficulty,
     }));
 
-  if (keywords.length > 0) {
-    waitUntil(
-      setCached(cacheKey, keywords, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
-        (error) => {
-          console.error(
-            "domain.keyword-suggestions.cache-write failed:",
-            error,
-          );
-        },
-      ),
-    );
-  }
+  waitUntil(
+    setCached(cacheKey, keywords, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
+      (error) => {
+        console.error("domain.keyword-suggestions.cache-write failed:", error);
+      },
+    ),
+  );
 
   return keywords;
 }
