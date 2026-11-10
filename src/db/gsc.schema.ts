@@ -3,10 +3,41 @@ import { sql } from "drizzle-orm";
 import { organization } from "./better-auth-schema";
 import { projects } from "./app.schema";
 
+// Google service account keys an organization uploaded to reach Search
+// Console without an OAuth grant (self-hosting only). The private key is
+// encrypted with GOOGLE_SERVICE_ACCOUNT_SECRET and never leaves the server;
+// the client email is what the operator adds as a user on the property.
+export const googleServiceAccounts = sqliteTable(
+  "google_service_accounts",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    clientEmail: text("client_email").notNull(),
+    privateKeyId: text("private_key_id"),
+    encryptedPrivateKey: text("encrypted_private_key").notNull(),
+    createdByUserId: text("created_by_user_id").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("google_service_accounts_org_email_idx").on(
+      table.organizationId,
+      table.clientEmail,
+    ),
+  ],
+);
+
 // Connected Google Search Console property per project.
 // OAuth tokens live in the better-auth `account` table under providerId
 // "google-search-console"; this row only records which verified property maps
-// to a project and whose grant to use when calling the GSC API.
+// to a project and whose grant (or which service account) to use when calling
+// the GSC API.
 export const gscConnections = sqliteTable(
   "gsc_connections",
   {
@@ -23,6 +54,12 @@ export const gscConnections = sqliteTable(
     // Whose google-search-console grant getAccessToken should use.
     connectedByUserId: text("connected_by_user_id").notNull(),
     gscAccountId: text("gsc_account_id"),
+    // Set when the property is reached through an uploaded service account key
+    // instead of a member's OAuth grant; gscAccountId then holds the same id.
+    serviceAccountId: text("service_account_id").references(
+      () => googleServiceAccounts.id,
+      { onDelete: "cascade" },
+    ),
     connectedAccountEmail: text("connected_account_email"),
     createdAt: text("created_at")
       .notNull()

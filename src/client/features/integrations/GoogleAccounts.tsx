@@ -24,6 +24,7 @@ type AccountsProps = {
 };
 
 export function accountLabel(account: GooglePickerAccount) {
+  if (account.serviceAccount) return `${account.email} · Service account`;
   return account.email ?? `Google account · ${account.accountId.slice(-6)}`;
 }
 
@@ -119,7 +120,9 @@ function AccountList(props: AccountsProps) {
           key={account.accountId}
           {...props}
           account={account}
-          onRemove={() => props.onRemove(account)}
+          onRemove={
+            account.serviceAccount ? undefined : () => props.onRemove(account)
+          }
         />
       ))}
       <AddAccountButton {...props} />

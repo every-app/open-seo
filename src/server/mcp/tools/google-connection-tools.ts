@@ -106,7 +106,7 @@ export const listSearchConsoleSitesTool = {
       Boolean(context.auth.guestClaimToken),
     );
     const [siteList, connection] = await Promise.all([
-      GscService.listSitesForUserWithGrantStatus(context.auth.userId),
+      GscService.listSitesForUserWithGrantStatus(context.auth),
       GscService.getConnection(args.projectId),
     ]);
     const accounts = siteList.accounts.map((grant) => ({

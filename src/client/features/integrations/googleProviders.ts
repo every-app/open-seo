@@ -31,6 +31,8 @@ export type GoogleConnection = {
   canManage: boolean;
   currentUserHasGrant: boolean;
   googleOAuthConfigured: boolean;
+  /** Search Console only: the deployment accepts service account keys. */
+  serviceAccountsEnabled?: boolean;
   connectedByEmail: string | null;
   property: string | null;
   propertyDetail: string | null;
@@ -80,6 +82,7 @@ function gscPickerOptions(accounts: GscAccounts): PickerOptions {
   return pickerOptions(
     accounts.map((account) => ({
       ...account,
+      serviceAccount: account.kind === "service_account",
       unavailable: account.propertiesUnavailable,
       properties: account.sites.map((site) => ({
         id: site.siteUrl,

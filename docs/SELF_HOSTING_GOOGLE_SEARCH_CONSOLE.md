@@ -95,6 +95,44 @@ Then open **Integrations**, click **Connect with Google**, authorize the Google
 account that owns your verified property, and pick the property to bind to your
 project.
 
+## Alternative: connect with a service account key
+
+Instead of (or alongside) OAuth, you can connect Search Console with a Google
+**service account**. No consent screen, no OAuth client, and nothing expires
+weekly. Self-hosting only: hosted and Every App deployments don't offer it.
+
+1. In the same Google Cloud project, with the Search Console API enabled (step
+   1), open **IAM & Admin → Service accounts** and create a service account.
+   Give it **no IAM roles**: it only needs to read Search Console.
+2. Open the account, go to **Keys → Add key → Create new key → JSON**, and save
+   the file.
+3. In [Search Console](https://search.google.com/search-console), open each
+   property under **Settings → Users and permissions → Add user**, enter the
+   service account's email (`…@….iam.gserviceaccount.com`) and choose
+   **Restricted**.
+4. Set `GOOGLE_SERVICE_ACCOUNT_SECRET` to a random string of **at least 32
+   characters**, different from your other secrets, and restart. It encrypts
+   the uploaded keys and turns the option on:
+
+   ```sh
+   openssl rand -base64 32
+   ```
+
+5. Open **Integrations**, click **Use a service account key** on the Search
+   Console card, paste the JSON (or choose the file) and save. The service
+   account then shows up in the property picker next to any Google accounts.
+
+Keep in mind:
+
+- A key doesn't expire, so treat the JSON file like a password. Delete the
+  local copy after uploading, and delete the key in Google Cloud if it may
+  have leaked.
+- The key belongs to the organization: anyone who can manage integrations can
+  use it for their projects. Only the account email is ever shown again.
+- Removing a key in OpenSEO disconnects the projects that used it. Delete the
+  key in Google Cloud too if you no longer need it.
+- One service account per client limits what a single leaked key can reach.
+
 ## How it works
 
 - OpenSEO uses your Google client to run the OAuth flow and stores the resulting
@@ -127,6 +165,14 @@ consent screen → Publish app**, then reconnect once.
 **"Search Console API isn't enabled"** — the API isn't enabled in the Google
 Cloud project that owns your OAuth client. Enable it (step 1), wait a minute,
 then click **Try again**.
+
+**"Google rejected this key"** when saving a service account key — the key was
+deleted or disabled in Google Cloud, or the service account itself was removed.
+Create a new JSON key and upload it.
+
+**Service account shows "No websites found"** — its email hasn't been added
+as a user on any Search Console property yet. Add it (Restricted is enough),
+wait a minute, then reopen the picker.
 
 **Connected, but no properties to pick** — the Google account you authorized
 doesn't have a verified property in Search Console. Verify the site in

@@ -3,6 +3,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import { GscService } from "@/server/features/gsc/services/GscService";
+import { GoogleServiceAccountService } from "@/server/features/google/GoogleServiceAccountService";
 import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { getGatewayGoogleConnectUrl } from "@/server/features/google/gatewayGoogle";
@@ -11,6 +12,7 @@ import {
   GSC_INTEGRATION,
 } from "@/server/features/google/googleOAuth";
 import { hasOrgPermission } from "@/lib/org-permissions";
+import { AppError } from "@/server/lib/errors";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
@@ -29,6 +31,11 @@ const setSiteSchema = projectScopedSchema.extend({
 const startLinkSchema = z.object({
   callbackURL: z.string().min(1),
 });
+// A key file is a few KB; the cap only stops absurd uploads.
+const addServiceAccountSchema = z.object({
+  keyJson: z.string().min(1).max(20_000),
+});
+const removeServiceAccountSchema = z.object({ id: z.string().min(1) });
 
 // Account-level grant check (no project needed) for surfaces like onboarding
 // where the user hasn't picked a project yet. The OAuth grant is per-account;
@@ -36,21 +43,27 @@ const startLinkSchema = z.object({
 export const getGscGrantStatus = createServerFn({ method: "GET" })
   .middleware(requireAuthenticatedContext)
   .handler(async ({ context }) => {
-    return { connected: await GscService.userHasGrant(context.userId) };
+    return { connected: await GscService.userHasGrant(context) };
   });
 
 export const getGscConnection = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
-    const [connection, currentUserHasGrant, googleOAuthConfigured] =
-      await Promise.all([
-        GscService.getConnection(context.projectId),
-        GscService.userHasGrant(context.userId),
-        hasGoogleOAuthConfig(),
-      ]);
+    const [
+      connection,
+      currentUserHasGrant,
+      googleOAuthConfigured,
+      serviceAccountsEnabled,
+    ] = await Promise.all([
+      GscService.getConnection(context.projectId),
+      GscService.userHasGrant(context),
+      hasGoogleOAuthConfig(),
+      GoogleServiceAccountService.isEnabled(),
+    ]);
     return {
       connected: Boolean(connection),
+      serviceAccountsEnabled,
       canManage: hasOrgPermission(context.role, { integration: ["manage"] }),
       currentUserHasGrant,
       googleOAuthConfigured,
@@ -65,7 +78,7 @@ export const listGscSites = createServerFn({ method: "POST" })
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
     const [siteList, connection] = await Promise.all([
-      GscService.listSitesForUserWithGrantStatus(context.userId),
+      GscService.listSitesForUserWithGrantStatus(context),
       GscService.getConnection(context.projectId),
     ]);
     const legacyAccounts = !connection?.gscAccountId
@@ -78,6 +91,7 @@ export const listGscSites = createServerFn({ method: "POST" })
     return {
       accounts: siteList.accounts.map((grant) => ({
         accountId: grant.accountId,
+        kind: grant.kind,
         email: grant.email,
         requiresReconnect: grant.requiresReconnect,
         propertiesUnavailable: grant.propertiesUnavailable,
@@ -167,3 +181,55 @@ export const startGscLink = createServerFn({ method: "POST" })
             publicOrigin: getPublicOrigin(getRequest()),
           }),
   }));
+
+// Service account keys belong to the organization. Only the account email
+// and usage come back; the private key never leaves the server.
+export const listGscServiceAccounts = createServerFn({ method: "GET" })
+  .middleware(requireAuthenticatedContext)
+  .handler(async ({ context }) => ({
+    enabled: await GoogleServiceAccountService.isEnabled(),
+    accounts: await GoogleServiceAccountService.listSummaries(
+      context.organizationId,
+    ),
+  }));
+
+export const addGscServiceAccount = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(addServiceAccountSchema)
+  .handler(async ({ data, context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
+    let saved;
+    try {
+      saved = await GoogleServiceAccountService.add({
+        organizationId: context.organizationId,
+        userId: context.userId,
+        keyJson: data.keyJson,
+      });
+    } catch (error) {
+      // What's wrong with the file is the answer the form shows, and thrown
+      // errors reach the client stripped to their code.
+      if (error instanceof AppError && error.code === "VALIDATION_ERROR") {
+        return { ok: false as const, message: error.message };
+      }
+      throw error;
+    }
+    waitUntil(
+      captureServerEvent({
+        distinctId: context.userId,
+        event: "gsc:service_account_add",
+        organizationId: context.organizationId,
+      }),
+    );
+    return { ok: true as const, id: saved.id, clientEmail: saved.clientEmail };
+  });
+
+export const removeGscServiceAccount = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(removeServiceAccountSchema)
+  .handler(async ({ data, context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
+    return GscService.removeServiceAccount({
+      organizationId: context.organizationId,
+      id: data.id,
+    });
+  });

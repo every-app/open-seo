@@ -11,6 +11,7 @@ import { GoogleConnectedState } from "@/client/features/integrations/GoogleConne
 import { GoogleLinkErrorAlert } from "@/client/features/integrations/GoogleLinkErrorAlert";
 import { GoogleOAuthSetupWarning } from "@/client/features/integrations/GoogleOAuthSetupWarning";
 import { GoogleProjectEmptyState } from "@/client/features/integrations/GoogleProjectEmptyState";
+import { GscServiceAccountKeys } from "@/client/features/integrations/GscServiceAccountKeys";
 import {
   GooglePropertyPicker,
   type GooglePickerSelection,
@@ -62,7 +63,7 @@ export function GoogleConnectionCard({
   const hasGrant = Boolean(connection?.currentUserHasGrant);
   const canManage = connection?.canManage === true;
   const needsGoogleOAuthSetup =
-    connectionQuery.isSuccess && !connection?.googleOAuthConfigured;
+    connectionQuery.isSuccess && needsOAuthClient(connection);
 
   const showPicker = picking ?? (!connected && hasGrant && canManage);
   const accountsKey = [config.accountsKey, projectId];
@@ -233,6 +234,7 @@ export function GoogleConnectionCard({
           pitch={prominent ? config.pitch : undefined}
           hasGrant={hasGrant}
           canManage={canManage}
+          canLink={connection?.googleOAuthConfigured}
           disabled={linking}
           onLink={handleConnect}
           onChoose={startPicking}
@@ -240,6 +242,17 @@ export function GoogleConnectionCard({
           {dismissButton}
         </GoogleProjectEmptyState>
       )}
+      <GscServiceAccountKeys
+        connection={connection}
+        picking={picking}
+        onChange={() => {
+          queryClient.removeQueries({ queryKey: accountsKey });
+          void queryClient.invalidateQueries({ queryKey: connectionKey });
+          void queryClient.invalidateQueries({
+            queryKey: ["gscGrantStatus"],
+          });
+        }}
+      />
       <ConnectionChangeError
         error={setPropertyMutation.error ?? disconnectMutation.error}
       />
@@ -250,6 +263,14 @@ export function GoogleConnectionCard({
         />
       ) : null}
     </CardShell>
+  );
+}
+
+/** Whether connecting needs a Google OAuth client first. A deployment that
+ *  accepts service account keys can connect without one. */
+function needsOAuthClient(connection: GoogleConnection | undefined) {
+  return (
+    !connection?.googleOAuthConfigured && !connection?.serviceAccountsEnabled
   );
 }
 

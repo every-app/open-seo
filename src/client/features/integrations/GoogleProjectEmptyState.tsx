@@ -10,6 +10,7 @@ export function GoogleProjectEmptyState({
   hasGrant,
   disabled,
   canManage,
+  canLink = true,
   onChoose,
   onLink,
   children,
@@ -20,6 +21,8 @@ export function GoogleProjectEmptyState({
   hasGrant: boolean;
   disabled: boolean;
   canManage: boolean;
+  /** False when only service account keys can connect (no OAuth client). */
+  canLink?: boolean;
   onChoose: () => void;
   onLink: () => void;
   children?: ReactNode;
@@ -34,7 +37,7 @@ export function GoogleProjectEmptyState({
         ? "Choose property"
         : "Connect"
       : "Manage Google accounts";
-  const canAct = canManage || hasGrant;
+  const canAct = hasGrant || (canManage && canLink);
   const onClick = hasGrant ? onChoose : onLink;
   const showGlyph = !disabled && !hasGrant;
 

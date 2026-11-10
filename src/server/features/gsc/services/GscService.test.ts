@@ -158,11 +158,15 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
       );
 
       await expect(
-        GscService.listSitesForUserWithGrantStatus("u1"),
+        GscService.listSitesForUserWithGrantStatus({
+          userId: "u1",
+          organizationId: "org1",
+        }),
       ).resolves.toEqual({
         accounts: [
           {
             accountId: "sub-a",
+            kind: "google_account",
             email: "sub-a@example.com",
             requiresReconnect: false,
             propertiesUnavailable: false,
@@ -171,6 +175,7 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
           },
           {
             accountId: "sub-b",
+            kind: "google_account",
             email: null,
             requiresReconnect: true,
             propertiesUnavailable: false,
@@ -194,11 +199,15 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
     ]);
 
     await expect(
-      GscService.listSitesForUserWithGrantStatus("u1"),
+      GscService.listSitesForUserWithGrantStatus({
+        userId: "u1",
+        organizationId: "org1",
+      }),
     ).resolves.toEqual({
       accounts: [
         {
           accountId: "sub-a",
+          kind: "google_account",
           email: null,
           requiresReconnect: false,
           propertiesUnavailable: false,
@@ -234,11 +243,15 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
         .mockImplementation(() => undefined);
 
       await expect(
-        GscService.listSitesForUserWithGrantStatus("u1"),
+        GscService.listSitesForUserWithGrantStatus({
+          userId: "u1",
+          organizationId: "org1",
+        }),
       ).resolves.toEqual({
         accounts: [
           {
             accountId: "sub-a",
+            kind: "google_account",
             email: "sub-a@example.com",
             requiresReconnect: false,
             propertiesUnavailable: false,
@@ -247,6 +260,7 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
           },
           {
             accountId: "sub-b",
+            kind: "google_account",
             email: null,
             requiresReconnect: false,
             propertiesUnavailable: true,

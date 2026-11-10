@@ -1,6 +1,7 @@
 import { getGoogleAccessToken } from "@/server/features/google/googleOAuth";
 import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { getGatewayGoogleFetch } from "@/server/features/google/gatewayGoogle";
+import { GoogleServiceAccountService } from "@/server/features/google/GoogleServiceAccountService";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 import { GscApiError, GscTokenError } from "./gscErrors";
 
@@ -81,20 +82,28 @@ function messageForStatus(status: number, body: string): string {
 /** Free Google Search Console client. Unlike the DataForSEO client it does NOT
  *  meter credits — GSC is first-party data with no per-call cost. Access tokens
  *  come from (and are auto-refreshed against) the connector's stored
- *  google-search-console grant. */
+ *  google-search-console grant, or from an uploaded service account key when
+ *  `serviceAccountId` is set. */
 export function createGscClient(opts: {
   userId: string;
   gscAccountId?: string;
+  serviceAccountId?: string;
 }) {
   // One mint per client: a client lives for a single service call, and
   // concurrent requests (inspectUrls fans out) must not race the refresh.
   let tokenPromise: Promise<string> | undefined;
   function getToken(): Promise<string> {
-    tokenPromise ??= getGoogleAccessToken({
-      providerId: GSC_OAUTH_PROVIDER_ID,
-      userId: opts.userId,
-      accountId: opts.gscAccountId,
-    }).catch((error: unknown) => {
+    tokenPromise ??= (
+      opts.serviceAccountId
+        ? GoogleServiceAccountService.getSearchConsoleAccessToken(
+            opts.serviceAccountId,
+          )
+        : getGoogleAccessToken({
+            providerId: GSC_OAUTH_PROVIDER_ID,
+            userId: opts.userId,
+            accountId: opts.gscAccountId,
+          })
+    ).catch((error: unknown) => {
       tokenPromise = undefined;
       throw new GscTokenError(
         "Could not mint a Search Console access token (grant revoked or expired).",
@@ -113,7 +122,7 @@ export function createGscClient(opts: {
     fetch: typeof fetch;
     headers: Record<string, string>;
   }> {
-    if ((await getGoogleAccessMode()) === "gateway") {
+    if (!opts.serviceAccountId && (await getGoogleAccessMode()) === "gateway") {
       const gatewayFetch = await getGatewayGoogleFetch(opts.userId);
       if (!gatewayFetch) {
         throw new GscTokenError(
