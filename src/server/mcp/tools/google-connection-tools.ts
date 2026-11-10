@@ -47,11 +47,14 @@ const listAnnotations = {
   destructiveHint: false,
 } as const;
 
+// Setting replaces the project's previous binding. The caller can only bind
+// through their own Google accounts, so one made by another member can't be
+// put back.
 const setAnnotations = {
   readOnlyHint: false,
   idempotentHint: true,
   openWorldHint: true,
-  destructiveHint: false,
+  destructiveHint: true,
 } as const;
 
 function grantHeader(grant: {
