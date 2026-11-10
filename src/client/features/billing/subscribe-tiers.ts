@@ -4,14 +4,20 @@ import {
   PRO_PLAN_OFFER,
   type PlanOffer,
 } from "@/client/features/billing/plan-offers";
+import {
+  AUTUMN_AGENCY_ANNUAL_PLAN_ID,
+  AUTUMN_PAID_ANNUAL_PLAN_ID,
+  AUTUMN_PRO_ANNUAL_PLAN_ID,
+  type CheckoutPlanId,
+} from "@/shared/billing";
 
 // The tiers on openseo.so/pricing, with the same copy. Its "Get started"
-// links highlight one with ?plan=. Annual prices are the hidden yearly plans
-// in Autumn, which support sets up by email until checkout can sell them.
+// links highlight one with ?plan=. Each tier's yearly plan costs ten months
+// and grants the same monthly credits.
 export const TIERS = {
   base: {
     offer: BASE_PLAN_OFFER,
-    annualPriceUsd: 100,
+    annual: { planId: AUTUMN_PAID_ANNUAL_PLAN_ID, priceUsd: 100 },
     description: "For your own website.",
     features: [
       "Keyword research, backlinks, rank tracking, and site audits",
@@ -22,7 +28,7 @@ export const TIERS = {
   },
   pro: {
     offer: PRO_PLAN_OFFER,
-    annualPriceUsd: 300,
+    annual: { planId: AUTUMN_PRO_ANNUAL_PLAN_ID, priceUsd: 300 },
     description: "For freelancers and growing teams.",
     features: [
       "Everything in Base",
@@ -32,7 +38,7 @@ export const TIERS = {
   },
   agency: {
     offer: AGENCY_PLAN_OFFER,
-    annualPriceUsd: 1000,
+    annual: { planId: AUTUMN_AGENCY_ANNUAL_PLAN_ID, priceUsd: 1000 },
     description: "For agencies with many clients.",
     features: [
       "Everything in Pro",
@@ -45,7 +51,7 @@ export const TIERS = {
   string,
   {
     offer: PlanOffer;
-    annualPriceUsd: number;
+    annual: { planId: CheckoutPlanId; priceUsd: number };
     description: string;
     features: string[];
   }

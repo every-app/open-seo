@@ -77,10 +77,11 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
     plan: isTier(search.plan) ? search.plan : undefined,
     billing: search.billing === "yearly" ? "yearly" : undefined,
   }),
-  loaderDeps: ({ search: { upgrade, checkout, plan } }) => ({
+  loaderDeps: ({ search: { upgrade, checkout, plan, billing } }) => ({
     upgrade,
     checkout,
     plan,
+    billing,
   }),
   // Start the billing read alongside the session check, not after it. Upgrade
   // links outside Billing land here with ?upgrade=true, and hovering one
@@ -88,11 +89,17 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
   loader: ({ deps }) => {
     prefetchBillingAccount();
     if (deps.upgrade && deps.checkout !== "success") {
-      prefetchUpgradeCheckout(TIERS[deps.plan ?? "base"].offer.planId);
+      prefetchUpgradeCheckout(
+        checkoutPlanId(deps.plan ?? "base", deps.billing === "yearly"),
+      );
     }
   },
   component: SubscribePage,
 });
+
+function checkoutPlanId(tier: Tier, yearly: boolean) {
+  return yearly ? TIERS[tier].annual.planId : TIERS[tier].offer.planId;
+}
 
 function SubscribePage() {
   const navigate = useNavigate();
@@ -108,8 +115,8 @@ function SubscribePage() {
   const [attachingPlan, setAttachingPlan] = useState<Tier | null>(null);
   // The pricing page's Yearly switch carries over with ?billing=yearly.
   const [yearly, setYearly] = useState(billing === "yearly");
-  // The yearly dialog keeps its last plan so its text doesn't blank out while
-  // it animates closed.
+  // The yearly dialog, for a subscriber who picks a yearly plan, keeps its
+  // last plan so its text doesn't blank out while it animates closed.
   const [annualPlan, setAnnualPlan] = useState<Tier>("base");
   const [annualDialogOpen, setAnnualDialogOpen] = useState(false);
   // Kept after closing, like the yearly dialog's plan.
@@ -257,7 +264,7 @@ function SubscribePage() {
     setAttachingPlan(tier);
 
     try {
-      await openUpgradeCheckout(TIERS[tier].offer.planId);
+      await openUpgradeCheckout(checkoutPlanId(tier, yearly));
     } catch (err) {
       setError(
         getStandardErrorMessage(
@@ -278,8 +285,6 @@ function SubscribePage() {
   }
 
   const firstName = session?.user?.name?.split(" ")[0] || "";
-  const annual = TIERS[annualPlan];
-  const showYearly = yearly && !isChangingPlan;
 
   return (
     // The top padding clears the pinned Back to app and account buttons.
@@ -319,54 +324,52 @@ function SubscribePage() {
           </p>
         </div>
 
-        {isChangingPlan ? null : (
-          <ToggleGroup
-            spacing={0}
-            value={[yearly ? "yearly" : "monthly"]}
-            onValueChange={(next) => {
-              // A press on the active item empties the group. Keep one item on.
-              if (next[0]) setYearly(next[0] === "yearly");
-            }}
-            className="mx-auto rounded-lg bg-foreground/[0.06] p-1"
-            aria-label="Billing period"
-          >
-            <ToggleGroupItem value="monthly" className={PERIOD_ITEM_CLASS}>
-              Monthly
-            </ToggleGroupItem>
-            <ToggleGroupItem value="yearly" className={PERIOD_ITEM_CLASS}>
-              Yearly
-              <Badge variant="soft">2 months free</Badge>
-            </ToggleGroupItem>
-          </ToggleGroup>
-        )}
+        <ToggleGroup
+          spacing={0}
+          value={[yearly ? "yearly" : "monthly"]}
+          onValueChange={(next) => {
+            // A press on the active item empties the group. Keep one item on.
+            if (next[0]) setYearly(next[0] === "yearly");
+          }}
+          className="mx-auto rounded-lg bg-foreground/[0.06] p-1"
+          aria-label="Billing period"
+        >
+          <ToggleGroupItem value="monthly" className={PERIOD_ITEM_CLASS}>
+            Monthly
+          </ToggleGroupItem>
+          <ToggleGroupItem value="yearly" className={PERIOD_ITEM_CLASS}>
+            Yearly
+            <Badge variant="soft">2 months free</Badge>
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {Object.keys(TIERS)
           .filter(isTier)
           .map((tier) => {
-            const { offer, annualPriceUsd, description, features } =
-              TIERS[tier];
+            const { offer, annual, description, features } = TIERS[tier];
             return (
               <PlanOfferCard
                 key={tier}
                 offer={offer}
                 description={description}
-                priceUsd={showYearly ? annualPriceUsd : offer.priceUsd}
-                period={showYearly ? "year" : "month"}
+                priceUsd={yearly ? annual.priceUsd : offer.priceUsd}
+                period={yearly ? "year" : "month"}
                 features={features}
                 highlighted={tier === highlightedPlan}
               >
                 {!canManageBilling ? null : isChangingPlan ? (
-                  // Yearly billing is set up by email, so this is monthly.
                   <PlanChangeAction
                     offer={offer}
                     currentPlanId={paidPlanId}
                     highlighted={tier === highlightedPlan}
+                    yearly={yearly}
                     onUpgrade={() => {
                       setUpgradeTier(tier);
                       setUpgradeDialogOpen(true);
                     }}
+                    onSwitchToYearly={() => openAnnualDialog(tier)}
                   />
                 ) : (
                   <Button
@@ -375,11 +378,7 @@ function SubscribePage() {
                     pending={attachingPlan === tier}
                     // One checkout at a time: a second one would replace the first.
                     disabled={attachingPlan !== null}
-                    onClick={() =>
-                      yearly
-                        ? openAnnualDialog(tier)
-                        : void handleSubscribe(tier)
-                    }
+                    onClick={() => void handleSubscribe(tier)}
                   >
                     {attachingPlan === tier ? "Redirecting..." : "Subscribe"}
                   </Button>
@@ -437,9 +436,8 @@ function SubscribePage() {
       <AnnualPlanDialog
         open={annualDialogOpen}
         onOpenChange={setAnnualDialogOpen}
-        planName={annual.offer.name}
-        annualPriceUsd={annual.annualPriceUsd}
-        onSubscribeMonthly={() => void handleSubscribe(annualPlan)}
+        planName={TIERS[annualPlan].offer.name}
+        annualPriceUsd={TIERS[annualPlan].annual.priceUsd}
       />
 
       {isChangingPlan ? (

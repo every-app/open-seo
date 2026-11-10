@@ -9,46 +9,34 @@ import {
 } from "@/client/components/ui/dialog";
 import { SUPPORT_EMAIL } from "@/client/lib/support";
 
-// Checkout can't sell the yearly plans yet, so /subscribe sends people who
-// pick one to support, or lets them start monthly and switch later.
+// Checkout sells the yearly plans to organizations without a plan. A monthly
+// subscriber who picks one on /subscribe is sent to support, who credit what
+// is left of the month they paid for.
 export function AnnualPlanDialog({
   open,
   onOpenChange,
   planName,
   annualPriceUsd,
-  onSubscribeMonthly,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   planName: string;
   annualPriceUsd: number;
-  onSubscribeMonthly: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Yearly plans are set up by email for now</DialogTitle>
+          <DialogTitle>
+            Switching to yearly is set up by email for now
+          </DialogTitle>
           <DialogDescription>
             Email {SUPPORT_EMAIL} and we&rsquo;ll move you to the {planName} at
-            ${annualPriceUsd.toLocaleString()}/year. Paying yearly in the app is
-            coming soon.
+            ${annualPriceUsd.toLocaleString()}/year. We&rsquo;ll credit the rest
+            of your month toward it.
           </DialogDescription>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Want to start today? Subscribe monthly now, and when you switch
-          we&rsquo;ll credit the rest of your month toward the yearly plan.
-        </p>
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              onOpenChange(false);
-              onSubscribeMonthly();
-            }}
-          >
-            Subscribe monthly
-          </Button>
           <Button
             nativeButton={false}
             render={

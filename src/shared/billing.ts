@@ -20,12 +20,19 @@ export const AUTUMN_YC_PLAN_ID = "yc-plan";
 // Base Plan entitlements with 20% more monthly credits than the price.
 export const AUTUMN_PRO_PLAN_ID = "pro-plan";
 export const AUTUMN_AGENCY_PLAN_ID = "agency-plan";
+// The tiers billed yearly, at ten months' price. Credits still refill monthly.
+export const AUTUMN_PAID_ANNUAL_PLAN_ID = "base-plan-annual";
+export const AUTUMN_PRO_ANNUAL_PLAN_ID = "pro-plan-annual";
+export const AUTUMN_AGENCY_ANNUAL_PLAN_ID = "agency-plan-annual";
 /** The plans the app sells through checkout. */
 export const CHECKOUT_PLAN_IDS = [
   AUTUMN_PAID_PLAN_ID,
   AUTUMN_YC_PLAN_ID,
   AUTUMN_PRO_PLAN_ID,
   AUTUMN_AGENCY_PLAN_ID,
+  AUTUMN_PAID_ANNUAL_PLAN_ID,
+  AUTUMN_PRO_ANNUAL_PLAN_ID,
+  AUTUMN_AGENCY_ANNUAL_PLAN_ID,
 ] as const;
 export type CheckoutPlanId = (typeof CHECKOUT_PLAN_IDS)[number];
 // The monthly plans by price, cheapest first. Moving up to a pricier tier is
@@ -43,8 +50,9 @@ const UPGRADE_PLAN_IDS: readonly string[] = [
   AUTUMN_AGENCY_PLAN_ID,
 ];
 
-/** Whether the plan is one the app can upgrade from. Annual plans and plans
- *  granted by hand change through support. */
+/** Whether the plan is one the app can upgrade from. Checkout sells annual
+ *  plans to organizations without a plan; a change to or from one, like a
+ *  plan granted by hand, goes through support. */
 export function isMonthlyPlan(planId: string | null) {
   return planId !== null && MONTHLY_PLANS_BY_PRICE.includes(planId);
 }

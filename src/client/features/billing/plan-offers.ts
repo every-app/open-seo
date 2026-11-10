@@ -44,13 +44,6 @@ export const AGENCY_PLAN_OFFER: PlanOffer = {
   monthlyCreditsUsd: 120,
 };
 
-/** The tiers /subscribe offers, cheapest first. */
-export const TIER_PLAN_OFFERS = [
-  BASE_PLAN_OFFER,
-  PRO_PLAN_OFFER,
-  AGENCY_PLAN_OFFER,
-] as const;
-
 export function monthlyCreditsFeature(offer: PlanOffer) {
   return `Includes $${offer.monthlyCreditsUsd.toFixed(2)} of Usage Credits each month`;
 }

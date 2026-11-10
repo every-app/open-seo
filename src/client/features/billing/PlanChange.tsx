@@ -24,19 +24,35 @@ export function ChangePlanButton({ planId }: { planId: string | null }) {
   );
 }
 
-/** A plan card's button for a paying customer: they move up in the app and
- *  down through support (see canUpgradePlan). */
+/** A plan card's button for a paying customer: they move up in the app, and
+ *  down or to a yearly plan through support (see canUpgradePlan). */
 export function PlanChangeAction({
   offer,
   currentPlanId,
   highlighted,
+  yearly,
   onUpgrade,
+  onSwitchToYearly,
 }: {
   offer: PlanOffer;
   currentPlanId: string | null;
   highlighted: boolean;
+  /** The card shows the plan's yearly price. */
+  yearly: boolean;
   onUpgrade: () => void;
+  onSwitchToYearly: () => void;
 }) {
+  if (yearly) {
+    return (
+      <Button
+        className="w-full"
+        variant={highlighted ? "default" : "outline"}
+        onClick={onSwitchToYearly}
+      >
+        Switch to yearly
+      </Button>
+    );
+  }
   if (offer.planId === currentPlanId) {
     return (
       <Button className="w-full" variant="outline" disabled>

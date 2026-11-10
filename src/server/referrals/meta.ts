@@ -1,6 +1,6 @@
 import { env, waitUntil } from "cloudflare:workers";
 import { parseCookies } from "better-auth/cookies";
-import { TIER_PLAN_OFFERS } from "@/client/features/billing/plan-offers";
+import { TIERS } from "@/client/features/billing/subscribe-tiers";
 import { captureServerError } from "@/server/lib/posthog";
 import { requestPrivacyChoices } from "@/shared/privacy-choices";
 
@@ -78,10 +78,13 @@ function isMetaConfigured() {
   return Boolean(env.META_PIXEL_ID && env.META_CONVERSIONS_API_TOKEN);
 }
 
-/** What a tier plan is worth to report, or undefined for any other plan. */
+/** What a tier plan is worth to report, monthly or yearly, or undefined for
+ *  any other plan. */
 function tierPlanValue(planId: string) {
-  const offer = TIER_PLAN_OFFERS.find((tier) => tier.planId === planId);
-  return offer && { currency: "USD", value: offer.priceUsd };
+  const plan = Object.values(TIERS)
+    .flatMap((tier) => [tier.offer, tier.annual])
+    .find((tierPlan) => tierPlan.planId === planId);
+  return plan && { currency: "USD", value: plan.priceUsd };
 }
 
 function sendMetaEvent(

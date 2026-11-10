@@ -21,7 +21,7 @@ Signing up needs no card. A paid plan adds:
 - Site audits of up to 10,000 pages, instead of 50.
 - Buying extra credits and auto-reload.
 
-Yearly plans cost the same as 10 months. They're set up by email for now: write to [support@openseo.so](mailto:support@openseo.so).
+Yearly plans cost the same as 10 months. Choose Yearly when you subscribe. To move a monthly plan to yearly, write to [support@openseo.so](mailto:support@openseo.so).
 
 ## What uses credits
 

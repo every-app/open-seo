@@ -12,7 +12,7 @@ A plan sells credits, not time, so the usual mid-cycle change does not fit. Autu
 
 ## Decision
 
-A billing manager on a monthly plan can upgrade to a pricier tier (Base to Pro or Agency, Pro or YC to Agency) from the plan picker. Billing's "Change plan" button and pricing-page plan links open it. Moving to a cheaper plan, changing a yearly plan and changing a plan granted by hand stay with support. The picker marks the current plan and offers "Email us to switch" for the rest.
+A billing manager on a monthly plan can upgrade to a pricier tier (Base to Pro or Agency, Pro or YC to Agency) from the plan picker. Billing's "Change plan" button and pricing-page plan links open it. Moving to a cheaper plan, moving to a yearly plan, changing a yearly plan and changing a plan granted by hand stay with support. The picker marks the current plan and offers "Email us to switch" for the rest. Checkout sells the yearly plans only to an organization without a plan, so under the picker's Yearly switch each plan opens a dialog that points to support.
 
 An upgrade is prorated by credits instead of days:
 
