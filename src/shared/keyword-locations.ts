@@ -433,6 +433,13 @@ export const LOCATION_OPTIONS: readonly LocationOption[] = [
   { code: 2682, label: "Saudi Arabia", shortLabel: "SA", languageCode: "ar" },
   { code: 2686, label: "Senegal", shortLabel: "SN", languageCode: "fr" },
   { code: 2688, label: "Serbia", shortLabel: "RS", languageCode: "sr" },
+  {
+    code: 2690,
+    label: "Seychelles",
+    shortLabel: "SC",
+    languageCode: "en",
+    googleAdsOnly: true,
+  },
   { code: 2702, label: "Singapore", shortLabel: "SG", languageCode: "en" },
   { code: 2703, label: "Slovakia", shortLabel: "SK", languageCode: "sk" },
   { code: 2705, label: "Slovenia", shortLabel: "SI", languageCode: "sl" },
