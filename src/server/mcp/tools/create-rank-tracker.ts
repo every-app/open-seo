@@ -69,7 +69,7 @@ export const createRankTrackerTool = {
   config: {
     title: "Create rank tracker",
     description:
-      "Create a rank tracking configuration for a project. Creating an empty tracker uses no credits and starts no check, but daily, weekly, and monthly trackers will spend credits after keywords are added. The domain defaults to the project's domain; market defaults to the project's market; devices default to mobile, search depth to 40, and schedule to manual. Use estimate_rank_tracker_cost before adding keywords to a scheduled tracker or starting a run. Call get_rank_tracker first to avoid duplicates. For local (city-level) tracking, call search_serp_locations first and pass its locationName verbatim.",
+      "Create a rank tracker for a project. The domain and market default to the project's; devices default to mobile, search depth to 40, and schedule to manual. For local (city-level) tracking, call search_serp_locations first and pass its locationName verbatim. Creating an empty tracker uses no credits and starts no check, but daily, weekly, and monthly trackers spend credits once keywords are added. Call get_rank_tracker first to avoid duplicates, and estimate_rank_tracker_cost before adding keywords to a scheduled tracker or starting a check.",
     inputSchema,
     outputSchema: z
       .object({

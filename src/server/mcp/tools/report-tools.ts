@@ -115,7 +115,7 @@ export const saveReportTool = {
   config: {
     title: "Save report",
     description:
-      "Saves a finished HTML report to this project, where anyone in the workspace can read and print it. Uses no credits. New reports are private; replacing a report preserves its sharing setting and updates what any existing public link shows. Only when the user explicitly requests public sharing (in their prompt or instructions for the skill), call set_report_sharing after saving. Call list_reports first and pass the matching reportId to replace that report instead of creating a near-duplicate — a save whose title already exists in the project is refused. Give the report a specific title (the report type or subject and full report date), a summary carrying the verdict, the top action and the key numbers, and the skill slug you are running. Then reply with the returned url, a one-line verdict and the single top action; do not paste the report into chat.",
+      "Save a finished HTML report to a project, where anyone in the workspace can read and print it. Call list_reports first and pass the matching reportId to replace that report instead of creating a near-duplicate; a save whose title already exists in the project is refused. New reports are private; replacing a report preserves its sharing setting and updates what any existing public link shows. Uses no credits. Call set_report_sharing afterward only when the user explicitly requests public sharing, in their prompt or in instructions for the skill.",
     inputSchema: saveInputSchema,
     outputSchema: saveOutputSchema,
     annotations: {
@@ -218,7 +218,7 @@ export const listReportsTool = {
   config: {
     title: "List reports",
     description:
-      "Lists this project's saved reports, newest update first: id, title, skill, who saved it, when, and a short summary preview. Uses no credits. Call this before save_report and reuse the id of the report you are redoing, so the project collects one good report per job instead of near-duplicates. Read the full summary with get_report; the HTML is only worth fetching to edit a specific passage.",
+      "List a project's saved reports, newest update first: id, title, skill, who saved it, when, and a short summary preview. Call it before save_report and reuse the id of the report you are redoing, so the project collects one good report per job instead of near-duplicates. Uses no credits. For a report's full summary, use get_report; the HTML is only worth fetching to edit a specific passage.",
     inputSchema: listInputSchema,
     outputSchema: listOutputSchema,
     annotations: {
@@ -311,7 +311,7 @@ export const getReportTool = {
   config: {
     title: "Get report",
     description:
-      "Reads one saved report: title, skill, attribution, size, the full summary, and shareUrl (null when private or public sharing is unavailable on this deployment). Reading never publishes a report. Use set_report_sharing only when the user explicitly requests a sharing change. Uses no credits. This is the cheap way to see what a report already says before you revise it — pass includeHtml only when you need the document itself.",
+      "Read one saved report: title, skill, attribution, size, the full summary, and shareUrl (null when the report is private or public sharing is unavailable on this deployment). It is the cheap way to see what a report already says before revising it; pass includeHtml only when you need the document itself. Reading never publishes a report. Uses no credits. To change sharing, use set_report_sharing, and only when the user explicitly requests it.",
     inputSchema: getInputSchema,
     outputSchema: getOutputSchema,
     annotations: {
@@ -384,7 +384,7 @@ export const deleteReportTool = {
   config: {
     title: "Delete report",
     description:
-      "Permanently deletes one saved report and makes its shared link unavailable. Uses no credits. Call list_reports to find the exact reportId. Does not delete site audits, templates, or project context.",
+      "Permanently delete one saved report and make its shared link unavailable. Site audits, templates, and project context are kept. Uses no credits. Call list_reports to find the exact reportId.",
     inputSchema: deleteInputSchema,
     outputSchema: z.looseObject({
       reportId: z.string(),

@@ -40,7 +40,7 @@ export const listReportTemplatesTool = {
   config: {
     title: "List report templates",
     description:
-      "Lists this project's report templates. Uses no credits. A template is a reusable brief — audience, sections in order, tone, sign-off — that replaces a skill's default report format. Read one only when the user names it or asks for the kind of report it describes; a plain skill run uses the skill's own format. Pass the template's id to save_report as templateId. To reuse one in another project, list it there and save it here.",
+      "List a project's report templates. A template is a reusable brief (audience, sections in order, tone, sign-off) that replaces a skill's default report format. Read one only when the user names it or asks for the kind of report it describes; a plain skill run uses the skill's own format. Uses no credits. Pass the id of a template you followed to save_report as templateId; to add or edit one, use save_report_template.",
     inputSchema: listInputSchema,
     outputSchema: listOutputSchema,
     annotations: {
@@ -132,7 +132,7 @@ export const saveReportTemplateTool = {
   config: {
     title: "Save report template",
     description:
-      "Saves a reusable report brief to this project. Uses no credits. Only do this when the user asks for a template, or agrees to one — a one-off report needs no template. Call list_report_templates first and pass the matching templateId to edit an existing template rather than creating a near-duplicate; a name already used in this project is refused.",
+      "Save a reusable report brief to a project as a template. Do this only when the user asks for a template or agrees to one; a one-off report needs no template. Call list_report_templates first and pass the matching templateId to edit an existing template rather than creating a near-duplicate; a name already used in the project is refused. Uses no credits.",
     inputSchema: saveInputSchema,
     outputSchema: saveOutputSchema,
     annotations: {
@@ -191,7 +191,7 @@ export const deleteReportTemplateTool = {
   config: {
     title: "Delete report template",
     description:
-      "Permanently deletes one reusable report template from this project. Uses no credits. Call list_report_templates to find its templateId. Existing saved reports are kept.",
+      "Permanently delete one reusable report template from a project. Existing saved reports are kept. Uses no credits. Call list_report_templates to find its templateId.",
     inputSchema: deleteInputSchema,
     outputSchema: z.looseObject({
       templateId: z.string(),

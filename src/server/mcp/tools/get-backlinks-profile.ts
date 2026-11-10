@@ -125,7 +125,7 @@ export const getBacklinksProfileTool = {
   config: {
     title: "Get backlinks profile",
     description:
-      "Returns one bounded page of detailed backlink rows for a domain or page: linking URLs, target URLs, anchors, dofollow/nofollow, authority/spam signals, and lost/broken status. Supports filters, sorting, one_per_domain/as_is mode, and pagination. Charges credits (~30 per page typical). Self-hosted deployments need the Backlinks API enabled on their DataForSEO account.",
+      "List the individual backlinks of a domain or page: linking and target URLs, anchors, dofollow or nofollow, authority and spam signals, and lost or broken status. Supports filters, sorting, pagination, and a mode of one_per_domain (the default) or as_is. Costs ~30 credits per page of rows. Self-hosted deployments need the Backlinks API enabled on their DataForSEO account. For totals and top referring domains, use get_backlinks_overview.",
     inputSchema,
     outputSchema: z.looseObject({
       target: z.string(),

@@ -80,7 +80,7 @@ export const listSearchConsoleSitesTool = {
   config: {
     title: "List Search Console sites",
     description:
-      "Lists the Search Console properties visible to each Google account the calling user has connected in the OpenSEO dashboard, and flags the one bound to the project. Use it to find the siteUrl (e.g. sc-domain:example.com or https://www.example.com/) and accountId to pass to set_search_console_site. Cannot connect a new Google account; connectUrl is the page where the user does that. Uses no credits. Read-only.",
+      "List the Search Console properties visible to each Google account the user has connected in the OpenSEO dashboard, and flag the one bound to the project. Use it to find the siteUrl (such as sc-domain:example.com) and accountId to pass to set_search_console_site. It cannot connect a new Google account: connectUrl is the page where the user does that. Uses no credits.",
     inputSchema: { projectId: projectIdSchema } as const,
     outputSchema: z.looseObject({
       ok: z.boolean(),
@@ -172,7 +172,7 @@ export const setSearchConsoleSiteTool = {
   config: {
     title: "Set project Search Console site",
     description:
-      "Binds a project to a verified Search Console property through a Google account the user already connected in the OpenSEO dashboard (gscAccountId from list_search_console_sites). The property must be visible to that account with verified access. Replaces the project's previous binding. Uses no credits. Requires permission to manage integrations.",
+      "Set which verified Search Console property a project reads, through a Google account the user already connected in the OpenSEO dashboard. Pass the siteUrl and gscAccountId from list_search_console_sites. Replaces the project's previous binding. Requires permission to manage integrations. Uses no credits.",
     inputSchema: setSiteInputSchema,
     outputSchema: z.looseObject({
       ok: z.boolean(),
@@ -226,7 +226,7 @@ export const listGoogleAnalyticsPropertiesTool = {
   config: {
     title: "List Google Analytics properties",
     description:
-      "Lists the GA4 properties visible to each Google account the calling user has connected in the OpenSEO dashboard, and flags the one bound to the project. Use it to find the propertyId and accountId to pass to set_google_analytics_property. Cannot connect a new Google account; that happens on the project's Integrations page. Uses no credits. Read-only.",
+      "List the GA4 properties visible to each Google account the user has connected in the OpenSEO dashboard, and flag the one bound to the project. Use it to find the propertyId and accountId to pass to set_google_analytics_property. It cannot connect a new Google account: the user does that on the project's Integrations page. Uses no credits.",
     inputSchema: { projectId: projectIdSchema } as const,
     outputSchema: z.looseObject({
       ok: z.boolean(),
@@ -309,7 +309,7 @@ export const setGoogleAnalyticsPropertyTool = {
   config: {
     title: "Set project Google Analytics property",
     description:
-      "Binds a project to a GA4 property through a Google account the user already connected in the OpenSEO dashboard (ga4AccountId from list_google_analytics_properties). The property must be visible to that account. Replaces the project's previous binding. Uses no credits. Requires permission to manage integrations.",
+      "Set which GA4 property a project reads, through a Google account the user already connected in the OpenSEO dashboard. Pass the propertyId and ga4AccountId from list_google_analytics_properties. Replaces the project's previous binding. Requires permission to manage integrations. Uses no credits.",
     inputSchema: setPropertyInputSchema,
     outputSchema: z.looseObject({
       ok: z.boolean(),

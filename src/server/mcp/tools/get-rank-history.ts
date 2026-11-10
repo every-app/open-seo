@@ -84,7 +84,7 @@ export const getRankHistoryTool = {
   config: {
     title: "Get rank history",
     description:
-      "Read-only position history for a rank tracker's keywords over its latest completed checks (up to 26), newest first, for one device. Each keyword row lists its position per check. A null position (— in text) means the domain was not found in the results that check returned; `checked: false` (not checked in text) means that check got no result for the keyword, so it says nothing about the position. Checks that only re-ran some keywords are left out. Use get_rank_tracker first for the trackerId and trackingKeywordId values. Uses no credits.",
+      "Read the position history of a rank tracker's keywords over its latest completed checks (up to 26), newest first, for one device. A null position (— in text) means the domain was not found in the results that check returned; `checked: false` (not checked in text) means the check got no result for the keyword, so it says nothing about the position. Checks that only re-ran some keywords are left out. Uses no credits. Call get_rank_tracker first for the trackerId and trackingKeywordId values.",
     inputSchema,
     outputSchema: z
       .object({

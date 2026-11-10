@@ -47,7 +47,7 @@ export const getDomainOverviewTool = {
   config: {
     title: "Get domain overview",
     description:
-      "Returns a high-level view of a domain's organic footprint: estimated organic traffic and organic keyword count. Use this first for domain research; for the detailed ranked-keyword list, call get_domain_keyword_suggestions next. For backlinks and referring domains, call get_backlinks_overview. Charges credits (~100-300 typical). Cached for 12 hours per domain.",
+      "Estimate a website's monthly organic search traffic and how many keywords it ranks for. Use it first when researching a domain, the user's own or a competitor's. Costs ~100-300 credits; cached for 12 hours per domain. For the keywords it ranks for, use get_domain_keyword_suggestions; for backlinks, use get_backlinks_overview.",
     inputSchema,
     outputSchema: z
       .object({

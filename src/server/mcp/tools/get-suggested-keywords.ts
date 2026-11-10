@@ -32,7 +32,7 @@ export const getSuggestedKeywordsTool = {
   config: {
     title: "Get suggested keywords",
     description:
-      "Suggests up to 10 short seed keywords (one to three words) to research next: Search Console searches where the site's best page ranks 4–6 (close to the top 3) or 11–20 (close to page 1), then the project's saved topics. The same suggestions the keyword research page shows. Use when the user asks what to research or where to start, then pass them to research_keywords as seeds; their results include the long tail. Search Console suggestions need a connected property. Read-only and uses no credits.",
+      "Suggest up to 10 short seed keywords to research next: Search Console searches where the site's best page ranks 4–6 (close to the top 3) or 11–20 (close to page 1), then the project's saved topics. Use it when the user asks what to research or where to start. Search Console suggestions need a connected property. Uses no credits. Pass the suggestions to research_keywords as seeds.",
     inputSchema,
     outputSchema: z.looseObject({
       suggestions: z.array(

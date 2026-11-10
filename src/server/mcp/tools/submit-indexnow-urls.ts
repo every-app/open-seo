@@ -21,7 +21,7 @@ export const submitIndexNowUrlsTool = {
   config: {
     title: "Submit URLs to IndexNow",
     description:
-      "Tells Bing, Yandex, Seznam, Naver, Yep and other IndexNow search engines that pages on the project's website changed, so they recrawl them sooner. Google does not use IndexNow. Submit only new, updated, redirected or removed pages, not the whole site. The site must host the project's key file at the root of each host, e.g. https://www.example.com/{key}.txt containing only the key. The first call creates the project's key (keyCreated: true); when a host's result says the key file is missing, create that file on the site and call again. URLs outside the project's website are skipped. Uses no credits.",
+      "Tell Bing, Yandex, Seznam, Naver, Yep, and other IndexNow search engines that pages on the project's website changed, so they recrawl them sooner. Google does not use IndexNow. Submit only new, updated, redirected, or removed pages, not the whole site. The site must host the project's key file at the root of each host, such as https://www.example.com/{key}.txt containing only the key. The first call creates the key; when a host's result says the key file is missing, create that file on the site and call again. Uses no credits. To check a page's Google index status, use inspect_urls.",
     inputSchema,
     outputSchema: z.looseObject({
       key: z.string(),

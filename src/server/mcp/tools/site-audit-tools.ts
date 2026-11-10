@@ -100,7 +100,7 @@ export const runSiteAuditTool = {
   config: {
     title: "Run site audit",
     description:
-      "Start a site audit: crawls the site (robots.txt-aware, same-origin), checks every page for SEO issues (broken links, duplicate/missing titles and descriptions, redirect chains, orphan pages, canonical problems, thin content, and more), and optionally runs Lighthouse on a sample of pages. Runs in the background — poll get_audit_status, then read get_audit_issues. If the site rate limits the crawler it slows down and retries; pages it still cannot read are honestly flagged as blocked or rate-limited rather than misreported.",
+      "Start a site audit: crawls the site (robots.txt-aware, same-origin) and checks every page for SEO issues such as broken links, duplicate or missing titles and descriptions, redirect chains, orphan pages, canonical problems, and thin content. Optionally runs Lighthouse on a sample of pages. If the site rate limits the crawler it slows down and retries; pages it still cannot read are flagged as blocked or rate-limited rather than misreported. The audit runs in the background: poll get_audit_status, then read the findings with get_audit_issues.",
     inputSchema: runInputSchema,
     outputSchema: z
       .object({
@@ -213,7 +213,7 @@ export const getAuditStatusTool = {
   config: {
     title: "Get site audit status",
     description:
-      "Check the progress of a site audit (phase, pages crawled, Lighthouse progress). Free — reads OpenSEO state and may reconcile a dead workflow by marking its audit failed. Omit auditId for the most recent audit.",
+      "Check the progress of a site audit: phase, pages crawled, and Lighthouse progress. Omit auditId for the most recent audit. An audit whose run has died is marked failed. Uses no credits. When the audit has finished, read it with get_audit_issues and get_audit_pages.",
     inputSchema: statusInputSchema,
     outputSchema: z
       .object({
@@ -318,7 +318,7 @@ export const getAuditIssuesTool = {
   config: {
     title: "Get site audit issues",
     description:
-      "Read the prioritized issue report from a completed site audit. Every issue carries a how_to_fix with concrete remediation steps an agent can act on. Free — reads OpenSEO state. Omit auditId for the most recent audit.",
+      "Read the prioritized issue report from a completed site audit. Every issue carries a how_to_fix with concrete remediation steps an agent can act on. Filter by severity or issueType; omit auditId for the most recent audit. Uses no credits. For per-page data on every crawled page, use get_audit_pages.",
     inputSchema: issuesInputSchema,
     outputSchema: z
       .object({
@@ -552,7 +552,7 @@ export const getAuditPagesTool = {
   config: {
     title: "Get site audit pages",
     description:
-      "List crawled pages from a site audit with per-page SEO data (status, title, description, word count, indexability, crawl depth, link counts). Free — reads OpenSEO state. Omit auditId for the most recent audit.",
+      "List the pages a site audit crawled, with per-page SEO data: status, title, description, word count, indexability, crawl depth, and link counts. Filter and sort the rows; omit auditId for the most recent audit. Uses no credits. For the prioritized problems and how to fix them, use get_audit_issues.",
     inputSchema: pagesInputSchema,
     outputSchema: z
       .object({

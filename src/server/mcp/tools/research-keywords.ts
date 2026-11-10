@@ -122,7 +122,7 @@ export const researchKeywordsTool = {
   config: {
     title: "Research keywords (bulk)",
     description:
-      "Research keyword data (search volume, difficulty, CPC, related ideas) for 1-5 seed keywords in one call. Charges credits per seed (~54 at the default result limit, ~110 at 500, plus ~40 more (~95 at 500) when an obscure seed needs a fallback lookup; flat ~96 for countries served from Google Ads data, where difficulty/intent are unavailable). Returns per-seed results — a single bad seed won't fail the batch.",
+      "Find keyword ideas for 1-5 seed keywords in one call, each with search volume, keyword difficulty, and CPC. Use it to learn what people search for around a topic. One bad seed won't fail the batch. Costs ~54 credits per seed at the default result limit and ~110 at 500; an obscure seed's fallback lookup adds ~40-95, and countries served from Google Ads data cost a flat ~96, without difficulty or intent. For metrics on keywords you already have, use get_keyword_metrics; for seeds to start from, use get_suggested_keywords.",
     inputSchema,
     outputSchema: z.looseObject({
       results: z.array(

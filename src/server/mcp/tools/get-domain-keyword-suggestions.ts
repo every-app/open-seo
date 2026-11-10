@@ -62,7 +62,7 @@ export const getDomainKeywordSuggestionsTool = {
   config: {
     title: "Get domain keyword opportunities",
     description:
-      "Returns the organic keywords a domain ranks for, including position and available metrics. Use after get_domain_overview when you want the detailed keyword opportunity list for a competitor or reference domain. Charges credits (~100-300 typical). Cached for 12 hours.",
+      "List the organic keywords a domain ranks for, with position and available metrics. Use it after get_domain_overview for a competitor's or reference domain's keyword opportunities. Costs ~100-300 credits; cached for 12 hours. To filter by rank, search volume, or brand terms, use get_ranked_keywords.",
     inputSchema,
     outputSchema: z.looseObject({
       keywords: z.array(looseObjectOutputSchema),

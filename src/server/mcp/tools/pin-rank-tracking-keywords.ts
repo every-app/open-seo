@@ -31,7 +31,7 @@ export const pinRankTrackingKeywordsTool = {
   config: {
     title: "Pin rank tracking keywords",
     description:
-      "Pin or unpin tracked keywords by their trackingKeywordId. Pinned keywords stay at the top of the tracker's keyword table for everyone in the project, and get_rank_tracker lists them first. Uses no credits. Missing, stale, foreign, and repeated IDs are ignored; `updated` is the number of keywords actually changed in this tracker.",
+      "Pin or unpin tracked keywords by their trackingKeywordId from get_rank_tracker. Pinned keywords stay at the top of the tracker's keyword table for everyone in the project, and get_rank_tracker lists them first. Missing, stale, foreign, and repeated IDs are ignored. Uses no credits.",
     inputSchema,
     outputSchema: z
       .object({

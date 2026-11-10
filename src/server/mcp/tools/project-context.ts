@@ -40,7 +40,7 @@ export const getProjectContextTool = {
   config: {
     title: "Get project context",
     description:
-      "Reads a project's shared memory: business overview, current goal, positioning, writing preferences, custom sections, competitors, key pages, and the recent research log. Uses no credits. Call this before SEO work to ground it in what the user already told OpenSEO, and check the research log before re-buying research. Sections listed as missing are the ones worth filling with update_project_context.",
+      "Read a project's shared memory: business overview, current goal, positioning, writing preferences, custom sections, competitors, key pages, and the recent research log. Call it before SEO work to ground the work in what the user already told OpenSEO, and check the research log before buying the same research again. Uses no credits. To fill sections listed as missing, use update_project_context.",
     inputSchema: getInputSchema,
     outputSchema: contextOutputSchema,
     annotations: {
@@ -89,7 +89,7 @@ export function buildUpdateProjectContextTool(author: ContextAuthor) {
     config: {
       title: "Update project context",
       description:
-        "Adds, edits, or deletes a project's shared memory so the app, SAM, and other agents see it. Uses no credits. Use the current project context to find the entries to remove. Send patch ops to clear sections, deleteCustomSection, removeCompetitors, removeKeyPages, or removeResearchLog. Sections are prose (~4,000 chars max), competitors and key pages are curated shortlists (100 max each), and appendResearchLog records research already bought. Report templates are managed separately. Confirm facts with the user before storing them.",
+        "Add, edit, or delete entries in a project's shared memory, which the app, SAM, and other agents all read. Sections are prose (~4,000 characters max), competitors and key pages are curated shortlists (100 max each), and appendResearchLog records research already bought. Confirm facts with the user before storing them. Uses no credits. Call get_project_context first to find entries to remove; for report templates, use save_report_template.",
       inputSchema: updateInputSchema,
       outputSchema: contextOutputSchema,
       annotations: {

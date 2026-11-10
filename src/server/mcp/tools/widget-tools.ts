@@ -27,7 +27,7 @@ export const showSearchConsolePerformanceTool = {
   config: {
     title: "Show Search Console performance",
     description:
-      "Show an interactive Search Console table or Google connection prompt using the resultId returned by get_search_console_performance. Use when the user would benefit from inspecting, filtering, or selecting results, or needs to connect Google. Optional: keep intermediate research and prose-only answers as ordinary data calls. Does not fetch data, connect Google, or use credits. The widget receives the exact saved data and query arguments; do not copy rows into this call.",
+      "Show Search Console performance as an interactive table, or a prompt to connect Google. Pass the resultId returned by get_search_console_performance; the widget receives the exact saved data and query arguments, so do not copy rows into this call. Use it when the user would benefit from inspecting, filtering, or selecting results, or needs to connect Google; intermediate research and prose-only answers do not need a widget. It fetches no data, does not connect Google itself, and uses no credits.",
     inputSchema,
     outputSchema,
     annotations: {
@@ -47,7 +47,7 @@ export const showSerpResultsTool = {
   config: {
     title: "Show Google SERP results",
     description:
-      "Show interactive Google search results using the resultId returned by get_serp_results so the user can filter, select pages, and compare them with their assistant. Use only when that interaction helps; ordinary research calls and prose-only answers do not need a widget. Does not fetch results or use credits. The widget receives the exact saved search results; do not copy rows into this call.",
+      "Show Google search results as an interactive widget where the user can filter, select pages, and compare them with their assistant. Pass the resultId returned by get_serp_results; the widget receives the exact saved results, so do not copy rows into this call. Use it only when that interaction helps: ordinary research and prose-only answers do not need a widget. It fetches nothing and uses no credits.",
     inputSchema,
     outputSchema,
     annotations: {

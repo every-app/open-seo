@@ -21,7 +21,7 @@ export const removeSavedKeywordsTool = {
   config: {
     title: "Remove saved keywords",
     description:
-      "Permanently deletes keywords from a project's saved-keywords list by their row ID. Uses no credits — does not call DataForSEO. Missing, foreign-project, and repeated IDs are ignored; deletedCount reports rows actually removed. This does not affect Rank Tracking; use remove_rank_tracking_keywords for that list separately.",
+      "Permanently delete keywords from a project's saved-keywords list by their saved-keyword ID from list_saved_keywords. Missing, foreign-project, and repeated IDs are ignored. Uses no credits. This does not change rank tracking: for that, use remove_rank_tracking_keywords.",
     inputSchema,
     outputSchema: z
       .object({

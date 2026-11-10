@@ -82,7 +82,7 @@ export const getBacklinksOverviewTool = {
   config: {
     title: "Get backlinks overview",
     description:
-      "Returns a backlinks profile summary (total backlinks, referring domains, top referring domains). Charges credits (~50 typical for a domain, ~25 for a single page). Note: bare domains default to scope 'subdomains'; pass scope 'domain' to exclude subdomains from the totals. Targets with a path default to 'subfolder', whose counts come from filtered backlink totals (no rank/trends/referring-domain breakdown). Trend data always includes subdomains (provider limitation). Self-hosted deployments need the Backlinks API enabled on their DataForSEO account.",
+      "Summarize the backlink profile of a domain or page: total backlinks, referring domains, and top referring domains. Bare domains include subdomains by default; pass scope 'domain' to exclude them. Trend data always includes subdomains. Costs ~50 credits for a domain and ~25 for a single page. Self-hosted deployments need the Backlinks API enabled on their DataForSEO account. For the individual links, use get_backlinks_profile.",
     inputSchema,
     outputSchema: z.looseObject({
       target: z.string(),

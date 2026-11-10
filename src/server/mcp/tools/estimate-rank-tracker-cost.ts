@@ -37,7 +37,7 @@ export const estimateRankTrackerCostTool = {
   config: {
     title: "Estimate rank tracker cost",
     description:
-      "Estimate rank tracker cost without spending credits or starting a check. Each estimate is the most a check can cost: every keyword/device gets 3 to 6 reads, and most checks use nearly all of them. The estimate covers one explicit run_rank_tracker check. For a scheduled tracker, the response also includes the per-check and approximate monthly recurring cost. Pass additionalKeywords before adding keywords to project the post-add cost.",
+      "Estimate what a rank tracker check costs, without spending credits or starting a check. The estimate is the most a check can cost: every keyword and device gets 3 to 6 reads, and most checks use nearly all of them. It covers one run_rank_tracker check; for a scheduled tracker, the response adds the per-check and approximate monthly cost. Pass additionalKeywords to price the tracker after adding keywords. Pass the estimate the user approves as maxCostCredits to run_rank_tracker, or as maxEstimatedScheduledCheckCredits to add_rank_tracking_keywords.",
     inputSchema,
     outputSchema: z
       .object({

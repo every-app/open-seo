@@ -226,7 +226,7 @@ export const getBusinessProfileTool = {
   config: {
     title: "Get business profile",
     description:
-      "Reads one Google Business Profile by name, cid, or placeId: categories, rating and review count, rating breakdown, address, phone, website, claimed status, opening hours, and photo count. Use it to audit your own profile, to compare a named competitor's, or to check whether a business has a Google Business Profile at all — it is the cheapest tool for that question, less than half the credits of search_local_businesses. For identity or existence checks, reuse a business already present in your search results. Fetch the full profile when you need missing details such as opening hours or rating breakdown. Charges credits.",
+      "Get one Google Business Profile by name, cid, or placeId: categories, rating and review count, rating breakdown, address, phone, website, claimed status, opening hours, and photo count. Use it to audit the user's own profile, to compare a named competitor's, or to check whether a business has a Google Business Profile at all: it is the cheapest tool for that, at less than half the credits of search_local_businesses. Skip it when a search result already answers an identity or existence check. Uses credits. To discover businesses you cannot name yet, use search_local_businesses; for reviews and posts, use get_business_reviews and get_business_updates.",
     inputSchema: getBusinessProfileInputSchema,
     outputSchema: z.looseObject({
       profile: looseObjectOutputSchema.nullable(),
@@ -375,7 +375,7 @@ export const getBusinessReviewsTool = {
   config: {
     title: "Get business reviews",
     description:
-      "Collects Google reviews for a business, with rating, author, text, and the owner's reply. Use it for review-gap analysis against competitors and to spot unanswered reviews. Usually completes within this call; if the queued job is still running you get status 'processing' plus a taskId — call again with that taskId in 30-60 seconds to collect the result at no extra cost. Charges credits.",
+      "Get the Google reviews of a business, each with rating, author, text, and the owner's reply. Use it for review-gap analysis against competitors and to spot unanswered reviews. It usually completes within the call; a 'processing' response returns a taskId to call again with in 30-60 seconds at no extra cost. Uses credits, billed by the number of reviews collected. For the rating and review count alone, use get_business_profile.",
     inputSchema: getBusinessReviewsInputSchema,
     outputSchema: z.looseObject({
       status: z.enum(["completed", "processing"]),
@@ -533,7 +533,7 @@ export const getBusinessUpdatesTool = {
   config: {
     title: "Get business updates",
     description:
-      "Collects the posts (updates, offers, events) published on a Google Business Profile. Use it to check posting activity and recency on your profile or a competitor's. Usually completes within this call; a 'processing' response returns a taskId to call back with in 30-60 seconds at no extra cost. Charges credits.",
+      "Get the posts (updates, offers, events) published on a Google Business Profile. Use it to check posting activity and recency on the user's profile or a competitor's. It usually completes within the call; a 'processing' response returns a taskId to call again with in 30-60 seconds at no extra cost. Uses credits.",
     inputSchema: getBusinessUpdatesInputSchema,
     outputSchema: z.looseObject({
       status: z.enum(["completed", "processing"]),
@@ -643,7 +643,7 @@ export const listBusinessCategoriesTool = {
   config: {
     title: "List business categories",
     description:
-      "Lists the Google Business categories DataForSEO recognizes, ranked by how many businesses use them. Use it to find valid category slugs for search_local_businesses (e.g. 'pizza_restaurant'). Uses no credits (the full list is cached for 7 days).",
+      "List Google Business categories, ranked by how many businesses use them. Use it to find valid category slugs, such as 'pizza_restaurant', for search_local_businesses; pass query to match part of a slug. Uses no credits.",
     inputSchema: listBusinessCategoriesInputSchema,
     outputSchema: z.looseObject({
       categories: z.array(
@@ -906,7 +906,7 @@ export const getLocalRankGridTool = {
   config: {
     title: "Get local rank grid",
     description:
-      "Runs one Google Maps search per point of a square grid around a coordinate and reports where the target business ranks at each point — plus each point's result count and #1 business — revealing how far its Maps visibility reaches. Cost scales with the grid: gridSize squared SERP calls (3x3 = 9, the sensible default; 5x5 = 25). Charges credits per grid point. The searches run as one queued batch that usually finishes within this call; if some are still running you get status 'processing'. Calling again with the same arguments within an hour collects the same searches at no extra charge, so repeat the call in about a minute to finish a 'processing' grid or to recover a lost response.",
+      "Map how far a business's Google Maps visibility reaches: runs one Maps search per point of a square grid around a coordinate and reports where the target business ranks at each point, plus each point's result count and #1 business. Uses credits per grid point: 3x3 = 9 searches (the sensible default), 5x5 = 25. It usually finishes within the call; if you get status 'processing' or lose the response, repeat the call with the same arguments in about a minute: within an hour it collects the same searches at no extra charge. For one Maps result list from a single point, use get_local_serp_results.",
     inputSchema: getLocalRankGridInputSchema,
     outputSchema: z.looseObject({
       status: z.enum(["completed", "processing"]),
