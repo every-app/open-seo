@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import { z } from "zod";
 import { Button } from "@/client/components/ui/button";
 import {
@@ -137,14 +138,16 @@ export function AuthPageCard({
   helperText,
   children,
   footer,
+  className,
 }: {
   title: string;
   helperText?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="w-full max-w-xs space-y-6">
+    <div className={cn("w-full max-w-xs space-y-6", className)}>
       <div className="space-y-3 text-center">
         <img
           src="/transparent-logo.png"
@@ -152,7 +155,7 @@ export function AuthPageCard({
           className="mx-auto size-10 rounded-lg"
         />
         <div>
-          <h1 className="text-xl font-semibold">{title}</h1>
+          <h1 className="text-xl font-semibold text-balance">{title}</h1>
           {helperText ? (
             <p className="mt-1 text-sm text-muted-foreground">{helperText}</p>
           ) : null}

@@ -262,6 +262,22 @@ export function getCapturedOAuthHelpers() {
   return oauthHelpers;
 }
 
+// What the consent screen shows about the request it approves. Parsing checks
+// the client and its redirect address the same way approving does, so the
+// screen never names an address the approval would refuse.
+export async function getConsentRequest(request: Request, query: string) {
+  const oauth = getCapturedOAuthHelpers();
+  const authRequest = await oauth.parseAuthRequest(
+    buildAuthorizeRequestFromConsentQuery(request, query),
+  );
+  const client = await oauth.lookupClient(authRequest.clientId);
+  return {
+    // Self-reported, and optional when a client registers.
+    clientName: client?.clientName,
+    redirectUri: authRequest.redirectUri,
+  };
+}
+
 function createDefaultHandler(
   appFetch: AppFetch,
 ): ExportedHandlerWithFetch<OpenSeoOAuthEnv> {
