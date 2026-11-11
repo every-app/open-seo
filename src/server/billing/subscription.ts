@@ -188,7 +188,11 @@ export async function checkUsageCreditsDepleted(
    *  credits still in the balance; the refusal copy says to raise it. */
   budgetReached: boolean;
 }> {
-  const check = await getUsageCreditsRemaining(customer.organizationId);
+  // A brand-new org's first call can be a gated MCP tool, before anything
+  // else has created its Autumn customer (and its free-plan credits); the
+  // balance read would 404 without it.
+  const { id } = await getOrCreateOrganizationCustomer(customer);
+  const check = await getUsageCreditsRemaining(id);
   const notDepleted = {
     depleted: false,
     monthlyRemaining: check.monthlyRemaining,

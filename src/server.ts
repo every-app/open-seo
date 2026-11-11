@@ -11,8 +11,6 @@ import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
 import { reconcileStaleAudits } from "@/server/features/audit/services/auditReconciler";
 import { sendFirstAuditEmails } from "@/server/features/audit/services/firstAuditEmails";
-import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   getAuthMode,
   isHostedAuthMode,
@@ -100,12 +98,6 @@ async function authorizeSamChat(
     : null;
   if (!session || !project) {
     return new Response("Forbidden", { status: 403 });
-  }
-  // Make sure the Autumn customer (and its default free-plan credits) exists
-  // before the DO's balance gate runs, or a brand-new org's first message hits
-  // a false "out of credits". Hosted-only; self-hosted has no Autumn.
-  if (await isHostedServerAuthMode()) {
-    await getOrCreateOrganizationCustomer(context);
   }
   return undefined;
 }

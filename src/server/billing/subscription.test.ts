@@ -83,10 +83,28 @@ describe("subscription billing", () => {
   beforeEach(() => {
     kvGetMock.mockResolvedValue(null);
     kvPutMock.mockResolvedValue(undefined);
+    getOrCreateMock.mockResolvedValue({ id: "org_123" });
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("creates a new org's billing customer before gating its first call", async () => {
+    let created = false;
+    getOrCreateMock.mockImplementation(async () => {
+      created = true;
+      return { id: "org_123" };
+    });
+    checkMock.mockImplementation(async () => {
+      if (!created) throw new Error("customer_not_found");
+      return { allowed: true, balance: { remaining: 500 } };
+    });
+
+    await expect(checkUsageCreditsDepleted(customer)).resolves.toMatchObject({
+      depleted: false,
+      monthlyRemaining: 500,
+    });
   });
 
   it("recovers from a degraded negative read when retryDenied is set", async () => {
