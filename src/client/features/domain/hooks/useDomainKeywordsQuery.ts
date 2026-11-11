@@ -77,5 +77,7 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
         },
       }),
     staleTime: 60_000,
+    // A failed page may already be billed; the tab offers a retry.
+    retry: false,
   });
 }

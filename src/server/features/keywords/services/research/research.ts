@@ -347,9 +347,8 @@ export async function research(
     ? cachedResult.data
     : null;
 
-  if (cached && cached.rows.length > 0) {
-    return cached;
-  }
+  // An empty result is still a paid answer; re-fetching it bills again.
+  if (cached) return cached;
 
   const result = effectiveInput.locationName
     ? await researchLocal(

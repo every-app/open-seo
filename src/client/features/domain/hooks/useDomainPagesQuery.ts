@@ -52,5 +52,7 @@ export function useDomainPagesQuery(input: DomainPagesQueryInput) {
         },
       }),
     staleTime: 60_000,
+    // A failed page may already be billed; the tab offers a retry.
+    retry: false,
   });
 }

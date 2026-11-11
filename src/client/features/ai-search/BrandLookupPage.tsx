@@ -124,6 +124,8 @@ export function BrandLookupPage({
     enabled: hasActiveQuery && planStatus === "paid",
     staleTime: 5 * 60 * 1000,
     retry: false,
+    // A partial lookup is not cached server-side, so a refetch bills again.
+    refetchOnWindowFocus: false,
   });
 
   const {

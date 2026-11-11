@@ -314,3 +314,17 @@ it("rejects a wildcard seed in a Google Ads country before any paid call", async
   });
   expect(mocks.fetchAdsRows).not.toHaveBeenCalled();
 });
+
+it("serves a cached empty result instead of paying for the seed again", async () => {
+  mocks.fetchRows.mockResolvedValue([]);
+  const input = {
+    ...localInput,
+    keywords: ["seed with no data"],
+    locationName: undefined,
+  };
+
+  await research(input, customer);
+  await research(input, customer);
+
+  expect(mocks.fetchRows).toHaveBeenCalledTimes(1);
+});
