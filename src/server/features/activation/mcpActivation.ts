@@ -2,6 +2,7 @@ import { waitUntil } from "cloudflare:workers";
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { inviteToReviewIfDue } from "@/server/trustpilot/invitations";
 
 // Orgs whose activation milestones are already recorded (or in flight) in
 // this isolate. Only *first* timestamps matter, so after one successful write
@@ -35,6 +36,8 @@ export async function recordExternalMcpToolCall(caller: {
   userEmail: string;
   organizationId: string;
 }): Promise<void> {
+  // Hosted only, and off the DB once the organization is invited.
+  await inviteToReviewIfDue(caller.organizationId);
   if (recordedToolCallOrgs.has(caller.organizationId)) return;
   recordedToolCallOrgs.add(caller.organizationId);
   let first: boolean;

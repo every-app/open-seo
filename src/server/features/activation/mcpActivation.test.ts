@@ -3,6 +3,9 @@ import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
 import { markMcpConnected, recordExternalMcpToolCall } from "./mcpActivation";
 
+vi.mock("@/server/trustpilot/invitations", () => ({
+  inviteToReviewIfDue: vi.fn(),
+}));
 vi.mock("cloudflare:workers", () => ({ waitUntil: vi.fn() }));
 vi.mock("@/server/lib/posthog", () => ({ captureServerEvent: vi.fn() }));
 vi.mock("@/server/email/onboarding-drip", () => ({
@@ -44,6 +47,7 @@ it("counts a connection as used when the workspace already made a tool call", as
       organizationId: "org-active",
       firstMcpAuthorizedAt: "2026-10-01T00:00:00.000Z",
       firstMcpToolCallAt: "2026-10-01T00:05:00.000Z",
+      trustpilotInvitedAt: null,
       updatedAt: "2026-10-01T00:05:00.000Z",
     })
     .mockResolvedValueOnce(null);

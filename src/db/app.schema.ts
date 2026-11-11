@@ -463,6 +463,8 @@ export const organizationActivationState = sqliteTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     firstMcpAuthorizedAt: text("first_mcp_authorized_at"),
     firstMcpToolCallAt: text("first_mcp_tool_call_at"),
+    // When the owner was invited to review OpenSEO on Trustpilot (hosted).
+    trustpilotInvitedAt: text("trustpilot_invited_at"),
     updatedAt: text("updated_at")
       .notNull()
       .default(sql`(current_timestamp)`),

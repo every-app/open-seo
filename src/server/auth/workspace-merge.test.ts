@@ -67,6 +67,7 @@ beforeAll(async () => {
       organization_id TEXT PRIMARY KEY REFERENCES organization(id) ON DELETE CASCADE,
       first_mcp_authorized_at TEXT,
       first_mcp_tool_call_at TEXT,
+      trustpilot_invited_at TEXT,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE gsc_connections (

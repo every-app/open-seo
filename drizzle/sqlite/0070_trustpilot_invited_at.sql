@@ -1,0 +1,1 @@
+ALTER TABLE `organization_activation_state` ADD `trustpilot_invited_at` text;

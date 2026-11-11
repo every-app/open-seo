@@ -28,6 +28,9 @@ vi.mock(
   }),
 );
 
+vi.mock("@/server/trustpilot/invitations", () => ({
+  inviteToReviewIfDue: vi.fn(),
+}));
 vi.mock("cloudflare:workers", () => ({
   waitUntil: (promise: Promise<unknown>) => promise,
 }));
