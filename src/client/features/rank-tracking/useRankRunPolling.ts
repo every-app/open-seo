@@ -37,10 +37,11 @@ export function useRankRunPolling(projectId: string, configId: string) {
 
       // A stale run stays active until the next start fails it (no cron
       // reconciles rank runs), so it only needs the slow poll; the page
-      // already says it stopped responding.
+      // already says it stopped responding. A delayed run can wait hours.
       if (
         (run?.status === "pending" || run?.status === "running") &&
-        !run.maybeStale
+        !run.maybeStale &&
+        !run.isDelayed
       )
         return 3000;
       // Discover scheduled checks and checks started from another client.

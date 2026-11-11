@@ -74,7 +74,7 @@ export function expandToTaskInputs(
 // task is free while re-posting it is billed again, so unfinished tasks are only
 // left for the next read after that. Cumulative waits: 4 / 6 / 8 / 10 / 12 / 15 /
 // 20 / 25 / 30 / 45 / 60 minutes.
-const QUEUED_POLL_INTERVALS = [
+const QUEUED_POLL_INTERVALS: WorkflowSleepDuration[] = [
   "4 minutes",
   "2 minutes",
   "2 minutes",
@@ -86,7 +86,16 @@ const QUEUED_POLL_INTERVALS = [
   "5 minutes",
   "15 minutes",
   "15 minutes",
-] as const;
+];
+
+// The first read keeps waiting when DataForSEO's queue is backed up, every 30
+// minutes up to 6 hours (the limit the delayed notice in RankRunAlerts names),
+// since those tasks are already paid for. It stays well inside
+// STUCK_RUN_AFTER_MS.
+const FIRST_READ_POLL_INTERVALS: WorkflowSleepDuration[] = [
+  ...QUEUED_POLL_INTERVALS,
+  ...Array<WorkflowSleepDuration>(10).fill("30 minutes"),
+];
 
 /** Concurrent task_get requests within a collect step. */
 const TASK_GET_CONCURRENCY = 25;
@@ -155,17 +164,24 @@ async function fetchQueuedRound(
 
 /**
  * Post tasks to DataForSEO's standard queue (~30% of live cost), one metered
- * step per 100, then poll task_get for up to an hour. `onCollected` runs inside
- * each collect step with that round's results. A task that's rejected, fails
- * or never finishes gets no result. Returns every collected result.
+ * step per 100, then poll task_get on `pollIntervals`. `onCollected` runs
+ * inside each collect step with that round's results. A task that's rejected,
+ * fails or never finishes gets no result. Returns every collected result, and
+ * whether any task was still in DataForSEO's queue when polling ended.
  */
 export async function runQueuedTasks(
   step: WorkflowStep,
   ctx: CheckContext,
   tasks: RankCheckTaskInput[],
   label: string,
-  onCollected?: (results: RankCheckResultWithDevice[]) => Promise<void>,
-): Promise<RankCheckResultWithDevice[]> {
+  {
+    onCollected,
+    pollIntervals = QUEUED_POLL_INTERVALS,
+  }: {
+    onCollected?: (results: RankCheckResultWithDevice[]) => Promise<void>;
+    pollIntervals?: WorkflowSleepDuration[];
+  } = {},
+): Promise<{ collected: RankCheckResultWithDevice[]; timedOut: boolean }> {
   // A failed post must not abort the run: earlier chunks were already
   // charged at DataForSEO, so their results have to be collected.
   let pending: PostedRankCheckTask[] = [];
@@ -194,10 +210,10 @@ export async function runQueuedTasks(
   // the next round instead of failing the run.
   for (
     let round = 0;
-    round < QUEUED_POLL_INTERVALS.length && pending.length > 0;
+    round < pollIntervals.length && pending.length > 0;
     round++
   ) {
-    await step.sleep(`${label}wait-${round}`, QUEUED_POLL_INTERVALS[round]);
+    await step.sleep(`${label}wait-${round}`, pollIntervals[round]);
 
     // Cap task_gets per round so one collect step stays well inside the
     // per-invocation subrequest limit at the 1000-keyword config ceiling.
@@ -226,35 +242,39 @@ export async function runQueuedTasks(
       );
     }
   }
-  return collected;
+  return { collected, timedOut: pending.length > 0 };
 }
 
 /**
  * Read every keyword/device pair once through the task queue, writing snapshots
  * as tasks complete. Billing happens at task_post. Further reads are made by
- * retryRankChecks.
+ * retryRankChecks. Returns true when some tasks never left DataForSEO's queue.
  */
 export async function runQueuedCheck(
   step: WorkflowStep,
   ctx: CheckContext,
-): Promise<void> {
-  await runQueuedTasks(
+): Promise<boolean> {
+  const { timedOut } = await runQueuedTasks(
     step,
     ctx,
     expandToTaskInputs(ctx.keywords, ctx.devices),
     "",
-    async (results) => {
-      await RankTrackingRepository.insertSnapshots(
-        mapResultsToSnapshotRows(ctx.runId, results),
-      );
-      // Progress for the UI; finalize recounts from the DB anyway.
-      const snapshots = await RankTrackingRepository.getSnapshotsForRun(
-        ctx.runId,
-      );
-      await RankTrackingRepository.updateRun(ctx.runId, {
-        keywordsChecked: new Set(snapshots.map((s) => s.trackingKeywordId))
-          .size,
-      });
+    {
+      onCollected: async (results) => {
+        await RankTrackingRepository.insertSnapshots(
+          mapResultsToSnapshotRows(ctx.runId, results),
+        );
+        // Progress for the UI; finalize recounts from the DB anyway.
+        const snapshots = await RankTrackingRepository.getSnapshotsForRun(
+          ctx.runId,
+        );
+        await RankTrackingRepository.updateRun(ctx.runId, {
+          keywordsChecked: new Set(snapshots.map((s) => s.trackingKeywordId))
+            .size,
+        });
+      },
+      pollIntervals: FIRST_READ_POLL_INTERVALS,
     },
   );
+  return timedOut;
 }

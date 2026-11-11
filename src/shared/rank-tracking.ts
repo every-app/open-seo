@@ -28,6 +28,26 @@ export const MAX_READS_PER_CHECK = 6;
 export const RANK_CHECK_DURATION_COPY =
   "Usually takes about an hour, up to 2 hours.";
 
+/** A failed run's error when DataForSEO never returned any of its results. */
+export const RANK_CHECK_DELAYED_ERROR =
+  "Our search data provider didn't return results in time.";
+
+// A check's first results normally arrive within 10 minutes. With none after
+// the hour the running banner promises, it is waiting on DataForSEO's queue.
+const RANK_CHECK_DELAYED_AFTER_MS = 60 * 60_000;
+
+export function isRankCheckDelayed(run: {
+  status: string;
+  keywordsChecked: number;
+  startedAt: string;
+}): boolean {
+  return (
+    run.status === "running" &&
+    run.keywordsChecked === 0 &&
+    Date.now() - new Date(run.startedAt).getTime() > RANK_CHECK_DELAYED_AFTER_MS
+  );
+}
+
 /** Soft application limit for keywords per rank tracking config */
 export const MAX_KEYWORDS_PER_CONFIG = 1000;
 

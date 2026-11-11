@@ -28,7 +28,8 @@ const READS_AGREE_WITHIN_POSITIONS = 2;
 
 /**
  * No new round of reads starts after this long. One round polls for up to an
- * hour, so a check ends in about two hours. Slow rounds get fewer reads.
+ * hour, so a check ends in about two hours. Slow rounds get fewer reads, and a
+ * first read DataForSEO delays past the window gets none.
  */
 export const READ_WINDOW_MS = 60 * 60_000;
 
@@ -171,7 +172,7 @@ export async function retryRankChecks(
       `[rank-check] ${ctx.runId} read ${read}: ${toRead.length} check(s)`,
     );
     const label = `read-${read}-`;
-    const collected = await runQueuedTasks(step, ctx, toRead, label);
+    const { collected } = await runQueuedTasks(step, ctx, toRead, label);
     const readPairs = pairs;
     ({ pairs, canReadAgain } = await pgStep(
       step,

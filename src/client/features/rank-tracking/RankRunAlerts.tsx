@@ -1,7 +1,10 @@
 import { AlertTriangle, Clock } from "lucide-react";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
-import { isOutOfCreditsRunError } from "@/shared/rank-tracking";
+import {
+  isOutOfCreditsRunError,
+  RANK_CHECK_DELAYED_ERROR,
+} from "@/shared/rank-tracking";
 import type { useRankRunPolling } from "./useRankRunPolling";
 
 function ReadWhatChangedLink() {
@@ -17,7 +20,7 @@ function ReadWhatChangedLink() {
   );
 }
 
-/** The latest rank check's state: running, stale, failed, or incomplete. */
+/** The latest rank check's state: running, delayed, stale, failed, or incomplete. */
 export function RankRunAlerts({
   run,
 }: {
@@ -31,6 +34,21 @@ export function RankRunAlerts({
         <AlertTriangle />
         <AlertDescription className="text-foreground">
           This check stopped responding. You can start a new one to replace it.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (run.isDelayed) {
+    return (
+      <Alert variant="warning">
+        <Clock />
+        <AlertDescription className="text-foreground">
+          <p>
+            <span className="font-medium">This check is delayed</span> because
+            our search data provider is slow. We'll keep waiting for up to 6
+            hours. You can leave this page.
+          </p>
         </AlertDescription>
       </Alert>
     );
@@ -53,6 +71,26 @@ export function RankRunAlerts({
 
   if (run.status === "failed" && isOutOfCreditsRunError(run.errorMessage)) {
     return <InsufficientCreditsError title="Your last rank check didn't run" />;
+  }
+
+  if (
+    run.status === "failed" &&
+    run.errorMessage === RANK_CHECK_DELAYED_ERROR
+  ) {
+    return (
+      <Alert variant="warning">
+        <AlertTriangle />
+        <AlertDescription className="text-foreground">
+          <p>
+            <span className="font-medium">
+              We couldn't finish your last check.
+            </span>{" "}
+            Our search data provider didn't return Google's results within 6
+            hours. Please try again later.
+          </p>
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   if (run.status === "failed") {
