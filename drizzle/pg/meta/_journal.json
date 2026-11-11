@@ -330,6 +330,13 @@
       "when": 1793950089330,
       "tag": "0046_guest_claimed_by",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794425608859,
+      "tag": "0047_ai_mode_engine",
+      "breakpoints": true
     }
   ]
 }

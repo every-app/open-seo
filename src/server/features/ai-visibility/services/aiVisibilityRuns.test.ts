@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { aiObservations, aiRuns } from "@/db/schema";
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import { runCheck } from "./aiVisibilityRuns";
+import { saveTracker } from "./aiVisibilitySetup";
 import { getTracker } from "./aiVisibilityState";
 import { configuration, customer } from "./aiVisibilityTestFixtures";
 import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
@@ -62,6 +63,17 @@ describe("AI visibility checks", () => {
       runCheck({ projectId, maxCostUsd: 1 }, customer),
     ).rejects.toMatchObject({ reason: "RUN_IN_PROGRESS", runId: run.id });
     expect(workflow.create).toHaveBeenCalledOnce();
+  });
+
+  it("collects Google AI Mode once a saved tracker turns it on", async () => {
+    await saveTracker({ projectId, engines: ["chatgpt", "google_ai_mode"] });
+
+    const run = await runCheck({ projectId, maxCostUsd: 1 }, customer);
+
+    const answers = await repo.getObservations([run.id]);
+    expect(new Set(answers.map((answer) => answer.engine))).toEqual(
+      new Set(["chatgpt", "google_ai_mode"]),
+    );
   });
 
   it("fails a check whose workflow stopped, so it never blocks the next one", async () => {

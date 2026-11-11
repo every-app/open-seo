@@ -21,6 +21,7 @@ import {
 // live/advanced, one prompt per call.
 // https://docs.dataforseo.com/v3/ai_optimization/chat_gpt/llm_scraper/overview/
 // https://docs.dataforseo.com/v3/serp/google/organic/overview/
+// https://docs.dataforseo.com/v3/serp/google/ai_mode/overview/
 const AI_TRACKING_ENDPOINTS: Record<
   Exclude<AiEngine, AiModelApiEngine>,
   string
@@ -28,6 +29,7 @@ const AI_TRACKING_ENDPOINTS: Record<
   chatgpt: "/v3/ai_optimization/chat_gpt/llm_scraper",
   gemini: "/v3/ai_optimization/gemini/llm_scraper",
   google_ai_overview: "/v3/serp/google/organic",
+  google_ai_mode: "/v3/serp/google/ai_mode",
 };
 
 /** Live engines have no LLM Scraper: their answers come from the live API. */
@@ -59,9 +61,9 @@ export interface PostedAiTrackingTask {
 }
 
 /**
- * The LLM Scraper language lists name three project-market languages
- * differently, and Gemini only offers Brazilian Portuguese. The organic
- * SERP uses the project-market codes.
+ * The LLM Scraper and AI Mode language lists name three project-market
+ * languages differently, and Gemini and AI Mode only offer Brazilian
+ * Portuguese. The organic SERP uses the project-market codes.
  */
 function providerLanguageCode(engine: AiEngine, languageCode: string) {
   if (engine === "google_ai_overview") return languageCode;

@@ -5,6 +5,7 @@ export const aiEngineSchema = z.enum([
   "chatgpt",
   "gemini",
   "google_ai_overview",
+  "google_ai_mode",
   "claude",
   "perplexity",
 ]);

@@ -53,7 +53,7 @@ New paid operations require credits. AI visibility setup research checks for a p
 - Setup fills missing project context and generates research keywords without replacing existing context or competitors. It does not automatically analyze each keyword.
 - Prompt Research finds questions about a keyword with ChatGPT's answers and cited sources, from US English data. The questions come mostly from Google "People also ask" data, not logged ChatGPT prompts; OpenSEO does not show AI search volume because no one can measure it. Analyzing a keyword costs about $0.25 in credits.
 - Prompt Explorer defaults to ChatGPT, with optional Claude, Gemini, and Perplexity. It returns API model answers and available citations, which can differ from tracked consumer-site answers. Uncached answers use credits.
-- Prompt Tracking collects answers from ChatGPT and Gemini by default, with optional Google AI Overviews. Users choose a market and daily, weekly, or monthly checks. Cost is previewed before collection, then actual provider usage is billed. The monthly allowance covers manual checks too.
+- Prompt Tracking collects answers from ChatGPT and Gemini by default, with optional Google AI Overviews, Google AI Mode, Claude, and Perplexity. Users choose a market and daily, weekly, or monthly checks. Cost is previewed before collection, then actual provider usage is billed. The monthly allowance covers manual checks too.
 - Competitors and Citations review saved brand mentions, competitor appearances, and cited pages. Viewing and exporting saved results use no credits. Failed checks are not evidence of brand absence.
 
 The workflow guide is at `https://openseo.so/docs/ai-visibility`.

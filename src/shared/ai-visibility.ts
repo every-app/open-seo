@@ -9,12 +9,14 @@ export type AiEngine =
   | "chatgpt"
   | "gemini"
   | "google_ai_overview"
+  | "google_ai_mode"
   | "claude"
   | "perplexity";
 export const AI_ENGINE_LABELS: Record<AiEngine, string> = {
   chatgpt: "ChatGPT",
   gemini: "Gemini",
   google_ai_overview: "Google AI Overviews",
+  google_ai_mode: "Google AI Mode",
   claude: "Claude",
   perplexity: "Perplexity",
 };
@@ -30,12 +32,14 @@ export function aiEngineUsesModelApi(
 }
 /**
  * Raw DataForSEO USD for one answer, standard queue. AI Overviews is one
- * organic SERP page ($0.0006) plus the async overview load ($0.0006).
+ * organic SERP page ($0.0006) plus the async overview load ($0.0006). AI Mode
+ * is one AI Mode SERP task.
  */
 export const AI_RECORD_COST_USD = 0.0012;
 /**
  * Raw DataForSEO USD for one live answer, used by manual runs. AI Overviews is
  * one live organic SERP page ($0.002) plus the async overview load ($0.002).
+ * AI Mode is one live AI Mode SERP task.
  */
 export const AI_LIVE_RECORD_COST_USD = 0.004;
 export type AiScheduleInterval = "daily" | "weekly" | "monthly";
@@ -323,6 +327,9 @@ export const AI_UNSUPPORTED_LOCATIONS: Record<AiEngine, readonly number[]> = {
   chatgpt: [2275, 2344, 2831, 2832, 2833, 2862],
   gemini: [],
   google_ai_overview: [],
+  // AI Mode has no locations endpoint of its own. Every country and language
+  // in the shared market list returned an answer on 2026-11-11.
+  google_ai_mode: [],
   claude: liveUnsupportedLocations("claude"),
   perplexity: liveUnsupportedLocations("perplexity"),
 };

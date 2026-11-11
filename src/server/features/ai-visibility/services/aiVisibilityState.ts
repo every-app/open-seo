@@ -26,6 +26,8 @@ const AI_ENGINE_NOTES: Record<AiEngine, string> = {
   gemini: CONSUMER_NOTE,
   google_ai_overview:
     "The AI Overview on one Google results page. A page without an AI Overview is a no-answer result, not a missing brand.",
+  google_ai_mode:
+    "One answer from Google AI Mode, the AI tab of Google Search. Collects in every project market country.",
   claude: LIVE_NOTE,
   perplexity: LIVE_NOTE,
 };

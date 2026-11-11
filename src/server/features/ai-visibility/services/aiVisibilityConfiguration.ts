@@ -23,6 +23,7 @@ export function trackerEngines(tracker: TrackerRow): AiEngine[] {
     ...(tracker.chatgpt ? (["chatgpt"] as const) : []),
     ...(tracker.gemini ? (["gemini"] as const) : []),
     ...(tracker.googleAiOverview ? (["google_ai_overview"] as const) : []),
+    ...(tracker.googleAiMode ? (["google_ai_mode"] as const) : []),
     ...(tracker.claude ? (["claude"] as const) : []),
     ...(tracker.perplexity ? (["perplexity"] as const) : []),
   ];
@@ -33,6 +34,7 @@ function engineColumns(engines: AiEngine[]) {
     chatgpt: engines.includes("chatgpt"),
     gemini: engines.includes("gemini"),
     googleAiOverview: engines.includes("google_ai_overview"),
+    googleAiMode: engines.includes("google_ai_mode"),
     claude: engines.includes("claude"),
     perplexity: engines.includes("perplexity"),
   };
