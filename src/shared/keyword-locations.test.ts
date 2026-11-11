@@ -16,6 +16,11 @@ import {
 
 describe("keyword locations", () => {
   it("routes Google-Ads-only countries to google_ads and unknown codes to labs", () => {
+    expect(getKeywordDataProvider(2136)).toBe("google_ads"); // Cayman Islands
+    expect(isSupportedLocationCode(2136)).toBe(true);
+    expect(isLabsLocationCode(2136)).toBe(false);
+    expect(getLanguageCode(2136)).toBe("en");
+    expect(getIsoCountryCode(2136)).toBe("ky");
     expect(getKeywordDataProvider(2352)).toBe("google_ads"); // Iceland
     expect(isSupportedLocationCode(2352)).toBe(true);
     expect(isLabsLocationCode(2352)).toBe(false);

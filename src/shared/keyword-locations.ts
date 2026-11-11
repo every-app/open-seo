@@ -130,6 +130,13 @@ export const LOCATION_OPTIONS: readonly LocationOption[] = [
   { code: 2116, label: "Cambodia", shortLabel: "KH", languageCode: "en" },
   { code: 2120, label: "Cameroon", shortLabel: "CM", languageCode: "fr" },
   { code: 2124, label: "Canada", shortLabel: "CA", languageCode: "en" },
+  {
+    code: 2136,
+    label: "Cayman Islands",
+    shortLabel: "KY",
+    languageCode: "en",
+    googleAdsOnly: true,
+  },
   { code: 2152, label: "Chile", shortLabel: "CL", languageCode: "es" },
   { code: 2170, label: "Colombia", shortLabel: "CO", languageCode: "es" },
   { code: 2188, label: "Costa Rica", shortLabel: "CR", languageCode: "es" },
