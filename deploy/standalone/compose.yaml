@@ -37,6 +37,7 @@ services:
       CELLD_V8_HEAP_LIMIT_MB: "256"
       CELLD_MAX_REQUEST_BODY_BYTES: "33554432"
       RUST_LOG: warn,cell_console=info
+      DATAFORSEO_API_KEY: ${DATAFORSEO_API_KEY:-}
     mem_limit: 2g
     logging:
       driver: json-file
