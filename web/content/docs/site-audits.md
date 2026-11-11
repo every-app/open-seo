@@ -21,6 +21,8 @@ The **Scan my website** button on the project dashboard starts a 50-page audit o
 
 The crawler starts at your URL, reads `robots.txt` and your sitemaps, and follows links from page to page. It stays on your site's host: `www.example.com` and `example.com` count as the same site, but other subdomains are skipped. It skips pages that `robots.txt` disallows.
 
+If your site has more pages than **Max pages**, the audit keeps room for every page in your sitemap. Pages it only finds through links, such as tag archives, fill what's left.
+
 The crawler identifies itself as `OpenSEO-Audit`. If a firewall or bot protection blocks it, see [OpenSEO-Audit crawler](/docs/crawler) for how to allow it.
 
 While an audit runs, the page shows its progress and the pages crawled so far. There's no cancel button; deleting a running audit stops it.

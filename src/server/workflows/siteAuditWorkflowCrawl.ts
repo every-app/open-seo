@@ -210,13 +210,11 @@ async function runCrawlChunk(
   let previousThrottle =
     (await scratchpad.getCrawlThrottle()) ?? input.throttleState;
 
-  const claimLimit = Math.min(
-    CHUNK_TARGET_PAGES,
-    maxPages - input.attemptedBefore,
-  );
+  const pagesLeft = maxPages - input.attemptedBefore;
   const { urls: claimed, isRetry } = await scratchpad.claimChunk(
     chunkNo,
-    claimLimit,
+    Math.min(CHUNK_TARGET_PAGES, pagesLeft),
+    pagesLeft,
   );
   // One line at each end of a chunk, so a crawl that stops making progress
   // shows where: inside a chunk, in a cooldown between chunks, or replaying.

@@ -70,6 +70,26 @@ step re-receives exactly the URLs its failed attempt held, and refuses a fresh
 claim for an already-crawled chunk number), deterministic page-row ids, and
 insert-or-ignore/replace writes on stable keys.
 
+### Crawl order and the page limit
+
+A chunk leases pages a link has reached first, oldest first, then pages only
+the sitemap lists. Link-found pages go first because a link is what gives a
+page its click depth, which the deep-page check reads; a page crawled straight
+from the sitemap has none.
+
+Left at that, the order can spend the whole page limit on pages the sitemap
+doesn't list. Tag archives and filter pages link to more of themselves, so the
+link queue never runs dry and the crawl never gets back to the sitemap. So a
+chunk leases pages the sitemap doesn't list only while the limit, after that
+chunk, still has room for every sitemap page waiting. Once it doesn't, chunks
+lease sitemap pages and the start page until those are done, and unlisted
+pages take what is left.
+
+Rejected alternative: always lease sitemap pages before unlisted ones. It gives
+the same coverage, but a sitemap page that is only linked from unlisted pages
+(an older post behind `/page/2/`) would be crawled before the link that gives
+it a depth, on every audit, including the ones that fit the limit.
+
 ### Streaming HTML parsing
 
 Pages are parsed with htmlparser2's streaming tokenizer — no DOM is built, so
