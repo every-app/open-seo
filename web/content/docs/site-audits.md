@@ -41,6 +41,7 @@ Past audits are listed under **Previous Audits**. Click **View** to open one. To
 - **"This site's bot protection blocked our crawler."** Your firewall or a service like Cloudflare stopped the crawl. Allow the crawler using the steps in [OpenSEO-Audit crawler](/docs/crawler). For a Shopify store, create a signature in Shopify admin under Online Store > Preferences > Crawler access. Then open **Project settings**, choose the **Integrations** tab, click **Connect** on the **Shopify** card, and paste it.
 - **"The crawl stopped early because of the site's rate limit."** Your server kept answering with HTTP 429 (Too Many Requests). Allow the crawler, or run a smaller audit.
 - **"This audit stopped early after N pages."** The results cover the pages it read before stopping.
+- **"Crawl stopped early: page limit."** This warning under **Issues** means the audit reached **Max pages** before it visited every URL it found, so the results cover part of the site. Open it to see how many URLs were left. Start a new audit with a higher limit, or [keep the crawler out of sections](/docs/crawler) you don't need audited.
 
 ## Limits
 
@@ -62,7 +63,7 @@ The dashboard's **Scan my website** turns both on, so it uses a few cents of cre
 
 ## Use your assistant
 
-Ask your agent to run an audit with [OpenSEO MCP](/docs/mcp). It can start one with `run_site_audit`, check progress, and read the issues and pages. From an agent, Lighthouse is off unless you ask for it, and a request over your plan's page limit runs at the limit.
+Ask your agent to run an audit with [OpenSEO MCP](/docs/mcp). It can start one with `run_site_audit`, check progress, and read the issues, pages and Lighthouse results. From an agent, Lighthouse is off unless you ask for it, and a request over your plan's page limit runs at the limit.
 
 The [SEO Audit](/docs/skills/seo-audit) skill runs the audit, reads the results with you, and writes a report with the one to three fixes that matter most. For a checklist to work through by hand, see the [technical SEO audit checklist](/library/site-audit/technical-seo-audit-checklist).
 

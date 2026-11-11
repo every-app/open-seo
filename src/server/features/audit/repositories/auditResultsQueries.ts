@@ -51,6 +51,18 @@ export function getAuditIssueGroups(auditId: string) {
     .groupBy(auditIssues.issueType, auditIssues.severity);
 }
 
+/** At most 20 rows (10 sampled pages, mobile + desktop). */
+export function listAuditLighthouseResults(auditId: string) {
+  return db
+    .select({
+      ...getTableColumns(auditLighthouseResults),
+      pageUrl: auditPages.url,
+    })
+    .from(auditLighthouseResults)
+    .leftJoin(auditPages, eq(auditPages.id, auditLighthouseResults.pageId))
+    .where(eq(auditLighthouseResults.auditId, auditId));
+}
+
 export async function getAuditResultsSummary(auditId: string) {
   const [issueGroups, fetchClassRows, lighthouse, okPageUrls] =
     await Promise.all([
@@ -67,15 +79,7 @@ export async function getAuditResultsSummary(auditId: string) {
         .from(auditPages)
         .where(eq(auditPages.auditId, auditId))
         .groupBy(auditPages.fetchClass),
-      // At most 20 rows (10 sampled pages, mobile + desktop).
-      db
-        .select({
-          ...getTableColumns(auditLighthouseResults),
-          pageUrl: auditPages.url,
-        })
-        .from(auditLighthouseResults)
-        .leftJoin(auditPages, eq(auditPages.id, auditLighthouseResults.pageId))
-        .where(eq(auditLighthouseResults.auditId, auditId)),
+      listAuditLighthouseResults(auditId),
       db
         .select({ url: auditPages.url })
         .from(auditPages)

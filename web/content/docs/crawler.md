@@ -30,6 +30,15 @@ User-agent: OpenSEO-Audit
 Disallow: /
 ```
 
+To keep it out of one section, such as tag pages you don't need audited, list that path instead:
+
+```
+User-agent: OpenSEO-Audit
+Disallow: /tag/
+```
+
+Once `robots.txt` has a group for `OpenSEO-Audit`, the crawler ignores the `*` group, so copy any `*` rules you still want it to follow.
+
 ## Crawl rate
 
 The crawler sends about one request per second to a site, and an audit fetches a limited number of pages, set by the user who starts it. When a site answers with `429 Too Many Requests`, the crawler pauses for the `Retry-After` header, slows down, and tries that page once more. A page refused again is reported as rate limited and the crawl moves on. If the site refuses several pages in a row, or keeps the crawler waiting for hours in total, the audit stops early. The crawler does not fetch links to images, scripts, fonts and other files.

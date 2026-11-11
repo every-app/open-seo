@@ -114,6 +114,7 @@ import {
 } from "@/server/mcp/tools/search-console-tools";
 import {
   getAuditIssuesTool,
+  getAuditLighthouseTool,
   getAuditPagesTool,
   getAuditStatusTool,
   runSiteAuditTool,
@@ -332,6 +333,7 @@ export function registerOpenSeoTools(
   register(getAuditStatusTool);
   register(getAuditIssuesTool);
   register(getAuditPagesTool);
+  register(getAuditLighthouseTool);
   register(saveReportTool);
   register(listReportsTool);
   register(getReportTool);

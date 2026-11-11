@@ -66,6 +66,14 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "If the site doesn't need JavaScript to show its content, re-run with Render JavaScript off.",
   },
+  "crawl-page-limit": {
+    severity: "warning",
+    title: "Crawl stopped early: page limit",
+    explanation:
+      "The audit reached its page limit before visiting every URL it found, so this report covers part of the site. Orphan pages are not checked on a partial crawl.",
+    howToFix:
+      'Re-run the audit with a higher page limit. If it is already at the maximum, add a robots.txt group for the "OpenSEO-Audit" user agent that disallows sections you don\'t need audited, such as tag archives or filtered listings, so the limit goes to the pages that matter: https://openseo.so/docs/crawler',
+  },
   "server-error": {
     severity: "critical",
     title: "Server error (5xx)",
@@ -277,6 +285,14 @@ export const AUDIT_ISSUE_TYPES = {
 } as const satisfies Record<string, AuditIssueDescriptor>;
 
 export type AuditIssueType = keyof typeof AUDIT_ISSUE_TYPES;
+
+/** Issue types a crawl raises when it stops with URLs left unvisited. */
+export const CRAWL_STOP_ISSUE_TYPES = [
+  "crawl-rate-limited",
+  "crawl-time-limit",
+  "crawl-credits-exhausted",
+  "crawl-page-limit",
+] as const satisfies readonly AuditIssueType[];
 
 export const ISSUE_SEVERITY_ORDER: Record<IssueSeverity, number> = {
   critical: 0,

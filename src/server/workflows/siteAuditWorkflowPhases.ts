@@ -380,12 +380,8 @@ async function finalizeAudit(args: {
       issueCount: linkIssues.length,
     });
     issues.push(...linkIssues);
-    if (crawl.stoppedBy) {
-      issues.push({
-        issueType: crawl.stoppedBy,
-        pageId: null,
-        pageUrl: startUrl,
-      });
+    if (crawl.stopIssue) {
+      issues.push({ ...crawl.stopIssue, pageId: null, pageUrl: startUrl });
     }
     const persistStartedAt = Date.now();
     await AuditRepository.insertIssues(auditId, issues);

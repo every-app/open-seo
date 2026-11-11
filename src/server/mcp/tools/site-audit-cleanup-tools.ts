@@ -37,7 +37,7 @@ export const listSiteAuditsTool = {
           ? audits
               .map(
                 (audit) =>
-                  `${audit.id}  ${audit.startUrl}  ${audit.status}  ${audit.pagesCrawled} pages  ${audit.startedAt}`,
+                  `${audit.id}  ${audit.startUrl}  ${audit.status}  ${audit.pagesCrawled} pages  ${audit.ranLighthouse ? "with" : "no"} Lighthouse  ${audit.startedAt}`,
               )
               .join("\n")
           : "No site audits in this project.",

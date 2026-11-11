@@ -36,6 +36,7 @@ import { searchSerpLocationsTool } from "@/server/mcp/tools/search-serp-location
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
 import {
   getAuditIssuesTool,
+  getAuditLighthouseTool,
   getAuditPagesTool,
   getAuditStatusTool,
   runSiteAuditTool,
@@ -464,5 +465,6 @@ export function buildSamMcpTools(
     get_audit_status: waitingAuditStatusTool(adaptTool),
     get_audit_issues: adaptTool(getAuditIssuesTool),
     get_audit_pages: adaptTool(getAuditPagesTool),
+    get_audit_lighthouse: adaptTool(getAuditLighthouseTool),
   };
 }

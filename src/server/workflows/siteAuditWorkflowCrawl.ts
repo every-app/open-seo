@@ -23,6 +23,7 @@ import {
   renderUsageCredits,
   type RenderUsage,
 } from "@/shared/audit-rendering";
+import type { CRAWL_STOP_ISSUE_TYPES } from "@/shared/audit-issues";
 import type { CrawlerAccess } from "@/shared/crawler-access";
 import { pgStep } from "@/server/workflows/pgStep";
 import { CRAWL_CHUNK_STEP } from "@/server/workflows/auditStepConfigs";
@@ -91,11 +92,11 @@ export type CrawlPhaseResult = {
   pagesCrawled: number;
   /** True when the frontier was exhausted before hitting maxPages. */
   completed: boolean;
-  /** Why the crawl stopped before running out of URLs or pages. */
-  stoppedBy?:
-    | "crawl-rate-limited"
-    | "crawl-time-limit"
-    | "crawl-credits-exhausted";
+  /** The report's issue for a crawl that stopped with URLs left unvisited. */
+  stopIssue?: {
+    issueType: (typeof CRAWL_STOP_ISSUE_TYPES)[number];
+    details?: Record<string, number>;
+  };
 };
 
 export async function runCrawlPhase(
@@ -137,13 +138,17 @@ export async function runCrawlPhase(
       result.renderUsage?.cloudflareAttempts ?? 0;
     params.renderUsage.contextCredits +=
       result.renderUsage?.contextCredits ?? 0;
-    const stoppedBy = result.rateLimited
+    const issueType = result.rateLimited
       ? "crawl-rate-limited"
       : result.timedOut
         ? "crawl-time-limit"
         : result.outOfCredits && "crawl-credits-exhausted";
-    if (stoppedBy) {
-      return { pagesCrawled: attemptedTotal, completed: false, stoppedBy };
+    if (issueType) {
+      return {
+        pagesCrawled: attemptedTotal,
+        completed: false,
+        stopIssue: { issueType },
+      };
     }
     // `?? initial`: an instance in flight across a deploy replays cached
     // step results from before endWindow existed.
@@ -164,6 +169,16 @@ export async function runCrawlPhase(
     if (zeroProgressChunks >= 2) break;
   }
 
+  if (pending > 0 && attemptedTotal >= params.maxPages) {
+    return {
+      pagesCrawled: attemptedTotal,
+      completed: false,
+      stopIssue: {
+        issueType: "crawl-page-limit",
+        details: { pagesCrawled: attemptedTotal, urlsNotCrawled: pending },
+      },
+    };
+  }
   return { pagesCrawled: attemptedTotal, completed: pending === 0 };
 }
 

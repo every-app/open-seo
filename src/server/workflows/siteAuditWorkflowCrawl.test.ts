@@ -311,7 +311,7 @@ describe("crawl pacing and cooldowns", () => {
     await vi.runAllTimersAsync();
     expect(await result).toMatchObject({
       completed: false,
-      stoppedBy: "crawl-rate-limited",
+      stopIssue: { issueType: "crawl-rate-limited" },
     });
     expect(fetchMock).toHaveBeenCalledTimes(6);
     expect(saved).toHaveLength(3);
@@ -329,11 +329,23 @@ describe("crawl pacing and cooldowns", () => {
     expect(await result).toEqual({
       pagesCrawled: 1,
       completed: false,
-      stoppedBy: "crawl-rate-limited",
+      stopIssue: { issueType: "crawl-rate-limited" },
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(mocks.sleepUntil).not.toHaveBeenCalled();
     expect(mocks.releaseUrls.mock.calls[0][0]).toHaveLength(99);
+  });
+});
+
+it("reports the URLs left unvisited when the page limit ends the crawl", async () => {
+  serve(() => 200);
+  const result = crawl(10);
+  // The site has two more URLs than the audit may crawl.
+  urls.push(`${ORIGIN}/left-1`, `${ORIGIN}/left-2`);
+  await vi.runAllTimersAsync();
+  expect((await result).stopIssue).toEqual({
+    issueType: "crawl-page-limit",
+    details: { pagesCrawled: 10, urlsNotCrawled: 2 },
   });
 });
 
@@ -367,7 +379,7 @@ describe("rendering credit hold", () => {
     await vi.runAllTimersAsync();
     expect(await run).toMatchObject({
       completed: false,
-      stoppedBy: "crawl-time-limit",
+      stopIssue: { issueType: "crawl-time-limit" },
     });
     // One request a second from t=0, none started at or after the deadline.
     expect(fetchMock).toHaveBeenCalledTimes(5);
@@ -385,7 +397,7 @@ describe("rendering credit hold", () => {
     await vi.runAllTimersAsync();
     expect(await run).toMatchObject({
       completed: false,
-      stoppedBy: "crawl-credits-exhausted",
+      stopIssue: { issueType: "crawl-credits-exhausted" },
     });
     expect(renderUsageCredits(renderUsage)).toBeLessThanOrEqual(credits);
   });
@@ -410,7 +422,7 @@ describe("throttled Shopify pages", () => {
     await vi.runAllTimersAsync();
     expect(await run).toMatchObject({
       completed: false,
-      stoppedBy: "crawl-rate-limited",
+      stopIssue: { issueType: "crawl-rate-limited" },
     });
   });
 });
