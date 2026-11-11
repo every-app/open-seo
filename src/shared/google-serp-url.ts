@@ -13,6 +13,14 @@ export function isGoogleRedirect(url: string): boolean {
   }
 }
 
+/** Google adds srsltid to many result links; it isn't part of the page. */
+export function withoutGoogleTracking(url: string): string {
+  const parsed = new URL(url);
+  if (!parsed.searchParams.has("srsltid")) return url;
+  parsed.searchParams.delete("srsltid");
+  return parsed.toString();
+}
+
 type SerpMarket = {
   locationCode: number;
   languageCode: string;

@@ -6,6 +6,7 @@ import { buildProjectMeta } from "@/server/mcp/context";
 import { serpSchema, type serpItemSchema } from "@/shared/mcp-contracts";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { resolveMarket } from "@/shared/keyword-locations";
+import { isGoogleRedirect } from "@/shared/google-serp-url";
 import { assertLocalResearchLocation } from "@/server/features/keywords/services/research/local-volume";
 import { readMergedSerps } from "@/server/features/keywords/services/research/serpReads";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
@@ -94,7 +95,7 @@ export const getSerpResultsTool = {
   config: {
     title: "Get Google SERP results",
     description:
-      "Fetch live Google organic search results for 1-10 keywords. Use this to inspect who ranks for a query, verify competitors, compare SERPs across keywords, or gather source URLs before content planning. Google serves automated readers pages that vary and are sometimes wrong, so each keyword is read 3 times and merged into one row per site, usually about 15 sites at the default depth 10. Expect 10-30 seconds. The sites the reads agree on come first, and `rank` numbers them 1 to n in that order, so it isn't a Google position. `bestPosition` is the best organic position any read gave the site, the same way the rank tracker reports it: quote that as a site's position. It can repeat or jump around from row to row, because the rows aren't one page Google served. `seenIn` says how many reads showed a row, so a site seen once is weak evidence. SERP features follow the organic rows, with no `rank` or `bestPosition`. Results still vary between calls, so use rank tracking or Search Console for a site's position over time. `url` can be a google.com/goto redirect that a plain fetch won't follow; `domain` is the reliable field. Charges credits per keyword: ~5 each at the default depth 10, and each additional 10 of depth adds ~3.5. A keyword fetched in this project in the last 12 hours with the same market, device, and depth collects those same reads again at no charge, so if a response is lost or a keyword is still running, wait a minute and repeat the same call; only a keyword whose reads all failed or came back empty is read and charged again. Per-keyword errors don't fail the batch.",
+      "Fetch live Google organic search results for 1-10 keywords. Use this to inspect who ranks for a query, verify competitors, compare SERPs across keywords, or gather source URLs before content planning. Google serves automated readers pages that vary and are sometimes wrong, so each keyword is read 3 times and merged into one row per site, usually about 15 sites at the default depth 10. Expect 10-30 seconds. The sites the reads agree on come first, and `rank` numbers them 1 to n in that order, so it isn't a Google position. `bestPosition` is the best organic position any read gave the site, the same way the rank tracker reports it: quote that as a site's position. It can repeat or jump around from row to row, because the rows aren't one page Google served. `seenIn` says how many reads showed a row, so a site seen once is weak evidence. SERP features follow the organic rows, with no `rank` or `bestPosition`. Results still vary between calls, so use rank tracking or Search Console for a site's position over time. Google wraps many results in a google.com/goto redirect; `url` and `domain` hold the real page once it's resolved. A row that couldn't be resolved keeps the goto link, has `urlIsGoogleRedirect` true, and takes `domain` from the result's breadcrumb (null when that isn't a URL). Charges credits per keyword: ~5 each at the default depth 10, and each additional 10 of depth adds ~3.5. A keyword fetched in this project in the last 12 hours with the same market, device, and depth collects those same reads again at no charge, so if a response is lost or a keyword is still running, wait a minute and repeat the same call; only a keyword whose reads all failed or came back empty is read and charged again. Per-keyword errors don't fail the batch.",
     inputSchema,
     outputSchema: serpSchema,
     annotations: {
@@ -185,6 +186,7 @@ export const getSerpResultsTool = {
             title: item.title ?? null,
             url: item.url ?? null,
             domain: item.domain ?? null,
+            urlIsGoogleRedirect: item.url ? isGoogleRedirect(item.url) : false,
             description: item.description ?? null,
           };
         }),

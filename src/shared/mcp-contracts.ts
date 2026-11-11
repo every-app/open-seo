@@ -77,6 +77,9 @@ export const serpItemSchema = z.looseObject({
   title: z.string().nullable(),
   url: z.string().nullable(),
   domain: z.string().nullable(),
+  // A google.com/goto link that couldn't be resolved; domain then comes from
+  // the result's breadcrumb.
+  urlIsGoogleRedirect: z.boolean().optional(),
   description: z.string().nullable(),
 });
 

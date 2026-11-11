@@ -3,12 +3,18 @@ import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
   createDataforseoClient,
   fetchSerpTaskResult,
+  MAX_GOTO_URLS_PER_REQUEST,
+  resolveGotoUrls,
   type SerpLiveItem,
   type SerpQuery,
 } from "@/server/lib/dataforseo";
 import { serpSnapshotItemSchema } from "@/server/lib/dataforseo/serp";
 import { AppError } from "@/server/lib/errors";
 import { getCached, setCached } from "@/server/lib/r2-cache";
+import {
+  isGoogleRedirect,
+  withoutGoogleTracking,
+} from "@/shared/google-serp-url";
 
 // Polling stops 40 s into the call so it answers inside the 60 s many MCP
 // clients wait. Reads usually all finish within about 20 s.
@@ -102,6 +108,47 @@ function mergeSerpReads(reads: SerpLiveItem[][]): MergedSerpItem[] {
   }));
 }
 
+/**
+ * Swaps each google.com/goto row for the page it points to, through
+ * DataForSEO's free goto converter. A row it can't resolve keeps the goto link
+ * and the breadcrumb host the parser credited it to.
+ */
+async function resolveGotoRows(
+  reads: SerpLiveItem[][],
+): Promise<SerpLiveItem[][]> {
+  const gotoUrls = [
+    ...new Set(
+      reads
+        .flat()
+        .flatMap(({ url }) => (url && isGoogleRedirect(url) ? [url] : [])),
+    ),
+  ];
+  const chunks: string[][] = [];
+  for (let i = 0; i < gotoUrls.length; i += MAX_GOTO_URLS_PER_REQUEST) {
+    chunks.push(gotoUrls.slice(i, i + MAX_GOTO_URLS_PER_REQUEST));
+  }
+  const resolved = await Promise.all(
+    chunks.map((chunk) =>
+      resolveGotoUrls(chunk).catch((error: unknown) => {
+        console.warn("serp-reads.goto-resolve failed:", error);
+        return new Map<string, string>();
+      }),
+    ),
+  );
+  const pages = new Map(resolved.flatMap((map) => [...map]));
+  return reads.map((read) =>
+    read.map((item) => {
+      const page = item.url ? pages.get(item.url) : undefined;
+      if (!page) return item;
+      return {
+        ...item,
+        url: withoutGoogleTracking(page),
+        domain: new URL(page).hostname,
+      };
+    }),
+  );
+}
+
 /** Polls one read until it finishes or the deadline passes, or just once. */
 async function collectRead(taskId: string, deadline: number, once: boolean) {
   for (;;) {
@@ -143,8 +190,10 @@ async function collectMergedSerp(
   const reads = await Promise.all(
     taskIds.map((taskId) => collectRead(taskId, deadline, replay)),
   );
-  const completed = reads.flatMap((read) =>
-    read.status === "completed" ? [read.items] : [],
+  // Resolved before merging and caching: rows merge on the real site, and a
+  // cached repeat doesn't ask the converter again.
+  const completed = await resolveGotoRows(
+    reads.flatMap((read) => (read.status === "completed" ? [read.items] : [])),
   );
   const items = mergeSerpReads(completed);
   const pending = reads.some((read) => read.status === "pending");

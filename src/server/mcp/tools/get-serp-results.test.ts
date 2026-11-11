@@ -7,6 +7,7 @@ import type * as r2CacheModule from "@/server/lib/r2-cache";
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   fetchSerpTaskResult: vi.fn(),
+  resolveGotoUrls: vi.fn(),
   getProjectForOrganization: vi.fn(),
   cache: new Map<string, unknown>(),
 }));
@@ -22,6 +23,8 @@ vi.mock("@/server/lib/r2-cache", async (importOriginal) => ({
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
   fetchSerpTaskResult: mocks.fetchSerpTaskResult,
+  resolveGotoUrls: mocks.resolveGotoUrls,
+  MAX_GOTO_URLS_PER_REQUEST: 100,
   SERP_ANALYSIS_DEPTH: 10,
 }));
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -81,6 +84,7 @@ function itemsOf(result: { structuredContent?: unknown }) {
 describe("get_serp_results", () => {
   beforeEach(() => {
     mocks.cache.clear();
+    mocks.resolveGotoUrls.mockResolvedValue(new Map());
     mocks.getProjectForOrganization.mockResolvedValue({
       id: "project_1",
       locationCode: 2840,
@@ -113,6 +117,38 @@ describe("get_serp_results", () => {
       [1, "www.agreed.com", 2, 3],
       [2, "second.com", 3, 2],
       [3, "poisoned.example", 1, 1],
+    ]);
+  });
+
+  it("swaps google.com/goto rows for the real page and flags any it can't resolve", async () => {
+    // As the parser returns them: the domain already comes from the breadcrumb.
+    const gotoRow = (position: number, id: string, domain: string) => ({
+      ...organic(position, domain),
+      url: `https://google.com/goto?url=${id}`,
+    });
+    mocks.resolveGotoUrls.mockResolvedValue(
+      new Map([
+        [
+          "https://google.com/goto?url=A",
+          "https://servestack.ai/tools?srsltid=x",
+        ],
+      ]),
+    );
+    mockReads({
+      t1: completed(gotoRow(1, "A", "servestack.ai"), gotoRow(2, "B", "b.com")),
+    });
+
+    const result = await getSerpResultsTool.handler(args, toolContext);
+
+    expect(
+      itemsOf(result).map(({ url, domain, urlIsGoogleRedirect }) => [
+        url,
+        domain,
+        urlIsGoogleRedirect,
+      ]),
+    ).toEqual([
+      ["https://servestack.ai/tools", "servestack.ai", false],
+      ["https://google.com/goto?url=B", "b.com", true],
     ]);
   });
 
