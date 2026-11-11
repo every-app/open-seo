@@ -252,12 +252,13 @@ export const dataforseoPricing = {
     relevantPages: priced(fetchRelevantPages, (input) => labsUsd(input.limit)),
   },
   serp: {
-    // High priority (priority 2) doubles the standard-queue rate.
+    // High priority (priority 2) doubles the standard-queue rate; finalUrls
+    // reads go on the standard queue.
     readsTaskPost: priced(
       postSerpReadTasks,
       (input) =>
         SERP_READS_PER_QUERY *
-        2 *
+        (input.finalUrls ? 1 : 2) *
         serpUsd(
           clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
           input.keyword,

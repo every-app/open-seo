@@ -38,6 +38,16 @@ describe("dataforseoPricing", () => {
       credits: 5,
     },
     {
+      name: "merged SERP reads with final URLs (standard queue, half the rate)",
+      estimateUsd: dataforseoPricing.serp.readsTaskPost({
+        keyword: "seo",
+        ...location,
+        finalUrls: true,
+      }),
+      rawUsd: 0.0018,
+      credits: 3,
+    },
+    {
       name: "merged SERP reads at depth 20",
       estimateUsd: dataforseoPricing.serp.readsTaskPost({
         keyword: "seo",

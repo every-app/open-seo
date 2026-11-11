@@ -62,7 +62,7 @@ export type { AdsKeywordIdeaItem } from "@/server/lib/dataforseo/google-ads";
 export type {
   LocalSerpTaskOutcome,
   SerpLiveItem,
-  SerpQuery,
+  SerpReadsQuery,
   RankCheckResult,
   RankCheckTaskInput,
   PostedRankCheckTask,

@@ -4,7 +4,7 @@ import {
   createDataforseoClient,
   fetchSerpTaskResult,
   type SerpLiveItem,
-  type SerpQuery,
+  type SerpReadsQuery,
 } from "@/server/lib/dataforseo";
 import { serpSnapshotItemSchema } from "@/server/lib/dataforseo/serp";
 import { AppError } from "@/server/lib/errors";
@@ -135,7 +135,7 @@ async function collectMergedSerp(
   taskIds: string[],
   receiptKey: string,
   deadline: number,
-  { replay }: { replay: boolean },
+  { replay, finalUrls }: { replay: boolean; finalUrls?: boolean },
 ): Promise<MergedSerpOutcome> {
   // The call that posted the reads waits for them. A repeat checks each once:
   // repeats are free, so a caller looping on them must not turn each one into
@@ -148,6 +148,9 @@ async function collectMergedSerp(
   );
   const items = mergeSerpReads(completed);
   const pending = reads.some((read) => read.status === "pending");
+  // A finalUrls caller has agreed to wait, so it gets the merge of every read
+  // rather than whichever read happens to be back first.
+  if (pending && finalUrls) return { status: "processing" };
   if (items.length > 0) {
     if (!pending) {
       await setCached(
@@ -181,12 +184,13 @@ async function collectMergedSerp(
 /**
  * Reads each query several times and merges the reads, because any one read can
  * be a poisoned page. Reads that aren't back by the deadline are left out of
- * the merge; the same query again collects them at no charge. Resolves per
- * query, in order.
+ * the merge; the same query again collects them at no charge. A finalUrls
+ * query's reads take minutes, so only a repeat collects them, once all are in.
+ * Resolves per query, in order.
  */
 export async function readMergedSerps(
   billing: BillingCustomerContext,
-  requests: Array<{ query: SerpQuery; receiptKey: string }>,
+  requests: Array<{ query: SerpReadsQuery; receiptKey: string }>,
 ): Promise<MergedSerpOutcome[]> {
   const deadline = Date.now() + READ_COLLECT_MS;
   const receipts = await Promise.all(
@@ -217,6 +221,7 @@ export async function readMergedSerps(
       if (receipt) {
         return collectMergedSerp(receipt, request.receiptKey, deadline, {
           replay: true,
+          finalUrls: request.query.finalUrls,
         });
       }
       const outcome = posted[toPost.indexOf(request)];
@@ -232,6 +237,7 @@ export async function readMergedSerps(
       ).catch((error) => {
         console.error("serp-reads.receipt-write failed:", error);
       });
+      if (request.query.finalUrls) return { status: "processing" };
       return collectMergedSerp(outcome.value, request.receiptKey, deadline, {
         replay: false,
       });

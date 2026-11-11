@@ -46,7 +46,7 @@ import {
   fetchLocalSerp,
   postLocalSerpTasks,
   postSerpReadTasks,
-  type SerpQuery,
+  type SerpReadsQuery,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
@@ -221,7 +221,7 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       // query is placed and refused as its own hold would be (see
       // meterDataforseoCalls). DataForSEO bills task_post, collection is free.
       // Resolves per query, in order.
-      readsTaskPostBatch: (inputs: SerpQuery[]) =>
+      readsTaskPostBatch: (inputs: SerpReadsQuery[]) =>
         meterDataforseoCalls(
           customer,
           inputs.map((input) => () => postSerpReadTasks(input)),

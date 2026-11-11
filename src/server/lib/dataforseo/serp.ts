@@ -99,7 +99,7 @@ function breadcrumbHost(breadcrumb: string | null | undefined): string | null {
 
 export type SerpLiveItem = z.infer<typeof serpSnapshotItemSchema>;
 
-export interface SerpQuery {
+interface SerpQuery {
   keyword: string;
   locationCode: number;
   languageCode: string;
@@ -343,12 +343,21 @@ export async function fetchSerpTaskResult(
 
 export const SERP_READS_PER_QUERY = 3;
 
+export interface SerpReadsQuery extends SerpQuery {
+  /**
+   * Post the reads on the standard queue. High-priority reads are back in
+   * seconds with their URLs wrapped in google.com/goto; standard-queue reads
+   * take minutes and carry each page's own URL, at half the price.
+   */
+  finalUrls?: boolean;
+}
+
 /**
  * Posts one query's reads and returns the accepted task ids. Not retried on a
  * 5xx, which does not prove the post went unbilled.
  */
 export async function postSerpReadTasks(
-  input: SerpQuery,
+  input: SerpReadsQuery,
 ): Promise<DataforseoApiResponse<string[]>> {
   const response = await dataforseoPost<
     DataforseoTaskLike & { id?: string; data?: Record<string, unknown> }
@@ -356,7 +365,7 @@ export async function postSerpReadTasks(
     "/v3/serp/google/organic/task_post",
     Array.from({ length: SERP_READS_PER_QUERY }, () => ({
       ...serpQueryParams(input),
-      priority: TASK_PRIORITY_HIGH,
+      ...(!input.finalUrls && { priority: TASK_PRIORITY_HIGH }),
     })),
     { maxServerErrorRetries: 0 },
   );

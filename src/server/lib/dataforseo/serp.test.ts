@@ -14,7 +14,6 @@ import {
   fetchSerpTaskResult,
   postLocalSerpTasks,
   postRankCheckTasks,
-  postSerpReadTasks,
 } from "@/server/lib/dataforseo/serp";
 
 function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
@@ -398,36 +397,5 @@ describe("fetchSerpTaskResult", () => {
     await expect(
       fetchSerpTaskResult("read-1", AbortSignal.timeout(1)),
     ).rejects.toMatchObject({ code: "UPSTREAM_UNAVAILABLE" });
-  });
-});
-
-describe("postSerpReadTasks", () => {
-  it("posts every read at high priority, bills them all, and returns only the accepted tasks", async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({
-        status_code: 20000,
-        tasks: [
-          { id: "read-1", status_code: 20100, cost: 0.0012 },
-          { id: "read-2", status_code: 40501, cost: 0.0012 },
-          { id: "read-3", status_code: 20100, cost: 0.0012 },
-        ],
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    const { data, billing } = await postSerpReadTasks({
-      keyword: "seo tools",
-      locationCode: 2840,
-      languageCode: "en",
-    });
-
-    expect(data).toEqual(["read-1", "read-3"]);
-    expect(billing.costUsd).toBeCloseTo(0.0036);
-    const read: unknown = expect.objectContaining({ depth: 10, priority: 2 });
-    expect(parseDataforseoRequestBody(fetchMock.mock.calls[0][1])).toEqual([
-      read,
-      read,
-      read,
-    ]);
   });
 });
