@@ -1,9 +1,10 @@
 import type { PageFetchClass } from "@/shared/audit-fetch-class";
 
 // Challenge pages that can arrive with a 200, as a renderer hands them back:
-// Cloudflare's interstitial, and SiteGround's sgcaptcha redirect.
+// Cloudflare's interstitial, Imunify360's bot check ("One moment, please..."),
+// and SiteGround's sgcaptcha redirect.
 const CHALLENGE_2XX =
-  /<title>\s*(?:just a moment\.\.\.|attention required! \| cloudflare)\s*<\/title>|\/\.well-known\/sgcaptcha\//i;
+  /<title>\s*(?:just a moment\.\.\.|attention required! \| cloudflare|one moment, please\.\.\.)\s*<\/title>|\/\.well-known\/sgcaptcha\//i;
 
 const CHALLENGE_BODY_MARKERS = [
   "just a moment...",

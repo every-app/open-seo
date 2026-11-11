@@ -5,7 +5,9 @@ import {
   buildTaskBilling,
   parseTaskItems,
   type DataforseoApiResponse,
+  type DataforseoItemsResult,
   type DataforseoItemsTask,
+  type DataforseoTaskLike,
 } from "@/server/lib/dataforseo/envelope";
 
 // Labs payload types: the fields the app reads, typed honestly (the wire nulls
@@ -176,6 +178,15 @@ export async function fetchRelatedKeywords(input: {
   };
 }
 
+/** keyword_suggestions returns the seed keyword's own data beside `items`. */
+type KeywordSuggestionsTask = DataforseoTaskLike & {
+  result?: Array<
+    DataforseoItemsResult<LabsKeywordDataItem> & {
+      seed_keyword_data?: LabsKeywordDataItem | null;
+    }
+  >;
+};
+
 export async function fetchKeywordSuggestions(input: {
   keyword: string;
   locationCode: number;
@@ -185,25 +196,33 @@ export async function fetchKeywordSuggestions(input: {
   ignoreSynonyms?: boolean;
   filters?: unknown[];
 }): Promise<DataforseoApiResponse<LabsKeywordDataItem[]>> {
-  const response = await dataforseoPost<
-    DataforseoItemsTask<LabsKeywordDataItem>
-  >("/v3/dataforseo_labs/google/keyword_suggestions/live", [
-    {
-      keyword: input.keyword,
-      location_code: input.locationCode,
-      language_code: input.languageCode,
-      limit: input.limit,
-      include_clickstream_data: input.includeClickstreamData ?? false,
-      include_serp_info: false,
-      include_seed_keyword: true,
-      ignore_synonyms: input.ignoreSynonyms ?? false,
-      exact_match: false,
-      filters: input.filters,
-    },
-  ]);
+  const response = await dataforseoPost<KeywordSuggestionsTask>(
+    "/v3/dataforseo_labs/google/keyword_suggestions/live",
+    [
+      {
+        keyword: input.keyword,
+        location_code: input.locationCode,
+        language_code: input.languageCode,
+        limit: input.limit,
+        include_clickstream_data: input.includeClickstreamData ?? false,
+        include_serp_info: false,
+        // DataForSEO does not apply `filters` to the seed keyword, so only an
+        // unfiltered call asks for it.
+        include_seed_keyword: !input.filters,
+        ignore_synonyms: input.ignoreSynonyms ?? false,
+        exact_match: false,
+        filters: input.filters,
+      },
+    ],
+  );
   const task = assertOk(response);
+  const result = task.result?.[0];
+  const items = result?.items ?? [];
+  // The seed keyword goes first, within the limit, so the keyword that was
+  // searched is always one of the rows.
+  const seed = result?.seed_keyword_data;
   return {
-    data: task.result?.[0]?.items ?? [],
+    data: seed ? [seed, ...items].slice(0, input.limit) : items,
     billing: buildTaskBilling(task),
   };
 }
