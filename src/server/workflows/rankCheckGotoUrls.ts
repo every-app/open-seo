@@ -3,15 +3,10 @@ import {
   MAX_GOTO_URLS_PER_REQUEST,
   resolveGotoUrls,
 } from "@/server/lib/dataforseo";
-import { isGoogleRedirect } from "@/shared/google-serp-url";
-
-/** Google adds srsltid to many result links; it isn't part of the page. */
-function withoutGoogleTracking(url: string): string {
-  const parsed = new URL(url);
-  if (!parsed.searchParams.has("srsltid")) return url;
-  parsed.searchParams.delete("srsltid");
-  return parsed.toString();
-}
+import {
+  isGoogleRedirect,
+  withoutGoogleTracking,
+} from "@/shared/google-serp-url";
 
 /**
  * Replace the run's google.com/goto ranking URLs with the real pages. Each
