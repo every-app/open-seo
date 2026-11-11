@@ -54,6 +54,34 @@ async function createTracker(
   ]);
 }
 
+async function updateTrackerArea(
+  projectId: string,
+  trackerId: string,
+  area: Pick<LocalTrackerRow, "gridSize" | "spacingKm">,
+) {
+  await db
+    .update(localRankTrackers)
+    .set(area)
+    .where(
+      and(
+        eq(localRankTrackers.projectId, projectId),
+        eq(localRankTrackers.id, trackerId),
+      ),
+    );
+}
+
+/** The tracker's keywords, checks and results are deleted with it by cascade. */
+async function deleteTracker(projectId: string, trackerId: string) {
+  await db
+    .delete(localRankTrackers)
+    .where(
+      and(
+        eq(localRankTrackers.projectId, projectId),
+        eq(localRankTrackers.id, trackerId),
+      ),
+    );
+}
+
 async function listChecks(projectId: string, trackerId: string) {
   return db
     .select()
@@ -342,6 +370,8 @@ export const LocalSeoRepository = {
   listTrackers,
   getTracker,
   createTracker,
+  updateTrackerArea,
+  deleteTracker,
   getKeywords,
   saveKeywords,
   listChecks,

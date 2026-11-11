@@ -52,6 +52,13 @@ export function localAreaLabel(grid: { gridSize: number; spacingKm: number }) {
   return `${grid.gridSize * grid.gridSize} points across ${(grid.gridSize - 1) * grid.spacingKm} km`;
 }
 
+const KM_PER_LATITUDE_DEGREE = 110.574;
+function kmPerLongitudeDegree(latitude: number) {
+  return (
+    111.32 * Math.max(Math.abs(Math.cos((latitude * Math.PI) / 180)), 0.01)
+  );
+}
+
 /** Row zero is the northern edge; points are in row-major order. */
 export function buildLocalGrid(
   center: { latitude: number; longitude: number },
@@ -59,11 +66,8 @@ export function buildLocalGrid(
   spacingKm: number,
 ): LocalGridPoint[] {
   const middle = (gridSize - 1) / 2;
-  const latitudeStep = spacingKm / 110.574;
-  const longitudeStep =
-    spacingKm /
-    (111.32 *
-      Math.max(Math.abs(Math.cos((center.latitude * Math.PI) / 180)), 0.01));
+  const latitudeStep = spacingKm / KM_PER_LATITUDE_DEGREE;
+  const longitudeStep = spacingKm / kmPerLongitudeDegree(center.latitude);
   return Array.from({ length: gridSize * gridSize }, (_, index) => {
     const row = Math.floor(index / gridSize);
     const col = index % gridSize;
@@ -78,6 +82,22 @@ export function buildLocalGrid(
       ),
     };
   });
+}
+
+/**
+ * How far north and east of the grid's center a point is, in km. Read from the
+ * point's own coordinates, so a saved check stays right after the tracker's
+ * area changes.
+ */
+export function localPointOffsetKm(
+  center: { latitude: number; longitude: number },
+  point: { latitude: number; longitude: number },
+) {
+  const north = (point.latitude - center.latitude) * KM_PER_LATITUDE_DEGREE;
+  const east =
+    (point.longitude - center.longitude) *
+    kmPerLongitudeDegree(center.latitude);
+  return { north: Number(north.toFixed(2)), east: Number(east.toFixed(2)) };
 }
 
 type RankedPoint = {

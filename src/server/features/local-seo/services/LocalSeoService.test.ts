@@ -21,6 +21,7 @@ import {
   LocalPointStatus,
   LocalScanStatus,
   localPointLabel,
+  localPointOffsetKm,
 } from "@/shared/local-seo";
 
 const mocks = vi.hoisted(() => ({
@@ -142,6 +143,15 @@ async function trackerAndInput(gridSize: 3 | 5 = 3, keywords = ["bookstore"]) {
   };
 }
 
+/** 5×5 points, 5 km apart. */
+const changeToMetroArea = (projectId: string, trackerId: string) =>
+  LocalSeoService.updateArea({
+    projectId,
+    trackerId,
+    gridSize: 5,
+    spacingKm: 5,
+  });
+
 async function startedScan() {
   const { input } = await trackerAndInput();
   const check = await LocalSeoService.startCheck(input, customer);
@@ -193,7 +203,7 @@ describe("saved local SEO scans", () => {
     },
   );
 
-  it("prevents another project from reading or starting a tracker or scan", async () => {
+  it("prevents another project from reading, starting, changing or deleting a tracker or scan", async () => {
     const { input } = await trackerAndInput();
     const check = await LocalSeoService.startCheck(input, customer);
     const [scan] = await repo.getScansForCheck(customer.projectId, check.id);
@@ -209,7 +219,80 @@ describe("saved local SEO scans", () => {
         { ...customer, projectId: "project-b", organizationId: "org-b" },
       ),
     ).rejects.toThrow("not found in this project");
+    await expect(
+      changeToMetroArea("project-b", input.trackerId),
+    ).rejects.toThrow("not found in this project");
+    await expect(
+      LocalSeoService.deleteTracker("project-b", input.trackerId),
+    ).rejects.toThrow("not found in this project");
     expect(await LocalSeoService.listTrackers("project-b")).toEqual([]);
+  });
+
+  it("waits for a running check before deleting a business or changing its area", async () => {
+    const scan = await startedScan();
+    expect(
+      await LocalSeoService.deleteTracker(customer.projectId, scan.trackerId),
+    ).toBe(false);
+    expect(await LocalSeoService.listTrackers(customer.projectId)).toHaveLength(
+      1,
+    );
+    await expect(
+      changeToMetroArea(customer.projectId, scan.trackerId),
+    ).rejects.toThrow("Wait for the current check");
+  });
+
+  it("deletes a business with its keywords, checks and results", async () => {
+    mocks.search.mockImplementation(async (searches: unknown[]) =>
+      searches.map(() => ({
+        status: "fulfilled",
+        value: [{ title: business.title, cid: business.cid, rank_absolute: 1 }],
+      })),
+    );
+    const scan = await searchedScan();
+    await finalizeLocalCheck(customer.projectId, scan.checkId);
+    expect(
+      await LocalSeoService.deleteTracker(customer.projectId, scan.trackerId),
+    ).toBe(true);
+    expect(await LocalSeoService.listTrackers(customer.projectId)).toEqual([]);
+    const left = await client.execute(`
+      SELECT (SELECT count(*) FROM local_rank_keywords)
+        + (SELECT count(*) FROM local_rank_checks)
+        + (SELECT count(*) FROM local_rank_scans)
+        + (SELECT count(*) FROM local_rank_points)
+        + (SELECT count(*) FROM local_rank_businesses)
+        + (SELECT count(*) FROM local_rank_results) AS count`);
+    expect(left.rows[0]?.count).toBe(0);
+  });
+
+  it("searches the new area after a change and keeps earlier checks' points", async () => {
+    const scan = await searchedScan();
+    await finalizeLocalCheck(customer.projectId, scan.checkId);
+    await changeToMetroArea(customer.projectId, scan.trackerId);
+    const state = await LocalSeoService.getTracker(
+      customer.projectId,
+      scan.trackerId,
+    );
+    const check = await LocalSeoService.startCheck(
+      {
+        projectId: customer.projectId,
+        trackerId: scan.trackerId,
+        requestId: crypto.randomUUID(),
+        maxCostCredits: state.estimate.costCredits,
+      },
+      customer,
+    );
+    const [next] = await repo.getScansForCheck(customer.projectId, check.id);
+    // A scan's point count, and how far its north-west point is from the listing.
+    const northWest = async (scanId: string) => {
+      const saved = await LocalSeoService.getScan(customer.projectId, scanId);
+      return [
+        saved.points.length,
+        localPointOffsetKm(business, saved.points[0]),
+      ];
+    };
+    // 3×3 points 2 km apart, then 5×5 points 5 km apart.
+    expect(await northWest(scan.id)).toEqual([9, { north: 2, east: -2 }]);
+    expect(await northWest(next.id)).toEqual([25, { north: 10, east: -10 }]);
   });
 
   it("rejects a lower credit approval before submitting paid searches", async () => {

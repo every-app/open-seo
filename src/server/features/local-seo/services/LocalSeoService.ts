@@ -23,6 +23,7 @@ import {
   localBusinessSchema,
   type createLocalTrackerSchema,
   type startLocalCheckSchema,
+  type updateLocalAreaSchema,
   type updateLocalKeywordsSchema,
 } from "@/types/schemas/local-seo";
 import {
@@ -131,6 +132,21 @@ async function requireTracker(projectId: string, trackerId: string) {
   return tracker;
 }
 
+/** Validates generated coordinates before storing an unusable tracker. */
+function requireGridOnMap(
+  center: { latitude: number; longitude: number },
+  gridSize: number,
+  spacingKm: number,
+) {
+  for (const point of buildLocalGrid(center, gridSize, spacingKm)) {
+    if (Math.abs(point.latitude) > 85 || Math.abs(point.longitude) > 180)
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "This grid extends beyond the map. Choose a smaller grid or spacing.",
+      );
+  }
+}
+
 async function createTracker(
   input: z.infer<typeof createLocalTrackerSchema>,
   languageCode: string,
@@ -145,18 +161,7 @@ async function createTracker(
     languageCode,
     createdAt: new Date().toISOString(),
   };
-  // Validate generated coordinates before storing an unusable tracker.
-  for (const point of buildLocalGrid(
-    tracker,
-    tracker.gridSize,
-    tracker.spacingKm,
-  )) {
-    if (Math.abs(point.latitude) > 85 || Math.abs(point.longitude) > 180)
-      throw new AppError(
-        "VALIDATION_ERROR",
-        "This grid extends beyond the map. Choose a smaller grid or spacing.",
-      );
-  }
+  requireGridOnMap(tracker, tracker.gridSize, tracker.spacingKm);
   await repo.createTracker(
     tracker,
     keywords.map((keyword) => ({
@@ -249,16 +254,50 @@ async function getTracker(projectId: string, trackerId: string) {
   };
 }
 
+/** The tracker's check that is still running, per its workflow. */
+async function runningCheck(projectId: string, trackerId: string) {
+  const active = await repo.getActiveCheck(projectId, trackerId);
+  return active && isLocalScanActive((await reconcileCheck(active)).status)
+    ? active
+    : null;
+}
+
+/** A running check reads the tracker and saves results under it, so changes
+ *  to the tracker wait for the check to finish. */
+async function requireIdleTracker(projectId: string, trackerId: string) {
+  const tracker = await requireTracker(projectId, trackerId);
+  if (await runningCheck(projectId, trackerId))
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Wait for the current check to finish before changing this business.",
+    );
+  return tracker;
+}
+
+/** New checks use the new area. Earlier checks keep the points they searched. */
+async function updateArea(input: z.infer<typeof updateLocalAreaSchema>) {
+  const { projectId, trackerId, gridSize, spacingKm } = input;
+  const tracker = await requireIdleTracker(projectId, trackerId);
+  requireGridOnMap(tracker, gridSize, spacingKm);
+  await repo.updateTrackerArea(projectId, trackerId, { gridSize, spacingKm });
+}
+
+/**
+ * Whether the tracker was deleted: false, with nothing deleted, while a check
+ * is running. The list this is called from cannot know about the check, so it
+ * gets an answer to explain instead of an error code.
+ */
+async function deleteTracker(projectId: string, trackerId: string) {
+  await requireTracker(projectId, trackerId);
+  if (await runningCheck(projectId, trackerId)) return false;
+  await repo.deleteTracker(projectId, trackerId);
+  return true;
+}
+
 async function updateKeywords(
   input: z.infer<typeof updateLocalKeywordsSchema>,
 ) {
-  await requireTracker(input.projectId, input.trackerId);
-  const active = await repo.getActiveCheck(input.projectId, input.trackerId);
-  if (active && isLocalScanActive((await reconcileCheck(active)).status))
-    throw new AppError(
-      "VALIDATION_ERROR",
-      "Wait for the current check to finish before changing keywords.",
-    );
+  await requireIdleTracker(input.projectId, input.trackerId);
   const existing = await repo.getKeywords(input.trackerId, true);
   const keywords = [...new Set(input.keywords)];
   await repo.saveKeywords(
@@ -290,9 +329,8 @@ async function startCheck(
     );
   const existing = await repo.getCheck(input.projectId, input.requestId);
   if (existing) return existing;
-  const active = await repo.getActiveCheck(input.projectId, tracker.id);
-  if (active && isLocalScanActive((await reconcileCheck(active)).status))
-    return active;
+  const active = await runningCheck(input.projectId, tracker.id);
+  if (active) return active;
   const costCredits = checkCostCredits(tracker, keywords.length);
   if (costCredits > input.maxCostCredits)
     throw new AppError(
@@ -384,6 +422,8 @@ export const LocalSeoService = {
   lookupBusiness,
   createTracker,
   getTracker,
+  updateArea,
+  deleteTracker,
   updateKeywords,
   startCheck,
   getScan,

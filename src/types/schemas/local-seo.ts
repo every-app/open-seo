@@ -35,12 +35,17 @@ const localKeywordsSchema = z
 export const updateLocalKeywordsSchema = localTrackerIdSchema.extend({
   keywords: localKeywordsSchema,
 });
+const localAreaShape = {
+  gridSize: z.union([z.literal(3), z.literal(5)]),
+  spacingKm: z.number().min(0.25).max(10),
+};
 export const createLocalTrackerSchema = localProjectSchema.extend({
   business: localBusinessSchema,
   keywords: localKeywordsSchema,
-  gridSize: z.union([z.literal(3), z.literal(5)]),
-  spacingKm: z.number().min(0.25).max(10),
+  ...localAreaShape,
 });
+export const updateLocalAreaSchema =
+  localTrackerIdSchema.extend(localAreaShape);
 export const startLocalCheckSchema = localTrackerIdSchema.extend({
   requestId: z.uuid(),
   maxCostCredits: z.number().int().nonnegative(),

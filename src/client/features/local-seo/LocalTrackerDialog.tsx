@@ -18,6 +18,7 @@ import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { getIsoCountryCode } from "@/shared/keyword-locations";
 import { cleanKeywords, LocalKeywordFields } from "./LocalKeywordFields";
 import { LocalListingChoices, type Listing } from "./LocalListingChoices";
+import { LOCAL_AREA_ITEMS, LOCAL_AREAS, type LocalArea } from "./localAreas";
 
 const ListingMap = lazy(() => import("./LocalListingMap"));
 
@@ -186,24 +187,6 @@ function ListingLookup({
   );
 }
 
-// Grid size and spacing as the area a customer would recognize. The width is
-// (gridSize - 1) × spacing, and each point is one paid search per keyword.
-const AREAS = {
-  neighborhood: {
-    label: "Neighborhood · 2 km wide · 9 points",
-    gridSize: 3,
-    spacingKm: 1,
-  },
-  town: { label: "Town · 4 km wide · 9 points", gridSize: 3, spacingKm: 2 },
-  city: { label: "City · 8 km wide · 25 points", gridSize: 5, spacingKm: 2 },
-  metro: {
-    label: "Metro area · 20 km wide · 25 points",
-    gridSize: 5,
-    spacingKm: 5,
-  },
-} as const;
-type Area = keyof typeof AREAS;
-
 function TrackerSettings({
   projectId,
   listing,
@@ -228,10 +211,10 @@ function TrackerSettings({
   const form = useAppForm({
     defaultValues: {
       keywords: suggestedKeywords.length ? suggestedKeywords : [""],
-      area: "town" as Area,
+      area: "town" as LocalArea,
     },
     onSubmit: async ({ value }) => {
-      const area = AREAS[value.area];
+      const area = LOCAL_AREAS[value.area];
       await create.mutateAsync({
         projectId,
         business,
@@ -283,10 +266,7 @@ function TrackerSettings({
               <field.SelectField
                 label="Area to check"
                 description="We search Google Maps from points spread across this area, centered on your listing."
-                items={Object.entries(AREAS).map(([value, { label }]) => ({
-                  value,
-                  label,
-                }))}
+                items={LOCAL_AREA_ITEMS}
               />
             )}
           </form.AppField>

@@ -8,6 +8,7 @@ import {
   localScanIdSchema,
   localTrackerIdSchema,
   startLocalCheckSchema,
+  updateLocalAreaSchema,
   updateLocalKeywordsSchema,
 } from "@/types/schemas/local-seo";
 
@@ -48,6 +49,21 @@ export const updateLocalKeywords = createServerFn({ method: "POST" })
   .handler(({ data, context }) =>
     LocalSeoService.updateKeywords({ ...data, projectId: context.projectId }),
   );
+export const updateLocalArea = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(updateLocalAreaSchema)
+  .handler(({ data, context }) =>
+    LocalSeoService.updateArea({ ...data, projectId: context.projectId }),
+  );
+export const deleteLocalTracker = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(localTrackerIdSchema)
+  .handler(async ({ data, context }) => ({
+    deleted: await LocalSeoService.deleteTracker(
+      context.projectId,
+      data.trackerId,
+    ),
+  }));
 export const startLocalCheck = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(startLocalCheckSchema)

@@ -112,8 +112,7 @@ export function LocalKeywordMap({
             )}
             cid={tracker.cid}
             placeId={tracker.placeId}
-            gridSize={tracker.gridSize}
-            spacingKm={tracker.spacingKm}
+            center={tracker}
           />
         ) : (
           <Card className="justify-center px-6 py-0 shadow-none">
