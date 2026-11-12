@@ -11,7 +11,6 @@ import type { BacklinksOverviewResult } from "@/server/features/backlinks/servic
  * totals come from two filtered `total_count` reads of the backlinks list:
  * every link (`as_is`) and one per referring domain. Rank, spam scores,
  * new/lost, and trends have no filtered source and stay null/empty.
- * Sequenced, not parallel: hosted billing checks balance per call.
  */
 export async function buildSubfolderOverview(
   dataforseo: ReturnType<typeof createDataforseoClient>,
@@ -21,24 +20,20 @@ export async function buildSubfolderOverview(
 ): Promise<BacklinksOverviewResult> {
   const filters = buildBacklinksScopeFilter("url_to", normalizedTarget).clauses;
 
-  const allLinks = await dataforseo.backlinks.rows({
-    target: normalizedTarget.apiTarget,
-    includeSubdomains: normalizedTarget.includeSubdomains,
-    limit: 1,
-    mode: "as_is",
-    hideSpam: false,
-    filters,
-    creditFeature,
-  });
-  const perDomain = await dataforseo.backlinks.rows({
-    target: normalizedTarget.apiTarget,
-    includeSubdomains: normalizedTarget.includeSubdomains,
-    limit: 1,
-    mode: "one_per_domain",
-    hideSpam: false,
-    filters,
-    creditFeature,
-  });
+  const read = (mode: "as_is" | "one_per_domain") =>
+    dataforseo.backlinks.rows({
+      target: normalizedTarget.apiTarget,
+      includeSubdomains: normalizedTarget.includeSubdomains,
+      limit: 1,
+      mode,
+      hideSpam: false,
+      filters,
+      creditFeature,
+    });
+  const [allLinks, perDomain] = await Promise.all([
+    read("as_is"),
+    read("one_per_domain"),
+  ]);
 
   return {
     target: normalizedTarget.apiTarget,
