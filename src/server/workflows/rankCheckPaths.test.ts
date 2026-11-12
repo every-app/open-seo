@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowStep } from "cloudflare:workers";
 import type { RankCheckTaskInput } from "@/server/lib/dataforseo";
+import { runQueuedCheck } from "./rankCheckPaths";
 import { retryRankChecks } from "./rankCheckRetries";
 
 const mocks = vi.hoisted(() => ({
@@ -84,6 +85,22 @@ beforeEach(() => {
     { trackingKeywordId: "kw_0", position: 1 },
     { trackingKeywordId: "kw_never", position: null },
   ]);
+});
+
+describe("runQueuedCheck", () => {
+  // A longer sleep is never woken by the local Docker runtime, so the run
+  // stayed running with every snapshot saved.
+  it("polls a task that never finishes for about an hour without a sleep of 5 minutes", async () => {
+    mocks.fetchRankCheckTaskResult.mockResolvedValue({ status: "pending" });
+
+    await runQueuedCheck(step, checkContext(["kw_slow"]));
+
+    const minutes = vi
+      .mocked(step.sleep)
+      .mock.calls.map(([, duration]) => Number.parseInt(String(duration)));
+    expect(Math.max(...minutes)).toBeLessThan(5);
+    expect(minutes.reduce((sum, wait) => sum + wait, 0)).toBeGreaterThan(55);
+  });
 });
 
 describe("retryRankChecks", () => {
