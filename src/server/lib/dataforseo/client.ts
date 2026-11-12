@@ -25,6 +25,7 @@ import {
   fetchBacklinksHistory,
   fetchBacklinksRows,
   fetchBacklinksSummary,
+  fetchBulkRanks,
   fetchDomainPagesSummary,
   fetchReferringDomains,
 } from "@/server/lib/dataforseo/backlinks";
@@ -136,6 +137,12 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         customer,
         fetchBacklinksSummary,
         dataforseoPricing.backlinks.summary,
+        "backlinks",
+      ),
+      bulkRanks: meter(
+        customer,
+        fetchBulkRanks,
+        dataforseoPricing.backlinks.bulkRanks,
         "backlinks",
       ),
       rows: meter(

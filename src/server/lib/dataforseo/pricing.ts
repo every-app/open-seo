@@ -10,6 +10,7 @@ import {
   fetchBacklinksHistory,
   fetchBacklinksRows,
   fetchBacklinksSummary,
+  fetchBulkRanks,
   fetchDomainPagesSummary,
   fetchReferringDomains,
 } from "@/server/lib/dataforseo/backlinks";
@@ -215,6 +216,9 @@ export const dataforseoPricing = {
   },
   backlinks: {
     summary: priced(fetchBacklinksSummary, () => backlinksUsd(1)),
+    bulkRanks: priced(fetchBulkRanks, (input) =>
+      backlinksUsd(input.targets.length),
+    ),
     rows: priced(fetchBacklinksRows, (input) =>
       backlinksUsd(input.limit ?? BACKLINKS_DEFAULT_LIMIT),
     ),
