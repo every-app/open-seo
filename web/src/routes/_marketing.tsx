@@ -357,6 +357,32 @@ function ResourcesDropdown() {
   );
 }
 
+const featureColumns = [
+  ...featureGroups.map((group) => ({
+    label: group.label,
+    links: group.pages.map((page) => ({
+      href: `/features/${page.slug}`,
+      title: page.eyebrow,
+      description: page.navDescription,
+    })),
+  })),
+  {
+    label: "AI agents",
+    links: [
+      {
+        href: "/features/mcp",
+        title: "OpenSEO MCP",
+        description: "Connect Claude, Codex, and agents.",
+      },
+      {
+        href: "/google-search-console-mcp",
+        title: "Search Console MCP",
+        description: "Search Console data for agents.",
+      },
+    ],
+  },
+];
+
 function FeatureDropdown() {
   return (
     <div className="group relative">
@@ -374,65 +400,42 @@ function FeatureDropdown() {
       </button>
       <div className="pointer-events-none absolute left-0 top-[calc(100%-2px)] z-20 hidden w-[560px] pt-2 opacity-0 transition md:block group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
         <div className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-5 shadow-xl shadow-neutral-900/10">
+          {/* Each column spans the same four subgrid rows (heading + three
+              links), so links in neighboring columns line up even when a
+              description wraps. */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-            {featureGroups.map((group) => (
-              <div key={group.label}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  {group.label}
+            {featureColumns.map((column, index) => (
+              <div
+                key={column.label}
+                className="row-span-4 grid grid-rows-subgrid gap-y-1"
+              >
+                <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  {column.label}
                 </p>
-                <div className="mt-3 space-y-1">
-                  {group.pages.map((page) => (
-                    <a
-                      key={page.slug}
-                      href={`/features/${page.slug}`}
-                      className="block rounded-md px-2 py-1.5 transition-colors hover:bg-[#f5f1ec]"
-                    >
-                      <span className="block text-sm font-semibold text-neutral-900">
-                        {page.eyebrow}
-                      </span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
-                        {page.navDescription}
-                      </span>
-                    </a>
-                  ))}
-                </div>
+                {column.links.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="self-start rounded-md px-2 py-1.5 transition-colors hover:bg-[#f5f1ec]"
+                  >
+                    <span className="block text-sm font-semibold text-neutral-900">
+                      {link.title}
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
+                      {link.description}
+                    </span>
+                  </a>
+                ))}
+                {index === featureColumns.length - 1 ? (
+                  <a
+                    href="/features"
+                    className="self-start rounded-md border border-[var(--color-border-subtle)] bg-[#f5f1ec] px-2 py-1.5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
+                  >
+                    View all features <span aria-hidden="true">&rarr;</span>
+                  </a>
+                ) : null}
               </div>
             ))}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                AI agents
-              </p>
-              <div className="mt-3 space-y-2">
-                <a
-                  href="/features/mcp"
-                  className="block rounded-md p-2 transition-colors hover:bg-[#f5f1ec]"
-                >
-                  <span className="text-sm font-semibold text-neutral-900">
-                    OpenSEO MCP
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
-                    Connect Claude, Codex, and agents.
-                  </span>
-                </a>
-                <a
-                  href="/google-search-console-mcp"
-                  className="block rounded-md p-2 transition-colors hover:bg-[#f5f1ec]"
-                >
-                  <span className="text-sm font-semibold text-neutral-900">
-                    Search Console MCP
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
-                    Search Console data for agents.
-                  </span>
-                </a>
-                <a
-                  href="/features"
-                  className="block rounded-md border border-[var(--color-border-subtle)] bg-[#f5f1ec] px-2 py-1.5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
-                >
-                  View all features <span aria-hidden="true">&rarr;</span>
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       </div>
