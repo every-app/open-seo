@@ -1,4 +1,3 @@
-import { waitUntil } from "cloudflare:workers";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { creditsForProviderUsd } from "@/shared/billing";
 import {
@@ -63,7 +62,10 @@ import {
   settleAiTrackingHold,
   type AiTrackingHold,
 } from "@/server/lib/dataforseo/ai-tracking-billing";
-import { inDataforseoSlot } from "@/server/lib/dataforseo/request-slots";
+import {
+  inDataforseoSlot,
+  settleAfterCalls,
+} from "@/server/lib/dataforseo/request-slots";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
 
@@ -356,7 +358,10 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
  * The one seam every DataForSEO charge passes through (hosted mode only).
  * Order: reserve the estimate on the org's credits -> provider calls -> settle
  * the hold on their real cost. The hold is atomic in Autumn, so concurrent
- * calls cannot all pass on one stale balance reading.
+ * calls cannot all pass on one stale balance reading. In a request the
+ * results return before the settle, which runs after the response
+ * (settleAfterCalls): the hold already covers the calls, and the settle never
+ * throws, so the customer needn't wait on Autumn.
  *
  * A batch of calls shares one hold and one settle per credit pool it draws
  * on, with each call placed and refused as its own hold would be (see
@@ -387,11 +392,9 @@ async function meterDataforseoCalls<T>(
     creditFeature,
   });
 
-  const work = (async () => {
-    const billed: Array<DataforseoApiCallCost | null> = executes.map(
-      () => null,
-    );
-    const settled = await Promise.allSettled(
+  const billed: Array<DataforseoApiCallCost | null> = executes.map(() => null);
+  return settleAfterCalls(
+    Promise.allSettled(
       executes.map(async (execute, index) => {
         if (refusedCalls.includes(index)) {
           throw new AppError("INSUFFICIENT_CREDITS");
@@ -422,27 +425,24 @@ async function meterDataforseoCalls<T>(
           throw error;
         }
       }),
-    );
-
-    for (const hold of holds) {
-      const costs = hold.callIndexes
-        .map((index) => billed[index])
-        .filter((cost) => cost !== null);
-      await settleUsageCredits({ customer, hold, creditFeature, costs });
-    }
-    return settled;
-  })();
-
-  // Register the calls + settle with the request: workerd cancels pending I/O
-  // once the client goes away, and a hold that never settles would let a
-  // disconnect-after-dispatch skip the deduction. The rejection is handled by
-  // the await below; the background handle only keeps the chain alive.
-  try {
-    waitUntil(work.catch(() => undefined));
-  } catch {
-    // No request context (Workflow step, tests): the await below runs it.
-  }
-  return await work;
+    ),
+    // Both holds of a split batch at once, so two finalizes that each retry
+    // after a timeout still fit the time a Worker gets after its response.
+    async () => {
+      await Promise.all(
+        holds.map((hold) =>
+          settleUsageCredits({
+            customer,
+            hold,
+            creditFeature,
+            costs: hold.callIndexes
+              .map((index) => billed[index])
+              .filter((cost) => cost !== null),
+          }),
+        ),
+      );
+    },
+  );
 }
 
 async function meterDataforseoCall<T>(
@@ -451,9 +451,9 @@ async function meterDataforseoCall<T>(
   estimatedCredits: number,
   creditFeature: CreditFeature,
 ): Promise<T> {
-  // Each single call settles as soon as it answers, so cap how many run at
-  // once (request-slots.ts). A batch settles after all of its calls answer,
-  // so it doesn't need the cap.
+  // Cap how many single calls run at once per request (request-slots.ts), so
+  // a settle always has a connection. Batches skip the cap: the live ones run
+  // only in Workflows, and the batch a request makes posts quick tasks.
   const [result] = await meterDataforseoCalls(
     customer,
     [() => inDataforseoSlot(execute)],

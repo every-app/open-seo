@@ -135,6 +135,7 @@ vi.mock("@/server/lib/dataforseo/ai-tracking", () => ({
 
 import { waitUntil } from "cloudflare:workers";
 import { createDataforseoClient } from "@/server/lib/dataforseo/client";
+import { withDataforseoSlots } from "@/server/lib/dataforseo/request-slots";
 import { dataforseoPricing } from "@/server/lib/dataforseo/pricing";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { AppError } from "@/server/lib/errors";
@@ -232,9 +233,6 @@ describe("meterDataforseoCall", () => {
       // billing page's feature breakdown needs the feature on the hold too.
       properties: { creditFeature: "backlinks" },
     });
-    // The execute + settle chain is registered with the request so a client
-    // disconnect after dispatch cannot skip the deduction.
-    expect(vi.mocked(waitUntil)).toHaveBeenCalledTimes(1);
     expect(finalizeMock).toHaveBeenCalledTimes(1);
     expect(finalizeMock.mock.calls[0][0]).toMatchObject({
       lockId: holdCall.lock?.lockId,
@@ -302,8 +300,61 @@ describe("meterDataforseoCall", () => {
       client.backlinks.summary(backlinksInput),
     ).rejects.toMatchObject({ code: "UPSTREAM_UNAVAILABLE" });
 
-    expect(vi.mocked(waitUntil)).toHaveBeenCalledTimes(1);
     expect(finalizeMock.mock.calls[0][0]).toMatchObject({ action: "release" });
+  });
+
+  it("in a request, returns before the settle and settles one hold at a time after it", async () => {
+    setupHostedMode();
+    mockMonthlyBalance(5000);
+    mockDataforseoResult(RAW_COST);
+    const finishFinalize: Array<() => void> = [];
+    finalizeMock.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          finishFinalize.push(() => resolve({ success: true })),
+        ),
+    );
+
+    const client = createDataforseoClient(billingCustomer);
+    const results = await withDataforseoSlots(() =>
+      Promise.all([
+        client.backlinks.summary(backlinksInput),
+        client.backlinks.summary(backlinksInput),
+      ]),
+    );
+
+    expect(results).toEqual([{ rank: 42 }, { rank: 42 }]);
+    // Registered with the request, so a client disconnect can't skip them.
+    expect(vi.mocked(waitUntil)).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(finalizeMock).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(finalizeMock).toHaveBeenCalledTimes(1);
+    finishFinalize[0]();
+    await vi.waitFor(() => expect(finalizeMock).toHaveBeenCalledTimes(2));
+    finishFinalize[1]();
+    await Promise.all(vi.mocked(waitUntil).mock.calls.map(([work]) => work));
+  });
+
+  it("outside a request (Workflows), waits for the settle before returning", async () => {
+    setupHostedMode();
+    mockMonthlyBalance(5000);
+    mockDataforseoResult(RAW_COST);
+    const finishFinalize: Array<() => void> = [];
+    finalizeMock.mockReturnValue(
+      new Promise((resolve) =>
+        finishFinalize.push(() => resolve({ success: true })),
+      ),
+    );
+
+    let returned = false;
+    const call = createDataforseoClient(billingCustomer)
+      .backlinks.summary(backlinksInput)
+      .then(() => (returned = true));
+    await vi.waitFor(() => expect(finalizeMock).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(returned).toBe(false);
+    finishFinalize[0]();
+    await call;
   });
 });
 
