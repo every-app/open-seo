@@ -24,6 +24,12 @@ vi.mock("@/server/billing/autumn", async (importOriginal) => ({
   AUTUMN_TRACK_RETRY_OPTIONS: { retryCodes: ["429"] },
 }));
 vi.mock("@/server/lib/posthog", () => ({ captureServerEvent: vi.fn() }));
+// No request context here, so runAfterResponse awaits the capture.
+vi.mock("cloudflare:workers", () => ({
+  waitUntil: () => {
+    throw new Error("waitUntil() called outside a request context");
+  },
+}));
 vi.mock("@/server/billing/loops-sync", () => ({
   getOrganizationContacts: contactsMock,
 }));

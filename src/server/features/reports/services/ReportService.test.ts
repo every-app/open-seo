@@ -23,6 +23,12 @@ vi.mock("@/server/features/reports/repositories/ReportRepository", () => ({
   ReportRepository: mocks,
 }));
 vi.mock("@/server/lib/posthog", () => ({ captureServerEvent: vi.fn() }));
+// No request context here, so runAfterResponse awaits the capture.
+vi.mock("cloudflare:workers", () => ({
+  waitUntil: () => {
+    throw new Error("waitUntil() called outside a request context");
+  },
+}));
 vi.mock("@/server/lib/runtime-env", () => ({
   usesBetterAuthServer: vi.fn(),
 }));

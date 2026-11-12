@@ -13,6 +13,7 @@ import {
 import { AppError } from "@/server/lib/errors";
 import { readStoredLighthousePayload } from "@/server/lib/lighthousePayload";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { runAfterResponse } from "@/server/lib/background";
 import { getJsonFromR2 } from "@/server/lib/r2";
 import {
   AUDIT_ISSUE_TYPES,
@@ -173,18 +174,20 @@ export const runSiteAuditTool = {
       throw error;
     }
 
-    await captureServerEvent({
-      distinctId: context.auth.userId,
-      event: "site_audit:start",
-      organizationId: context.auth.organizationId,
-      properties: {
-        project_id: args.projectId,
-        max_pages: maxPages,
-        requested_max_pages: requestedPages,
-        run_lighthouse: lighthouseStrategy !== "none",
-        source: "mcp",
-      },
-    });
+    await runAfterResponse(
+      captureServerEvent({
+        distinctId: context.auth.userId,
+        event: "site_audit:start",
+        organizationId: context.auth.organizationId,
+        properties: {
+          project_id: args.projectId,
+          max_pages: maxPages,
+          requested_max_pages: requestedPages,
+          run_lighthouse: lighthouseStrategy !== "none",
+          source: "mcp",
+        },
+      }),
+    );
 
     const capNote =
       maxPages < requestedPages

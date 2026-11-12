@@ -1,4 +1,4 @@
-import { waitUntil } from "cloudflare:workers";
+import { runAfterResponse } from "@/server/lib/background";
 import {
   sendLoopsEvent,
   updateLoopsContact,
@@ -107,13 +107,9 @@ async function sendOnce(
   const apiKey = await getOptionalEnvValue("LOOPS_API_KEY");
   if (!apiKey) return;
   sentKeys.add(key);
-  const work = send(apiKey).catch((error: unknown) => {
-    console.error(`onboarding drip: ${key} failed`, error);
-  });
-  try {
-    waitUntil(work);
-  } catch {
-    // No request context (Workflow step): wait for the send instead.
-    await work;
-  }
+  await runAfterResponse(
+    send(apiKey).catch((error: unknown) => {
+      console.error(`onboarding drip: ${key} failed`, error);
+    }),
+  );
 }

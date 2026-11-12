@@ -2,6 +2,7 @@ import { ReportRepository } from "@/server/features/reports/repositories/ReportR
 import { sharesEnabled } from "@/server/features/reports/shareAccess";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { runAfterResponse } from "@/server/lib/background";
 import { formatCount } from "@/shared/format";
 import { mintShareToken } from "@/shared/report-share";
 import {
@@ -271,17 +272,19 @@ async function shareReport(params: ShareParams): Promise<ReportMetadata> {
   // Another publisher may have won after our read. Return its stored token,
   // and emit the shared event only for the request that created it.
   if (!created) return getReport(params.projectId, params.reportId);
-  await captureServerEvent({
-    distinctId: params.userId,
-    event: "report:shared",
-    organizationId: params.organizationId,
-    properties: {
-      project_id: params.projectId,
-      report_id: params.reportId,
-      skill: report.skill,
-      source: params.source ?? "app",
-    },
-  });
+  await runAfterResponse(
+    captureServerEvent({
+      distinctId: params.userId,
+      event: "report:shared",
+      organizationId: params.organizationId,
+      properties: {
+        project_id: params.projectId,
+        report_id: params.reportId,
+        skill: report.skill,
+        source: params.source ?? "app",
+      },
+    }),
+  );
   return { ...report, shareToken, sharedAt };
 }
 
@@ -291,17 +294,19 @@ async function unshareReport(params: ShareParams): Promise<ReportMetadata> {
   if (!report.shareToken) return report;
 
   await ReportRepository.setShareToken(params.projectId, params.reportId, null);
-  await captureServerEvent({
-    distinctId: params.userId,
-    event: "report:unshared",
-    organizationId: params.organizationId,
-    properties: {
-      project_id: params.projectId,
-      report_id: params.reportId,
-      skill: report.skill,
-      source: params.source ?? "app",
-    },
-  });
+  await runAfterResponse(
+    captureServerEvent({
+      distinctId: params.userId,
+      event: "report:unshared",
+      organizationId: params.organizationId,
+      properties: {
+        project_id: params.projectId,
+        report_id: params.reportId,
+        skill: report.skill,
+        source: params.source ?? "app",
+      },
+    }),
+  );
   return { ...report, shareToken: null, sharedAt: null };
 }
 

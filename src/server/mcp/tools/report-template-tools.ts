@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ReportTemplateService } from "@/server/features/reports/services/ReportTemplateService";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { runAfterResponse } from "@/server/lib/background";
 import { DEFAULT_CLIENT_LABEL } from "@/server/mcp/client-label";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse, truncatePreview } from "@/server/mcp/formatters";
@@ -158,16 +159,18 @@ export const saveReportTemplateTool = {
       const path = templatesPath(args.projectId);
       const url = buildDashboardUrl(context.baseUrl, path);
 
-      await captureServerEvent({
-        distinctId: context.auth.userId,
-        event: "report_template:saved",
-        organizationId: context.auth.organizationId,
-        properties: {
-          project_id: args.projectId,
-          is_update: !created,
-          source: "mcp",
-        },
-      });
+      await runAfterResponse(
+        captureServerEvent({
+          distinctId: context.auth.userId,
+          event: "report_template:saved",
+          organizationId: context.auth.organizationId,
+          properties: {
+            project_id: args.projectId,
+            is_update: !created,
+            source: "mcp",
+          },
+        }),
+      );
 
       return mcpResponse({
         text: `${created ? "Saved" : "Updated"} report template "${name}" (id ${templateId}) in this project. Pass templateId: "${templateId}" to save_report when you write a report from it. Manage templates at ${url}.`,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ReportService } from "@/server/features/reports/services/ReportService";
 import { ReportTemplateService } from "@/server/features/reports/services/ReportTemplateService";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { runAfterResponse } from "@/server/lib/background";
 import { DEFAULT_CLIENT_LABEL } from "@/server/mcp/client-label";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse, truncatePreview } from "@/server/mcp/formatters";
@@ -154,20 +155,22 @@ export const saveReportTool = {
       const path = reportPath(args.projectId, saved.reportId);
       const url = buildDashboardUrl(context.baseUrl, path);
 
-      await captureServerEvent({
-        distinctId: context.auth.userId,
-        event: "report:saved",
-        organizationId: context.auth.organizationId,
-        properties: {
-          project_id: args.projectId,
-          skill: args.skill,
-          used_template: Boolean(args.templateId),
-          size_bytes: saved.htmlBytes,
-          client: context.auth.clientLabel,
-          is_update: !saved.created,
-          source: "mcp",
-        },
-      });
+      await runAfterResponse(
+        captureServerEvent({
+          distinctId: context.auth.userId,
+          event: "report:saved",
+          organizationId: context.auth.organizationId,
+          properties: {
+            project_id: args.projectId,
+            skill: args.skill,
+            used_template: Boolean(args.templateId),
+            size_bytes: saved.htmlBytes,
+            client: context.auth.clientLabel,
+            is_update: !saved.created,
+            source: "mcp",
+          },
+        }),
+      );
 
       return mcpResponse({
         text: `${saved.created ? "Saved" : "Replaced"} report "${saved.title}" (${size(saved.htmlBytes)}). Open it at ${url}. Reply with this link, a one-line verdict, and the single top action — do not paste the report into chat.`,

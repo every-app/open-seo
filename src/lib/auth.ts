@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- the one Better Auth configuration: every hook and plugin lives here */
-import { env } from "cloudflare:workers";
+import { env, waitUntil } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
 import {
   APIError,
@@ -49,6 +49,7 @@ import { assertNotScheduledForDeletion } from "@/server/account-deletion/signInB
 import { claimGuestFromCookie } from "@/server/auth/guest-accounts";
 import { RETURNING_BROWSER_COOKIE } from "@/server/auth/guest-cookies";
 import { isGuestEmail } from "@/shared/guest-account";
+import { runAfterResponse } from "@/server/lib/background";
 import {
   sendHostedPasswordResetEmail,
   sendHostedVerificationEmail,
@@ -228,6 +229,17 @@ function createAuth() {
     // guessing against /sign-in/email was unlimited there. The memory store
     // is enough: the runtime keeps the app alive between requests.
     ...(standalone ? { rateLimit: { enabled: true } } : {}),
+    advanced: {
+      ...baseAuthConfig.advanced,
+      // Hosted only, where every Better Auth route runs in a Workers request:
+      // reset and verification emails send after the response instead of
+      // holding it. Better Auth logs and swallows a failed send either way.
+      // Waiting on the send also made /request-password-reset answer
+      // measurably slower for an existing account than for an unknown email.
+      ...(isHostedAuthMode(env.AUTH_MODE)
+        ? { backgroundTasks: { handler: waitUntil } }
+        : {}),
+    },
     emailAndPassword: {
       ...baseAuthConfig.emailAndPassword,
       requireEmailVerification: !bypassEmail,
@@ -403,7 +415,8 @@ function createAuth() {
           },
           after: async (user, ctx) => {
             if (isHostedAuthMode(env.AUTH_MODE)) {
-              await syncHostedSignupContact(user);
+              // Contact upserts can't race the onboarding drip's later ones.
+              await runAfterResponse(syncHostedSignupContact(user));
               // Partner attribution is a referral choice: an older dub_id
               // cookie must not credit a partner without it.
               if (requestPrivacyChoices(ctx?.request).referrals) {

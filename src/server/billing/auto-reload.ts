@@ -17,6 +17,7 @@ import { sendLoopsEvent } from "@/server/email/loops-client";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { runAfterResponse } from "@/server/lib/background";
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import {
   AUTO_RELOAD_CARD_FAILURE_REASONS,
@@ -235,12 +236,14 @@ function captureSaved(
   caller: BillingCaller,
   properties: Record<string, unknown>,
 ) {
-  return captureServerEvent({
-    distinctId: caller.userId,
-    event: "billing:auto_reload_saved",
-    organizationId: caller.organizationId,
-    properties,
-  });
+  return runAfterResponse(
+    captureServerEvent({
+      distinctId: caller.userId,
+      event: "billing:auto_reload_saved",
+      organizationId: caller.organizationId,
+      properties,
+    }),
+  );
 }
 
 // Autumn reports every reload it buys or fails to buy. Only what is read is
