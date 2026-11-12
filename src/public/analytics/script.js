@@ -169,6 +169,25 @@
   d.addEventListener('click', onClick, true);
   d.addEventListener('auxclick', onClick, true);
 
+  // ---- codeless tracking: file downloads and form submissions
+  var DL_RE = /\.(pdf|docx?|xlsx?|pptx?|zip|csv|tsv|mp[34]|m4a|wav|webm|dmg|exe|pkg|apk)(\?|#|$)/i;
+  d.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    try {
+      var u = new URL(a.href, loc.href);
+      if (DL_RE.test(u.pathname + u.search)) {
+        goal('File Download', { file: (u.pathname.split('/').pop() || u.pathname).slice(0, 120) });
+      }
+    } catch (err) {}
+  }, true);
+  d.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (!f || f.hasAttribute('data-wa-ignore')) return;
+    var id = f.id || f.getAttribute('name') || (f.getAttribute('action') || 'form').split('/').pop();
+    goal('Form Submission', { form: String(id).slice(0, 64) });
+  }, true);
+
   // ---- public API
   function api(cmd, a, b) {
     if (cmd === 'goal' || cmd === 'track') goal(a, b);

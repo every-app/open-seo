@@ -43,6 +43,43 @@ What you get out of the box:
 Disable yourself from the numbers by visiting any page of your site with
 `?wa_ignore=true` (undo with `?wa_ignore=false`).
 
+## Plausible-compatible ingestion (for migrations and server-side events)
+
+The ingestion endpoint also accepts the payload shape the Plausible tracker
+and Events API send:
+
+```js
+fetch("https://YOUR-OPENSEO-HOST/api/wa/event", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "pageview",            // or any custom event name
+    url: "https://yoursite.com/pricing",
+    domain: "yoursite.com",
+    referrer: "https://news.ycombinator.com/",
+    props: { plan: "pro" },      // custom event properties
+  }),
+});
+```
+
+The site is resolved by `domain`, custom event names become goals, and
+visitor/session ids are derived per day from the user agent + country
+(cookieless daily-visitor semantics, no IP stored). A site migrating from
+Plausible can repoint its existing Plausible script at OpenSEO's endpoint
+without changes.
+
+## Codeless tracking
+
+Beyond outbound links, the tracker automatically records:
+
+- **File downloads** — clicks on links ending in `.pdf`, `.doc(x)`,
+  `.xls(x)`, `.ppt(x)`, `.zip`, `.csv`, `.tsv`, `.mp3`, `.mp4`, `.m4a`,
+  `.wav`, `.webm`, `.dmg`, `.exe`, `.pkg`, `.apk` → goal `File Download`
+  with a `file` property
+- **Form submissions** — any `<form>` submit → goal `Form Submission` with
+  a `form` property (form id/name/action tail). Add `data-wa-ignore` to a
+  form to skip it.
+
 ## What it collects (and doesn't)
 
 The tracker sends the page URL (with personal-looking query parameters like

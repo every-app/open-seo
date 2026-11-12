@@ -9,6 +9,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   getById: vi.fn<() => Promise<unknown>>(),
+  getByDomain: vi.fn<(domain: string) => Promise<unknown>>(),
   sessionExists: vi.fn<() => Promise<boolean>>(),
   applyIngestOps: vi.fn<(ops: IngestOp[]) => Promise<void>>(),
 }));
@@ -18,6 +19,7 @@ vi.mock(
   () => ({
     WebAnalyticsRepository: {
       getById: mocks.getById,
+      getByDomain: mocks.getByDomain,
       sessionExists: mocks.sessionExists,
       applyIngestOps: mocks.applyIngestOps,
     },
@@ -51,6 +53,7 @@ function payload(overrides: Record<string, unknown> = {}): string {
 beforeEach(() => {
   clearSiteCache();
   mocks.getById.mockResolvedValue(SITE);
+  mocks.getByDomain.mockResolvedValue(SITE);
   mocks.sessionExists.mockResolvedValue(false);
   mocks.applyIngestOps.mockResolvedValue(undefined);
 });
@@ -209,5 +212,123 @@ describe("ingestEvent", () => {
     clearSiteCache();
     await ingestEvent({ rawBody: payload(), userAgent: UA, geo: GEO });
     expect(mocks.getById).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("Plausible-compatible ingestion", () => {
+  function plausiblePayload(overrides: Record<string, unknown> = {}): string {
+    return JSON.stringify({
+      name: "pageview",
+      url: "https://shipkit.dev/pricing",
+      domain: "shipkit.dev",
+      referrer: "https://news.ycombinator.com/",
+      ...overrides,
+    });
+  }
+
+  it("accepts a Plausible pageview and resolves the site by domain", async () => {
+    const outcome = await ingestEvent({
+      rawBody: plausiblePayload(),
+      userAgent: UA,
+      geo: GEO,
+      now: new Date("2026-11-12T12:00:00.000Z"),
+    });
+    expect(outcome).toBe("accepted");
+    expect(mocks.getById).not.toHaveBeenCalled();
+    expect(mocks.getByDomain).toHaveBeenCalledWith("shipkit.dev");
+    const ops = mocks.applyIngestOps.mock.calls[0]?.[0] ?? [];
+    expect(ops.map((op) => op.kind)).toEqual([
+      "insertSession",
+      "markPageview",
+      "insertEvent",
+    ]);
+    const session = ops.find(
+      (op): op is Extract<IngestOp, { kind: "insertSession" }> =>
+        op.kind === "insertSession",
+    )?.session;
+    expect(session).toMatchObject({ entryPage: "/pricing" });
+  });
+
+  it("maps custom events to goals with props", async () => {
+    const outcome = await ingestEvent({
+      rawBody: plausiblePayload({
+        name: "signup",
+        props: { plan: "pro", method: "github" },
+      }),
+      userAgent: UA,
+      geo: GEO,
+    });
+    expect(outcome).toBe("accepted");
+    const ops = mocks.applyIngestOps.mock.calls[0]?.[0] ?? [];
+    const event = ops.find(
+      (op): op is Extract<IngestOp, { kind: "insertEvent" }> =>
+        op.kind === "insertEvent",
+    );
+    expect(event?.event.type).toBe("goal");
+    expect(event?.event.name).toBe("signup");
+    expect(event?.event.props).toEqual(
+      JSON.stringify({ plan: "pro", method: "github" }),
+    );
+  });
+
+  it("derives a stable visitor id for identical inputs on the same day", async () => {
+    const now = new Date("2026-11-12T12:00:00.000Z");
+    await ingestEvent({ rawBody: plausiblePayload(), userAgent: UA, geo: GEO, now });
+    const secondOps = (await ingestEvent({
+      rawBody: plausiblePayload({ url: "https://shipkit.dev/about" }),
+      userAgent: UA,
+      geo: GEO,
+      now,
+    })) as unknown;
+    void secondOps;
+    // Cookieless daily-visitor semantics: both events derive the SAME
+    // visitor/session id (sha256 of site+UA+country+day), so the second
+    // event's session row carries the same id as the first.
+    const firstSession = mocks.applyIngestOps.mock.calls[0]?.[0].find(
+      (op: IngestOp): op is Extract<IngestOp, { kind: "insertSession" }> =>
+        op.kind === "insertSession",
+    )?.session.id;
+    const secondSession = mocks.applyIngestOps.mock.calls
+      .at(-1)?.[0]
+      .find(
+        (op: IngestOp): op is Extract<IngestOp, { kind: "insertSession" }> =>
+          op.kind === "insertSession",
+      )?.session.id;
+    expect(secondSession).toBeDefined();
+    expect(secondSession).toBe(firstSession);
+  });
+
+  it("rejects foreign domains and unknown sites", async () => {
+    mocks.getByDomain.mockImplementation(
+      async (domain: string) => (domain === "shipkit.dev" ? SITE : null),
+    );
+    expect(
+      await ingestEvent({
+        rawBody: plausiblePayload({ domain: "evilshipkit.dev" }),
+        userAgent: UA,
+        geo: GEO,
+      }),
+    ).toBe("unknown_site");
+    expect(
+      await ingestEvent({
+        rawBody: plausiblePayload({
+          url: "https://evil.example.com/x",
+          domain: "shipkit.dev",
+        }),
+        userAgent: UA,
+        geo: GEO,
+      }),
+    ).toBe("foreign_domain");
+  });
+
+  it("silently drops Plausible bot traffic", async () => {
+    expect(
+      await ingestEvent({
+        rawBody: plausiblePayload(),
+        userAgent: "Mozilla/5.0 (compatible; Googlebot/2.1)",
+        geo: GEO,
+      }),
+    ).toBe("bot");
+    expect(mocks.applyIngestOps).not.toHaveBeenCalled();
   });
 });

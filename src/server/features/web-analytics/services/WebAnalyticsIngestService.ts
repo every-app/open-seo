@@ -32,6 +32,20 @@ const payloadSchema = z.object({
   d: z.number().optional(),
 });
 
+// Plausible-compatible ingestion (2026-11-12): accept the payload shape the
+// Plausible tracker and Events API send — {name, url, domain, referrer,
+// props} — so a site migrating from Plausible can repoint its existing
+// script at OpenSEO's endpoint without changes. The site is resolved by
+// `domain`; the visitor/session ids are derived per day from the user agent
+// + country (Plausible's cookieless daily-visitor semantics, no IP stored).
+const plausibleSchema = z.object({
+  name: z.string().min(1).max(64),
+  url: z.string().min(1),
+  domain: z.string().min(1),
+  referrer: z.string().optional(),
+  props: z.record(z.string(), z.unknown()).optional(),
+});
+
 type TrackerPayload = z.infer<typeof payloadSchema>;
 
 interface Geo {
@@ -111,9 +125,73 @@ export async function ingestEvent(input: {
     return "invalid_payload";
   }
   const body = payloadSchema.safeParse(parsed);
-  if (!body.success) return "invalid_payload";
-  const payload = body.data;
+  if (body.success) return ingestTracker(body.data, input);
 
+  // Plausible-compatible payloads: {name, url, domain, ...}. Everything
+  // downstream (bot filter, domain check, session/event writes) is shared
+  // with the tracker path — only site resolution and the visitor id differ.
+  const asPlausible = plausibleSchema.safeParse(parsed);
+  if (!asPlausible.success) return "invalid_payload";
+  const pl = asPlausible.data;
+  if (isBot(input.userAgent)) return "bot";
+
+  const site = await WebAnalyticsRepository.getByDomain(pl.domain);
+  if (!site) return "unknown_site";
+
+  let url: URL;
+  try {
+    url = new URL(pl.url);
+  } catch {
+    return "invalid_payload";
+  }
+  if (!site.domain || !belongsTo(url.hostname, site.domain)) {
+    return "foreign_domain";
+  }
+
+  const visitor = await dailyVisitorId(site.id, input.userAgent, input.geo, input.now ?? new Date());
+  await ingest({
+    site,
+    payload: {
+      w: site.id,
+      t: pl.name === "pageview" ? "pageview" : "goal",
+      u: pl.url,
+      r: pl.referrer,
+      vid: visitor,
+      sid: visitor,
+      n: pl.name === "pageview" ? undefined : pl.name.slice(0, 64),
+      p: pl.props,
+    },
+    url,
+    userAgent: input.userAgent,
+    geo: input.geo,
+    now: input.now ?? new Date(),
+  });
+  return "accepted";
+}
+
+// Cookieless daily-visitor identity for Plausible-compatible payloads: a
+// SHA-256 of site + user agent + country + calendar day. Same inputs on the
+// same day collapse to one visitor/session, mirroring Plausible's
+// cookieless counting; the hash is salted per site and never stores the UA.
+async function dailyVisitorId(
+  siteId: string,
+  userAgent: string,
+  geo: Geo,
+  now: Date,
+): Promise<string> {
+  const day = now.toISOString().slice(0, 10);
+  const material = `${siteId}|${userAgent}|${geo.country ?? ""}|${day}`;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(material));
+  return Array.from(new Uint8Array(digest))
+    .slice(0, 16)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function ingestTracker(
+  payload: TrackerPayload,
+  input: { rawBody: string; userAgent: string; geo: Geo; now?: Date },
+): Promise<IngestOutcome> {
   // Bots get a 202-style silent drop: success to the tracker, no rows stored.
   if (isBot(input.userAgent)) return "bot";
 

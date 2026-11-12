@@ -86,6 +86,25 @@ async function getById(id: string): Promise<WebAnalyticsSiteWithDomain | null> {
   return site ?? null;
 }
 
+// Plausible-compatible ingestion resolves the site by tracked domain instead
+// of site id (2026-11-12: Plausible event payloads carry `domain`).
+async function getByDomain(domain: string): Promise<WebAnalyticsSiteWithDomain | null> {
+  const d = domain.replace(/^www\./, "").toLowerCase();
+  const [site] = await db
+    .select({
+      id: webAnalyticsSites.id,
+      projectId: webAnalyticsSites.projectId,
+      organizationId: webAnalyticsSites.organizationId,
+      createdAt: webAnalyticsSites.createdAt,
+      domain: projects.domain,
+    })
+    .from(webAnalyticsSites)
+    .innerJoin(projects, eq(projects.id, webAnalyticsSites.projectId))
+    .where(sql`lower(${projects.domain}) = ${d}`)
+    .limit(1);
+  return site ?? null;
+}
+
 async function create(site: WebAnalyticsSite): Promise<void> {
   await db.insert(webAnalyticsSites).values(site);
 }
@@ -388,6 +407,7 @@ async function getBreakdown(
 export const WebAnalyticsRepository = {
   getByProjectId,
   getById,
+  getByDomain,
   create,
   removeByProjectId,
   sessionExists,
