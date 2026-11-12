@@ -69,11 +69,12 @@ export function expandToTaskInputs(
 
 // Poll cadence for queued tasks. Standard-priority tasks usually complete in
 // ~5 minutes, so the first check waits 4 minutes and polls are frequent up to
-// 15 minutes, every 5 minutes up to 30 so slow rounds still leave time for more
-// reads inside READ_WINDOW_MS, then sparse up to an hour. Collecting a slow
-// task is free while re-posting it is billed again, so unfinished tasks are only
-// left for the next read after that. Cumulative waits: 4 / 6 / 8 / 10 / 12 / 15 /
-// 20 / 25 / 30 / 45 / 60 minutes.
+// 15 minutes, then every 4 minutes up to an hour. Collecting a slow task is free
+// while re-posting it is billed again, so unfinished tasks are only left for
+// the next read after that. Each sleep stays under 5 minutes, like AI
+// visibility's: the engine cancels an invocation idling in a longer sleep, and
+// the local Docker runtime never wakes it again, so the run stays running.
+// Cumulative waits: 4 / 6 / 8 / 10 / 12 / 15 minutes, then every 4 to 59.
 const QUEUED_POLL_INTERVALS = [
   "4 minutes",
   "2 minutes",
@@ -81,11 +82,17 @@ const QUEUED_POLL_INTERVALS = [
   "2 minutes",
   "2 minutes",
   "3 minutes",
-  "5 minutes",
-  "5 minutes",
-  "5 minutes",
-  "15 minutes",
-  "15 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
+  "4 minutes",
 ] as const;
 
 /** Concurrent task_get requests within a collect step. */
