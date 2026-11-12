@@ -171,4 +171,13 @@ describe("gscClient", () => {
       createGscClient({ userId: "u1" }).listSites(),
     ).rejects.toBeInstanceOf(GscTokenError);
   });
+
+  it("reports a token endpoint timeout as an outage, not a revoked grant", async () => {
+    mocks.getAccessToken.mockRejectedValue(
+      new DOMException("timed out", "TimeoutError"),
+    );
+    await expect(
+      createGscClient({ userId: "u1" }).listSites(),
+    ).rejects.toMatchObject({ name: "GscApiError", status: 504 });
+  });
 });

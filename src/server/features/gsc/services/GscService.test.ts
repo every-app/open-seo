@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => {
     vi.fn<(opts: GscClientOptions) => Promise<string | null>>();
   const querySearchAnalytics =
     vi.fn<(opts: GscClientOptions) => Promise<never[]>>();
+  const inspectUrl = vi.fn<(url: string) => Promise<object>>();
   const dbSelect = vi.fn(() => ({
     from: vi.fn(() => ({
       where: vi.fn(() => {
@@ -30,10 +31,12 @@ const mocks = vi.hoisted(() => {
     listSites,
     getUserInfoEmail,
     querySearchAnalytics,
+    inspectUrl,
     createGscClient: vi.fn((opts: GscClientOptions) => ({
       listSites: () => listSites(opts),
       getUserInfoEmail: () => getUserInfoEmail(opts),
       querySearchAnalytics: () => querySearchAnalytics(opts),
+      inspectUrl: (_siteUrl: string, url: string) => inspectUrl(url),
     })),
     upsert: vi.fn(),
     getByProjectId: vi.fn(),
@@ -309,5 +312,36 @@ describe("GscService.getPerformance", () => {
       rowLimit: 25000,
     });
     expect(result.request.rowLimit).toBe(25000);
+  });
+});
+
+describe("GscService.inspectUrls", () => {
+  it("inspects at most five URLs at a time and keeps input order", async () => {
+    mocks.getByProjectId.mockResolvedValue({
+      siteUrl: "sc-domain:example.com",
+      connectedByUserId: "u1",
+      gscAccountId: null,
+      connectedAccountEmail: null,
+    });
+    let inFlight = 0;
+    let maxInFlight = 0;
+    mocks.inspectUrl.mockImplementation(async (url) => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      // Later URLs finish first, so results must be placed by index.
+      await new Promise((resolve) =>
+        setTimeout(resolve, 10 - Number(url.at(-1))),
+      );
+      inFlight -= 1;
+      if (url.endsWith("/3")) throw new Error("boom");
+      return { inspectionResultLink: url };
+    });
+    const urls = Array.from({ length: 8 }, (_, i) => `https://x.co/${i}`);
+
+    const { results } = await GscService.inspectUrls({ projectId: "p1", urls });
+
+    expect(maxInFlight).toBe(5);
+    expect(results.map((r) => r.url)).toEqual(urls);
+    expect(results[3]).toMatchObject({ result: null, error: "boom" });
   });
 });

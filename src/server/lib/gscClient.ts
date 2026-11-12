@@ -8,6 +8,9 @@ export { GscApiError, GscTokenError } from "./gscErrors";
 
 const GSC_API_BASE = "https://www.googleapis.com/webmasters/v3";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
+// URL inspection takes ~6 s and slow searchAnalytics queries ~30 s; past this
+// Google is stuck, and the call would hold one of the Worker's 6 connections.
+const GSC_TIMEOUT_MS = 60_000;
 
 /** A GSC REST call returned a non-2xx status. `status` drives user-facing messaging. */
 export type GscSite = {
@@ -96,6 +99,9 @@ export function createGscClient(opts: {
       accountId: opts.gscAccountId,
     }).catch((error: unknown) => {
       tokenPromise = undefined;
+      // A slow token endpoint is an outage, not a revoked grant: request()
+      // reports it as one rather than prompting a reconnect.
+      if (error instanceof Error && error.name === "TimeoutError") throw error;
       throw new GscTokenError(
         "Could not mint a Search Console access token (grant revoked or expired).",
         error,
@@ -132,16 +138,28 @@ export function createGscClient(opts: {
     url: string,
     init?: { method?: string; body?: unknown },
   ): Promise<T> {
-    const { fetch: send, headers } = await authenticated();
     const hasBody = init?.body !== undefined;
-    const response = await send(url, {
-      method: init?.method ?? "GET",
-      headers: {
-        ...headers,
-        ...(hasBody ? { "Content-Type": "application/json" } : {}),
-      },
-      body: hasBody ? JSON.stringify(init?.body) : undefined,
-    });
+    let response: Response;
+    try {
+      const { fetch: send, headers } = await authenticated();
+      response = await send(url, {
+        method: init?.method ?? "GET",
+        headers: {
+          ...headers,
+          ...(hasBody ? { "Content-Type": "application/json" } : {}),
+        },
+        body: hasBody ? JSON.stringify(init?.body) : undefined,
+        signal: AbortSignal.timeout(GSC_TIMEOUT_MS),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "TimeoutError") {
+        throw new GscApiError(
+          504,
+          "Search Console didn't respond in time. Retry shortly.",
+        );
+      }
+      throw error;
+    }
     if (!response.ok) {
       const body = await response.text().catch(() => "");
       throw new GscApiError(

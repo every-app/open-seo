@@ -18,6 +18,9 @@ const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const GA4_DATA_API_BASE = "https://analyticsdata.googleapis.com/v1beta";
 const MAX_ACCOUNT_SUMMARY_PAGES = 100;
 const MAX_ERROR_BODY_LENGTH = 8_000;
+// runReport answers in ~0.5 s (p99 2.5 s); past this Google is stuck, and the
+// call would hold one of the Worker's 6 outbound connections.
+const GA4_TIMEOUT_MS = 45_000;
 const propertyIdSchema = z.string().regex(/^properties\/\d+$/);
 const dataStreamNameSchema = z
   .string()
@@ -137,6 +140,14 @@ async function getGa4AccessToken(opts: {
       accountId: opts.ga4AccountId,
     });
   } catch (error) {
+    // A slow token endpoint is an outage, not a revoked grant: don't ask the
+    // user to reconnect.
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new Ga4AdminApiError(
+        0,
+        "Google Analytics is temporarily unavailable.",
+      );
+    }
     throw new Ga4TokenError(
       "Could not mint a Google Analytics access token.",
       error,
@@ -151,10 +162,6 @@ function adminMessageForStatus(status: number): string {
   }
   if (status === 429) return "Google Analytics rate limit reached.";
   return `Google Analytics Admin API error (${status}).`;
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
 }
 
 type Authenticated = { fetch: typeof fetch; headers: Record<string, string> };
@@ -199,9 +206,11 @@ export function createGa4AdminClient(opts: {
     const { fetch: send, headers } = await access();
     let response: Response;
     try {
-      response = await send(url, { headers });
-    } catch (error) {
-      if (isAbortError(error)) throw error;
+      response = await send(url, {
+        headers,
+        signal: AbortSignal.timeout(GA4_TIMEOUT_MS),
+      });
+    } catch {
       throw new Ga4AdminApiError(
         0,
         "Google Analytics Admin API is temporarily unavailable.",
@@ -450,9 +459,9 @@ export function createGa4DataClient(opts: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(request),
+          signal: AbortSignal.timeout(GA4_TIMEOUT_MS),
         });
-      } catch (error) {
-        if (isAbortError(error)) throw error;
+      } catch {
         throw new Ga4DataApiError(
           0,
           "Google Analytics reporting is temporarily unavailable.",
