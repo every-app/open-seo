@@ -31,6 +31,8 @@ type Property = {
 export type GooglePickerAccount = {
   accountId: string;
   email: string | null;
+  /** An uploaded service account key, managed outside the picker. */
+  serviceAccount?: boolean;
   requiresReconnect: boolean;
   unavailable?: boolean;
   apiDisabled?: boolean;

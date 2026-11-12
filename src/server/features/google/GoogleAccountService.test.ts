@@ -76,6 +76,11 @@ beforeAll(async () => {
     );
   }
   await client.execute("ALTER TABLE gsc_connections ADD gsc_account_id text");
+  await client.executeMultiple(
+    readFileSync("drizzle/sqlite/0069_gsc_service_accounts.sql", "utf8")
+      .split("--> statement-breakpoint")
+      .join("\n"),
+  );
   ({ GoogleAccountService: service } = await import("./GoogleAccountService"));
 });
 
@@ -276,6 +281,7 @@ it.each(["same-account", "other-account", "other-user"] as const)(
       siteUrl: "https://example.com/",
       connectedByUserId: "u1",
       gscAccountId: "google-a",
+      serviceAccountId: null,
       connectedAccountEmail: "old@example.com",
     };
     await GscConnectionRepository.upsert(base);

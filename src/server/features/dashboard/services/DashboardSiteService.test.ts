@@ -43,6 +43,7 @@ beforeEach(() => {
     siteUrl: "sc-domain:example.com",
     connectedByUserId: "user",
     gscAccountId: "account",
+    serviceAccountId: null,
     connectedAccountEmail: null,
     createdAt: "2026-10-01",
     updatedAt: "2026-10-01",

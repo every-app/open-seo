@@ -21,6 +21,7 @@ async function upsert(input: {
   siteUrl: string;
   connectedByUserId: string;
   gscAccountId: string;
+  serviceAccountId: string | null;
   connectedAccountEmail: string | null;
 }): Promise<GscConnection> {
   const [row] = await db
@@ -33,6 +34,7 @@ async function upsert(input: {
         organizationId: input.organizationId,
         connectedByUserId: input.connectedByUserId,
         gscAccountId: input.gscAccountId,
+        serviceAccountId: input.serviceAccountId,
         connectedAccountEmail: sql`case
           when ${gscConnections.connectedByUserId} = ${input.connectedByUserId}
             and ${gscConnections.gscAccountId} = ${input.gscAccountId}

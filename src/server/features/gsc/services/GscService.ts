@@ -28,6 +28,7 @@ import {
   type GscConnection,
 } from "@/server/features/gsc/repositories/GscConnectionRepository";
 import { DashboardCacheService } from "@/server/features/dashboard/services/DashboardCacheService";
+import { GoogleServiceAccountService } from "@/server/features/google/GoogleServiceAccountService";
 import type {
   GscSearchAnalyticsRequest,
   GscSearchAnalyticsRow,
@@ -45,6 +46,7 @@ type GscPerformanceResult = {
 type GscSiteListResult = {
   accounts: Array<{
     accountId: string;
+    kind: GscAccountKind;
     email: string | null;
     requiresReconnect: boolean;
     propertiesUnavailable: boolean;
@@ -58,12 +60,32 @@ async function getConnection(projectId: string): Promise<GscConnection | null> {
   return GscConnectionRepository.getByProjectId(projectId);
 }
 
-/** Whether this user has linked a google-search-console grant (regardless of
- *  whether they've picked a property yet). Drives the connect-vs-pick UI. */
-async function userHasGrant(userId: string): Promise<boolean> {
+type GscAccountKind = "google_account" | "service_account";
+
+/** Something a member can pick a property through: their own Google grant,
+ *  or a service account key their organization uploaded. */
+type GscAccess = {
+  accountId: string;
+  kind: GscAccountKind;
+  /** Known up front for service accounts; Google accounts look it up. */
+  email: string | null;
+  serviceAccountId?: string;
+};
+
+type MemberScope = { userId: string; organizationId: string };
+
+/** Whether this member can reach Search Console at all: a linked
+ *  google-search-console grant or an organization service account (regardless
+ *  of whether they've picked a property yet). Drives the connect-vs-pick UI. */
+async function userHasGrant(scope: MemberScope): Promise<boolean> {
+  const serviceAccounts = await GoogleServiceAccountService.listForOrganization(
+    scope.organizationId,
+  );
+  if (serviceAccounts.length > 0) return true;
   if ((await getGoogleAccessMode()) === "gateway") {
     return (await getGatewayGoogleStatus()).connected;
   }
+  const userId = scope.userId;
   const rows = await db
     .select({ id: account.id })
     .from(account)
@@ -78,30 +100,66 @@ async function userHasGrant(userId: string): Promise<boolean> {
 }
 
 /**
- * The Google accounts a member may pick a property from. Behind the gateway
- * there is one, their gateway connection (gatewayGoogle.ts), and only while
- * it is connected.
+ * What a member may pick a property through: their Google accounts, then the
+ * organization's service accounts. Behind the gateway there is one Google
+ * account, their gateway connection (gatewayGoogle.ts), and only while it is
+ * connected; service accounts are never offered there.
  */
-async function listGrantsForUser(userId: string) {
+async function listAccessForMember(scope: MemberScope): Promise<GscAccess[]> {
   if ((await getGoogleAccessMode()) === "gateway") {
     return (await getGatewayGoogleStatus()).connected
       ? [
           {
-            id: GATEWAY_GOOGLE_ACCOUNT_ID,
             accountId: GATEWAY_GOOGLE_ACCOUNT_ID,
+            kind: "google_account",
+            email: null,
           },
         ]
       : [];
   }
-  return db
-    .select({ id: account.id, accountId: account.accountId })
-    .from(account)
-    .where(
-      and(
-        eq(account.userId, userId),
-        eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
+  const [grants, serviceAccounts] = await Promise.all([
+    db
+      .select({ accountId: account.accountId })
+      .from(account)
+      .where(
+        and(
+          eq(account.userId, scope.userId),
+          eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
+        ),
       ),
-    );
+    GoogleServiceAccountService.listForOrganization(scope.organizationId),
+  ]);
+  return [
+    ...grants.map(
+      (grant): GscAccess => ({
+        accountId: grant.accountId,
+        kind: "google_account",
+        email: null,
+      }),
+    ),
+    ...serviceAccounts.map(
+      (row): GscAccess => ({
+        accountId: row.id,
+        kind: "service_account",
+        email: row.clientEmail,
+        serviceAccountId: row.id,
+      }),
+    ),
+  ];
+}
+
+/** The account's email: stored for service accounts, which can't call the
+ *  userinfo endpoint, and looked up for Google accounts. */
+async function accessEmail(
+  access: GscAccess,
+  client: ReturnType<typeof createGscClient>,
+): Promise<string | null> {
+  if (access.kind === "service_account") return access.email;
+  try {
+    return await client.getUserInfoEmail();
+  } catch {
+    return null;
+  }
 }
 
 /** Expected ways a stored grant fails to reach Search Console: no token could be
@@ -116,26 +174,23 @@ export function isExpectedGrantFailure(error: unknown): boolean {
 }
 
 async function listSitesForUserWithGrantStatus(
-  userId: string,
+  scope: MemberScope,
 ): Promise<GscSiteListResult> {
-  const grants = await listGrantsForUser(userId);
+  const grants = await listAccessForMember(scope);
   const accounts = await Promise.all(
     grants.map(async (grant) => {
       const client = createGscClient({
-        userId,
+        userId: scope.userId,
         gscAccountId: grant.accountId,
+        serviceAccountId: grant.serviceAccountId,
       });
 
       try {
         const sites = await client.listSites();
-        let email: string | null = null;
-        try {
-          email = await client.getUserInfoEmail();
-        } catch {
-          email = null;
-        }
+        const email = await accessEmail(grant, client);
         return {
           accountId: grant.accountId,
+          kind: grant.kind,
           email,
           requiresReconnect: false,
           propertiesUnavailable: false,
@@ -156,7 +211,8 @@ async function listSitesForUserWithGrantStatus(
         }
         return {
           accountId: grant.accountId,
-          email: null,
+          kind: grant.kind,
+          email: grant.email,
           requiresReconnect,
           propertiesUnavailable: !requiresReconnect,
           apiDisabled,
@@ -177,8 +233,9 @@ async function setSite(input: {
   accountId: string;
   userId: string;
 }): Promise<GscConnection> {
-  const grants = await listGrantsForUser(input.userId);
-  if (!grants.some((grant) => grant.accountId === input.accountId)) {
+  const grants = await listAccessForMember(input);
+  const access = grants.find((grant) => grant.accountId === input.accountId);
+  if (!access) {
     throw new AppError(
       "NOT_FOUND",
       "That Google account isn't connected to your OpenSEO account.",
@@ -188,6 +245,7 @@ async function setSite(input: {
   const client = createGscClient({
     userId: input.userId,
     gscAccountId: input.accountId,
+    serviceAccountId: access.serviceAccountId,
   });
   const sites = await client.listSites();
   const match = sites.find((s) => s.siteUrl === input.siteUrl);
@@ -203,20 +261,31 @@ async function setSite(input: {
       "You don't have verified access to that Search Console property.",
     );
   }
-  let connectedAccountEmail: string | null = null;
-  try {
-    connectedAccountEmail = await client.getUserInfoEmail();
-  } catch {
-    connectedAccountEmail = null;
-  }
+  const connectedAccountEmail = await accessEmail(access, client);
   return GscConnectionRepository.upsert({
     projectId: input.projectId,
     organizationId: input.organizationId,
     siteUrl: input.siteUrl,
     connectedByUserId: input.userId,
     gscAccountId: input.accountId,
+    serviceAccountId: access.serviceAccountId ?? null,
     connectedAccountEmail,
   });
+}
+
+/** Deletes an organization's service account key, which disconnects the
+ *  projects that used it. */
+async function removeServiceAccount(input: {
+  organizationId: string;
+  id: string;
+}): Promise<{ disconnectedProjects: number }> {
+  const projectIds = await GoogleServiceAccountService.remove(input);
+  await Promise.all(
+    projectIds.map((projectId) =>
+      DashboardCacheService.deleteGscCache(projectId),
+    ),
+  );
+  return { disconnectedProjects: projectIds.length };
 }
 
 async function disconnect(input: { projectId: string }): Promise<void> {
@@ -243,6 +312,7 @@ async function getPerformance(
   const client = createGscClient({
     userId: connection.connectedByUserId,
     gscAccountId: connection.gscAccountId ?? undefined,
+    serviceAccountId: connection.serviceAccountId ?? undefined,
   });
   const rows = await client.querySearchAnalytics(connection.siteUrl, request);
   return {
@@ -286,6 +356,7 @@ async function inspectUrls(input: {
   const client = createGscClient({
     userId: connection.connectedByUserId,
     gscAccountId: connection.gscAccountId ?? undefined,
+    serviceAccountId: connection.serviceAccountId ?? undefined,
   });
   const results = await Promise.all(
     input.urls.map(async (url): Promise<GscUrlInspection> => {
@@ -319,6 +390,7 @@ export const GscService = {
   listSitesForUserWithGrantStatus,
   setSite,
   disconnect,
+  removeServiceAccount,
   getPerformance,
   inspectUrls,
 };

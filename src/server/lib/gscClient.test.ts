@@ -3,11 +3,17 @@ import { createGscClient, GscApiError, GscTokenError } from "./gscClient";
 
 const mocks = vi.hoisted(() => ({
   getAccessToken: vi.fn(),
+  getServiceAccountToken: vi.fn(),
   fetch: vi.fn<typeof fetch>(),
 }));
 
 vi.mock("@/server/features/google/googleOAuth", () => ({
   getGoogleAccessToken: mocks.getAccessToken,
+}));
+vi.mock("@/server/features/google/GoogleServiceAccountService", () => ({
+  GoogleServiceAccountService: {
+    getSearchConsoleAccessToken: mocks.getServiceAccountToken,
+  },
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -49,6 +55,23 @@ describe("gscClient", () => {
       providerId: "google-search-console",
       userId: "u1",
       accountId: "google-sub-a",
+    });
+  });
+
+  it("uses the service account's token instead of a member grant", async () => {
+    mocks.getServiceAccountToken.mockResolvedValue("sa_tok");
+    mocks.fetch.mockResolvedValue(jsonResponse({ siteEntry: [] }));
+
+    await createGscClient({
+      userId: "u1",
+      gscAccountId: "sa-1",
+      serviceAccountId: "sa-1",
+    }).listSites();
+
+    expect(mocks.getServiceAccountToken).toHaveBeenCalledWith("sa-1");
+    expect(mocks.getAccessToken).not.toHaveBeenCalled();
+    expect(mocks.fetch.mock.calls[0][1]?.headers).toMatchObject({
+      Authorization: "Bearer sa_tok",
     });
   });
 

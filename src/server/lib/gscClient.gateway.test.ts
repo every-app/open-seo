@@ -17,6 +17,9 @@ vi.mock("@/server/features/google/googleAccess", () => ({
 vi.mock("@/server/features/google/gatewayGoogle", () => ({
   getGatewayGoogleFetch: mocks.getGatewayGoogleFetch,
 }));
+vi.mock("@/server/features/google/GoogleServiceAccountService", () => ({
+  GoogleServiceAccountService: { getSearchConsoleAccessToken: vi.fn() },
+}));
 
 import { createGa4AdminClient, createGa4DataClient } from "./ga4Client";
 import { Ga4TokenError } from "./ga4Errors";

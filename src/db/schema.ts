@@ -128,6 +128,7 @@ export const {
   billingCustomerStatus,
   ga4Connections,
   gscConnections,
+  googleServiceAccounts,
   telemetryState,
   aiTrackers,
   aiPrompts,
