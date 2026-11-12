@@ -11,7 +11,7 @@ import { featureGroups } from "@/lib/feature-pages";
 
 const GITHUB_REPO = "every-app/open-seo";
 // Used if GitHub is unreachable at build time so the header never renders empty.
-const FALLBACK_STAR_COUNT = "2.1k";
+const FALLBACK_STAR_COUNT = "27k";
 
 // Round to the nearest hundred and render in thousands, e.g. 3140 -> "3.1k".
 function formatStarCount(count: number): string {

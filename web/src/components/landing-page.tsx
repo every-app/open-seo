@@ -1087,7 +1087,8 @@ export function OpenSourceSection() {
             Star on GitHub
           </a>
           <a href="/open-source-seo" className="itc-textlink">
-            Why Open Source? <IconArrowRight size={15} className="itc-arrow" />
+            The open source alternative to Semrush and Ahrefs{" "}
+            <IconArrowRight size={15} className="itc-arrow" />
           </a>
         </div>
       </Container>

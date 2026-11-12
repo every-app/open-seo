@@ -171,7 +171,7 @@ export const featurePages = {
       },
       {
         title: "How it compares with Google Keyword Planner and free tools",
-        body: "Google Keyword Planner is the free option most guides point to, and it sits inside Google Ads. OpenSEO's free keyword generator is the quick version of this tool: one topic in, up to 20 ideas out, with volume and difficulty and no account. The full tool returns up to 500 ideas per search and adds CPC, search intent and the live results page for each keyword. Full metrics cover 94 countries. Elsewhere the data comes from Google Ads, which has volume and CPC but no difficulty or intent.",
+        body: "Google Keyword Planner is the free option most guides point to, and it sits inside Google Ads. OpenSEO's free keyword generator is the quick version of this tool: one topic in, up to 20 ideas out, with volume and difficulty and no account. The full tool returns up to 500 ideas per search and adds CPC, search intent and the live results page for each keyword. Keyword data covers 143 countries. 94 of them have full metrics. In the other 49 the data comes from Google Ads, which has volume and CPC but no difficulty or intent.",
       },
       {
         title: "Keyword research with ChatGPT or Claude, using real numbers",
@@ -219,7 +219,7 @@ export const featurePages = {
       {
         question: "Which countries have keyword data?",
         answer:
-          "94 countries get full metrics, including keyword difficulty and search intent. Other countries are served from Google Ads data, which has search volume and CPC but no difficulty or intent.",
+          "143 countries. 94 of them get full metrics, including keyword difficulty and search intent. The other 49 are served from Google Ads data, which has search volume and CPC but no difficulty or intent.",
       },
     ],
     guides: {
@@ -332,8 +332,8 @@ export const featurePages = {
     },
     contextSections: [
       {
-        title: "32 issue types, sorted by what to fix first",
-        body: "Every issue the crawler reports carries a severity. Four are critical: the crawler was blocked, a server error, a broken internal link, or a missing title. Nineteen are warnings, including duplicate titles and content, redirect chains and loops, conflicting canonicals, thin content and orphan pages. Three of those warnings tell you when the crawl itself stopped early, so a short report never passes for a clean one. The other nine are info, like title length and pages buried deep in the site. Each issue opens to the URLs it affects.",
+        title: "33 issue types, sorted by what to fix first",
+        body: "Every issue the crawler reports carries a severity. Four are critical: the crawler was blocked, a server error, a broken internal link, or a missing title. Twenty are warnings, including duplicate titles and content, redirect chains and loops, conflicting canonicals, thin content and orphan pages. Four of those warnings tell you when the crawl itself stopped early, so a short report never passes for a clean one. The other nine are info, like title length and pages buried deep in the site. Each issue opens to the URLs it affects.",
       },
       {
         title: "Audits that see JavaScript sites",
@@ -347,7 +347,8 @@ export const featurePages = {
     contextImage: {
       src: "/features/site-audit/openseo-site-audit-issue-types-by-severity.png",
       alt: "List of the 32 issue types an OpenSEO site audit checks, in three columns: 4 critical (crawler was blocked, server error, broken internal link, missing title tag), 19 warnings and 9 info.",
-      caption: "The full check list, grouped the way the report sorts it.",
+      caption:
+        "The check list, grouped the way the report sorts it. A page-limit warning has been added since.",
       width: 1600,
       height: 900,
     },
@@ -361,7 +362,7 @@ export const featurePages = {
       {
         question: "What does the OpenSEO site audit tool check?",
         answer:
-          "32 issue types across every crawled page, including status codes, titles, meta descriptions, headings, canonicals, redirects, internal links, image alt text and response time. Enable Lighthouse and a sample of pages also gets performance, SEO, accessibility and best-practice findings.",
+          "33 issue types across every crawled page, including status codes, titles, meta descriptions, headings, canonicals, redirects, internal links, image alt text and response time. Enable Lighthouse and a sample of pages also gets performance, SEO, accessibility and best-practice findings.",
       },
       {
         question: "Is OpenSEO a free SEO audit tool?",
@@ -656,7 +657,7 @@ export const featurePages = {
     description:
       "Track the keywords that matter, optionally compare desktop and mobile results, and keep ranking changes connected to your research workflow.",
     seoDescription:
-      "Track keyword positions on desktop and mobile, daily, weekly or monthly. 100 keywords checked weekly uses about $1-2 of credits a month, shown before each run.",
+      "Track keyword positions on desktop and mobile, daily, weekly or monthly. 100 keywords checked weekly on one device costs $3 to $6 a month, shown before each run.",
     primaryKeyword: "rank tracker",
     secondaryKeywords: [
       "seo rank tracking tool",
@@ -729,7 +730,7 @@ export const featurePages = {
     contextSections: [
       {
         title: "Schedules, limits and what a check costs",
-        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords, on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. 100 keywords on both devices, checked weekly, comes to about $2. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
+        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords, on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. Every check reads each keyword three to six times, because one read of Google can't be trusted, and the app shows the most it can cost. 100 keywords on one device, checked weekly, costs $3 to $6 a month; on both devices, $6 to $12. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
       },
       {
         title: "Track a city, not just a country",
@@ -742,9 +743,9 @@ export const featurePages = {
     ],
     contextImage: {
       src: "/features/rank-tracking/openseo-rank-tracker-monthly-cost.png",
-      alt: "Grid of monthly rank tracking costs for 100, 250, 500 and 1,000 keywords checked on desktop and mobile at top 40. Monthly checks cost $0.50 to $4.99, weekly $2.00 to $19.97, daily $14.98 to $149.76. Every monthly cell, and weekly up to 500 keywords, fits inside the $10 of usage in the Base plan.",
+      alt: "Grid of rank tracking costs for one read of 100, 250, 500 and 1,000 keywords on desktop and mobile at top 40. One read per check costs $0.50 to $4.99 a month on a monthly schedule, $2.00 to $19.97 weekly, and $14.98 to $149.76 daily. A check makes three to six reads.",
       caption:
-        "Monthly cost by keyword count and schedule, before retries. Most weekly trackers fit inside the Base plan's included usage.",
+        "The cost of one read of each keyword, by keyword count and schedule. A check makes three to six reads, so a month costs three to six times these figures.",
       width: 1600,
       height: 900,
     },
@@ -781,7 +782,7 @@ export const featurePages = {
       {
         question: "How much does rank tracking cost?",
         answer:
-          "It depends on the number of keywords, devices, result depth and how often you check. 100 keywords on desktop and mobile, checked weekly, is about $2 a month. The app shows the monthly cost before you save a tracker, and checks draw from the usage included in your plan.",
+          "It depends on the number of keywords, devices, result depth and how often you check. 100 keywords on one device, checked weekly, costs $3 to $6 a month, and twice that on desktop and mobile. The app shows the most a tracker can cost per month before you save it, and checks draw from the usage included in your plan.",
       },
       {
         question: "Can I track rankings in a specific city?",

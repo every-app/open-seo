@@ -6,11 +6,10 @@ import { buildPageSeo } from "@/lib/seo";
 export const Route = createFileRoute("/_marketing/pricing")({
   head: () =>
     buildPageSeo({
-      title: "Pricing",
+      title: "OpenSEO Pricing: Plans from $10 a Month",
       description:
         "Plans from $10/mo, each with usage included every month. Pro and Agency include 20% more usage than you pay for. Estimate what your month would cost.",
       path: "/pricing",
-      titleSuffix: "OpenSEO",
     }),
   component: Pricing,
 });
@@ -138,6 +137,7 @@ const PLANS: Plan[] = [
       "AI visibility, prompt research, and tracking",
       "Works inside Claude, Cursor, and ChatGPT",
       "Free Google Search Console data",
+      "Unlimited projects, and no per-seat fee for teammates",
       PAY_AS_YOU_GO,
     ],
     featured: true,
@@ -505,7 +505,9 @@ function Pricing() {
                       </span>
                     </dt>
                     <dd className="shrink-0 text-sm font-medium tabular-nums text-neutral-950">
-                      {line.key === "rank" && line.credits > 0 ? "Up to " : null}
+                      {line.key === "rank" && line.credits > 0
+                        ? "Up to "
+                        : null}
                       {usd(line.credits * CREDIT_USD)}
                     </dd>
                   </div>
@@ -543,7 +545,8 @@ function Pricing() {
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
               Yes. The free trial includes $0.50 of credits so you can test
-              OpenSEO before subscribing.
+              OpenSEO before subscribing. You don&apos;t need a credit card to
+              start.
             </dd>
           </div>
           <div className="py-4 first:pt-0 last:pb-0">

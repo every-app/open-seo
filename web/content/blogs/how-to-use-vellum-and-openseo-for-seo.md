@@ -59,7 +59,7 @@ No custom scripts, no API keys to manually wire up. Once connected, your assista
 
 Without a live data source, AI models invent search volumes that sound plausible but are completely fabricated. Connecting OpenSEO gives your assistant real DataForSEO numbers directly in chat.
 
-Traditional SEO platforms like Ahrefs or Semrush charge $130 or more per month for a single seat, largely to pay for proprietary dashboard interfaces. OpenSEO is $10 a month with $10 of usage credits included, and signing up includes $0.50 of trial credits.
+Traditional SEO platforms like Ahrefs or Semrush charge $129 or more per month for a single seat, largely to pay for proprietary dashboard interfaces. OpenSEO is $10 a month with $10 of usage credits included, and signing up includes $0.50 of trial credits.
 
 Because an assistant only queries data when you need it, a typical keyword lookup or live SERP check costs about five cents. A lean team pays a fraction of enterprise SaaS pricing while getting search intelligence embedded directly where content is created.
 
@@ -137,7 +137,7 @@ The web app is useful for high-level overviews, but connecting OpenSEO over MCP 
 
 ### How much does this setup cost compared to legacy SEO suites?
 
-Ahrefs and Semrush charge $130 or more per month for a single seat. OpenSEO is $10/month with $10 of usage credits included (and a free trial with $0.50 of credits). A typical keyword or SERP lookup costs around five cents, meaning small teams pay a fraction of enterprise SaaS pricing for real DataForSEO search data.
+Ahrefs and Semrush charge $129 or more per month for a single seat. OpenSEO is $10/month with $10 of usage credits included (and a free trial with $0.50 of credits). A typical keyword or SERP lookup costs around five cents, meaning small teams pay a fraction of enterprise SaaS pricing for real DataForSEO search data.
 
 ### What is the difference between SEO and GEO in this workflow?
 

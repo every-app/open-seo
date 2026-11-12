@@ -29,7 +29,7 @@ Working with OpenSEO:
 ## Why OpenSEO
 
 - [Why OpenSEO](https://openseo.so/why-openseo): Who it's for and what's different: your own agent, shared project context, skills, and saved reports.
-- [Open source SEO](https://openseo.so/open-source-seo): Why the code is open, where the data comes from, and why OpenSEO helps you work with your agent instead of automating SEO away.
+- [Open source SEO](https://openseo.so/open-source-seo): The MIT license, how to self-host with Docker or Cloudflare, what the software and the search data cost, and answers to common open source SEO questions.
 - [Pricing](https://openseo.so/pricing): One plan, what uses credits, and a cost estimator.
 - [OpenSEO vs DataForSEO](https://openseo.so/openseo-vs-dataforseo): What OpenSEO adds on top of the DataForSEO data it's built on, and what it costs.
 - [OpenSEO vs Semrush](https://openseo.so/semrush-alternative): Comparison with cost examples.
