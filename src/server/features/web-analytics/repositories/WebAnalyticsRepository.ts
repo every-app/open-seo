@@ -88,7 +88,9 @@ async function getById(id: string): Promise<WebAnalyticsSiteWithDomain | null> {
 
 // Plausible-compatible ingestion resolves the site by tracked domain instead
 // of site id (2026-11-12: Plausible event payloads carry `domain`).
-async function getByDomain(domain: string): Promise<WebAnalyticsSiteWithDomain | null> {
+async function getByDomain(
+  domain: string,
+): Promise<WebAnalyticsSiteWithDomain | null> {
   const d = domain.replace(/^www\./, "").toLowerCase();
   const [site] = await db
     .select({

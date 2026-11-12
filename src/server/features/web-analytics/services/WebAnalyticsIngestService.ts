@@ -148,7 +148,12 @@ export async function ingestEvent(input: {
     return "foreign_domain";
   }
 
-  const visitor = await dailyVisitorId(site.id, input.userAgent, input.geo, input.now ?? new Date());
+  const visitor = await dailyVisitorId(
+    site.id,
+    input.userAgent,
+    input.geo,
+    input.now ?? new Date(),
+  );
   await ingest({
     site,
     payload: {
@@ -181,7 +186,10 @@ async function dailyVisitorId(
 ): Promise<string> {
   const day = now.toISOString().slice(0, 10);
   const material = `${siteId}|${userAgent}|${geo.country ?? ""}|${day}`;
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(material));
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(material),
+  );
   return Array.from(new Uint8Array(digest))
     .slice(0, 16)
     .map((b) => b.toString(16).padStart(2, "0"))

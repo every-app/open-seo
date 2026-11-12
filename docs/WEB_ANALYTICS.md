@@ -53,11 +53,11 @@ fetch("https://YOUR-OPENSEO-HOST/api/wa/event", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    name: "pageview",            // or any custom event name
+    name: "pageview", // or any custom event name
     url: "https://yoursite.com/pricing",
     domain: "yoursite.com",
     referrer: "https://news.ycombinator.com/",
-    props: { plan: "pro" },      // custom event properties
+    props: { plan: "pro" }, // custom event properties
   }),
 });
 ```

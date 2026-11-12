@@ -50,6 +50,16 @@ function payload(overrides: Record<string, unknown> = {}): string {
   });
 }
 
+function plausiblePayload(overrides: Record<string, unknown> = {}): string {
+  return JSON.stringify({
+    name: "pageview",
+    url: "https://shipkit.dev/pricing",
+    domain: "shipkit.dev",
+    referrer: "https://news.ycombinator.com/",
+    ...overrides,
+  });
+}
+
 beforeEach(() => {
   clearSiteCache();
   mocks.getById.mockResolvedValue(SITE);
@@ -216,16 +226,6 @@ describe("ingestEvent", () => {
 });
 
 describe("Plausible-compatible ingestion", () => {
-  function plausiblePayload(overrides: Record<string, unknown> = {}): string {
-    return JSON.stringify({
-      name: "pageview",
-      url: "https://shipkit.dev/pricing",
-      domain: "shipkit.dev",
-      referrer: "https://news.ycombinator.com/",
-      ...overrides,
-    });
-  }
-
   it("accepts a Plausible pageview and resolves the site by domain", async () => {
     const outcome = await ingestEvent({
       rawBody: plausiblePayload(),
@@ -273,7 +273,12 @@ describe("Plausible-compatible ingestion", () => {
 
   it("derives a stable visitor id for identical inputs on the same day", async () => {
     const now = new Date("2026-11-12T12:00:00.000Z");
-    await ingestEvent({ rawBody: plausiblePayload(), userAgent: UA, geo: GEO, now });
+    await ingestEvent({
+      rawBody: plausiblePayload(),
+      userAgent: UA,
+      geo: GEO,
+      now,
+    });
     const secondOps = (await ingestEvent({
       rawBody: plausiblePayload({ url: "https://shipkit.dev/about" }),
       userAgent: UA,
@@ -299,8 +304,8 @@ describe("Plausible-compatible ingestion", () => {
   });
 
   it("rejects foreign domains and unknown sites", async () => {
-    mocks.getByDomain.mockImplementation(
-      async (domain: string) => (domain === "shipkit.dev" ? SITE : null),
+    mocks.getByDomain.mockImplementation(async (domain: string) =>
+      domain === "shipkit.dev" ? SITE : null,
     );
     expect(
       await ingestEvent({
