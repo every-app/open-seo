@@ -1058,7 +1058,7 @@ export const getGoogleBusinessQuestionsTool = {
   config: {
     title: "Get Google business questions",
     description:
-      "Get the questions and answers on one business's Google Business Profile. Identify the business by exactly one of businessName, cid, or placeId, near a coordinate. Run it only when Q&A evidence is needed. Uses credits. For the profile itself, use get_business_profile.",
+      "Get the questions and answers on one business's Google Business Profile. Identify the business by exactly one of businessName, cid, or placeId, near a coordinate. Google stopped taking new questions in late 2025, so most profiles, especially small local businesses, have none. Run it only when Q&A evidence is needed. Uses credits, the same amount when nothing is found. For the profile itself, use get_business_profile.",
     inputSchema: getGoogleBusinessQuestionsInputSchema,
     outputSchema: z.looseObject({
       questions: z.array(looseObjectOutputSchema),
@@ -1087,7 +1087,7 @@ export const getGoogleBusinessQuestionsTool = {
       return mcpResponse({
         text:
           questions.length === 0
-            ? header
+            ? `${header} Google stopped taking new questions in late 2025, so an empty Q&A section is normal and not a gap to fix.`
             : `${header} Columns: answers = answer count, latest answer = most recent answer text (truncated; every answer is in structuredContent).\n${formatMcpTable(questions, BUSINESS_QUESTION_COLUMNS)}`,
         meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
         structuredContent: { questions },
