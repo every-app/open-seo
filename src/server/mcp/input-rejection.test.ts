@@ -61,6 +61,15 @@ describe("MCP tool input the SDK rejects", () => {
       },
       fields: ["updates.*"],
     },
+    {
+      // A code DataForSEO doesn't know fails every SERP read with a 40501.
+      tool: "get_serp_results",
+      args: {
+        projectId: "project_test",
+        queries: [{ keyword: "secret-keyword", locationCode: 840 }],
+      },
+      fields: ["queries.*.locationCode"],
+    },
   ])(
     "reports $tool by field path, without what the caller sent",
     async ({ tool, args, fields }) => {
