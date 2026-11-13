@@ -25,6 +25,12 @@ const querySchema = z.object({
   impressions: z.number(),
   position: z.number(),
 });
+// Scrapers and AI tools send Google queries stuffed with operators like
+// "-site:youtube.com -filetype:pdf". Each one is unique, so they keep showing
+// up as new keywords even though no person searched them.
+const SEARCH_OPERATOR =
+  /(?:^|\s)-?(?:site|filetype|(?:all)?in(?:url|title|text)):\S/i;
+
 const queriesSchema = z.object({
   connected: z.boolean(),
   hasSearchData: z.boolean(),
@@ -176,7 +182,7 @@ async function getEmergingQueries(projectId: string, organizationId: string) {
       siteUrl: connection.siteUrl,
       accountId: connection.gscAccountId,
       updatedAt: connection.updatedAt,
-      comparison: "verified-v3",
+      comparison: "verified-v4",
     },
     schema: queriesSchema,
     maxAgeMs: 86400_000,
@@ -205,7 +211,10 @@ async function getEmergingQueries(projectId: string, organizationId: string) {
         const observed = recent.rows
           .filter(
             (row) =>
-              row.keys?.[0] && row.impressions >= 10 && !seen.has(row.keys[0]),
+              row.keys?.[0] &&
+              row.impressions >= 10 &&
+              !seen.has(row.keys[0]) &&
+              !SEARCH_OPERATOR.test(row.keys[0]),
           )
           .map((row) => ({
             query: row.keys![0],
