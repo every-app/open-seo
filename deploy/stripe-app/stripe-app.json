@@ -3,16 +3,7 @@
   "id": "so.openseo.provider",
   "name": "OpenSEO",
   "version": "0.1.0",
-  "provisioning": {
-    "base_url": "https://app.openseo.so/api/stripe-projects/",
-    "oauth_scopes": ["mcp"],
-    "oauth_token_endpoint": "https://app.openseo.so/api/stripe-projects/oauth/token",
-    "oauth_client_id": "openseo-stripe-projects",
-    "oauth_client_secret_secret_store_key": "oauth_client_secret",
-    "capabilities": [],
-    "deep_link_purposes": ["dashboard"],
-    "llm_context": "https://openseo.so/stripe-projects/llm-context.md"
-  },
+  "extensions": null,
   "permissions": [
     {
       "permission": "secret_write",
@@ -23,7 +14,23 @@
       "purpose": "Create and sign in to OpenSEO accounts for Stripe Projects."
     }
   ],
+  "allowed_redirect_uris": [
+    "https://openseo.so/docs/stripe-projects"
+  ],
   "distribution_type": "public",
   "stripe_api_access_type": "oauth",
-  "sandbox_install_compatible": true
+  "sandbox_install_compatible": true,
+  "provisioning": {
+    "base_url": "https://app.openseo.so/api/stripe-projects",
+    "oauth_scopes": [
+      "mcp"
+    ],
+    "oauth_token_endpoint": "https://app.openseo.so/api/stripe-projects/oauth/token",
+    "oauth_client_id": "openseo-stripe-projects",
+    "oauth_client_secret_secret_store_key": "oauth_client_secret",
+    "deep_link_purposes": [
+      "dashboard"
+    ],
+    "llm_context": "https://openseo.so/stripe-projects/llm-context.md"
+  }
 }

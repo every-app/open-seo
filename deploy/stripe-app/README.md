@@ -7,8 +7,10 @@
 1. Upload the app from this directory with the Stripe CLI, signed in to OpenSEO's Stripe account:
 
    ```bash
-   stripe apps upload
+   stripe apps upload --non-interactive --accept-tos --wait
    ```
+
+   Stripe refuses a version it already has: raise `version` in `stripe-app.json` first, or pass `--app-version`. The CLI rewrites `stripe-app.json` in its own format on every upload, so the file is committed that way and left out of Prettier. `pnpm-lock.yaml` is here only because the CLI will not package a directory without a lockfile.
 
 2. In the Stripe Dashboard app settings, copy the app's signing secret and set it as `STRIPE_PROJECTS_SIGNING_SECRET` (GitHub production secret, then deploy). Until it is set, every `/api/stripe-projects/` path returns 404.
 3. Store any random value under the Secret Store key `oauth_client_secret`. OpenSEO authenticates the token endpoint with Stripe's signature or PKCE and ignores the client secret.

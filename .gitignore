@@ -50,3 +50,6 @@ dist/
 # Cloudflare Vite plugin 2.x's build output and local state
 .everyapp/
 .cloudflare/
+
+# built by `stripe apps upload`
+deploy/stripe-app/.build/
