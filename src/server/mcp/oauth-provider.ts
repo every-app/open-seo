@@ -34,6 +34,7 @@ import {
   workersOAuthMcpPropsSchema,
 } from "@/server/mcp/context";
 import { handleOAuthError } from "@/server/mcp/oauth-errors";
+import { asksForChatGptSignIn } from "@/shared/chatgpt-sign-in";
 import { normalizeClientRegistrationRequest } from "@/server/mcp/oauth-registration";
 import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
 import { handleMcpApiKeyRequest } from "@/server/mcp/api-key-auth";
@@ -106,6 +107,9 @@ async function getAuthorizeSessionBlocker(
   } catch (error) {
     const appError = asAppError(error);
     if (appError?.code === "UNAUTHENTICATED") {
+      // The person chose "Continue with ChatGPT" in ChatGPT's connect window,
+      // so no guest account stands in: the sign-in page starts it for them.
+      if (asksForChatGptSignIn(request.url)) return redirectToSignIn(request);
       // No session: an eligible browser gets a guest account instead of the
       // sign-in page (src/server/auth/guest-accounts.ts). A failed check
       // (database, feature flag) must never block the normal sign-in.

@@ -108,6 +108,12 @@ because before that OpenAI turns away everyone but the app's developers. Registe
 redirect URI. Set `OPENAI_SIWC_CLIENT_SECRET` only when OpenAI registered the
 client as confidential (`client_secret_basic`); a public client has no secret.
 
+ChatGPT's own connect window can offer "Continue with ChatGPT" next to "Sign in
+with OpenSEO". OpenAI's partnerships team turns that on; there is no dashboard
+setting. ChatGPT then adds `target_flow=chatgpt_siwc` to the connector's
+authorize request, and the sign-in page starts the ChatGPT sign-in without
+another click.
+
 OpenAI's account security notifications (back-channel logout) are not
 implemented, so leave "Automatic logout" off in OpenAI Platform.
 
