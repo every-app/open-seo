@@ -77,15 +77,15 @@ export const FRONTIER_CLAIM_SQL = `
  * Queue one link-discovered URL. Already-seen URLs keep their row (the
  * global dedup), except that a pending row with no click depth yet — almost
  * always a sitemap seed — takes the link's depth and link-queue priority
- * while keeping its in-sitemap flag. Sitemap seeding covers the whole
- * sitemap, so without this every linked sitemap page would crawl in sitemap
- * order with no depth. Takes (url, depth).
+ * while keeping its in-sitemap flag. If reached again at a shorter path,
+ * its depth is updated so the crawl depth reflects the shortest path from the start URL.
+ * Takes (url, depth).
  */
 export const FRONTIER_DISCOVER_SQL = `
   INSERT INTO frontier (url, depth, source, in_sitemap) VALUES (?, ?, 'link', 0)
   ON CONFLICT(url) DO UPDATE SET source = 'link', depth = excluded.depth
-  WHERE frontier.state = 'pending' AND frontier.depth IS NULL
-    AND excluded.depth IS NOT NULL
+  WHERE frontier.state = 'pending' AND excluded.depth IS NOT NULL
+    AND (frontier.depth IS NULL OR excluded.depth < frontier.depth)
 `;
 
 /**

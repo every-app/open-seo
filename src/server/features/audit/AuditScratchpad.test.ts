@@ -285,4 +285,29 @@ describe("frontier link discovery", () => {
         .get(url),
     ).toEqual({ depth: 2, source: "link", in_sitemap: 1 });
   });
+
+  it("updates depth when a pending frontier row is reached via a shorter path", () => {
+    const url = "https://site.test/deep-or-shallow";
+    db.prepare(
+      `INSERT INTO frontier (url, depth, source, in_sitemap) VALUES (?, 4, 'link', 0)`,
+    ).run(url);
+
+    // Reached later via a shorter path (depth 1)
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, 1);
+
+    expect(
+      db
+        .prepare(`SELECT depth, source, in_sitemap FROM frontier WHERE url = ?`)
+        .get(url),
+    ).toEqual({ depth: 1, source: "link", in_sitemap: 0 });
+
+    // Reached later via a longer path (depth 3) - should not overwrite shorter depth 1
+    db.prepare(FRONTIER_DISCOVER_SQL).run(url, 3);
+
+    expect(
+      db
+        .prepare(`SELECT depth, source, in_sitemap FROM frontier WHERE url = ?`)
+        .get(url),
+    ).toEqual({ depth: 1, source: "link", in_sitemap: 0 });
+  });
 });
