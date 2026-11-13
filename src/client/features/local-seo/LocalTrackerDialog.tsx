@@ -4,6 +4,14 @@ import { z } from "zod";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useAppForm } from "@/client/components/form/useAppForm";
 import { FormDialog } from "@/client/components/FormDialog";
+import {
+  cleanKeywords,
+  KeywordFields,
+} from "@/client/components/KeywordFields";
+import {
+  MAX_LOCAL_KEYWORD_LENGTH,
+  MAX_LOCAL_KEYWORDS,
+} from "@/types/schemas/local-seo";
 import { Button } from "@/client/components/ui/button";
 import { Skeleton } from "@/client/components/ui/skeleton";
 import { QueryError } from "@/client/components/QueryState";
@@ -16,7 +24,6 @@ import { usePrewarmSerpLocations } from "@/client/components/usePrewarmSerpLocat
 import { Field, FieldError, FieldLabel } from "@/client/components/ui/field";
 import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { getIsoCountryCode } from "@/shared/keyword-locations";
-import { cleanKeywords, LocalKeywordFields } from "./LocalKeywordFields";
 import { LocalListingChoices, type Listing } from "./LocalListingChoices";
 import { LOCAL_AREA_ITEMS, LOCAL_AREAS, type LocalArea } from "./localAreas";
 
@@ -255,7 +262,11 @@ function TrackerSettings({
         <form.Form id="local-tracker-settings" className="space-y-4">
           <form.Field name="keywords">
             {(field) => (
-              <LocalKeywordFields
+              <KeywordFields
+                label="Keywords to track"
+                placeholder="e.g. pizza delivery"
+                max={MAX_LOCAL_KEYWORDS}
+                maxLength={MAX_LOCAL_KEYWORD_LENGTH}
                 value={field.state.value}
                 onChange={field.handleChange}
               />

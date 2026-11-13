@@ -7,10 +7,6 @@ import {
   FieldLabel,
 } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
-import {
-  MAX_LOCAL_KEYWORD_LENGTH,
-  MAX_LOCAL_KEYWORDS,
-} from "@/types/schemas/local-seo";
 
 /** The keywords entered, without blank rows or repeats. */
 export function cleanKeywords(rows: string[]) {
@@ -18,14 +14,23 @@ export function cleanKeywords(rows: string[]) {
 }
 
 /** One input per keyword. Pasting several lines fills several rows. */
-export function LocalKeywordFields({
+export function KeywordFields({
   value,
   onChange,
+  label,
   description,
+  placeholder,
+  max,
+  maxLength,
 }: {
   value: string[];
   onChange: (rows: string[]) => void;
+  label: string;
   description?: string;
+  placeholder: string;
+  /** The most keywords the list takes. */
+  max: number;
+  maxLength: number;
 }) {
   const id = useId();
   // The row "Add keyword" just created, so typing can start right away.
@@ -33,16 +38,18 @@ export function LocalKeywordFields({
   const setRows = (rows: string[]) => onChange(rows.length ? rows : [""]);
   return (
     <Field>
-      <FieldLabel htmlFor={`${id}-0`}>Keywords to track</FieldLabel>
+      <FieldLabel htmlFor={`${id}-0`}>{label}</FieldLabel>
       {description && <FieldDescription>{description}</FieldDescription>}
-      <div className="space-y-2">
+      {/* A long list scrolls here, so the buttons below stay in view. The
+          padding leaves room for the focus ring. */}
+      <div className="-m-1 max-h-[50vh] space-y-2 overflow-y-auto p-1">
         {value.map((keyword, index) => (
           <div key={index} className="flex items-center gap-1">
             <Input
               id={`${id}-${index}`}
               aria-label={`Keyword ${index + 1}`}
-              placeholder="e.g. pizza delivery"
-              maxLength={MAX_LOCAL_KEYWORD_LENGTH}
+              placeholder={placeholder}
+              maxLength={maxLength}
               autoFocus={index === addedRow}
               value={keyword}
               onChange={(event) =>
@@ -65,7 +72,7 @@ export function LocalKeywordFields({
                     ...value.slice(0, index),
                     ...lines,
                     ...value.slice(index + 1),
-                  ].slice(0, MAX_LOCAL_KEYWORDS),
+                  ].slice(0, max),
                 );
               }}
             />
@@ -88,7 +95,7 @@ export function LocalKeywordFields({
         variant="ghost"
         size="sm"
         className="self-start w-auto!"
-        disabled={value.length >= MAX_LOCAL_KEYWORDS}
+        disabled={value.length >= max}
         onClick={() => {
           setAddedRow(value.length);
           onChange([...value, ""]);

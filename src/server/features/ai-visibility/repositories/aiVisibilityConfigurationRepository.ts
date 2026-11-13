@@ -80,13 +80,8 @@ export function writeConfiguration(tx: Tx, rows: ConfigurationRows) {
   ];
 }
 
-/** Fills a project's missing Prompt Research keywords, in the given order. */
-export function writeResearchKeywords(
-  tx: Tx,
-  projectId: string,
-  names: string[],
-) {
-  // One keyword per line, so a keyword itself never holds a line break.
+/** One keyword per line, so a keyword itself never holds a line break. */
+function researchKeywordsText(names: string[]) {
   const keywords = [
     ...new Map(
       names.map((name) => [
@@ -95,12 +90,32 @@ export function writeResearchKeywords(
       ]),
     ).values(),
   ].filter(Boolean);
+  return keywords.join("\n") || null;
+}
+
+/** Fills a project's missing Prompt Research keywords, in the given order. */
+export function writeResearchKeywords(
+  tx: Tx,
+  projectId: string,
+  names: string[],
+) {
   return [
     tx
       .update(projects)
-      .set({ aiResearchKeywords: keywords.join("\n") || null })
+      .set({ aiResearchKeywords: researchKeywordsText(names) })
       .where(
         and(eq(projects.id, projectId), isNull(projects.aiResearchKeywords)),
       ),
   ];
+}
+
+/** Replaces a project's Prompt Research keywords with the given list. */
+export async function replaceResearchKeywords(
+  projectId: string,
+  names: string[],
+) {
+  await db
+    .update(projects)
+    .set({ aiResearchKeywords: researchKeywordsText(names) })
+    .where(eq(projects.id, projectId));
 }

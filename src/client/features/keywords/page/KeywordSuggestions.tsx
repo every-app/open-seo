@@ -31,7 +31,8 @@ export const keywordSuggestionsQueryOptions = (projectId: string) =>
   queryOptions({
     queryKey: ["keywordSuggestions", projectId],
     queryFn: () => getKeywordSuggestions({ data: { projectId } }),
-    // Topics change only when generated, and Search Console data daily.
+    // Topics change only when generated or edited in Prompt Research, which
+    // refreshes this, and Search Console data daily.
     staleTime: 10 * 60_000,
   });
 

@@ -2,6 +2,7 @@ import { waitUntil } from "cloudflare:workers";
 import { type BillingCustomerContext } from "@/server/billing/subscription";
 import type { ContextAuthor } from "@/types/schemas/projectContext";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
+import { AiVisibilityRepository } from "@/server/features/ai-visibility/repositories/AiVisibilityRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { saveWebsiteSetup } from "@/server/features/projects/repositories/ProjectWebsiteRepository";
 import { researchWebsite } from "@/server/features/projects/services/websiteResearch";
@@ -9,6 +10,7 @@ import { withResearchAdmission } from "@/server/billing/researchSpend";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 import { AppError } from "@/server/lib/errors";
 import { isDefaultProjectName } from "@/shared/ai-visibility";
+import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
 import {
   prepareWebsiteTracking,
   startWebsiteTrackingRun,
@@ -60,9 +62,10 @@ async function save(
     normalizeBacklinksTarget(accepted.domain, {
       scope: "domain",
     }).apiTarget;
-  const existing = await ProjectContextRepository.listCompetitors(
-    accepted.projectId,
-  );
+  const [existing, savedKeywords] = await Promise.all([
+    ProjectContextRepository.listCompetitors(accepted.projectId),
+    AiVisibilityRepository.listResearchKeywords(accepted.projectId),
+  ]);
   // A saved competitor list is authoritative, even if it was added while
   // research was running or the review was open. Setup never edits that list.
   if (existing.length) accepted.competitors = [];
@@ -81,6 +84,7 @@ async function save(
     ...new Map(accepted.competitors.map((row) => [row.domain, row])).values(),
   ];
   const tracking = await prepareWebsiteTracking(accepted, project);
+  const saved = new Set(savedKeywords.map(normalizeAiSuggestion));
   await saveWebsiteSetup(
     customer.organizationId,
     accepted,
@@ -95,6 +99,16 @@ async function save(
   return {
     project: await requireProject(customer, accepted.projectId),
     seededTracking: tracking !== null,
+    // Setup only fills missing keywords, so a list sent to change saved ones
+    // is dropped. Callers say so instead of reporting a save. Setup for a
+    // project that has keywords but no tracker sends the saved ones back as
+    // topics, which drops nothing.
+    keywordsIgnored:
+      saved.size > 0 &&
+      [
+        ...(accepted.suggestedTopics ?? []).map((topic) => topic.name),
+        ...(accepted.suggestedKeywords ?? []),
+      ].some((keyword) => !saved.has(normalizeAiSuggestion(keyword))),
   };
 }
 export const ProjectWebsiteService = { research, save };

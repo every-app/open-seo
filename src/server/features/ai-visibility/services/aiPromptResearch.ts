@@ -11,6 +11,7 @@ import { assertPaidAiSearchPlan } from "@/server/features/ai-search/services/acc
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { requireOpenRouterCostUsd } from "@/server/lib/chatAgent";
+import { AppError } from "@/server/lib/errors";
 import {
   CHATGPT_LANGUAGE_CODE,
   CHATGPT_LOCATION_CODE,
@@ -29,7 +30,11 @@ import {
   type AiPromptResearchResult,
   type AiResearchedPrompt,
 } from "@/shared/ai-visibility";
-import type { ResearchAiPromptsInput } from "@/types/schemas/aiPromptResearch";
+import {
+  MAX_AI_RESEARCH_KEYWORDS,
+  type ResearchAiPromptsInput,
+  type UpdateAiResearchKeywordsInput,
+} from "@/types/schemas/aiPromptResearch";
 import { aiPromptIsBranded, ownedAiDomain } from "./aiVisibilityMatching";
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import { getTracker } from "./aiVisibilityState";
@@ -65,20 +70,52 @@ const relevanceOutputSchema = z.object({
   relevant: z.array(z.number().int()),
 });
 
-/** Website setup keywords first, then tracker topics the user added. */
+/**
+ * Saved keywords first, then tracker topics the user added. Tracked topics
+ * are always listed, so they are named for callers that edit the saved ones.
+ */
 export async function listAiResearchKeywords(input: {
   projectId: string;
-}): Promise<{ keywords: string[] }> {
+}): Promise<{ keywords: string[]; trackedTopics: string[] }> {
   const [state, researchKeywords] = await Promise.all([
     getTracker({ projectId: input.projectId }),
     repo.listResearchKeywords(input.projectId),
   ]);
-  const keywords = [
-    ...researchKeywords,
+  const trackedTopics = state.topics
     // The default topic is a catch-all, not a keyword.
-    ...state.topics.filter((topic) => topic !== AI_DEFAULT_TOPIC),
-  ].map(normalizeAiSuggestion);
-  return { keywords: [...new Set(keywords)] };
+    .filter((topic) => topic !== AI_DEFAULT_TOPIC)
+    .map(normalizeAiSuggestion);
+  const keywords = [
+    ...researchKeywords.map(normalizeAiSuggestion),
+    ...trackedTopics,
+  ];
+  return {
+    keywords: [...new Set(keywords)],
+    trackedTopics: [...new Set(trackedTopics)],
+  };
+}
+
+/** Edits the saved keywords. The app and the MCP both edit through here. */
+export async function updateAiResearchKeywords(
+  input: UpdateAiResearchKeywordsInput,
+) {
+  if (input.add.length || input.remove.length) {
+    // An added keyword moves to the top, so its saved copy goes too.
+    const changed = new Set(
+      [...input.remove, ...input.add].map(normalizeAiSuggestion),
+    );
+    const kept = (await repo.listResearchKeywords(input.projectId)).filter(
+      (keyword) => !changed.has(normalizeAiSuggestion(keyword)),
+    );
+    const keywords = [...input.add, ...kept];
+    if (keywords.length > MAX_AI_RESEARCH_KEYWORDS)
+      throw new AppError(
+        "VALIDATION_ERROR",
+        `Prompt Research keeps up to ${MAX_AI_RESEARCH_KEYWORDS} keywords. Remove some before adding more.`,
+      );
+    await repo.replaceResearchKeywords(input.projectId, keywords);
+  }
+  return listAiResearchKeywords({ projectId: input.projectId });
 }
 
 export async function researchAiPrompts(

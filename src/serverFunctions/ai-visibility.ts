@@ -4,7 +4,10 @@ import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { AiVisibilityService } from "@/server/features/ai-visibility/services/AiVisibilityService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import { generateAiPromptsSchema } from "@/types/schemas/aiPromptSuggestions";
-import { researchAiPromptsSchema } from "@/types/schemas/aiPromptResearch";
+import {
+  researchAiPromptsSchema,
+  updateAiResearchKeywordsSchema,
+} from "@/types/schemas/aiPromptResearch";
 import {
   aiProjectSchema,
   saveAiTrackerSchema,
@@ -62,6 +65,16 @@ export const listAiResearchKeywords = createServerFn({ method: "POST" })
   .validator(aiProjectSchema)
   .handler(({ context }) =>
     AiVisibilityService.listResearchKeywords({ projectId: context.projectId }),
+  );
+
+export const updateAiResearchKeywords = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(updateAiResearchKeywordsSchema)
+  .handler(({ data, context }) =>
+    AiVisibilityService.updateResearchKeywords({
+      ...data,
+      projectId: context.projectId,
+    }),
   );
 
 export const getAiVisibilityTracker = createServerFn({ method: "POST" })

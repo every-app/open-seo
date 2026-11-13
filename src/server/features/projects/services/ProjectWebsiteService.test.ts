@@ -21,7 +21,11 @@ vi.mock("cloudflare:workers", () => ({
   env: { DATABASE_PROVIDER: "d1" },
   waitUntil: vi.fn(),
 }));
-vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/db", () => ({
+  get db() {
+    return testDb;
+  },
+}));
 vi.mock("@/db/runBatch", () => ({
   runBatch: async (build: Parameters<typeof runBatch>[0]) => {
     if (beforeWrite) await beforeWrite();
@@ -170,6 +174,28 @@ describe("ProjectWebsiteService.save", () => {
       (await client.execute("SELECT content FROM project_context_sections"))
         .rows[0]?.content,
     ).toBe(accepted.overview);
+  });
+
+  it("reports the keywords it ignored because the project already had some", async () => {
+    const first = await ProjectWebsiteService.save(accepted, customer, "mcp");
+    // Setup sends saved keywords back as topics; that drops nothing.
+    const same = await ProjectWebsiteService.save(
+      { ...accepted, suggestedTopics: [], suggestedKeywords: ["Site Audit"] },
+      customer,
+      "mcp",
+    );
+    const changed = await ProjectWebsiteService.save(
+      { ...accepted, suggestedTopics: [], suggestedKeywords: ["rank tracker"] },
+      customer,
+      "mcp",
+    );
+
+    expect(
+      [first, same, changed].map((result) => result.keywordsIgnored),
+    ).toEqual([false, false, true]);
+    expect(
+      (await client.execute("SELECT ai_research_keywords FROM projects")).rows,
+    ).toEqual([{ ai_research_keywords: "new keyword\nsite audit" }]);
   });
 
   it.each([

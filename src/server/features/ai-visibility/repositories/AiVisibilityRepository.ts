@@ -16,6 +16,7 @@ import {
   getTracker,
   getConfiguration,
   saveConfiguration,
+  replaceResearchKeywords,
   type ObservationRow,
   type RunRow,
   type TrackerRow,
@@ -263,6 +264,7 @@ export const AiVisibilityRepository = {
     )
       .split("\n")
       .filter(Boolean),
+  replaceResearchKeywords,
   getTracker,
   getConfiguration,
   saveConfiguration,

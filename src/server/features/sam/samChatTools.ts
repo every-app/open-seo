@@ -43,6 +43,7 @@ import {
 } from "@/server/mcp/tools/site-audit-tools";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
 import { removeSavedKeywordsTool } from "@/server/mcp/tools/remove-saved-keywords";
+import { updateAiResearchKeywordsTool } from "@/server/mcp/tools/update-ai-research-keywords";
 import { buildUpdateProjectContextTool } from "@/server/mcp/tools/project-context";
 import {
   getGoogleAnalyticsAudienceBreakdownTool,
@@ -399,6 +400,7 @@ export function buildSamMcpTools(
     generate_ai_visibility_prompts: adaptTool(generateAiVisibilityPromptsTool),
     research_ai_visibility_prompts: adaptTool(researchAiVisibilityPromptsTool),
     complete_ai_research_setup: adaptTool(completeAiResearchSetupTool),
+    update_ai_research_keywords: adaptTool(updateAiResearchKeywordsTool),
     explore_prompt: adaptTool(explorePromptTool),
     save_ai_visibility_tracker: adaptTool(saveAiVisibilityTrackerTool),
     estimate_ai_visibility_cost: adaptTool(estimateAiVisibilityCostTool),
