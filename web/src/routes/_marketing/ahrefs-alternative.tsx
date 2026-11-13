@@ -68,7 +68,7 @@ const comparison: ComparisonTableProps = {
       label: "Keyword research",
       cells: [
         {
-          text: "Volume and CPC in 143 countries. Difficulty and intent in 94 of them",
+          text: "Volume and CPC in 211 countries. Difficulty and intent in 94 of them",
           tone: "positive",
         },
         {

@@ -66,10 +66,23 @@ There is no user-facing provider choice.
    state the 2× credit cost. The flag is part of the research cache key.
 5. **Language codes for Google-Ads-only countries must exist in both the
    Google Ads and SERP language lists** — the country picker is shared with
-   rank tracking, which uses the SERP API. China is excluded: its Ads
-   language code (`zh_CN`) conflicts with the SERP format (`zh-CN`), and
-   Google search does not meaningfully operate there.
-6. **Billing is unchanged.** `keywords_data/*` task costs flow through the
+   rank tracking, which uses the SERP API. Google Ads names some languages
+   differently (`no` for `nb`, `iw` for `he`, `zh_TW` for `zh-TW`, `zh_CN` for
+   `zh-CN`), so the Google Ads client translates them. Five Labs countries
+   default to a language Google Ads does not have at all (Albanian, Armenian,
+   Azerbaijani, Bosnian, Macedonian). Their local volume calls send no
+   language, because Google Ads fails a task with a language it does not
+   know and returns the same volumes with no language as with English.
+6. **The picker offers every country in both the Google Ads and SERP country
+   lists**, plus Hong Kong, Macao, Palestine, and Taiwan, which DataForSEO
+   lists as regions. China is left out because Google search does not
+   meaningfully operate there. Territories with no permanent population
+   (Antarctica, Heard Island and McDonald Islands, South Georgia, the French
+   Southern and Antarctic Lands, the United States Minor Outlying Islands)
+   are left out too. Saint Barthelemy, South Sudan, Sudan, and Syria have
+   Google Ads data but no SERP location, so rank tracking could not run
+   there.
+7. **Billing is unchanged.** `keywords_data/*` task costs flow through the
    same envelope → markup → Autumn pipeline as Labs calls and map to the
    `keyword_research` credit feature (rank tracking overrides to
    `rank_tracking`).
@@ -99,7 +112,7 @@ USD × 1.28 markup × 1000):
 
 ## Consequences
 
-- Iceland and ~47 other countries are selectable for keyword research and
+- Iceland and 116 other countries are selectable for keyword research and
   rank tracking; a Google-Ads-served research or metrics call costs a flat
   ~96 credits.
 - Cross-country volume numbers stay roughly comparable: both providers'

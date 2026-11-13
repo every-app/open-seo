@@ -47,7 +47,7 @@ Yes. OpenSEO runs on your own server with [Docker](/docs/self-hosting/docker), o
 
 ### Is there an open source keyword research tool?
 
-Yes. OpenSEO's [keyword research](/features/keyword-research) returns up to 500 ideas per search with volume, difficulty, CPC and search intent. It covers 143 countries. 94 of them have every metric, and the rest have volume and CPC only. A search costs about 5¢ on the hosted app. To try it without an account, the [free keyword generator](/keyword-generator) returns up to 20 ideas.
+Yes. OpenSEO's [keyword research](/features/keyword-research) returns up to 500 ideas per search with volume, difficulty, CPC and search intent. It covers 211 countries. 94 of them have every metric, and the rest have volume and CPC only. A search costs about 5¢ on the hosted app. To try it without an account, the [free keyword generator](/keyword-generator) returns up to 20 ideas.
 
 ### Are open source SEO tools free?
 

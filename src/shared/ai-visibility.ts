@@ -324,11 +324,14 @@ export interface AiTrend {
  * engine. Keep in sync with each engine's DataForSEO locations endpoint.
  */
 export const AI_UNSUPPORTED_LOCATIONS: Record<AiEngine, readonly number[]> = {
-  chatgpt: [2275, 2344, 2831, 2832, 2833, 2862],
+  chatgpt: [
+    2016, 2162, 2166, 2184, 2275, 2316, 2344, 2446, 2531, 2534, 2535, 2570,
+    2574, 2580, 2612, 2772, 2831, 2832, 2833, 2862,
+  ],
   gemini: [],
   google_ai_overview: [],
   // AI Mode has no locations endpoint of its own. Every country and language
-  // in the shared market list returned an answer on 2026-11-11.
+  // in the shared market list had returned an answer by 2026-11-13.
   google_ai_mode: [],
   claude: liveUnsupportedLocations("claude"),
   perplexity: liveUnsupportedLocations("perplexity"),

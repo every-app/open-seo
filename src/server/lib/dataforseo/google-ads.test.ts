@@ -27,13 +27,17 @@ function stubAdsFetch() {
   return fetchMock;
 }
 
+function sentTasks(fetchMock: ReturnType<typeof stubAdsFetch>): unknown {
+  const body = fetchMock.mock.lastCall?.[1]?.body;
+  if (typeof body !== "string") throw new Error("Expected JSON request body");
+  return JSON.parse(body);
+}
+
 function expectLanguageCode(
   fetchMock: ReturnType<typeof stubAdsFetch>,
   languageCode: string,
 ) {
-  const body = fetchMock.mock.lastCall?.[1]?.body;
-  if (typeof body !== "string") throw new Error("Expected JSON request body");
-  expect(JSON.parse(body)).toEqual([
+  expect(sentTasks(fetchMock)).toEqual([
     expect.objectContaining({ language_code: languageCode }),
   ]);
 }
@@ -56,4 +60,34 @@ it("sends Norwegian Bokmål to Google Ads as no", async () => {
     limit: 10,
   });
   expectLanguageCode(fetchMock, "no");
+});
+
+it.each([
+  ["he", "iw"],
+  ["zh-TW", "zh_TW"],
+  ["zh-CN", "zh_CN"],
+])("sends %s to Google Ads as %s", async (languageCode, adsCode) => {
+  const fetchMock = stubAdsFetch();
+
+  await fetchAdsSearchVolume({
+    keywords: ["hotel"],
+    locationCode: 2344,
+    languageCode,
+  });
+  expectLanguageCode(fetchMock, adsCode);
+});
+
+it("sends no language for one Google Ads does not have", async () => {
+  const fetchMock = stubAdsFetch();
+
+  // Albanian: Google Ads fails the whole task on language_code "sq".
+  await fetchAdsSearchVolume({
+    keywords: ["hotel tirana"],
+    locationCode: 2008,
+    languageCode: "sq",
+    locationName: "Tirana County,Albania",
+  });
+  expect(sentTasks(fetchMock)).toEqual([
+    { keywords: ["hotel tirana"], location_name: "Tirana County,Albania" },
+  ]);
 });

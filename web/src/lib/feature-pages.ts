@@ -171,7 +171,7 @@ export const featurePages = {
       },
       {
         title: "How it compares with Google Keyword Planner and free tools",
-        body: "Google Keyword Planner is the free option most guides point to, and it sits inside Google Ads. OpenSEO's free keyword generator is the quick version of this tool: one topic in, up to 20 ideas out, with volume and difficulty and no account. The full tool returns up to 500 ideas per search and adds CPC, search intent and the live results page for each keyword. Keyword data covers 143 countries. 94 of them have full metrics. In the other 49 the data comes from Google Ads, which has volume and CPC but no difficulty or intent.",
+        body: "Google Keyword Planner is the free option most guides point to, and it sits inside Google Ads. OpenSEO's free keyword generator is the quick version of this tool: one topic in, up to 20 ideas out, with volume and difficulty and no account. The full tool returns up to 500 ideas per search and adds CPC, search intent and the live results page for each keyword. Keyword data covers 211 countries. 94 of them have full metrics. In the other 117 the data comes from Google Ads, which has volume and CPC but no difficulty or intent.",
       },
       {
         title: "Keyword research with ChatGPT or Claude, using real numbers",
@@ -219,7 +219,7 @@ export const featurePages = {
       {
         question: "Which countries have keyword data?",
         answer:
-          "143 countries. 94 of them get full metrics, including keyword difficulty and search intent. The other 49 are served from Google Ads data, which has search volume and CPC but no difficulty or intent.",
+          "211 countries. 94 of them get full metrics, including keyword difficulty and search intent. The other 117 are served from Google Ads data, which has search volume and CPC but no difficulty or intent.",
       },
     ],
     guides: {
