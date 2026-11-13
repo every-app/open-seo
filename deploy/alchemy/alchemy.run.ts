@@ -307,6 +307,9 @@ const dataEnv = {
   GOOGLE_CLIENT_ID: optionalVar("GOOGLE_CLIENT_ID"),
   GOOGLE_CLIENT_SECRET: optionalSecret("GOOGLE_CLIENT_SECRET"),
   GOOGLE_MAPS_API_KEY: optionalSecret("GOOGLE_MAPS_API_KEY"),
+  // Sign in with ChatGPT (hosted only). Unset = no button.
+  OPENAI_SIWC_CLIENT_ID: optionalVar("OPENAI_SIWC_CLIENT_ID"),
+  OPENAI_SIWC_CLIENT_SECRET: optionalSecret("OPENAI_SIWC_CLIENT_SECRET"),
   OPENROUTER_API_KEY: optionalSecret("OPENROUTER_API_KEY"),
   OPENROUTER_BASE_URL: optionalVar("OPENROUTER_BASE_URL"),
   OPENROUTER_MODEL: optionalVar("OPENROUTER_MODEL"),

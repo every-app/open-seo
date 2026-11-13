@@ -60,6 +60,18 @@ describe("captureSignUpCompleted", () => {
     );
   });
 
+  it("names ChatGPT as the method of a sign-up from its callback", async () => {
+    await captureSignUpCompleted(user, {
+      path: "/oauth2/callback/:providerId",
+    });
+
+    expect(mocks.captureServerEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        properties: { method: "chatgpt", entry: "app", from_free_check: false },
+      }),
+    );
+  });
+
   it("sends nothing for a visitor who has not allowed analytics", async () => {
     await captureSignUpCompleted(
       { ...user, analyticsOptedOut: true },

@@ -2,14 +2,21 @@ import { useState } from "react";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 import { toAuthCallbackURL } from "@/lib/auth-redirect";
+import { CHATGPT_PROVIDER_ID } from "@/shared/chatgpt-sign-in";
 
-export function useGoogleAuth({
-  redirectTo,
-  postSignupRedirect,
-}: {
-  redirectTo: string;
-  postSignupRedirect?: string;
-}) {
+const PROVIDER_LABELS = { google: "Google", chatgpt: "ChatGPT" };
+
+/** Starts Google or ChatGPT sign-in: a full-page redirect to the provider. */
+export function useSocialAuth(
+  provider: keyof typeof PROVIDER_LABELS,
+  {
+    redirectTo,
+    postSignupRedirect,
+  }: {
+    redirectTo: string;
+    postSignupRedirect?: string;
+  },
+) {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isSignUp = postSignupRedirect !== undefined;
@@ -19,11 +26,12 @@ export function useGoogleAuth({
     setIsStarting(true);
     try {
       captureClientEvent(
-        isSignUp ? "auth:sign_up_google_start" : "auth:sign_in_google_start",
+        isSignUp
+          ? `auth:sign_up_${provider}_start`
+          : `auth:sign_in_${provider}_start`,
         { redirect_to: redirectTo },
       );
-      const result = await authClient.signIn.social({
-        provider: "google",
+      const destination = {
         callbackURL: toAuthCallbackURL(redirectTo),
         ...(isSignUp
           ? {
@@ -31,7 +39,14 @@ export function useGoogleAuth({
               requestSignUp: true,
             }
           : {}),
-      });
+      };
+      const result =
+        provider === "google"
+          ? await authClient.signIn.social({ provider, ...destination })
+          : await authClient.signIn.oauth2({
+              providerId: CHATGPT_PROVIDER_ID,
+              ...destination,
+            });
       if (!result.error) return;
       setError(result.error.message || fallbackMessage);
     } catch {
@@ -40,9 +55,7 @@ export function useGoogleAuth({
     setIsStarting(false);
   }
 
-  const fallbackMessage = isSignUp
-    ? "Google sign up is not available right now."
-    : "Google sign in is not available right now.";
+  const fallbackMessage = `${PROVIDER_LABELS[provider]} ${isSignUp ? "sign up" : "sign in"} is not available right now.`;
 
   return { isStarting, error, start, clearError: () => setError(null) };
 }

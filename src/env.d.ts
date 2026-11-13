@@ -78,6 +78,11 @@ declare namespace Cloudflare {
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
     GOOGLE_MAPS_API_KEY?: string;
+    // Sign in with ChatGPT (hosted only, optional). The client ID is public
+    // and inlined into the client build, which shows the button only when it
+    // is set. Only a client OpenAI registered as confidential has a secret.
+    OPENAI_SIWC_CLIENT_ID?: string;
+    OPENAI_SIWC_CLIENT_SECRET?: string;
     LOOPS_API_KEY?: string;
     LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
@@ -149,6 +154,7 @@ interface ImportMetaEnv {
   readonly POSTHOG_PUBLIC_KEY?: string;
   readonly POSTHOG_HOST?: string;
   readonly TURNSTILE_SITE_KEY?: string;
+  readonly OPENAI_SIWC_CLIENT_ID?: string;
   readonly VITE_E2E_DOMAIN_FIXTURES?: string;
   readonly VITE_E2E_KEYWORD_FIXTURES?: string;
   readonly VITE_OPENSEO_LEGACY_DOCKER?: string;

@@ -14,6 +14,10 @@ export enum FeatureFlag {
   // Stops new guest accounts for MCP connections; people get the normal
   // sign-in page instead (src/server/auth/guest-accounts.ts).
   PauseMcpGuestAccounts = "pause-mcp-guest-accounts",
+  // Shows "Continue with ChatGPT" on the sign-in and sign-up pages. Off until
+  // OpenAI approves the OpenSEO app: before that, OpenAI turns away everyone
+  // but the app's developers. Delete the flag once the button is on for good.
+  ChatGptSignIn = "chatgpt-sign-in",
 }
 
 /**

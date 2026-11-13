@@ -30,6 +30,11 @@ import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { GoogleAccountService } from "@/server/features/google/GoogleAccountService";
 import { assertStandaloneSignUpOpen } from "@/server/standalone/sign-up";
+import {
+  assertChatGptSignInOffered,
+  assertChatGptSignUpEmailVerified,
+  chatGptSignInPlugins,
+} from "@/server/auth/chatgpt-sign-in";
 import { stripeProjectsLoginPlugin } from "@/server/stripe-projects/login-plugin";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
 import {
@@ -272,8 +277,8 @@ function createAuth() {
           },
         },
     socialProviders: getSocialProviders(),
-    // Where Google sign-in failures land (canceled consent screen, replayed
-    // callback URLs). Without this the default /api/auth/error page 302s to
+    // Where Google and ChatGPT sign-in failures land (canceled consent screen,
+    // replayed callback URLs). Without this the default /api/auth/error page 302s to
     // `/?error=...` and the dashboard silently discards the code. Self-hosted
     // never serves social sign-in, so the placeholder baseUrl there is
     // harmless.
@@ -283,6 +288,7 @@ function createAuth() {
     plugins: [
       ...baseAuthConfig.plugins,
       ...(usesBetterAuth(env.AUTH_MODE) ? [createApiKeyPlugin()] : []),
+      ...(isHostedAuthMode(env.AUTH_MODE) ? chatGptSignInPlugins(env) : []),
       ...(isHostedAuthMode(env.AUTH_MODE) ? [stripeProjectsLoginPlugin()] : []),
       ...(turnstileSecretKey
         ? [
@@ -300,6 +306,8 @@ function createAuth() {
         // Standalone closes registration (src/server/standalone/sign-up.ts).
         if (standalone && ctx.path === "/sign-up/email")
           return assertStandaloneSignUpOpen(ctx.headers, ctx.body);
+
+        await assertChatGptSignInOffered(env, ctx);
 
         // Binds a new MCP API key to the organization the session is working
         // in, server-side: the /mcp handler reads metadata.organizationId and
@@ -401,13 +409,15 @@ function createAuth() {
                 message: "Please sign up with a non-disposable email address.",
               });
             }
+            assertChatGptSignUpEmailVerified(user, ctx?.path);
             // Start new accounts with the analytics choice that applies to
             // this browser, so server-side analytics doesn't run for a
             // visitor who hasn't opted in where opt-in is required.
             const choices = requestPrivacyChoices(ctx?.request);
             const now = new Date();
-            // Every hosted signup path (email form, Google on the sign-up or
-            // sign-in page) shows the Terms clickwrap next to its button.
+            // Every hosted signup path (email form, Google or ChatGPT on the
+            // sign-up or sign-in page) shows the Terms clickwrap next to its
+            // button.
             return {
               data: {
                 ...user,

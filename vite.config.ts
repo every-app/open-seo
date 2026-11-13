@@ -88,6 +88,8 @@ export default defineConfig(
         "POSTHOG_PUBLIC_KEY",
         "POSTHOG_HOST",
         "TURNSTILE_SITE_KEY",
+        // Public. OPENAI_SIWC_CLIENT_SECRET does not share this prefix.
+        "OPENAI_SIWC_CLIENT_ID",
       ],
       server: {
         allowedHosts,

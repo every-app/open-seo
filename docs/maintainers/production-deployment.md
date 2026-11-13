@@ -25,6 +25,7 @@ deployment branches to `main`. Then add the following.
 | `CRAWLER_ACCESS_SECRET`            | Must be the existing value: it encrypts stored crawler signatures  |
 | `GOOGLE_CLIENT_SECRET`             | Hosted Google sign-in and Search Console / GA4 OAuth               |
 | `TURNSTILE_SECRET_KEY`             | Signup captcha verification                                        |
+| `OPENAI_SIWC_CLIENT_SECRET`        | Sign in with ChatGPT, confidential clients only (optional)         |
 | `LOOPS_API_KEY`                    | Transactional email and contact sync                               |
 | `AUTUMN_SECRET_KEY`                | Billing                                                            |
 | `AUTUMN_WEBHOOK_SECRET`            | Billing webhook verification                                       |
@@ -66,32 +67,49 @@ binding authorization failed".
 
 ### Variables
 
-| Variable                                  | Value                                          |
-| ----------------------------------------- | ---------------------------------------------- |
-| `CLOUDFLARE_ACCOUNT_ID`                   | Production account ID                          |
-| `HYPERDRIVE_ID`                           | Existing `openseo` Hyperdrive configuration ID |
-| `GOOGLE_CLIENT_ID`                        | Existing Google OAuth client ID                |
-| `TURNSTILE_SITE_KEY`                      | Existing public Turnstile site key             |
-| `LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID`     | Verification template ID                       |
-| `LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID`   | Password-reset template ID                     |
-| `LOOPS_TRANSACTIONAL_INVITATION_ID`       | Invitation template ID                         |
-| `LOOPS_TRANSACTIONAL_ACCOUNT_DELETION_ID` | Account deletion confirmation template ID      |
-| `POSTHOG_PROJECT_ID`                      | PostHog project, for account deletion          |
-| `LOOPS_PRODUCT_UPDATES_LIST_ID`           | Product-updates mailing list ID; optional      |
-| `META_PIXEL_ID`                           | Meta pixel ID for signup attribution; optional |
-| `POSTHOG_PUBLIC_KEY`                      | Existing analytics key; optional               |
-| `POSTHOG_HOST`                            | Existing analytics ingestion host              |
-| `OPENROUTER_MODEL`                        | Optional model override                        |
-| `OPENSEO_TELEMETRY_DISABLED`              | Optional telemetry setting                     |
-| `TRUSTPILOT_BUSINESS_UNIT_ID`             | Trustpilot business unit; optional             |
-| `TRUSTPILOT_BUSINESS_USER_ID`             | Trustpilot business user; optional             |
-| `TRUSTPILOT_TEMPLATE_ID`                  | Trustpilot invitation template; optional       |
+| Variable                                  | Value                                               |
+| ----------------------------------------- | --------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID`                   | Production account ID                               |
+| `HYPERDRIVE_ID`                           | Existing `openseo` Hyperdrive configuration ID      |
+| `GOOGLE_CLIENT_ID`                        | Existing Google OAuth client ID                     |
+| `TURNSTILE_SITE_KEY`                      | Existing public Turnstile site key                  |
+| `OPENAI_SIWC_CLIENT_ID`                   | OpenAI client ID for Sign in with ChatGPT; optional |
+| `LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID`     | Verification template ID                            |
+| `LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID`   | Password-reset template ID                          |
+| `LOOPS_TRANSACTIONAL_INVITATION_ID`       | Invitation template ID                              |
+| `LOOPS_TRANSACTIONAL_ACCOUNT_DELETION_ID` | Account deletion confirmation template ID           |
+| `POSTHOG_PROJECT_ID`                      | PostHog project, for account deletion               |
+| `LOOPS_PRODUCT_UPDATES_LIST_ID`           | Product-updates mailing list ID; optional           |
+| `META_PIXEL_ID`                           | Meta pixel ID for signup attribution; optional      |
+| `POSTHOG_PUBLIC_KEY`                      | Existing analytics key; optional                    |
+| `POSTHOG_HOST`                            | Existing analytics ingestion host                   |
+| `OPENROUTER_MODEL`                        | Optional model override                             |
+| `OPENSEO_TELEMETRY_DISABLED`              | Optional telemetry setting                          |
+| `TRUSTPILOT_BUSINESS_UNIT_ID`             | Trustpilot business unit; optional                  |
+| `TRUSTPILOT_BUSINESS_USER_ID`             | Trustpilot business user; optional                  |
+| `TRUSTPILOT_TEMPLATE_ID`                  | Trustpilot invitation template; optional            |
 
 How to create the account deletion keys is in
 [account-deletion.md](account-deletion.md#setting-it-up-in-github).
 
 The workflow fixes `AUTH_MODE=hosted`, `DATABASE_PROVIDER=postgres`,
 `BETTER_AUTH_URL=https://app.openseo.so`, and email verification enabled.
+
+### Sign in with ChatGPT
+
+Optional. With `OPENAI_SIWC_CLIENT_ID` unset there is no "Continue with
+ChatGPT" button and nothing else changes. The client ID is inlined into the
+client build and read by the Worker, so it takes a deploy to set. In production
+the button also stays hidden, and the server refuses ChatGPT sign-ins, until
+the `chatgpt-sign-in` feature flag is on
+(Cloudflare dashboard, no deploy): leave it off until OpenAI approves the app,
+because before that OpenAI turns away everyone but the app's developers. Register
+`https://app.openseo.so/api/auth/oauth2/callback/chatgpt` with OpenAI as the
+redirect URI. Set `OPENAI_SIWC_CLIENT_SECRET` only when OpenAI registered the
+client as confidential (`client_secret_basic`); a public client has no secret.
+
+OpenAI's account security notifications (back-channel logout) are not
+implemented, so leave "Automatic logout" off in OpenAI Platform.
 
 ### Hyperdrive
 

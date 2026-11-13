@@ -13,7 +13,7 @@ import {
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
 import { signUpStatusQueryOptions } from "@/client/features/auth/signUpStatus";
-import { useGoogleAuth } from "@/client/features/auth/useGoogleAuth";
+import { useSocialAuth } from "@/client/features/auth/useSocialAuth";
 import { getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
@@ -39,8 +39,13 @@ export const Route = createFileRoute("/_auth/sign-in")({
 function SignInPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { redirectTo, oauthQuery, isHostedMode, isBetterAuthMode } =
-    useAuthPageState(search.redirect);
+  const {
+    redirectTo,
+    oauthQuery,
+    isHostedMode,
+    isBetterAuthMode,
+    chatGptEnabled,
+  } = useAuthPageState(search.redirect);
   const [showEmailForm, setShowEmailForm] = useState(false);
   // The standalone Docker edition has accounts but no Google sign-in and no
   // emailed password reset: go straight to the email form. Accounts come from
@@ -48,7 +53,8 @@ function SignInPage() {
   // visitor is sent to create the admin account instead.
   const emailOnly = isBetterAuthMode && !isHostedMode;
   const emailFormVisible = showEmailForm || emailOnly;
-  const google = useGoogleAuth({ redirectTo });
+  const google = useSocialAuth("google", { redirectTo });
+  const chatGpt = useSocialAuth("chatgpt", { redirectTo });
   const signUpStatus = useQuery({
     ...signUpStatusQueryOptions(),
     enabled: emailOnly,
@@ -165,20 +171,27 @@ function SignInPage() {
           <AuthMethodChooser
             googleLabel="Continue with Google"
             disabled={!isHostedMode}
-            isBusy={google.isStarting}
-            onContinueWithGoogle={() => {
-              void google.start();
-            }}
+            google={google}
+            chatGpt={chatGptEnabled ? chatGpt : undefined}
             onContinueWithEmail={() => {
               setShowEmailForm(true);
               google.clearError();
+              chatGpt.clearError();
             }}
           />
           {isHostedMode ? (
-            <TermsAgreementNotice action="By continuing with Google" />
+            <TermsAgreementNotice
+              action={
+                chatGptEnabled
+                  ? "By continuing with Google or ChatGPT"
+                  : "By continuing with Google"
+              }
+            />
           ) : null}
-          {google.error ? (
-            <p className="text-sm text-destructive">{google.error}</p>
+          {(google.error ?? chatGpt.error) ? (
+            <p className="text-sm text-destructive">
+              {google.error ?? chatGpt.error}
+            </p>
           ) : null}
         </>
       ) : (

@@ -1,11 +1,14 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
-const signUpStatusSchema = z.object({ firstAccount: z.boolean() });
+const signUpStatusSchema = z.object({
+  firstAccount: z.boolean(),
+  chatGptSignIn: z.boolean(),
+});
 
 // Whether this standalone installation still has no account, so the auth
-// pages can offer to create the administrator's
-// (src/routes/api/sign-up-status.ts).
+// pages can offer to create the administrator's, and whether to show
+// "Continue with ChatGPT" (src/routes/api/sign-up-status.ts).
 export const signUpStatusQueryOptions = () =>
   queryOptions({
     queryKey: ["sign-up-status"],
