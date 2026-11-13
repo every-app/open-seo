@@ -68,6 +68,9 @@ declare namespace Cloudflare {
     // Private Ed25519 JWK that signs site audit requests (Web Bot Auth). Hosted
     // only; unset sends unsigned requests.
     WEB_BOT_AUTH_JWK?: string;
+    // Stripe App signing secret that authenticates Stripe Projects
+    // provisioning requests (hosted only). Unset turns the provider off.
+    STRIPE_PROJECTS_SIGNING_SECRET?: string;
     DATABASE_PROVIDER?: "d1" | "postgres";
     HYPERDRIVE?: {
       connectionString: string;

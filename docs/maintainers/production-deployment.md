@@ -35,6 +35,7 @@ deployment branches to `main`. Then add the following.
 | `POSTHOG_ACCOUNT_DELETION_API_KEY` | Account deletion: deletes the PostHog person (person read + write) |
 | `GOOGLE_MAPS_API_KEY`              | Local SEO basemap tiles (optional)                                 |
 | `WEB_BOT_AUTH_JWK`                 | Private Ed25519 JWK that signs site audit requests (optional)      |
+| `STRIPE_PROJECTS_SIGNING_SECRET`   | Stripe Projects provisioning signatures (optional; unset = off)    |
 | `TRUSTPILOT_API_KEY`               | Trustpilot review invitations (optional)                           |
 | `TRUSTPILOT_API_SECRET`            | Trustpilot review invitations (optional)                           |
 

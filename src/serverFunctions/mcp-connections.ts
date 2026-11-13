@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { McpConnectionsService } from "@/server/mcp/connections";
+import {
+  McpConnectionsService,
+  revokeMcpConnectionSchema,
+} from "@/server/mcp/connections";
 import { getConsentRequest } from "@/server/mcp/oauth-provider";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 
@@ -18,7 +21,7 @@ export const listMcpConnections = createServerFn({ method: "GET" })
 
 export const revokeMcpConnection = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .validator(z.object({ grantId: z.string().min(1) }))
+  .validator(revokeMcpConnectionSchema)
   .handler(({ data, context }) =>
-    McpConnectionsService.revokeMcpConnection(context.userId, data.grantId),
+    McpConnectionsService.revokeMcpConnection(context.userId, data),
   );

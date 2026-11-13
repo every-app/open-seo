@@ -29,6 +29,10 @@ import {
   AUTUMN_WEBHOOK_PATH,
   handleAutumnWebhookRequest,
 } from "@/server/billing/autumn-webhook";
+import {
+  STRIPE_PROJECTS_PATH_PREFIX,
+  handleStripeProjectsRequest,
+} from "@/server/stripe-projects/handler";
 import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleOperatorRequest } from "@/server/standalone/admin";
@@ -211,6 +215,13 @@ async function handleAppRequest(
 
   if (isHostedAuthMode(authMode) && pathname === AUTUMN_WEBHOOK_PATH) {
     return handleAutumnWebhookRequest(publicRequest);
+  }
+
+  if (
+    isHostedAuthMode(authMode) &&
+    pathname.startsWith(STRIPE_PROJECTS_PATH_PREFIX)
+  ) {
+    return handleStripeProjectsRequest(publicRequest);
   }
 
   if (usesBetterAuth(authMode)) {

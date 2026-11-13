@@ -12,6 +12,9 @@ const listClaimedGuestUserIds = vi.hoisted(() => vi.fn());
 vi.mock("@/server/mcp/oauth-provider", () => ({
   getCapturedOAuthHelpers: () => helpers,
 }));
+vi.mock("@/server/stripe-projects/service", () => ({
+  listStripeConnections: async () => [],
+}));
 vi.mock("@/server/auth/repositories/GuestAccountRepository", () => ({
   GuestAccountRepository: { listClaimedGuestUserIds },
 }));
@@ -52,6 +55,7 @@ it("lists grants newest first with the client name, chat app and bound organizat
     McpConnectionsService.listMcpConnections("user-1"),
   ).resolves.toEqual([
     {
+      kind: "oauth",
       id: "grant-new",
       clientName: "MCP client",
       webChat: null,
@@ -59,6 +63,7 @@ it("lists grants newest first with the client name, chat app and bound organizat
       organizationId: null,
     },
     {
+      kind: "oauth",
       id: "grant-old",
       clientName: "Claude",
       webChat: "claude",
@@ -84,6 +89,9 @@ it("lists and revokes the agent connections of guests the user claimed", async (
     McpConnectionsService.listMcpConnections("user-1"),
   ).resolves.toMatchObject([{ id: "grant-guest" }]);
 
-  await McpConnectionsService.revokeMcpConnection("user-1", "grant-guest");
+  await McpConnectionsService.revokeMcpConnection("user-1", {
+    kind: "oauth",
+    grantId: "grant-guest",
+  });
   expect(helpers.revokeGrant).toHaveBeenCalledWith("grant-guest", "guest-1");
 });

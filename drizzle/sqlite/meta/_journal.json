@@ -498,6 +498,13 @@
       "when": 1794438903013,
       "tag": "0070_trustpilot_invited_at",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "6",
+      "when": 1794544101554,
+      "tag": "0071_stripe_projects_provider",
+      "breakpoints": true
     }
   ]
 }

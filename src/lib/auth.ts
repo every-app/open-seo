@@ -30,6 +30,7 @@ import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { GoogleAccountService } from "@/server/features/google/GoogleAccountService";
 import { assertStandaloneSignUpOpen } from "@/server/standalone/sign-up";
+import { stripeProjectsLoginPlugin } from "@/server/stripe-projects/login-plugin";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
 import {
   captureMetaSetupStep,
@@ -282,6 +283,7 @@ function createAuth() {
     plugins: [
       ...baseAuthConfig.plugins,
       ...(usesBetterAuth(env.AUTH_MODE) ? [createApiKeyPlugin()] : []),
+      ...(isHostedAuthMode(env.AUTH_MODE) ? [stripeProjectsLoginPlugin()] : []),
       ...(turnstileSecretKey
         ? [
             captcha({
@@ -315,6 +317,12 @@ function createAuth() {
         // no memory, so every one would re-send it and hit Loops' team-wide
         // rate limit.
         if (ctx.path !== "/api-key/create") return;
+        // A server-side auth.api.createApiKey call (no request, no headers) is
+        // trusted code that names the user and stamps metadata itself: the
+        // Stripe Projects provider (server/stripe-projects/service.ts). The
+        // plugin uses the same test to tell server calls apart, and refuses a
+        // client-supplied userId on any call that has a request.
+        if (!ctx.request && !ctx.headers) return;
         // Minting a credential must see the stored session, not the cookie
         // cache: a cookie from a session revoked minutes ago must not mint a
         // key that outlives the revocation. The plugin reuses this lookup.
