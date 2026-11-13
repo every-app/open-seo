@@ -78,6 +78,21 @@ export const serpItemSchema = z.looseObject({
   url: z.string().nullable(),
   domain: z.string().nullable(),
   description: z.string().nullable(),
+  // Only on people_also_ask rows.
+  questions: z.array(z.string()).optional(),
+  // Only on related_searches rows.
+  relatedSearches: z.array(z.string()).optional(),
+  // Only on the ai_overview row: its answer and the pages it cites.
+  text: z.string().optional(),
+  references: z
+    .array(
+      z.looseObject({
+        url: z.string(),
+        domain: z.string(),
+        title: z.string().nullable(),
+      }),
+    )
+    .optional(),
 });
 
 export const serpSchema = z.looseObject({
