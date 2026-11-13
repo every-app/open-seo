@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Play, Plus, Settings2 } from "lucide-react";
+import { Play, Plus, Settings2 } from "lucide-react";
+import { AiMentionIllustration } from "@/client/components/EmptyIllustrations";
 import { toast } from "sonner";
 import { EmptyState } from "@/client/components/EmptyState";
 import { SkeletonPageContent } from "@/client/components/SkeletonPresets";
@@ -182,9 +183,9 @@ function PromptTrackingContent({
       {!state.configured ? (
         <EmptyState
           variant="card"
-          icon={MessageSquare}
-          title="Start with the prompts that matter to your business"
-          description="Add a topic and its prompts using your saved project settings."
+          illustration={<AiMentionIllustration />}
+          title="Add the questions your customers ask AI"
+          description="We run them on a schedule and show which answers mention or cite you."
           action={
             <Button onClick={() => setEditorMode(TrackerEditorMode.Prompts)}>
               <Plus />

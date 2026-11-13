@@ -2,12 +2,12 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { RankRowsIllustration } from "@/client/components/EmptyIllustrations";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import {
   AlertTriangle,
   Archive,
   CircleAlert,
-  Globe,
   Info,
   Plus,
   ChevronRight,
@@ -201,9 +201,9 @@ export function RankTrackingDomainList({
           ) : !summaries ? null : summaries.length === 0 ? (
             <EmptyState
               variant="plain"
-              icon={Globe}
-              title="No tracked domains yet"
-              description="Add a domain to start monitoring keyword rankings over time."
+              illustration={<RankRowsIllustration />}
+              title="Track your Google rankings over time"
+              description="Add a domain and the keywords you care about to see when their positions move."
             />
           ) : filteredSummaries.length === 0 ? (
             <EmptyState

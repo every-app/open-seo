@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
+import { AiMentionIllustration } from "@/client/components/EmptyIllustrations";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
@@ -173,15 +173,15 @@ export function AiResearchSetupGate({
         <Card className="w-full max-w-2xl py-6 md:py-8">
           <CardContent className="space-y-6 px-6 md:px-8">
             <div>
-              <div className="mb-4 flex size-10 items-center justify-center rounded-lg border border-border bg-muted">
-                <Sparkles className="size-5" />
+              <div className="mb-4">
+                <AiMentionIllustration />
               </div>
               <h1 className="text-2xl font-semibold tracking-tight">
-                Set up AI visibility
+                See when AI recommends you
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                We’ll research your brand and find the most relevant topics to
-                monitor.
+                We’ll research your brand, suggest the questions your customers
+                ask AI, and track which answers mention or cite you.
               </p>
             </div>
             {getErrorCode(start.error) === "INSUFFICIENT_CREDITS" ? (

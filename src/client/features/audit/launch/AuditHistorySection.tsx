@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { UseQueryResult } from "@tanstack/react-query";
-import { ScanSearch, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { AuditChecksIllustration } from "@/client/components/EmptyIllustrations";
 import type { getAuditHistory } from "@/serverFunctions/audit";
 import { EmptyState } from "@/client/components/EmptyState";
 import { QueryState } from "@/client/components/QueryState";
@@ -57,7 +58,13 @@ function AuditHistoryTable({
   onDelete: (auditId: string) => void;
 }) {
   if (history.length === 0) {
-    return <EmptyState icon={ScanSearch} title="No audits yet" />;
+    return (
+      <EmptyState
+        illustration={<AuditChecksIllustration />}
+        title="Find what's holding your site back"
+        description="An audit crawls your pages for broken links, missing titles and pages Google can't index."
+      />
+    );
   }
 
   return (

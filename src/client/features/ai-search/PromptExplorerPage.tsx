@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { identity, sortBy } from "remeda";
-import { Columns3, MessageSquare, SearchCheck, Sparkles } from "lucide-react";
+import { Columns3, SearchCheck, Sparkles } from "lucide-react";
 import { useHostedPlanGate } from "@/client/features/billing/HostedPlanGate";
 import { ResearchPageShell } from "@/client/features/ai-search/ResearchPageShell";
 import { PromptTrackingWithoutUpgradeButton } from "@/client/features/ai-visibility/shared";
@@ -21,6 +21,7 @@ import type {
   SearchTabInput,
 } from "@/client/features/search-tabs/types";
 import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
+import { ModelAnswersIllustration } from "@/client/components/EmptyIllustrations";
 import { RecentSearches } from "@/client/components/RecentSearches";
 import { BackLink } from "@/client/components/PageHeader";
 import { formatModelLabel } from "@/shared/prompt-explorer-labels";
@@ -256,8 +257,9 @@ export function PromptExplorerPage({
           items={history}
           loaded={historyLoaded}
           onRemove={removeHistoryItem}
-          emptyIcon={MessageSquare}
-          emptyTitle="Enter a prompt to compare model answers"
+          emptyIllustration={<ModelAnswersIllustration />}
+          emptyTitle="See what AI says about your market"
+          emptyDescription="Each model's answer comes with the sources it cited."
           getTitle={(item) => item.prompt}
           getSubtitle={(item) => item.models.map(formatModelLabel).join(", ")}
           renderLink={(item, props) => (

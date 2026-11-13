@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, MapPin, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react";
+import { LocalGridIllustration } from "@/client/components/EmptyIllustrations";
 import { toast } from "sonner";
 import {
   deleteLocalTracker,
@@ -85,9 +86,9 @@ export function LocalTrackerList({
             trackers.length === 0 ? (
               <EmptyState
                 variant="plain"
-                icon={MapPin}
-                title="No tracked businesses yet"
-                description="Add a Google Maps listing to check keyword rankings across the surrounding area."
+                illustration={<LocalGridIllustration />}
+                title="See where you rank on Google Maps"
+                description="Rankings change from block to block. Add your business to check a keyword across the surrounding area."
               />
             ) : (
               trackers.map((tracker) => (

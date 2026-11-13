@@ -271,7 +271,11 @@ export function SearchPerformancePage({
           </>
         ) : !report.connected ? (
           <div className="max-w-2xl">
-            <GoogleConnectionCard provider="gsc" projectId={projectId} />
+            <GoogleConnectionCard
+              provider="gsc"
+              projectId={projectId}
+              prominent
+            />
           </div>
         ) : (
           <>
