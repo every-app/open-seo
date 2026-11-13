@@ -64,6 +64,18 @@ For security-conscious setups, two advanced options replace the accounts with yo
 
 Either way, you need a DataForSEO API key to get SEO data. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
 
+### Updating
+
+- **Docker:** make a backup, then pull the new image and restart. See [Updates](./docs/SELF_HOSTING_DOCKER.md#updates).
+- **Older single-container image:** from your checkout, run:
+
+  ```sh
+  docker compose pull
+  docker compose up -d --force-recreate
+  ```
+
+  The container builds the app each time it starts, so the page loads 1-2 minutes later. Until then the browser shows `ERR_EMPTY_RESPONSE`; wait until `docker compose ps` shows the container as `healthy`.
+
 ## Costs
 
 OpenSEO needs a [DataForSEO](https://dataforseo.com/?aff=255379) API key so that you can get SEO data. You pay them directly when self hosting.
