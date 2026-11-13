@@ -23,24 +23,41 @@ import {
 } from "@/client/lib/error-messages";
 import { renderingCreditsNeededText } from "@/shared/audit-rendering";
 import { useAuditCapabilities } from "@/client/features/audit/shared";
+import {
+  excludePathsSchema,
+  findExcludingPath,
+  splitExcludePathsInput,
+} from "@/shared/audit-exclude-paths";
 
 function getLaunchValidationErrors(
   value: LaunchFormValues,
-  shouldValidateUntouchedField: boolean,
+  // Untouched fields stay quiet until the form is submitted.
+  validate: { url: boolean; excludePaths: boolean },
 ) {
-  if (value.url.trim()) {
-    return null;
-  }
-
-  if (!shouldValidateUntouchedField) {
-    return null;
-  }
-
   return createFormValidationErrors({
     fields: {
-      url: "Please enter a URL.",
+      url: !value.url.trim() && validate.url ? "Please enter a URL." : null,
+      excludePathsInput: validate.excludePaths
+        ? getExcludePathsError(value)
+        : null,
     },
   });
+}
+
+function getExcludePathsError(value: LaunchFormValues) {
+  const parsed = excludePathsSchema.safeParse(
+    splitExcludePathsInput(value.excludePathsInput),
+  );
+  if (!parsed.success) return parsed.error.issues[0].message;
+  // The form takes a bare domain; the server adds the scheme the same way.
+  const url = value.url.trim();
+  const excludingPath = findExcludingPath(
+    parsed.data,
+    /^https?:\/\//i.test(url) ? url : `https://${url}`,
+  );
+  return excludingPath
+    ? `"${excludingPath}" excludes the URL the audit starts from.`
+    : null;
 }
 
 export function useLaunchController({
@@ -74,11 +91,15 @@ export function useLaunchController({
     defaultValues: { ...DEFAULT_LAUNCH_FORM_VALUES, url: initialUrl },
     validators: {
       onChange: ({ formApi, value }) =>
-        getLaunchValidationErrors(
-          value,
-          shouldValidateFieldOnChange(formApi, "url"),
-        ),
-      onSubmit: ({ value }) => getLaunchValidationErrors(value, true),
+        getLaunchValidationErrors(value, {
+          url: shouldValidateFieldOnChange(formApi, "url"),
+          excludePaths: shouldValidateFieldOnChange(
+            formApi,
+            "excludePathsInput",
+          ),
+        }),
+      onSubmit: ({ value }) =>
+        getLaunchValidationErrors(value, { url: true, excludePaths: true }),
     },
     onSubmit: async ({ formApi, value }) => {
       const effectiveMaxPages = commitMaxPagesInput(
@@ -100,6 +121,7 @@ export function useLaunchController({
           maxPages: effectiveMaxPages,
           lighthouseStrategy: value.runLighthouse ? "auto" : "none",
           renderJavaScript: value.renderJavaScript,
+          excludePaths: splitExcludePathsInput(value.excludePathsInput),
         });
         toast.success("Audit started!");
         onAuditStarted(result.auditId);
@@ -160,6 +182,7 @@ function useLaunchMutations({ projectId }: { projectId: string }) {
       maxPages: number;
       lighthouseStrategy: "auto" | "none";
       renderJavaScript: boolean;
+      excludePaths: string[];
     }) => startAudit({ data }),
     onSuccess: () => {
       void invalidateHistory();

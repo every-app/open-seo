@@ -38,6 +38,7 @@ export const startAudit = createServerFn({ method: "POST" })
       lighthouseStrategy: data.lighthouseStrategy,
       limitTier,
       renderJavaScript,
+      excludePaths: data.excludePaths,
     });
 
     waitUntil(

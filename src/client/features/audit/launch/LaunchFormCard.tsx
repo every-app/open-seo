@@ -22,6 +22,7 @@ import {
   MIN_PAGES,
 } from "@/client/features/audit/launch/types";
 import type { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
+import { ExcludePathsField } from "@/client/features/audit/launch/ExcludePathsField";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import {
   isEveryAppClientAuthMode,
@@ -111,6 +112,7 @@ export function LaunchFormCard({
               />
             </div>
           </div>
+          <ExcludePathsField launchForm={launchForm} />
         </form>
 
         <LaunchErrors launchForm={launchForm} outOfCredits={outOfCredits} />

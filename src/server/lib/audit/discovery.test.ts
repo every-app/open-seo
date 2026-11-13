@@ -88,4 +88,24 @@ describe("parseRobotsTxt", () => {
     expect(robots.isAllowed("https://example.com/private/page")).toBe(false);
     expect(robots.isAllowed("https://example.com/public")).toBe(true);
   });
+
+  it("skips the audit's excluded paths, like Disallow rules", () => {
+    const { isAllowed } = parseRobotsTxt("https://example.com", null, [
+      "/blog/",
+      "/*/print",
+      "/*.pdf$",
+      "/*?sort=",
+    ]);
+    const allowed = (path: string) => isAllowed(`https://example.com${path}`);
+
+    expect(allowed("/blog/post")).toBe(false);
+    expect(allowed("/blog")).toBe(true);
+    expect(allowed("/docs/blog/post")).toBe(true);
+    expect(allowed("/docs/guide/print")).toBe(false);
+    expect(allowed("/files/a.pdf")).toBe(false);
+    expect(allowed("/files/a.pdf.html")).toBe(true);
+    expect(allowed("/shop?sort=price")).toBe(false);
+    // The crawl treats www and the bare domain as one site.
+    expect(isAllowed("https://www.example.com/blog/post")).toBe(false);
+  });
 });

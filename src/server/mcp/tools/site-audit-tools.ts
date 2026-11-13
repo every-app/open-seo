@@ -39,6 +39,10 @@ import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { renderingEstimateText } from "@/shared/audit-rendering";
 import {
+  excludePathsSchema,
+  MAX_EXCLUDE_PATHS,
+} from "@/shared/audit-exclude-paths";
+import {
   DEFAULT_AUDIT_PAGES,
   FREE_MAX_AUDIT_PAGES,
   RENDERED_CRAWL_TIME_LIMIT_HOURS,
@@ -90,6 +94,11 @@ const runInputSchema = {
     .describe(
       `Render JavaScript before auditing, for sites whose content or links load client-side or whose bot protection blocks the plain crawler. Slower. On hosted plans, for 100 pages: ${renderingEstimateText(100)} Hosted plans hold that amount until the audit ends; an account that cannot cover it is refused. A hosted rendered crawl stops after ${RENDERED_CRAWL_TIME_LIMIT_HOURS} hours. Default false.`,
     ),
+  excludePaths: excludePathsSchema
+    .optional()
+    .describe(
+      `Paths to leave out of the audit, up to ${MAX_EXCLUDE_PATHS}. Each is matched against the URL's path and query string from the start, like a robots.txt Disallow rule: "/blog/" skips everything under /blog/, "*" matches any characters ("/*/print", "/*?sort="), and a trailing "$" pins the end ("/*.pdf$"). No regex. Excluded URLs are not fetched, do not count against maxPages, and are left out of pages and issues; links to them are not checked, and the orphan-page check is skipped because links from excluded pages are unknown. The start URL must not match.`,
+    ),
   runLighthouse: z
     .boolean()
     .optional()
@@ -105,7 +114,7 @@ export const runSiteAuditTool = {
   config: {
     title: "Run site audit",
     description:
-      "Start a site audit: crawls the site (robots.txt-aware, same-origin) and checks every page for SEO issues such as broken links, duplicate or missing titles and descriptions, redirect chains, orphan pages, canonical problems, and thin content. Optionally runs Lighthouse on a sample of pages. If the site rate limits the crawler it slows down and retries; pages it still cannot read are flagged as blocked or rate-limited rather than misreported. The audit runs in the background: poll get_audit_status, then read the findings with get_audit_issues.",
+      "Start a site audit: crawls the site (robots.txt-aware, same-origin) and checks every page for SEO issues such as broken links, duplicate or missing titles and descriptions, redirect chains, orphan pages, canonical problems, and thin content. Optionally runs Lighthouse on a sample of pages. Pass excludePaths to leave sections of the site out. If the site rate limits the crawler it slows down and retries; pages it still cannot read are flagged as blocked or rate-limited rather than misreported. The audit runs in the background: poll get_audit_status, then read the findings with get_audit_issues.",
     inputSchema: runInputSchema,
     outputSchema: z
       .object({
@@ -145,6 +154,7 @@ export const runSiteAuditTool = {
         lighthouseStrategy,
         limitTier,
         renderJavaScript: args.renderJavaScript,
+        excludePaths: args.excludePaths,
       }));
     } catch (error) {
       // Expected refusals become readable answers instead of protocol errors:
@@ -194,8 +204,12 @@ export const runSiteAuditTool = {
         ? ` Free plan audits are limited to ${maxPages} pages, so this audit covers at most ${maxPages} of the ${requestedPages} requested. Mention this limit when you report the results. Larger audits need a paid plan, which the organization owner can manage at ${buildDashboardUrl(context.baseUrl, BILLING_ROUTE)}.`
         : "";
 
+    const excludeNote = args.excludePaths?.length
+      ? ` Skipping URLs that match: ${args.excludePaths.join(", ")}.`
+      : "";
+
     return mcpResponse({
-      text: `Audit ${auditId} started for ${args.url}.${capNote} Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
+      text: `Audit ${auditId} started for ${args.url}.${capNote}${excludeNote} Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
       meta: buildProjectMeta(
         context,
         args.projectId,
@@ -257,6 +271,10 @@ export const getAuditStatusTool = {
       : "";
     // Failed audits keep partial results — point agents at them instead of
     // letting a mid-crawl death read as "no data".
+    const excludeNote =
+      status.excludePaths.length > 0
+        ? ` Excluded paths: ${status.excludePaths.join(", ")}.`
+        : "";
     const nextStep =
       status.status === "completed"
         ? ` Call get_audit_issues for the issue report${status.lighthouseTotal > 0 ? " and get_audit_lighthouse for the Lighthouse results" : ""}.`
@@ -264,7 +282,7 @@ export const getAuditStatusTool = {
           ? ` The audit stopped early but kept results for the ${status.pagesCrawled} pages it crawled — call get_audit_issues for the partial issue report.`
           : "";
     return mcpResponse({
-      text: `Audit ${status.id} (${status.startUrl}): ${status.status}${status.errorCode ? ` (${status.errorCode})` : ""} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${partialNote}${nextStep}`,
+      text: `Audit ${status.id} (${status.startUrl}): ${status.status}${status.errorCode ? ` (${status.errorCode})` : ""} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${excludeNote}${partialNote}${nextStep}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

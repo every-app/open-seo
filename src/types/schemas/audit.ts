@@ -5,6 +5,7 @@ import {
   MIN_AUDIT_PAGES,
   PAID_MAX_AUDIT_PAGES,
 } from "@/shared/audit-limits";
+import { excludePathsSchema } from "@/shared/audit-exclude-paths";
 
 // ─── Server function input schemas ──────────────────────────────────────────
 
@@ -20,6 +21,7 @@ export const startAuditSchema = z.object({
     .optional()
     .default(DEFAULT_AUDIT_PAGES),
   lighthouseStrategy: z.enum(["auto", "none"]).optional().default("auto"),
+  excludePaths: excludePathsSchema.optional(),
 });
 
 export const getAuditStatusSchema = z.object({

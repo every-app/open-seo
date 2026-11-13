@@ -13,7 +13,8 @@ A site audit crawls your website and checks every page it reads for SEO issues, 
 4. Turn on any options you want:
    - **Include Lighthouse** measures speed and other Lighthouse scores. It tests up to 10 pages, one for each page template it finds, on mobile and desktop.
    - **Render JavaScript** loads each page in a browser before checking it. Turn it on when your site builds its content with JavaScript and the crawler sees empty pages. It's slower.
-5. Click **Start Audit**.
+5. To leave part of the site out, open **Advanced** and list the paths under **Exclude paths**. See [Exclude paths](#exclude-paths).
+6. Click **Start Audit**.
 
 The **Scan my website** button on the project dashboard starts a 50-page audit of your project's site with both options on.
 
@@ -26,6 +27,26 @@ If your site has more pages than **Max pages**, the audit keeps room for every p
 The crawler identifies itself as `OpenSEO-Audit`. If a firewall or bot protection blocks it, see [OpenSEO-Audit crawler](/docs/crawler) for how to allow it.
 
 While an audit runs, the page shows its progress and the pages crawled so far. There's no cancel button; deleting a running audit stops it.
+
+## Exclude paths
+
+Use **Exclude paths**, under **Advanced** on the audit form, to keep the crawler out of sections you don't want audited, such as a blog archive, internal search results, or cart pages. Enter one path per line, up to 20.
+
+Each line is matched against the start of a URL's path and query string, the same way a `Disallow` rule in `robots.txt` is:
+
+| You enter  | What it skips                                                           |
+| ---------- | ----------------------------------------------------------------------- |
+| `/blog/`   | Every page under `/blog/`. `/blog` itself is still crawled.             |
+| `/blog`    | Every path that starts with `/blog`, including `/blog-news`.            |
+| `/*/print` | `*` matches any characters, so this skips `/docs/guide/print` and more. |
+| `/*?sort=` | Any URL whose query string starts with `sort=`.                         |
+| `/*.pdf$`  | `$` marks the end of the URL, so this skips only URLs ending in `.pdf`. |
+
+Paths are case-sensitive. The URL the audit starts from can't be excluded.
+
+Excluded pages aren't fetched and don't count toward **Max pages**, so they don't appear under **Pages** or **Issues**. Links that point to them aren't checked, so they're never reported as broken. The orphan page check doesn't run on an audit with excluded paths, because the audit can't see links from the pages it skipped.
+
+The results page lists the paths an audit skipped.
 
 ## Read the results
 
@@ -43,7 +64,7 @@ Past audits are listed under **Previous Audits**. Click **View** to open one. To
 - **"This site's bot protection blocked our crawler."** Your firewall or a service like Cloudflare stopped the crawl. Allow the crawler using the steps in [OpenSEO-Audit crawler](/docs/crawler). For a Shopify store, create a signature in Shopify admin under Online Store > Preferences > Crawler access. Then open **Project settings**, choose the **Integrations** tab, click **Connect** on the **Shopify** card, and paste it.
 - **"The crawl stopped early because of the site's rate limit."** Your server kept answering with HTTP 429 (Too Many Requests). Allow the crawler, or run a smaller audit.
 - **"This audit stopped early after N pages."** The results cover the pages it read before stopping.
-- **"Crawl stopped early: page limit."** This warning under **Issues** means the audit reached **Max pages** before it visited every URL it found, so the results cover part of the site. Open it to see how many URLs were left. Start a new audit with a higher limit, or [keep the crawler out of sections](/docs/crawler) you don't need audited.
+- **"Crawl stopped early: page limit."** This warning under **Issues** means the audit reached **Max pages** before it visited every URL it found, so the results cover part of the site. Open it to see how many URLs were left. Start a new audit with a higher limit, or [exclude the paths](#exclude-paths) you don't need audited.
 
 ## Limits
 
@@ -65,7 +86,7 @@ The dashboard's **Scan my website** turns both on, so it uses a few cents of cre
 
 ## Use your assistant
 
-Ask your agent to run an audit with [OpenSEO MCP](/docs/mcp). It can start one with `run_site_audit`, check progress, and read the issues, pages and Lighthouse results. From an agent, Lighthouse is off unless you ask for it, and a request over your plan's page limit runs at the limit.
+Ask your agent to run an audit with [OpenSEO MCP](/docs/mcp). It can start one with `run_site_audit`, check progress, and read the issues, pages and Lighthouse results. From an agent, Lighthouse is off unless you ask for it, and a request over your plan's page limit runs at the limit. It can also pass `excludePaths` to leave sections out.
 
 The [SEO Audit](/docs/skills/seo-audit) skill runs the audit, reads the results with you, and writes a report with the one to three fixes that matter most. For a checklist to work through by hand, see the [technical SEO audit checklist](/library/site-audit/technical-seo-audit-checklist).
 

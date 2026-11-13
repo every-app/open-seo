@@ -34,6 +34,7 @@ import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { reconcileRunningAudit } from "@/server/features/audit/services/auditReconciler";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { startWorkflow } from "@/server/lib/startWorkflow";
+import { findExcludingPath } from "@/shared/audit-exclude-paths";
 
 // Free accounts keep bounded audit capacity; rendering reserves usage credits.
 async function resolveAuditLimitTier(
@@ -53,6 +54,7 @@ async function startAudit(input: {
   lighthouseStrategy?: LighthouseStrategy;
   limitTier: AuditLimitTier;
   renderJavaScript?: boolean;
+  excludePaths?: string[];
 }) {
   const renderJavaScript = input.renderJavaScript ?? false;
   if (renderJavaScript && !(await isAuditRenderingAllowed())) {
@@ -78,6 +80,14 @@ async function startAudit(input: {
   // The site itself is first contacted by the workflow's first step
   // (resolveAuditStart), so starting an audit never waits on a slow site.
   const startUrl = await normalizeAndValidateStartUrl(input.startUrl);
+  const excludePaths = Array.from(new Set(input.excludePaths));
+  const excludingPath = findExcludingPath(excludePaths, startUrl);
+  if (excludingPath) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `The start URL is excluded by "${excludingPath}". Remove that path or start from a different URL.`,
+    );
+  }
   const credential = await CrawlerCredentialService.resolveCrawlerAccess(
     organizationId,
     input.projectId,
@@ -89,6 +99,7 @@ async function startAudit(input: {
     lighthouseStrategy,
     renderJavaScript,
     crawlerCredentialId: credential?.id,
+    ...(excludePaths.length > 0 && { excludePaths }),
   };
 
   await AuditRepository.createAudit({
@@ -194,6 +205,7 @@ async function getStatus(auditId: string, projectId: string) {
     lighthouseCompleted: audit.lighthouseCompleted,
     lighthouseFailed: audit.lighthouseFailed,
     currentPhase: audit.currentPhase,
+    excludePaths: parseAuditConfig(audit.config)?.excludePaths ?? [],
     errorCode: audit.errorCode,
     startedAt: audit.startedAt,
     completedAt: audit.completedAt,
