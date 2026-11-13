@@ -1,0 +1,96 @@
+name: Deploy self-hosted OpenSEO (Cloudflare)
+
+# Deploys this fork to your own Cloudflare account, using the same command as
+# docs/SELF_HOSTING_CLOUDFLARE.md (pnpm deploy:selfhost), from GitHub Actions
+# instead of a laptop. Run it from Actions > this workflow > "Run workflow".
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   CLOUDFLARE_API_TOKEN   - Account token with edit on Workers Scripts, Workers KV,
+#                            D1, Workers R2 Storage, Workflows and Secrets Store,
+#                            plus read on Account Settings.
+#   CLOUDFLARE_ACCOUNT_ID  - From the Cloudflare dashboard sidebar.
+#   DATAFORSEO_API_KEY     - The Base64 credential from DataForSEO (docs/DATAFORSEO_API_KEY.md).
+# Optional secrets:
+#   OPENSEO_OPERATOR_SECRET - Lets you reset passwords from a terminal later.
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET - Google Search Console connection.
+#
+# After the FIRST deploy, open the printed URL straight away and create the
+# administrator account: registration stays open until the first account exists.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: openseo-selfhost
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.repository_owner == 'nmbambo'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "true"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Check required secrets
+        env:
+          DATAFORSEO_API_KEY: ${{ secrets.DATAFORSEO_API_KEY }}
+        run: |
+          missing=0
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID DATAFORSEO_API_KEY; do
+            if [ -z "${!name}" ]; then echo "::error::Repository secret $name is not set"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write .env.selfhost
+        env:
+          DATAFORSEO_API_KEY: ${{ secrets.DATAFORSEO_API_KEY }}
+          OPENSEO_OPERATOR_SECRET: ${{ secrets.OPENSEO_OPERATOR_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          {
+            echo "DATAFORSEO_API_KEY=$DATAFORSEO_API_KEY"
+            echo "AUTH_MODE=password"
+            [ -n "$OPENSEO_OPERATOR_SECRET" ] && echo "OPENSEO_OPERATOR_SECRET=$OPENSEO_OPERATOR_SECRET"
+            [ -n "$GOOGLE_CLIENT_ID" ] && echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
+            [ -n "$GOOGLE_CLIENT_SECRET" ] && echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET"
+            true
+          } > .env.selfhost
+
+      # Creates alchemy's state-store Worker on the first run; later runs adopt it.
+      - name: Bootstrap deploy state (idempotent)
+        run: pnpm alchemy cloudflare bootstrap
+
+      - name: Deploy
+        run: pnpm deploy:selfhost --yes 2>&1 | tee deploy.log
+
+      - name: Report URL
+        if: success()
+        run: |
+          url=$(grep -Eo 'https://[A-Za-z0-9.-]+\.workers\.dev' deploy.log | tail -1)
+          {
+            echo "### OpenSEO deployed"
+            echo ""
+            echo "URL: ${url:-see the Deploy step log}"
+            echo ""
+            echo "First deploy only: open it now and create the administrator account; registration closes once one exists."
+            echo "Health check: ${url}/api/health · MCP endpoint: ${url}/mcp"
+          } >> "$GITHUB_STEP_SUMMARY"
