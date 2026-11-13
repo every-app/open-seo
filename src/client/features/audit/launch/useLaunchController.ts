@@ -10,7 +10,7 @@ import {
 import {
   DEFAULT_LAUNCH_FORM_VALUES,
   getMaxPagesLimit,
-  clampMaxPagesInput,
+  resolveMaxPagesInput,
   type LaunchFormValues,
 } from "@/client/features/audit/launch/types";
 import {
@@ -84,6 +84,7 @@ export function useLaunchController({
       const effectiveMaxPages = commitMaxPagesInput(
         launchForm,
         getMaxPagesLimit(isFreePlan),
+        value.maxPagesInput,
       );
       formApi.setErrorMap({ onSubmit: undefined });
 
@@ -184,8 +185,10 @@ function commitMaxPagesInput(
     setFieldValue: (field: "maxPagesInput", value: string) => void;
   },
   maxPagesLimit: number,
+  submittedInput?: string,
 ) {
-  const safeValue = clampMaxPagesInput(
+  const safeValue = resolveMaxPagesInput(
+    submittedInput,
     launchForm.state.values.maxPagesInput,
     maxPagesLimit,
   );
