@@ -55,6 +55,13 @@ export async function completeMcpGrant(input: {
     },
     scope: scopes,
     props,
+    // One client id can serve several installs of one OpenSEO user: ChatGPT
+    // reuses the client it registered for an app, and Claude can hold one for
+    // a directory entry. Revoking the user's other grants for the client
+    // (the library default) signed the earlier install out on every new
+    // connect. Unused grants expire after 30 idle days instead, and each one is
+    // a row under Settings "Connected agents" that can be disconnected.
+    revokeExistingGrants: false,
   });
 
   await recordMcpAuthorized(context.organizationId);
