@@ -178,6 +178,18 @@ describe("AI visibility checks", () => {
     expect(sendCreditsExhaustedEvent).toHaveBeenCalledWith(customer);
   });
 
+  it("drops the credits notice once a later check starts", async () => {
+    hosted.mockResolvedValue(true);
+    await expect(
+      runCheck({ projectId, maxCostUsd: 1 }, customer),
+    ).rejects.toMatchObject({ code: "INSUFFICIENT_CREDITS" });
+    credits.mockResolvedValue({ monthlyRemaining: 1000, topupRemaining: 0 });
+
+    await runCheck({ projectId, maxCostUsd: 1 }, customer);
+
+    expect((await repo.getTracker(projectId))?.lastSkipReason).toBeNull();
+  });
+
   it("starts a check that top-up credits cover after research overdrew monthly credits", async () => {
     hosted.mockResolvedValue(true);
     credits.mockResolvedValue({

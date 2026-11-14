@@ -238,7 +238,9 @@ function PromptTrackingContent({
                 </div>
               </div>
               <RunStatusLine run={progress.run} tracker={tracker} />
-              {tracker?.lastSkipReason === "INSUFFICIENT_CREDITS" ? (
+              {/* A notice about the last check is stale while one runs. */}
+              {busy ? null : tracker?.lastSkipReason ===
+                "INSUFFICIENT_CREDITS" ? (
                 <InsufficientCreditsError variant="inline" />
               ) : (
                 tracker?.lastSkipReason && (

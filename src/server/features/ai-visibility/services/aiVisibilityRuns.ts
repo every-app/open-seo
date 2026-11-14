@@ -164,6 +164,8 @@ export async function startRun(
         blocker.id,
       );
     }
+    // A check is now running, so whatever stopped the last one is over.
+    await repo.updateTracker(config.tracker.id, { lastSkipReason: null });
     try {
       await startWorkflow(
         env.AI_VISIBILITY_WORKFLOW,
