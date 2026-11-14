@@ -117,16 +117,16 @@ describe("AI configuration projection", () => {
     ).toThrow(/duplicates/);
   });
 
-  it("allows 100 unarchived prompts in 30 topics and reuses archived capacity", () => {
+  it("allows 300 unarchived prompts in 30 topics and reuses archived capacity", () => {
     const full = project({
-      prompts: Array.from({ length: 100 }, (_, i) => ({
+      prompts: Array.from({ length: 300 }, (_, i) => ({
         text: `Question ${i}`,
         topic: `Topic ${i % 30}`,
         paused: true,
       })),
     }).rows;
     expect(() => project({ prompts: [{ text: "Overflow" }] }, full)).toThrow(
-      /100 unarchived/,
+      /300 unarchived/,
     );
     expect(() =>
       project(
@@ -145,7 +145,7 @@ describe("AI configuration projection", () => {
         },
         full,
       ).rows.prompts.filter((p) => !p.archived),
-    ).toHaveLength(100);
+    ).toHaveLength(300);
   });
 });
 

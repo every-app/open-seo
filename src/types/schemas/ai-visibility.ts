@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AI_PROMPT_LIMIT } from "@/shared/ai-visibility";
 import { scheduleTimeSchema } from "./schedule-time";
 
 export const aiEngineSchema = z.enum([
@@ -64,9 +65,9 @@ export const aiTrackerPatchSchema = z.object({
         paused: z.boolean().optional(),
       }),
     )
-    .max(100)
+    .max(AI_PROMPT_LIMIT)
     .optional(),
-  archivePromptIds: z.array(z.string().uuid()).max(100).optional(),
+  archivePromptIds: z.array(z.string().uuid()).max(AI_PROMPT_LIMIT).optional(),
 });
 export const saveAiTrackerSchema = aiProjectSchema.extend(
   aiTrackerPatchSchema.shape,
@@ -80,7 +81,7 @@ export const estimateAiCostSchema = aiProjectSchema.extend({
   patch: aiTrackerPatchSchema
     .optional()
     .describe("Optional proposed changes to estimate before saving."),
-  promptIds: z.array(z.string().uuid()).min(1).max(100).optional(),
+  promptIds: z.array(z.string().uuid()).min(1).max(AI_PROMPT_LIMIT).optional(),
 });
 export const setAiScheduleSchema = aiProjectSchema.extend({
   enabled: z.boolean(),
@@ -103,7 +104,7 @@ export const runAiCheckSchema = aiProjectSchema.extend({
     .describe(
       "Spending ceiling for this one check: runNowCostUsd from estimate_ai_visibility_cost. The check is refused if its current cost is higher.",
     ),
-  promptIds: z.array(z.string().uuid()).min(1).max(100).optional(),
+  promptIds: z.array(z.string().uuid()).min(1).max(AI_PROMPT_LIMIT).optional(),
 });
 export const getAiRunSchema = aiProjectSchema.extend({
   runId: z.string().uuid(),

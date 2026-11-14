@@ -19,7 +19,7 @@ import {
   normalizeAiSuggestion,
   toTopicName,
 } from "@/shared/ai-prompt-suggestions";
-import { ownBrandName } from "@/shared/ai-visibility";
+import { AI_PROMPT_LIMIT, ownBrandName } from "@/shared/ai-visibility";
 import {
   generatedAiTopicSchema,
   type GenerateAiPromptsInput,
@@ -58,7 +58,7 @@ export async function generateAiPrompts(
       "VALIDATION_ERROR",
       "Archive the prompts of an unused topic before generating a new one.",
     );
-  if (unarchived.length >= 100)
+  if (unarchived.length >= AI_PROMPT_LIMIT)
     throw new AppError(
       "VALIDATION_ERROR",
       "Archive unused prompts before generating more.",
@@ -133,7 +133,7 @@ export async function generateAiPrompts(
       0,
       Math.max(
         0,
-        100 -
+        AI_PROMPT_LIMIT -
           (latest?.prompts.filter((prompt) => !prompt.archived).length ?? 0),
       ),
     );

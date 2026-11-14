@@ -13,6 +13,7 @@ import { AppError, asAppError } from "@/server/lib/errors";
 import type { ErrorCode } from "@/shared/error-codes";
 import { getIsoCountryCode } from "@/shared/keyword-locations";
 import {
+  AI_LIVE_ANSWERS_PER_STEP,
   aiEngineUsesModelApi,
   type AiBrand,
   type AiEngine,
@@ -52,12 +53,6 @@ interface AiRunMarket {
   locationCode: number;
   languageCode: string;
 }
-
-/**
- * Live answers per workflow step. A Worker holds 6 connections open at once,
- * so a larger step only queues calls behind the first 6.
- */
-const LIVE_ANSWERS_PER_STEP = 6;
 
 /**
  * Attempts per answer. A new attempt follows only when DataForSEO returned the
@@ -110,13 +105,13 @@ export async function prepareAiRun(
   }));
   const modelBatches = engineBatches(
     tasks.filter((task) => aiEngineUsesModelApi(task.engine)),
-    LIVE_ANSWERS_PER_STEP,
+    AI_LIVE_ANSWERS_PER_STEP,
   );
   const answers = tasks.filter((task) => !aiEngineUsesModelApi(task.engine));
   if (live) {
     const batches: AiLiveTask[][] = [];
-    for (let i = 0; i < answers.length; i += LIVE_ANSWERS_PER_STEP)
-      batches.push(answers.slice(i, i + LIVE_ANSWERS_PER_STEP));
+    for (let i = 0; i < answers.length; i += AI_LIVE_ANSWERS_PER_STEP)
+      batches.push(answers.slice(i, i + AI_LIVE_ANSWERS_PER_STEP));
     return { market, modelBatches, live, batches };
   }
   return {

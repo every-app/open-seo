@@ -38,8 +38,11 @@ async function createRun(
 ) {
   await runBatch((tx) => [
     tx.insert(aiRuns).values(run),
-    ...observations.map((observation) =>
-      tx.insert(aiObservations).values(observation),
+    // A full tracker is 1,800 answers, too many for one statement each. D1
+    // allows 100 bound parameters per statement: 6 per answer, with the
+    // status default.
+    ...chunk(observations, 16).map((rows) =>
+      tx.insert(aiObservations).values(rows),
     ),
   ]);
 }

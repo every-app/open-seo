@@ -10,7 +10,7 @@ describe("AI tracker input boundary", () => {
     for (const patch of [
       { prompts: [{ id: "foreign", text: "x" }] },
       { engines: [] },
-      { prompts: Array.from({ length: 101 }, () => ({ text: "x" })) },
+      { prompts: Array.from({ length: 301 }, () => ({ text: "x" })) },
     ]) {
       expect(aiTrackerPatchSchema.safeParse(patch).success).toBe(false);
     }

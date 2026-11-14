@@ -226,7 +226,7 @@ describe("AI visibility assistant tools", () => {
     mocks.service.saveTracker.mockRejectedValue(
       new AiVisibilityError(
         "PROMPT_LIMIT",
-        "Tracking supports up to 100 unarchived prompts per project. Archive unused prompts first.",
+        "Tracking supports up to 300 unarchived prompts per project. Archive unused prompts first.",
       ),
     );
     const result = await definitions.saveAiVisibilityTrackerTool.handler(

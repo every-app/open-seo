@@ -2,6 +2,7 @@ import { sort } from "remeda";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
 import {
   AI_DEFAULT_TOPIC,
+  AI_PROMPT_LIMIT,
   ownBrandName,
   type AiBrand,
   type AiEngine,
@@ -15,7 +16,6 @@ import type {
 } from "../repositories/AiVisibilityRepository";
 import { AiVisibilityError } from "./aiVisibilityErrors";
 
-const PROMPT_LIMIT = 100;
 const TOPIC_LIMIT = 30;
 
 export function trackerEngines(tracker: TrackerRow): AiEngine[] {
@@ -139,10 +139,10 @@ export function projectAiConfiguration(input: {
   applyMarket(rows, patch, !previous, trackerEngines(rows.tracker));
   const counts = applyPrompts(rows, patch, now);
   const unarchived = rows.prompts.filter((p) => !p.archived);
-  if (unarchived.length > PROMPT_LIMIT)
+  if (unarchived.length > AI_PROMPT_LIMIT)
     throw new AiVisibilityError(
       "PROMPT_LIMIT",
-      "Tracking supports up to 100 unarchived prompts per project. Archive unused prompts first.",
+      `Tracking supports up to ${AI_PROMPT_LIMIT} unarchived prompts per project. Archive unused prompts first.`,
     );
   if (new Set(unarchived.map((p) => p.topic)).size > TOPIC_LIMIT)
     throw new AiVisibilityError(

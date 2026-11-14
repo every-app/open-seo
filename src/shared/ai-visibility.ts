@@ -46,6 +46,24 @@ export type AiScheduleInterval = "daily" | "weekly" | "monthly";
 export type AiObservationStatus = "pending" | "completed" | "failed";
 /** Prompts without a chosen topic are grouped here. */
 export const AI_DEFAULT_TOPIC = "General";
+/** Unarchived prompts one project can track. */
+export const AI_PROMPT_LIMIT = 300;
+/**
+ * Live answers per workflow step. A Worker holds 6 connections open at once,
+ * so a larger step only queues calls behind the first 6.
+ */
+export const AI_LIVE_ANSWERS_PER_STEP = 6;
+/** A hosted live step usually takes 20-30 seconds (Nov 2026). */
+const AI_LIVE_STEP_SECONDS = 25;
+
+/** How long a Run now check takes, in words. Its steps run one at a time. */
+export function aiLiveRunDuration(answers: number) {
+  const minutes =
+    (Math.ceil(answers / AI_LIVE_ANSWERS_PER_STEP) * AI_LIVE_STEP_SECONDS) / 60;
+  if (minutes <= 5) return "a few minutes";
+  if (minutes < 90) return `about ${Math.ceil(minutes / 10) * 10} minutes`;
+  return `about ${Math.round(minutes / 60)} hours`;
+}
 export interface AiPrompt {
   id: string;
   text: string;
