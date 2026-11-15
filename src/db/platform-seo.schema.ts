@@ -7,10 +7,14 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { projects } from "./app.schema";
+import { organization } from "./better-auth-schema";
 import {
+  PS_AI_VERDICTS,
   PS_FUNNEL_STAGES,
   PS_INTENTS,
   PS_KEYWORD_GROUPS,
+  PS_PLATFORM_SOURCES,
+  PS_PLATFORM_STATUSES,
   PS_PULL_STAGES,
   PS_TOPIC_STATUSES,
 } from "@/shared/platform-seo";
@@ -132,5 +136,89 @@ export const psTopics = sqliteTable(
   },
   (table) => [
     index("ps_topics_project_status_idx").on(table.projectId, table.status),
+  ],
+);
+
+// ----------------------------------------------------------------------------
+// Platform discovery. Both tables belong to the organization, so every project
+// grows (and benefits from) one list.
+// ----------------------------------------------------------------------------
+
+// One site that ranks in Google, keyed by registrable domain (user.medium.com
+// and medium.com are one platform). The user's status is the decision; the AI
+// fields are its first-pass guess.
+export const psPlatforms = sqliteTable(
+  "ps_platforms",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    domain: text("domain").notNull(),
+    status: text("status", { enum: PS_PLATFORM_STATUSES }).notNull(),
+    source: text("source", { enum: PS_PLATFORM_SOURCES }).notNull(),
+    aiVerdict: text("ai_verdict", { enum: PS_AI_VERDICTS }),
+    aiCanProfile: integer("ai_can_profile", { mode: "boolean" }),
+    aiCanPost: integer("ai_can_post", { mode: "boolean" }),
+    aiReason: text("ai_reason"),
+    aiClassifiedAt: text("ai_classified_at"),
+    // The first result we saw for it, shown as an example while reviewing.
+    exampleKeyword: text("example_keyword"),
+    exampleUrl: text("example_url"),
+    exampleTitle: text("example_title"),
+    bestPosition: integer("best_position"),
+    seenCount: integer("seen_count").notNull().default(0),
+    firstSeenAt: text("first_seen_at").notNull().default(isoNow),
+    lastSeenAt: text("last_seen_at"),
+    classifiedAt: text("classified_at"),
+  },
+  (table) => [
+    uniqueIndex("ps_platforms_org_domain_idx").on(
+      table.organizationId,
+      table.domain,
+    ),
+    index("ps_platforms_org_status_idx").on(table.organizationId, table.status),
+  ],
+);
+
+// One organic result from one SERP read the app paid for. runKey identifies
+// the read (repeats of it insert nothing), so a keyword's latest run is the
+// page as Google last showed it.
+export const psSerpObservations = sqliteTable(
+  "ps_serp_observations",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    projectId: text("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+    runKey: text("run_key").notNull(),
+    keyword: text("keyword").notNull(),
+    locationCode: integer("location_code").notNull(),
+    languageCode: text("language_code").notNull(),
+    device: text("device", { enum: ["desktop", "mobile"] }).notNull(),
+    position: integer("position").notNull(),
+    domain: text("domain").notNull(),
+    // Identifies one result within a run: domain plus its title or URL.
+    resultKey: text("result_key").notNull(),
+    url: text("url"),
+    title: text("title"),
+    observedAt: text("observed_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("ps_serp_observations_run_result_idx").on(
+      table.organizationId,
+      table.runKey,
+      table.resultKey,
+    ),
+    index("ps_serp_observations_keyword_idx").on(
+      table.organizationId,
+      table.keyword,
+      table.locationCode,
+      table.languageCode,
+      table.observedAt,
+    ),
   ],
 );

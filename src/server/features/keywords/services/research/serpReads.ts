@@ -9,6 +9,8 @@ import {
 import { serpSnapshotItemSchema } from "@/server/lib/dataforseo/serp";
 import { AppError } from "@/server/lib/errors";
 import { getCached, setCached } from "@/server/lib/r2-cache";
+import { runAfterResponse } from "@/server/lib/background";
+import { recordSerpReads } from "@/server/features/platform-seo/services/serpRecorder";
 
 // Polling stops 40 s into the call so it answers inside the 60 s many MCP
 // clients wait. Reads usually all finish within about 20 s.
@@ -131,12 +133,20 @@ function forgetReceipt(receiptKey: string) {
   });
 }
 
+type CollectContext = {
+  billing: BillingCustomerContext;
+  query: SerpReadsQuery;
+  replay: boolean;
+  awaitObservations?: boolean;
+};
+
 async function collectMergedSerp(
   taskIds: string[],
   receiptKey: string,
   deadline: number,
-  { replay, finalUrls }: { replay: boolean; finalUrls?: boolean },
+  { billing, query, replay, awaitObservations }: CollectContext,
 ): Promise<MergedSerpOutcome> {
+  const finalUrls = query.finalUrls;
   // The call that posted the reads waits for them. A repeat checks each once:
   // repeats are free, so a caller looping on them must not turn each one into
   // a run of polls against the shared DataForSEO account.
@@ -152,6 +162,16 @@ async function collectMergedSerp(
   // rather than whichever read happens to be back first.
   if (pending && finalUrls) return { status: "processing" };
   if (items.length > 0) {
+    // Platform SEO keeps every paid page of results (organization-wide) to
+    // find sites it could publish on. It never fails or slows this read.
+    const recording = recordSerpReads({
+      customer: billing,
+      query,
+      taskIds,
+      reads: completed,
+    });
+    if (awaitObservations) await recording;
+    else await runAfterResponse(recording);
     if (!pending) {
       await setCached(
         receiptKey,
@@ -191,6 +211,7 @@ async function collectMergedSerp(
 export async function readMergedSerps(
   billing: BillingCustomerContext,
   requests: Array<{ query: SerpReadsQuery; receiptKey: string }>,
+  options: { awaitObservations?: boolean } = {},
 ): Promise<MergedSerpOutcome[]> {
   const deadline = Date.now() + READ_COLLECT_MS;
   const receipts = await Promise.all(
@@ -220,8 +241,10 @@ export async function readMergedSerps(
       }
       if (receipt) {
         return collectMergedSerp(receipt, request.receiptKey, deadline, {
+          billing,
+          query: request.query,
           replay: true,
-          finalUrls: request.query.finalUrls,
+          awaitObservations: options.awaitObservations,
         });
       }
       const outcome = posted[toPost.indexOf(request)];
@@ -239,7 +262,10 @@ export async function readMergedSerps(
       });
       if (request.query.finalUrls) return { status: "processing" };
       return collectMergedSerp(outcome.value, request.receiptKey, deadline, {
+        billing,
+        query: request.query,
         replay: false,
+        awaitObservations: options.awaitObservations,
       });
     }),
   );

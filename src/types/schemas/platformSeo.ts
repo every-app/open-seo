@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PS_PLATFORM_STATUSES } from "@/shared/platform-seo";
 
 const projectIdSchema = z.string().min(1);
 
@@ -21,4 +22,26 @@ export const psCreateTopicSchema = z.object({
   projectId: projectIdSchema,
   clusterId: z.string().min(1),
   title: z.string().trim().max(200).optional(),
+});
+
+// Platform discovery
+export const psSetPlatformStatusSchema = z.object({
+  projectId: projectIdSchema,
+  platformId: z.string().min(1),
+  status: z.enum(PS_PLATFORM_STATUSES),
+});
+
+// Each keyword costs a two-page SERP, so a lookup is capped like get_serp_results.
+export const psFindPlatformsSchema = z.object({
+  projectId: projectIdSchema,
+  keywords: z.array(z.string().trim().min(1).max(200)).min(1).max(10),
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
+});
+
+export const psOpportunitiesSchema = z.object({
+  projectId: projectIdSchema,
+  keywords: z.array(z.string().trim().min(1).max(200)).max(500),
+  locationCode: z.number().int().positive(),
+  languageCode: z.string().min(2).max(8),
 });

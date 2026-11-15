@@ -29,7 +29,7 @@ export function withStepAdmission<T>(
 // One-shot structured generation for Platform SEO. Call it inside
 // withStepAdmission; each call bills its actual OpenRouter cost.
 export async function generateStructured<T extends z.ZodType>(params: {
-  customer: BillingCustomerContext & { projectId: string };
+  customer: BillingCustomerContext;
   operation: string;
   schema: T;
   system: string;

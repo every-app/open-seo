@@ -19,6 +19,8 @@ export const expandQueryKeys = {
   pulls: (projectId: string) => ["platformSeo", projectId, "pulls"] as const,
   pull: (projectId: string, pullId: string) =>
     ["platformSeo", projectId, "pull", pullId] as const,
+  opportunities: (projectId: string, pullId: string) =>
+    ["platformSeo", projectId, "opportunities", pullId] as const,
 };
 
 const STEP_FAILURE: Record<PipelineStep, string> = {

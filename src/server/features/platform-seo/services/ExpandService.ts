@@ -8,6 +8,7 @@ import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo/client";
 import { fetchKeywordMetricsForList } from "@/server/lib/dataforseo/keyword-metrics";
 import { AppError } from "@/server/lib/errors";
+import { hasDataforseoAccess } from "@/server/lib/provider-access";
 import { getOpenRouterAccess } from "@/server/lib/openrouter";
 import { getOptionalEnvValue, getWorkersEnv } from "@/server/lib/runtime-env";
 import { getIsoCountryCode } from "@/shared/keyword-locations";
@@ -45,12 +46,13 @@ async function getSetup() {
   const env = (await getWorkersEnv()) ?? {};
   const [answerSocrates, dataForSeo] = await Promise.all([
     getOptionalEnvValue("ANSWERSOCRATES_API_KEY"),
-    getOptionalEnvValue("DATAFORSEO_API_KEY"),
+    // Gateway-aware: behind Every App the gateway holds the key.
+    hasDataforseoAccess(),
   ]);
   return {
     answerSocrates: Boolean(answerSocrates),
     openRouter: getOpenRouterAccess(env) !== null,
-    dataForSeo: Boolean(dataForSeo),
+    dataForSeo,
   };
 }
 

@@ -10,6 +10,7 @@ import {
   Link2,
   MapPin,
   MessageSquare,
+  Network,
   Search,
   TrendingUp,
 } from "lucide-react";
@@ -29,6 +30,11 @@ const projectNavItems = [
     to: "/p/$projectId/keywords" as const,
     label: "Keyword Research",
     icon: Search,
+  },
+  {
+    to: "/p/$projectId/platforms" as const,
+    label: "Platforms",
+    icon: Network,
   },
   {
     to: "/p/$projectId/saved" as const,
@@ -136,6 +142,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/keywords"),
         byPath("/p/$projectId/domain"),
         byPath("/p/$projectId/backlinks"),
+        byPath("/p/$projectId/platforms"),
       ],
     },
     {

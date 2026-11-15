@@ -23,9 +23,16 @@ import {
 import { saveKeywords } from "@/serverFunctions/keywords";
 import {
   createTopicFromCluster,
+  findPlatforms,
   getKeywordPull,
+  getParasiteOpportunities,
 } from "@/serverFunctions/platformSeo";
 import type { PsPullStage } from "@/shared/platform-seo";
+import {
+  ParasiteOpportunityBadge,
+  type ParasiteOpportunity,
+} from "../platforms/ParasiteOpportunityBadge";
+import { platformQueryKeys } from "../platforms/platformQueryKeys";
 import { expandQueryKeys } from "./useExpandPipeline";
 
 type PullData = Awaited<ReturnType<typeof getKeywordPull>>;
@@ -39,6 +46,8 @@ const GROUP_LABELS: Record<string, string> = {
   autocomplete: "Autocomplete",
 };
 const STAGE_LABELS = { tofu: "TOFU", mofu: "MOFU", bofu: "BOFU" } as const;
+
+const OPPORTUNITY_CHUNK = 500;
 
 const formatNumber = (value: number | null | undefined) =>
   value == null ? "—" : value.toLocaleString();
@@ -58,6 +67,38 @@ export function PullDetail({
     queryKey: expandQueryKeys.pull(projectId, pullId),
     queryFn: () => getKeywordPull({ data: { projectId, pullId } }),
   });
+  const pull = query.data?.pull;
+  const clusterKeywords =
+    query.data?.clusters.flatMap((cluster) =>
+      cluster.keywords.map((k) => k.keyword),
+    ) ?? [];
+  const opportunities = useQuery({
+    queryKey: expandQueryKeys.opportunities(projectId, pullId),
+    enabled: pull !== undefined && clusterKeywords.length > 0,
+    // Clustering keeps up to 800 keywords; each request takes 500.
+    queryFn: async () => {
+      const chunks: string[][] = [];
+      for (let i = 0; i < clusterKeywords.length; i += OPPORTUNITY_CHUNK) {
+        chunks.push(clusterKeywords.slice(i, i + OPPORTUNITY_CHUNK));
+      }
+      const results = await Promise.all(
+        chunks.map((keywords) =>
+          getParasiteOpportunities({
+            data: {
+              projectId,
+              keywords,
+              locationCode: pull!.locationCode,
+              languageCode: pull!.languageCode,
+            },
+          }),
+        ),
+      );
+      return results.flat();
+    },
+  });
+  const byKeyword = new Map(
+    (opportunities.data ?? []).map((row) => [row.keyword, row]),
+  );
   return (
     <QueryState query={query} errorFallback="Failed to load this expansion.">
       {(data) => (
@@ -77,8 +118,10 @@ export function PullDetail({
                   key={cluster.id}
                   projectId={projectId}
                   cluster={cluster}
+                  pullId={pullId}
                   locationCode={data.pull.locationCode}
                   languageCode={data.pull.languageCode}
+                  opportunities={byKeyword}
                 />
               ))}
             </div>
@@ -201,16 +244,23 @@ function Stat({
 
 const PREVIEW_ROWS = 8;
 
+// A lookup reads two Google pages per keyword, so one click checks this many.
+const CHECK_MAX = 10;
+
 function ClusterCard({
   projectId,
+  pullId,
   cluster,
   locationCode,
   languageCode,
+  opportunities,
 }: {
   projectId: string;
+  pullId: string;
   cluster: Cluster;
   locationCode: number;
   languageCode: string;
+  opportunities: Map<string, ParasiteOpportunity>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const totalVolume = cluster.keywords.reduce(
@@ -250,6 +300,37 @@ function ClusterCard({
     onSuccess: () => toast.success(`Topic “${cluster.name}” created`),
   });
 
+  // The highest-volume keywords not yet checked (keywords are volume-sorted).
+  const unchecked = cluster.keywords
+    .filter((k) => !opportunities.has(k.keyword))
+    .slice(0, CHECK_MAX)
+    .map((k) => k.keyword);
+  const easy = cluster.keywords.filter(
+    (k) => opportunities.get(k.keyword)?.label === "easy",
+  ).length;
+  const checkGoogle = useMutation({
+    mutationFn: () =>
+      findPlatforms({
+        data: { projectId, keywords: unchecked, locationCode, languageCode },
+      }),
+    onSuccess: async ({ results }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: expandQueryKeys.opportunities(projectId, pullId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: platformQueryKeys.list(projectId),
+        }),
+      ]);
+      const waiting = results.filter((r) => r.status === "processing").length;
+      toast.success(
+        waiting > 0
+          ? `Checked ${results.length - waiting} keywords; ${waiting} still loading. Check again in a minute at no extra cost.`
+          : `Checked ${results.length} keywords on Google. New sites are on the Platforms page.`,
+      );
+    },
+  });
+
   const rows = expanded
     ? cluster.keywords
     : cluster.keywords.slice(0, PREVIEW_ROWS);
@@ -264,6 +345,9 @@ function ClusterCard({
             {cluster.keywords.length} keywords · {totalVolume.toLocaleString()}{" "}
             searches/mo · avg KD {avgKd ?? "—"}
           </span>
+          {easy > 0 ? (
+            <Badge variant="success">{easy} easy for parasites</Badge>
+          ) : null}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -273,6 +357,7 @@ function ClusterCard({
               <TableHead>Keyword</TableHead>
               <TableHead className="w-20 text-right">Volume</TableHead>
               <TableHead className="w-12 text-right">KD</TableHead>
+              <TableHead className="w-20 text-right">Parasites</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -286,6 +371,11 @@ function ClusterCard({
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {formatNumber(k.keywordDifficulty)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <ParasiteOpportunityBadge
+                    opportunity={opportunities.get(k.keyword)}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -301,7 +391,18 @@ function ClusterCard({
               {expanded ? "Show fewer" : `Show all ${cluster.keywords.length}`}
             </Button>
           ) : null}
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex flex-wrap justify-end gap-2">
+            {unchecked.length > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                pending={checkGoogle.isPending}
+                title={`Reads Google's first two pages for the top ${unchecked.length} unchecked keywords (about ${(unchecked.length * 0.007).toFixed(2)} of DataForSEO credit).`}
+                onClick={() => checkGoogle.mutate()}
+              >
+                Check {unchecked.length} on Google
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               size="sm"

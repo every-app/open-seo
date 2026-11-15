@@ -31,3 +31,20 @@ export const PS_TOPIC_STATUSES = [
   "ready",
   "published",
 ] as const;
+
+// Platform discovery: sites found ranking in Google that may host our content.
+// pending = waiting for the user; the AI's first pass is advisory only.
+export const PS_PLATFORM_STATUSES = [
+  "pending",
+  "parasite",
+  "not_parasite",
+] as const;
+export type PsPlatformStatus = (typeof PS_PLATFORM_STATUSES)[number];
+
+export const PS_PLATFORM_SOURCES = ["seed", "serp"] as const;
+
+export const PS_AI_VERDICTS = ["parasite", "not_parasite", "unsure"] as const;
+export type PsAiVerdict = (typeof PS_AI_VERDICTS)[number];
+
+// Google's first two pages: where a parasite post can realistically rank.
+export const PS_SERP_DEPTH = 20;
