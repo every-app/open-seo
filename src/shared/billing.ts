@@ -15,8 +15,6 @@ export type BillingTab = (typeof BILLING_TABS)[number]["value"];
 export type PlanStatus = "free" | "paid";
 
 export const AUTUMN_PAID_PLAN_ID = "base-plan";
-// YC deal: same entitlements as the base plan with $50 of monthly credits.
-export const AUTUMN_YC_PLAN_ID = "yc-plan";
 // Base Plan entitlements with 20% more monthly credits than the price.
 export const AUTUMN_PRO_PLAN_ID = "pro-plan";
 export const AUTUMN_AGENCY_PLAN_ID = "agency-plan";
@@ -27,7 +25,6 @@ export const AUTUMN_AGENCY_ANNUAL_PLAN_ID = "agency-plan-annual";
 /** The plans the app sells through checkout. */
 export const CHECKOUT_PLAN_IDS = [
   AUTUMN_PAID_PLAN_ID,
-  AUTUMN_YC_PLAN_ID,
   AUTUMN_PRO_PLAN_ID,
   AUTUMN_AGENCY_PLAN_ID,
   AUTUMN_PAID_ANNUAL_PLAN_ID,
@@ -37,12 +34,10 @@ export const CHECKOUT_PLAN_IDS = [
 export type CheckoutPlanId = (typeof CHECKOUT_PLAN_IDS)[number];
 // The monthly plans by price, cheapest first. Moving up to a pricier tier is
 // self-serve. Moving down goes through support: a downgrade after spending
-// the bigger plan's credits would buy them at the smaller plan's price. The
-// YC plan is a deal, so it is a plan to upgrade from but not to.
+// the bigger plan's credits would buy them at the smaller plan's price.
 const MONTHLY_PLANS_BY_PRICE: readonly string[] = [
   AUTUMN_PAID_PLAN_ID,
   AUTUMN_PRO_PLAN_ID,
-  AUTUMN_YC_PLAN_ID,
   AUTUMN_AGENCY_PLAN_ID,
 ];
 const UPGRADE_PLAN_IDS: readonly string[] = [
@@ -147,13 +142,6 @@ export const AUTUMN_CHECKOUT_SESSION_PARAMS = {
   tax_id_collection: { enabled: true },
   billing_address_collection: "required",
   customer_update: { name: "auto", address: "auto" },
-} as const;
-
-// YC checkout additionally shows Stripe's promotion code field so founders
-// can redeem the YC deal code for their first month.
-export const AUTUMN_YC_CHECKOUT_SESSION_PARAMS = {
-  ...AUTUMN_CHECKOUT_SESSION_PARAMS,
-  allow_promotion_codes: true,
 } as const;
 
 export function roundUsdForBilling(value: number) {

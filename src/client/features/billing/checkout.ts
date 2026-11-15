@@ -77,7 +77,7 @@ export function prefetchUpgradeCheckout(planId: CheckoutPlanId) {
 }
 
 /** Sends the browser to checkout, using the link made ahead of time if any. */
-export async function openPlanCheckout(
+async function openPlanCheckout(
   planId: CheckoutPlanId,
   redirectTo: string,
 ) {

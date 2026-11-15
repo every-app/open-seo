@@ -15,8 +15,6 @@ import {
   AUTUMN_SEO_DATA_CREDITS_PER_USD,
   AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-  AUTUMN_YC_CHECKOUT_SESSION_PARAMS,
-  AUTUMN_YC_PLAN_ID,
   BILLING_ROUTE,
   SUBSCRIBE_ROUTE,
   type CheckoutPlanId,
@@ -30,7 +28,6 @@ const PLAN_CHECKOUT_SESSION_PARAMS: Record<
   Record<string, unknown>
 > = {
   [AUTUMN_PAID_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
-  [AUTUMN_YC_PLAN_ID]: AUTUMN_YC_CHECKOUT_SESSION_PARAMS,
   [AUTUMN_PRO_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
   [AUTUMN_AGENCY_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
   [AUTUMN_PAID_ANNUAL_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
@@ -67,12 +64,8 @@ export async function createPlanCheckoutUrl(
 ) {
   // A paying organization changes tiers through upgradeOrganizationPlan,
   // whose terms are priced by credits; a checkout here would apply Autumn's
-  // default proration. The YC deal is the one plan sold to subscribers
-  // through checkout, from /yc.
-  if (
-    args.planId !== AUTUMN_YC_PLAN_ID &&
-    (await customerHasPaidPlan(caller.organizationId))
-  ) {
+  // default proration.
+  if (await customerHasPaidPlan(caller.organizationId)) {
     throw new AppError(
       "VALIDATION_ERROR",
       `${caller.organizationId} already pays for a plan`,

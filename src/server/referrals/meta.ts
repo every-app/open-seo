@@ -6,8 +6,7 @@ import { requestPrivacyChoices } from "@/shared/privacy-choices";
 
 // Meta ad conversions (hosted only): a signup, an organization's setup steps
 // (website added, Search Console or an agent connected), a click through to
-// checkout, and a subscription to a tier plan (Base, Pro or Agency; YC deal
-// subscriptions aren't reported). Sent only when the visitor's advertising
+// checkout, and a subscription to a tier plan (Base, Pro or Agency). Sent only when the visitor's advertising
 // (Meta) choice allows it, read from the privacy cookie, location and GPC header
 // of their own request, and the pixel on openseo.so left its cookies.
 // Deliberately no name or email, and nothing about the website or Google account.

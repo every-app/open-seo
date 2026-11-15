@@ -13,7 +13,7 @@ import {
 } from "@/client/components/ui/tooltip";
 import { SUPPORT_EMAIL } from "@/client/lib/support";
 
-// Shared card for the full-page checkout screens (/subscribe, /yc). Callers
+// Shared card for the full-page checkout screens (/subscribe). Callers
 // pass the CTA and any extra notes as children.
 export function PlanOfferCard({
   offer,

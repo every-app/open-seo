@@ -10,11 +10,11 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
   it.each([
     {
       name: "an active paid plan is paying",
-      flags: paidFlags("yc-plan"),
-      subscriptions: [{ planId: "yc-plan", status: "active" }],
+      flags: paidFlags("pro-plan"),
+      subscriptions: [{ planId: "pro-plan", status: "active" }],
       expected: {
         isPaying: true,
-        paidPlanId: "yc-plan",
+        paidPlanId: "pro-plan",
         paidPlanStatus: "active",
         pastDue: false,
         canceledAt: null,

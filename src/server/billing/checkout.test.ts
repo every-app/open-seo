@@ -3,8 +3,6 @@ import {
   AUTUMN_AGENCY_PLAN_ID,
   AUTUMN_CHECKOUT_SESSION_PARAMS,
   AUTUMN_PAID_PLAN_ID,
-  AUTUMN_YC_PLAN_ID,
-  type CheckoutPlanId,
   AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
@@ -60,19 +58,17 @@ describe("billing checkout links", () => {
     });
   });
 
-  it("sells a paying organization only the YC deal, since tier changes go through the plan upgrade", async () => {
+  it("refuses a paying organization, since tier changes go through the plan upgrade", async () => {
     hasPaidPlanMock.mockResolvedValue(true);
-    const checkout = (planId: CheckoutPlanId) =>
-      createPlanCheckoutUrl(owner, { planId, redirectTo: "/billing", origin });
 
-    await expect(checkout(AUTUMN_AGENCY_PLAN_ID)).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-    });
+    await expect(
+      createPlanCheckoutUrl(owner, {
+        planId: AUTUMN_AGENCY_PLAN_ID,
+        redirectTo: "/billing",
+        origin,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
     expect(attachMock).not.toHaveBeenCalled();
-
-    await expect(checkout(AUTUMN_YC_PLAN_ID)).resolves.toBe(
-      "https://checkout/session",
-    );
   });
 
   it("buys the chosen dollars of top-up credits", async () => {

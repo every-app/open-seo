@@ -12,7 +12,7 @@ A plan sells credits, not time, so the usual mid-cycle change does not fit. Autu
 
 ## Decision
 
-A billing manager on a monthly plan can upgrade to a pricier tier (Base to Pro or Agency, Pro or YC to Agency) from the plan picker. Billing's "Change plan" button and pricing-page plan links open it. Moving to a cheaper plan, moving to a yearly plan, changing a yearly plan and changing a plan granted by hand stay with support. The picker marks the current plan and offers "Email us to switch" for the rest. Checkout sells the yearly plans only to an organization without a plan, so under the picker's Yearly switch each plan opens a dialog that points to support.
+A billing manager on a monthly plan can upgrade to a pricier tier (Base to Pro or Agency, Pro to Agency) from the plan picker. Billing's "Change plan" button and pricing-page plan links open it. Moving to a cheaper plan, moving to a yearly plan, changing a yearly plan and changing a plan granted by hand stay with support. The picker marks the current plan and offers "Email us to switch" for the rest. Checkout sells the yearly plans only to an organization without a plan, so under the picker's Yearly switch each plan opens a dialog that points to support.
 
 An upgrade is prorated by credits instead of days:
 
@@ -23,7 +23,7 @@ An upgrade is prorated by credits instead of days:
 
 The confirm step shows Autumn's preview of the charge, the credits the organization will have, and the renewal date and price. The upgrade is an Autumn attach with the billing cycle anchored to now, proration turned off and the monthly credit balance carried over. Autumn keeps carried-over credits until the old plan's refill date, so the app moves them to the new refill date right after the charge. The charge has landed by then, so if that last step fails it is reported and the upgrade still succeeds; the credits then end at the old date.
 
-The server decides whether an organization can upgrade and builds every Autumn request from fixed plan IDs. An organization whose last payment failed updates its card first. Checkout refuses a tier plan to an organization that already pays, so Autumn's default proration cannot be reached that way; the YC deal is still sold to subscribers through checkout.
+The server decides whether an organization can upgrade and builds every Autumn request from fixed plan IDs. An organization whose last payment failed updates its card first. Checkout refuses a tier plan to an organization that already pays, so Autumn's default proration cannot be reached that way.
 
 ## Rationale
 

@@ -2,7 +2,6 @@ import {
   AUTUMN_AGENCY_PLAN_ID,
   AUTUMN_PAID_PLAN_ID,
   AUTUMN_PRO_PLAN_ID,
-  AUTUMN_YC_PLAN_ID,
   type CheckoutPlanId,
 } from "@/shared/billing";
 
@@ -21,13 +20,6 @@ export const BASE_PLAN_OFFER: PlanOffer = {
   name: "Base Plan",
   priceUsd: 10,
   monthlyCreditsUsd: 10,
-};
-
-export const YC_PLAN_OFFER: PlanOffer = {
-  planId: AUTUMN_YC_PLAN_ID,
-  name: "YC Plan",
-  priceUsd: 50,
-  monthlyCreditsUsd: 50,
 };
 
 export const PRO_PLAN_OFFER: PlanOffer = {
