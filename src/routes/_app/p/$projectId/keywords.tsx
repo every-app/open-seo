@@ -9,6 +9,7 @@ import {
 } from "@/client/features/keywords/keywordSearchParams";
 import { keywordsSearchSchema } from "@/types/schemas/keywords";
 import { pageHead } from "@/client/lib/pageHead";
+import { ExpandPage } from "@/client/features/platform-seo/expand/ExpandPage";
 
 export const Route = createFileRoute("/_app/p/$projectId/keywords")({
   head: () => pageHead("Keyword Research"),
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/_app/p/$projectId/keywords")({
 function KeywordResearchPageRoute() {
   const { projectId } = Route.useParams();
   const search = Route.useSearch();
+  if (search.tab === "expand") return <ExpandPage projectId={projectId} />;
   const {
     q: keywordInput = "",
     loc: locationCode,

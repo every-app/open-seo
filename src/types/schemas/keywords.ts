@@ -260,4 +260,6 @@ export const keywordsSearchSchema = z.object({
   maxKd: z.string().optional(),
   include: z.string().optional(),
   exclude: z.string().optional(),
+  // Platform SEO: the Expand tab (Answer Socrates pulls -> clusters).
+  tab: z.enum(["expand"]).optional().catch(undefined),
 });

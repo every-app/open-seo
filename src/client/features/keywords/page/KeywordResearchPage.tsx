@@ -33,6 +33,7 @@ import { KeywordResearchLoadingState } from "./KeywordResearchLoadingState";
 import { KeywordResearchResults } from "./KeywordResearchResults";
 import { KeywordResearchSearchBar } from "./KeywordResearchSearchBar";
 import type { KeywordResearchControllerState } from "./types";
+import { KeywordModeTabs } from "@/client/features/platform-seo/expand/KeywordModeTabs";
 
 type ControllerProps = Omit<KeywordResearchControllerInput, "onFormSubmit">;
 type Props = Omit<
@@ -203,6 +204,7 @@ export function KeywordResearchPage(input: Props) {
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
         <PageHeader
           title="Keyword Research"
+          actions={<KeywordModeTabs projectId={projectId} active="research" />}
           description={
             controller.hasSearched
               ? undefined

@@ -22,6 +22,7 @@ type KeywordSearchParams = {
   maxKd?: string;
   include?: string;
   exclude?: string;
+  tab?: "expand";
 };
 
 export function normalizeLegacyKeywordSearch(search: KeywordSearchParams): {
@@ -47,6 +48,7 @@ export function normalizeLegacyKeywordSearch(search: KeywordSearchParams): {
     maxKd: undefined,
     include: undefined,
     exclude: undefined,
+    tab: search.tab,
   };
 
   const keys: Array<keyof KeywordSearchParams> = [
@@ -67,6 +69,7 @@ export function normalizeLegacyKeywordSearch(search: KeywordSearchParams): {
     "maxKd",
     "include",
     "exclude",
+    "tab",
   ];
 
   return {
