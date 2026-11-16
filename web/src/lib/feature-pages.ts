@@ -419,7 +419,8 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.backlinks,
     eyebrow: "Backlinks",
     navDescription: "Check links and referring domains.",
-    title: "Backlink checker for understanding a domain's link profile",
+    title:
+      "Backlink analysis tool for referring domains, anchors, spam and lost links",
     description:
       "Analyze backlinks, referring domains, and linked pages without separating link research from the rest of your SEO workspace.",
     seoDescription:
@@ -435,19 +436,19 @@ export const featurePages = {
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/d97206ed-bd64-447c-2b9e-1b9f07c5ec00/public",
     workflows: [
       {
-        title: "Check a domain's backlinks",
+        title: "Look up any domain, folder or page",
         description:
-          "Look up backlinks and referring-domain signals for your site, competitors, or pages you are evaluating.",
+          "Enter a domain, a subdomain, a folder or a single page. The overview shows backlinks, referring domains, domain rank and spam score, and for a whole domain, a year of monthly link growth.",
       },
       {
-        title: "Compare link quality",
+        title: "Judge the links",
         description:
-          "Use backlink rows, referring-domain rows, rank, spam, broken, lost, and nofollow signals to inspect link quality.",
+          "Sort by rank, spam score or first seen. Hide spam, lost, broken or nofollow links, and switch between the strongest link per domain and every individual link.",
       },
       {
-        title: "Filter and export link data",
+        title: "Export the list",
         description:
-          "Export and filter backlink, referring-domain, and top-page data for your own outreach, competitor research, or cleanup review.",
+          "Send backlinks, referring domains or top linked pages to CSV or Google Sheets for outreach, competitor research or a cleanup review.",
       },
     ],
     metrics: [
@@ -467,6 +468,55 @@ export const featurePages = {
       "Self-host or adapt backlink reporting for your team's workflow.",
       "MCP support lets an AI agent pull backlink context during SEO research.",
     ],
+    headings: {
+      workflows: "Pull a profile, judge the links, export the list",
+      metrics: "What every backlink lookup tells you",
+      useCases: "When to run backlink analysis",
+      differentiators: "Why analyze links next to your keyword data",
+      related: "Where link research goes next",
+      faq: "Backlink analysis questions",
+    },
+    toolCallout: {
+      title: "Check any domain's links before you open the full report",
+      description: "Two free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free backlink checker",
+          description:
+            "Summary metrics and the top 15 backlinks for any domain, one per referring domain, strongest first.",
+          href: "/backlink-checker",
+        },
+        {
+          title: "Free spam score checker",
+          description:
+            "A domain's backlink spam score and the 10 spammiest domains linking to it.",
+          href: "/spam-score-checker",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Count referring domains, not backlinks",
+        body: "openseo.so has 9,499 backlinks from 495 referring domains. One of those domains links from 3,243 of its pages, which makes 3,754 links: 40% of the total, and more than the next nine domains combined. Counted as backlinks, that one site looks like most of the profile. Counted as referring domains, it is one of 495. Start with the referring domains tab, then expand a domain to see its individual links.",
+      },
+      {
+        title: "Analyze a competitor's backlinks in four steps",
+        body: "Enter the competitor's domain and open referring domains. Sort by first seen to see who linked to them recently. Spam is hidden by default, so add the lost and broken filters and read what's left: those are the sites that link in your space. Export the list for outreach, or hand it to your AI agent with the link prospecting skill.",
+      },
+      {
+        title: "Backlink analysis from your AI agent",
+        body: "Connect OpenSEO to Claude, Cursor or ChatGPT over MCP and the agent can pull a backlink overview or the full link list mid-conversation, with the same filters as the app. The link prospecting skill turns that into a short list: sites with a real reason to link to your page, and an outreach angle for each.",
+      },
+    ],
+    contextImage: {
+      src: "/features/backlink-checker/openseo-backlinks-links-vs-referring-domains.png",
+      alt: "Two stacked bars for openseo.so. Backlinks: 9,499, of which the top referring domain supplies 3,754, the next nine domains 2,782 and all others 2,963. Referring domains: 495, where the same top domain is a single sliver.",
+      caption:
+        "The same profile counted two ways. One domain supplies 40% of the links and counts once.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     guides: {
       title: "The Link Building Strategy Library",
       description:
@@ -496,12 +546,6 @@ export const featurePages = {
         href: "/library/link-building",
       },
     },
-    featuredLink: {
-      title: "Free backlink checker",
-      description:
-        "Check any domain's backlink summary and top 15 backlinks. No signup required.",
-      href: "/backlink-checker",
-    },
     related: [
       {
         label: "Link Prospecting",
@@ -524,6 +568,21 @@ export const featurePages = {
         question: "How does backlink research connect to SEO planning?",
         answer:
           "Backlinks tell you whether a page ranks on content or on authority. Check them before targeting a keyword to judge whether you can realistically outrank the incumbents, and check a competitor's profile to find sites that might link to you too.",
+      },
+      {
+        question: "Does OpenSEO hide spam backlinks?",
+        answer:
+          "Yes, by default. Links with a spam score of 40 or higher, out of 100, drop out of the lists. Turn the filter off to see them.",
+      },
+      {
+        question: "How far back does backlink history go?",
+        answer:
+          "A domain lookup shows monthly backlink and referring-domain counts for the last 12 months, with new and lost links per month. A single page or a folder shows current counts without the trend.",
+      },
+      {
+        question: "Is there a free backlink checker?",
+        answer:
+          "Yes. The free backlink checker shows summary metrics and the top 15 backlinks for any domain without signup. The full report pages through every link with filters and export, and each new lookup uses credits. Looking up the same target again within 6 hours reuses the result at no cost.",
       },
     ],
   },
