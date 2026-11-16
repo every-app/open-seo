@@ -99,6 +99,31 @@ export async function customerHasPaidPlan(
   return retry.allowed;
 }
 
+/**
+ * The plan that grants the organization's paid entitlement. Null on the free
+ * plan, for paid access granted by hand, and for an organization with no
+ * Autumn customer yet (see customerHasPaidPlan).
+ */
+export async function getPaidPlanId(customerId: string) {
+  let customer;
+  try {
+    customer = await autumn.customers.get({ customerId });
+  } catch (error) {
+    if (errorBodyIncludes(error, "customer_not_found")) return null;
+    throw error;
+  }
+  // The SDK fails open on Autumn 5xx and network errors with an empty
+  // customer that has no id. Reading it as "no plan" would tell a paying
+  // customer they are on a smaller plan, so surface the outage instead.
+  if (!customer.id) {
+    throw new AppError(
+      "UPSTREAM_UNAVAILABLE",
+      "Autumn returned no billing customer",
+    );
+  }
+  return customer.flags[AUTUMN_PAID_PLAN_FEATURE_ID]?.planId ?? null;
+}
+
 // Remaining shared usage credits — the monthly `usage_credits` balance plus the
 // rolled-over `topup_credits` balance. Both DataForSEO and LLM spend draw from
 // these (the `seo_data_usage` and `llm_usage` features both map into them).

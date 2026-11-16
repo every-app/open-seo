@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
+import {
+  keywordLimitMessage,
+  MAX_KEYWORDS_PER_CONFIG,
+  MAX_TRACKED_KEYWORD_LENGTH,
+} from "@/shared/rank-tracking";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { asAppError } from "@/server/lib/errors";
@@ -18,7 +22,7 @@ const inputSchema = {
   keywords: z
     .array(z.string().min(1).max(MAX_TRACKED_KEYWORD_LENGTH))
     .min(1)
-    .max(2000)
+    .max(MAX_KEYWORDS_PER_CONFIG)
     .describe("Keywords to track. Existing and repeated keywords are skipped."),
   matchCase: z
     .boolean()
@@ -94,8 +98,11 @@ export const addRankTrackingKeywordsTool = {
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     const result = await RankTrackingService.addKeywords(
-      args.trackerId,
-      args.projectId,
+      {
+        configId: args.trackerId,
+        projectId: args.projectId,
+        organizationId: context.billing.organizationId,
+      },
       args.keywords,
       {
         kind: "credit_ceiling",
@@ -108,7 +115,7 @@ export const addRankTrackingKeywordsTool = {
     const metricsNote =
       result.added > 0 ? await fetchKeywordMetrics(args, context.billing) : "";
     return mcpResponse({
-      text: `Added ${result.added} of ${requested} requested keyword${requested === 1 ? "" : "s"} to tracker ${args.trackerId}. No check was started.${metricsNote}${result.scheduledEstimate ? ` Future ${result.scheduledEstimate.scheduleInterval} checks cost at most ${result.scheduledEstimate.costCredits} credits each, including retries (up to ~${result.scheduledEstimate.monthlyCostCredits} credits/month).` : result.added > 0 ? " This tracker is manual, so positions appear only after a check with run_rank_tracker." : ""}`,
+      text: `Added ${result.added} of ${requested} requested keyword${requested === 1 ? "" : "s"} to tracker ${args.trackerId}.${result.overLimit ? ` ${result.overLimit.notAdded} did not fit: ${keywordLimitMessage(result.overLimit.limit)}` : ""} No check was started.${metricsNote}${result.scheduledEstimate ? ` Future ${result.scheduledEstimate.scheduleInterval} checks cost at most ${result.scheduledEstimate.costCredits} credits each, including retries (up to ~${result.scheduledEstimate.monthlyCostCredits} credits/month).` : result.added > 0 ? " This tracker is manual, so positions appear only after a check with run_rank_tracker." : ""}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

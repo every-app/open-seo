@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_KEYWORDS_PER_CONFIG } from "@/shared/rank-tracking";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -16,14 +17,14 @@ const inputSchema = {
     .number()
     .int()
     .min(0)
-    .max(1000)
+    .max(MAX_KEYWORDS_PER_CONFIG)
     .optional()
     .describe(
       "Number of keywords you plan to add, priced as plain keywords. Prefer additionalKeywords when you know them.",
     ),
   additionalKeywords: z
     .array(z.string())
-    .max(1000)
+    .max(MAX_KEYWORDS_PER_CONFIG)
     .optional()
     .describe(
       "Keywords you plan to add. Include these before adding to a scheduled tracker so the response projects its recurring per-check and monthly cost; keywords with search operators such as site: cost 5x. Overrides additionalKeywordCount.",
@@ -72,6 +73,7 @@ export const estimateRankTrackerCostTool = {
     const estimate = await RankTrackingService.estimateCost(
       args.trackerId,
       args.projectId,
+      context.billing.organizationId,
       // A bare count has no keyword text, so it prices as plain keywords.
       args.additionalKeywords ??
         Array<string>(args.additionalKeywordCount ?? 0).fill(""),

@@ -27,7 +27,10 @@ import {
 import { RankTrackingTableToolbar } from "./RankTrackingTableToolbar";
 import { exportRankTracking } from "./RankTrackingTableParts";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
-import { isScheduledRankTrackingInterval } from "@/shared/rank-tracking";
+import {
+  isScheduledRankTrackingInterval,
+  keywordLimitMessage,
+} from "@/shared/rank-tracking";
 import {
   rankTrackingDetailSearchSchema,
   type ComparePeriod,
@@ -150,6 +153,7 @@ export function RankTrackingDomainDetail({
 
   const handleKeywordsAdded = (result: {
     added: number;
+    overLimit?: { limit: number; notAdded: number };
     checkTriggered: boolean;
     checkScheduledSoon: boolean;
   }) => {
@@ -164,9 +168,17 @@ export function RankTrackingDomainDetail({
     });
     setShowAddKeywords(false);
     captureClientEvent("rank_tracking:keywords_add");
-    toast.success(
-      `${result.added} keyword${result.added !== 1 ? "s" : ""} added`,
-    );
+    if (result.added > 0 || !result.overLimit) {
+      toast.success(
+        `${result.added} keyword${result.added !== 1 ? "s" : ""} added`,
+      );
+    }
+    if (result.overLimit) {
+      const { notAdded, limit } = result.overLimit;
+      toast.warning(
+        `${notAdded} keyword${notAdded !== 1 ? "s" : ""} not added. ${keywordLimitMessage(limit)}`,
+      );
+    }
     if (result.checkScheduledSoon) {
       toast.info("The scheduled check within the hour covers these keywords");
     } else if (

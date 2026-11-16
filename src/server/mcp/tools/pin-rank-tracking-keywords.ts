@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_KEYWORDS_PER_CONFIG } from "@/shared/rank-tracking";
 import { RankTrackingKeywordService } from "@/server/features/rank-tracking/services/RankTrackingKeywordService";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -15,7 +16,7 @@ const inputSchema = {
   keywordIds: z
     .array(z.string().uuid())
     .min(1)
-    .max(2000)
+    .max(MAX_KEYWORDS_PER_CONFIG)
     .describe(
       "Tracking keyword IDs to pin or unpin. Use `trackingKeywordId` values returned by get_rank_tracker.",
     ),

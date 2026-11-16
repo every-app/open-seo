@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   updateKeywordMetrics: vi.fn(),
   isHostedServerAuthMode: vi.fn(),
   customerHasPaidPlan: vi.fn(),
+  getPaidPlanId: vi.fn(),
   beginRankCheckRun: vi.fn(),
   createDataforseoClient: vi.fn(),
   fetchKeywordMetricsForList: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("@/server/lib/runtime-env", () => ({
 }));
 vi.mock("@/server/billing/subscription", () => ({
   customerHasPaidPlan: mocks.customerHasPaidPlan,
+  getPaidPlanId: mocks.getPaidPlanId,
 }));
 vi.mock("@/server/features/rank-tracking/services/rankCheckRunGuards", () => ({
   beginRankCheckRun: mocks.beginRankCheckRun,
@@ -44,6 +46,12 @@ const config = {
   devices: "both" as const,
   serpDepth: 10,
   scheduleInterval: "weekly" as const,
+};
+
+const tracker = {
+  configId: "config_1",
+  projectId: "project_1",
+  organizationId: "org_1",
 };
 
 const billingCustomer = {
@@ -73,8 +81,7 @@ describe("RankTrackingService management invariants", () => {
     );
 
     const result = await RankTrackingService.addKeywords(
-      "config_1",
-      "project_1",
+      tracker,
       ["SEO", "seo", "technical seo"],
       { kind: "direct_user_action" },
     );
@@ -95,8 +102,7 @@ describe("RankTrackingService management invariants", () => {
     );
 
     await RankTrackingService.addKeywords(
-      "config_1",
-      "project_1",
+      tracker,
       ["İstanbul avukat", "KIRMIZI"],
       { kind: "direct_user_action" },
     );
@@ -114,12 +120,9 @@ describe("RankTrackingService management invariants", () => {
       { id: "kw_1", keyword: "İstanbul avukat".toLowerCase() },
     ]);
 
-    await RankTrackingService.addKeywords(
-      "config_1",
-      "project_1",
-      ["İstanbul avukat"],
-      { kind: "direct_user_action" },
-    );
+    await RankTrackingService.addKeywords(tracker, ["İstanbul avukat"], {
+      kind: "direct_user_action",
+    });
 
     expect(mocks.addKeywordsToConfig).not.toHaveBeenCalled();
   });
@@ -133,8 +136,7 @@ describe("RankTrackingService management invariants", () => {
     );
 
     await RankTrackingService.addKeywords(
-      "config_1",
-      "project_1",
+      tracker,
       ["Nodex"],
       { kind: "direct_user_action" },
       true,
@@ -149,8 +151,7 @@ describe("RankTrackingService management invariants", () => {
     mocks.getKeywordsForConfig.mockResolvedValue([]);
 
     const error: unknown = await RankTrackingService.addKeywords(
-      "config_1",
-      "project_1",
+      tracker,
       ["seo", "technical seo"],
       { kind: "credit_ceiling" },
     ).catch((cause: unknown) => cause);
@@ -173,15 +174,10 @@ describe("RankTrackingService management invariants", () => {
     );
 
     await expect(
-      RankTrackingService.addKeywords(
-        "config_1",
-        "project_1",
-        ["seo", "technical seo"],
-        {
-          kind: "credit_ceiling",
-          maxEstimatedScheduledCheckCredits: 24,
-        },
-      ),
+      RankTrackingService.addKeywords(tracker, ["seo", "technical seo"], {
+        kind: "credit_ceiling",
+        maxEstimatedScheduledCheckCredits: 24,
+      }),
     ).resolves.toMatchObject({
       added: 2,
       scheduledEstimate: {
@@ -209,8 +205,7 @@ describe("RankTrackingService management invariants", () => {
     );
 
     const error: unknown = await RankTrackingService.addKeywords(
-      "config_1",
-      "project_1",
+      tracker,
       ["seo", "technical seo"],
       {
         kind: "credit_ceiling",
@@ -237,7 +232,7 @@ describe("RankTrackingService management invariants", () => {
     );
 
     await expect(
-      RankTrackingService.addKeywords("config_1", "project_1", ["seo"], {
+      RankTrackingService.addKeywords(tracker, ["seo"], {
         kind: "credit_ceiling",
       }),
     ).resolves.toMatchObject({ added: 1, scheduledEstimate: undefined });
@@ -365,6 +360,67 @@ describe("RankTrackingService management invariants", () => {
     await expect(
       RankTrackingService.removeKeywords("foreign", "project_1", ["kw_1"]),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(mocks.removeKeywordsFromConfig).not.toHaveBeenCalled();
+  });
+});
+
+describe("RankTrackingService keyword limit", () => {
+  beforeEach(() => {
+    mocks.getConfigById.mockResolvedValue({
+      ...config,
+      scheduleInterval: "manual",
+    });
+    mocks.isHostedServerAuthMode.mockResolvedValue(true);
+    mocks.addKeywordsToConfig.mockImplementation(
+      async (rows: Array<{ id: string }>) => rows.map((row) => row.id),
+    );
+  });
+
+  it.each([
+    ["the base plan", true, "base-plan", 1000],
+    ["a plan granted by hand", true, null, 1000],
+    ["the annual Pro plan", true, "pro-plan-annual", 2500],
+    ["the Agency plan", true, "agency-plan", 2500],
+    ["a deployment without billing", false, null, 2500],
+  ])(
+    "fills a tracker to its limit on %s and reports what did not fit",
+    async (_label, hosted, planId, limit) => {
+      mocks.isHostedServerAuthMode.mockResolvedValue(hosted);
+      mocks.getPaidPlanId.mockResolvedValue(planId);
+      mocks.getKeywordsForConfig.mockResolvedValue(
+        Array.from({ length: 999 }, (_, i) => ({ keyword: `tracked ${i}` })),
+      );
+      const result = await RankTrackingService.addKeywords(
+        tracker,
+        Array.from({ length: 2000 }, (_, i) => `new ${i}`),
+        { kind: "direct_user_action" },
+      );
+
+      expect(result.added).toBe(limit - 999);
+      expect(result.overLimit).toEqual({
+        limit,
+        notAdded: 2000 - (limit - 999),
+      });
+    },
+  );
+
+  it("keeps a tracker that is over its limit after a downgrade, and adds nothing", async () => {
+    mocks.getPaidPlanId.mockResolvedValue("base-plan");
+    mocks.getKeywordsForConfig.mockResolvedValue(
+      Array.from({ length: 1500 }, (_, i) => ({ keyword: `tracked ${i}` })),
+    );
+
+    const result = await RankTrackingService.addKeywords(
+      tracker,
+      ["one more"],
+      { kind: "direct_user_action" },
+    );
+
+    expect(result).toMatchObject({
+      added: 0,
+      overLimit: { limit: 1000, notAdded: 1 },
+    });
+    expect(mocks.addKeywordsToConfig).not.toHaveBeenCalled();
     expect(mocks.removeKeywordsFromConfig).not.toHaveBeenCalled();
   });
 });

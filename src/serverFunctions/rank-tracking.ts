@@ -194,7 +194,11 @@ export const estimateRankCheckCost = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(estimateCostSchema)
   .handler(async ({ data, context }) => {
-    return RankTrackingService.estimateCost(data.configId, context.projectId);
+    return RankTrackingService.estimateCost(
+      data.configId,
+      context.projectId,
+      context.organizationId,
+    );
   });
 
 function logAutoActionFailure(action: string, err: unknown) {
@@ -228,8 +232,11 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
   .validator(addKeywordsSchema)
   .handler(async ({ data, context }) => {
     const result = await RankTrackingService.addKeywords(
-      data.configId,
-      context.projectId,
+      {
+        configId: data.configId,
+        projectId: context.projectId,
+        organizationId: context.organizationId,
+      },
       data.keywords,
       { kind: "direct_user_action" },
       data.matchCase,

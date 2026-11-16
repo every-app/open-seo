@@ -150,8 +150,7 @@ describe("rank tracking management MCP tools", () => {
     );
     expect(added.structuredContent).toMatchObject({ requested: 3, added: 1 });
     expect(mocks.addKeywords).toHaveBeenCalledWith(
-      trackerId,
-      projectId,
+      { configId: trackerId, projectId, organizationId: "org_123" },
       ["seo", "SEO", "existing"],
       {
         kind: "credit_ceiling",

@@ -117,6 +117,30 @@ describe("retryRankChecks", () => {
     },
   );
 
+  it("polls every task of a large read in each round, pausing between steps of 500", async () => {
+    const keywordIds = Array.from({ length: 600 }, (_, i) => `kw_${i + 1}`);
+    mocks.getSnapshotsForRun.mockResolvedValue(
+      keywordIds.map((id) => snapshot(id, 5)),
+    );
+    mocks.fetchRankCheckTaskResult.mockImplementation(
+      async (task: RankCheckTaskInput) => ({
+        status: "completed",
+        result: { ...task, position: 5, url: null, serpFeatures: [] },
+      }),
+    );
+
+    await retry(checkContext(keywordIds));
+
+    // Reads two and three: one round each, the last 100 tasks in a second step.
+    expect(mocks.fetchRankCheckTaskResult).toHaveBeenCalledTimes(1200);
+    expect(vi.mocked(step.sleep).mock.calls).toEqual([
+      ["read-2-wait-0", "4 minutes"],
+      ["read-2-collect-0-1-pace", "30 seconds"],
+      ["read-3-wait-0", "4 minutes"],
+      ["read-3-collect-0-1-pace", "30 seconds"],
+    ]);
+  });
+
   it("starts no more reads once the read window has passed, and still drops misses", async () => {
     mocks.getSnapshotsForRun.mockResolvedValue([snapshot("kw_0", null)]);
 

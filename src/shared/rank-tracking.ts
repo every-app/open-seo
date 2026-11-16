@@ -1,5 +1,9 @@
 import {
   applyBillingMarkupUsd,
+  AUTUMN_AGENCY_ANNUAL_PLAN_ID,
+  AUTUMN_AGENCY_PLAN_ID,
+  AUTUMN_PRO_ANNUAL_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
   creditsForProviderUsd,
   roundUsdForBilling,
 } from "./billing";
@@ -48,8 +52,44 @@ export function isRankCheckDelayed(run: {
   );
 }
 
-/** Soft application limit for keywords per rank tracking config */
-export const MAX_KEYWORDS_PER_CONFIG = 1000;
+/**
+ * Keywords one tracker holds on the base plan, the free plan, and any plan
+ * not named in KEYWORDS_PER_CONFIG_BY_PLAN.
+ */
+export const BASE_KEYWORDS_PER_CONFIG = 1000;
+
+/**
+ * The most keywords any plan lets one tracker hold. The check pipeline is
+ * sized for this on both devices (see TASK_GETS_PER_COLLECT in
+ * rankCheckPaths.ts), so raise the two together.
+ */
+export const MAX_KEYWORDS_PER_CONFIG = 2500;
+
+const KEYWORDS_PER_CONFIG_BY_PLAN: Record<string, number> = {
+  [AUTUMN_PRO_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
+  [AUTUMN_PRO_ANNUAL_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
+  [AUTUMN_AGENCY_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
+  [AUTUMN_AGENCY_ANNUAL_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
+};
+
+/** How many keywords one tracker holds on the given paid plan, or on none. */
+export function keywordsPerConfigForPlan(paidPlanId: string | null): number {
+  return (
+    (paidPlanId && KEYWORDS_PER_CONFIG_BY_PLAN[paidPlanId]) ||
+    BASE_KEYWORDS_PER_CONFIG
+  );
+}
+
+/**
+ * What to tell someone whose tracker is full. Below the highest limit it
+ * names the plans that allow more.
+ */
+export function keywordLimitMessage(limit: number): string {
+  const reached = `This tracker is at its limit of ${limit.toLocaleString("en-US")} keywords.`;
+  return limit < MAX_KEYWORDS_PER_CONFIG
+    ? `${reached} The Pro and Agency plans allow ${MAX_KEYWORDS_PER_CONFIG.toLocaleString("en-US")} per tracker.`
+    : reached;
+}
 
 /** Maximum length of a single tracked keyword */
 export const MAX_TRACKED_KEYWORD_LENGTH = 200;

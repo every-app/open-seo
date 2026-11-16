@@ -2,7 +2,10 @@ import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
 import { rankTrackingConfigs } from "@/db/schema";
 import { isSupportedLanguageCode } from "@/shared/keyword-locations";
-import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
+import {
+  MAX_KEYWORDS_PER_CONFIG,
+  MAX_TRACKED_KEYWORD_LENGTH,
+} from "@/shared/rank-tracking";
 import { comparePeriodSchema } from "@/types/schemas/rank-tracking-search";
 import { domainField } from "@/types/schemas/domain";
 import { scheduleTimeSchema } from "@/types/schemas/schedule-time";
@@ -98,7 +101,10 @@ export const updateConfigSchema = z.object({
 export const triggerCheckSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
-  keywordIds: z.array(z.string().uuid()).max(2000).optional(),
+  keywordIds: z
+    .array(z.string().uuid())
+    .max(MAX_KEYWORDS_PER_CONFIG)
+    .optional(),
 });
 
 export const getLatestResultsSchema = z.object({
@@ -123,20 +129,20 @@ export const addKeywordsSchema = z.object({
   keywords: z
     .array(z.string().min(1).max(MAX_TRACKED_KEYWORD_LENGTH))
     .min(1)
-    .max(2000),
+    .max(MAX_KEYWORDS_PER_CONFIG),
   matchCase: z.boolean().optional(),
 });
 
 export const removeKeywordsSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
-  keywordIds: z.array(z.string().uuid()).min(1).max(2000),
+  keywordIds: z.array(z.string().uuid()).min(1).max(MAX_KEYWORDS_PER_CONFIG),
 });
 
 export const setKeywordsPinnedSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
-  keywordIds: z.array(z.string().uuid()).min(1).max(2000),
+  keywordIds: z.array(z.string().uuid()).min(1).max(MAX_KEYWORDS_PER_CONFIG),
   pinned: z.boolean(),
 });
 

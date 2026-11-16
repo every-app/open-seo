@@ -18,6 +18,7 @@ export function AddKeywordsPanel({
   projectId: string;
   onSuccess: (result: {
     added: number;
+    overLimit?: { limit: number; notAdded: number };
     checkTriggered: boolean;
     checkScheduledSoon: boolean;
   }) => void;

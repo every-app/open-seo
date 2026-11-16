@@ -100,8 +100,17 @@ const FIRST_READ_POLL_INTERVALS: WorkflowSleepDuration[] = [
 /** Concurrent task_get requests within a collect step. */
 const TASK_GET_CONCURRENCY = 25;
 
-/** Max task_get calls per collect round (bounds one round's fan-out). */
+/** Max task_get calls per collect step. A poll round runs one step per chunk. */
 const TASK_GETS_PER_COLLECT = 500;
+
+// The pause between a round's collect steps. It holds one run to about
+// TASK_GETS_PER_COLLECT task_gets a minute however many keywords it has, which
+// is the per-tick burst the scheduler's budget assumes (scheduledRankChecks.ts)
+// against DataForSEO's requests-per-minute cap. At the largest tracker,
+// MAX_KEYWORDS_PER_CONFIG on both devices (5,000 tasks), a round is ten steps
+// and takes about ten minutes, so the reads MIN_READS_PER_CHECK needs still
+// fit READ_WINDOW_MS. A larger limit needs faster collection first.
+const COLLECT_PACE: WorkflowSleepDuration = "30 seconds";
 
 // Collect steps may issue hundreds of task_get calls, so they get more room
 // than SINGLE_ATTEMPT_STEP_CONFIG's 2-minute timeout. Unlike the metered
@@ -206,7 +215,7 @@ export async function runQueuedTasks(
   }
   const collected: RankCheckResultWithDevice[] = [];
 
-  // A collect failure (past its retries) leaves that round's tasks pending for
+  // A collect failure (past its retries) leaves that step's tasks pending for
   // the next round instead of failing the run.
   for (
     let round = 0;
@@ -215,32 +224,42 @@ export async function runQueuedTasks(
   ) {
     await step.sleep(`${label}wait-${round}`, pollIntervals[round]);
 
-    // Cap task_gets per round so one collect step stays well inside the
-    // per-invocation subrequest limit at the 1000-keyword config ceiling.
-    const batch = pending.slice(0, TASK_GETS_PER_COLLECT);
-    const overflow = pending.slice(TASK_GETS_PER_COLLECT);
-    try {
-      // Results come back as the step's output, so a replay sees them too.
-      const outcome = await pgStep(
-        step,
-        `${label}collect-${round}`,
-        COLLECT_STEP_CONFIG,
-        async () => {
-          const fetched = await fetchQueuedRound(ctx, batch);
-          if (onCollected && fetched.completed.length > 0) {
-            await onCollected(fetched.completed);
-          }
-          return fetched;
-        },
-      );
-      collected.push(...outcome.completed);
-      pending = [...outcome.stillPending, ...overflow];
-    } catch (error) {
-      console.warn(
-        `[rank-check] ${ctx.runId} ${label}collect-${round} failed:`,
-        error,
-      );
+    // One step per TASK_GETS_PER_COLLECT tasks keeps each step's task_gets
+    // and its output small. Every pending task is polled each round: a task
+    // left unpolled when polling ends is read again and billed again.
+    const stillPending: PostedRankCheckTask[] = [];
+    for (let i = 0; i < pending.length; i += TASK_GETS_PER_COLLECT) {
+      const batch = pending.slice(i, i + TASK_GETS_PER_COLLECT);
+      // The first chunk keeps the name a round's only step had, so a run in
+      // flight across a deploy replays its finished steps.
+      const chunk = i / TASK_GETS_PER_COLLECT;
+      const collectLabel = `${label}collect-${round}${chunk > 0 ? `-${chunk}` : ""}`;
+      if (chunk > 0) await step.sleep(`${collectLabel}-pace`, COLLECT_PACE);
+      try {
+        // Results come back as the step's output, so a replay sees them too.
+        const outcome = await pgStep(
+          step,
+          collectLabel,
+          COLLECT_STEP_CONFIG,
+          async () => {
+            const fetched = await fetchQueuedRound(ctx, batch);
+            if (onCollected && fetched.completed.length > 0) {
+              await onCollected(fetched.completed);
+            }
+            return fetched;
+          },
+        );
+        collected.push(...outcome.completed);
+        stillPending.push(...outcome.stillPending);
+      } catch (error) {
+        console.warn(
+          `[rank-check] ${ctx.runId} ${collectLabel} failed:`,
+          error,
+        );
+        stillPending.push(...batch);
+      }
     }
+    pending = stillPending;
   }
   return { collected, timedOut: pending.length > 0 };
 }

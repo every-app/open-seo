@@ -12,16 +12,20 @@ import { describeError } from "@/server/lib/errors";
 
 // Work admitted per tick, in task units (keywords × devices). Admission
 // control, not a hard rate limit: the first start of a tick is always
-// admitted, so a config bigger than the budget (legal max: 1,000 keywords ×
-// 2 devices = 2,000 units) can never starve. Sized against DataForSEO's
-// 2,000 requests/min account cap, where task_get polling is the binding
-// term: one call per unit per poll round, rounds wake synchronized per tick,
-// and a unit gets up to six reads, so polling from about six ticks overlaps
-// the */5 cron — a full tick can burst ~500 polls into a single minute,
-// stacking with the rounds of the ticks before it. Overruns aren't loud
-// failures: throttled polls delay collection and, past the hour, leave tasks
-// unfinished, which are read again and billed to the customer, so keep real
-// headroom under the cap.
+// admitted, so a config bigger than the budget (legal max:
+// MAX_KEYWORDS_PER_CONFIG × 2 devices = 5,000 units) can never starve. Sized
+// against DataForSEO's 2,000 requests/min account cap, where task_get polling
+// is the binding term: one call per unit per poll round, rounds wake
+// synchronized per tick, and a unit gets up to six reads, so polling from
+// about six ticks overlaps the */5 cron — a full tick can burst ~500 polls
+// into a single minute, stacking with the rounds of the ticks before it. A
+// config admitted over the budget polls no faster than a full tick does: its
+// collect steps are paced (COLLECT_PACE in rankCheckPaths.ts), so it adds
+// about 500 polls a minute for longer, not a bigger burst. Each one takes a
+// tick of its own, so several large trackers due together still stack.
+// Overruns aren't loud failures: throttled polls delay collection and, past
+// the hour, leave tasks unfinished, which are read again and billed to the
+// customer, so keep real headroom under the cap.
 // 500/tick ≈ 144,000 units/day, a few times steady-state demand — it binds
 // during backlog catch-up and briefly during the 04:00–10:00 UTC default
 // schedule window.
