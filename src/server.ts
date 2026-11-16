@@ -41,30 +41,41 @@ import { hasOperatorSecret } from "@/server/standalone/operator-auth";
 
 const startHandler = createStartHandler(defaultStreamHandler);
 
-// The app ships no security response headers of its own, so any third-party
-// page can frame an app route and UI-redress a one-click action (delete a
-// project, change project settings, buy credits). `frame-ancestors 'self'` on
-// the app's own documents is the whole fix, and deliberately all of it: a
-// script-src policy would need a nonce for the inline bootstrap script in
-// __root.tsx plus allowances for Turnstile and PostHog, which is separate,
-// larger work.
-//
-// Only HTML documents, and only ones that carry no policy of their own, so a
-// route that sets its own stricter CSP keeps it (two CSP headers intersect, so
-// adding a second could only confuse things). Wrapping the handler rather than
-// one call site covers the OAuth-provider path too, which serves app documents
+// Security headers for everything the app serves, set here because wrapping
+// the handler covers the OAuth-provider path too, which serves app documents
 // through this same function.
+//
+// The Content-Security-Policy goes on HTML documents that carry no policy of
+// their own, so a route that sets its own stricter CSP keeps it (two CSP
+// headers intersect, so adding a second could only confuse things):
+// - `frame-ancestors 'self'`: no third-party page can frame an app route and
+//   UI-redress a one-click action (delete a project, buy credits).
+// - `object-src 'none'` and `base-uri 'self'`: the app has no plugins and no
+//   <base>, so injected markup can't add either.
+// It deliberately stops there. script-src, img-src and connect-src need a
+// nonce for the inline bootstrap scripts in __root.tsx plus allowances for
+// Turnstile, PostHog and Google Maps, which is separate, larger work.
+const APP_CSP = "frame-ancestors 'self'; object-src 'none'; base-uri 'self'";
+
 async function appFetch(request: Request): Promise<Response> {
   const response = await startHandler(request);
+  // A WebSocket upgrade's response can't be rebuilt, and has no use for these.
+  if (response.status === 101) return response;
+  const headers = new Headers(response.headers);
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  // Only over https: a self-hosted instance on plain http has no TLS to pin.
+  if (new URL(request.url).protocol === "https:") {
+    headers.set("Strict-Transport-Security", "max-age=31536000");
+  }
   const contentType = response.headers.get("content-type") ?? "";
   if (
-    !contentType.startsWith("text/html") ||
-    response.headers.has("content-security-policy")
+    contentType.startsWith("text/html") &&
+    !headers.has("content-security-policy")
   ) {
-    return response;
+    headers.set("Content-Security-Policy", APP_CSP);
   }
-  const headers = new Headers(response.headers);
-  headers.set("Content-Security-Policy", "frame-ancestors 'self'");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

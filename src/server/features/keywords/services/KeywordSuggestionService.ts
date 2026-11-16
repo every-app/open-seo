@@ -2,10 +2,8 @@ import { waitUntil } from "cloudflare:workers";
 import { sortBy } from "remeda";
 import { runBatch } from "@/db/runBatch";
 import type { EnsuredProject } from "@/middleware/ensure-user/types";
-import {
-  checkUsageCreditsDepleted,
-  type BillingCustomerContext,
-} from "@/server/billing/subscription";
+import { withResearchAdmission } from "@/server/billing/researchSpend";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AiVisibilityRepository } from "@/server/features/ai-visibility/repositories/AiVisibilityRepository";
 import { writeResearchKeywords } from "@/server/features/ai-visibility/repositories/aiVisibilityConfigurationRepository";
 import { resolveDateRange } from "@/server/features/gsc/searchAnalytics";
@@ -18,7 +16,6 @@ import {
 import { normalizeKeyword } from "@/server/features/keywords/services/research/helpers";
 import { researchWebsite } from "@/server/features/projects/services/websiteResearch";
 import { AppError } from "@/server/lib/errors";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { KeywordSuggestionReason } from "@/shared/keyword-suggestions";
 
 const MAX_SUGGESTIONS = 10;
@@ -122,20 +119,19 @@ async function generate(
   // Setup in another tab may have saved topics since the page loaded.
   if ((await AiVisibilityRepository.listResearchKeywords(project.id)).length)
     return;
-  // Any positive balance admits the run; it bills its actual spend at the end.
-  if (
-    (await isHostedServerAuthMode()) &&
-    (await checkUsageCreditsDepleted(customer)).depleted
-  )
-    throw new AppError(
-      "INSUFFICIENT_CREDITS",
-      "You need usage credits to generate suggestions.",
-    );
-  const work = researchWebsite(
-    project.domain,
-    project,
-    { ...customer, projectId: project.id },
-    { skipCompetitors: true },
+  const domain = project.domain;
+  // Any positive balance admits the run, holding some of it so a burst of
+  // these can't all start on one balance; it bills its actual spend at the end.
+  const work = withResearchAdmission(
+    customer,
+    "You need usage credits to generate suggestions.",
+    () =>
+      researchWebsite(
+        domain,
+        project,
+        { ...customer, projectId: project.id },
+        { skipCompetitors: true },
+      ),
   ).then((research) =>
     runBatch((tx) =>
       writeResearchKeywords(tx, project.id, [

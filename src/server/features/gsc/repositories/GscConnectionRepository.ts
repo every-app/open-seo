@@ -1,16 +1,24 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { gscConnections } from "@/db/schema";
+import { connectorIsMember } from "@/server/features/google/connectorIsMember";
 
 export type GscConnection = typeof gscConnections.$inferSelect;
 
+/** The project's connection, while the member who made it is still in the
+ *  organization (see connectorIsMember). */
 async function getByProjectId(
   projectId: string,
 ): Promise<GscConnection | null> {
   const rows = await db
     .select()
     .from(gscConnections)
-    .where(eq(gscConnections.projectId, projectId))
+    .where(
+      and(
+        eq(gscConnections.projectId, projectId),
+        await connectorIsMember(gscConnections),
+      ),
+    )
     .limit(1);
   return rows[0] ?? null;
 }

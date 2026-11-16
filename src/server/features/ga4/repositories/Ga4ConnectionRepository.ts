@@ -1,16 +1,24 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ga4Connections } from "@/db/schema";
+import { connectorIsMember } from "@/server/features/google/connectorIsMember";
 
 export type Ga4Connection = typeof ga4Connections.$inferSelect;
 
+/** The project's connection, while the member who made it is still in the
+ *  organization (see connectorIsMember). */
 async function getByProjectId(
   projectId: string,
 ): Promise<Ga4Connection | null> {
   const rows = await db
     .select()
     .from(ga4Connections)
-    .where(eq(ga4Connections.projectId, projectId))
+    .where(
+      and(
+        eq(ga4Connections.projectId, projectId),
+        await connectorIsMember(ga4Connections),
+      ),
+    )
     .limit(1);
   return rows[0] ?? null;
 }

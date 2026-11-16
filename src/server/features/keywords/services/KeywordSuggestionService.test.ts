@@ -5,6 +5,7 @@ import { KeywordSuggestionReason } from "@/shared/keyword-suggestions";
 const {
   checkUsageCreditsDepleted,
   getPerformance,
+  holdTaskCredits,
   isHosted,
   listResearchKeywords,
   research,
@@ -12,6 +13,7 @@ const {
 } = vi.hoisted(() => ({
   checkUsageCreditsDepleted: vi.fn(),
   getPerformance: vi.fn(),
+  holdTaskCredits: vi.fn(),
   isHosted: vi.fn(),
   listResearchKeywords: vi.fn(),
   research: vi.fn(),
@@ -24,6 +26,8 @@ vi.mock("@/db/runBatch", () => ({
 }));
 vi.mock("@/server/billing/subscription", () => ({
   checkUsageCreditsDepleted,
+  holdTaskCredits,
+  releaseTaskCredits: vi.fn(),
 }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: isHosted,
@@ -133,6 +137,7 @@ describe("KeywordSuggestionService.generate", () => {
     listResearchKeywords.mockResolvedValue([]);
     isHosted.mockResolvedValue(true);
     checkUsageCreditsDepleted.mockResolvedValue({ depleted: false });
+    holdTaskCredits.mockResolvedValue({ lockId: "hold" });
     research.mockResolvedValue({
       suggestedTopics: [{ name: "jeep lease", prompts: [] }],
       suggestedKeywords: ["used jeep wrangler"],
@@ -156,6 +161,15 @@ describe("KeywordSuggestionService.generate", () => {
 
   it("does not research without credits", async () => {
     checkUsageCreditsDepleted.mockResolvedValue({ depleted: true });
+
+    await expect(
+      KeywordSuggestionService.generate(project, customer),
+    ).rejects.toMatchObject({ code: "INSUFFICIENT_CREDITS" });
+    expect(research).not.toHaveBeenCalled();
+  });
+
+  it("does not research while other research holds the remaining credits", async () => {
+    holdTaskCredits.mockResolvedValue(null);
 
     await expect(
       KeywordSuggestionService.generate(project, customer),
