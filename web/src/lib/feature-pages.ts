@@ -531,9 +531,10 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.domainOverview,
     eyebrow: "Domain Overview",
     navDescription: "Analyze competitor visibility.",
-    title: "Domain overview: traffic, keywords, and pages for any domain",
+    title:
+      "Domain analysis tool: traffic, keywords and top pages for any website",
     description:
-      "Get a domain overview of any website: estimated organic traffic, ranking keywords, and top organic pages, with one click into backlink and keyword research.",
+      "Get a domain overview of any website: estimated organic traffic, ranking keywords, and top organic pages, with filters, export and saved keywords in the same place.",
     primaryKeyword: "domain overview",
     secondaryKeywords: [
       "domain analysis tool",
@@ -547,17 +548,17 @@ export const featurePages = {
       {
         title: "Analyze a domain",
         description:
-          "Start with a domain and get an overview of estimated organic traffic, organic keyword count, top ranking keywords, and top organic pages.",
+          "Enter a domain, a folder or a single page and pick a country. The overview shows estimated organic traffic and how many keywords the site ranks for, then lists its keywords and its top pages.",
       },
       {
         title: "Find competitor keywords",
         description:
-          "Inspect keywords a competitor already ranks for and identify topics worth building or defending.",
+          "Filter the keyword list by traffic, volume, CPC, difficulty or position, include or exclude words, and save the ones worth building or defending.",
       },
       {
-        title: "Move into deeper research",
+        title: "Take the list further",
         description:
-          "Use domain insights to open keyword research, backlink analysis, or rank tracking without starting over.",
+          "Export the keywords or pages to CSV, Excel or Google Sheets, or save keywords to your list for content planning and rank tracking.",
       },
     ],
     metrics: [
@@ -577,12 +578,62 @@ export const featurePages = {
       "Built around ranking keywords, estimated traffic, and top pages for practical competitor research.",
       "Open-source and self-hostable for teams that want control over their SEO stack.",
     ],
-    featuredLink: {
-      title: "Free website traffic checker",
-      description:
-        "Estimate any domain's organic traffic, keywords, and top pages. No signup required.",
-      href: "/website-traffic-checker",
+    headings: {
+      workflows: "Read a domain, find its keywords, go deeper",
+      metrics: "Four numbers in every overview",
+      useCases: "When to pull a domain overview",
+      differentiators: "Why do competitor research here",
+      related: "Where domain research goes next",
+      faq: "Domain overview questions",
     },
+    toolCallout: {
+      title: "Size up any domain before you sign up",
+      description: "Three free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free website traffic checker",
+          description:
+            "Estimated organic traffic, keyword count, and the top 5 keywords and pages for any domain. Compare two domains side by side.",
+          href: "/website-traffic-checker",
+        },
+        {
+          title: "Free competitor analysis",
+          description:
+            "A competitor's top 20 keywords and top 10 pages, plus up to 20 keywords they rank for that you don't.",
+          href: "/competitor-analysis",
+        },
+        {
+          title: "Free domain age checker",
+          description:
+            "Registration date, expiry date and registrar for up to 10 domains at once.",
+          href: "/domain-age-checker",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "How much to trust a traffic estimate",
+        body: "Estimated traffic is a model, not a count. It combines each keyword's search volume with an expected click rate for the position, and the data provider revises both. openseo.so is a live example. In October the model put it at 4,556 visits a month. Five weeks later it said 303. The site ranked 8th for \"linkback checker\" both times, and that one keyword's estimate fell from 1,783 visits to less than one. Read the keywords behind a total before you quote it, and compare domains on the same day.",
+      },
+      {
+        title:
+          "Check a domain before you buy it, link to it or partner with it",
+        body: "Three questions settle most of it. How old is it? The domain age checker shows when it was registered and who the registrar is. Is its link profile clean? The spam score checker lists the spammiest domains linking to it. Does it earn real search traffic, and from what? The overview shows estimated traffic, the keywords behind it and the pages that rank. A domain that is old, clean and ranks for its own topic is a safer bet than one with a big traffic number built on a single keyword.",
+      },
+      {
+        title: "Competitor research from your AI agent",
+        body: "Connect OpenSEO to Claude, Cursor or ChatGPT over MCP and the agent can pull a domain's traffic estimate and the keywords it ranks for, filtered by position, volume or brand terms. The competitor analysis skill gives it an order of work: keywords, pages, backlinks and content themes, ending in what to learn from and where your site has a better angle.",
+      },
+    ],
+    contextImage: {
+      src: "/features/domain-overview/openseo-domain-overview-traffic-estimate-two-dates.png",
+      alt: "Two bar charts for openseo.so in the US. Whole-site estimated organic traffic fell from 4,556 visits a month on 6 October 2026 to 303 on 16 November. The estimate for linkback checker, ranked 8th both times, fell from 1,783 to 0.2.",
+      caption:
+        "Same site, same position, two estimates five weeks apart. The ranking held; the estimate didn't.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       {
         label: "Competitor Analysis",
@@ -600,7 +651,7 @@ export const featurePages = {
       {
         question: "How does this compare to Semrush Domain Overview?",
         answer:
-          "OpenSEO covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. OpenSEO is open source, so you can self-host it, and the managed app is $10/month and includes usage credits.",
+          "OpenSEO covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. OpenSEO is open source, so you can self-host it, and the managed app starts at $10/month with usage credits included.",
       },
       {
         question: "Can OpenSEO help with competitor keyword analysis?",
@@ -611,6 +662,16 @@ export const featurePages = {
         question: "Is Domain Overview the same as a traffic checker?",
         answer:
           "Not quite. It includes an estimated-traffic metric, but the value is seeing which keywords and pages produce that traffic, which a plain traffic checker doesn't show.",
+      },
+      {
+        question: "Can I analyze a folder or a single page?",
+        answer:
+          "Yes. Choose a domain, a domain with its subdomains, a folder or one page. The keyword and page lists follow that choice. The traffic and keyword totals at the top always cover the whole domain.",
+      },
+      {
+        question: "Does OpenSEO show domain authority?",
+        answer:
+          "Not under that name. Domain Authority is Moz's score. The backlinks report shows a domain rank next to referring domains and spam score, so you can see what the number is built from.",
       },
     ],
     guides: {
