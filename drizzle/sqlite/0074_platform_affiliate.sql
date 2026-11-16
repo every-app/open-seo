@@ -1,0 +1,1 @@
+ALTER TABLE `ps_platforms` ADD `affiliate_program` integer DEFAULT false NOT NULL;

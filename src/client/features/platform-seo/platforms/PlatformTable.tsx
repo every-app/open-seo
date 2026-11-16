@@ -1,8 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, X } from "lucide-react";
+import { Check, HandCoins, X } from "lucide-react";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,10 +21,16 @@ import {
 } from "@/client/components/ui/table";
 import {
   type listPlatforms,
+  setPlatformAffiliate,
   setPlatformStatus,
 } from "@/serverFunctions/platformSeo";
-import type { PsPlatformStatus } from "@/shared/platform-seo";
+import type { PsPlatformDecision } from "@/shared/platform-seo";
+import { asDecision, DECISION_ITEMS } from "./platformDecisions";
 import { platformQueryKeys } from "./platformQueryKeys";
+
+const OTHER_ITEMS = DECISION_ITEMS.filter(
+  (item) => item.value === "tool" || item.value === "sponsorship",
+);
 
 type Platform = Awaited<ReturnType<typeof listPlatforms>>["platforms"][number];
 
@@ -43,8 +56,17 @@ export function PlatformTable({
 }) {
   const queryClient = useQueryClient();
   const setStatus = useMutation({
-    mutationFn: (input: { platformId: string; status: PsPlatformStatus }) =>
+    mutationFn: (input: { platformId: string; status: PsPlatformDecision }) =>
       setPlatformStatus({ data: { projectId, ...input } }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: platformQueryKeys.list(projectId),
+      }),
+  });
+
+  const setAffiliate = useMutation({
+    mutationFn: (input: { platformId: string; affiliateProgram: boolean }) =>
+      setPlatformAffiliate({ data: { projectId, ...input } }),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: platformQueryKeys.list(projectId),
@@ -60,7 +82,7 @@ export function PlatformTable({
             <TableHead>AI first pass</TableHead>
             <TableHead className="w-28">Best rank</TableHead>
             <TableHead className="w-16 text-right">Seen</TableHead>
-            <TableHead className="w-56 text-right">Your call</TableHead>
+            <TableHead className="w-60 text-right">Your call</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -113,7 +135,7 @@ export function PlatformTable({
                   {platform.seenCount}
                 </TableCell>
                 <TableCell className="align-top text-right">
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-wrap justify-end gap-2">
                     <Button
                       size="sm"
                       variant={
@@ -148,6 +170,58 @@ export function PlatformTable({
                       <X />
                       Not
                     </Button>
+                    <Button
+                      size="sm"
+                      variant={
+                        platform.affiliateProgram ? "default" : "outline"
+                      }
+                      aria-pressed={platform.affiliateProgram}
+                      disabled={
+                        setAffiliate.isPending &&
+                        setAffiliate.variables?.platformId === platform.id
+                      }
+                      title="Has an affiliate program"
+                      onClick={() =>
+                        setAffiliate.mutate({
+                          platformId: platform.id,
+                          affiliateProgram: !platform.affiliateProgram,
+                        })
+                      }
+                    >
+                      <HandCoins />
+                      Affiliate
+                    </Button>
+                    <Select
+                      items={OTHER_ITEMS}
+                      value={
+                        platform.status === "tool" ||
+                        platform.status === "sponsorship"
+                          ? platform.status
+                          : null
+                      }
+                      disabled={busy}
+                      onValueChange={(value) => {
+                        const status = asDecision(value);
+                        if (status) {
+                          setStatus.mutate({ platformId: platform.id, status });
+                        }
+                      }}
+                    >
+                      <SelectTrigger
+                        size="sm"
+                        className="w-28"
+                        aria-label={`Other type for ${platform.domain}`}
+                      >
+                        <SelectValue placeholder="Other" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {OTHER_ITEMS.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </TableCell>
               </TableRow>
@@ -165,6 +239,11 @@ function AiVerdict({ platform }: { platform: Platform }) {
       <span className="text-sm text-muted-foreground">
         Known publishing platform
       </span>
+    );
+  }
+  if (platform.source === "import") {
+    return (
+      <span className="text-sm text-muted-foreground">From your list</span>
     );
   }
   if (!platform.aiVerdict) {

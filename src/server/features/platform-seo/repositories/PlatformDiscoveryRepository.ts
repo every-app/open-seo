@@ -2,7 +2,11 @@ import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { executeInBatches } from "@/db/runBatch";
 import { psPlatforms, psSerpObservations } from "@/db/schema";
-import type { PsAiVerdict, PsPlatformStatus } from "@/shared/platform-seo";
+import type {
+  PsAiVerdict,
+  PsPlatformSource,
+  PsPlatformStatus,
+} from "@/shared/platform-seo";
 
 // D1 caps bound parameters at ~100 per statement.
 const OBSERVATIONS_PER_INSERT = 7; // 14 columns
@@ -59,13 +63,14 @@ export type NewPlatformInput = {
   organizationId: string;
   domain: string;
   status: PsPlatformStatus;
-  source: "seed" | "serp";
+  source: PsPlatformSource;
   exampleKeyword: string | null;
   exampleUrl: string | null;
   exampleTitle: string | null;
   bestPosition: number | null;
   seenCount: number;
   lastSeenAt: string | null;
+  affiliateProgram?: boolean;
 };
 
 /** Inserts platforms not already listed; returns the ones it added. */
@@ -124,6 +129,94 @@ async function upsertSeenPlatforms(rows: NewPlatformInput[]) {
     );
   }
   return seen;
+}
+
+/** Each listed domain's current status, for the domains given. */
+async function listDomainStatuses(organizationId: string, domains: string[]) {
+  const statuses = new Map<string, PsPlatformStatus>();
+  for (const part of chunk(domains, VALUES_PER_IN)) {
+    const rows = await db
+      .select({ domain: psPlatforms.domain, status: psPlatforms.status })
+      .from(psPlatforms)
+      .where(
+        and(
+          eq(psPlatforms.organizationId, organizationId),
+          inArray(psPlatforms.domain, part),
+        ),
+      );
+    for (const row of rows) statuses.set(row.domain, row.status);
+  }
+  return statuses;
+}
+
+/**
+ * Adds an imported list in batched statements: D1 counts a batch as one
+ * query, and a request may only make 50 on the Workers Free plan.
+ */
+async function importPlatformRows(
+  organizationId: string,
+  params: {
+    newRows: NewPlatformInput[];
+    pendingDomains: string[];
+    status: PsPlatformStatus;
+    /** Listed domains to tag as affiliate programs. */
+    affiliateDomains: string[];
+  },
+) {
+  await executeInBatches(
+    chunk(params.newRows, PLATFORMS_PER_INSERT),
+    (tx, part) =>
+      tx
+        .insert(psPlatforms)
+        .values(part.map((row) => ({ id: crypto.randomUUID(), ...row })))
+        .onConflictDoNothing(),
+  );
+  const classifiedAt = new Date().toISOString();
+  await executeInBatches(
+    chunk(params.pendingDomains, VALUES_PER_IN),
+    (tx, part) =>
+      tx
+        .update(psPlatforms)
+        .set({ status: params.status, classifiedAt })
+        .where(
+          and(
+            eq(psPlatforms.organizationId, organizationId),
+            eq(psPlatforms.status, "pending"),
+            inArray(psPlatforms.domain, part),
+          ),
+        ),
+  );
+  await executeInBatches(
+    chunk(params.affiliateDomains, VALUES_PER_IN),
+    (tx, part) =>
+      tx
+        .update(psPlatforms)
+        .set({ affiliateProgram: true })
+        .where(
+          and(
+            eq(psPlatforms.organizationId, organizationId),
+            inArray(psPlatforms.domain, part),
+          ),
+        ),
+  );
+}
+
+async function setAffiliateProgram(
+  organizationId: string,
+  platformId: string,
+  affiliateProgram: boolean,
+) {
+  const updated = await db
+    .update(psPlatforms)
+    .set({ affiliateProgram })
+    .where(
+      and(
+        eq(psPlatforms.organizationId, organizationId),
+        eq(psPlatforms.id, platformId),
+      ),
+    )
+    .returning({ id: psPlatforms.id });
+  return updated.length > 0;
 }
 
 async function hasSeededPlatforms(organizationId: string) {
@@ -288,6 +381,9 @@ export const PlatformDiscoveryRepository = {
   insertObservations,
   insertPlatforms,
   upsertSeenPlatforms,
+  listDomainStatuses,
+  importPlatformRows,
+  setAffiliateProgram,
   hasSeededPlatforms,
   listPlatforms,
   setStatus,

@@ -5,8 +5,10 @@ import { PlatformDiscoveryService } from "@/server/features/platform-seo/service
 import {
   psCreateTopicSchema,
   psFindPlatformsSchema,
+  psImportPlatformsSchema,
   psOpportunitiesSchema,
   psProjectSchema,
+  psSetAffiliateProgramSchema,
   psPullSchema,
   psSetPlatformStatusSchema,
   psStartPullSchema,
@@ -99,6 +101,28 @@ export const setPlatformStatus = createServerFn({ method: "POST" })
       context.organizationId,
       data.platformId,
       data.status,
+    ),
+  );
+
+export const importPlatforms = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psImportPlatformsSchema)
+  .handler(({ data, context }) =>
+    PlatformDiscoveryService.importPlatforms(context.organizationId, {
+      sites: data.sites,
+      status: data.status,
+      affiliateProgram: data.affiliateProgram,
+    }),
+  );
+
+export const setPlatformAffiliate = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psSetAffiliateProgramSchema)
+  .handler(({ data, context }) =>
+    PlatformDiscoveryService.setAffiliateProgram(
+      context.organizationId,
+      data.platformId,
+      data.affiliateProgram,
     ),
   );
 

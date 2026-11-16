@@ -171,6 +171,10 @@ export const psPlatforms = sqliteTable(
     firstSeenAt: text("first_seen_at").notNull().default(isoNow),
     lastSeenAt: text("last_seen_at"),
     classifiedAt: text("classified_at"),
+    // An affiliate program, whatever else the site is (Skool is both).
+    affiliateProgram: integer("affiliate_program", { mode: "boolean" })
+      .notNull()
+      .default(false),
   },
   (table) => [
     uniqueIndex("ps_platforms_org_domain_idx").on(

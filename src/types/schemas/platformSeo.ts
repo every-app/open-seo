@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { PS_PLATFORM_STATUSES } from "@/shared/platform-seo";
+import {
+  PS_PLATFORM_DECISIONS,
+  PS_PLATFORM_STATUSES,
+} from "@/shared/platform-seo";
 
 const projectIdSchema = z.string().min(1);
 
@@ -28,7 +31,7 @@ export const psCreateTopicSchema = z.object({
 export const psSetPlatformStatusSchema = z.object({
   projectId: projectIdSchema,
   platformId: z.string().min(1),
-  status: z.enum(PS_PLATFORM_STATUSES),
+  status: z.enum(PS_PLATFORM_DECISIONS),
 });
 
 // Each keyword costs a two-page SERP, so a lookup is capped like get_serp_results.
@@ -44,4 +47,19 @@ export const psOpportunitiesSchema = z.object({
   keywords: z.array(z.string().trim().min(1).max(200)).max(500),
   locationCode: z.number().int().positive(),
   languageCode: z.string().min(2).max(8),
+});
+
+// One site per entry, as a URL or a bare domain; size of a pasted list.
+export const psImportPlatformsSchema = z.object({
+  projectId: projectIdSchema,
+  sites: z.array(z.string().trim().min(1).max(500)).min(1).max(1000),
+  // pending adds new sites for review and leaves listed ones as they are.
+  status: z.enum(PS_PLATFORM_STATUSES),
+  affiliateProgram: z.boolean().default(false),
+});
+
+export const psSetAffiliateProgramSchema = z.object({
+  projectId: projectIdSchema,
+  platformId: z.string().min(1),
+  affiliateProgram: z.boolean(),
 });

@@ -1,6 +1,10 @@
 import { classifyPlatforms } from "./platformClassifier";
 import { normalizeSerpKeyword } from "./serpRecorder";
-import { KNOWN_PARASITE_PLATFORMS } from "../platforms/platformDomain";
+import {
+  isBareUmbrella,
+  KNOWN_PARASITE_PLATFORMS,
+  platformDomain,
+} from "../platforms/platformDomain";
 import { PlatformDiscoveryRepository as repo } from "../repositories/PlatformDiscoveryRepository";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { readMergedSerps } from "@/server/features/keywords/services/research/serpReads";
@@ -51,6 +55,80 @@ async function setPlatformStatus(
   status: PsPlatformStatus,
 ) {
   const updated = await repo.setStatus(organizationId, platformId, status);
+  if (!updated) throw new AppError("NOT_FOUND");
+}
+
+/**
+ * Adds a pasted list of sites (URLs or bare domains) with the status the user
+ * chose. Sites already listed keep their status unless still waiting for
+ * review; entries that aren't a site are returned so the user can see them.
+ */
+async function importPlatforms(
+  organizationId: string,
+  params: {
+    sites: string[];
+    status: PsPlatformStatus;
+    affiliateProgram: boolean;
+  },
+) {
+  const domains = new Set<string>();
+  const invalid: string[] = [];
+  // amazon.com alone would never match a result: they're filed by section.
+  const needsSection: string[] = [];
+  for (const site of params.sites) {
+    const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(site)
+      ? site
+      : `https://${site}`;
+    const domain = platformDomain({ url });
+    if (!domain) invalid.push(site);
+    else if (isBareUmbrella(domain)) needsSection.push(site);
+    else domains.add(domain);
+  }
+  const listed = await repo.listDomainStatuses(organizationId, [...domains]);
+  const newDomains = [...domains].filter((domain) => !listed.has(domain));
+  const pendingDomains =
+    params.status === "pending"
+      ? []
+      : [...listed]
+          .filter(([, status]) => status === "pending")
+          .map(([domain]) => domain);
+  await repo.importPlatformRows(organizationId, {
+    newRows: newDomains.map((domain) => ({
+      organizationId,
+      domain,
+      status: params.status,
+      source: "import",
+      exampleKeyword: null,
+      exampleUrl: null,
+      exampleTitle: null,
+      bestPosition: null,
+      seenCount: 0,
+      lastSeenAt: null,
+      affiliateProgram: params.affiliateProgram,
+    })),
+    pendingDomains,
+    status: params.status,
+    affiliateDomains: params.affiliateProgram ? [...listed.keys()] : [],
+  });
+  return {
+    added: newDomains.length,
+    reviewed: pendingDomains.length,
+    alreadyListed: listed.size - pendingDomains.length,
+    invalid,
+    needsSection,
+  };
+}
+
+async function setAffiliateProgram(
+  organizationId: string,
+  platformId: string,
+  affiliateProgram: boolean,
+) {
+  const updated = await repo.setAffiliateProgram(
+    organizationId,
+    platformId,
+    affiliateProgram,
+  );
   if (!updated) throw new AppError("NOT_FOUND");
 }
 
@@ -209,6 +287,8 @@ async function getOpportunities(params: {
 export const PlatformDiscoveryService = {
   listPlatforms,
   setPlatformStatus,
+  importPlatforms,
+  setAffiliateProgram,
   runAiPass,
   findPlatforms,
   getOpportunities,

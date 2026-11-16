@@ -519,6 +519,13 @@
       "when": 1794772534173,
       "tag": "0073_platform_discovery",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "6",
+      "when": 1794846963322,
+      "tag": "0074_platform_affiliate",
+      "breakpoints": true
     }
   ]
 }

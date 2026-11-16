@@ -16,7 +16,8 @@ import type * as ServiceModule from "./PlatformDiscoveryService";
 // Real in-memory SQLite: recording is conflict-safe upserts and a latest-run
 // join, which mocked builder chains can't verify.
 
-const classifyPlatforms = vi.fn();
+const classifyPlatforms =
+  vi.fn<(customer: unknown, options: { ids: string[] }) => Promise<number>>();
 vi.mock("cloudflare:workers", () => ({
   env: { DATABASE_PROVIDER: "d1" },
   waitUntil: (work: Promise<unknown>) => work,
@@ -44,13 +45,17 @@ beforeAll(async () => {
     withPgClient: passthrough,
   }));
 
-  const migration = readFileSync(
-    new URL(
-      "../../../../../drizzle/sqlite/0073_platform_discovery.sql",
-      import.meta.url,
-    ),
-    "utf8",
-  );
+  const migration = [
+    "0073_platform_discovery.sql",
+    "0074_platform_affiliate.sql",
+  ]
+    .map((file) =>
+      readFileSync(
+        new URL(`../../../../../drizzle/sqlite/${file}`, import.meta.url),
+        "utf8",
+      ),
+    )
+    .join(";\n");
   await client.executeMultiple(`
     CREATE TABLE organization (id TEXT PRIMARY KEY);
     INSERT INTO organization VALUES ('org-a'), ('org-b');
@@ -160,7 +165,7 @@ describe("recordSerpReads", () => {
     // The paid AI pass sees each new unknown site exactly once: the agency on
     // the first pass, the late-only site on the replay, nothing on the repeat.
     const sentToAi = classifyPlatforms.mock.calls.map(
-      ([, options]) => (options as { ids: string[] }).ids.length,
+      ([, options]) => options.ids.length,
     );
     expect(sentToAi).toEqual([1, 1]);
   });
@@ -181,5 +186,75 @@ describe("recordSerpReads", () => {
       sawPage2: true,
       label: "possible",
     });
+  });
+
+  it("imports a pasted list without overriding sites the user already reviewed, tagging every one an affiliate program", async () => {
+    // A SERP leaves example-agency.com waiting for review.
+    await recordSerpReads({ customer, query, taskIds: ["t1"], reads });
+    await client.execute(
+      "UPDATE ps_platforms SET status = 'not_parasite' WHERE domain = 'reddit.com'",
+    );
+
+    const result = await PlatformDiscoveryService.importPlatforms("org-a", {
+      sites: [
+        "https://jane.example-blog.com/p/post",
+        "example-blog.com",
+        "www.example-agency.com/blog",
+        "reddit.com",
+        "Native uploads everywhere",
+        "amazon.com",
+      ],
+      status: "parasite",
+      affiliateProgram: true,
+    });
+
+    expect(result).toEqual({
+      added: 1,
+      reviewed: 1,
+      alreadyListed: 1,
+      invalid: ["Native uploads everywhere"],
+      needsSection: ["amazon.com"],
+    });
+    const rows = await platforms("org-a");
+    expect(rows.find((row) => row.domain === "example-blog.com")).toMatchObject(
+      {
+        status: "parasite",
+      },
+    );
+    expect(
+      rows.find((row) => row.domain === "example-agency.com"),
+    ).toMatchObject({ status: "parasite" });
+    expect(rows.find((row) => row.domain === "reddit.com")).toMatchObject({
+      status: "not_parasite",
+    });
+    const affiliates = await client.execute(
+      "SELECT domain FROM ps_platforms WHERE affiliate_program = 1 ORDER BY domain",
+    );
+    expect(affiliates.rows.map((row) => row.domain)).toEqual([
+      "example-agency.com",
+      "example-blog.com",
+      "reddit.com",
+    ]);
+    expect(await platforms("org-b")).toEqual([]);
+
+    // Tagging affiliates without choosing a type leaves the type to review.
+    await recordSerpReads({
+      customer,
+      query: { ...query, keyword: "affiliate programs" },
+      taskIds: ["t9"],
+      reads: [[organic(4, "https://partners.example.io/", "Partner network")]],
+    });
+    await PlatformDiscoveryService.importPlatforms("org-a", {
+      sites: ["example.io", "affiliate-network.com"],
+      status: "pending",
+      affiliateProgram: true,
+    });
+    const tagged = await client.execute(
+      "SELECT domain, status FROM ps_platforms WHERE domain IN ('example.io', 'affiliate-network.com') ORDER BY domain",
+    );
+    expect(tagged.rows.map((row) => ({ ...row }))).toEqual([
+      { domain: "affiliate-network.com", status: "pending" },
+      { domain: "example.io", status: "pending" },
+    ]);
   });
 });

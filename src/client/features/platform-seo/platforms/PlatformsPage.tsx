@@ -25,10 +25,34 @@ import {
   listPlatforms,
   runPlatformAiPass,
 } from "@/serverFunctions/platformSeo";
+import { ImportPlatformsForm } from "./ImportPlatformsForm";
 import { platformQueryKeys } from "./platformQueryKeys";
 import { isAwaitingAi, PlatformTable } from "./PlatformTable";
 
-type View = "review" | "parasite" | "not_parasite" | "all";
+const VIEWS = [
+  "review",
+  "parasite",
+  "not_parasite",
+  "tool",
+  "sponsorship",
+  "affiliate",
+  "all",
+] as const;
+type View = (typeof VIEWS)[number];
+
+const DISCOVERY_HINT =
+  "Look up a few keywords above, or open search results anywhere in the app. New sites show up here.";
+const EMPTY_HINTS: Record<View, string> = {
+  review: DISCOVERY_HINT,
+  parasite: DISCOVERY_HINT,
+  not_parasite: DISCOVERY_HINT,
+  all: DISCOVERY_HINT,
+  tool: "Import a list of tools above, or choose Tool under Other on any site.",
+  sponsorship:
+    "Import a list of sponsorship marketplaces above, or choose it under Other on any site.",
+  affiliate:
+    "Import a list above with Affiliate programs ticked, or press Affiliate on any site.",
+};
 
 const MAX_KEYWORDS = 10;
 export function PlatformsPage({ projectId }: { projectId: string }) {
@@ -62,6 +86,9 @@ export function PlatformsPage({ projectId }: { projectId: string }) {
     review: platforms.filter((p) => p.status === "pending").length,
     parasite: platforms.filter((p) => p.status === "parasite").length,
     not_parasite: platforms.filter((p) => p.status === "not_parasite").length,
+    tool: platforms.filter((p) => p.status === "tool").length,
+    sponsorship: platforms.filter((p) => p.status === "sponsorship").length,
+    affiliate: platforms.filter((p) => p.affiliateProgram).length,
     all: platforms.length,
   };
   const unclassified = platforms.filter(
@@ -106,8 +133,16 @@ export function PlatformsPage({ projectId }: { projectId: string }) {
           onDone={refresh}
         />
 
-        <Tabs value={view} onValueChange={(value) => setView(value as View)}>
-          <TabsList>
+        <ImportPlatformsForm projectId={projectId} onDone={refresh} />
+
+        <Tabs
+          value={view}
+          onValueChange={(value) => {
+            const next = VIEWS.find((candidate) => candidate === value);
+            if (next) setView(next);
+          }}
+        >
+          <TabsList className="h-auto! max-w-full flex-wrap justify-start">
             <TabsTrigger value="review">
               To review ({counts.review})
             </TabsTrigger>
@@ -116,6 +151,13 @@ export function PlatformsPage({ projectId }: { projectId: string }) {
             </TabsTrigger>
             <TabsTrigger value="not_parasite">
               Not parasite ({counts.not_parasite})
+            </TabsTrigger>
+            <TabsTrigger value="tool">Tools ({counts.tool})</TabsTrigger>
+            <TabsTrigger value="sponsorship">
+              Sponsorships ({counts.sponsorship})
+            </TabsTrigger>
+            <TabsTrigger value="affiliate">
+              Affiliate programs ({counts.affiliate})
             </TabsTrigger>
             <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
           </TabsList>
@@ -128,7 +170,9 @@ export function PlatformsPage({ projectId }: { projectId: string }) {
                 ? true
                 : view === "review"
                   ? p.status === "pending"
-                  : p.status === view,
+                  : view === "affiliate"
+                    ? p.affiliateProgram
+                    : p.status === view,
             );
             return rows.length === 0 ? (
               <EmptyState
@@ -136,7 +180,7 @@ export function PlatformsPage({ projectId }: { projectId: string }) {
                 title={
                   view === "review" ? "Nothing to review" : "No sites here yet"
                 }
-                description="Look up a few keywords above, or open search results anywhere in the app. New sites show up here."
+                description={EMPTY_HINTS[view]}
               />
             ) : (
               <PlatformTable projectId={projectId} rows={rows} />

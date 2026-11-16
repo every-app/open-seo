@@ -1,0 +1,1 @@
+ALTER TABLE "ps_platforms" ADD COLUMN "affiliate_program" boolean DEFAULT false NOT NULL;

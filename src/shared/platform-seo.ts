@@ -33,15 +33,24 @@ export const PS_TOPIC_STATUSES = [
 ] as const;
 
 // Platform discovery: sites found ranking in Google that may host our content.
-// pending = waiting for the user; the AI's first pass is advisory only.
-export const PS_PLATFORM_STATUSES = [
-  "pending",
+// pending = waiting for the user; the AI's first pass is advisory only. Tools
+// and sponsorship marketplaces are kept as their own directories, and never
+// count as parasites in a keyword's score.
+export const PS_PLATFORM_DECISIONS = [
   "parasite",
   "not_parasite",
+  "tool",
+  "sponsorship",
+] as const;
+export const PS_PLATFORM_STATUSES = [
+  "pending",
+  ...PS_PLATFORM_DECISIONS,
 ] as const;
 export type PsPlatformStatus = (typeof PS_PLATFORM_STATUSES)[number];
+export type PsPlatformDecision = (typeof PS_PLATFORM_DECISIONS)[number];
 
-export const PS_PLATFORM_SOURCES = ["seed", "serp"] as const;
+export const PS_PLATFORM_SOURCES = ["seed", "serp", "import"] as const;
+export type PsPlatformSource = (typeof PS_PLATFORM_SOURCES)[number];
 
 export const PS_AI_VERDICTS = ["parasite", "not_parasite", "unsure"] as const;
 export type PsAiVerdict = (typeof PS_AI_VERDICTS)[number];
