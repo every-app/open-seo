@@ -34,3 +34,11 @@
     sans-serif;
   overflow-wrap: anywhere;
 }
+
+.local-grid-center {
+  border: 3px solid white;
+  border-radius: 9999px;
+  background: #0f172a;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+  cursor: grab;
+}

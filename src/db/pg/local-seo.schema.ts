@@ -21,6 +21,7 @@ export const localRankTrackers = pgTable(
     address: text("address"),
     cid: text("cid"),
     placeId: text("place_id"),
+    // The grid's center: the listing's point unless the user moved it.
     latitude: doublePrecision("latitude").notNull(),
     longitude: doublePrecision("longitude").notNull(),
     gridSize: integer("grid_size").notNull(),

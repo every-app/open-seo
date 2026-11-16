@@ -57,7 +57,10 @@ async function createTracker(
 async function updateTrackerArea(
   projectId: string,
   trackerId: string,
-  area: Pick<LocalTrackerRow, "gridSize" | "spacingKm">,
+  area: Pick<
+    LocalTrackerRow,
+    "gridSize" | "spacingKm" | "latitude" | "longitude"
+  >,
 ) {
   await db
     .update(localRankTrackers)

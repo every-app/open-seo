@@ -36,7 +36,11 @@ export function LocalRankGrid({
         <ClientOnly fallback={<Skeleton className="h-full rounded-none" />}>
           <Suspense fallback={<Skeleton className="h-full rounded-none" />}>
             <MapView
-              key={points.map((point) => point.id).join(",")}
+              // The map fits the grid when it mounts. A preview's point ids
+              // stay the same when the tracker's area moves, so key on place.
+              key={points
+                .map((point) => `${point.latitude},${point.longitude}`)
+                .join("|")}
               projectId={projectId}
               points={points}
               selectedPointId={selectedPointId}

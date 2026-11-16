@@ -56,9 +56,9 @@ export function LocalKeywordMap({
         resultsCount: null,
       }),
     );
-  const point =
-    points.find((row) => row.id === search.point) ??
-    points[Math.floor(points.length / 2)];
+  // Points are in row-major order around an odd-width grid.
+  const middle = points[Math.floor(points.length / 2)];
+  const point = points.find((row) => row.id === search.point) ?? middle;
   return (
     <div className="space-y-3 border-t border-border p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -112,7 +112,7 @@ export function LocalKeywordMap({
             )}
             cid={tracker.cid}
             placeId={tracker.placeId}
-            center={tracker}
+            center={middle}
           />
         ) : (
           <Card className="justify-center px-6 py-0 shadow-none">

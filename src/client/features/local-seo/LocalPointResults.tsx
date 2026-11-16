@@ -30,7 +30,7 @@ export function LocalPointResults({
   results: PointResult[];
   cid: string | null;
   placeId: string | null;
-  /** The tracked listing, which every check's grid is centered on. */
+  /** The center of this check's grid. The tracker's center can move later. */
   center: { latitude: number; longitude: number };
 }) {
   return (
@@ -105,7 +105,7 @@ export function LocalPointResults({
   );
 }
 
-/** Where a point's search ran, e.g. "Searched 2 km north, 2 km west of your listing". */
+/** Where a point's search ran, e.g. "Searched 2 km north, 2 km west of the center". */
 function searchedFrom(
   point: LocalGridDisplayPoint,
   center: { latitude: number; longitude: number },
@@ -116,6 +116,6 @@ function searchedFrom(
     east && `${Math.abs(east)} km ${east > 0 ? "east" : "west"}`,
   ].filter(Boolean);
   return parts.length
-    ? `Searched ${parts.join(", ")} of your listing`
-    : "Searched from your listing";
+    ? `Searched ${parts.join(", ")} of the center`
+    : "Searched from the center";
 }

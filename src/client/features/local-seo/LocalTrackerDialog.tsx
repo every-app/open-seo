@@ -26,6 +26,7 @@ import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { getIsoCountryCode } from "@/shared/keyword-locations";
 import { LocalListingChoices, type Listing } from "./LocalListingChoices";
 import { LOCAL_AREA_ITEMS, LOCAL_AREAS, type LocalArea } from "./localAreas";
+import { LocalCenterField } from "./LocalCenterField";
 
 const ListingMap = lazy(() => import("./LocalListingMap"));
 
@@ -219,12 +220,14 @@ function TrackerSettings({
     defaultValues: {
       keywords: suggestedKeywords.length ? suggestedKeywords : [""],
       area: "town" as LocalArea,
+      center: { latitude: business.latitude, longitude: business.longitude },
     },
     onSubmit: async ({ value }) => {
       const area = LOCAL_AREAS[value.area];
       await create.mutateAsync({
         projectId,
-        business,
+        // The tracker's coordinates are the grid's center.
+        business: { ...business, ...value.center },
         keywords: cleanKeywords(value.keywords),
         gridSize: area.gridSize,
         spacingKm: area.spacingKm,
@@ -276,11 +279,30 @@ function TrackerSettings({
             {(field) => (
               <field.SelectField
                 label="Area to check"
-                description="We search Google Maps from points spread across this area, centered on your listing."
+                description="We search Google Maps from points spread across this area."
                 items={LOCAL_AREA_ITEMS}
               />
             )}
           </form.AppField>
+          <form.Subscribe selector={(state) => state.values.area}>
+            {(area) => (
+              <form.Field name="center">
+                {(field) => (
+                  <LocalCenterField
+                    projectId={projectId}
+                    center={field.state.value}
+                    grid={LOCAL_AREAS[area]}
+                    onChange={field.handleChange}
+                    note={
+                      business.address
+                        ? undefined
+                        : "The selected listing has no public address, so Google's location may be different."
+                    }
+                  />
+                )}
+              </form.Field>
+            )}
+          </form.Subscribe>
         </form.Form>
       </form.AppForm>
       {create.isError && (

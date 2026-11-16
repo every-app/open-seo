@@ -21,6 +21,7 @@ export const localRankTrackers = sqliteTable(
     address: text("address"),
     cid: text("cid"),
     placeId: text("place_id"),
+    // The grid's center: the listing's point unless the user moved it.
     latitude: real("latitude").notNull(),
     longitude: real("longitude").notNull(),
     gridSize: integer("grid_size").notNull(),

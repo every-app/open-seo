@@ -77,10 +77,7 @@ export function prefetchUpgradeCheckout(planId: CheckoutPlanId) {
 }
 
 /** Sends the browser to checkout, using the link made ahead of time if any. */
-async function openPlanCheckout(
-  planId: CheckoutPlanId,
-  redirectTo: string,
-) {
+async function openPlanCheckout(planId: CheckoutPlanId, redirectTo: string) {
   // Let links still being made for other plans finish first: each one expires
   // the link made before it, so this plan's link has to be made, or kept, last.
   await checkoutQueue;

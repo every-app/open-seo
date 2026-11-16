@@ -44,8 +44,13 @@ export const createLocalTrackerSchema = localProjectSchema.extend({
   keywords: localKeywordsSchema,
   ...localAreaShape,
 });
-export const updateLocalAreaSchema =
-  localTrackerIdSchema.extend(localAreaShape);
+/** The tracker's coordinates are the grid's center, which starts at the
+ *  listing's point and can be moved. */
+export const updateLocalAreaSchema = localTrackerIdSchema.extend({
+  ...localAreaShape,
+  latitude: z.number().min(-85).max(85),
+  longitude: z.number().min(-180).max(180),
+});
 export const startLocalCheckSchema = localTrackerIdSchema.extend({
   requestId: z.uuid(),
   maxCostCredits: z.number().int().nonnegative(),

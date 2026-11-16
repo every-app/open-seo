@@ -143,13 +143,15 @@ async function trackerAndInput(gridSize: 3 | 5 = 3, keywords = ["bookstore"]) {
   };
 }
 
-/** 5×5 points, 5 km apart. */
+/** 5×5 points, 5 km apart, centered 11 km north of the listing. */
+const movedCenter = { latitude: 45.62, longitude: -122.68 };
 const changeToMetroArea = (projectId: string, trackerId: string) =>
   LocalSeoService.updateArea({
     projectId,
     trackerId,
     gridSize: 5,
     spacingKm: 5,
+    ...movedCenter,
   });
 
 async function startedScan() {
@@ -264,7 +266,7 @@ describe("saved local SEO scans", () => {
     expect(left.rows[0]?.count).toBe(0);
   });
 
-  it("searches the new area after a change and keeps earlier checks' points", async () => {
+  it("searches the new area and center after a change and keeps earlier checks' points", async () => {
     const scan = await searchedScan();
     await finalizeLocalCheck(customer.projectId, scan.checkId);
     await changeToMetroArea(customer.projectId, scan.trackerId);
@@ -282,17 +284,19 @@ describe("saved local SEO scans", () => {
       customer,
     );
     const [next] = await repo.getScansForCheck(customer.projectId, check.id);
-    // A scan's point count, and how far its north-west point is from the listing.
-    const northWest = async (scanId: string) => {
+    // A scan's point count, and how far its north-west point is from a center.
+    const northWest = async (scanId: string, center: typeof movedCenter) => {
       const saved = await LocalSeoService.getScan(customer.projectId, scanId);
-      return [
-        saved.points.length,
-        localPointOffsetKm(business, saved.points[0]),
-      ];
+      return [saved.points.length, localPointOffsetKm(center, saved.points[0])];
     };
-    // 3×3 points 2 km apart, then 5×5 points 5 km apart.
-    expect(await northWest(scan.id)).toEqual([9, { north: 2, east: -2 }]);
-    expect(await northWest(next.id)).toEqual([25, { north: 10, east: -10 }]);
+    // 3×3 points 2 km apart, then 5×5 points 5 km apart around the new center.
+    expect([
+      await northWest(scan.id, business),
+      await northWest(next.id, movedCenter),
+    ]).toEqual([
+      [9, { north: 2, east: -2 }],
+      [25, { north: 10, east: -10 }],
+    ]);
   });
 
   it("rejects a lower credit approval before submitting paid searches", async () => {

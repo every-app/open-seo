@@ -276,10 +276,10 @@ async function requireIdleTracker(projectId: string, trackerId: string) {
 
 /** New checks use the new area. Earlier checks keep the points they searched. */
 async function updateArea(input: z.infer<typeof updateLocalAreaSchema>) {
-  const { projectId, trackerId, gridSize, spacingKm } = input;
-  const tracker = await requireIdleTracker(projectId, trackerId);
-  requireGridOnMap(tracker, gridSize, spacingKm);
-  await repo.updateTrackerArea(projectId, trackerId, { gridSize, spacingKm });
+  const { projectId, trackerId, ...area } = input;
+  await requireIdleTracker(projectId, trackerId);
+  requireGridOnMap(area, area.gridSize, area.spacingKm);
+  await repo.updateTrackerArea(projectId, trackerId, area);
 }
 
 /**
