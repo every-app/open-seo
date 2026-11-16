@@ -978,7 +978,8 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.aiSearchPrompts,
     eyebrow: "Prompt Explorer",
     navDescription: "Compare answers across supported models.",
-    title: "AI search prompt explorer for visibility research",
+    title:
+      "AI search prompt explorer: one prompt across ChatGPT, Claude, Gemini and Perplexity",
     description:
       "Start with ChatGPT, or add Claude, Gemini, and Perplexity to compare API model answers and available citations.",
     seoDescription:
@@ -996,12 +997,12 @@ export const featurePages = {
       {
         title: "Test category prompts",
         description:
-          "Compare answers to the questions your customers might ask AI tools.",
+          "Ask the questions your customers ask AI tools, up to 500 characters each, in one model or all four at once.",
       },
       {
         title: "Inspect web-backed answers",
         description:
-          "When web search is enabled, inspect the pages and domains cited by model responses.",
+          "With web search on, see the pages and domains each answer cites and the searches the model ran before it answered.",
       },
       {
         title: "Check brand mentions",
@@ -1025,6 +1026,37 @@ export const featurePages = {
       "OpenSEO treats AI search as a research layer, not a replacement for SEO fundamentals.",
       "OpenSEO MCP lets your agent explore prompts and work with saved AI visibility results.",
     ],
+    headings: {
+      workflows: "Run a prompt, read the sources, check your brand",
+      metrics: "What each run records",
+      useCases: "When to run prompt research",
+      differentiators: "Why prompt research belongs next to SEO",
+      related: "Where prompt research goes next",
+      faq: "Prompt Explorer questions",
+    },
+    contextSections: [
+      {
+        title: "Same question, four shortlists",
+        body: 'We asked all four models "What is the best affordable SEO tool for a small business owner?" with web search on. ChatGPT, Claude and Perplexity all picked Mangools. Gemini listed SE Ranking first. Every model named Google Search Console, Semrush and Ahrefs, and none named OpenSEO. Their sources barely overlapped: 34 citations across the four answers, and only three sites cited by more than one model. ChatGPT\'s four searches all asked for official pricing pages. One run per model is a snapshot, so run a prompt more than once before you act on it.',
+      },
+      {
+        title: "Four models, one prompt, side by side",
+        body: "Prompt Explorer sends one prompt to ChatGPT, Claude, Gemini and Perplexity and lays the answers side by side. Web search is on by default, and you can pick the country it searches from (Gemini doesn't take one). Each answer comes back with the pages it cited, the searches the model ran, and whether your highlighted brand appears. Answers are saved for seven days, so running the same prompt with the same settings again that week costs nothing.",
+      },
+      {
+        title: "Explorer, research or tracking",
+        body: "Use Prompt Explorer for a one-off look at how models answer a question. These are API answers, and they can differ from what a customer sees on ChatGPT's own site. Use Prompt Research to find which questions to ask, and Prompt Tracking to collect consumer-site answers on a schedule and watch them change. Your AI agent can run the same comparison over MCP; it asks ChatGPT unless you name other models.",
+      },
+    ],
+    contextImage: {
+      src: "/features/ai-search-prompts/openseo-prompt-explorer-four-model-shortlists.png",
+      alt: "Dot matrix of the tools ChatGPT, Claude, Gemini and Perplexity named for one prompt about affordable SEO tools for a small business. Mangools is the top pick for ChatGPT, Claude and Perplexity; Gemini lists SE Ranking first. Google Search Console, Semrush and Ahrefs appear in all four answers. OpenSEO appears in none.",
+      caption:
+        "One prompt, four models, four different shortlists. OpenSEO wasn't named by any of them.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "AI Visibility", href: "/features/ai-brand-visibility" },
       { label: "Keyword Research", href: "/features/keyword-research" },
@@ -1045,6 +1077,21 @@ export const featurePages = {
         question: "Can this help with answer engine optimization?",
         answer:
           "Yes. Prompt Explorer is a starting point for mapping prompt responses and returned citations back to source pages and possible SEO follow-up work.",
+      },
+      {
+        question: "Which AI models does Prompt Explorer support?",
+        answer:
+          "ChatGPT, Claude, Gemini and Perplexity. Run a prompt on one model or compare all four, with web search and a search country when you want cited sources.",
+      },
+      {
+        question: "Do AI answers change between runs?",
+        answer:
+          "Yes. The same prompt can return a different answer or different sources on the next run. Run important prompts more than once before you draw a conclusion.",
+      },
+      {
+        question: "How much does Prompt Explorer cost?",
+        answer:
+          "It needs a paid plan on hosted OpenSEO, and each new answer uses credits for the model usage. Answers are saved for seven days, so asking the same prompt with the same settings again that week is free.",
       },
     ],
   },
