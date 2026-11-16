@@ -16,3 +16,9 @@ Set the value as `DATAFORSEO_API_KEY`:
 - **Docker self-hosting:** in `deploy/standalone/.env` (see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md)), or `.env` for the [older single-container image](./SELF_HOSTING_DOCKER_LEGACY.md).
 - **Cloudflare self-hosting:** in `.env.selfhost` (see [`SELF_HOSTING_CLOUDFLARE.md`](./SELF_HOSTING_CLOUDFLARE.md)). Legacy button/Wrangler deployments: as a Worker secret in the dashboard under `Settings` -> `Variables & Secrets`.
 - **Local development:** in `.env.local` (see [`LOCAL_DEVELOPMENT.md`](./LOCAL_DEVELOPMENT.md)).
+
+## No DataForSEO account? Use treg
+
+[treg](https://treg.to) sells DataForSEO calls one at a time from a prepaid balance, so you can skip the DataForSEO signup and its $50 minimum top-up. Create a team at treg.to, copy its API key, and set it as `TREG_API_KEY` instead of `DATAFORSEO_API_KEY` (Docker self-hosting and local development).
+
+treg doesn't serve every DataForSEO endpoint yet. Keyword research, domain overview, backlinks, SERP analysis, Local SEO and manual AI Visibility checks work through it. Rank tracking, AI Search and scheduled AI Visibility runs still need `DATAFORSEO_API_KEY` and show a setup error without it. When both keys are set, OpenSEO uses `DATAFORSEO_API_KEY`.
