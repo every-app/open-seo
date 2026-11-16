@@ -903,7 +903,8 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.aiBrandVisibility,
     eyebrow: "AI Visibility",
     navDescription: "Research prompts and track mentions and citations.",
-    title: "Track your brand in AI answers",
+    title:
+      "AI visibility tool: track your brand in ChatGPT, Gemini and Google AI answers",
     description:
       "Research prompts, then track brand mentions, cited pages, and competitor appearances in ChatGPT, Gemini, and Google AI Overviews.",
     seoDescription:
@@ -921,17 +922,17 @@ export const featurePages = {
       {
         title: "Research prompts",
         description:
-          "Find the questions people ask about a keyword, see what ChatGPT answers and cites, and choose questions to track.",
+          "Enter a keyword to find the questions people ask about it, with ChatGPT's answer and the sources it cites for each. Pick the questions worth tracking.",
       },
       {
         title: "Track answers over time",
         description:
-          "Preview cost, then run a check or schedule daily, weekly, or monthly collection in your selected market.",
+          "Save up to 100 questions under topics, choose engines and a market, check the cost estimate, then run a check or schedule daily, weekly, or monthly collection.",
       },
       {
         title: "Review competitors and citations",
         description:
-          "Use your saved project competitors and captured answers to see which brands and pages appear.",
+          "See which answers mention your brand, which cite your site, which competitors from your project appear instead, and which pages the answers are built on.",
       },
     ],
     metrics: [
@@ -950,6 +951,37 @@ export const featurePages = {
       "The workflow focuses on concrete sources and mentions, not vague AI hype.",
       "OpenSEO helps teams connect AI mention and citation research to concrete SEO planning.",
     ],
+    headings: {
+      workflows: "Find the questions, track the answers, read the sources",
+      metrics: "What each tracked answer records",
+      useCases: "When to check AI visibility",
+      differentiators: "Why track AI answers next to your SEO data",
+      related: "Where AI visibility research goes next",
+      faq: "AI visibility questions",
+    },
+    contextSections: [
+      {
+        title: "What tracking costs",
+        body: "Each check pays for one answer per question per engine. A scheduled answer from ChatGPT, Gemini, AI Overviews or AI Mode costs $0.002, so 50 questions on ChatGPT and Gemini, checked weekly, comes to $0.80 a month. Run now collects live answers from those four engines at $0.006 each. Perplexity costs $0.052 an answer and Claude $0.231, scheduled or not. The app shows the estimate before you start a check or a schedule, and reviewing or exporting saved results is free.",
+      },
+      {
+        title: "Six AI engines, one tracker",
+        body: "A tracker checks ChatGPT and Gemini by default. Add Google AI Overviews, Google AI Mode, Claude or Perplexity when you need them. ChatGPT and Gemini answers are collected from their consumer sites, the way a customer sees them. Claude and Perplexity have no consumer-site collection, so every check asks their model API at live API pricing. Each tracker holds up to 100 questions in up to 30 topics, and editing a question's wording starts a new question, so earlier answers keep the wording they were collected for.",
+      },
+      {
+        title: "When your brand counts as mentioned or cited",
+        body: "Your brand counts as mentioned when its name or domain appears in an answer, and as cited when the answer links to your site. The name comes from the brand name in your project context, or from the project name when that's blank. Competitors come from the same project context, so the tracker and your other research agree on who you compete with. A check that failed is not evidence your brand was absent.",
+      },
+    ],
+    contextImage: {
+      src: "/features/ai-brand-visibility/openseo-ai-visibility-tracking-monthly-cost.png",
+      alt: "Grid of monthly costs to track 50 prompts. ChatGPT, Gemini, AI Overviews or AI Mode: $0.10 monthly, $0.40 weekly, $3.00 daily. Perplexity: $2.60, $10.40, $78.00. Claude: $11.55, $46.20, $346.50.",
+      caption:
+        "Monthly cost of 50 tracked prompts on one engine, by schedule. Orange cells fit inside the Base plan's $10 of usage.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "AI Visibility Guide", href: "/docs/ai-visibility" },
       { label: "Prompt Explorer", href: "/features/ai-search-prompts" },
@@ -971,6 +1003,21 @@ export const featurePages = {
         question: "Should AI visibility replace keyword research?",
         answer:
           "No. It should sit beside keyword, domain, backlink, and audit data so teams can understand both search rankings and answer coverage.",
+      },
+      {
+        question: "Which AI engines can OpenSEO track?",
+        answer:
+          "ChatGPT, Gemini, Google AI Overviews, Google AI Mode, Claude and Perplexity. ChatGPT and Gemini are selected by default.",
+      },
+      {
+        question: "How much does AI visibility tracking cost?",
+        answer:
+          "A scheduled answer from ChatGPT, Gemini, AI Overviews or AI Mode costs $0.002, so 50 questions on two engines checked weekly is about $0.80 a month. Claude and Perplexity cost more because they're asked through their model APIs. Prompt research costs about $0.25 per keyword.",
+      },
+      {
+        question: "Do I need a paid plan?",
+        answer:
+          "Tracking only needs credits. Prompt Research and Prompt Explorer need a paid plan on hosted OpenSEO.",
       },
     ],
   },
