@@ -14,7 +14,7 @@ import { STUCK_RUN_AFTER_MS } from "@/server/lib/startWorkflow";
 // Work admitted per tick, in task units (keywords × devices). Admission
 // control, not a hard rate limit: the first start of a tick is always
 // admitted, so a config bigger than the budget (legal max:
-// MAX_KEYWORDS_PER_CONFIG × 2 devices = 5,000 units) can never starve. Sized
+// MAX_KEYWORDS_PER_CONFIG × 2 devices = 10,000 units) can never starve. Sized
 // against DataForSEO's requests-per-minute account cap, where task_get polling
 // is the binding term: one call per unit per poll round, rounds wake
 // synchronized per tick, and a unit gets up to six reads, so polling from

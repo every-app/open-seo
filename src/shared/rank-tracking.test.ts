@@ -1,5 +1,26 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { computeNextCheckAt, estimateRankCheckCredits } from "./rank-tracking";
+import {
+  computeNextCheckAt,
+  estimateRankCheckCredits,
+  keywordLimitMessage,
+  keywordsPerConfigForPlan,
+} from "./rank-tracking";
+
+describe("rank tracking keyword limits", () => {
+  it.each([
+    [
+      "base-plan",
+      "This tracker is at its limit of 1,000 keywords. The Pro plan allows 2,500 per tracker and the Agency plan 5,000.",
+    ],
+    [
+      "pro-plan",
+      "This tracker is at its limit of 2,500 keywords. The Agency plan allows 5,000 per tracker.",
+    ],
+    ["agency-plan", "This tracker is at its limit of 5,000 keywords."],
+  ])("tells a full tracker on %s which plans allow more", (planId, message) => {
+    expect(keywordLimitMessage(keywordsPerConfigForPlan(planId))).toBe(message);
+  });
+});
 
 describe("rank tracking cost estimates", () => {
   it.each([

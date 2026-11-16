@@ -58,16 +58,20 @@ export function isRankCheckDelayed(run: {
  */
 export const BASE_KEYWORDS_PER_CONFIG = 1000;
 
+/** Keywords one tracker holds on the Pro plan. */
+const PRO_KEYWORDS_PER_CONFIG = 2500;
+
 /**
- * The most keywords any plan lets one tracker hold. The check pipeline is
- * sized for this on both devices (see TASK_GETS_PER_COLLECT in
- * rankCheckPaths.ts), so raise the two together.
+ * The most keywords any plan lets one tracker hold: the Agency plan's limit,
+ * and the limit of a deployment without billing. The check pipeline is sized
+ * for this on both devices (see TASK_GET_BATCH_MS in rankCheckPaths.ts and
+ * MAX_TASK_UNITS_IN_FLIGHT in scheduledRankChecks.ts), so raise them together.
  */
-export const MAX_KEYWORDS_PER_CONFIG = 2500;
+export const MAX_KEYWORDS_PER_CONFIG = 5000;
 
 const KEYWORDS_PER_CONFIG_BY_PLAN: Record<string, number> = {
-  [AUTUMN_PRO_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
-  [AUTUMN_PRO_ANNUAL_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
+  [AUTUMN_PRO_PLAN_ID]: PRO_KEYWORDS_PER_CONFIG,
+  [AUTUMN_PRO_ANNUAL_PLAN_ID]: PRO_KEYWORDS_PER_CONFIG,
   [AUTUMN_AGENCY_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
   [AUTUMN_AGENCY_ANNUAL_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
 };
@@ -80,15 +84,24 @@ export function keywordsPerConfigForPlan(paidPlanId: string | null): number {
   );
 }
 
+function count(keywords: number) {
+  return keywords.toLocaleString("en-US");
+}
+
 /**
  * What to tell someone whose tracker is full. Below the highest limit it
  * names the plans that allow more.
  */
 export function keywordLimitMessage(limit: number): string {
-  const reached = `This tracker is at its limit of ${limit.toLocaleString("en-US")} keywords.`;
-  return limit < MAX_KEYWORDS_PER_CONFIG
-    ? `${reached} The Pro and Agency plans allow ${MAX_KEYWORDS_PER_CONFIG.toLocaleString("en-US")} per tracker.`
-    : reached;
+  const reached = `This tracker is at its limit of ${count(limit)} keywords.`;
+  const agency = `the Agency plan ${count(MAX_KEYWORDS_PER_CONFIG)}`;
+  if (limit < PRO_KEYWORDS_PER_CONFIG) {
+    return `${reached} The Pro plan allows ${count(PRO_KEYWORDS_PER_CONFIG)} per tracker and ${agency}.`;
+  }
+  if (limit < MAX_KEYWORDS_PER_CONFIG) {
+    return `${reached} The Agency plan allows ${count(MAX_KEYWORDS_PER_CONFIG)} per tracker.`;
+  }
+  return reached;
 }
 
 /** Maximum length of a single tracked keyword */

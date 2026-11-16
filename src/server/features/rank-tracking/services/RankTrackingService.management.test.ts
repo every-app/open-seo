@@ -380,8 +380,9 @@ describe("RankTrackingService keyword limit", () => {
     ["the base plan", true, "base-plan", 1000],
     ["a plan granted by hand", true, null, 1000],
     ["the annual Pro plan", true, "pro-plan-annual", 2500],
-    ["the Agency plan", true, "agency-plan", 2500],
-    ["a deployment without billing", false, null, 2500],
+    ["the Agency plan", true, "agency-plan", 5000],
+    ["the annual Agency plan", true, "agency-plan-annual", 5000],
+    ["a deployment without billing", false, null, 5000],
   ])(
     "fills a tracker to its limit on %s and reports what did not fit",
     async (_label, hosted, planId, limit) => {
@@ -392,14 +393,14 @@ describe("RankTrackingService keyword limit", () => {
       );
       const result = await RankTrackingService.addKeywords(
         tracker,
-        Array.from({ length: 2000 }, (_, i) => `new ${i}`),
+        Array.from({ length: 4500 }, (_, i) => `new ${i}`),
         { kind: "direct_user_action" },
       );
 
       expect(result.added).toBe(limit - 999);
       expect(result.overLimit).toEqual({
         limit,
-        notAdded: 2000 - (limit - 999),
+        notAdded: 4500 - (limit - 999),
       });
     },
   );
