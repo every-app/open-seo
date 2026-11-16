@@ -366,7 +366,7 @@ async function clusterPull(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Reads + topic creation
+// Reads
 // ---------------------------------------------------------------------------
 async function getPullDetail(projectId: string, pullId: string) {
   const pull = await repo.getPull(projectId, pullId);
@@ -393,22 +393,6 @@ async function getPullDetail(projectId: string, pullId: string) {
   };
 }
 
-async function createTopicFromCluster(params: {
-  projectId: string;
-  clusterId: string;
-  title?: string;
-}) {
-  const cluster = await repo.getCluster(params.projectId, params.clusterId);
-  if (!cluster) throw new AppError("NOT_FOUND");
-  const topicId = await repo.insertTopic({
-    projectId: params.projectId,
-    clusterId: cluster.id,
-    title: params.title?.trim() || cluster.name,
-    angle: null,
-  });
-  return { topicId };
-}
-
 export const ExpandService = {
   getSetup,
   startPull,
@@ -416,5 +400,4 @@ export const ExpandService = {
   clusterPull,
   listPulls: repo.listPulls,
   getPullDetail,
-  createTopicFromCluster,
 } as const;

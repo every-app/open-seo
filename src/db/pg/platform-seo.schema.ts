@@ -127,17 +127,90 @@ export const psTopics = pgTable(
     projectId: text("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    // Where the topic came from. Re-clustering replaces a pull's clusters, so
+    // the topic keeps its own keywords and market rather than reading them
+    // through the cluster.
     clusterId: text("cluster_id").references(() => psClusters.id, {
+      onDelete: "set null",
+    }),
+    pullId: text("pull_id").references(() => psKeywordPulls.id, {
       onDelete: "set null",
     }),
     title: text("title").notNull(),
     angle: text("angle"),
     status: text("status", { enum: PS_TOPIC_STATUSES }).notNull(),
+    // DataForSEO market for the keyword metrics. Nullable only because the
+    // columns were added after topics existed; new topics always set them.
+    locationCode: integer("location_code"),
+    languageCode: text("language_code"),
+    // Brief: the keyword the article targets, plus the questions and outline
+    // below. Null until "Write this" has run.
+    primaryKeyword: text("primary_keyword"),
+    briefGeneratedAt: text("brief_generated_at"),
     createdAt: text("created_at").notNull().default(isoNow),
     updatedAt: text("updated_at").notNull().default(isoNow),
   },
   (table) => [
     index("ps_topics_project_status_idx").on(table.projectId, table.status),
+    index("ps_topics_cluster_idx").on(table.clusterId),
+  ],
+);
+
+// The searches a topic targets. Volume / KD live in keyword_metrics, joined on
+// (project, keyword, topic market).
+export const psTopicKeywords = pgTable(
+  "ps_topic_keywords",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => psTopics.id, { onDelete: "cascade" }),
+    keyword: text("keyword").notNull(),
+  },
+  (table) => [
+    uniqueIndex("ps_topic_keywords_topic_keyword_idx").on(
+      table.topicId,
+      table.keyword,
+    ),
+  ],
+);
+
+// Brief: real searches (from the pull's Questions group) the article answers.
+export const psTopicQuestions = pgTable(
+  "ps_topic_questions",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => psTopics.id, { onDelete: "cascade" }),
+    question: text("question").notNull(),
+    position: integer("position").notNull(),
+  },
+  (table) => [
+    uniqueIndex("ps_topic_questions_topic_question_idx").on(
+      table.topicId,
+      table.question,
+    ),
+  ],
+);
+
+// Brief: the article's sections in order, each with what it should cover.
+export const psTopicOutlineSections = pgTable(
+  "ps_topic_outline_sections",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => psTopics.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    heading: text("heading").notNull(),
+    notes: text("notes"),
+  },
+  (table) => [
+    uniqueIndex("ps_topic_outline_sections_topic_position_idx").on(
+      table.topicId,
+      table.position,
+    ),
   ],
 );
 

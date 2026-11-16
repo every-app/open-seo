@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   FileText,
   Globe,
+  SquareKanban,
   LayoutDashboard,
   Link2,
   MapPin,
@@ -35,6 +36,11 @@ const projectNavItems = [
     to: "/p/$projectId/platforms" as const,
     label: "Platforms",
     icon: Network,
+  },
+  {
+    to: "/p/$projectId/topics" as const,
+    label: "Topics",
+    icon: SquareKanban,
   },
   {
     to: "/p/$projectId/saved" as const,
@@ -125,7 +131,7 @@ function getProjectNavItems(projectId: string) {
 }
 
 // Grouped by scope: "My Site" is the project's own domain (tracked data),
-// "Research" is point-at-anything lookup tools.
+// "Research" is point-at-anything lookup tools, "Content" is what you write.
 export function getProjectNavGroups(projectId: string) {
   const all = getProjectNavItems(projectId);
   const byPath = (path: (typeof projectNavItems)[number]["to"]) =>
@@ -144,6 +150,10 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/backlinks"),
         byPath("/p/$projectId/platforms"),
       ],
+    },
+    {
+      label: "Content",
+      items: [byPath("/p/$projectId/topics")],
     },
     {
       label: "AI Visibility",

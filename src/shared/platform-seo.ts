@@ -31,6 +31,7 @@ export const PS_TOPIC_STATUSES = [
   "ready",
   "published",
 ] as const;
+export type PsTopicStatus = (typeof PS_TOPIC_STATUSES)[number];
 
 // Platform discovery: sites found ranking in Google that may host our content.
 // pending = waiting for the user; the AI's first pass is advisory only. Tools

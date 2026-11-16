@@ -159,6 +159,9 @@ export const {
   psClusters,
   psClusterKeywords,
   psTopics,
+  psTopicKeywords,
+  psTopicQuestions,
+  psTopicOutlineSections,
   psPlatforms,
   psSerpObservations,
 } = schema;

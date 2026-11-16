@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/client/components/ui/badge";
@@ -29,6 +30,7 @@ import {
   type ParasiteOpportunity,
 } from "../platforms/ParasiteOpportunityBadge";
 import { platformQueryKeys } from "../platforms/platformQueryKeys";
+import { topicQueryKeys } from "../topics/topicQueryKeys";
 import { expandQueryKeys } from "./useExpandPipeline";
 
 type Cluster = Awaited<ReturnType<typeof getKeywordPull>>["clusters"][number];
@@ -90,10 +92,30 @@ export function ClusterCard({
       toast.success(`Saved ${toSave.length} keywords as “${cluster.name}”`);
     },
   });
+  const navigate = useNavigate();
   const createTopic = useMutation({
     mutationFn: () =>
       createTopicFromCluster({ data: { projectId, clusterId: cluster.id } }),
-    onSuccess: () => toast.success(`Topic “${cluster.name}” created`),
+    onSuccess: async ({ topicId, created }) => {
+      await queryClient.invalidateQueries({
+        queryKey: topicQueryKeys.list(projectId),
+      });
+      toast.success(
+        created
+          ? `Topic “${cluster.name}” created`
+          : `“${cluster.name}” is already a topic`,
+        {
+          action: {
+            label: "Open",
+            onClick: () =>
+              void navigate({
+                to: "/p/$projectId/topics/$topicId",
+                params: { projectId, topicId },
+              }),
+          },
+        },
+      );
+    },
   });
 
   // The highest-volume keywords not yet checked (keywords are volume-sorted).
@@ -207,14 +229,29 @@ export function ClusterCard({
             >
               Save cluster
             </Button>
-            <Button
-              size="sm"
-              pending={createTopic.isPending}
-              disabled={createTopic.isSuccess}
-              onClick={() => createTopic.mutate()}
-            >
-              {createTopic.isSuccess ? "Topic created" : "Create topic"}
-            </Button>
+            {createTopic.data ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/p/$projectId/topics/$topicId"
+                    params={{ projectId, topicId: createTopic.data.topicId }}
+                  />
+                }
+              >
+                Open topic
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                pending={createTopic.isPending}
+                onClick={() => createTopic.mutate()}
+              >
+                Create topic
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   PS_PLATFORM_DECISIONS,
   PS_PLATFORM_STATUSES,
+  PS_TOPIC_STATUSES,
 } from "@/shared/platform-seo";
 
 const projectIdSchema = z.string().min(1);
@@ -25,6 +26,29 @@ export const psCreateTopicSchema = z.object({
   projectId: projectIdSchema,
   clusterId: z.string().min(1),
   title: z.string().trim().max(200).optional(),
+});
+
+// Topics
+const topicTitleSchema = z.string().trim().min(1).max(200);
+const topicAngleSchema = z.string().trim().max(300);
+
+export const psTopicSchema = z.object({
+  projectId: projectIdSchema,
+  topicId: z.string().min(1),
+});
+
+export const psNewTopicSchema = z.object({
+  projectId: projectIdSchema,
+  title: topicTitleSchema,
+  angle: topicAngleSchema.optional(),
+  keywords: z.array(z.string().trim().min(1).max(200)).min(1).max(100),
+});
+
+export const psUpdateTopicSchema = psTopicSchema.extend({
+  title: topicTitleSchema.optional(),
+  angle: topicAngleSchema.nullable().optional(),
+  status: z.enum(PS_TOPIC_STATUSES).optional(),
+  primaryKeyword: z.string().trim().min(1).max(200).optional(),
 });
 
 // Platform discovery

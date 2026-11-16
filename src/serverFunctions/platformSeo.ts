@@ -2,9 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireProjectContext } from "./middleware";
 import { ExpandService } from "@/server/features/platform-seo/services/ExpandService";
 import { PlatformDiscoveryService } from "@/server/features/platform-seo/services/PlatformDiscoveryService";
+import { TopicService } from "@/server/features/platform-seo/services/TopicService";
 import {
   psCreateTopicSchema,
   psFindPlatformsSchema,
+  psNewTopicSchema,
   psImportPlatformsSchema,
   psOpportunitiesSchema,
   psProjectSchema,
@@ -12,6 +14,8 @@ import {
   psPullSchema,
   psSetPlatformStatusSchema,
   psStartPullSchema,
+  psTopicSchema,
+  psUpdateTopicSchema,
 } from "@/types/schemas/platformSeo";
 
 // Platform SEO (Automation Squad fork). Project access is enforced by the
@@ -74,10 +78,70 @@ export const createTopicFromCluster = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(psCreateTopicSchema)
   .handler(({ data, context }) =>
-    ExpandService.createTopicFromCluster({
+    TopicService.createTopicFromCluster({
       projectId: context.projectId,
       clusterId: data.clusterId,
       title: data.title,
+    }),
+  );
+
+// ---------------------------------------------------------------------------
+// Topic hub
+// ---------------------------------------------------------------------------
+
+export const listTopics = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psProjectSchema)
+  .handler(({ context }) => TopicService.listTopics(context.projectId));
+
+export const getTopic = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psTopicSchema)
+  .handler(({ data, context }) =>
+    TopicService.getTopic(context.projectId, data.topicId),
+  );
+
+export const createTopic = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psNewTopicSchema)
+  .handler(({ data, context }) =>
+    TopicService.createTopic({
+      project: context.project,
+      title: data.title,
+      angle: data.angle,
+      keywords: data.keywords,
+    }),
+  );
+
+export const updateTopic = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psUpdateTopicSchema)
+  .handler(({ data, context }) =>
+    TopicService.updateTopic({
+      projectId: context.projectId,
+      topicId: data.topicId,
+      title: data.title,
+      angle: data.angle,
+      status: data.status,
+      primaryKeyword: data.primaryKeyword,
+    }),
+  );
+
+export const deleteTopic = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psTopicSchema)
+  .handler(({ data, context }) =>
+    TopicService.deleteTopic(context.projectId, data.topicId),
+  );
+
+export const generateTopicBrief = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psTopicSchema)
+  .handler(({ data, context }) =>
+    TopicService.generateBrief({
+      projectId: context.projectId,
+      topicId: data.topicId,
+      customer: context,
     }),
   );
 

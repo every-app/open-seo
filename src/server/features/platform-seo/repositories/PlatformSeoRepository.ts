@@ -7,7 +7,6 @@ import {
   psClusters,
   psKeywordPulls,
   psPulledKeywords,
-  psTopics,
 } from "@/db/schema";
 import type {
   PsFunnelStage,
@@ -333,24 +332,6 @@ async function getCluster(projectId: string, clusterId: string) {
   return row ?? null;
 }
 
-async function insertTopic(params: {
-  projectId: string;
-  clusterId: string | null;
-  title: string;
-  angle: string | null;
-}) {
-  const id = crypto.randomUUID();
-  const now = new Date().toISOString();
-  await db.insert(psTopics).values({
-    id,
-    ...params,
-    status: "idea",
-    createdAt: now,
-    updatedAt: now,
-  });
-  return id;
-}
-
 export const PlatformSeoRepository = {
   insertPull,
   getPull,
@@ -362,5 +343,4 @@ export const PlatformSeoRepository = {
   listFreshMetricKeywords,
   upsertKeywordMetrics,
   getCluster,
-  insertTopic,
 } as const;
