@@ -75,7 +75,17 @@ async function setStatus(params: {
   ]);
 }
 
+async function setCanonicalUrl(topicId: string, canonicalUrl: string | null) {
+  const rows = await db
+    .update(psArticles)
+    .set({ canonicalUrl, updatedAt: new Date().toISOString() })
+    .where(eq(psArticles.topicId, topicId))
+    .returning({ id: psArticles.id });
+  return rows.length > 0;
+}
+
 export const ArticleRepository = {
+  setCanonicalUrl,
   getArticle,
   saveArticle,
   setStatus,

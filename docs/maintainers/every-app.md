@@ -54,6 +54,7 @@ Autumn stays hosted-only.
 | `DATAFORSEO_API_KEY`                                           | gateway | required               | Keyword, SERP, backlink, local business and AI answer data, including scheduled rank checks              |
 | `CONTEXT_API_KEY`                                              | gateway | optional (`rendering`) | Rendering JavaScript-heavy pages when a site audit asks for it                                           |
 | `CRAWLER_ACCESS_SECRET`                                        | OpenSEO | generated              | Encrypting the Shopify crawler-access signatures audits of protected stores send (32+ chars)             |
+| `CHANNEL_TOKEN_SECRET`                                         | OpenSEO | generated              | Encrypting the Hashnode and Dev.to tokens of connected publishing accounts (32+ chars)                   |
 | `OPENROUTER_MODEL`                                             | OpenSEO | optional (`model`)     | The OpenRouter model SAM, prompt suggestions and website research run on (default `openai/gpt-5.6-luna`) |
 | `GOOGLE_WORKSPACE_CLIENT_ID`, `GOOGLE_WORKSPACE_CLIENT_SECRET` | gateway | optional (`google`)    | Search Console and GA4 reads for your sites, with the Google account a member connects in OpenSEO        |
 

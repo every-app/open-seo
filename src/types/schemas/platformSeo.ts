@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  PS_AI_DISCLOSURES,
   PS_ARTICLE_MAX_CHARS,
   PS_ARTICLE_STATUSES,
   PS_PLATFORM_DECISIONS,
@@ -63,6 +64,51 @@ export const psSaveArticleSchema = psTopicSchema.extend(articleTextSchema);
 
 export const psArticleStatusSchema = psTopicSchema.extend({
   status: z.enum(PS_ARTICLE_STATUSES),
+});
+
+// Syndication. Tokens are bounded but otherwise opaque; the platform checks
+// them before anything is stored.
+const tokenSchema = z.string().trim().min(8).max(500);
+
+export const psConnectDevtoSchema = z.object({
+  projectId: projectIdSchema,
+  apiKey: tokenSchema,
+});
+
+export const psConnectHashnodeSchema = z.object({
+  projectId: projectIdSchema,
+  token: tokenSchema,
+  publicationId: z.string().trim().min(1).max(100).optional(),
+});
+
+export const psChannelSchema = z.object({
+  projectId: projectIdSchema,
+  channelId: z.string().min(1),
+});
+
+export const psPrepareSyndicationSchema = psTopicSchema.extend({
+  channelId: z.string().min(1),
+});
+
+export const psSyndicationSchema = z.object({
+  projectId: projectIdSchema,
+  syndicationId: z.string().min(1),
+});
+
+export const psSaveSyndicationSchema = psSyndicationSchema.extend({
+  title: z.string().trim().min(1).max(250),
+  summary: z.string().trim().max(300).nullable(),
+  body: z.string().min(1).max(PS_ARTICLE_MAX_CHARS),
+  tags: z.array(z.string().trim().min(1).max(60)).max(15),
+  aiDisclosure: z.enum(PS_AI_DISCLOSURES).nullable(),
+});
+
+// The original on the user's own site: a public http(s) page.
+export const psCanonicalUrlSchema = psTopicSchema.extend({
+  canonicalUrl: z
+    .url({ protocol: /^https?$/ })
+    .max(2000)
+    .nullable(),
 });
 
 // Platform discovery

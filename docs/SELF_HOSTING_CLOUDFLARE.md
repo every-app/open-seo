@@ -116,6 +116,8 @@ A Cloudflare Workflow on the Workers Free plan can make 50 outgoing requests per
 
 **Shopify crawler access:** saving the crawler-access signature a Shopify store creates needs `CRAWLER_ACCESS_SECRET` in `.env.selfhost`, set to at least 32 random characters (e.g. `openssl rand -hex 32`), then `pnpm deploy:selfhost --yes`. Keep the value once set: changing it makes saved signatures unreadable.
 
+**Publishing to Hashnode and Dev.to:** connecting those accounts needs `CHANNEL_TOKEN_SECRET` in `.env.selfhost`, at least 32 random characters (e.g. `openssl rand -hex 32`), then `pnpm deploy:selfhost --yes`. It encrypts the tokens; keep the value once set.
+
 ## Troubleshooting
 
 - `https://<your-worker-hostname>/api/health` reports runtime configuration checks and database status.

@@ -1,11 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
+import { hasOrgPermission } from "@/lib/org-permissions";
+import { requireOrgPermission } from "@/server/auth/org-gate";
 import { requireProjectContext } from "./middleware";
 import { ExpandService } from "@/server/features/platform-seo/services/ExpandService";
 import { PlatformDiscoveryService } from "@/server/features/platform-seo/services/PlatformDiscoveryService";
+import { ChannelService } from "@/server/features/platform-seo/services/ChannelService";
+import { SyndicationService } from "@/server/features/platform-seo/services/SyndicationService";
 import { ArticleService } from "@/server/features/platform-seo/services/ArticleService";
 import { TopicService } from "@/server/features/platform-seo/services/TopicService";
 import {
   psArticleStatusSchema,
+  psCanonicalUrlSchema,
+  psChannelSchema,
+  psConnectDevtoSchema,
+  psConnectHashnodeSchema,
+  psPrepareSyndicationSchema,
+  psSaveSyndicationSchema,
+  psSyndicationSchema,
   psCreateTopicSchema,
   psFindPlatformsSchema,
   psNewTopicSchema,
@@ -204,6 +215,113 @@ export const humanizeArticle = createServerFn({ method: "POST" })
       body: data.body,
       customer: context,
     }),
+  );
+
+// ---------------------------------------------------------------------------
+// Syndication. Channels belong to the organization and syndications are
+// reached through both the project and the organization; tokens never leave
+// the server.
+// ---------------------------------------------------------------------------
+
+const scopeOf = (context: { projectId: string; organizationId: string }) => ({
+  projectId: context.projectId,
+  organizationId: context.organizationId,
+});
+
+export const listChannels = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psProjectSchema)
+  .handler(async ({ context }) => ({
+    ...(await ChannelService.listChannels(context.organizationId)),
+    // Channels are shared by the organization, like its other integrations.
+    canManage: hasOrgPermission(context.role, { integration: ["manage"] }),
+  }));
+
+export const connectDevto = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psConnectDevtoSchema)
+  .handler(({ data, context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
+    return ChannelService.connectDevto(context.organizationId, data.apiKey);
+  });
+
+export const connectHashnode = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psConnectHashnodeSchema)
+  .handler(({ data, context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
+    return ChannelService.connectHashnode(
+      context.organizationId,
+      data.token,
+      data.publicationId,
+    );
+  });
+
+export const disconnectChannel = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psChannelSchema)
+  .handler(({ data, context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
+    return ChannelService.disconnect(context.organizationId, data.channelId);
+  });
+
+export const getPublishing = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psTopicSchema)
+  .handler(({ data, context }) =>
+    SyndicationService.getPublishing(scopeOf(context), data.topicId),
+  );
+
+export const setCanonicalUrl = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psCanonicalUrlSchema)
+  .handler(({ data, context }) =>
+    SyndicationService.setCanonicalUrl(
+      scopeOf(context),
+      data.topicId,
+      data.canonicalUrl,
+    ),
+  );
+
+export const prepareSyndication = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psPrepareSyndicationSchema)
+  .handler(({ data, context }) =>
+    SyndicationService.prepare(scopeOf(context), data.topicId, data.channelId),
+  );
+
+export const saveSyndication = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psSaveSyndicationSchema)
+  .handler(({ data, context }) =>
+    SyndicationService.saveEdits(scopeOf(context), data.syndicationId, {
+      title: data.title,
+      summary: data.summary,
+      body: data.body,
+      tags: data.tags,
+      aiDisclosure: data.aiDisclosure,
+    }),
+  );
+
+export const removeSyndication = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psSyndicationSchema)
+  .handler(({ data, context }) =>
+    SyndicationService.remove(scopeOf(context), data.syndicationId),
+  );
+
+export const sendSyndicationDraft = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psSyndicationSchema)
+  .handler(({ data, context }) =>
+    SyndicationService.sendDraft(scopeOf(context), data.syndicationId),
+  );
+
+export const publishSyndication = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psSyndicationSchema)
+  .handler(({ data, context }) =>
+    SyndicationService.publish(scopeOf(context), data.syndicationId),
   );
 
 // ---------------------------------------------------------------------------

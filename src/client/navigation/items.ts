@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   FileText,
   Globe,
+  Send,
   SquareKanban,
   LayoutDashboard,
   Link2,
@@ -41,6 +42,11 @@ const projectNavItems = [
     to: "/p/$projectId/topics" as const,
     label: "Topics",
     icon: SquareKanban,
+  },
+  {
+    to: "/p/$projectId/channels" as const,
+    label: "Channels",
+    icon: Send,
   },
   {
     to: "/p/$projectId/saved" as const,
@@ -153,7 +159,7 @@ export function getProjectNavGroups(projectId: string) {
     },
     {
       label: "Content",
-      items: [byPath("/p/$projectId/topics")],
+      items: [byPath("/p/$projectId/topics"), byPath("/p/$projectId/channels")],
     },
     {
       label: "AI Visibility",

@@ -69,6 +69,7 @@ docker compose up -d --force-recreate init web crawl-gateway
 | `CONTEXT_API_KEY`                          | Optional JavaScript rendering for site audits                                                                              |
 | `GOOGLE_MAPS_API_KEY`                      | Optional map for Local SEO; see [`GOOGLE_MAPS_SETUP.md`](./GOOGLE_MAPS_SETUP.md)                                           |
 | `CRAWLER_ACCESS_SECRET`                    | Optional, 32+ random characters; encrypts saved Shopify crawler signatures                                                 |
+| `CHANNEL_TOKEN_SECRET`                     | Optional, 32+ random characters; encrypts connected Hashnode and Dev.to tokens                                             |
 
 For Google, register your own OAuth application with these redirect URLs under your public address: `/api/gsc/oauth/callback` for Search Console and `/api/ga4/oauth/callback` for Analytics. See [`SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md`](./SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md). Signing in with Google is not offered; accounts use email and password.
 

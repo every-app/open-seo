@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { BackLink, PageHeader } from "@/client/components/PageHeader";
 import { QueryState } from "@/client/components/QueryState";
@@ -140,6 +140,19 @@ function TopicDetail({
             >
               <FileText />
               Open editor
+            </Button>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={
+                <Link
+                  to="/p/$projectId/topics/$topicId/publish"
+                  params={{ projectId, topicId: topic.id }}
+                />
+              }
+            >
+              <Send />
+              Publish
             </Button>
             <Select
               items={STATUS_ITEMS}

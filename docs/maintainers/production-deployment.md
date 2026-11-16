@@ -23,6 +23,7 @@ deployment branches to `main`. Then add the following.
 | `DATAFORSEO_API_KEY`               | base64 `login:password` (not the dashboard key)                    |
 | `BETTER_AUTH_SECRET`               | Must be the existing value: it encrypts stored Google OAuth tokens |
 | `CRAWLER_ACCESS_SECRET`            | Must be the existing value: it encrypts stored crawler signatures  |
+| `CHANNEL_TOKEN_SECRET`             | Optional; keep its value: encrypts connected publishing tokens     |
 | `GOOGLE_CLIENT_SECRET`             | Hosted Google sign-in and Search Console / GA4 OAuth               |
 | `TURNSTILE_SECRET_KEY`             | Signup captcha verification                                        |
 | `OPENAI_SIWC_CLIENT_SECRET`        | Sign in with ChatGPT, confidential clients only (optional)         |

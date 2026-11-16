@@ -65,6 +65,8 @@ declare namespace Cloudflare {
     // Encrypts saved Shopify crawler signatures. Kept separate from
     // BETTER_AUTH_SECRET so the audit worker never holds the auth secret.
     CRAWLER_ACCESS_SECRET?: string;
+    // Encrypts connected Hashnode and Dev.to tokens (Platform SEO).
+    CHANNEL_TOKEN_SECRET?: string;
     // Private Ed25519 JWK that signs site audit requests (Web Bot Auth). Hosted
     // only; unset sends unsigned requests.
     WEB_BOT_AUTH_JWK?: string;

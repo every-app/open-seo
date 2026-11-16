@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BackLink, PageHeader } from "@/client/components/PageHeader";
 import { QueryState } from "@/client/components/QueryState";
@@ -192,6 +194,19 @@ function ArticleEditor({
           }}
           onRestore={setText}
         />
+        <Button
+          variant="ghost"
+          nativeButton={false}
+          render={
+            <Link
+              to="/p/$projectId/topics/$topicId/publish"
+              params={{ projectId, topicId: topic.id }}
+            />
+          }
+        >
+          <Send />
+          Publish
+        </Button>
         <span
           className="ml-auto text-xs text-muted-foreground"
           role="status"

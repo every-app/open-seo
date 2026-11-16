@@ -10,14 +10,17 @@ import { sql } from "drizzle-orm";
 import { projects } from "./app.schema";
 import { organization } from "./better-auth-schema";
 import {
+  PS_AI_DISCLOSURES,
   PS_AI_VERDICTS,
   PS_ARTICLE_STATUSES,
+  PS_CHANNEL_TYPES,
   PS_FUNNEL_STAGES,
   PS_INTENTS,
   PS_KEYWORD_GROUPS,
   PS_PLATFORM_SOURCES,
   PS_PLATFORM_STATUSES,
   PS_PULL_STAGES,
+  PS_SYNDICATION_STATUSES,
   PS_TOPIC_STATUSES,
 } from "@/shared/platform-seo";
 
@@ -227,10 +230,87 @@ export const psArticles = pgTable(
     canonicalTitle: text("canonical_title").notNull(),
     bodyMarkdown: text("body_markdown").notNull(),
     status: text("status", { enum: PS_ARTICLE_STATUSES }).notNull(),
+    // Where the article lives on the user's own site; every syndicated copy
+    // points its canonical link here.
+    canonicalUrl: text("canonical_url"),
     createdAt: text("created_at").notNull().default(isoNow),
     updatedAt: text("updated_at").notNull().default(isoNow),
   },
   (table) => [uniqueIndex("ps_articles_topic_idx").on(table.topicId)],
+);
+
+// A publishing account the organization connected. The token is encrypted
+// with CHANNEL_TOKEN_SECRET and never leaves the server.
+export const psChannels = pgTable(
+  "ps_channels",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    type: text("type", { enum: PS_CHANNEL_TYPES }).notNull(),
+    displayName: text("display_name").notNull(),
+    // Hashnode posts go to one publication (blog) of the account.
+    publicationId: text("publication_id"),
+    accountUrl: text("account_url"),
+    tokenCiphertext: text("token_ciphertext").notNull(),
+    createdAt: text("created_at").notNull().default(isoNow),
+  },
+  (table) => [index("ps_channels_org_idx").on(table.organizationId)],
+);
+
+// One article's copy on one channel: the platform version (editable before it
+// goes out) and what the platform returned.
+export const psSyndications = pgTable(
+  "ps_syndications",
+  {
+    id: text("id").primaryKey(),
+    articleId: text("article_id")
+      .notNull()
+      .references(() => psArticles.id, { onDelete: "cascade" }),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => psChannels.id, { onDelete: "cascade" }),
+    platformTitle: text("platform_title").notNull(),
+    // Hashnode's subtitle, Dev.to's description.
+    platformSummary: text("platform_summary"),
+    platformBody: text("platform_body").notNull(),
+    aiDisclosure: text("ai_disclosure", { enum: PS_AI_DISCLOSURES }),
+    status: text("status", { enum: PS_SYNDICATION_STATUSES }).notNull(),
+    // The platform's id for the draft, then for the post once published.
+    remoteId: text("remote_id"),
+    liveUrl: text("live_url"),
+    publishedAt: text("published_at"),
+    // The last send's problem, in words the user can act on.
+    error: text("error"),
+    createdAt: text("created_at").notNull().default(isoNow),
+    updatedAt: text("updated_at").notNull().default(isoNow),
+  },
+  (table) => [
+    uniqueIndex("ps_syndications_article_channel_idx").on(
+      table.articleId,
+      table.channelId,
+    ),
+    index("ps_syndications_channel_idx").on(table.channelId),
+  ],
+);
+
+export const psSyndicationTags = pgTable(
+  "ps_syndication_tags",
+  {
+    id: text("id").primaryKey(),
+    syndicationId: text("syndication_id")
+      .notNull()
+      .references(() => psSyndications.id, { onDelete: "cascade" }),
+    tag: text("tag").notNull(),
+    position: integer("position").notNull(),
+  },
+  (table) => [
+    uniqueIndex("ps_syndication_tags_syndication_tag_idx").on(
+      table.syndicationId,
+      table.tag,
+    ),
+  ],
 );
 
 // ----------------------------------------------------------------------------

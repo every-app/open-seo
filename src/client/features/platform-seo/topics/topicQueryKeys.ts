@@ -8,4 +8,9 @@ export const topicQueryKeys = {
     ["platformSeo", projectId, "topics", topicId, "brief"] as const,
   article: (projectId: string, topicId: string) =>
     ["platformSeo", projectId, "topics", topicId, "article"] as const,
+  publishing: (projectId: string, topicId: string) =>
+    ["platformSeo", projectId, "topics", topicId, "publishing"] as const,
+  // Organization-wide, but keyed by project like every other query here.
+  channels: (projectId: string) =>
+    ["platformSeo", projectId, "channels"] as const,
 };

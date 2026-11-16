@@ -386,6 +386,13 @@
       "when": 1794856962634,
       "tag": "0054_platform_articles",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1794859422077,
+      "tag": "0055_platform_syndication",
+      "breakpoints": true
     }
   ]
 }

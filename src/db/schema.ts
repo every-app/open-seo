@@ -163,6 +163,9 @@ export const {
   psTopicQuestions,
   psTopicOutlineSections,
   psArticles,
+  psChannels,
+  psSyndications,
+  psSyndicationTags,
   psPlatforms,
   psSerpObservations,
 } = schema;

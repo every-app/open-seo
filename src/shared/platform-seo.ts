@@ -65,3 +65,30 @@ export type PsAiVerdict = (typeof PS_AI_VERDICTS)[number];
 
 // Google's first two pages: where a parasite post can realistically rank.
 export const PS_SERP_DEPTH = 20;
+
+// Syndication: where a canonical article is republished, with a canonical link
+// back to the original.
+export const PS_CHANNEL_TYPES = ["hashnode", "devto"] as const;
+export type PsChannelType = (typeof PS_CHANNEL_TYPES)[number];
+
+export const PS_CHANNEL_LABELS: Record<PsChannelType, string> = {
+  hashnode: "Hashnode",
+  devto: "Dev.to",
+};
+
+// prepared = a platform copy here only; drafted = a draft on the platform;
+// published = live there.
+export const PS_SYNDICATION_STATUSES = [
+  "prepared",
+  "drafted",
+  "published",
+] as const;
+export type PsSyndicationStatus = (typeof PS_SYNDICATION_STATUSES)[number];
+
+// Dev.to asks how much AI wrote the article; it shows a label on the post.
+export const PS_AI_DISCLOSURES = [
+  "no_ai",
+  "some_ai",
+  "fully_autonomous",
+] as const;
+export type PsAiDisclosure = (typeof PS_AI_DISCLOSURES)[number];

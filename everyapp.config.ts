@@ -99,6 +99,11 @@ export default {
       generate: true,
       why: "Encrypts the Shopify crawler-access signatures that audits of protected stores send.",
     },
+    {
+      name: "CHANNEL_TOKEN_SECRET",
+      generate: true,
+      why: "Encrypts the Hashnode and Dev.to tokens of the publishing accounts you connect.",
+    },
   ],
   // Optional, each all or nothing: OpenSEO opens without them.
   features: {
