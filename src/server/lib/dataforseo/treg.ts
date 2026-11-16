@@ -13,7 +13,7 @@ const DATAFORSEO_HOST = "api.dataforseo.com";
  * The DataForSEO paths OpenSEO calls that treg's catalog serves, with their
  * treg endpoint ids. A `{name}` segment is a path parameter, which treg takes
  * as a query parameter of that name. Anything not listed (the SERP task
- * queue behind rank tracking, LLM mentions, the LLM models list) still
+ * queue behind rank tracking and SERP results, LLM mentions, the LLM models list) still
  * needs a DataForSEO key.
  */
 const TREG_ENDPOINTS: Record<string, string> = {
