@@ -4,7 +4,8 @@ import {
   resolveDateRange,
 } from "@/server/features/gsc/searchAnalytics";
 
-const TODAY = new Date("2026-05-28T00:00:00Z");
+// Noon UTC (05:00 PDT) falls on the same calendar day in Pacific time.
+const TODAY = new Date("2026-05-28T12:00:00Z");
 
 describe("resolveDateRange", () => {
   it.each([
@@ -61,10 +62,50 @@ describe("resolveDateRange", () => {
     "subtracts calendar months without overflowing short months ($dateRange from $today)",
     ({ dateRange, today, startDate, endDate }) => {
       expect(
-        resolveDateRange({ dateRange }, new Date(`${today}T00:00:00Z`)),
+        resolveDateRange({ dateRange }, new Date(`${today}T12:00:00Z`)),
       ).toEqual({ startDate, endDate });
     },
   );
+
+  it("keeps presets stable across UTC midnight and rolls over at Pacific midnight", () => {
+    // 23:59Z (3:59 PM PST) and 00:01Z (4:01 PM PST) are both Nov 15 in Pacific time.
+    expect(
+      resolveDateRange(
+        { dateRange: "last_7_days" },
+        new Date("2026-11-15T23:59:00Z"),
+      ),
+    ).toEqual({ startDate: "2026-11-06", endDate: "2026-11-12" });
+
+    expect(
+      resolveDateRange(
+        { dateRange: "last_7_days" },
+        new Date("2026-11-16T00:01:00Z"),
+      ),
+    ).toEqual({ startDate: "2026-11-06", endDate: "2026-11-12" });
+
+    // Advances once Pacific midnight arrives (08:00Z during PST = UTC-8).
+    expect(
+      resolveDateRange(
+        { dateRange: "last_7_days" },
+        new Date("2026-11-16T08:00:00Z"),
+      ),
+    ).toEqual({ startDate: "2026-11-07", endDate: "2026-11-13" });
+
+    // Advances at Pacific midnight during PDT (07:00Z during PDT = UTC-7).
+    expect(
+      resolveDateRange(
+        { dateRange: "last_7_days" },
+        new Date("2026-07-16T06:59:00Z"),
+      ),
+    ).toEqual({ startDate: "2026-07-06", endDate: "2026-07-12" });
+
+    expect(
+      resolveDateRange(
+        { dateRange: "last_7_days" },
+        new Date("2026-07-16T07:00:00Z"),
+      ),
+    ).toEqual({ startDate: "2026-07-07", endDate: "2026-07-13" });
+  });
 });
 
 describe("buildSearchAnalyticsRequest", () => {
