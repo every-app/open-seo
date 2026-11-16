@@ -9,27 +9,36 @@ import {
   isScheduledRankTrackingInterval,
 } from "@/shared/rank-tracking";
 import { describeError } from "@/server/lib/errors";
+import { STUCK_RUN_AFTER_MS } from "@/server/lib/startWorkflow";
 
 // Work admitted per tick, in task units (keywords × devices). Admission
 // control, not a hard rate limit: the first start of a tick is always
 // admitted, so a config bigger than the budget (legal max:
 // MAX_KEYWORDS_PER_CONFIG × 2 devices = 5,000 units) can never starve. Sized
-// against DataForSEO's 2,000 requests/min account cap, where task_get polling
+// against DataForSEO's requests-per-minute account cap, where task_get polling
 // is the binding term: one call per unit per poll round, rounds wake
 // synchronized per tick, and a unit gets up to six reads, so polling from
 // about six ticks overlaps the */5 cron — a full tick can burst ~500 polls
 // into a single minute, stacking with the rounds of the ticks before it. A
-// config admitted over the budget polls no faster than a full tick does: its
-// collect steps are paced (COLLECT_PACE in rankCheckPaths.ts), so it adds
-// about 500 polls a minute for longer, not a bigger burst. Each one takes a
-// tick of its own, so several large trackers due together still stack.
-// Overruns aren't loud failures: throttled polls delay collection and, past
-// the hour, leave tasks unfinished, which are read again and billed to the
-// customer, so keep real headroom under the cap.
-// 500/tick ≈ 144,000 units/day, a few times steady-state demand — it binds
-// during backlog catch-up and briefly during the 04:00–10:00 UTC default
-// schedule window.
+// config admitted over the budget takes a tick of its own and polls at its own
+// paced rate (TASK_GET_BATCH_MS in rankCheckPaths.ts), which
+// MAX_TASK_UNITS_IN_FLIGHT bounds.
+// 500/tick ≈ 144,000 units/day of small trackers — it binds during backlog
+// catch-up and briefly during the 04:00–10:00 UTC default schedule window.
 const SCHEDULED_TASK_UNIT_BUDGET = 500;
+
+// A config bigger than the tick budget waits while this much work is in flight
+// (every active check, manual ones included), so large trackers due together
+// run a few at a time instead of all at once. One check polls at most 1,500
+// task_gets a minute, so 30,000 units is at most three trackers of 5,000
+// keywords on both devices and about 4,500 polls a minute, under half of
+// DataForSEO's 10,000 requests a minute. That leaves the rest for manual
+// checks, which nothing holds back, and for every other feature on the
+// account. Overruns aren't loud failures: throttled polls delay collection and
+// can leave tasks unfinished, which are read again and billed to the customer,
+// so keep real headroom under the cap. A waiting config stays due and is tried
+// again each tick; smaller configs behind it still start.
+const MAX_TASK_UNITS_IN_FLIGHT = 30_000;
 
 // Wall-clock guard for the per-config loop: sub-hourly crons are killed at 15
 // minutes, and a skip-heavy tick pays serial Autumn round-trips per distinct
@@ -53,12 +62,16 @@ export async function runScheduledRankChecks(env: Env) {
     return;
   }
 
-  const nowIso = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
   const dueConfigs =
     await RankTrackingRepository.getDueConfigsWithOrganization(nowIso);
   const isHosted = await isHostedServerAuthMode();
   const keywordCounts = await RankTrackingRepository.getKeywordCountsForConfigs(
     dueConfigs.map((config) => config.id),
+  );
+  let unitsInFlight = await RankTrackingRepository.getTaskUnitsInFlight(
+    new Date(now.getTime() - STUCK_RUN_AFTER_MS),
   );
 
   // Function-local so it lives exactly one tick: at module scope this would be
@@ -80,6 +93,7 @@ export async function runScheduledRankChecks(env: Env) {
   let started = 0;
   let stoppedByBudget = false;
   let stoppedByDeadline = false;
+  let waitingForCapacity = 0;
   let skippedFree = 0;
   let skippedNoKeywords = 0;
   let concurrentChangeSkips = 0;
@@ -117,6 +131,14 @@ export async function runScheduledRankChecks(env: Env) {
       ) {
         stoppedByBudget = true;
         break;
+      }
+
+      if (
+        taskUnits > SCHEDULED_TASK_UNIT_BUDGET &&
+        unitsInFlight + taskUnits > MAX_TASK_UNITS_IN_FLIGHT
+      ) {
+        waitingForCapacity++;
+        continue;
       }
 
       const observedNextCheckAt = config.nextCheckAt;
@@ -211,6 +233,7 @@ export async function runScheduledRankChecks(env: Env) {
 
       if (result.ok) {
         unitsStarted += taskUnits;
+        unitsInFlight += taskUnits;
         started++;
         continue;
       }
@@ -258,6 +281,8 @@ export async function runScheduledRankChecks(env: Env) {
     budget: SCHEDULED_TASK_UNIT_BUDGET,
     stoppedByBudget,
     stoppedByDeadline,
+    waitingForCapacity,
+    unitsInFlight,
     skippedFree,
     skippedNoKeywords,
     concurrentChangeSkips,

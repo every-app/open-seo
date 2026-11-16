@@ -1,6 +1,9 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import type { RankCheckTaskInput } from "@/server/lib/dataforseo";
+import type {
+  PostedRankCheckTask,
+  RankCheckTaskInput,
+} from "@/server/lib/dataforseo";
 import {
   MAX_READS_PER_CHECK,
   MIN_READS_PER_CHECK,
@@ -10,6 +13,7 @@ import {
   COLLECT_STEP_CONFIG,
   expandToTaskInputs,
   mapResultsToSnapshotRows,
+  QUEUED_POLL_INTERVALS,
   runQueuedTasks,
   type CheckContext,
   type RankCheckResultWithDevice,
@@ -27,11 +31,24 @@ import {
 const READS_AGREE_WITHIN_POSITIONS = 2;
 
 /**
- * No new round of reads starts after this long. One round polls for up to an
- * hour, so a check ends in about two hours. Slow rounds get fewer reads, and a
- * first read DataForSEO delays past the window gets none.
+ * No new round of reads starts after this long, except the reads
+ * MIN_READS_PER_CHECK still owes (OWED_READS_GRACE_MS). One round polls for up
+ * to an hour, so a check ends in about two hours. Slow rounds get fewer reads,
+ * and a first read DataForSEO delays past the window gets none.
  */
 export const READ_WINDOW_MS = 60 * 60_000;
+
+/**
+ * How long after the window a read may still start for the pairs that have
+ * fewer than MIN_READS_PER_CHECK. At 100 results a keyword DataForSEO takes
+ * about 18 minutes over a task, so the third read of a large tracker starts
+ * close to the end of the window. A read that starts in the grace polls for
+ * OWED_READ_POLL_INTERVALS, so the check still ends within two hours.
+ */
+const OWED_READS_GRACE_MS = 15 * 60_000;
+
+/** The usual polls without the last, 15 minutes shorter. */
+const OWED_READ_POLL_INTERVALS = QUEUED_POLL_INTERVALS.slice(0, -1);
 
 /**
  * What the reads of one keyword/device pair found. Steps return these in
@@ -45,8 +62,8 @@ interface PairReads {
   answered: boolean;
 }
 
-function key(keywordId: string, device: string) {
-  return `${keywordId}:${device}`;
+function key(pair: { keywordId: string; device: string }) {
+  return `${pair.keywordId}:${pair.device}`;
 }
 
 function foundPositions(pair: PairReads) {
@@ -65,17 +82,27 @@ function needsAnotherRead(pair: PairReads): boolean {
   return Math.max(...found) - Math.min(...found) > READS_AGREE_WITHIN_POSITIONS;
 }
 
-/** Every pair's first read, from its saved result. A pair with no row errored. */
+/**
+ * Every pair's first read, from its saved result. A pair with no row errored,
+ * unless its task is still `queued`: then it has no read yet.
+ */
 async function loadFirstReads(
   runId: string,
   tasks: RankCheckTaskInput[],
+  queued: Set<string>,
 ): Promise<PairReads[]> {
   const snapshots = await RankTrackingRepository.getSnapshotsForRun(runId);
   const saved = new Map(
-    snapshots.map((s) => [key(s.trackingKeywordId, s.device), s.position]),
+    snapshots.map((s) => [
+      key({ keywordId: s.trackingKeywordId, device: s.device }),
+      s.position,
+    ]),
   );
   return tasks.map((task) => {
-    const pairKey = key(task.keywordId, task.device);
+    const pairKey = key(task);
+    if (!saved.has(pairKey) && queued.has(pairKey)) {
+      return { reads: [], answered: false };
+    }
     return {
       reads: [saved.get(pairKey) ?? null],
       answered: saved.has(pairKey),
@@ -84,24 +111,31 @@ async function loadFirstReads(
 }
 
 /**
- * Add this round's result to each pair that was read, saving any position that
- * beats its best and the first answer for a pair that had none.
+ * Add this round's result to each pair that was `polled`, saving any position
+ * that beats its best and the first answer for a pair that had none. A pair
+ * whose task is still `queued` gets its read when the task is collected.
  */
 async function saveReads(
   runId: string,
   tasks: RankCheckTaskInput[],
   pairs: PairReads[],
-  collected: RankCheckResultWithDevice[],
+  {
+    polled,
+    queued,
+    collected,
+  }: {
+    polled: Set<string>;
+    queued: Set<string>;
+    collected: RankCheckResultWithDevice[];
+  },
 ): Promise<PairReads[]> {
-  const results = new Map(
-    collected.map((result) => [key(result.keywordId, result.device), result]),
-  );
+  const results = new Map(collected.map((result) => [key(result), result]));
   const toSave: RankCheckResultWithDevice[] = [];
   const updated = pairs.map((pair, index) => {
-    if (!needsAnotherRead(pair)) return pair;
-    const result = results.get(
-      key(tasks[index].keywordId, tasks[index].device),
-    );
+    const pairKey = key(tasks[index]);
+    if (!polled.has(pairKey)) return pair;
+    const result = results.get(pairKey);
+    if (!result && queued.has(pairKey)) return pair;
     const position = result?.position ?? null;
     const best = bestPosition(pair);
     const isBetter = position !== null && (best === null || position < best);
@@ -157,46 +191,92 @@ async function dropUnconfirmedMisses(
 
 /**
  * Read each pair again through the task queue until it has enough reads that
- * agree, it reaches MAX_READS_PER_CHECK, or `readsEndAt` passes. The clock is
- * read inside the steps, so a replay makes the same decision.
+ * agree, it reaches MAX_READS_PER_CHECK, or `readsEndAt` passes. A pair short
+ * of MIN_READS_PER_CHECK can be read for a little longer. A read moves
+ * on without its last few tasks (see STRAGGLER_SHARE in rankCheckPaths.ts):
+ * the next read collects them and leaves their pairs out, so a pair never has
+ * two tasks queued. The clock is read inside the steps, so a replay makes the
+ * same decision.
  */
 export async function retryRankChecks(
   step: WorkflowStep,
   ctx: CheckContext,
   configId: string,
   readsEndAt: number,
+  firstReadStragglers: PostedRankCheckTask[] = [],
 ): Promise<void> {
   const tasks = expandToTaskInputs(ctx.keywords, ctx.devices);
-  let { pairs, canReadAgain } = await pgStep(
+  const readClock = () => ({
+    canReadAgain: Date.now() < readsEndAt,
+    canFinishReads: Date.now() < readsEndAt + OWED_READS_GRACE_MS,
+  });
+  let stragglers = firstReadStragglers;
+  let { pairs, canReadAgain, canFinishReads } = await pgStep(
     step,
     "find-reads",
     COLLECT_STEP_CONFIG,
     async () => ({
-      pairs: await loadFirstReads(ctx.runId, tasks),
-      canReadAgain: Date.now() < readsEndAt,
+      pairs: await loadFirstReads(
+        ctx.runId,
+        tasks,
+        new Set(firstReadStragglers.map(key)),
+      ),
+      ...readClock(),
     }),
   );
 
-  for (let read = 2; read <= MAX_READS_PER_CHECK && canReadAgain; read++) {
+  for (let read = 2; ; ) {
     const readPairs = pairs;
-    const toRead = tasks.filter((_, index) =>
-      needsAnotherRead(readPairs[index]),
-    );
-    if (toRead.length === 0) break;
+    const carried = stragglers;
+    const waiting = new Set(carried.map(key));
+    // Past the window, only the reads every pair is owed.
+    const isOwedOnly = !canReadAgain;
+    const wantsRead = (pair: PairReads) =>
+      isOwedOnly
+        ? canFinishReads && pair.reads.length < MIN_READS_PER_CHECK
+        : needsAnotherRead(pair);
+    const toRead =
+      read <= MAX_READS_PER_CHECK
+        ? tasks.filter(
+            (task, index) =>
+              wantsRead(readPairs[index]) && !waiting.has(key(task)),
+          )
+        : [];
+    if (toRead.length === 0 && carried.length === 0) break;
     console.log(
-      `[rank-check] ${ctx.runId} read ${read}: ${toRead.length} check(s)`,
+      `[rank-check] ${ctx.runId} read ${read}: ${toRead.length} check(s), ${carried.length} still queued`,
     );
-    const label = `read-${read}-`;
-    const { collected } = await runQueuedTasks(step, ctx, toRead, label);
-    ({ pairs, canReadAgain } = await pgStep(
+    // With nothing to post, this only waits for the tasks still queued. It
+    // never moves on, so the next pass posts read `read` or ends: no label
+    // is used twice. Nor does the last read, which has no next one.
+    const isRead = toRead.length > 0;
+    const label = isRead ? `read-${read}-` : `read-${read}-queued-`;
+    const outcome = await runQueuedTasks(step, ctx, toRead, label, {
+      carried,
+      pollIntervals:
+        isRead && isOwedOnly ? OWED_READ_POLL_INTERVALS : QUEUED_POLL_INTERVALS,
+      moveOnUntil:
+        isRead && !isOwedOnly && read < MAX_READS_PER_CHECK
+          ? readsEndAt
+          : undefined,
+    });
+    stragglers = outcome.stragglers;
+    const polled = new Set([...waiting, ...toRead.map(key)]);
+    const queued = new Set(stragglers.map(key));
+    ({ pairs, canReadAgain, canFinishReads } = await pgStep(
       step,
       `${label}save`,
       COLLECT_STEP_CONFIG,
       async () => ({
-        pairs: await saveReads(ctx.runId, tasks, readPairs, collected),
-        canReadAgain: Date.now() < readsEndAt,
+        pairs: await saveReads(ctx.runId, tasks, readPairs, {
+          polled,
+          queued,
+          collected: outcome.collected,
+        }),
+        ...readClock(),
       }),
     ));
+    if (isRead) read++;
   }
 
   const finalPairs = pairs;

@@ -1,7 +1,9 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/db";
-import { rankCheckRuns, rankSnapshots } from "@/db/schema";
+import { rankCheckRuns, rankSnapshots, rankTrackingConfigs } from "@/db/schema";
+import { toRankTrackingTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
+import { devicesCount } from "@/shared/rank-tracking";
 import { executeInBatches } from "@/db/runBatch";
 
 // ---------------------------------------------------------------------------
@@ -88,6 +90,34 @@ export async function getActiveRunForConfig(configId: string) {
     )
     .limit(1);
   return rows[0] ?? null;
+}
+
+/**
+ * Task units (keywords × devices) of every check still pending or running,
+ * across all organizations. Runs started before `since` are left out: a stuck
+ * run stays "running" until its tracker is checked again.
+ */
+export async function getTaskUnitsInFlight(since: Date) {
+  const runs = await db
+    .select({
+      keywordsTotal: rankCheckRuns.keywordsTotal,
+      devices: rankTrackingConfigs.devices,
+    })
+    .from(rankCheckRuns)
+    .innerJoin(
+      rankTrackingConfigs,
+      eq(rankCheckRuns.configId, rankTrackingConfigs.id),
+    )
+    .where(
+      and(
+        inArray(rankCheckRuns.status, ["pending", "running"]),
+        gte(rankCheckRuns.startedAt, toRankTrackingTimestamp(since)),
+      ),
+    );
+  return runs.reduce(
+    (units, run) => units + run.keywordsTotal * devicesCount(run.devices),
+    0,
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CircleSlash } from "lucide-react";
 import { sort } from "remeda";
 import type { RankPositionMatrixCell } from "@/serverFunctions/rank-tracking";
 import { EmptyState } from "@/client/components/EmptyState";
 import { Button } from "@/client/components/ui/button";
+import { TablePagination } from "@/client/components/table/TablePagination";
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ export function RankTrackingHistoryMatrix({
   onClearFilters: () => void;
 }) {
   const { runs, cellByKeyword } = useMemo(() => buildMatrix(cells), [cells]);
+  const [page, setPage] = useState(1);
 
   // The History view is only offered once the matrix has loaded at least two
   // runs, so only filters can leave this empty.
@@ -71,40 +73,53 @@ export function RankTrackingHistoryMatrix({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {keywords.map((kw) => {
-            const byRun = cellByKeyword.get(kw.trackingKeywordId);
-            return (
-              <TableRow key={kw.trackingKeywordId}>
-                <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap">
-                  {kw.keyword}
-                </TableCell>
-                {runs.map((r, i) => {
-                  // No cell at all means the keyword wasn't tracked yet.
-                  const cell = byRun?.get(r.runId);
-                  const notChecked = cell?.checked === false;
-                  const position = cell?.position ?? null;
-                  const previous =
-                    i > 0
-                      ? (byRun?.get(runs[i - 1].runId)?.position ?? null)
-                      : undefined;
-                  return (
-                    <TableCell key={r.runId} className="text-right">
-                      {notChecked ? (
-                        <NotCheckedCell />
-                      ) : (
-                        <MatrixCell position={position} previous={previous} />
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            );
-          })}
+          {keywords
+            .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+            .map((kw) => {
+              const byRun = cellByKeyword.get(kw.trackingKeywordId);
+              return (
+                <TableRow key={kw.trackingKeywordId}>
+                  <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap">
+                    {kw.keyword}
+                  </TableCell>
+                  {runs.map((r, i) => {
+                    // No cell at all means the keyword wasn't tracked yet.
+                    const cell = byRun?.get(r.runId);
+                    const notChecked = cell?.checked === false;
+                    const position = cell?.position ?? null;
+                    const previous =
+                      i > 0
+                        ? (byRun?.get(runs[i - 1].runId)?.position ?? null)
+                        : undefined;
+                    return (
+                      <TableCell key={r.runId} className="text-right">
+                        {notChecked ? (
+                          <NotCheckedCell />
+                        ) : (
+                          <MatrixCell position={position} previous={previous} />
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
         </TableBody>
       </Table>
+      {keywords.length > PAGE_SIZE ? (
+        <TablePagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          totalCount={keywords.length}
+          onPageChange={setPage}
+        />
+      ) : null}
     </TableCard>
   );
 }
+
+/** A tracker holds thousands of keywords, too many rows to draw at once. */
+const PAGE_SIZE = 100;
 
 function NotCheckedCell() {
   return (

@@ -354,6 +354,7 @@ export function RankTrackingDomainDetail({
                   key={defaultSortId}
                   totalCount={results.rows.length}
                   rows={filtered}
+                  pageResetKey={JSON.stringify(filters)}
                   showDesktop={showDesktop}
                   showMobile={showMobile}
                   sorting={

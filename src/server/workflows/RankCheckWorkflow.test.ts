@@ -127,6 +127,10 @@ function runWorkflow(
   );
 }
 
+beforeEach(() => {
+  mocks.runQueuedCheck.mockResolvedValue({ stragglers: [], timedOut: false });
+});
+
 describe("rank check workflow credit ceiling", () => {
   beforeEach(() => {
     mocks.getConfigById.mockResolvedValue({ isActive: true });
@@ -215,6 +219,7 @@ describe("rank check workflow credit ceiling", () => {
     expect(mocks.runQueuedCheck).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ keywords: keywords(count) }),
+      expect.any(Number),
     );
   });
 });
@@ -247,7 +252,10 @@ describe("rank check finalization", () => {
   });
 
   it("says the provider was delayed when no task left its queue", async () => {
-    mocks.runQueuedCheck.mockResolvedValueOnce(true);
+    mocks.runQueuedCheck.mockResolvedValueOnce({
+      stragglers: [],
+      timedOut: true,
+    });
 
     await runWorkflow({});
 
