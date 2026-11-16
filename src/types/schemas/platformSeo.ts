@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  PS_ARTICLE_MAX_CHARS,
+  PS_ARTICLE_STATUSES,
   PS_PLATFORM_DECISIONS,
   PS_PLATFORM_STATUSES,
   PS_TOPIC_STATUSES,
@@ -49,6 +51,18 @@ export const psUpdateTopicSchema = psTopicSchema.extend({
   angle: topicAngleSchema.nullable().optional(),
   status: z.enum(PS_TOPIC_STATUSES).optional(),
   primaryKeyword: z.string().trim().min(1).max(200).optional(),
+});
+
+// Articles
+const articleTextSchema = {
+  title: z.string().trim().min(1).max(200),
+  body: z.string().max(PS_ARTICLE_MAX_CHARS),
+};
+
+export const psSaveArticleSchema = psTopicSchema.extend(articleTextSchema);
+
+export const psArticleStatusSchema = psTopicSchema.extend({
+  status: z.enum(PS_ARTICLE_STATUSES),
 });
 
 // Platform discovery

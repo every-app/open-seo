@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireProjectContext } from "./middleware";
 import { ExpandService } from "@/server/features/platform-seo/services/ExpandService";
 import { PlatformDiscoveryService } from "@/server/features/platform-seo/services/PlatformDiscoveryService";
+import { ArticleService } from "@/server/features/platform-seo/services/ArticleService";
 import { TopicService } from "@/server/features/platform-seo/services/TopicService";
 import {
+  psArticleStatusSchema,
   psCreateTopicSchema,
   psFindPlatformsSchema,
   psNewTopicSchema,
@@ -12,6 +14,7 @@ import {
   psProjectSchema,
   psSetAffiliateProgramSchema,
   psPullSchema,
+  psSaveArticleSchema,
   psSetPlatformStatusSchema,
   psStartPullSchema,
   psTopicSchema,
@@ -141,6 +144,64 @@ export const generateTopicBrief = createServerFn({ method: "POST" })
     TopicService.generateBrief({
       projectId: context.projectId,
       topicId: data.topicId,
+      customer: context,
+    }),
+  );
+
+// ---------------------------------------------------------------------------
+// Writing hub: one canonical article per topic
+// ---------------------------------------------------------------------------
+
+export const getArticleEditor = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psTopicSchema)
+  .handler(({ data, context }) =>
+    ArticleService.getEditor(context.projectId, data.topicId),
+  );
+
+export const saveArticle = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psSaveArticleSchema)
+  .handler(({ data, context }) =>
+    ArticleService.saveArticle({
+      projectId: context.projectId,
+      topicId: data.topicId,
+      title: data.title,
+      body: data.body,
+    }),
+  );
+
+export const setArticleStatus = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psArticleStatusSchema)
+  .handler(({ data, context }) =>
+    ArticleService.setArticleStatus({
+      projectId: context.projectId,
+      topicId: data.topicId,
+      status: data.status,
+    }),
+  );
+
+export const draftArticle = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psTopicSchema)
+  .handler(({ data, context }) =>
+    ArticleService.draftArticle({
+      projectId: context.projectId,
+      topicId: data.topicId,
+      customer: context,
+    }),
+  );
+
+export const humanizeArticle = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psSaveArticleSchema)
+  .handler(({ data, context }) =>
+    ArticleService.humanizeArticle({
+      projectId: context.projectId,
+      topicId: data.topicId,
+      title: data.title,
+      body: data.body,
       customer: context,
     }),
   );

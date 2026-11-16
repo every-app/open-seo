@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { TopicDetailPage } from "@/client/features/platform-seo/topics/TopicDetailPage";
 import { pageHead } from "@/client/lib/pageHead";
 
-export const Route = createFileRoute("/_app/p/$projectId/topics/$topicId")({
+export const Route = createFileRoute("/_app/p/$projectId/topics/$topicId/")({
   head: () => pageHead("Topic"),
   component: TopicRoute,
 });

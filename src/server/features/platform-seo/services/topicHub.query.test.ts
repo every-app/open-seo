@@ -10,10 +10,12 @@ import {
   it,
   vi,
 } from "vitest";
+import type * as ArticleModule from "./ArticleService";
 import type * as ServiceModule from "./TopicService";
 
 // Real in-memory SQLite: topics snapshot cluster keywords and join metrics on
-// their own market, which mocked builder chains can't verify.
+// their own market, and articles move their topic's status, which mocked
+// builder chains can't verify.
 
 const generateStructured = vi.fn();
 vi.mock("cloudflare:workers", () => ({ env: { DATABASE_PROVIDER: "d1" } }));
@@ -44,6 +46,7 @@ const customer = {
 
 let client: Client;
 let TopicService: typeof ServiceModule.TopicService;
+let ArticleService: typeof ArticleModule.ArticleService;
 
 beforeAll(async () => {
   client = createClient({ url: "file::memory:" });
@@ -57,7 +60,11 @@ beforeAll(async () => {
     withPgClient: passthrough,
   }));
 
-  const migration = ["0072_platform_seo_phase1.sql", "0075_platform_topics.sql"]
+  const migration = [
+    "0072_platform_seo_phase1.sql",
+    "0075_platform_topics.sql",
+    "0076_platform_articles.sql",
+  ]
     .map((file) =>
       readFileSync(
         new URL(`../../../../../drizzle/sqlite/${file}`, import.meta.url),
@@ -76,6 +83,7 @@ beforeAll(async () => {
   `);
 
   ({ TopicService } = await import("./TopicService"));
+  ({ ArticleService } = await import("./ArticleService"));
 });
 
 afterAll(() => {
@@ -200,5 +208,104 @@ describe("TopicService", () => {
         primaryKeyword: "something else",
       }),
     ).rejects.toThrow("primary keyword");
+  });
+});
+
+describe("ArticleService", () => {
+  async function topicWithArticle(body: string) {
+    const { topicId } = await TopicService.createTopicFromCluster({
+      projectId: "p-a",
+      clusterId: "c1",
+    });
+    await ArticleService.saveArticle({
+      projectId: "p-a",
+      topicId,
+      title: "Parasite SEO",
+      body,
+    });
+    return topicId;
+  }
+  const topicStatus = async (topicId: string) =>
+    (await TopicService.getTopic("p-a", topicId)).status;
+
+  it("keeps article and topic status in step, but never pulls a published topic back", async () => {
+    const topicId = await topicWithArticle("Some text.");
+    await ArticleService.setArticleStatus({
+      projectId: "p-a",
+      topicId,
+      status: "ready",
+    });
+    expect(await topicStatus(topicId)).toBe("ready");
+    await ArticleService.setArticleStatus({
+      projectId: "p-a",
+      topicId,
+      status: "draft",
+    });
+    expect(await topicStatus(topicId)).toBe("drafting");
+
+    // Moving the topic on the board moves the article with it.
+    await TopicService.updateTopic({
+      projectId: "p-a",
+      topicId,
+      status: "ready",
+    });
+    const { article } = await ArticleService.getEditor("p-a", topicId);
+    expect(article?.status).toBe("ready");
+
+    await TopicService.updateTopic({
+      projectId: "p-a",
+      topicId,
+      status: "published",
+    });
+    await ArticleService.setArticleStatus({
+      projectId: "p-a",
+      topicId,
+      status: "draft",
+    });
+    expect(await topicStatus(topicId)).toBe("published");
+  });
+
+  it("keeps the saved article when a humanized rewrite comes back cut short", async () => {
+    const body = "word ".repeat(100).trim();
+    const topicId = await topicWithArticle(body);
+    generateStructured.mockResolvedValue({ markdown: "word ".repeat(40) });
+
+    const result = await ArticleService.humanizeArticle({
+      projectId: "p-a",
+      topicId,
+      title: "Parasite SEO",
+      body,
+      customer,
+    });
+    expect(result).toEqual({ outcome: "too_short" });
+    const { article } = await ArticleService.getEditor("p-a", topicId);
+    expect(article?.bodyMarkdown).toBe(body);
+  });
+
+  it("keeps an article inside its topic's project", async () => {
+    const topicId = await topicWithArticle("Mine.");
+    await expect(ArticleService.getEditor("p-b", topicId)).rejects.toThrow(
+      "NOT_FOUND",
+    );
+    await expect(
+      ArticleService.saveArticle({
+        projectId: "p-b",
+        topicId,
+        title: "Theirs",
+        body: "Theirs.",
+      }),
+    ).rejects.toThrow("NOT_FOUND");
+    await expect(
+      ArticleService.humanizeArticle({
+        projectId: "p-b",
+        topicId,
+        title: "Theirs",
+        body: "Theirs.",
+        customer,
+      }),
+    ).rejects.toThrow("NOT_FOUND");
+    expect(generateStructured).not.toHaveBeenCalled();
+    const { article } = await ArticleService.getEditor("p-a", topicId);
+    expect(article?.bodyMarkdown).toBe("Mine.");
   });
 });

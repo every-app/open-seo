@@ -80,10 +80,11 @@ import { Route as AppPProjectIdSettingsIndexRouteImport } from './routes/_app/p/
 import { Route as AppPProjectIdSettingsContextRouteImport } from './routes/_app/p/$projectId/settings/context'
 import { Route as AppPProjectIdSettingsIntegrationsRouteImport } from './routes/_app/p/$projectId/settings/integrations'
 import { Route as AppPProjectIdTopicsIndexRouteImport } from './routes/_app/p/$projectId/topics/index'
-import { Route as AppPProjectIdTopicsTopicIdRouteImport } from './routes/_app/p/$projectId/topics/$topicId'
 import { Route as ReportMapGrantZXYRouteImport } from './routes/report-map/$grant/$z/$x/$y'
 import { Route as AppPProjectIdAiVisibilityPromptsPromptIdRouteImport } from './routes/_app/p/$projectId/ai-visibility/prompts/$promptId'
 import { Route as AppPProjectIdAuditIssuesResultIdRouteImport } from './routes/_app/p/$projectId/audit/issues/$resultId'
+import { Route as AppPProjectIdTopicsTopicIdIndexRouteImport } from './routes/_app/p/$projectId/topics/$topicId/index'
+import { Route as AppPProjectIdTopicsTopicIdWriteRouteImport } from './routes/_app/p/$projectId/topics/$topicId/write'
 import { Route as ApiLocalSeoMapsProjectIdZXYRouteImport } from './routes/api/local-seo/maps/$projectId/$z/$x/$y'
 
 const AppRouteRoute = AppRouteRouteImport.update({
@@ -460,12 +461,6 @@ const AppPProjectIdTopicsIndexRoute =
     path: '/topics/',
     getParentRoute: () => AppPProjectIdRouteRoute,
   } as any)
-const AppPProjectIdTopicsTopicIdRoute =
-  AppPProjectIdTopicsTopicIdRouteImport.update({
-    id: '/topics/$topicId',
-    path: '/topics/$topicId',
-    getParentRoute: () => AppPProjectIdRouteRoute,
-  } as any)
 const ReportMapGrantZXYRoute = ReportMapGrantZXYRouteImport.update({
   id: '/report-map/$grant/$z/$x/$y',
   path: '/report-map/$grant/$z/$x/$y',
@@ -481,6 +476,18 @@ const AppPProjectIdAuditIssuesResultIdRoute =
   AppPProjectIdAuditIssuesResultIdRouteImport.update({
     id: '/audit/issues/$resultId',
     path: '/audit/issues/$resultId',
+    getParentRoute: () => AppPProjectIdRouteRoute,
+  } as any)
+const AppPProjectIdTopicsTopicIdIndexRoute =
+  AppPProjectIdTopicsTopicIdIndexRouteImport.update({
+    id: '/topics/$topicId/',
+    path: '/topics/$topicId/',
+    getParentRoute: () => AppPProjectIdRouteRoute,
+  } as any)
+const AppPProjectIdTopicsTopicIdWriteRoute =
+  AppPProjectIdTopicsTopicIdWriteRouteImport.update({
+    id: '/topics/$topicId/write',
+    path: '/topics/$topicId/write',
     getParentRoute: () => AppPProjectIdRouteRoute,
   } as any)
 const ApiLocalSeoMapsProjectIdZXYRoute =
@@ -552,7 +559,6 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
-  '/p/$projectId/topics/$topicId': typeof AppPProjectIdTopicsTopicIdRoute
   '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/p/$projectId/ai-visibility/': typeof AppPProjectIdAiVisibilityIndexRoute
   '/p/$projectId/audit/': typeof AppPProjectIdAuditIndexRoute
@@ -563,6 +569,8 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/topics/': typeof AppPProjectIdTopicsIndexRoute
   '/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
+  '/p/$projectId/topics/$topicId/write': typeof AppPProjectIdTopicsTopicIdWriteRoute
+  '/p/$projectId/topics/$topicId/': typeof AppPProjectIdTopicsTopicIdIndexRoute
   '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
 export interface FileRoutesByTo {
@@ -621,7 +629,6 @@ export interface FileRoutesByTo {
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
-  '/p/$projectId/topics/$topicId': typeof AppPProjectIdTopicsTopicIdRoute
   '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/p/$projectId/ai-visibility': typeof AppPProjectIdAiVisibilityIndexRoute
   '/p/$projectId/audit': typeof AppPProjectIdAuditIndexRoute
@@ -632,6 +639,8 @@ export interface FileRoutesByTo {
   '/p/$projectId/topics': typeof AppPProjectIdTopicsIndexRoute
   '/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
+  '/p/$projectId/topics/$topicId/write': typeof AppPProjectIdTopicsTopicIdWriteRoute
+  '/p/$projectId/topics/$topicId': typeof AppPProjectIdTopicsTopicIdIndexRoute
   '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
 export interface FileRoutesById {
@@ -700,7 +709,6 @@ export interface FileRoutesById {
   '/_app/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/_app/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/_app/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
-  '/_app/p/$projectId/topics/$topicId': typeof AppPProjectIdTopicsTopicIdRoute
   '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/_app/p/$projectId/ai-visibility/': typeof AppPProjectIdAiVisibilityIndexRoute
   '/_app/p/$projectId/audit/': typeof AppPProjectIdAuditIndexRoute
@@ -711,6 +719,8 @@ export interface FileRoutesById {
   '/_app/p/$projectId/topics/': typeof AppPProjectIdTopicsIndexRoute
   '/_app/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/_app/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
+  '/_app/p/$projectId/topics/$topicId/write': typeof AppPProjectIdTopicsTopicIdWriteRoute
+  '/_app/p/$projectId/topics/$topicId/': typeof AppPProjectIdTopicsTopicIdIndexRoute
   '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
 export interface FileRouteTypes {
@@ -777,7 +787,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/reports/templates'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
-    | '/p/$projectId/topics/$topicId'
     | '/report-map/$grant/$z/$x/$y'
     | '/p/$projectId/ai-visibility/'
     | '/p/$projectId/audit/'
@@ -788,6 +797,8 @@ export interface FileRouteTypes {
     | '/p/$projectId/topics/'
     | '/p/$projectId/ai-visibility/prompts/$promptId'
     | '/p/$projectId/audit/issues/$resultId'
+    | '/p/$projectId/topics/$topicId/write'
+    | '/p/$projectId/topics/$topicId/'
     | '/api/local-seo/maps/$projectId/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -846,7 +857,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/reports/templates'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
-    | '/p/$projectId/topics/$topicId'
     | '/report-map/$grant/$z/$x/$y'
     | '/p/$projectId/ai-visibility'
     | '/p/$projectId/audit'
@@ -857,6 +867,8 @@ export interface FileRouteTypes {
     | '/p/$projectId/topics'
     | '/p/$projectId/ai-visibility/prompts/$promptId'
     | '/p/$projectId/audit/issues/$resultId'
+    | '/p/$projectId/topics/$topicId/write'
+    | '/p/$projectId/topics/$topicId'
     | '/api/local-seo/maps/$projectId/$z/$x/$y'
   id:
     | '__root__'
@@ -924,7 +936,6 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/reports/templates'
     | '/_app/p/$projectId/settings/context'
     | '/_app/p/$projectId/settings/integrations'
-    | '/_app/p/$projectId/topics/$topicId'
     | '/report-map/$grant/$z/$x/$y'
     | '/_app/p/$projectId/ai-visibility/'
     | '/_app/p/$projectId/audit/'
@@ -935,6 +946,8 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/topics/'
     | '/_app/p/$projectId/ai-visibility/prompts/$promptId'
     | '/_app/p/$projectId/audit/issues/$resultId'
+    | '/_app/p/$projectId/topics/$topicId/write'
+    | '/_app/p/$projectId/topics/$topicId/'
     | '/api/local-seo/maps/$projectId/$z/$x/$y'
   fileRoutesById: FileRoutesById
 }
@@ -1466,13 +1479,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdTopicsIndexRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
-    '/_app/p/$projectId/topics/$topicId': {
-      id: '/_app/p/$projectId/topics/$topicId'
-      path: '/topics/$topicId'
-      fullPath: '/p/$projectId/topics/$topicId'
-      preLoaderRoute: typeof AppPProjectIdTopicsTopicIdRouteImport
-      parentRoute: typeof AppPProjectIdRouteRoute
-    }
     '/report-map/$grant/$z/$x/$y': {
       id: '/report-map/$grant/$z/$x/$y'
       path: '/report-map/$grant/$z/$x/$y'
@@ -1492,6 +1498,20 @@ declare module '@tanstack/react-router' {
       path: '/audit/issues/$resultId'
       fullPath: '/p/$projectId/audit/issues/$resultId'
       preLoaderRoute: typeof AppPProjectIdAuditIssuesResultIdRouteImport
+      parentRoute: typeof AppPProjectIdRouteRoute
+    }
+    '/_app/p/$projectId/topics/$topicId/': {
+      id: '/_app/p/$projectId/topics/$topicId/'
+      path: '/topics/$topicId'
+      fullPath: '/p/$projectId/topics/$topicId/'
+      preLoaderRoute: typeof AppPProjectIdTopicsTopicIdIndexRouteImport
+      parentRoute: typeof AppPProjectIdRouteRoute
+    }
+    '/_app/p/$projectId/topics/$topicId/write': {
+      id: '/_app/p/$projectId/topics/$topicId/write'
+      path: '/topics/$topicId/write'
+      fullPath: '/p/$projectId/topics/$topicId/write'
+      preLoaderRoute: typeof AppPProjectIdTopicsTopicIdWriteRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
     '/api/local-seo/maps/$projectId/$z/$x/$y': {
@@ -1606,11 +1626,12 @@ interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdIndexRoute: typeof AppPProjectIdIndexRoute
   AppPProjectIdReportsReportIdRoute: typeof AppPProjectIdReportsReportIdRoute
   AppPProjectIdReportsTemplatesRoute: typeof AppPProjectIdReportsTemplatesRoute
-  AppPProjectIdTopicsTopicIdRoute: typeof AppPProjectIdTopicsTopicIdRoute
   AppPProjectIdAuditIndexRoute: typeof AppPProjectIdAuditIndexRoute
   AppPProjectIdReportsIndexRoute: typeof AppPProjectIdReportsIndexRoute
   AppPProjectIdTopicsIndexRoute: typeof AppPProjectIdTopicsIndexRoute
   AppPProjectIdAuditIssuesResultIdRoute: typeof AppPProjectIdAuditIssuesResultIdRoute
+  AppPProjectIdTopicsTopicIdWriteRoute: typeof AppPProjectIdTopicsTopicIdWriteRoute
+  AppPProjectIdTopicsTopicIdIndexRoute: typeof AppPProjectIdTopicsTopicIdIndexRoute
 }
 
 const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
@@ -1631,11 +1652,12 @@ const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdIndexRoute: AppPProjectIdIndexRoute,
   AppPProjectIdReportsReportIdRoute: AppPProjectIdReportsReportIdRoute,
   AppPProjectIdReportsTemplatesRoute: AppPProjectIdReportsTemplatesRoute,
-  AppPProjectIdTopicsTopicIdRoute: AppPProjectIdTopicsTopicIdRoute,
   AppPProjectIdAuditIndexRoute: AppPProjectIdAuditIndexRoute,
   AppPProjectIdReportsIndexRoute: AppPProjectIdReportsIndexRoute,
   AppPProjectIdTopicsIndexRoute: AppPProjectIdTopicsIndexRoute,
   AppPProjectIdAuditIssuesResultIdRoute: AppPProjectIdAuditIssuesResultIdRoute,
+  AppPProjectIdTopicsTopicIdWriteRoute: AppPProjectIdTopicsTopicIdWriteRoute,
+  AppPProjectIdTopicsTopicIdIndexRoute: AppPProjectIdTopicsTopicIdIndexRoute,
 }
 
 const AppPProjectIdRouteRouteWithChildren =

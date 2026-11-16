@@ -10,6 +10,7 @@ import { projects } from "./app.schema";
 import { organization } from "./better-auth-schema";
 import {
   PS_AI_VERDICTS,
+  PS_ARTICLE_STATUSES,
   PS_FUNNEL_STAGES,
   PS_INTENTS,
   PS_KEYWORD_GROUPS,
@@ -210,6 +211,24 @@ export const psTopicOutlineSections = sqliteTable(
       table.position,
     ),
   ],
+);
+
+// The canonical article for a topic, written in Markdown. One per topic; the
+// syndicated copies (later) are derived from it.
+export const psArticles = sqliteTable(
+  "ps_articles",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => psTopics.id, { onDelete: "cascade" }),
+    canonicalTitle: text("canonical_title").notNull(),
+    bodyMarkdown: text("body_markdown").notNull(),
+    status: text("status", { enum: PS_ARTICLE_STATUSES }).notNull(),
+    createdAt: text("created_at").notNull().default(isoNow),
+    updatedAt: text("updated_at").notNull().default(isoNow),
+  },
+  (table) => [uniqueIndex("ps_articles_topic_idx").on(table.topicId)],
 );
 
 // ----------------------------------------------------------------------------

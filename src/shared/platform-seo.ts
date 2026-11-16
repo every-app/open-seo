@@ -33,6 +33,13 @@ export const PS_TOPIC_STATUSES = [
 ] as const;
 export type PsTopicStatus = (typeof PS_TOPIC_STATUSES)[number];
 
+// The canonical article for a topic. Marking it ready moves the topic to Ready.
+export const PS_ARTICLE_STATUSES = ["draft", "ready"] as const;
+export type PsArticleStatus = (typeof PS_ARTICLE_STATUSES)[number];
+
+// Long enough for any article; keeps one row well inside D1's size limits.
+export const PS_ARTICLE_MAX_CHARS = 100_000;
+
 // Platform discovery: sites found ranking in Google that may host our content.
 // pending = waiting for the user; the AI's first pass is advisory only. Tools
 // and sponsorship marketplaces are kept as their own directories, and never

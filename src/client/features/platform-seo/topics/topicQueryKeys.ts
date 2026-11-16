@@ -6,4 +6,6 @@ export const topicQueryKeys = {
   // shows as pending wherever the topic appears.
   brief: (projectId: string, topicId: string) =>
     ["platformSeo", projectId, "topics", topicId, "brief"] as const,
+  article: (projectId: string, topicId: string) =>
+    ["platformSeo", projectId, "topics", topicId, "article"] as const,
 };

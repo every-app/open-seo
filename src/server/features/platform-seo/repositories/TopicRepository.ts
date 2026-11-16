@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { runBatch } from "@/db/runBatch";
 import {
   keywordMetrics,
+  psArticles,
   psClusterKeywords,
   psClusters,
   psKeywordPulls,
@@ -102,6 +103,16 @@ async function getTopic(projectId: string, topicId: string) {
   };
 }
 
+// The bare topic row, for checks that it exists in this project.
+async function getTopicRow(projectId: string, topicId: string) {
+  const [row] = await db
+    .select()
+    .from(psTopics)
+    .where(topicScope(projectId, topicId))
+    .limit(1);
+  return row ?? null;
+}
+
 async function findTopicIdByCluster(projectId: string, clusterId: string) {
   const [row] = await db
     .select({ id: psTopics.id })
@@ -168,12 +179,30 @@ async function updateTopic(
     primaryKeyword?: string | null;
   },
 ) {
-  const rows = await db
-    .update(psTopics)
-    .set({ ...patch, updatedAt: new Date().toISOString() })
-    .where(topicScope(projectId, topicId))
-    .returning({ id: psTopics.id });
-  return rows.length > 0;
+  if (!(await getTopicRow(projectId, topicId))) return false;
+  const status = patch.status;
+  // Moving a topic on the board moves its article too, so the editor and the
+  // board never disagree about whether it is ready.
+  await runBatch((tx) => [
+    tx
+      .update(psTopics)
+      .set({ ...patch, updatedAt: new Date().toISOString() })
+      .where(topicScope(projectId, topicId)),
+    ...(status
+      ? [
+          tx
+            .update(psArticles)
+            .set({
+              status:
+                status === "ready" || status === "published"
+                  ? "ready"
+                  : "draft",
+            })
+            .where(eq(psArticles.topicId, topicId)),
+        ]
+      : []),
+  ]);
+  return true;
 }
 
 async function deleteTopic(projectId: string, topicId: string) {
@@ -261,6 +290,7 @@ async function saveBrief(params: {
 export const TopicRepository = {
   listTopics,
   getTopic,
+  getTopicRow,
   findTopicIdByCluster,
   listClusterKeywords,
   insertTopic,

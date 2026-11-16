@@ -5,7 +5,13 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, PenLine, SquareKanban } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  PenLine,
+  SquareKanban,
+} from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/client/components/EmptyState";
 import { PageHeader } from "@/client/components/PageHeader";
@@ -200,7 +206,23 @@ function TopicCard({ projectId, topic }: { projectId: string; topic: Topic }) {
               <ChevronRight />
             </Button>
           ) : null}
-          {topic.hasBrief ? null : (
+          {topic.hasBrief ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-auto"
+              nativeButton={false}
+              render={
+                <Link
+                  to="/p/$projectId/topics/$topicId/write"
+                  params={{ projectId, topicId: topic.id }}
+                />
+              }
+            >
+              <FileText />
+              Write
+            </Button>
+          ) : (
             <Button
               size="sm"
               className="ml-auto"
