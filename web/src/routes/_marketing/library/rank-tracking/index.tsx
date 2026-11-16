@@ -171,9 +171,9 @@ function RankTrackingLibraryPage() {
           (manual, daily, weekly, or monthly). Each check records, per keyword
           and device, the position, the previous position, the URL that ranked,
           and the SERP features on the page. A tracker holds up to 1,000
-          keywords (2,500 on the Pro and Agency plans), and a project can hold
-          up to 500 trackers, which is how you track several locations for one
-          business.
+          keywords (2,500 on the Pro plan, 5,000 on the Agency plan), and a
+          project can hold up to 500 trackers, which is how you track several
+          locations for one business.
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           Creating a tracker and adding keywords cost nothing. Checks cost

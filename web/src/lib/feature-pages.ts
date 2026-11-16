@@ -730,7 +730,7 @@ export const featurePages = {
     contextSections: [
       {
         title: "Schedules, limits and what a check costs",
-        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords (2,500 on the Pro and Agency plans), on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. Every check reads each keyword three to six times, because one read of Google can't be trusted, and the app shows the most it can cost. 100 keywords on one device, checked weekly, costs $3 to $6 a month; on both devices, $6 to $12. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
+        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords (2,500 on the Pro plan, 5,000 on the Agency plan), on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. Every check reads each keyword three to six times, because one read of Google can't be trusted, and the app shows the most it can cost. 100 keywords on one device, checked weekly, costs $3 to $6 a month; on both devices, $6 to $12. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
       },
       {
         title: "Track a city, not just a country",

@@ -19,7 +19,7 @@ Rank tracking checks where your site ranks in Google's results for each keyword 
 4. Click **Add Domain**.
 5. OpenSEO suggests keywords the domain already ranks for, with the top 20 by traffic selected. Click **Save Keywords**, or **Skip** to add your own.
 
-To add keywords later, open the tracker, click **Add Keywords**, and enter one per line. Keywords are saved in lowercase unless you tick **Match case**. A tracker holds up to 1,000 keywords (2,500 on the Pro and Agency plans). New keywords are checked straight away, which uses credits. If a scheduled check is due within the hour, they wait for it instead.
+To add keywords later, open the tracker, click **Add Keywords**, and enter one per line. Keywords are saved in lowercase unless you tick **Match case**. A tracker holds up to 1,000 keywords (2,500 on the Pro plan, 5,000 on the Agency plan). New keywords are checked straight away, which uses credits. If a scheduled check is due within the hour, they wait for it instead.
 
 For help choosing keywords, see [Which keywords to track](/library/rank-tracking/which-keywords-to-track).
 
@@ -81,4 +81,4 @@ For a ranking report template, see [Keyword ranking report](/library/rank-tracki
 
 ## Self-hosting
 
-Self-hosted rank tracking uses your own DataForSEO key, with no plan or credit checks. A tracker holds up to 2,500 keywords. Schedules run the same way. See [Self-hosting](/docs/self-hosting).
+Self-hosted rank tracking uses your own DataForSEO key, with no plan or credit checks. A tracker holds up to 5,000 keywords. Schedules run the same way. See [Self-hosting](/docs/self-hosting).
