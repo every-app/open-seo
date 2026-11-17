@@ -179,10 +179,10 @@ function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
   }
   const key = get(env, "DATAFORSEO_API_KEY");
 
-  if (!key && get(env, "TREG_API_KEY")) {
+  if (!key && get(env, "TREG_API_TOKEN")) {
     items.push({
       key: "dataforseo",
-      name: "TREG_API_KEY",
+      name: "TREG_API_TOKEN",
       level: "ok",
       message: "Set — DataForSEO calls go through treg.",
     });
@@ -195,7 +195,7 @@ function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
       name: "DATAFORSEO_API_KEY",
       level: "warn",
       message:
-        "Not set — all SEO data features will be unavailable until it is (or until TREG_API_KEY is). It is the base64 of your DataForSEO login:password (NOT the dashboard API key). See docs/DATAFORSEO_API_KEY.md.",
+        "Not set — all SEO data features will be unavailable until it is (or until TREG_API_TOKEN is). It is the base64 of your DataForSEO login:password (NOT the dashboard API key). See docs/DATAFORSEO_API_KEY.md.",
     });
     return;
   }

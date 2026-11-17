@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/server/lib/runtime-env", () => ({
   // No DataForSEO key, only a treg key: calls go through treg.
   getOptionalEnvValue: vi.fn(async (name: string) =>
-    name === "TREG_API_KEY" ? "treg-key" : undefined,
+    name === "TREG_API_TOKEN" ? "treg-key" : undefined,
   ),
   getRequiredEnvValue: vi.fn(),
 }));

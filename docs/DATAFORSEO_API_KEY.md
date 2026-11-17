@@ -19,6 +19,6 @@ Set the value as `DATAFORSEO_API_KEY`:
 
 ## No DataForSEO account? Use treg
 
-[treg](https://treg.to) sells DataForSEO calls one at a time from a prepaid balance, so you can skip the DataForSEO signup and its $50 minimum top-up. Create a team at treg.to, copy its API key, and set it as `TREG_API_KEY` instead of `DATAFORSEO_API_KEY` (Docker self-hosting and local development).
+[treg](https://treg.to) sells DataForSEO calls one at a time from a prepaid balance, so you can skip the DataForSEO signup and its $50 minimum top-up. Create a team at treg.to, copy its API token, and set it as `TREG_API_TOKEN` instead of `DATAFORSEO_API_KEY` (Docker self-hosting and local development).
 
 Every OpenSEO feature works through treg. When both keys are set, OpenSEO uses `DATAFORSEO_API_KEY`.
