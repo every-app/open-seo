@@ -62,13 +62,12 @@ For security-conscious setups, two advanced options replace the accounts with yo
 - **Cloudflare Access** in front of the Cloudflare deploy, so Cloudflare checks every request before it reaches OpenSEO. See [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
 - **No sign-in on Docker**, behind Tailscale, a private network or your own authenticating proxy. See [Without sign-in](./docs/SELF_HOSTING_DOCKER.md#without-sign-in-advanced).
 
-Either way, you need a DataForSEO API key to get SEO data, or a [treg](https://treg.to) token if you'd rather not open a DataForSEO account. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
+Either way, you need a DataForSEO API key to get SEO data, or a [treg](https://treg.to) account which also gives access to DataForSEO. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
 
 ## Costs
 
 OpenSEO needs a [DataForSEO](https://dataforseo.com/?aff=255379) API key so that you can get SEO data. You pay them directly when self hosting.
 
-DataForSEO's minimum top-up is $50. To try OpenSEO for less on Docker, use [treg](https://treg.to) instead: a third-party reseller that sells the same DataForSEO calls one at a time from a prepaid balance, at DataForSEO's own rates. It suits trying OpenSEO and light use; for large rank trackers, bring your own DataForSEO key. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md#no-dataforseo-account-use-treg).
 
 See [openseo.so/pricing](https://openseo.so/pricing)
 
