@@ -22,11 +22,11 @@ const QUEUED_BASE_PAGE_COST_USD = 0.0006;
 /** DataForSEO task queue (standard priority): cost of each additional page (75% of base) */
 const QUEUED_EXTRA_PAGE_COST_USD = 0.00045;
 
-/** Reads every rank check gives each keyword/device. */
-export const MIN_READS_PER_CHECK = 3;
-
-/** Reads a keyword/device can get when a read missed it or positions disagree. */
-export const MAX_READS_PER_CHECK = 6;
+/**
+ * Reads a keyword/device can get in one check: the first, and a second when
+ * the first got no page back or missed a keyword that ranked before.
+ */
+export const MAX_READS_PER_CHECK = 2;
 
 /** How long a check takes, shown before and during one. */
 export const RANK_CHECK_DURATION_COPY =
@@ -130,6 +130,14 @@ export function costPerSerpAtDepth(depth: number): number {
   return QUEUED_BASE_PAGE_COST_USD + (pages - 1) * QUEUED_EXTRA_PAGE_COST_USD;
 }
 
+/**
+ * DataForSEO cost for one rank check read: a standard-queue SERP plus the
+ * first-page price resolve_poisoned_results adds to every task.
+ */
+export function costPerRankCheckRead(depth: number): number {
+  return costPerSerpAtDepth(depth) + QUEUED_BASE_PAGE_COST_USD;
+}
+
 export function pagesToDepth(pages: number): number {
   return pages * 10;
 }
@@ -182,7 +190,7 @@ function meteredCost(checkMultipliers: number[], depth: number) {
     const callMultiplier = checkMultipliers
       .slice(offset, offset + MAX_TASKS_PER_POST)
       .reduce((sum, multiplier) => sum + multiplier, 0);
-    const callRawUsd = callMultiplier * costPerSerpAtDepth(depth);
+    const callRawUsd = callMultiplier * costPerRankCheckRead(depth);
     costUsd += applyBillingMarkupUsd(callRawUsd);
     costCredits += creditsForProviderUsd(callRawUsd);
   }

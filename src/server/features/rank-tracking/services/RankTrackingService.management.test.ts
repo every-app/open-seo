@@ -176,13 +176,13 @@ describe("RankTrackingService management invariants", () => {
     await expect(
       RankTrackingService.addKeywords(tracker, ["seo", "technical seo"], {
         kind: "credit_ceiling",
-        maxEstimatedScheduledCheckCredits: 24,
+        maxEstimatedScheduledCheckCredits: 14,
       }),
     ).resolves.toMatchObject({
       added: 2,
       scheduledEstimate: {
         scheduleInterval: "weekly",
-        costCredits: 24,
+        costCredits: 14,
         checksPerMonth: 4,
       },
     });
@@ -209,7 +209,7 @@ describe("RankTrackingService management invariants", () => {
       ["seo", "technical seo"],
       {
         kind: "credit_ceiling",
-        maxEstimatedScheduledCheckCredits: 24,
+        maxEstimatedScheduledCheckCredits: 14,
       },
     ).catch((cause: unknown) => cause);
     expect(error).toBeInstanceOf(Error);
@@ -294,19 +294,19 @@ describe("RankTrackingService management invariants", () => {
 
     const error: unknown = await RankTrackingService.triggerCheck({
       ...run,
-      maxCostCredits: 23,
+      maxCostCredits: 13,
     }).catch((cause: unknown) => cause);
     expect(error).toBeInstanceOf(Error);
     if (!(error instanceof Error) || !("code" in error)) throw error;
     expect(error.code).toBe("VALIDATION_ERROR");
-    expect(error.message).toContain("costs 24 credits");
+    expect(error.message).toContain("costs 14 credits");
     expect(mocks.beginRankCheckRun).not.toHaveBeenCalled();
 
     await expect(
-      RankTrackingService.triggerCheck({ ...run, maxCostCredits: 24 }),
+      RankTrackingService.triggerCheck({ ...run, maxCostCredits: 14 }),
     ).resolves.toEqual({ ok: true, runId: "run_1" });
     expect(mocks.beginRankCheckRun).toHaveBeenCalledWith(
-      expect.objectContaining({ maxCostCredits: 24 }),
+      expect.objectContaining({ maxCostCredits: 14 }),
     );
   });
 

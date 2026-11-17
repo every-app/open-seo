@@ -56,6 +56,7 @@ import {
   AI_RECORD_COST_USD,
 } from "@/shared/ai-visibility";
 import {
+  costPerRankCheckRead,
   costPerSerpAtDepth,
   serpKeywordCostMultiplier,
 } from "@/shared/rank-tracking";
@@ -266,7 +267,12 @@ export const dataforseoPricing = {
     ),
     rankCheckTaskPost: priced(postRankCheckTasks, (input) =>
       input.tasks.reduce(
-        (sum, task) => sum + serpUsd(clampSerpDepth(input.depth), task.keyword),
+        (sum, task) =>
+          sum +
+          costPerRankCheckRead(
+            Math.ceil(clampSerpDepth(input.depth) / 10) * 10,
+          ) *
+            serpKeywordCostMultiplier(task.keyword),
         0,
       ),
     ),

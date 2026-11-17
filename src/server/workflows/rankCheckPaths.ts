@@ -74,7 +74,7 @@ export function expandToTaskInputs(
 // task is free while re-posting it is billed again, so a read gives up on
 // unfinished tasks only after that. Cumulative waits: 4 / 6 / 8 / 10 / 12 / 15 /
 // 20 / 25 / 30 / 45 / 60 minutes.
-export const QUEUED_POLL_INTERVALS: WorkflowSleepDuration[] = [
+const QUEUED_POLL_INTERVALS: WorkflowSleepDuration[] = [
   "4 minutes",
   "2 minutes",
   "2 minutes",
@@ -112,10 +112,10 @@ const TASK_GET_BATCH_MS = 1000;
 const TASK_GETS_PER_COLLECT = 500;
 
 // DataForSEO finishes nearly all of a read's tasks within minutes of each
-// other and a few much later. A read that waited for those would leave a large
-// tracker no time for the reads MIN_READS_PER_CHECK needs, so once this share
-// or less of its tasks is still queued the next read starts and those tasks
-// are collected alongside it. Below 50 tasks the share rounds to none.
+// other and a few much later. A first read that waited for those would hold up
+// a large tracker's second reads, so once this share or less of its tasks is
+// still queued the second read starts and those tasks are collected alongside
+// it. Below 50 tasks the share rounds to none.
 const STRAGGLER_SHARE = 0.02;
 
 // Collect steps may issue hundreds of task_get calls, so they get more room

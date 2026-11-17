@@ -28,18 +28,18 @@ describe("rank tracking cost estimates", () => {
       keywordCount: 104,
       devices: "desktop" as const,
       depth: 10,
-      costUsd: 0.47922,
-      costCredits: 486,
+      costUsd: 0.31948,
+      costCredits: 322,
     },
     {
       keywordCount: 1000,
       devices: "both" as const,
       depth: 40,
-      costUsd: 29.952,
-      costCredits: 30_000,
+      costUsd: 13.056,
+      costCredits: 13_080,
     },
   ])(
-    "matches per-call billing for six queued reads of $keywordCount keywords",
+    "matches per-call billing for two queued reads of $keywordCount keywords",
     ({ keywordCount, devices, depth, costUsd, costCredits }) => {
       expect(
         estimateRankCheckCredits(

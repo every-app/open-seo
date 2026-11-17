@@ -68,7 +68,6 @@ Either way, you need a DataForSEO API key to get SEO data, or a [treg](https://t
 
 OpenSEO needs a [DataForSEO](https://dataforseo.com/?aff=255379) API key so that you can get SEO data. You pay them directly when self hosting.
 
-
 See [openseo.so/pricing](https://openseo.so/pricing)
 
 When you self host, your costs will be slightly lower than the estimates on our website. The way the hosted service makes money is by charging 28% extra for every request we make to DataForSEO.

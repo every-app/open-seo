@@ -730,7 +730,7 @@ export const featurePages = {
     contextSections: [
       {
         title: "Schedules, limits and what a check costs",
-        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords (2,500 on the Pro plan, 5,000 on the Agency plan), on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. Every check reads each keyword three to six times, because one read of Google can't be trusted, and the app shows the most it can cost. 100 keywords on one device, checked weekly, costs $3 to $6 a month; on both devices, $6 to $12. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
+        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords (2,500 on the Pro plan, 5,000 on the Agency plan), on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. Every check catches the incomplete results Google serves some rank trackers and replaces them with the real ones, and reads a keyword a second time when it seems to have dropped out. The app shows the most a check can cost. 100 keywords on one device, checked weekly, costs about $1.30 to $2.60 a month; on both devices, about $2.60 to $5.20. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
       },
       {
         title: "Track a city, not just a country",
@@ -743,9 +743,9 @@ export const featurePages = {
     ],
     contextImage: {
       src: "/features/rank-tracking/openseo-rank-tracker-monthly-cost.png",
-      alt: "Grid of rank tracking costs for one read of 100, 250, 500 and 1,000 keywords on desktop and mobile at top 40. One read per check costs $0.50 to $4.99 a month on a monthly schedule, $2.00 to $19.97 weekly, and $14.98 to $149.76 daily. A check makes three to six reads.",
+      alt: "Grid of rank tracking costs for one read of 100, 250, 500 and 1,000 keywords on desktop and mobile at top 40. One read per check costs $0.50 to $4.99 a month on a monthly schedule, $2.00 to $19.97 weekly, and $14.98 to $149.76 daily.",
       caption:
-        "The cost of one read of each keyword, by keyword count and schedule. A check makes three to six reads, so a month costs three to six times these figures.",
+        "The cost of one read of each keyword, by keyword count and schedule, before the incomplete-results check that every read now includes.",
       width: 1600,
       height: 900,
     },

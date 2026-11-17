@@ -147,7 +147,7 @@ describe("rank check workflow credit ceiling", () => {
   it("rejects a keyword-list race before balance or DataForSEO calls", async () => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(4));
 
-    await expect(runWorkflow({ maxCostCredits: 18 })).rejects.toThrow();
+    await expect(runWorkflow({ maxCostCredits: 10 })).rejects.toThrow();
 
     expect(mocks.autumnCheck).not.toHaveBeenCalled();
     expect(mocks.createDataforseoClient).not.toHaveBeenCalled();
@@ -206,7 +206,7 @@ describe("rank check workflow credit ceiling", () => {
   // callers without a ceiling — every scheduled check — must not be treated
   // as approving zero credits.
   it.each([
-    ["at the approved ceiling", 18, 3],
+    ["at the approved ceiling", 10, 3],
     ["without a ceiling", undefined, 5],
   ])("checks the reloaded list %s", async (_label, maxCostCredits, count) => {
     mocks.getKeywordsForConfig.mockResolvedValue(keywords(count));

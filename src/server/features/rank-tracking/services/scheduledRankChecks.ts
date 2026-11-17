@@ -17,7 +17,7 @@ import { STUCK_RUN_AFTER_MS } from "@/server/lib/startWorkflow";
 // MAX_KEYWORDS_PER_CONFIG × 2 devices = 10,000 units) can never starve. Sized
 // against DataForSEO's requests-per-minute account cap, where task_get polling
 // is the binding term: one call per unit per poll round, rounds wake
-// synchronized per tick, and a unit gets up to six reads, so polling from
+// synchronized per tick, and a unit gets up to two reads, so polling from
 // about six ticks overlaps the */5 cron — a full tick can burst ~500 polls
 // into a single minute, stacking with the rounds of the ticks before it. A
 // config admitted over the budget takes a tick of its own and polls at its own
