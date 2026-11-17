@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { DocsBody } from "fumadocs-ui/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { SiteFooter } from "@/components/site-footer";
-import { BlogLayout, PostDate } from "@/components/blog-layout";
+import { PostDate } from "@/components/post-date";
 import type { ComponentPropsWithoutRef } from "react";
 import { Suspense } from "react";
 import { getBlogPost } from "@/lib/content.functions";
@@ -90,7 +90,7 @@ function BlogPost() {
   };
 
   return (
-    <BlogLayout>
+    <>
       <article className="fd-light mx-auto max-w-3xl px-6 py-12 text-neutral-950 md:py-24">
         <BlogHeader
           title={data.title}
@@ -106,7 +106,7 @@ function BlogPost() {
           <SiteFooter className="text-xs text-neutral-600 [&_a]:transition-colors [&_a]:hover:text-neutral-900" />
         </div>
       </div>
-    </BlogLayout>
+    </>
   );
 }
 

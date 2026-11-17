@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/site-footer";
-import { BlogLayout, PostDate } from "@/components/blog-layout";
+import { PostDate } from "@/components/post-date";
 import { getBlogPosts } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
 
@@ -21,53 +21,51 @@ function BlogIndex() {
   const posts = Route.useLoaderData();
 
   return (
-    <BlogLayout>
-      <div className="mx-auto max-w-5xl px-6 py-12 md:py-24">
-        <p className="text-sm font-medium text-[var(--color-brand-accent)]">
-          Resources
+    <div className="mx-auto max-w-5xl px-6 py-12 md:py-24">
+      <p className="text-sm font-medium text-[var(--color-brand-accent)]">
+        Resources
+      </p>
+      <h1 className="mt-3 text-4xl font-semibold tracking-tight text-neutral-950 md:text-6xl">
+        Blog
+      </h1>
+
+      {posts.length === 0 ? (
+        <p className="mt-8 text-[var(--color-brand-muted)]">
+          No posts yet. Check back soon.
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-neutral-950 md:text-6xl">
-          Blog
-        </h1>
-
-        {posts.length === 0 ? (
-          <p className="mt-8 text-[var(--color-brand-muted)]">
-            No posts yet. Check back soon.
-          </p>
-        ) : (
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {posts.map((post) => (
-              <article key={post.url}>
-                <Link
-                  to="/blogs/$"
-                  params={{ _splat: post.slugs.join("/") }}
-                  className="group block h-full rounded-lg border border-[var(--color-border-subtle)] bg-white p-6 transition-colors hover:border-neutral-900"
-                >
-                  <PostDate
-                    date={post.date}
-                    className="block text-sm text-[var(--color-brand-muted)]"
-                  />
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-950 transition-colors group-hover:text-[var(--color-brand-accent)]">
-                    {post.title}
-                  </h2>
-                  {post.description && (
-                    <p className="mt-3 text-sm leading-6 text-[var(--color-brand-muted)]">
-                      {post.description}
-                    </p>
-                  )}
-                  <p className="mt-5 text-sm font-medium text-neutral-950">
-                    Read post <span aria-hidden="true">&rarr;</span>
+      ) : (
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
+          {posts.map((post) => (
+            <article key={post.url}>
+              <Link
+                to="/blogs/$"
+                params={{ _splat: post.slugs.join("/") }}
+                className="group block h-full rounded-lg border border-[var(--color-border-subtle)] bg-white p-6 transition-colors hover:border-neutral-900"
+              >
+                <PostDate
+                  date={post.date}
+                  className="block text-sm text-[var(--color-brand-muted)]"
+                />
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-950 transition-colors group-hover:text-[var(--color-brand-accent)]">
+                  {post.title}
+                </h2>
+                {post.description && (
+                  <p className="mt-3 text-sm leading-6 text-[var(--color-brand-muted)]">
+                    {post.description}
                   </p>
-                </Link>
-              </article>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-16 border-t border-[var(--color-border-subtle)] pt-8">
-          <SiteFooter className="text-xs text-neutral-600 [&_a]:transition-colors [&_a]:hover:text-neutral-900" />
+                )}
+                <p className="mt-5 text-sm font-medium text-neutral-950">
+                  Read post <span aria-hidden="true">&rarr;</span>
+                </p>
+              </Link>
+            </article>
+          ))}
         </div>
+      )}
+
+      <div className="mt-16 border-t border-[var(--color-border-subtle)] pt-8">
+        <SiteFooter className="text-xs text-neutral-600 [&_a]:transition-colors [&_a]:hover:text-neutral-900" />
       </div>
-    </BlogLayout>
+    </div>
   );
 }

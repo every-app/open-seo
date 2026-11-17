@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as CampaignRouteImport } from './routes/_campaign'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as AgentSetupDottxtRouteImport } from './routes/agent-setup[.]txt'
+import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as CampaignAgenciesRouteImport } from './routes/_campaign/agencies'
 import { Route as CampaignAgentsRouteImport } from './routes/_campaign/agents'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
@@ -117,6 +118,11 @@ const MarketingRoute = MarketingRouteImport.update({
 const AgentSetupDottxtRoute = AgentSetupDottxtRouteImport.update({
   id: '/agent-setup.txt',
   path: '/agent-setup.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogsRoute = BlogsRouteImport.update({
+  id: '/blogs',
+  path: '/blogs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CampaignAgenciesRoute = CampaignAgenciesRouteImport.update({
@@ -319,14 +325,14 @@ const ApiWebsiteTrafficCheckerRoute =
     getParentRoute: () => rootRouteImport,
   } as any)
 const BlogsIndexRoute = BlogsIndexRouteImport.update({
-  id: '/blogs/',
-  path: '/blogs/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => BlogsRoute,
 } as any)
 const BlogsSplatRoute = BlogsSplatRouteImport.update({
-  id: '/blogs/$',
-  path: '/blogs/$',
-  getParentRoute: () => rootRouteImport,
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => BlogsRoute,
 } as any)
 const DocsIndexRoute = DocsIndexRouteImport.update({
   id: '/docs/',
@@ -647,6 +653,7 @@ const MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute =
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
   '/agent-setup.txt': typeof AgentSetupDottxtRoute
+  '/blogs': typeof BlogsRouteWithChildren
   '/agencies': typeof CampaignAgenciesRoute
   '/agents': typeof CampaignAgentsRoute
   '/about': typeof MarketingAboutRoute
@@ -841,6 +848,7 @@ export interface FileRoutesById {
   '/_campaign': typeof CampaignRouteWithChildren
   '/_marketing': typeof MarketingRouteWithChildren
   '/agent-setup.txt': typeof AgentSetupDottxtRoute
+  '/blogs': typeof BlogsRouteWithChildren
   '/_campaign/agencies': typeof CampaignAgenciesRoute
   '/_campaign/agents': typeof CampaignAgentsRoute
   '/_marketing/about': typeof MarketingAboutRoute
@@ -940,6 +948,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agent-setup.txt'
+    | '/blogs'
     | '/agencies'
     | '/agents'
     | '/about'
@@ -1133,6 +1142,7 @@ export interface FileRouteTypes {
     | '/_campaign'
     | '/_marketing'
     | '/agent-setup.txt'
+    | '/blogs'
     | '/_campaign/agencies'
     | '/_campaign/agents'
     | '/_marketing/about'
@@ -1232,6 +1242,7 @@ export interface RootRouteChildren {
   CampaignRoute: typeof CampaignRouteWithChildren
   MarketingRoute: typeof MarketingRouteWithChildren
   AgentSetupDottxtRoute: typeof AgentSetupDottxtRoute
+  BlogsRoute: typeof BlogsRouteWithChildren
   ApiBacklinkCheckRoute: typeof ApiBacklinkCheckRoute
   ApiCompetitorAnalysisRoute: typeof ApiCompetitorAnalysisRoute
   ApiCompetitorKeywordFinderRoute: typeof ApiCompetitorKeywordFinderRoute
@@ -1242,7 +1253,6 @@ export interface RootRouteChildren {
   ApiSpamScoreCheckerRoute: typeof ApiSpamScoreCheckerRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
   ApiWebsiteTrafficCheckerRoute: typeof ApiWebsiteTrafficCheckerRoute
-  BlogsSplatRoute: typeof BlogsSplatRoute
   DocsSplatRoute: typeof DocsSplatRoute
   DocsClaudeRoute: typeof DocsClaudeRoute
   DocsCodexRoute: typeof DocsCodexRoute
@@ -1250,7 +1260,6 @@ export interface RootRouteChildren {
   GuidesSplatRoute: typeof GuidesSplatRoute
   JsMetaDotjsRoute: typeof JsMetaDotjsRoute
   JsScriptDotjsRoute: typeof JsScriptDotjsRoute
-  BlogsIndexRoute: typeof BlogsIndexRoute
   DocsIndexRoute: typeof DocsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
 }
@@ -1276,6 +1285,13 @@ declare module '@tanstack/react-router' {
       path: '/agent-setup.txt'
       fullPath: '/agent-setup.txt'
       preLoaderRoute: typeof AgentSetupDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blogs': {
+      id: '/blogs'
+      path: '/blogs'
+      fullPath: '/blogs'
+      preLoaderRoute: typeof BlogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_campaign/agencies': {
@@ -1539,17 +1555,17 @@ declare module '@tanstack/react-router' {
     }
     '/blogs/': {
       id: '/blogs/'
-      path: '/blogs'
+      path: '/'
       fullPath: '/blogs/'
       preLoaderRoute: typeof BlogsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BlogsRoute
     }
     '/blogs/$': {
       id: '/blogs/$'
-      path: '/blogs/$'
+      path: '/$'
       fullPath: '/blogs/$'
       preLoaderRoute: typeof BlogsSplatRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof BlogsRoute
     }
     '/docs/': {
       id: '/docs/'
@@ -2127,10 +2143,23 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
   MarketingRouteChildren,
 )
 
+interface BlogsRouteChildren {
+  BlogsSplatRoute: typeof BlogsSplatRoute
+  BlogsIndexRoute: typeof BlogsIndexRoute
+}
+
+const BlogsRouteChildren: BlogsRouteChildren = {
+  BlogsSplatRoute: BlogsSplatRoute,
+  BlogsIndexRoute: BlogsIndexRoute,
+}
+
+const BlogsRouteWithChildren = BlogsRoute._addFileChildren(BlogsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   CampaignRoute: CampaignRouteWithChildren,
   MarketingRoute: MarketingRouteWithChildren,
   AgentSetupDottxtRoute: AgentSetupDottxtRoute,
+  BlogsRoute: BlogsRouteWithChildren,
   ApiBacklinkCheckRoute: ApiBacklinkCheckRoute,
   ApiCompetitorAnalysisRoute: ApiCompetitorAnalysisRoute,
   ApiCompetitorKeywordFinderRoute: ApiCompetitorKeywordFinderRoute,
@@ -2141,7 +2170,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpamScoreCheckerRoute: ApiSpamScoreCheckerRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
   ApiWebsiteTrafficCheckerRoute: ApiWebsiteTrafficCheckerRoute,
-  BlogsSplatRoute: BlogsSplatRoute,
   DocsSplatRoute: DocsSplatRoute,
   DocsClaudeRoute: DocsClaudeRoute,
   DocsCodexRoute: DocsCodexRoute,
@@ -2149,7 +2177,6 @@ const rootRouteChildren: RootRouteChildren = {
   GuidesSplatRoute: GuidesSplatRoute,
   JsMetaDotjsRoute: JsMetaDotjsRoute,
   JsScriptDotjsRoute: JsScriptDotjsRoute,
-  BlogsIndexRoute: BlogsIndexRoute,
   DocsIndexRoute: DocsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
 }
