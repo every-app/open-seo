@@ -92,13 +92,15 @@ export function SearchPerformanceSelects({
         onValueChange={(value) => {
           if (value == null || !isSearchType(value)) return;
           // Discover and Google News have no queries: drop the query filter
-          // and the query tabs along with the switch.
+          // and the query tabs along with the switch. Discover has no device
+          // filter either.
           onSearchChange({
             type: value === "web" ? undefined : value,
             tab: undefined,
             page: undefined,
             queryText: undefined,
             queryMatch: undefined,
+            ...(value === "discover" ? { device: undefined } : {}),
           });
         }}
       >
@@ -113,28 +115,30 @@ export function SearchPerformanceSelects({
           ))}
         </SelectContent>
       </Select>
-      <Select
-        items={DEVICE_ITEMS}
-        value={device}
-        onValueChange={(value) => {
-          if (value == null) return;
-          onSearchChange({
-            page: undefined,
-            device: isDevice(value) ? value : undefined,
-          });
-        }}
-      >
-        <SelectTrigger size="sm" className="w-36" aria-label="Device filter">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {DEVICE_ITEMS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {search.type === "discover" ? null : (
+        <Select
+          items={DEVICE_ITEMS}
+          value={device}
+          onValueChange={(value) => {
+            if (value == null) return;
+            onSearchChange({
+              page: undefined,
+              device: isDevice(value) ? value : undefined,
+            });
+          }}
+        >
+          <SelectTrigger size="sm" className="w-36" aria-label="Device filter">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DEVICE_ITEMS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
       <Select
         items={countryItems}
         value={country}

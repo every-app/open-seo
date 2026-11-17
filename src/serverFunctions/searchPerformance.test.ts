@@ -67,26 +67,26 @@ describe("Search Performance combined filters", () => {
     });
   });
 
-  it("reads Discover without queries: no striking-distance scan or query filter", async () => {
+  it("reads Discover without queries: no striking-distance scan, query filter, or device filter", async () => {
     await getSearchPerformanceReport({
       data: { ...data, searchType: "discover" },
     });
 
     expect(getPerformance).toHaveBeenCalledTimes(3);
-    // Totals for both periods, then the country list; the query filter is
-    // dropped everywhere.
-    const withoutQuery = [filters[0], filters[1], filters[3]];
+    // Totals for both periods, then the country list; Google rejects a device
+    // filter on Discover and it has no queries, so both are dropped everywhere.
+    const discoverFilters = [filters[1], filters[3]];
     for (const index of [0, 1]) {
       expect(getPerformance.mock.calls[index][0]).toMatchObject({
         type: "discover",
         dimensions: ["date"],
-        filters: withoutQuery,
+        filters: discoverFilters,
       });
     }
     expect(getPerformance.mock.calls[2][0]).toMatchObject({
       type: "discover",
       dimensions: ["country"],
-      filters: withoutQuery.slice(0, 2),
+      filters: discoverFilters.slice(0, 1),
     });
   });
 
