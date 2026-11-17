@@ -1,4 +1,5 @@
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
+import { getGlobalStartContext } from "@tanstack/react-start";
 import { routeTree } from "./routeTree.gen";
 import { DefaultCatchBoundary } from "./client/components/DefaultCatchBoundary";
 import { NotFound } from "./client/components/NotFound";
@@ -20,6 +21,12 @@ if (typeof window !== "undefined") {
   });
 }
 
+declare module "@tanstack/react-start" {
+  interface Register {
+    server: { requestContext: { cspNonce: string } };
+  }
+}
+
 export function getRouter() {
   const router = createTanStackRouter({
     routeTree,
@@ -27,6 +34,10 @@ export function getRouter() {
     defaultErrorComponent: DefaultCatchBoundary,
     defaultNotFoundComponent: () => <NotFound />,
     scrollRestoration: true,
+    // The nonce server.ts names in the Content-Security-Policy, for every
+    // inline script the document carries. Unset in the browser, where the
+    // router reads it back from the document.
+    ssr: { nonce: getGlobalStartContext()?.cspNonce },
   });
 
   return router;

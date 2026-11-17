@@ -3,6 +3,7 @@ import {
   defaultStreamHandler,
 } from "@tanstack/react-start/server";
 import { routeAgentRequest } from "agents";
+import { env as workerEnv } from "cloudflare:workers";
 import { everyApp } from "@every-app/sdk/server";
 import { serveEveryAppRequest } from "@/server/lib/gateway-attribution";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
@@ -24,6 +25,7 @@ import {
 import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_ROUTE } from "@/server/mcp/context";
 import { withPgClient } from "@/db";
+import { ENFORCED_CSP, reportOnlyCsp } from "@/server/lib/csp";
 import { withDataforseoSlots } from "@/server/lib/dataforseo/request-slots";
 import {
   AUTUMN_WEBHOOK_PATH,
@@ -47,18 +49,13 @@ const startHandler = createStartHandler(defaultStreamHandler);
 //
 // The Content-Security-Policy goes on HTML documents that carry no policy of
 // their own, so a route that sets its own stricter CSP keeps it (two CSP
-// headers intersect, so adding a second could only confuse things):
-// - `frame-ancestors 'self'`: no third-party page can frame an app route and
-//   UI-redress a one-click action (delete a project, buy credits).
-// - `object-src 'none'` and `base-uri 'self'`: the app has no plugins and no
-//   <base>, so injected markup can't add either.
-// It deliberately stops there. script-src, img-src and connect-src need a
-// nonce for the inline bootstrap scripts in __root.tsx plus allowances for
-// Turnstile, PostHog and Google Maps, which is separate, larger work.
-const APP_CSP = "frame-ancestors 'self'; object-src 'none'; base-uri 'self'";
-
+// headers intersect, so adding a second could only confuse things). What is
+// enforced is ENFORCED_CSP. OpenSEO Cloud also sends the full policy
+// report-only (csp.ts); the nonce it names reaches the document's inline
+// scripts through the router (router.tsx).
 async function appFetch(request: Request): Promise<Response> {
-  const response = await startHandler(request);
+  const cspNonce = crypto.randomUUID();
+  const response = await startHandler(request, { context: { cspNonce } });
   // A WebSocket upgrade's response can't be rebuilt, and has no use for these.
   if (response.status === 101) return response;
   const headers = new Headers(response.headers);
@@ -74,7 +71,17 @@ async function appFetch(request: Request): Promise<Response> {
     contentType.startsWith("text/html") &&
     !headers.has("content-security-policy")
   ) {
-    headers.set("Content-Security-Policy", APP_CSP);
+    headers.set("Content-Security-Policy", ENFORCED_CSP);
+    if (isHostedAuthMode(workerEnv.AUTH_MODE)) {
+      headers.set(
+        "Content-Security-Policy-Report-Only",
+        reportOnlyCsp({
+          nonce: cspNonce,
+          host: new URL(request.url).host,
+          posthogHost: workerEnv.POSTHOG_HOST,
+        }),
+      );
+    }
   }
   return new Response(response.body, {
     status: response.status,

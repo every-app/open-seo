@@ -601,6 +601,14 @@ export default Alchemy.Stack(
           { namespaceId: 1003, simple: { limit: 60, period: 60 } },
         ),
 
+        // Per-IP throttle on the reports browsers post about the report-only
+        // Content-Security-Policy (see src/server/lib/csp.ts). A page that
+        // trips the policy sends a handful at once.
+        CSP_REPORT_RATE_LIMIT: Cloudflare.RateLimit("CSP_REPORT_RATE_LIMIT", {
+          namespaceId: 1004,
+          simple: { limit: 30, period: 60 },
+        }),
+
         // Durable Objects (the chat agents; the audit scratchpad lives
         // privately in the open-seo-audit worker). Alchemy backs new DO
         // classes with SQLite storage; wrangler.jsonc's `migrations` only
