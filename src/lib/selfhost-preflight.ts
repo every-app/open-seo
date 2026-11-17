@@ -184,8 +184,7 @@ function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
       key: "dataforseo",
       name: "TREG_API_KEY",
       level: "ok",
-      message:
-        "Set — DataForSEO calls go through treg. Rank tracking, SERP results, AI Search and scheduled AI Visibility runs still need DATAFORSEO_API_KEY.",
+      message: "Set — DataForSEO calls go through treg.",
     });
     return;
   }

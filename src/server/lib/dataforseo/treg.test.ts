@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe("DataForSEO through treg", () => {
-  it("calls the treg endpoint for the path, path params as query", async () => {
+  it("sends DataForSEO calls to treg's DataForSEO path", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockImplementation(async () =>
@@ -24,28 +24,16 @@ describe("DataForSEO through treg", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await dataforseoPost("/v3/backlinks/summary/live", [{ target: "a.com" }]);
-    await dataforseoGet("/v3/business_data/google/reviews/task_get/abc%2F1");
+    await dataforseoGet("/v3/serp/google/organic/task_get/advanced/abc");
 
     const [postUrl, postInit] = fetchMock.mock.calls[0];
     expect(postUrl).toBe(
-      "https://treg.to/call/dataforseo.web.backlinks.summary",
+      "https://treg.to/call/dataforseo/backlinks/summary/live",
     );
     expect(postInit?.body).toBe('[{"target":"a.com"}]');
     expect(new Headers(postInit?.headers).get("X-Treg-Token")).toBe("treg-key");
     expect(fetchMock.mock.calls[1][0]).toBe(
-      "https://treg.to/call/dataforseo.x.business-data-google-reviews-task-get?id=abc%2F1",
+      "https://treg.to/call/dataforseo/serp/google/organic/task_get/advanced/abc",
     );
-  });
-
-  // Rank tracking's task queue isn't in treg's catalog; it must fail with a
-  // setup error, not reach treg or DataForSEO.
-  it("refuses a path treg doesn't serve without calling out", async () => {
-    const fetchMock = vi.fn<typeof fetch>();
-    vi.stubGlobal("fetch", fetchMock);
-
-    await expect(
-      dataforseoPost("/v3/serp/google/organic/task_post", []),
-    ).rejects.toMatchObject({ code: "DATAFORSEO_AUTH_FAILED" });
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
