@@ -468,9 +468,14 @@ export default Alchemy.Stack(
         flags: wrangler.compatibility_flags,
       },
       // Audit workflow steps parse and persist batches of HTML — the same
-      // CPU allowance the app worker used to carry for them. Configurable
-      // CPU limits are a paid-plan feature (see selfHostPlan).
-      ...(selfHostPlan ? {} : { limits: { cpuMs: 300_000 } }),
+      // CPU allowance the app worker used to carry for them. A workflow run
+      // shares one subrequest budget across its steps, and a 10,000-page
+      // audit spent the 10,000 default before its Lighthouse and billing
+      // calls. Configurable limits are a paid-plan feature (see
+      // selfHostPlan).
+      ...(selfHostPlan
+        ? {}
+        : { limits: { cpuMs: 300_000, subrequests: 200_000 } }),
       observability: {
         enabled: wrangler.observability?.enabled ?? true,
         traces: { enabled: wrangler.observability?.traces?.enabled ?? false },
