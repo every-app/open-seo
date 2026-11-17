@@ -40,7 +40,7 @@ export const backlinksScopeParamSchema =
 /** Shared wording for the MCP tools that take a backlinks scope. */
 export const BACKLINKS_SCOPE_DESCRIPTION = `${RESEARCH_SCOPE_PARAM_DESCRIPTION} 'page' is a deprecated alias of 'exact_url'. Subfolder counts are computed from filtered backlink totals; rank, trends, and the referring-domains breakdown are unavailable for subfolders.`;
 
-const DEFAULT_BACKLINKS_SPAM_THRESHOLD = 40;
+export const DEFAULT_BACKLINKS_SPAM_THRESHOLD = 40;
 
 function normalizeBacklinksSpamThreshold(value: number) {
   if (!Number.isFinite(value)) {

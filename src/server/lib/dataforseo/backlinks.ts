@@ -22,7 +22,10 @@ type BacklinksRequest = {
    * field, so a domain-scoped history is always subdomain-inclusive.
    */
   includeSubdomains?: boolean;
+  /** Which links DataForSEO returns. Defaults to "live". */
+  statusType?: BacklinksStatusType;
 };
+type BacklinksStatusType = "live" | "lost" | "all";
 type BacklinksListRequest = BacklinksRequest &
   BacklinksSpamFilterOptions & {
     limit?: number;
@@ -144,7 +147,7 @@ function buildCommonPayload(input: BacklinksRequest) {
     include_subdomains: input.includeSubdomains ?? true,
     include_indirect_links: true,
     exclude_internal_backlinks: true,
-    backlinks_status_type: "live",
+    backlinks_status_type: input.statusType ?? "live",
     rank_scale: "one_hundred",
   };
 }
@@ -211,6 +214,9 @@ export async function fetchBacklinksRows(input: BacklinksListRequest) {
       ? ["backlink_spam_score", "<=", spamFilterOptions.spamThreshold]
       : undefined,
   );
+  // An empty list sends no order_by at all: DataForSEO rejected order_by and
+  // filters on a "lost" request, so lost-link callers pass none.
+  const orderBy = input.orderBy ?? ["rank,desc"];
   const response = await dataforseoPost(
     "/v3/backlinks/backlinks/live",
     [
@@ -218,7 +224,7 @@ export async function fetchBacklinksRows(input: BacklinksListRequest) {
         ...buildCommonPayload(input),
         limit: input.limit ?? 100,
         offset: input.offset,
-        order_by: input.orderBy ?? ["rank,desc"],
+        ...(orderBy.length > 0 ? { order_by: orderBy } : {}),
         mode: input.mode,
         ...(filters ? { filters } : {}),
       },
@@ -337,6 +343,77 @@ export async function fetchDomainPagesSummary(input: BacklinksListRequest) {
   };
 }
 
+// One entry per target index ("1", "2", ...). With intersection_mode "partial"
+// a target the domain doesn't link to may be missing or null.
+const domainIntersectionEntrySchema = z
+  .object({
+    target: z.string().nullable().optional(),
+    rank: z.number().nullable().optional(),
+    backlinks: z.number().nullable().optional(),
+    first_seen: z.string().nullable().optional(),
+    backlinks_spam_score: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const domainIntersectionItemSchema = z
+  .object({
+    domain_intersection: z.record(
+      z.string(),
+      domainIntersectionEntrySchema.nullable(),
+    ),
+    summary: z
+      .object({ intersections_count: z.number().nullable().optional() })
+      .passthrough()
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
+/**
+ * Sites that link to any of the targets (intersection_mode "partial") but not
+ * to the excluded ones. Results are per domain, not per link. Entry "1" of each
+ * item belongs to targets[0], "2" to targets[1], and so on.
+ */
+export async function fetchDomainIntersection(input: {
+  targets: string[];
+  excludeTargets?: string[];
+  /** Filter fields are per target index, e.g. ["1.first_seen", ">=", ...]. */
+  filters?: unknown[];
+  orderBy?: string[];
+  limit?: number;
+}) {
+  const path = "/v3/backlinks/domain_intersection/live";
+  const response = await dataforseoPost(
+    path,
+    [
+      {
+        targets: Object.fromEntries(
+          input.targets.map((target, index) => [String(index + 1), target]),
+        ),
+        exclude_targets: input.excludeTargets,
+        intersection_mode: "partial",
+        include_subdomains: true,
+        exclude_internal_backlinks: true,
+        backlinks_status_type: "live",
+        rank_scale: "one_hundred",
+        limit: input.limit ?? 100,
+        order_by: input.orderBy,
+        filters: input.filters,
+      },
+    ],
+    { classify: classifyBacklinksError },
+  );
+  const task = assertOk(response, assertOptions(path));
+  return {
+    data: parseTaskItems(
+      "domain-intersection-live",
+      task,
+      domainIntersectionItemSchema,
+    ),
+    billing: buildTaskBilling(task),
+  };
+}
+
 export async function fetchBacklinksHistory(input: BacklinksTimeseriesRequest) {
   const response = await dataforseoPost(
     "/v3/backlinks/history/live",
@@ -366,3 +443,6 @@ export type BacklinksItem = z.infer<typeof backlinksItemSchema>;
 export type ReferringDomainItem = z.infer<typeof referringDomainItemSchema>;
 export type DomainPageSummaryItem = z.infer<typeof domainPageSummaryItemSchema>;
 export type BacklinksHistoryItem = z.infer<typeof backlinksHistoryItemSchema>;
+export type DomainIntersectionItem = z.infer<
+  typeof domainIntersectionItemSchema
+>;

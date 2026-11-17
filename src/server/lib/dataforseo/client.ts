@@ -25,6 +25,7 @@ import {
   fetchBulkReferringDomains,
   fetchBacklinksRows,
   fetchBacklinksSummary,
+  fetchDomainIntersection,
   fetchDomainPagesSummary,
   fetchReferringDomains,
 } from "@/server/lib/dataforseo/backlinks";
@@ -105,6 +106,7 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       referringDomains: meter(customer, fetchReferringDomains),
       bulkReferringDomains: meter(customer, fetchBulkReferringDomains),
       domainPages: meter(customer, fetchDomainPagesSummary),
+      domainIntersection: meter(customer, fetchDomainIntersection),
       history: meter(customer, fetchBacklinksHistory),
     },
     keywords: {

@@ -54,5 +54,6 @@ export type {
   BacklinksItem,
   ReferringDomainItem,
   DomainPageSummaryItem,
+  DomainIntersectionItem,
   BacklinksHistoryItem,
 } from "@/server/lib/dataforseo/backlinks";
