@@ -3,13 +3,15 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 
 // The topic hub's tables on in-memory SQLite, for the query tests: two
-// organizations, two projects and one clustered pull in project p-a.
+// organizations, two projects and one clustered pull in project p-a, plus the
+// columns of the AI visibility tables tracking reads.
 
 const MIGRATIONS = [
   "0072_platform_seo_phase1.sql",
   "0075_platform_topics.sql",
   "0076_platform_articles.sql",
   "0077_platform_syndication.sql",
+  "0078_platform_tracking.sql",
 ];
 
 export async function createTopicHubDb() {
@@ -25,6 +27,9 @@ export async function createTopicHubDb() {
     INSERT INTO organization VALUES ('org-a'), ('org-b');
     CREATE TABLE projects (id TEXT PRIMARY KEY, location_code INTEGER, language_code TEXT);
     INSERT INTO projects VALUES ('p-a', 2840, 'en'), ('p-b', 2840, 'en');
+    CREATE TABLE ai_runs (id TEXT PRIMARY KEY, project_id TEXT);
+    CREATE TABLE ai_observations (id TEXT PRIMARY KEY, run_id TEXT);
+    CREATE TABLE ai_sources (id TEXT PRIMARY KEY, observation_id TEXT, url TEXT, domain TEXT);
     CREATE TABLE keyword_metrics (
       id INTEGER PRIMARY KEY, project_id TEXT, keyword TEXT, location_code INTEGER,
       language_code TEXT, search_volume INTEGER, keyword_difficulty INTEGER

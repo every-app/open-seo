@@ -13,4 +13,6 @@ export const topicQueryKeys = {
   // Organization-wide, but keyed by project like every other query here.
   channels: (projectId: string) =>
     ["platformSeo", projectId, "channels"] as const,
+  pipeline: (projectId: string) =>
+    ["platformSeo", projectId, "pipeline"] as const,
 };

@@ -20,6 +20,7 @@ import {
   PS_PLATFORM_STATUSES,
   PS_PULL_STAGES,
   PS_SYNDICATION_STATUSES,
+  PS_TRACKING_STATUSES,
   PS_TOPIC_STATUSES,
 } from "@/shared/platform-seo";
 
@@ -308,6 +309,44 @@ export const psSyndicationTags = sqliteTable(
       table.syndicationId,
       table.tag,
     ),
+  ],
+);
+
+// One check of a published copy. The two queued Google reads are posted when
+// the check starts and collected (free) when they finish; the results fill in
+// then. Null means not known: no target keyword, or the read failed.
+export const psTrackingSnapshots = sqliteTable(
+  "ps_tracking_snapshots",
+  {
+    id: text("id").primaryKey(),
+    syndicationId: text("syndication_id")
+      .notNull()
+      .references(() => psSyndications.id, { onDelete: "cascade" }),
+    status: text("status", { enum: PS_TRACKING_STATUSES }).notNull(),
+    // What was checked: the topic's target keyword in its market.
+    keyword: text("keyword"),
+    locationCode: integer("location_code").notNull(),
+    languageCode: text("language_code").notNull(),
+    rankTaskId: text("rank_task_id"),
+    indexTaskId: text("index_task_id"),
+    indexed: integer("indexed", { mode: "boolean" }),
+    // In the top PS_TRACKING_DEPTH for the keyword (googlePosition says
+    // where); false = read and not there; null = no keyword or no read.
+    ranked: integer("ranked", { mode: "boolean" }),
+    googlePosition: integer("google_position"),
+    aiCited: integer("ai_cited", { mode: "boolean" }),
+    requestedAt: text("requested_at").notNull(),
+    checkedAt: text("checked_at"),
+  },
+  (table) => [
+    index("ps_tracking_snapshots_syndication_idx").on(
+      table.syndicationId,
+      table.requestedAt,
+    ),
+    // One running check per copy: a second start can't buy the reads again.
+    uniqueIndex("ps_tracking_snapshots_one_pending_idx")
+      .on(table.syndicationId)
+      .where(sql`status = 'pending'`),
   ],
 );
 

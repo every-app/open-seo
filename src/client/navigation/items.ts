@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   FileText,
   Globe,
+  ChartNoAxesColumnDecreasing,
   Send,
   SquareKanban,
   LayoutDashboard,
@@ -37,6 +38,11 @@ const projectNavItems = [
     to: "/p/$projectId/platforms" as const,
     label: "Platforms",
     icon: Network,
+  },
+  {
+    to: "/p/$projectId/pipeline" as const,
+    label: "Pipeline",
+    icon: ChartNoAxesColumnDecreasing,
   },
   {
     to: "/p/$projectId/topics" as const,
@@ -159,7 +165,11 @@ export function getProjectNavGroups(projectId: string) {
     },
     {
       label: "Content",
-      items: [byPath("/p/$projectId/topics"), byPath("/p/$projectId/channels")],
+      items: [
+        byPath("/p/$projectId/pipeline"),
+        byPath("/p/$projectId/topics"),
+        byPath("/p/$projectId/channels"),
+      ],
     },
     {
       label: "AI Visibility",

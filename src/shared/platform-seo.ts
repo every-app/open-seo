@@ -92,3 +92,10 @@ export const PS_AI_DISCLOSURES = [
   "fully_autonomous",
 ] as const;
 export type PsAiDisclosure = (typeof PS_AI_DISCLOSURES)[number];
+
+// Tracking: each check of a published copy reads Google twice through the
+// queued SERP endpoint (its target keyword, and site: its URL for indexing)
+// and looks for the URL among the project's AI answer sources.
+export const PS_TRACKING_STATUSES = ["pending", "done", "failed"] as const;
+// Three pages: where a post is still worth pushing up.
+export const PS_TRACKING_DEPTH = 30;

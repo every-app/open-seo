@@ -5,6 +5,7 @@ import { requireProjectContext } from "./middleware";
 import { ExpandService } from "@/server/features/platform-seo/services/ExpandService";
 import { PlatformDiscoveryService } from "@/server/features/platform-seo/services/PlatformDiscoveryService";
 import { ChannelService } from "@/server/features/platform-seo/services/ChannelService";
+import { TrackingService } from "@/server/features/platform-seo/services/TrackingService";
 import { SyndicationService } from "@/server/features/platform-seo/services/SyndicationService";
 import { ArticleService } from "@/server/features/platform-seo/services/ArticleService";
 import { TopicService } from "@/server/features/platform-seo/services/TopicService";
@@ -28,6 +29,7 @@ import {
   psSaveArticleSchema,
   psSetPlatformStatusSchema,
   psStartPullSchema,
+  psStartTrackingSchema,
   psTopicSchema,
   psUpdateTopicSchema,
 } from "@/types/schemas/platformSeo";
@@ -323,6 +325,45 @@ export const publishSyndication = createServerFn({ method: "POST" })
   .handler(({ data, context }) =>
     SyndicationService.publish(scopeOf(context), data.syndicationId),
   );
+
+// ---------------------------------------------------------------------------
+// Tracking and the pipeline dashboard
+// ---------------------------------------------------------------------------
+
+const trackingScope = (context: {
+  projectId: string;
+  organizationId: string;
+  project: { locationCode: number; languageCode: string };
+}) => ({
+  projectId: context.projectId,
+  organizationId: context.organizationId,
+  locationCode: context.project.locationCode,
+  languageCode: context.project.languageCode,
+});
+
+export const getPipeline = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psProjectSchema)
+  .handler(({ context }) =>
+    TrackingService.getPipeline(trackingScope(context)),
+  );
+
+export const startTrackingChecks = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psStartTrackingSchema)
+  .handler(({ data, context }) =>
+    TrackingService.startChecks({
+      scope: trackingScope(context),
+      customer: context,
+      syndicationIds: data.syndicationIds,
+    }),
+  );
+
+// Free: collects finished reads (task_get) and looks up AI sources.
+export const collectTrackingChecks = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(psProjectSchema)
+  .handler(({ context }) => TrackingService.collect(trackingScope(context)));
 
 // ---------------------------------------------------------------------------
 // Platform discovery. The list belongs to the organization: every query uses

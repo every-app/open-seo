@@ -111,6 +111,12 @@ export const psCanonicalUrlSchema = psTopicSchema.extend({
     .nullable(),
 });
 
+// Tracking: no ids checks every published copy (up to the per-click cap).
+export const psStartTrackingSchema = z.object({
+  projectId: projectIdSchema,
+  syndicationIds: z.array(z.string().min(1)).min(1).max(25).optional(),
+});
+
 // Platform discovery
 export const psSetPlatformStatusSchema = z.object({
   projectId: projectIdSchema,

@@ -166,6 +166,7 @@ export const {
   psChannels,
   psSyndications,
   psSyndicationTags,
+  psTrackingSnapshots,
   psPlatforms,
   psSerpObservations,
 } = schema;

@@ -547,6 +547,13 @@
       "when": 1794859421205,
       "tag": "0077_platform_syndication",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "6",
+      "when": 1794880662735,
+      "tag": "0078_platform_tracking",
+      "breakpoints": true
     }
   ]
 }

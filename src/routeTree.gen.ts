@@ -58,6 +58,7 @@ import { Route as AppPProjectIdContextRouteImport } from './routes/_app/p/$proje
 import { Route as AppPProjectIdDomainRouteImport } from './routes/_app/p/$projectId/domain'
 import { Route as AppPProjectIdKeywordsRouteImport } from './routes/_app/p/$projectId/keywords'
 import { Route as AppPProjectIdLocalSeoRouteImport } from './routes/_app/p/$projectId/local-seo'
+import { Route as AppPProjectIdPipelineRouteImport } from './routes/_app/p/$projectId/pipeline'
 import { Route as AppPProjectIdPlatformsRouteImport } from './routes/_app/p/$projectId/platforms'
 import { Route as AppPProjectIdPromptExplorerRouteImport } from './routes/_app/p/$projectId/prompt-explorer'
 import { Route as AppPProjectIdRankTrackingRouteImport } from './routes/_app/p/$projectId/rank-tracking'
@@ -337,6 +338,11 @@ const AppPProjectIdLocalSeoRoute = AppPProjectIdLocalSeoRouteImport.update({
   path: '/local-seo',
   getParentRoute: () => AppPProjectIdRouteRoute,
 } as any)
+const AppPProjectIdPipelineRoute = AppPProjectIdPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => AppPProjectIdRouteRoute,
+} as any)
 const AppPProjectIdPlatformsRoute = AppPProjectIdPlatformsRouteImport.update({
   id: '/platforms',
   path: '/platforms',
@@ -556,6 +562,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
   '/p/$projectId/local-seo': typeof AppPProjectIdLocalSeoRouteWithChildren
+  '/p/$projectId/pipeline': typeof AppPProjectIdPipelineRoute
   '/p/$projectId/platforms': typeof AppPProjectIdPlatformsRoute
   '/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingRouteWithChildren
@@ -630,6 +637,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
+  '/p/$projectId/pipeline': typeof AppPProjectIdPipelineRoute
   '/p/$projectId/platforms': typeof AppPProjectIdPlatformsRoute
   '/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/p/$projectId/sam': typeof AppPProjectIdSamRoute
@@ -710,6 +718,7 @@ export interface FileRoutesById {
   '/_app/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/_app/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
   '/_app/p/$projectId/local-seo': typeof AppPProjectIdLocalSeoRouteWithChildren
+  '/_app/p/$projectId/pipeline': typeof AppPProjectIdPipelineRoute
   '/_app/p/$projectId/platforms': typeof AppPProjectIdPlatformsRoute
   '/_app/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/_app/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingRouteWithChildren
@@ -790,6 +799,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
     | '/p/$projectId/local-seo'
+    | '/p/$projectId/pipeline'
     | '/p/$projectId/platforms'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
@@ -864,6 +874,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/pipeline'
     | '/p/$projectId/platforms'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/sam'
@@ -943,6 +954,7 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/domain'
     | '/_app/p/$projectId/keywords'
     | '/_app/p/$projectId/local-seo'
+    | '/_app/p/$projectId/pipeline'
     | '/_app/p/$projectId/platforms'
     | '/_app/p/$projectId/prompt-explorer'
     | '/_app/p/$projectId/rank-tracking'
@@ -1350,6 +1362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdLocalSeoRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
+    '/_app/p/$projectId/pipeline': {
+      id: '/_app/p/$projectId/pipeline'
+      path: '/pipeline'
+      fullPath: '/p/$projectId/pipeline'
+      preLoaderRoute: typeof AppPProjectIdPipelineRouteImport
+      parentRoute: typeof AppPProjectIdRouteRoute
+    }
     '/_app/p/$projectId/platforms': {
       id: '/_app/p/$projectId/platforms'
       path: '/platforms'
@@ -1656,6 +1675,7 @@ interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdDomainRoute: typeof AppPProjectIdDomainRoute
   AppPProjectIdKeywordsRoute: typeof AppPProjectIdKeywordsRoute
   AppPProjectIdLocalSeoRoute: typeof AppPProjectIdLocalSeoRouteWithChildren
+  AppPProjectIdPipelineRoute: typeof AppPProjectIdPipelineRoute
   AppPProjectIdPlatformsRoute: typeof AppPProjectIdPlatformsRoute
   AppPProjectIdPromptExplorerRoute: typeof AppPProjectIdPromptExplorerRoute
   AppPProjectIdRankTrackingRoute: typeof AppPProjectIdRankTrackingRouteWithChildren
@@ -1684,6 +1704,7 @@ const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdDomainRoute: AppPProjectIdDomainRoute,
   AppPProjectIdKeywordsRoute: AppPProjectIdKeywordsRoute,
   AppPProjectIdLocalSeoRoute: AppPProjectIdLocalSeoRouteWithChildren,
+  AppPProjectIdPipelineRoute: AppPProjectIdPipelineRoute,
   AppPProjectIdPlatformsRoute: AppPProjectIdPlatformsRoute,
   AppPProjectIdPromptExplorerRoute: AppPProjectIdPromptExplorerRoute,
   AppPProjectIdRankTrackingRoute: AppPProjectIdRankTrackingRouteWithChildren,
