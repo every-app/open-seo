@@ -5,6 +5,7 @@ import {
 } from "@every-app/sdk/server";
 import { isEveryAppAuthMode } from "@/lib/auth-mode";
 import { AppError } from "@/server/lib/errors";
+import { createTregDataforseoFetch } from "@/server/lib/dataforseo/treg";
 import { gatewayCallFor } from "@/server/lib/gateway-attribution";
 import { DATAFORSEO_NOT_SET_UP_MESSAGE } from "@/shared/gateway-setup-messages";
 import {
@@ -14,6 +15,8 @@ import {
 } from "@/server/lib/runtime-env";
 
 // How OpenSEO reaches the APIs it calls with a key (DataForSEO, Context.dev).
+// Self-hosters without a DataForSEO account can reach it through treg
+// (dataforseo/treg.ts) with TREG_API_TOKEN.
 // Every mode but one holds the keys itself. Behind an Every App gateway
 // (AUTH_MODE=everyapp) the gateway holds them: calls go over the gateway's
 // binding, which puts the key on them, so the deployment needs no key of its
@@ -74,6 +77,11 @@ export async function getDataforseoFetch(): Promise<typeof fetch> {
     }
     return providerFetch;
   }
+  if (!(await getOptionalEnvValue("DATAFORSEO_API_KEY"))) {
+    // No DataForSEO account of its own: buy the calls through treg instead.
+    const tregKey = await getOptionalEnvValue("TREG_API_TOKEN");
+    if (tregKey) return createTregDataforseoFetch(tregKey);
+  }
   const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
   return withAuthorization(`Basic ${apiKey}`);
 }
@@ -104,7 +112,10 @@ export async function hasProviderAccess(
     });
     return status.ready;
   }
-  return Boolean(await getOptionalEnvValue(KEY_ENV[provider]));
+  if (await getOptionalEnvValue(KEY_ENV[provider])) return true;
+  return provider === "dataforseo"
+    ? Boolean(await getOptionalEnvValue("TREG_API_TOKEN"))
+    : false;
 }
 
 export function hasDataforseoAccess(): Promise<boolean> {

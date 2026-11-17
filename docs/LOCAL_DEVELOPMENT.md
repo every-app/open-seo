@@ -4,7 +4,7 @@
 
 - Node.js 20+
 - [Corepack](https://nodejs.org/api/corepack.html) (bundled through Node.js 24; install it separately on Node.js 25+)
-- A DataForSEO account/API credentials
+- A DataForSEO account/API credentials (or a [treg token](./DATAFORSEO_API_KEY.md#no-dataforseo-account-use-treg))
 
 ## Local Development Workflow
 

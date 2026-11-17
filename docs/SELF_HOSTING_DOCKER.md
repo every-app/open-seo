@@ -6,7 +6,7 @@ Already running the older single-container image (`ghcr.io/every-app/open-seo`)?
 
 ## Install
 
-You need Docker Engine or Docker Desktop with Compose, at least 4 GiB of memory for Docker, and a [DataForSEO API key](./DATAFORSEO_API_KEY.md). Every command below runs from the repository root:
+You need Docker Engine or Docker Desktop with Compose, at least 4 GiB of memory for Docker, and a [DataForSEO API key](./DATAFORSEO_API_KEY.md) (or a [treg token](./DATAFORSEO_API_KEY.md#no-dataforseo-account-use-treg)). Every command below runs from the repository root:
 
 ```sh
 git clone https://github.com/every-app/open-seo.git
@@ -62,6 +62,7 @@ docker compose up -d --force-recreate init web crawl-gateway
 | Variable                                   | Purpose                                                                                                                    |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
 | `DATAFORSEO_API_KEY`                       | Base64-encoded `login:password`; keyword, backlink, rank and site data                                                     |
+| `TREG_API_TOKEN`                           | Optional, instead of `DATAFORSEO_API_KEY`: the same data, bought per call through treg (see the DataForSEO key guide)      |
 | `OPENROUTER_API_KEY`                       | SAM conversations, website research and summaries                                                                          |
 | `OPENROUTER_BASE_URL`                      | Optional base URL of another OpenAI-compatible server (vLLM, LiteLLM, Ollama); set `OPENROUTER_MODEL` to a model it serves |
 | `OPENROUTER_MODEL`                         | Optional model override                                                                                                    |

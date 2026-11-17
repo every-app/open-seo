@@ -19,6 +19,8 @@ services:
       - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      # Optional: buy DataForSEO calls through treg.to instead of your own key.
+      - TREG_API_TOKEN=${TREG_API_TOKEN:-}
       # Optional: AI features (the SAM agent). Without this the setup
       # gate in the app asks for the key, but nothing here would forward it.
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
