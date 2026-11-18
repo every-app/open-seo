@@ -160,7 +160,11 @@ const optionalVar = (name: string) =>
 const readCustomDomain = (prod: boolean) =>
   Effect.gen(function* () {
     if (prod) return "";
-    const domain = yield* optionalVar("CUSTOM_DOMAIN");
+    // SELFHOST_DOMAIN is the name this fork used before upstream's CUSTOM_DOMAIN.
+    const configured =
+      (yield* optionalVar("CUSTOM_DOMAIN")) ||
+      (yield* optionalVar("SELFHOST_DOMAIN"));
+    const domain = configured.replace(/^https?:\/\//, "").replace(/\/$/, "");
     if (domain && !/^[a-z0-9.-]+$/i.test(domain)) {
       return yield* Effect.die(
         new Error("CUSTOM_DOMAIN must be a bare hostname (seo.example.com)."),
