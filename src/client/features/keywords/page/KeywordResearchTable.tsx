@@ -86,7 +86,7 @@ export function KeywordResearchTable({
             className={`flex min-w-48 items-center gap-1.5 md:min-w-0 ${row.original.parentKeyword ? "pl-4" : ""}`}
           >
             <span
-              className={`block min-w-0 whitespace-normal break-words capitalize md:truncate ${row.original.parentKeyword ? "font-normal" : "font-medium"}`}
+              className={`block min-w-0 whitespace-normal break-words md:truncate ${row.original.parentKeyword ? "font-normal" : "font-medium"}`}
               title={
                 row.original.parentKeyword
                   ? `${row.original.keyword}: matching reported volume with ${row.original.parentKeyword}. Shared volumes may overlap.`

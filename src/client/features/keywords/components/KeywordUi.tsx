@@ -40,9 +40,7 @@ export function KeywordOverviewCard({
     <Card size="sm" className="shrink-0">
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2">
-          <h2 className="min-w-0 truncate font-semibold capitalize">
-            {keyword.keyword}
-          </h2>
+          <h2 className="min-w-0 truncate font-semibold">{keyword.keyword}</h2>
           <IntentBadge intent={keyword.intent} />
         </div>
         <dl className="flex flex-wrap justify-between gap-x-4 gap-y-2">
