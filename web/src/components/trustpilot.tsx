@@ -124,10 +124,7 @@ export function TrustpilotReviews({
           <figure className="tp-card" key={review.url}>
             <Stars value={review.stars} size={15} />
             <blockquote>
-              {/* Trustpilot fills a missing title with the start of the text. */}
-              {review.text.startsWith(review.title.replace(/…$/, "")) ? null : (
-                <strong className="tp-card-title">{review.title}</strong>
-              )}
+              <strong className="tp-card-title">{review.title}</strong>
               {/* Blank lines between paragraphs would eat the clipped height. */}
               <span className="tp-card-text">
                 {review.text.replace(/\n\s*\n/g, "\n")}

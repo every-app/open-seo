@@ -60,7 +60,7 @@ function ProofRow() {
         ))}
       </span>
       <span>
-        <strong>90,000+</strong> users
+        <strong>8,000+</strong> users
       </span>
       <span className="itc-proof-divider" aria-hidden="true" />
       <span>

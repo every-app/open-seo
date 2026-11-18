@@ -39,17 +39,16 @@
 .tp-rating:hover {
   color: #111111;
 }
+/* Inline, so the word sits on the same baseline as the text before it. */
 .tp-wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
   color: #111111;
   font-weight: 600;
   white-space: nowrap;
 }
 .tp-wordmark svg {
-  position: relative;
-  top: -1px;
+  display: inline;
+  margin-right: 3px;
+  vertical-align: -2px;
 }
 
 /* ── Review cards ── */
@@ -87,12 +86,11 @@
   -webkit-line-clamp: 6;
   line-clamp: 6;
 }
+/* Name above the date, so cards match whatever the name's length. */
 .tp-card figcaption {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 2px 12px;
+  flex-direction: column;
+  gap: 2px;
   font-size: 13px;
 }
 .tp-card-name {

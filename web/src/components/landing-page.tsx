@@ -274,7 +274,7 @@ function Hero() {
 // ─── Testimonial (true-black inverse strip) ──────────────────────────
 
 export function Testimonials({
-  title = "Trusted by 90,000+ entrepreneurs",
+  title = "Trusted by 8,000+ entrepreneurs",
   items = TESTIMONIALS,
 }: {
   title?: string;
@@ -353,7 +353,7 @@ function TrustpilotSection() {
             className="itc-display-md itc-testimonials-title"
             style={{ margin: "0 auto" }}
           >
-            Trusted by 90,000+ entrepreneurs
+            Trusted by 8,000+ entrepreneurs
           </h2>
           <p className="itc-testimonials-rating">
             <TrustpilotRating />
