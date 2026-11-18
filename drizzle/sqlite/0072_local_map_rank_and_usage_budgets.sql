@@ -1,4 +1,4 @@
-CREATE TABLE `local_map_campaigns` (
+CREATE TABLE IF NOT EXISTS `local_map_campaigns` (
 	`id` text PRIMARY KEY NOT NULL,
 	`project_id` text NOT NULL,
 	`name` text NOT NULL,
@@ -19,8 +19,8 @@ CREATE TABLE `local_map_campaigns` (
 	FOREIGN KEY (`project_id`) REFERENCES `projects`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `local_map_campaigns_project_idx` ON `local_map_campaigns` (`project_id`,`is_active`);--> statement-breakpoint
-CREATE TABLE `local_map_keywords` (
+CREATE INDEX IF NOT EXISTS `local_map_campaigns_project_idx` ON `local_map_campaigns` (`project_id`,`is_active`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `local_map_keywords` (
 	`id` text PRIMARY KEY NOT NULL,
 	`campaign_id` text NOT NULL,
 	`keyword` text NOT NULL,
@@ -28,8 +28,8 @@ CREATE TABLE `local_map_keywords` (
 	FOREIGN KEY (`campaign_id`) REFERENCES `local_map_campaigns`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `local_map_keywords_campaign_keyword_idx` ON `local_map_keywords` (`campaign_id`,`keyword`);--> statement-breakpoint
-CREATE TABLE `local_map_scan_runs` (
+CREATE UNIQUE INDEX IF NOT EXISTS `local_map_keywords_campaign_keyword_idx` ON `local_map_keywords` (`campaign_id`,`keyword`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `local_map_scan_runs` (
 	`id` text PRIMARY KEY NOT NULL,
 	`campaign_id` text NOT NULL,
 	`project_id` text NOT NULL,
@@ -46,9 +46,9 @@ CREATE TABLE `local_map_scan_runs` (
 	FOREIGN KEY (`project_id`) REFERENCES `projects`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `local_map_scan_runs_campaign_idx` ON `local_map_scan_runs` (`campaign_id`,`created_at`);--> statement-breakpoint
-CREATE UNIQUE INDEX `local_map_scan_runs_active_idx` ON `local_map_scan_runs` (`campaign_id`) WHERE "local_map_scan_runs"."status" IN ('pending', 'running');--> statement-breakpoint
-CREATE TABLE `local_map_scan_results` (
+CREATE INDEX IF NOT EXISTS `local_map_scan_runs_campaign_idx` ON `local_map_scan_runs` (`campaign_id`,`created_at`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `local_map_scan_runs_active_idx` ON `local_map_scan_runs` (`campaign_id`) WHERE "local_map_scan_runs"."status" IN ('pending', 'running');--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `local_map_scan_results` (
 	`id` text PRIMARY KEY NOT NULL,
 	`run_id` text NOT NULL,
 	`keyword_id` text NOT NULL,
@@ -63,8 +63,8 @@ CREATE TABLE `local_map_scan_results` (
 	FOREIGN KEY (`keyword_id`) REFERENCES `local_map_keywords`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `local_map_scan_results_run_keyword_pin_idx` ON `local_map_scan_results` (`run_id`,`keyword_id`,`pin_index`);--> statement-breakpoint
-CREATE TABLE `organization_usage_ledger` (
+CREATE UNIQUE INDEX IF NOT EXISTS `local_map_scan_results_run_keyword_pin_idx` ON `local_map_scan_results` (`run_id`,`keyword_id`,`pin_index`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `organization_usage_ledger` (
 	`id` text PRIMARY KEY NOT NULL,
 	`organization_id` text NOT NULL,
 	`credit_feature` text NOT NULL,
@@ -76,8 +76,8 @@ CREATE TABLE `organization_usage_ledger` (
 	FOREIGN KEY (`organization_id`) REFERENCES `organization`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `organization_usage_ledger_org_created_idx` ON `organization_usage_ledger` (`organization_id`,`created_at`);--> statement-breakpoint
-CREATE TABLE `organization_usage_settings` (
+CREATE INDEX IF NOT EXISTS `organization_usage_ledger_org_created_idx` ON `organization_usage_ledger` (`organization_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `organization_usage_settings` (
 	`organization_id` text PRIMARY KEY NOT NULL,
 	`monthly_budget_usd` real,
 	`alert_threshold_pct` integer DEFAULT 80 NOT NULL,
