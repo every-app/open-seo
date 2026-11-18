@@ -11,7 +11,12 @@ export {
   AuditScratchpad,
   SiteAuditWorkflow,
 } from "./audit-worker";
-export { LocalRankWorkflow, RankCheckWorkflow, default } from "./server";
+export {
+  LocalMapRankWorkflow,
+  LocalRankWorkflow,
+  RankCheckWorkflow,
+  default,
+} from "./server";
 // Same binding and class name as hosted (the SAM_CHAT binding and migrations
 // in wrangler.standalone.json), with the legacy-import RPC added.
 export { StandaloneSamChatAgent as SamChatAgent } from "./server/standalone/SamChatAgent";
