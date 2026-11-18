@@ -64,7 +64,7 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
   );
 }
 
-/** One quiet line: stars, TrustScore, review count, link to the profile. */
+/** One quiet line: stars, score, review count, link to the profile. */
 export function TrustpilotRating({ className = "" }: { className?: string }) {
   if (!hasTrustpilotReviews) return null;
   return (
@@ -76,7 +76,7 @@ export function TrustpilotRating({ className = "" }: { className?: string }) {
     >
       <Stars value={snapshot.stars} />
       <span>
-        <strong>{snapshot.trustScore.toFixed(1)}</strong> TrustScore ·{" "}
+        <strong>{snapshot.trustScore.toFixed(1)}</strong> ·{" "}
         {snapshot.totalReviews} reviews on{" "}
         <span className="tp-wordmark">
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
