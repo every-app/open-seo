@@ -12,7 +12,7 @@ import {
   type SearchConsoleData,
   type WidgetSnapshot,
 } from "@/shared/mcp-contracts";
-import type { WidgetHost } from "./useWidgetHost";
+import type { WidgetHost } from "./host";
 
 enum View {
   Striking = "striking",
@@ -66,7 +66,8 @@ export function SearchConsoleWidget({
   }>();
   const snapshot = host.snapshot!;
   const input = snapshot.context.arguments;
-  const busy = host.action.isPending;
+  const busy = host.busy;
+  const conversation = host.conversation;
   const dimensions = data.dimensions ?? [];
   const queryIndex = dimensions.indexOf("query");
   const view =
@@ -140,23 +141,12 @@ export function SearchConsoleWidget({
       },
     );
   };
-  const save = () => {
-    host.action.mutate(async (app) => {
-      const result = await app.callServerTool({
-        name: "save_keywords",
-        arguments: { projectId: input.projectId, keywords },
-      });
-      if (result.isError)
-        throw new Error(
-          result.content
-            ?.flatMap((item) => (item.type === "text" ? [item.text] : []))
-            .join("\n") || "Could not save keywords.",
-        );
+  const save = () =>
+    conversation?.saveKeywords(input.projectId, keywords, () => {
       setSaved(true);
       setSelected(new Set());
       setConfirmSave(false);
     });
-  };
 
   return (
     <section className="space-y-3">
@@ -216,6 +206,7 @@ export function SearchConsoleWidget({
           setSelected={setSelected}
           drill={drill}
           busy={busy}
+          selectable={Boolean(conversation)}
         />
         {!matching.length && (
           <p className="p-5 text-sm text-muted-foreground">
@@ -329,11 +320,11 @@ export function SearchConsoleWidget({
           Keywords saved to OpenSEO.
         </p>
       )}
-      {rows.length > 0 && (
+      {rows.length > 0 && conversation && (
         <Button
           disabled={busy}
           onClick={() =>
-            host.ask(
+            conversation.ask(
               "Use this Search Console selection to recommend which page to improve and a concrete next step. Read the page before proposing edits; do not change the website.",
               {
                 projectId: input.projectId,
@@ -348,8 +339,8 @@ export function SearchConsoleWidget({
           }
         >
           <MessageSquare />
-          {host.clientName
-            ? `Ask ${host.clientName} for a plan`
+          {conversation.clientName
+            ? `Ask ${conversation.clientName} for a plan`
             : "Ask for a plan"}
         </Button>
       )}

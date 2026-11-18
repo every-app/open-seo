@@ -7,6 +7,7 @@ import {
   type WidgetContext,
   type WidgetSnapshot,
 } from "@/shared/mcp-contracts";
+import type { WidgetHost } from "./host";
 
 type ToolResult = Awaited<ReturnType<App["callServerTool"]>>;
 
@@ -34,7 +35,7 @@ function theme(value: string | undefined) {
     value === "dark" ? "openseo-dark" : "openseo";
 }
 
-export function useWidgetHost() {
+export function useMcpHost(): WidgetHost {
   const [snapshot, setSnapshot] = useState<WidgetSnapshot>();
   const [hostError, setHostError] = useState<string>();
   const [notice, setNotice] = useState<string>();
@@ -127,6 +128,21 @@ export function useWidgetHost() {
       setNotice("Selection sent to the conversation.");
     });
 
+  const saveKeywords = (
+    projectId: unknown,
+    keywords: string[],
+    onSaved: () => void,
+  ) =>
+    action.mutate(async (host) => {
+      const result = await host.callServerTool({
+        name: "save_keywords",
+        arguments: { projectId, keywords },
+      });
+      if (result.isError)
+        throw new Error(resultText(result) || "Could not save keywords.");
+      onSaved();
+    });
+
   return {
     snapshot,
     restore: (value: WidgetSnapshot) => {
@@ -137,13 +153,10 @@ export function useWidgetHost() {
     },
     call,
     open,
-    ask,
-    action,
+    busy: action.isPending,
     notice,
     error: action.error?.message ?? hostError ?? error?.message,
     isConnected,
-    clientName,
+    conversation: { clientName, ask, saveKeywords },
   };
 }
-
-export type WidgetHost = ReturnType<typeof useWidgetHost>;

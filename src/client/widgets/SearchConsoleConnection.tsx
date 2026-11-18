@@ -2,7 +2,7 @@ import { ExternalLink, MessageSquare, RefreshCw } from "lucide-react";
 import { Button } from "@/client/components/ui/button";
 import { safeHttpUrl } from "@/shared/safe-url";
 import type { SearchConsoleData } from "@/shared/mcp-contracts";
-import type { WidgetHost } from "./useWidgetHost";
+import type { WidgetHost } from "./host";
 
 export function SearchConsoleConnection({
   host,
@@ -12,7 +12,8 @@ export function SearchConsoleConnection({
   data: SearchConsoleData;
 }) {
   const input = host.snapshot!.context.arguments;
-  const busy = host.action.isPending;
+  const busy = host.busy;
+  const conversation = host.conversation;
   const connectUrl = safeHttpUrl(data.connectUrl);
   const setupUrl = safeHttpUrl(data.setupDocsUrl);
   const connection = data.reason === "not_connected" || data.connectionRequired;
@@ -57,21 +58,23 @@ export function SearchConsoleConnection({
           {connection ? "Check connection" : "Try again"}
         </Button>
       </div>
-      <div className="border-t border-border pt-4">
-        <Button
-          variant="outline"
-          disabled={busy}
-          onClick={() =>
-            host.ask(
-              "Help me research Google search results for this OpenSEO project. Ask me which keyword and market to use first.",
-              { projectId: input.projectId },
-            )
-          }
-        >
-          <MessageSquare />
-          Research a keyword instead
-        </Button>
-      </div>
+      {conversation && (
+        <div className="border-t border-border pt-4">
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() =>
+              conversation.ask(
+                "Help me research Google search results for this OpenSEO project. Ask me which keyword and market to use first.",
+                { projectId: input.projectId },
+              )
+            }
+          >
+            <MessageSquare />
+            Research a keyword instead
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

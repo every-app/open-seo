@@ -8,6 +8,7 @@ const resolvedId = `\0${moduleId}`;
 // A separate browser bundle keeps React and the app's actual UI components out
 // of the Worker runtime. The MCP resource serves the bundle and CSS inline, so
 // the sandbox needs no network access, session cookies, or asset allowlist.
+// Embed links serve the same document (src/server/features/embeds).
 export function mcpWidgets(): Plugin {
   return {
     name: "openseo-mcp-widgets",
@@ -38,7 +39,7 @@ async function buildWidget() {
       write: false,
       cssCodeSplit: false,
       lib: {
-        entry: "src/client/mcp-widgets/main.tsx",
+        entry: "src/client/widgets/main.tsx",
         formats: ["iife"],
         name: "OpenSeoWidgets",
       },

@@ -26,6 +26,7 @@ declare namespace Cloudflare {
 		AUTH_RATE_LIMIT?: RateLimit;
 		SAVE_KEYWORDS_RATE_LIMIT?: RateLimit;
 		CSP_REPORT_RATE_LIMIT?: RateLimit;
+		EMBED_RATE_LIMIT?: RateLimit;
 		// Hand-patched: the class moved to src/audit-worker.ts and a full regen pulls
 		// unrelated runtime-type drift (see cf-typegen); keep this in sync until then.
 		SITE_AUDIT_WORKFLOW: Workflow<Parameters<import("./audit-worker").SiteAuditWorkflow['run']>[0]['payload']>;

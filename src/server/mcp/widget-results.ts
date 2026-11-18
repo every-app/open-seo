@@ -5,17 +5,21 @@ import { AppError } from "@/server/lib/errors";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import type { ToolAuthContext } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
-import { widgetSnapshotSchema, WidgetTool } from "@/shared/mcp-contracts";
+import {
+  widgetSnapshotSchema,
+  WidgetTool,
+  type McpWidgetTool,
+} from "@/shared/mcp-contracts";
 
 const RESULT_TTL_SECONDS = 60 * 60;
 type ResultAuth = Pick<ToolAuthContext, "organizationId" | "userId">;
-const SHOW_TOOL: Record<WidgetTool, string> = {
+const SHOW_TOOL: Record<McpWidgetTool, string> = {
   [WidgetTool.SearchConsole]: "show_search_console_performance",
   [WidgetTool.Serp]: "show_serp_results",
 };
 
 function resultKey(
-  tool: WidgetTool,
+  tool: McpWidgetTool,
   projectId: string,
   resultId: string,
   auth: ResultAuth,
@@ -35,7 +39,7 @@ function resultKey(
 }
 
 export async function rememberWidgetResult(
-  tool: WidgetTool,
+  tool: McpWidgetTool,
   args: unknown,
   result: CallToolResult,
   auth: ResultAuth,
@@ -75,7 +79,7 @@ export async function rememberWidgetResult(
 }
 
 export async function displayWidgetResult(
-  tool: WidgetTool,
+  tool: McpWidgetTool,
   args: { projectId: string; resultId: string },
   auth: ResultAuth,
 ): Promise<CallToolResult> {

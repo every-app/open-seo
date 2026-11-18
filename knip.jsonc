@@ -8,7 +8,7 @@
     // Docker self-hosting entry (wrangler.standalone.json)
     "src/standalone-server.ts",
     // Separately bundled MCP App, served as an inline HTML resource.
-    "src/client/mcp-widgets/main.tsx",
+    "src/client/widgets/main.tsx",
     // Every App manifest and Worker, read by the everyapp CLI and the
     // Cloudflare Vite plugin 2.x (AUTH_MODE=everyapp)
     "everyapp.config.ts",

@@ -83,13 +83,19 @@ export function RankTrackingTable({
   );
 
   const setKeywordPinned = useSetKeywordPinned(projectId, configId);
+  const actions = useMemo(
+    () => ({
+      selectAnchorRef,
+      onKeywordClick: handleKeywordClick,
+      onSetPinned: setKeywordPinned,
+    }),
+    [handleKeywordClick, setKeywordPinned],
+  );
   const columns = useRankTrackingColumns({
     showDesktop,
     showMobile,
     domain,
-    selectAnchorRef,
-    onKeywordClick: handleKeywordClick,
-    onSetPinned: setKeywordPinned,
+    actions,
     locationName,
   });
 

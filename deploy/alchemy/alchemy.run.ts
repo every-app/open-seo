@@ -614,6 +614,14 @@ export default Alchemy.Stack(
           simple: { limit: 30, period: 60 },
         }),
 
+        // Per-link throttle on embed links' widget calls (see
+        // src/server/features/embeds/embedRoutes.ts). A page load makes a few;
+        // this bounds the Search Console calls one public link can make.
+        EMBED_RATE_LIMIT: Cloudflare.RateLimit("EMBED_RATE_LIMIT", {
+          namespaceId: 1005,
+          simple: { limit: 60, period: 60 },
+        }),
+
         // Durable Objects (the chat agents; the audit scratchpad lives
         // privately in the open-seo-audit worker). Alchemy backs new DO
         // classes with SQLite storage; wrangler.jsonc's `migrations` only

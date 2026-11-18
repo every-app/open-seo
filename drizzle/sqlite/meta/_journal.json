@@ -505,6 +505,13 @@
       "when": 1794544101554,
       "tag": "0071_stripe_projects_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "6",
+      "when": 1795027967479,
+      "tag": "0072_project_embeds",
+      "breakpoints": true
     }
   ]
 }

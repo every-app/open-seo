@@ -20,6 +20,7 @@ export function SearchConsoleTable({
   setSelected,
   drill,
   busy,
+  selectable,
 }: {
   matching: Row[];
   dimensions: string[];
@@ -27,15 +28,18 @@ export function SearchConsoleTable({
   setSelected: Dispatch<SetStateAction<Set<number>>>;
   drill: (page: string) => void;
   busy: boolean;
+  /** Rows can be picked to save or send to the assistant. */
+  selectable: boolean;
 }) {
   const queryIndex = dimensions.indexOf("query");
+  const showSelection = selectable && queryIndex >= 0;
   const pageIndex = dimensions.indexOf("page");
   const number = new Intl.NumberFormat("en-US");
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          {queryIndex >= 0 && <TableHead className="w-8" />}
+          {showSelection && <TableHead className="w-8" />}
           <TableHead>{dimensions.join(" / ") || "Result"}</TableHead>
           <TableHead className="text-right">Impressions</TableHead>
           <TableHead className="text-right">Clicks</TableHead>
@@ -49,7 +53,7 @@ export function SearchConsoleTable({
             key={row.index}
             data-state={selected.has(row.index) ? "selected" : undefined}
           >
-            {queryIndex >= 0 && (
+            {showSelection && (
               <TableCell>
                 <Checkbox
                   checked={selected.has(row.index)}

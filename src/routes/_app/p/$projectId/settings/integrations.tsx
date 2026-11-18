@@ -3,6 +3,7 @@ import { googleConnectionOptions } from "@/client/features/integrations/googlePr
 import { createFileRoute } from "@tanstack/react-router";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { CrawlerAccessSettings } from "@/client/features/settings/CrawlerAccessSettings";
+import { EmbedSettings } from "@/client/features/embeds/EmbedSettings";
 import { IndexNowSettings } from "@/client/features/settings/IndexNowSettings";
 
 export const Route = createFileRoute(
@@ -35,6 +36,8 @@ function ProjectIntegrationsRoute() {
       <section id="google-analytics" className="scroll-mt-6">
         <GoogleConnectionCard provider="ga4" projectId={projectId} />
       </section>
+
+      <EmbedSettings projectId={projectId} />
 
       <IndexNowSettings projectId={projectId} />
 
