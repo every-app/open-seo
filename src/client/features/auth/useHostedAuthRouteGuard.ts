@@ -4,6 +4,7 @@ import { useSession } from "@/lib/auth-client";
 import {
   isEmailVerificationBypassed,
   isHostedClientAuthMode,
+  usesBetterAuthClient,
 } from "@/lib/auth-mode";
 import {
   getCurrentAuthRedirectFromHref,
@@ -14,12 +15,16 @@ import {
 export function useHostedAuthRouteGuard() {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
+  // The session guard runs wherever Better Auth accounts exist (hosted and the
+  // standalone Docker edition); isHostedMode is kept for callers that gate
+  // hosted-only surfaces such as billing.
   const isHostedMode = isHostedClientAuthMode();
+  const hasAccounts = usesBetterAuthClient();
   const emailVerified =
     session?.user?.emailVerified === true || isEmailVerificationBypassed();
 
   useEffect(() => {
-    if (isPending || !isHostedMode) {
+    if (isPending || !hasAccounts) {
       return;
     }
 
@@ -43,18 +48,18 @@ export function useHostedAuthRouteGuard() {
     }
   }, [
     isPending,
-    isHostedMode,
+    hasAccounts,
     emailVerified,
     session?.user?.email,
     session?.user?.id,
     navigate,
   ]);
 
-  const hasVerifiedHostedSession =
+  const hasVerifiedSession =
     !isPending && Boolean(session?.user?.id) && emailVerified;
 
   return {
     isHostedMode,
-    canRenderAuthenticatedContent: !isHostedMode || hasVerifiedHostedSession,
+    canRenderAuthenticatedContent: !hasAccounts || hasVerifiedSession,
   };
 }

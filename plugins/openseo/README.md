@@ -1,4 +1,4 @@
-# OpenSEO for Cursor
+# OpenSEO for Grok Bot and Cursor
 
 SEO made simple.
 
@@ -14,11 +14,13 @@ OpenSEO gives your agent real SEO data and guided workflows, so its advice is gr
 - Work with Google Search Console and Analytics data
 - Research AI prompts and track brand mentions, citations, and competitors
 
-The plugin includes twelve skills that guide Cursor through complete SEO workflows, plus the hosted OpenSEO MCP server for live data and project management.
+The plugin includes twelve skills that guide your agent through complete SEO workflows, plus the hosted OpenSEO MCP server for live data and project management.
 
 ## Connect
 
-Install the OpenSEO plugin from the Cursor Marketplace. The first time Cursor uses an OpenSEO tool, follow the OAuth prompt to sign in and approve the connection.
+Install OpenSEO from the Grok Bot or Cursor marketplace. The first time your agent uses an OpenSEO tool, follow the OAuth prompt to sign in and approve the connection. There is no API key to configure.
+
+To check the connection without using credits, ask: "Use OpenSEO to check my connection and list my projects."
 
 You need an OpenSEO account. The plugin package is free and open source. Hosted OpenSEO plans and usage credits are described at [openseo.so/pricing](https://openseo.so/pricing), and OpenSEO can also be [self-hosted](https://github.com/every-app/open-seo#self-hosting).
 

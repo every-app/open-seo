@@ -227,6 +227,7 @@ describe("Google Analytics MCP tools", () => {
         },
       ],
       coverage: { matchedRows: 1 },
+      warnings: [],
     });
     const { getSearchOpportunitiesTool } = tools;
     const result = await getSearchOpportunitiesTool.handler(
@@ -249,6 +250,29 @@ describe("Google Analytics MCP tools", () => {
         "90 | https://example.com/a | 8.4 | 900 | 12 | 1.3% | 40 | 3 | 0.62 | joined",
         "— | https://example.com/b | 14.0 | 120 | 1 | 0.8% | — | — | — | gsc_only",
       ].join("\n"),
+    );
+  });
+
+  it("explains a window with no GA4 organic landing pages", async () => {
+    mocks.getOpportunities.mockResolvedValue({
+      status: "ok",
+      rowCount: 0,
+      totalCandidateRows: 0,
+      request: {
+        dateRange: { startDate: "2026-09-17", endDate: "2026-10-14" },
+      },
+      rows: [],
+      coverage: { matchedRows: 0 },
+      warnings: ["ga4_no_organic_landing_pages"],
+    });
+
+    const result = await tools.getSearchOpportunitiesTool.handler(
+      { projectId: "project_1", limit: 25 },
+      toolContext,
+    );
+
+    expect(textContent(result)).toContain(
+      "GA4 recorded no organic landing pages from 2026-09-17 through 2026-10-14",
     );
   });
 

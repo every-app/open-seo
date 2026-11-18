@@ -425,8 +425,92 @@
     {
       "idx": 60,
       "version": "6",
-      "when": 1792539081465,
-      "tag": "0060_local_map_rank_and_usage_budgets",
+      "when": 1792516807017,
+      "tag": "0060_reflective_wrecker",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1792647300707,
+      "tag": "0061_bumpy_fat_cobra",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "6",
+      "when": 1792713962596,
+      "tag": "0062_bind_api_keys_to_organization",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "6",
+      "when": 1793683954987,
+      "tag": "0063_account_deletion_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "6",
+      "when": 1793817732491,
+      "tag": "0064_adorable_devos",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "6",
+      "when": 1793842519449,
+      "tag": "0065_guest_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "6",
+      "when": 1793943058991,
+      "tag": "0066_guest_account_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "6",
+      "when": 1793947511393,
+      "tag": "0067_signup_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "6",
+      "when": 1793950088872,
+      "tag": "0068_guest_claimed_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "6",
+      "when": 1794425608056,
+      "tag": "0069_ai_mode_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "6",
+      "when": 1794438903013,
+      "tag": "0070_trustpilot_invited_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "6",
+      "when": 1794544101554,
+      "tag": "0071_stripe_projects_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "6",
+      "when": 1794963933002,
+      "tag": "0072_local_map_rank_and_usage_budgets",
       "breakpoints": true
     }
   ]

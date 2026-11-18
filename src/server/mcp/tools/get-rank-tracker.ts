@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { sortBy } from "remeda";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
+import {
+  isOutOfCreditsRunError,
+  type RankTrackingSkipReason,
+} from "@/shared/rank-tracking";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import {
@@ -77,6 +81,27 @@ const CONFIG_COLUMNS: McpTableColumn<unknown>[] = [
   { header: "trackerId", value: (row) => readPath(row, "id") },
 ];
 
+// The stored skip reason is free-form text; every value the writers use has
+// a line here.
+const SKIP_REASON_TEXT = new Map<string, string>(
+  Object.entries({
+    plan_required:
+      "Scheduled checks are being skipped because rank checks need a paid OpenSEO plan, and this account doesn't have one.",
+    insufficient_credits:
+      // A refused manual check sets this too, so it can't say "scheduled".
+      "Rank checks are being refused because the account ran out of credits; whoami shows the balance.",
+    no_keywords:
+      "Scheduled checks are being skipped because the tracker has no keywords; add them with add_rank_tracking_keywords.",
+  } satisfies Record<RankTrackingSkipReason, string>),
+);
+
+/** Why scheduled checks stopped running, since the run line can't show a
+ *  check that never started. */
+function formatSkipReason(reason: string | null): [string] | null {
+  const text = reason ? SKIP_REASON_TEXT.get(reason) : undefined;
+  return text ? [text] : null;
+}
+
 /**
  * `lastCheckedAt` comes from the newest snapshot, so a run that finished
  * without saving any (e.g. every keyword errored) would otherwise read
@@ -92,10 +117,17 @@ function formatLatestRun(
 ): string {
   if (!run) return "Latest run: never";
   if (run.status === "failed")
-    return `Latest run: failed — ${run.errorMessage ?? "Unknown error"}`;
+    return isOutOfCreditsRunError(run.errorMessage)
+      ? "Latest run: failed — INSUFFICIENT_CREDITS"
+      : "Latest run: failed. Google's results have been unreliable lately, so positions below are from the last completed check.";
+  const finishedAt = run.completedAt ?? run.lastCheckedAt;
+  // A completed run carries an error message only when some keyword/device
+  // checks got no result; those keywords keep their previous position.
+  if (run.status === "completed" && run.errorMessage)
+    return `Latest run: partial${finishedAt ? ` (${finishedAt})` : ""} — ${run.errorMessage.replace(/\.$/, "")}. Google's results have been unreliable lately, so some keywords show their previous position.`;
   if (run.status === "completed")
-    return `Latest run: ${run.completedAt ?? run.lastCheckedAt ?? "completed"}`;
-  return `Latest run: ${run.status}`;
+    return `Latest run: ${finishedAt ?? "completed"}`;
+  return `Latest run: ${run.status}. A check reads every keyword several times, so it can take up to 2 hours. Positions below are from the last completed check until then.`;
 }
 
 const inputSchema = {
@@ -131,7 +163,7 @@ export const getRankTrackerTool = {
   config: {
     title: "Get rank tracker",
     description:
-      "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + a page of latest snapshots (pinned keywords first), including `trackingKeywordId` for removals and pins, `pinned`, and `googleSerpUrl`, a live Google search for the tracked keyword, language, country, and city. Use offset/limit to read additional keywords. Without it, lists all trackers in the project. Uses no credits. Use create_rank_tracker when no tracker exists; then use add_rank_tracking_keywords, remove_rank_tracking_keywords, pin_rank_tracking_keywords, estimate_rank_tracker_cost, or run_rank_tracker to manage it. `lastCheckedAt` shows position freshness. A null position means the domain was not found in the results the check returned, which can be fewer than `serpDepth`, so it does not prove the domain ranks below `serpDepth`.",
+      "Read a project's rank trackers and their latest Google positions. Without trackerId, lists every tracker in the project. With trackerId, returns its config and a page of the latest keyword positions, pinned keywords first, each with the trackingKeywordId used for removals and pins and a googleSerpUrl that opens a live Google search for the keyword in its market; use offset and limit for more keywords. lastCheckedAt shows how fresh a position is. A null position means the domain was not found in the results the check returned, which can be fewer than serpDepth, so it does not prove the domain ranks below serpDepth. Uses no credits. When no tracker exists, use create_rank_tracker; to manage one, use add_rank_tracking_keywords, remove_rank_tracking_keywords, pin_rank_tracking_keywords, or run_rank_tracker; for positions over time, use get_rank_history.",
     inputSchema,
     outputSchema: z
       .object({
@@ -216,6 +248,14 @@ export const getRankTrackerTool = {
       `Keyword page: offset=${offset}, limit=${limit}, ${rows.length} of ${totalCount} rows.${nextOffset !== null ? ` Next page: offset=${nextOffset}.` : ""} If text is truncated, repeat offset=${offset} with a smaller limit.`,
       `Schedule: ${config.scheduleInterval}, devices: ${config.devices}, depth: ${config.serpDepth}, location: ${formatLocation(config.locationCode, config.locationName)}, lang: ${config.languageCode}`,
       formatLatestRun(results.run),
+      ...(formatSkipReason(config.lastSkipReason) ??
+        (totalCount > 0 && !results.run
+          ? [
+              config.scheduleInterval === "manual"
+                ? "No check has run yet, so blank positions don't mean unranked; they fill in after a check with run_rank_tracker."
+                : "No check has run yet, so blank positions don't mean unranked; the first scheduled check fills them in.",
+            ]
+          : [])),
       `Keywords (${totalCount}):`,
       totalCount === 0
         ? "No keywords tracked yet."

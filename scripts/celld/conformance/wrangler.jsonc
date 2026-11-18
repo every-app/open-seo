@@ -1,0 +1,13 @@
+// A Worker that exercises the parts of the Workers runtime contract OpenSEO
+// relies on. conformance.sh runs it on the standalone image's celld.
+{
+  "name": "conformance",
+  "main": "worker.js",
+  "no_bundle": true,
+  "compatibility_date": "2026-09-24",
+  "workflows": [{ "name": "steps", "binding": "STEPS", "class_name": "Steps" }],
+  "durable_objects": {
+    "bindings": [{ "name": "ALARM", "class_name": "Alarm" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Alarm"] }],
+}

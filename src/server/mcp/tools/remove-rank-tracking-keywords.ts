@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_KEYWORDS_PER_CONFIG } from "@/shared/rank-tracking";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -15,7 +16,7 @@ const inputSchema = {
   keywordIds: z
     .array(z.string().uuid())
     .min(1)
-    .max(2000)
+    .max(MAX_KEYWORDS_PER_CONFIG)
     .describe(
       "Tracking keyword IDs to remove. Use `trackingKeywordId` values returned by get_rank_tracker.",
     ),
@@ -28,7 +29,7 @@ export const removeRankTrackingKeywordsTool = {
   config: {
     title: "Remove rank tracking keywords",
     description:
-      "Stop tracking keywords by their trackingKeywordId. Uses no credits and preserves historical snapshots. Missing, stale, foreign, and repeated IDs are ignored; `removed` is the number actually deleted from this tracker.",
+      "Stop tracking keywords in a rank tracker by their trackingKeywordId from get_rank_tracker. Historical snapshots are kept. Missing, stale, foreign, and repeated IDs are ignored. Uses no credits. This does not change the saved-keywords list: for that, use remove_saved_keywords.",
     inputSchema,
     outputSchema: z
       .object({

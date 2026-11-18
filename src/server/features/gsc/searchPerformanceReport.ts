@@ -38,6 +38,8 @@ const STRIKING_DISTANCE_MIN_POSITION = 5;
 const STRIKING_DISTANCE_MAX_POSITION = 20;
 const STRIKING_DISTANCE_ROW_LIMIT = 100;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export function sumSearchTotals(
   rows: GscSearchAnalyticsRow[],
 ): SearchPerformanceTotals {
@@ -76,18 +78,13 @@ export function toDimensionRows(
   return output;
 }
 
-/** Reduce `["query","page"]` rows to one striking-distance row per query.
+/** Collapse `["query","page"]` rows to each query's best-ranking page.
  *
  *  GSC returns a row per page that ranks for a query, so a query fans out across
- *  every page it appears on. A query only belongs in "striking distance" when
- *  the site's BEST-ranking page for it sits in the 5..20 band — if any page
- *  already ranks above position 5, the site effectively ranks near the top and
- *  improving a secondary page won't move traffic. So we collapse each query to
- *  its top page (lowest average position; ties broken by impressions) and keep
- *  it only when that top page is in band. Result is sorted by impressions. */
-export function buildStrikingDistanceRows(
+ *  every page it appears on. The site ranks for a query where its best page
+ *  does (lowest average position; ties broken by impressions). */
+export function bestPagePerQuery(
   rows: GscSearchAnalyticsRow[],
-  limit: number = STRIKING_DISTANCE_ROW_LIMIT,
 ): StrikingDistanceRow[] {
   const topPageByQuery = new Map<string, StrikingDistanceRow>();
   for (const row of rows) {
@@ -111,9 +108,21 @@ export function buildStrikingDistanceRows(
       position: row.position,
     });
   }
+  return Array.from(topPageByQuery.values());
+}
 
+/** Reduce `["query","page"]` rows to one striking-distance row per query.
+ *
+ *  A query only belongs in "striking distance" when the site's BEST-ranking
+ *  page for it sits in the 5..20 band — if any page already ranks above
+ *  position 5, the site effectively ranks near the top and improving a
+ *  secondary page won't move traffic. Result is sorted by impressions. */
+export function buildStrikingDistanceRows(
+  rows: GscSearchAnalyticsRow[],
+  limit: number = STRIKING_DISTANCE_ROW_LIMIT,
+): StrikingDistanceRow[] {
   return sort(
-    Array.from(topPageByQuery.values()).filter(
+    bestPagePerQuery(rows).filter(
       (row) =>
         row.position >= STRIKING_DISTANCE_MIN_POSITION &&
         row.position <= STRIKING_DISTANCE_MAX_POSITION,
@@ -122,17 +131,43 @@ export function buildStrikingDistanceRows(
   ).slice(0, limit);
 }
 
+/** One point per day across the range, oldest first, from `["date"]` rows.
+ *  GSC omits days with no impressions, which would silently shrink a chart's
+ *  x-axis. Dates are YYYY-MM-DD in UTC. */
+export function buildDailyTrend(
+  rows: GscSearchAnalyticsRow[],
+  startDate: string,
+  endDate: string,
+): { date: string; clicks: number; impressions: number }[] {
+  const rowsByDate = new Map(rows.map((row) => [row.keys?.[0], row]));
+  const days: { date: string; clicks: number; impressions: number }[] = [];
+  const end = Date.parse(`${endDate}T00:00:00Z`);
+  for (
+    let day = Date.parse(`${startDate}T00:00:00Z`);
+    day <= end;
+    day += DAY_MS
+  ) {
+    const date = formatUtcDate(day);
+    const row = rowsByDate.get(date);
+    days.push({
+      date,
+      clicks: row?.clicks ?? 0,
+      impressions: row?.impressions ?? 0,
+    });
+  }
+  return days;
+}
+
 /** The same-length period immediately before [startDate, endDate], for the
  *  totals comparison. Dates are YYYY-MM-DD in UTC. */
 export function previousPeriod(
   startDate: string,
   endDate: string,
 ): { startDate: string; endDate: string } {
-  const dayMs = 24 * 60 * 60 * 1000;
   const start = Date.parse(`${startDate}T00:00:00Z`);
   const end = Date.parse(`${endDate}T00:00:00Z`);
   const lengthMs = Math.max(end - start, 0);
-  const prevEnd = start - dayMs;
+  const prevEnd = start - DAY_MS;
   const prevStart = prevEnd - lengthMs;
   return {
     startDate: formatUtcDate(prevStart),

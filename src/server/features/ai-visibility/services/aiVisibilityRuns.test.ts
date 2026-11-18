@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { aiObservations, aiRuns } from "@/db/schema";
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import { runCheck } from "./aiVisibilityRuns";
+import { saveTracker } from "./aiVisibilitySetup";
 import { getTracker } from "./aiVisibilityState";
 import { configuration, customer } from "./aiVisibilityTestFixtures";
 import { sendCreditsExhaustedEvent } from "@/server/email/onboarding-drip";
@@ -64,6 +65,17 @@ describe("AI visibility checks", () => {
     expect(workflow.create).toHaveBeenCalledOnce();
   });
 
+  it("collects Google AI Mode once a saved tracker turns it on", async () => {
+    await saveTracker({ projectId, engines: ["chatgpt", "google_ai_mode"] });
+
+    const run = await runCheck({ projectId, maxCostUsd: 1 }, customer);
+
+    const answers = await repo.getObservations([run.id]);
+    expect(new Set(answers.map((answer) => answer.engine))).toEqual(
+      new Set(["chatgpt", "google_ai_mode"]),
+    );
+  });
+
   it("fails a check whose workflow stopped, so it never blocks the next one", async () => {
     const stuck = await runCheck({ projectId, maxCostUsd: 1 }, customer);
     await testDb.db
@@ -83,6 +95,42 @@ describe("AI visibility checks", () => {
         .from(aiObservations)
         .where(eq(aiObservations.runId, stuck.id)),
     ).toEqual([{ status: "failed" }]);
+  });
+
+  it("keeps a running check when its workflow lookup fails", async () => {
+    const run = await runCheck({ projectId, maxCostUsd: 1 }, customer);
+    await testDb.db.update(aiRuns).set({
+      status: "running",
+      createdAt: new Date(Date.now() - 5 * 60_000).toISOString(),
+    });
+    workflow.get.mockRejectedValue(new Error("internal error"));
+
+    await expect(
+      runCheck({ projectId, maxCostUsd: 1 }, customer),
+    ).rejects.toMatchObject({ reason: "RUN_IN_PROGRESS", runId: run.id });
+    expect(await repo.getRunInternal(run.id)).toMatchObject({
+      status: "running",
+    });
+  });
+
+  it("terminates a check whose workflow is still running after 12 hours, so it stops blocking", async () => {
+    const stuck = await runCheck({ projectId, maxCostUsd: 1 }, customer);
+    await testDb.db
+      .update(aiRuns)
+      .set({ status: "running", createdAt: "2026-01-01T00:00:00.000Z" });
+    const terminate = vi.fn();
+    workflow.get.mockResolvedValue({
+      status: async () => ({ status: "running" }),
+      terminate,
+    });
+
+    const next = await runCheck({ projectId, maxCostUsd: 1 }, customer);
+
+    expect(next.id).not.toBe(stuck.id);
+    expect(terminate).toHaveBeenCalled();
+    expect(await repo.getRunInternal(stuck.id)).toMatchObject({
+      status: "failed",
+    });
   });
 
   it("marks only prompts with collected answer text as having results", async () => {
@@ -128,6 +176,18 @@ describe("AI visibility checks", () => {
       "INSUFFICIENT_CREDITS",
     );
     expect(sendCreditsExhaustedEvent).toHaveBeenCalledWith(customer);
+  });
+
+  it("drops the credits notice once a later check starts", async () => {
+    hosted.mockResolvedValue(true);
+    await expect(
+      runCheck({ projectId, maxCostUsd: 1 }, customer),
+    ).rejects.toMatchObject({ code: "INSUFFICIENT_CREDITS" });
+    credits.mockResolvedValue({ monthlyRemaining: 1000, topupRemaining: 0 });
+
+    await runCheck({ projectId, maxCostUsd: 1 }, customer);
+
+    expect((await repo.getTracker(projectId))?.lastSkipReason).toBeNull();
   });
 
   it("starts a check that top-up credits cover after research overdrew monthly credits", async () => {

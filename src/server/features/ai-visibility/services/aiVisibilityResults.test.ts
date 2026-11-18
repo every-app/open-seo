@@ -153,7 +153,10 @@ describe("AI visibility results", () => {
     await seedRun("baseline", [
       { failed: "Internal SE Server Error." },
       { failed: "DataForSEO returned an answer we could not read." },
-      { failed: "No answer arrived within the collection window." },
+      {
+        failed:
+          "Our data provider hasn't returned this answer yet. You'll only be charged credits if we get it, and the answer will appear here.",
+      },
     ]);
 
     const results = await loadAiResults({
@@ -165,7 +168,7 @@ describe("AI visibility results", () => {
     expect(results.rows.map((row) => row.error)).toEqual([
       "UPSTREAM_UNAVAILABLE",
       "INTERNAL_ERROR",
-      "No answer arrived within the collection window.",
+      "Our data provider hasn't returned this answer yet. You'll only be charged credits if we get it, and the answer will appear here.",
     ]);
   });
 

@@ -1,0 +1,2 @@
+ALTER TABLE "guest_accounts" ADD COLUMN "claimed_by_user_id" text;--> statement-breakpoint
+ALTER TABLE "guest_accounts" ADD CONSTRAINT "guest_accounts_claimed_by_user_id_user_id_fk" FOREIGN KEY ("claimed_by_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;

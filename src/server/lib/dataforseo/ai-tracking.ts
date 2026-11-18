@@ -21,6 +21,7 @@ import {
 // live/advanced, one prompt per call.
 // https://docs.dataforseo.com/v3/ai_optimization/chat_gpt/llm_scraper/overview/
 // https://docs.dataforseo.com/v3/serp/google/organic/overview/
+// https://docs.dataforseo.com/v3/serp/google/ai_mode/overview/
 const AI_TRACKING_ENDPOINTS: Record<
   Exclude<AiEngine, AiModelApiEngine>,
   string
@@ -28,6 +29,7 @@ const AI_TRACKING_ENDPOINTS: Record<
   chatgpt: "/v3/ai_optimization/chat_gpt/llm_scraper",
   gemini: "/v3/ai_optimization/gemini/llm_scraper",
   google_ai_overview: "/v3/serp/google/organic",
+  google_ai_mode: "/v3/serp/google/ai_mode",
 };
 
 /** Live engines have no LLM Scraper: their answers come from the live API. */
@@ -54,12 +56,14 @@ const LIVE_REQUEST_TIMEOUT_MS = 150_000;
 export interface PostedAiTrackingTask {
   tag: string;
   taskId: string;
+  /** What DataForSEO charged for this task, owed only if its answer arrives. */
+  costUsd: number;
 }
 
 /**
- * The LLM Scraper language lists name three project-market languages
- * differently, and Gemini only offers Brazilian Portuguese. The organic
- * SERP uses the project-market codes.
+ * The LLM Scraper and AI Mode language lists name three project-market
+ * languages differently, and Gemini and AI Mode only offer Brazilian
+ * Portuguese. The organic SERP uses the project-market codes.
  */
 function providerLanguageCode(engine: AiEngine, languageCode: string) {
   if (engine === "google_ai_overview") return languageCode;
@@ -89,9 +93,10 @@ function aiTrackingTaskBody(
 }
 
 /**
- * Posts up to 100 prompts for one engine. DataForSEO bills at task_post, so
- * this is the metered call. Rejected entries come back without a task; the
- * caller fails their answers.
+ * Posts up to 100 prompts for one engine. DataForSEO bills at task_post; the
+ * metered client holds credits for it and charges each task once its answer
+ * arrives. Rejected entries come back without a task; the caller fails their
+ * answers.
  */
 export async function postAiTrackingTasks(
   input: AiTrackingMarket & {
@@ -130,7 +135,7 @@ export async function postAiTrackingTasks(
       );
       continue;
     }
-    posted.push({ tag, taskId: entry.id });
+    posted.push({ tag, taskId: entry.id, costUsd: entry.cost ?? 0 });
   }
   return {
     data: posted,

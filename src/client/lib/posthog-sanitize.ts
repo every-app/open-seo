@@ -101,12 +101,13 @@ export function sanitizePostHogEvent<T extends PostHogEvent>(event: T): T {
   }
   // Error tracking keeps each exception's type and stack frames. A message
   // can quote page content (a JSON snippet, a URL); a bare error code can't.
+  // Redacted messages get a marker so issues and their alerts don't read blank.
   if (Array.isArray(properties.$exception_list)) {
     properties.$exception_list.forEach((entry: unknown) => {
       if (typeof entry !== "object" || entry === null) return;
       const value: unknown = Reflect.get(entry, "value");
       if (typeof value !== "string" || !isErrorCode(value)) {
-        Reflect.set(entry, "value", "");
+        Reflect.set(entry, "value", "message redacted");
       }
     });
   }

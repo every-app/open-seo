@@ -1,3 +1,4 @@
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 import type {
   RankCheckScheduleTime,
   RankTrackingConfig,
@@ -96,7 +97,7 @@ export function describeSchedule(
 }
 
 export function formatNextCheck(nextCheckAt: string): string {
-  return new Date(nextCheckAt).toLocaleString([], {
+  return parseDbTimestamp(nextCheckAt).toLocaleString([], {
     weekday: "short",
     month: "short",
     day: "numeric",

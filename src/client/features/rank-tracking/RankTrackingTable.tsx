@@ -4,6 +4,7 @@ import { FileDown, Plus, Sheet, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/client/components/ConfirmDialog";
 import { Button } from "@/client/components/ui/button";
 import { DataTable, useDataTable } from "@/client/components/table/DataTable";
+import { TablePagination } from "@/client/components/table/TablePagination";
 import {
   TableBulkActionBar,
   TableBulkActionButton,
@@ -25,12 +26,17 @@ import {
 } from "./KeywordTrendModal";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
+// A tracker holds thousands of keywords, and a browser can't draw them all at
+// once. Sorting, filters, selection and exports still cover every row.
+const PAGE_SIZES = [50, 100, 250] as const;
+
 export function RankTrackingTable({
   totalCount,
   rows,
   showDesktop,
   showMobile,
   sorting,
+  pageResetKey,
   onSortingChange,
   domain,
   configId,
@@ -47,6 +53,8 @@ export function RankTrackingTable({
   showDesktop: boolean;
   showMobile: boolean;
   sorting: SortingState;
+  /** Changes when the filters do, which returns the table to its first page. */
+  pageResetKey: string;
   onSortingChange: (sorting: SortingState) => void;
   domain: string;
   configId: string;
@@ -92,13 +100,27 @@ export function RankTrackingTable({
     () => [{ id: PINNED_COLUMN_ID, desc: false }, ...sorting],
     [sorting],
   );
+  // The page belongs to one sort and one set of filters. Under another, the
+  // table shows its first page.
+  const pageKey = `${JSON.stringify(sorting)}:${pageResetKey}`;
+  const [paging, setPaging] = useState({
+    page: 1,
+    pageSize: 100 as (typeof PAGE_SIZES)[number],
+    key: pageKey,
+  });
+  const page = paging.key === pageKey ? paging.page : 1;
+  const { pageSize } = paging;
   const table = useDataTable({
     data: rows,
     columns,
     state: {
       sorting: tableSorting,
       columnVisibility: { [PINNED_COLUMN_ID]: false },
+      pagination: { pageIndex: page - 1, pageSize },
     },
+    withPagination: true,
+    // A refetch during a check replaces the rows; it must not change the page.
+    autoResetPageIndex: false,
     onSortingChange: (updater) =>
       onSortingChange(
         (typeof updater === "function"
@@ -224,9 +246,25 @@ export function RankTrackingTable({
         }}
         footer={
           rows.length > 0 ? (
-            <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">
-              {rows.length} of {totalCount} keywords
-            </p>
+            <>
+              <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">
+                {rows.length} of {totalCount} keywords
+              </p>
+              {rows.length > PAGE_SIZES[0] ? (
+                <TablePagination
+                  page={page}
+                  pageSize={pageSize}
+                  pageSizes={PAGE_SIZES}
+                  totalCount={rows.length}
+                  onPageChange={(next) =>
+                    setPaging({ page: next, pageSize, key: pageKey })
+                  }
+                  onPageSizeChange={(next) =>
+                    setPaging({ page: 1, pageSize: next, key: pageKey })
+                  }
+                />
+              ) : null}
+            </>
           ) : null
         }
       />

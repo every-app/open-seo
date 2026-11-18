@@ -1,6 +1,6 @@
-import { useId, useState } from "react";
+import { useId } from "react";
 import { SlidersHorizontal } from "lucide-react";
-import { FormDialog } from "@/client/components/FormDialog";
+import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
 import {
   Field,
@@ -8,6 +8,11 @@ import {
   FieldDescription,
   FieldLabel,
 } from "@/client/components/ui/field";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/client/components/ui/popover";
 import { Switch } from "@/client/components/ui/switch";
 import {
   RESULT_LIMITS,
@@ -42,7 +47,6 @@ export function KeywordSearchOptions({ controller }: Props) {
     preferredGroupKeywords: groupKeywords,
     setPreferredGroupKeywords: setGroupKeywords,
   } = controller;
-  const [open, setOpen] = useState(false);
 
   return (
     <controlsForm.Subscribe selector={(state) => state.values}>
@@ -51,70 +55,73 @@ export function KeywordSearchOptions({ controller }: Props) {
         const labs = isLabsLocationCode(values.locationCode);
         const local = Boolean(values.locationName);
 
+        // Options that don't apply to this search don't count.
+        const changedCount = [
+          values.resultLimit !== RESULT_LIMITS[0],
+          labs && values.mode !== "auto",
+          labs && !local && values.clickstream,
+          labs && groupKeywords,
+        ].filter(Boolean).length;
+
         return (
-          <>
-            <Button
-              variant="outline"
-              className="w-full font-normal lg:w-auto lg:shrink-0"
-              aria-haspopup="dialog"
-              onClick={() => setOpen(true)}
+          <Popover>
+            <PopoverTrigger
+              render={<Button variant="outline" className="font-normal" />}
             >
               <SlidersHorizontal data-icon="inline-start" />
               Options
-            </Button>
+              {changedCount > 0 ? (
+                <Badge variant="secondary" size="sm">
+                  {changedCount}
+                </Badge>
+              ) : null}
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80 gap-4 p-4">
+              <controlsForm.AppField name="resultLimit">
+                {(field) => (
+                  <field.SelectField label="Results" items={RESULT_ITEMS} />
+                )}
+              </controlsForm.AppField>
 
-            {open ? (
-              <FormDialog
-                title="Search options"
-                onClose={() => setOpen(false)}
-                actions={<Button onClick={() => setOpen(false)}>Done</Button>}
-              >
-                <controlsForm.AppField name="resultLimit">
-                  {(field) => (
-                    <field.SelectField label="Results" items={RESULT_ITEMS} />
-                  )}
-                </controlsForm.AppField>
+              <controlsForm.AppField name="mode">
+                {(field) => (
+                  <field.SelectField
+                    label="Keyword source"
+                    description={labs ? undefined : GOOGLE_ADS_ONLY_NOTE}
+                    items={MODE_ITEMS}
+                    disabled={!labs}
+                  />
+                )}
+              </controlsForm.AppField>
 
-                <controlsForm.AppField name="mode">
-                  {(field) => (
-                    <field.SelectField
-                      label="Keyword source"
-                      description={labs ? undefined : GOOGLE_ADS_ONLY_NOTE}
-                      items={MODE_ITEMS}
-                      disabled={!labs}
-                    />
-                  )}
-                </controlsForm.AppField>
+              <controlsForm.Field name="clickstream">
+                {(field) => (
+                  <ToggleRow
+                    label="Clickstream-refined volumes"
+                    help={
+                      !labs
+                        ? GOOGLE_ADS_ONLY_NOTE
+                        : local
+                          ? "Not available for local results. Clickstream data covers whole countries only."
+                          : "Google reports one combined volume for similar keywords. This estimates each keyword's own volume. Costs 2x the credits."
+                    }
+                    // The saved choice returns when the option applies again.
+                    checked={labs && !local && field.state.value}
+                    disabled={!labs || local}
+                    onChange={(checked) => field.handleChange(checked)}
+                  />
+                )}
+              </controlsForm.Field>
 
-                <controlsForm.Field name="clickstream">
-                  {(field) => (
-                    <ToggleRow
-                      label="Clickstream-refined volumes"
-                      help={
-                        !labs
-                          ? GOOGLE_ADS_ONLY_NOTE
-                          : local
-                            ? "Not available for local results. Clickstream data covers whole countries only."
-                            : "Google reports one combined volume for similar keywords. This estimates each keyword's own volume. Costs 2x the credits."
-                      }
-                      // The saved choice returns when the option applies again.
-                      checked={labs && !local && field.state.value}
-                      disabled={!labs || local}
-                      onChange={(checked) => field.handleChange(checked)}
-                    />
-                  )}
-                </controlsForm.Field>
-
-                <ToggleRow
-                  label="Group keywords"
-                  help={labs ? undefined : GOOGLE_ADS_ONLY_NOTE}
-                  checked={labs && groupKeywords}
-                  disabled={!labs}
-                  onChange={setGroupKeywords}
-                />
-              </FormDialog>
-            ) : null}
-          </>
+              <ToggleRow
+                label="Group keywords"
+                help={labs ? undefined : GOOGLE_ADS_ONLY_NOTE}
+                checked={labs && groupKeywords}
+                disabled={!labs}
+                onChange={setGroupKeywords}
+              />
+            </PopoverContent>
+          </Popover>
         );
       }}
     </controlsForm.Subscribe>

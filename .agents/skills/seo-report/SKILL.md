@@ -57,7 +57,7 @@ These are enforced by the viewer, not by taste. A report that breaks them render
 
 - **No external resources of any kind.** No web fonts, no CDN scripts or stylesheets, no images by URL, no `fetch`. Every request from a saved report is blocked. Inline all CSS in one `<style>` block.
 - **Links open in a new tab.** Write every link as `<a href="..." target="_blank" rel="noopener">`. A plain link would navigate the report frame itself, replacing the report with a broken copy of the target. The exception is an in-page anchor (`href="#id"`, as in the contents rail), which stays in the document.
-- **No `<script>`.** Scripts are blocked outright. Anything interactive has to be static.
+- **No executable `<script>`.** A report's own scripts never run, however they are written. The one interactive element is a widget the viewer renders itself from a `<script type="application/json">` data block inside a `<figure data-widget="…">` (the rank grid in `local-seo` is the first). That block is data, not code, and it is the only `<script>` tag a report may contain.
 - **Charts are inline SVG or CSS bars**, with real `<text>` labels and a `viewBox`. Always print the numbers next to the chart too.
 - **Aim under 80 KB.** The hard cap is 500,000 bytes, and the error says "the limit is 500 KB". Inlined images are the usual way people blow it. A filled report is normally 10-30 KB.
 - **No backticks and no `${` anywhere in the HTML.** Codex passes the argument through a JavaScript template literal, where both are syntax. Use `<code>` for inline code and plain text everywhere else.
@@ -251,6 +251,7 @@ footer{max-width:660px;margin:64px 0 0;padding:26px 0 0;border-top:1px solid var
 - **`.note`** — one left-ruled callout for a caveat, a confidence limit, or something you could not verify. Two or three in a report, never a row of them.
 - **`.tw` table** — every numeric column gets `class="n"` on both the `th` and the `td` so the digits line up. Keep tables to five columns or fewer, put the long-text column last, and keep cell text short; a wide table scrolls on a phone and clips in print.
 - **`figure` + `.bars`** — one small bar chart where a comparison reads faster than a sentence. One row per item: `.label`, a `.track` holding a `.bar` whose inline width is the value as a percentage of the largest, and `.value`. Inline SVG is fine for anything that is not a bar chart; give it a `viewBox` and real `<text>` labels.
+- **Widget figure** — a `figure` with a `data-widget` name, a JSON data block the viewer reads, the static drawing as the fallback, and a `figcaption`. Only the widgets a skill documents exist; the viewer ignores any other name and shows the fallback.
 - **`hr` then a closing `h2`** — the "What to do next" list, ordered, shortest useful.
 - **How this report was made** — the last `h2`: the skill link line, then Tools and Verified bullets. See the section above.
 - **`footer`** — one line: the sign-off and the data date. Method detail belongs in the closing section, not here.

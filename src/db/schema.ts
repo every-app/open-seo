@@ -13,6 +13,8 @@ import * as sqliteTelemetry from "./telemetry.schema";
 import * as sqliteAiVisibility from "./ai-visibility.schema";
 import * as sqliteLocalMapRank from "./local-map-rank.schema";
 import * as sqliteUsageBudget from "./usage-budget.schema";
+import * as sqliteLocalSeo from "./local-seo.schema";
+import * as sqliteStripeProjects from "./stripe-projects.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgProjectContext from "./pg/project-context.schema";
 import * as pgReports from "./pg/reports.schema";
@@ -27,6 +29,8 @@ import * as pgTelemetry from "./pg/telemetry.schema";
 import * as pgAiVisibility from "./pg/ai-visibility.schema";
 import * as pgLocalMapRank from "./pg/local-map-rank.schema";
 import * as pgUsageBudget from "./pg/usage-budget.schema";
+import * as pgLocalSeo from "./pg/local-seo.schema";
+import * as pgStripeProjects from "./pg/stripe-projects.schema";
 
 // Canonical schema barrel. Repositories import their tables from here and the
 // provider-aware `db` from "@/db", so each repository is written ONCE for both
@@ -51,7 +55,9 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteTelemetry &
   typeof sqliteAiVisibility &
   typeof sqliteLocalMapRank &
-  typeof sqliteUsageBudget;
+  typeof sqliteUsageBudget &
+  typeof sqliteLocalSeo &
+  typeof sqliteStripeProjects;
 
 const runtimeSchema =
   getDatabaseProvider() === "postgres"
@@ -70,6 +76,8 @@ const runtimeSchema =
         ...pgAiVisibility,
         ...pgLocalMapRank,
         ...pgUsageBudget,
+        ...pgLocalSeo,
+        ...pgStripeProjects,
       }
     : {
         ...sqliteApp,
@@ -86,6 +94,8 @@ const runtimeSchema =
         ...sqliteAiVisibility,
         ...sqliteLocalMapRank,
         ...sqliteUsageBudget,
+        ...sqliteLocalSeo,
+        ...sqliteStripeProjects,
       };
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- guarded by schema-parity.test.ts
@@ -93,6 +103,9 @@ const schema = runtimeSchema as unknown as AppSchema;
 
 export const {
   userOnboardingAnswers,
+  userSignupCampaigns,
+  accountDeletionRequests,
+  guestAccounts,
   projects,
   savedKeywords,
   savedKeywordTags,
@@ -143,4 +156,13 @@ export const {
   localMapScanResults,
   organizationUsageSettings,
   organizationUsageLedger,
+  localRankTrackers,
+  localRankChecks,
+  localRankKeywords,
+  localRankScans,
+  localRankPoints,
+  localRankBusinesses,
+  localRankResults,
+  stripeProjectsGrants,
+  stripeProjectsResources,
 } = schema;

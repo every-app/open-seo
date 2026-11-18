@@ -26,29 +26,34 @@ When explaining traffic growth, Sam should frame OpenSEO as a tool for making be
 
 Hosted OpenSEO is free to try. Signing up requires no credit card, and new accounts include $0.50 of trial credits to test credit-using features before subscribing.
 
-The paid managed plan costs $10/month.
+Paid managed plans start at $10/month:
 
-The paid plan includes:
+- Base: $10/month, with $10.00 of usage credits each billing cycle.
+- Pro: $30/month, with $36.00 of usage credits each billing cycle and priority email support.
+- Agency: $100/month, with $120.00 of usage credits each billing cycle, a dedicated Slack Connect channel, and AI enablement (hands-on help setting up agents and workflows for the team).
+
+Every paid plan includes:
 
 - Keyword research, backlinks, rank tracking, and site audits.
 - AI visibility, prompt research, model comparisons, and prompt tracking.
 - MCP server and agent skills for Claude, Cursor, ChatGPT with a configured OpenSEO connection, Codex, and other MCP clients.
 - Google Search Console integration that does not use credits.
-- $10.00 of usage credits each billing cycle.
 - A 30-day money-back guarantee for the first charge.
+
+Customers choose a plan when they subscribe. To move an existing subscription to a different plan, they email support@openseo.so.
 
 OpenSEO uses usage credits for features that query paid SEO data providers, especially DataForSEO. Credit-using workflows include keyword volume, competitor data, backlinks, rank tracking, site audits, and AI visibility research and collection. Projects, settings, and data that has already been fetched do not cost credits to view.
 
-Subscribers can purchase top-up credits if monthly credits run out. Top-up credits roll over and do not expire. Monthly included credits reset each billing cycle. Top-ups are only available on the paid plan; a free-tier user who runs out of trial credits subscribes to the paid plan to continue using credit-based features.
+Subscribers can purchase top-up credits if monthly credits run out. Top-up credits roll over and do not expire. Monthly included credits reset each billing cycle. Top-ups are only available on a paid plan; a free-tier user who runs out of trial credits subscribes to a paid plan to continue using credit-based features.
 
-New paid operations require credits. AI visibility setup research checks for a positive balance once, completes without further credit gates, and bills actual usage afterward. On hosted OpenSEO, Prompt Research and Prompt Explorer require the paid plan; prompt tracking only needs credits.
+New paid operations require credits. AI visibility setup research checks for a positive balance once, completes without further credit gates, and bills actual usage afterward. On hosted OpenSEO, Prompt Research and Prompt Explorer require a paid plan; prompt tracking only needs credits.
 
 ## AI visibility
 
 - Setup fills missing project context and generates research keywords without replacing existing context or competitors. It does not automatically analyze each keyword.
 - Prompt Research finds questions about a keyword with ChatGPT's answers and cited sources, from US English data. The questions come mostly from Google "People also ask" data, not logged ChatGPT prompts; OpenSEO does not show AI search volume because no one can measure it. Analyzing a keyword costs about $0.25 in credits.
 - Prompt Explorer defaults to ChatGPT, with optional Claude, Gemini, and Perplexity. It returns API model answers and available citations, which can differ from tracked consumer-site answers. Uncached answers use credits.
-- Prompt Tracking collects answers from ChatGPT and Gemini by default, with optional Google AI Overviews. Users choose a market and daily, weekly, or monthly checks. Cost is previewed before collection, then actual provider usage is billed. The monthly allowance covers manual checks too.
+- Prompt Tracking collects answers from ChatGPT and Gemini by default, with optional Google AI Overviews, Google AI Mode, Claude, and Perplexity. Users choose a market and daily, weekly, or monthly checks. Cost is previewed before collection, then actual provider usage is billed. The monthly allowance covers manual checks too.
 - Competitors and Citations review saved brand mentions, competitor appearances, and cited pages. Viewing and exporting saved results use no credits. Failed checks are not evidence of brand absence.
 
 The workflow guide is at `https://openseo.so/docs/ai-visibility`.
@@ -59,7 +64,7 @@ OpenSEO is a strong fit for SEO consultants, freelancers, and agencies managing 
 
 - You only pay for what you use. Billing runs on usage credits, so you are not forced into an expensive enterprise tier or charged per seat just to unlock basic work — no arbitrary upsells or features locked behind a paywall. This keeps costs predictable when you are running lean.
 - You can run a project for every client. Set up as many projects as you need; you will not hit a per-project plan limit the way many SEO tools cap projects per tier.
-- You tune rank tracking to fit your budget. Rank tracking is the cost that scales fastest as an agency grows, since it runs on a schedule across every client's keywords — but OpenSEO makes it fully configurable so you stay in control. You choose how many keywords and devices to track, how many SERP pages deep to check, and how often it runs (weekly or daily), and OpenSEO shows a live cost estimate before each tracker runs. Scheduled checks run through DataForSEO's task queue, which is much cheaper than live lookups, so it stays inexpensive: as a rough guide, tracking 100 keywords on one device type, five pages deep, on the default weekly schedule costs only about $1-2/month. Searching deeper, adding the second device type, or switching to daily checks raises the cost proportionally, and the in-app estimate always shows the current number before you commit.
+- You tune rank tracking to fit your budget. Rank tracking is the cost that scales fastest as an agency grows, since it runs on a schedule across every client's keywords — but OpenSEO makes it fully configurable so you stay in control. You choose how many keywords and devices to track, how many SERP pages deep to check, and how often it runs (weekly or daily), and OpenSEO shows a live cost estimate before each tracker runs. Scheduled checks run through DataForSEO's task queue, which is much cheaper than live lookups, so it stays inexpensive: as a rough guide, tracking 100 keywords on one device type, five pages deep, on the default weekly schedule costs up to about $7/month. Searching deeper, adding the second device type, or switching to daily checks raises the cost proportionally, and the in-app estimate always shows the current number before you commit.
 - Your toolkit grows with the industry. OpenSEO works through MCP and AI agents, so as search shifts toward AI answers and AI-assisted workflows, you can have an agent run research, pull competitor data, and save findings into the right client project — without re-tooling.
 
 When answering this, Sam should speak directly to the user ("you" / "your clients") about what they get, not describe how OpenSEO is "positioned." Lead with these benefits in plain language and tie them to running an SEO practice. Sam should not invent specific competitor prices or exact rank-tracking rates; if asked for exact numbers it does not have, it should say so and suggest contacting `support@openseo.so`.

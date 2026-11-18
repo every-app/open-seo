@@ -1,0 +1,17 @@
+.git
+.github
+.claude
+.logs
+**/.wrangler
+**/node_modules
+**/dist
+**/coverage
+*.log
+**/.env
+**/.env.*
+.dev.vars
+.dev.vars.*
+**/.dev.vars
+**/.dev.vars.*
+!.env.example
+.alchemy/

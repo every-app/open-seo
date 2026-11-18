@@ -9,7 +9,7 @@ import {
 } from "@/client/lib/error-messages";
 import { AuthErrorCard } from "@/client/components/AuthErrorCard";
 import { QueryError } from "@/client/components/QueryState";
-import { SkeletonPage } from "@/client/components/SkeletonPresets";
+import { DashboardSkeleton } from "@/client/features/dashboard/DashboardPage";
 import { StatusScreen } from "@/client/components/StatusScreen";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
@@ -34,7 +34,11 @@ function IndexRedirect() {
     // getProjects always returns at least one project.
     const projectId = lastProjectId ?? data?.[0]?.id;
     if (!projectId) return;
-    void navigate({ to: "/p/$projectId", params: { projectId } });
+    void navigate({
+      to: "/p/$projectId",
+      params: { projectId },
+      replace: true,
+    });
   }, [lastProjectId, data, navigate]);
 
   useEffect(() => {
@@ -42,7 +46,7 @@ function IndexRedirect() {
       return;
     }
 
-    void navigate({ href: SUBSCRIBE_ROUTE });
+    void navigate({ href: SUBSCRIBE_ROUTE, replace: true });
   }, [error, navigate]);
 
   if (isError) {
@@ -75,6 +79,6 @@ function IndexRedirect() {
     );
   }
 
-  // Shaped like the page it is about to open.
-  return <SkeletonPage />;
+  // The dashboard's own skeleton, so opening it changes nothing on screen.
+  return <DashboardSkeleton />;
 }

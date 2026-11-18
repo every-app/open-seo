@@ -1,5 +1,9 @@
 import {
   applyBillingMarkupUsd,
+  AUTUMN_AGENCY_ANNUAL_PLAN_ID,
+  AUTUMN_AGENCY_PLAN_ID,
+  AUTUMN_PRO_ANNUAL_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
   creditsForProviderUsd,
   roundUsdForBilling,
 } from "./billing";
@@ -12,12 +16,6 @@ import type {
 // Cost constants
 // ---------------------------------------------------------------------------
 
-/** DataForSEO Live API: cost of first page (10 results) */
-const LIVE_BASE_PAGE_COST_USD = 0.002;
-
-/** DataForSEO Live API: cost of each additional page (75% of base) */
-const LIVE_EXTRA_PAGE_COST_USD = 0.0015;
-
 /** DataForSEO task queue (standard priority): cost of first page (10 results) */
 const QUEUED_BASE_PAGE_COST_USD = 0.0006;
 
@@ -25,25 +23,86 @@ const QUEUED_BASE_PAGE_COST_USD = 0.0006;
 const QUEUED_EXTRA_PAGE_COST_USD = 0.00045;
 
 /**
- * How a rank check reaches DataForSEO: "live" is the instant endpoint used for
- * manual checks; "queued" is the cheaper task queue used for scheduled checks.
+ * Reads a keyword/device can get in one check: the first, and a second when
+ * the first got no page back or missed a keyword that ranked before.
  */
-type RankCheckMethod = "live" | "queued";
+export const MAX_READS_PER_CHECK = 2;
 
-/** How many keywords are checked per batch */
-export const KEYWORDS_PER_BATCH = 10;
+/** How long a check takes, shown before and during one. */
+export const RANK_CHECK_DURATION_COPY =
+  "Usually takes about an hour, up to 2 hours.";
+
+/** A failed run's error when DataForSEO never returned any of its results. */
+export const RANK_CHECK_DELAYED_ERROR =
+  "Our search data provider didn't return results in time.";
+
+// A check's first results normally arrive within 10 minutes. With none after
+// the hour the running banner promises, it is waiting on DataForSEO's queue.
+const RANK_CHECK_DELAYED_AFTER_MS = 60 * 60_000;
+
+export function isRankCheckDelayed(run: {
+  status: string;
+  keywordsChecked: number;
+  startedAt: string;
+}): boolean {
+  return (
+    run.status === "running" &&
+    run.keywordsChecked === 0 &&
+    Date.now() - new Date(run.startedAt).getTime() > RANK_CHECK_DELAYED_AFTER_MS
+  );
+}
 
 /**
- * Extra queued checks a rank check gives a keyword/device that errored or
- * reads as lost or far below its known position.
+ * Keywords one tracker holds on the base plan, the free plan, and any plan
+ * not named in KEYWORDS_PER_CONFIG_BY_PLAN.
  */
-export const RETRY_ROUNDS = 2;
+export const BASE_KEYWORDS_PER_CONFIG = 1000;
 
-/** Approximate seconds per batch */
-export const SECONDS_PER_BATCH = 6;
+/** Keywords one tracker holds on the Pro plan. */
+const PRO_KEYWORDS_PER_CONFIG = 2500;
 
-/** Soft application limit for keywords per rank tracking config */
-export const MAX_KEYWORDS_PER_CONFIG = 1000;
+/**
+ * The most keywords any plan lets one tracker hold: the Agency plan's limit,
+ * and the limit of a deployment without billing. The check pipeline is sized
+ * for this on both devices (see TASK_GET_BATCH_MS in rankCheckPaths.ts and
+ * MAX_TASK_UNITS_IN_FLIGHT in scheduledRankChecks.ts), so raise them together.
+ */
+export const MAX_KEYWORDS_PER_CONFIG = 5000;
+
+const KEYWORDS_PER_CONFIG_BY_PLAN: Record<string, number> = {
+  [AUTUMN_PRO_PLAN_ID]: PRO_KEYWORDS_PER_CONFIG,
+  [AUTUMN_PRO_ANNUAL_PLAN_ID]: PRO_KEYWORDS_PER_CONFIG,
+  [AUTUMN_AGENCY_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
+  [AUTUMN_AGENCY_ANNUAL_PLAN_ID]: MAX_KEYWORDS_PER_CONFIG,
+};
+
+/** How many keywords one tracker holds on the given paid plan, or on none. */
+export function keywordsPerConfigForPlan(paidPlanId: string | null): number {
+  return (
+    (paidPlanId && KEYWORDS_PER_CONFIG_BY_PLAN[paidPlanId]) ||
+    BASE_KEYWORDS_PER_CONFIG
+  );
+}
+
+function count(keywords: number) {
+  return keywords.toLocaleString("en-US");
+}
+
+/**
+ * What to tell someone whose tracker is full. Below the highest limit it
+ * names the plans that allow more.
+ */
+export function keywordLimitMessage(limit: number): string {
+  const reached = `This tracker is at its limit of ${count(limit)} keywords.`;
+  const agency = `the Agency plan ${count(MAX_KEYWORDS_PER_CONFIG)}`;
+  if (limit < PRO_KEYWORDS_PER_CONFIG) {
+    return `${reached} The Pro plan allows ${count(PRO_KEYWORDS_PER_CONFIG)} per tracker and ${agency}.`;
+  }
+  if (limit < MAX_KEYWORDS_PER_CONFIG) {
+    return `${reached} The Agency plan allows ${count(MAX_KEYWORDS_PER_CONFIG)} per tracker.`;
+  }
+  return reached;
+}
 
 /** Maximum length of a single tracked keyword */
 export const MAX_TRACKED_KEYWORD_LENGTH = 200;
@@ -65,15 +124,18 @@ export const rankCheckCostApprovalError = (
 // Cost estimation
 // ---------------------------------------------------------------------------
 
-/** DataForSEO cost for a single SERP request at the given depth. */
-export function costPerSerpAtDepth(
-  depth: number,
-  method: RankCheckMethod,
-): number {
+/** DataForSEO cost for a single standard-queue SERP read at the given depth. */
+export function costPerSerpAtDepth(depth: number): number {
   const pages = depth / 10;
-  return method === "queued"
-    ? QUEUED_BASE_PAGE_COST_USD + (pages - 1) * QUEUED_EXTRA_PAGE_COST_USD
-    : LIVE_BASE_PAGE_COST_USD + (pages - 1) * LIVE_EXTRA_PAGE_COST_USD;
+  return QUEUED_BASE_PAGE_COST_USD + (pages - 1) * QUEUED_EXTRA_PAGE_COST_USD;
+}
+
+/**
+ * DataForSEO cost for one rank check read: a standard-queue SERP plus the
+ * first-page price resolve_poisoned_results adds to every task.
+ */
+export function costPerRankCheckRead(depth: number): number {
+  return costPerSerpAtDepth(depth) + QUEUED_BASE_PAGE_COST_USD;
 }
 
 export function pagesToDepth(pages: number): number {
@@ -91,15 +153,13 @@ export function serpKeywordCostMultiplier(keyword: string) {
 }
 
 /**
- * The most one rank check can cost: the check itself at `method` price, plus
- * RETRY_ROUNDS queued retries of every keyword/device pair (retries go to
- * pairs that error or read as lost, so most checks cost far less).
+ * The most one rank check can cost: MAX_READS_PER_CHECK queued reads of every
+ * keyword/device pair.
  */
 export function estimateRankCheckCredits(
   keywords: readonly string[],
   devices: RankTrackingConfig["devices"],
   depth: number,
-  method: RankCheckMethod,
 ) {
   // One entry per keyword/device pair, keyword-major like the workflow's
   // task list, so queued chunks group the same pairs the real posts do.
@@ -108,36 +168,29 @@ export function estimateRankCheckCredits(
       serpKeywordCostMultiplier(keyword),
     ),
   );
-  const check = meteredCost(checkMultipliers, depth, method);
-  const retry = meteredCost(checkMultipliers, depth, "queued");
+  const read = meteredCost(checkMultipliers, depth);
   return {
-    costUsd: roundUsdForBilling(check.costUsd + RETRY_ROUNDS * retry.costUsd),
-    costCredits: check.costCredits + RETRY_ROUNDS * retry.costCredits,
+    costUsd: roundUsdForBilling(MAX_READS_PER_CHECK * read.costUsd),
+    costCredits: MAX_READS_PER_CHECK * read.costCredits,
   };
 }
 
-function meteredCost(
-  checkMultipliers: number[],
-  depth: number,
-  method: RankCheckMethod,
-) {
-  const checksPerMeteredCall = method === "queued" ? MAX_TASKS_PER_POST : 1;
+function meteredCost(checkMultipliers: number[], depth: number) {
   let costUsd = 0;
   let costCredits = 0;
 
-  // Metering rounds and ceilings each provider call independently. Live rank
-  // checks make one call per keyword/device pair, while queued checks post up
-  // to MAX_TASKS_PER_POST pairs per call. Summing one aggregate and rounding
-  // once can therefore understate the credits that will actually be charged.
+  // Metering rounds and ceilings each provider call independently, and a read
+  // posts up to MAX_TASKS_PER_POST pairs per call. Summing one aggregate and
+  // rounding once can therefore understate the credits actually charged.
   for (
     let offset = 0;
     offset < checkMultipliers.length;
-    offset += checksPerMeteredCall
+    offset += MAX_TASKS_PER_POST
   ) {
     const callMultiplier = checkMultipliers
-      .slice(offset, offset + checksPerMeteredCall)
+      .slice(offset, offset + MAX_TASKS_PER_POST)
       .reduce((sum, multiplier) => sum + multiplier, 0);
-    const callRawUsd = callMultiplier * costPerSerpAtDepth(depth, method);
+    const callRawUsd = callMultiplier * costPerRankCheckRead(depth);
     costUsd += applyBillingMarkupUsd(callRawUsd);
     costCredits += creditsForProviderUsd(callRawUsd);
   }
@@ -170,7 +223,6 @@ export function estimateScheduledRankCheckCredits(
     keywords,
     devices,
     depth,
-    "queued",
   );
   const checksPerMonth = scheduledChecksPerMonth(scheduleInterval);
   return {
@@ -389,6 +441,11 @@ export function scheduleLabel(
   if (interval === "weekly") return "Weekly";
   if (interval === "monthly") return "Monthly";
   return "Manual";
+}
+
+/** Older failed runs stored "AppError: Insufficient credits for rank check". */
+export function isOutOfCreditsRunError(errorMessage: string | null): boolean {
+  return /insufficient.credits/i.test(errorMessage ?? "");
 }
 
 export function devicesCount(devices: RankTrackingConfig["devices"]): number {

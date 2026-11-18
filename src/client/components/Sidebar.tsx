@@ -3,9 +3,11 @@ import type { LinkOptions } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ComponentType } from "react";
 import { toast } from "sonner";
+import { cn } from "cn";
 import {
   ArrowLeftRight,
   Check,
+  ChevronLeft,
   CircleHelp,
   CreditCard,
   LogOut,
@@ -27,6 +29,11 @@ import {
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
+import {
+  isEveryAppClientAuthMode,
+  isHostedClientAuthMode,
+} from "@/lib/auth-mode";
+import { everyAppAccountQueryOptions } from "@/client/features/every-app/everyAppAccountQueries";
 import { BILLING_ROUTE } from "@/shared/billing";
 import {
   Sidebar as UiSidebar,
@@ -139,7 +146,10 @@ export function Sidebar({
 
   return (
     <UiSidebar variant="inset" collapsible="offcanvas" className="md:!p-0">
-      <SidebarHeader className="gap-0 px-3 pb-1 pt-3">
+      <SidebarHeader
+        className={cn("gap-0 px-3 pb-1", everyApp ? "pt-2" : "pt-3")}
+      >
+        {everyApp ? <EveryAppLink /> : null}
         <Link
           to="/"
           onClick={() => setOpenMobile(false)}
@@ -173,7 +183,7 @@ export function Sidebar({
           >
             {navGroups.map((group) => (
               <SidebarGroup key={group.label} className="py-1">
-                <SidebarGroupLabel className="h-7 uppercase tracking-wider text-sidebar-foreground/40">
+                <SidebarGroupLabel className="h-7 uppercase tracking-wider">
                   {group.label}
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
@@ -202,16 +212,52 @@ export function Sidebar({
   );
 }
 
+// Behind an Every App gateway, which owns sign-in, organizations, teams and
+// billing: the sidebar's first row links back to the gateway, and the footer
+// holds help and OpenSEO settings.
+const everyApp = isEveryAppClientAuthMode();
+
+/**
+ * The way back up, first in the sidebar as in every Every App app. The row
+ * keeps its height while the gateway's URL loads so the header doesn't jump.
+ */
+function EveryAppLink() {
+  const accountQuery = useQuery(everyAppAccountQueryOptions());
+  const gatewayUrl = accountQuery.data?.gatewayUrl;
+  if (!accountQuery.isPending && !gatewayUrl) return null;
+  return (
+    <a
+      href={gatewayUrl ?? undefined}
+      aria-label="Back to Every App"
+      className={cn(
+        "mb-1 inline-flex h-7 w-fit items-center gap-0.5 rounded-md pl-0.5 pr-2 text-sm text-sidebar-foreground/60 transition-colors hover:text-sidebar-foreground",
+        accountQuery.isPending && "invisible",
+      )}
+    >
+      <ChevronLeft className="size-4" aria-hidden />
+      <span>Every App</span>
+    </a>
+  );
+}
+
 function AccountFooter({ ready }: { ready: boolean }) {
   const { data: session } = useSession();
   const { setOpenMobile } = useSidebar();
-  const email = session?.user?.email;
+  const everyAppAccountQuery = useQuery({
+    ...everyAppAccountQueryOptions(),
+    enabled: everyApp,
+  });
+  const email = everyApp
+    ? everyAppAccountQuery.data?.email
+    : session?.user?.email;
   const [isSwitching, setIsSwitching] = useState(false);
   const orgContextQuery = useQuery({
     ...organizationContextQueryOptions(),
-    enabled: Boolean(email),
+    enabled: Boolean(email) && !everyApp,
   });
-  const organizations = orgContextQuery.data?.organizations ?? [];
+  const organizations = everyApp
+    ? []
+    : (orgContextQuery.data?.organizations ?? []);
   const activeOrganizationId = orgContextQuery.data?.organizationId;
 
   async function handleSwitchOrganization(organizationId: string) {
@@ -237,7 +283,13 @@ function AccountFooter({ ready }: { ready: boolean }) {
           label="Help & Community"
           linkProps={{ to: "/support" }}
         />
-        {email ? (
+        {everyApp ? (
+          <SidebarNavLink
+            icon={Settings}
+            label="Settings"
+            linkProps={{ to: "/settings" }}
+          />
+        ) : email ? (
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -292,17 +344,19 @@ function AccountFooter({ ready }: { ready: boolean }) {
                   <Settings className="size-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  render={
-                    <Link
-                      to={BILLING_ROUTE}
-                      onClick={() => setOpenMobile(false)}
-                    />
-                  }
-                >
-                  <CreditCard className="size-4" />
-                  Billing
-                </DropdownMenuItem>
+                {isHostedClientAuthMode() ? (
+                  <DropdownMenuItem
+                    render={
+                      <Link
+                        to={BILLING_ROUTE}
+                        onClick={() => setOpenMobile(false)}
+                      />
+                    }
+                  >
+                    <CreditCard className="size-4" />
+                    Billing
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Theme</DropdownMenuLabel>
                   <div className="px-1 pb-1">

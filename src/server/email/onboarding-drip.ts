@@ -1,4 +1,4 @@
-import { waitUntil } from "cloudflare:workers";
+import { runAfterResponse } from "@/server/lib/background";
 import {
   sendLoopsEvent,
   updateLoopsContact,
@@ -20,11 +20,17 @@ type OnboardingMilestone =
   | "auditStarted"
   | "gscConnected"
   | "rankTrackingSetUp"
-  | "mcpConnected";
+  | "mcpConnected"
+  | "mcpToolCalled";
 
 export async function markOnboardingMilestone(
   recipient: OnboardingRecipient,
   milestone: OnboardingMilestone,
+  // Set alongside the milestone for its emails (see markMcpConnected).
+  properties: {
+    agentProvider?: "claude" | "chatgpt";
+    mcpToolCalled?: true;
+  } = {},
 ) {
   await sendOnce(`${milestone}:${recipient.userId}`, (apiKey) =>
     updateLoopsContact({
@@ -33,6 +39,7 @@ export async function markOnboardingMilestone(
         email: recipient.userEmail,
         userId: recipient.userId,
         [milestone]: true,
+        ...properties,
       },
       logContext: { action: "onboarding-milestone", milestone },
     }),
@@ -100,13 +107,9 @@ async function sendOnce(
   const apiKey = await getOptionalEnvValue("LOOPS_API_KEY");
   if (!apiKey) return;
   sentKeys.add(key);
-  const work = send(apiKey).catch((error: unknown) => {
-    console.error(`onboarding drip: ${key} failed`, error);
-  });
-  try {
-    waitUntil(work);
-  } catch {
-    // No request context (Workflow step): wait for the send instead.
-    await work;
-  }
+  await runAfterResponse(
+    send(apiKey).catch((error: unknown) => {
+      console.error(`onboarding drip: ${key} failed`, error);
+    }),
+  );
 }

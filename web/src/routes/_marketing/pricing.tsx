@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { MetaEvent, trackMetaEvent } from "@/lib/meta-pixel";
 import { buildPageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/_marketing/pricing")({
   head: () =>
     buildPageSeo({
-      title: "Pricing estimator",
+      title: "OpenSEO Pricing: Plans from $10 a Month",
       description:
-        "Start at $10/mo. The $10 includes $10 of usage, enough for most people. Move the sliders to estimate what your month would cost.",
+        "Plans from $10/mo, each with usage included every month. Pro and Agency include 20% more usage than you pay for. Estimate what your month would cost.",
       path: "/pricing",
-      titleSuffix: "OpenSEO",
     }),
   component: Pricing,
 });
@@ -26,7 +26,6 @@ const MARKUP = 1.28; // OpenSEO's flat 28% premium over raw DataForSEO cost
 const CREDIT_USD = 0.001; // $ value of a single credit
 const BASE_PRICE_USD = 10; // Base Plan / month
 const BASE_INCLUDED_CREDIT_USD = 10; // $10 of usage credits included, reset monthly
-const WEEKS_PER_MONTH = 4.345; // 52 / 12
 const DEFAULT_RANK_DEPTH = 40;
 const DEFAULT_LOCAL_SERP_DEPTH = 20;
 const BACKLINK_HISTORY_DAYS = 365;
@@ -37,11 +36,18 @@ const RANK_CHECK_LABELS: Record<number, string> = {
   7: "Daily",
 };
 
+// Priced like the app's "up to" estimate: a check reads each keyword up to
+// twice, weekly is 4 checks a month and daily is 30 (MAX_READS_PER_CHECK and
+// scheduledChecksPerMonth in src/shared/rank-tracking.ts).
+const RANK_MAX_READS_PER_CHECK = 2;
+const RANK_CHECKS_PER_MONTH: Record<number, number> = { 0: 0, 1: 4, 7: 30 };
+
 // Raw DataForSEO per-call cost in USD (NOT including OpenSEO's markup).
 const RAW_COST_USD = {
-  // Scheduled checks use the queued API. The app defaults to one device and
-  // the top 40 results: $0.0006 for page one + $0.00045 per extra page.
-  rankCheck: 0.0006 + (DEFAULT_RANK_DEPTH / 10 - 1) * 0.00045,
+  // Rank checks use the queued API. The app defaults to one device and the top
+  // 40 results: $0.0006 for page one + $0.00045 per extra page, per read, plus
+  // $0.0006 for resolve_poisoned_results.
+  rankCheck: 0.0006 + (DEFAULT_RANK_DEPTH / 10 - 1) * 0.00045 + 0.0006,
   // Labs live costs $0.012/task + $0.00012/row (measured Sep 2026). Auto mode
   // blends two half-limit calls (suggestions + ideas), so the default
   // 150-result search is 2 x (0.012 + 75 x 0.00012) = $0.042; 300 results is
@@ -79,6 +85,97 @@ const CREDITS_PER_UNIT = {
 } as const;
 
 /* ------------------------------------------------------------------ *
+ * Plans — the cards at the top of the page. Pro and Agency include 20%
+ * more usage than their price.
+ * ------------------------------------------------------------------ */
+/** The plan's ?plan= value on the app's subscribe page. */
+type CheckoutPlan = "base" | "pro" | "agency";
+
+type Plan = {
+  name: string;
+  id: CheckoutPlan;
+  priceUsd: number;
+  /** The yearly price, 2 months free. */
+  annualPriceUsd: number;
+  includedUsageUsd: number;
+  audience: string;
+  features: string[];
+  /** Small print under the button. Every card keeps the line so they align. */
+  signUpNote?: string;
+  contactHref?: string;
+  featured?: boolean;
+};
+
+const SIGN_UP_URL = "https://app.openseo.so/sign-up";
+
+/**
+ * Sign-up that goes straight to this plan on the app's subscribe page. Base
+ * monthly is the free trial, so it stays a plain sign-up.
+ */
+function signUpHref(plan: CheckoutPlan, yearly: boolean) {
+  if (plan === "base" && !yearly) return SIGN_UP_URL;
+  const url = new URL(SIGN_UP_URL);
+  url.searchParams.set(
+    "redirect",
+    `/subscribe?upgrade=true&plan=${plan}${yearly ? "&billing=yearly" : ""}`,
+  );
+  return url.href;
+}
+
+const PAY_AS_YOU_GO = "Pay as you go for extra usage";
+
+const PLANS: Plan[] = [
+  {
+    name: "Base",
+    id: "base",
+    signUpNote: "Try for free",
+    priceUsd: BASE_PRICE_USD,
+    annualPriceUsd: 100,
+    includedUsageUsd: BASE_INCLUDED_CREDIT_USD,
+    audience: "For your own website.",
+    features: [
+      "Keyword research, backlinks, rank tracking, and site audits",
+      "AI visibility, prompt research, and tracking",
+      "Works inside Claude, Cursor, and ChatGPT",
+      "Free Google Search Console data",
+      "Unlimited projects, and no per-seat fee for teammates",
+      PAY_AS_YOU_GO,
+    ],
+    featured: true,
+  },
+  {
+    name: "Pro",
+    id: "pro",
+    priceUsd: 30,
+    annualPriceUsd: 300,
+    includedUsageUsd: 36,
+    audience: "For freelancers and growing teams.",
+    features: [
+      "Everything in Base",
+      "20% more usage than you pay for",
+      "Priority email support",
+      PAY_AS_YOU_GO,
+    ],
+  },
+  {
+    name: "Agency",
+    id: "agency",
+    priceUsd: 100,
+    annualPriceUsd: 1000,
+    includedUsageUsd: 120,
+    audience: "For agencies with many clients.",
+    features: [
+      "Everything in Pro",
+      "20% more usage than you pay for",
+      "Dedicated Slack Connect channel",
+      "AI enablement: hands-on help setting up agents and workflows for your team",
+      PAY_AS_YOU_GO,
+    ],
+    contactHref: "https://calendar.app.google/F2ZQ9Rs3Jr4rfnpFA",
+  },
+];
+
+/* ------------------------------------------------------------------ *
  * Personas — preset the estimator to the two modeled customers.
  * ------------------------------------------------------------------ */
 type Inputs = {
@@ -92,7 +189,7 @@ type Inputs = {
 };
 
 const PRESETS: Record<"business" | "freelancer", Inputs> = {
-  // About $8/mo of usage: one site with weekly rank tracking and regular research.
+  // About $10/mo of usage: one site with weekly rank tracking and regular research.
   business: {
     sites: 1,
     keywordsPerSite: 50,
@@ -102,7 +199,7 @@ const PRESETS: Record<"business" | "freelancer", Inputs> = {
     backlinks: 20,
     aiPromptChecks: 0,
   },
-  // About $27/mo of usage: an agency checking 15 client sites weekly.
+  // About $41/mo of usage: an agency checking 15 client sites weekly.
   freelancer: {
     sites: 15,
     keywordsPerSite: 20,
@@ -119,6 +216,7 @@ const usd = (n: number) =>
 
 function Pricing() {
   const [persona, setPersona] = useState<"business" | "freelancer">("business");
+  const [yearly, setYearly] = useState(false);
   const [inputs, setInputs] = useState<Inputs>(PRESETS.business);
 
   function applyPersona(next: "business" | "freelancer") {
@@ -132,10 +230,8 @@ function Pricing() {
 
   const estimate = useMemo(() => {
     const scheduledRunsPerMonth =
-      inputs.sites * inputs.checksPerWeek * WEEKS_PER_MONTH;
-    const rankChecksPerMonth = Math.round(
-      scheduledRunsPerMonth * inputs.keywordsPerSite,
-    );
+      inputs.sites * RANK_CHECKS_PER_MONTH[inputs.checksPerWeek];
+    const rankChecksPerMonth = scheduledRunsPerMonth * inputs.keywordsPerSite;
 
     const lines = [
       {
@@ -170,11 +266,11 @@ function Pricing() {
         key: "rank",
         label: "Rank tracking",
         detail: `${rankChecksPerMonth.toLocaleString()} checks this month`,
-        // The app bills each site's scheduled run as one keyword batch.
-        credits: Math.round(
+        // The app bills each read of a site's keywords as one batch.
+        credits:
           scheduledRunsPerMonth *
-            creditsForRaw(inputs.keywordsPerSite * RAW_COST_USD.rankCheck),
-        ),
+          RANK_MAX_READS_PER_CHECK *
+          creditsForRaw(inputs.keywordsPerSite * RAW_COST_USD.rankCheck),
       },
     ];
 
@@ -188,72 +284,86 @@ function Pricing() {
   }, [inputs, persona]);
 
   return (
-    <article className="mx-auto max-w-4xl">
+    <article>
       {/* 1. Hero */}
-      <p className="text-sm font-medium text-[var(--color-brand-accent)]">
-        Pricing
-      </p>
-      <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-neutral-950 md:text-5xl">
-        Starts at $10/month
-      </h1>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--color-brand-muted)]">
-        Other SEO tools are too expensive. OpenSEO grows with you.
-      </p>
+      <div className="text-center">
+        <p className="text-sm font-medium text-[var(--color-brand-accent)]">
+          Pricing
+        </p>
+        <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-neutral-950 md:text-5xl">
+          Starts at $10/month
+        </h1>
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[var(--color-brand-muted)]">
+          Other SEO tools are too expensive. OpenSEO grows with you.
+        </p>
+      </div>
 
-      {/* 2. Base Plan */}
-      <section className="mt-10 border-y border-[var(--color-border-subtle)] py-8">
-        <div className="flex items-baseline justify-between gap-4">
-          <div>
-            <p className="font-semibold text-neutral-950">Base Plan</p>
-            <p className="mt-1 text-sm text-[var(--color-brand-muted)]">
-              One plan. Everything included.
-            </p>
-          </div>
-          <p className="text-2xl font-semibold tabular-nums text-neutral-950">
-            $10
-            <span className="text-base font-normal text-[var(--color-brand-muted)]">
-              /mo
-            </span>
-          </p>
-        </div>
-        <ul className="mt-4 space-y-2">
-          {[
-            "Keyword research, backlinks, rank tracking, and site audits",
-            "AI visibility, prompt research, and tracking",
-            "Works inside Claude, Cursor, and ChatGPT",
-            "Google Search Console data is free and doesn't touch your $10",
-            "Includes $10 of usage every month",
-            "Buy extra usage anytime; it never expires",
-          ].map((item) => (
-            <li key={item} className="flex gap-2.5 text-sm text-neutral-700">
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brand-accent)]">
-                <span className="sr-only">Included:</span>
-              </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-        <div className="mt-6 flex items-center gap-4">
-          <a
-            href="https://app.openseo.so/sign-up"
-            className="inline-flex items-center justify-center rounded-lg bg-neutral-950 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+      {/* 2. Plans */}
+      <div
+        className="mx-auto mt-10 flex w-fit rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-1"
+        role="group"
+        aria-label="Billing period"
+      >
+        {(
+          [
+            [false, "Monthly"],
+            [true, "Yearly (2 months free)"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => setYearly(value)}
+            aria-pressed={yearly === value}
+            className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              yearly === value
+                ? "border border-[var(--color-border-subtle)] bg-white text-neutral-950 shadow-sm"
+                : "border border-transparent text-neutral-600 hover:text-neutral-950"
+            }`}
           >
-            Get Started
-            <span aria-hidden="true" className="ml-1.5">
-              &rarr;
-            </span>
-          </a>
-          <p className="text-xs text-neutral-500">Try for free</p>
+            {label}
+          </button>
+        ))}
+      </div>
+      <section
+        aria-label="Plans"
+        className="mt-6 grid gap-5 md:grid-cols-3 md:items-stretch"
+      >
+        {PLANS.map((plan) => (
+          <PlanCard key={plan.name} plan={plan} yearly={yearly} />
+        ))}
+      </section>
+
+      {/* 3. How usage works */}
+      <section className="mx-auto mt-16 max-w-4xl">
+        <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
+          How usage-based pricing works
+        </h2>
+        <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--color-brand-muted)]">
+          <p>
+            Every plan includes a monthly amount of usage. Usage pays for new
+            SEO data you look up: keyword research, backlinks, rank checks, site
+            audits, and AI visibility checks. Each action costs what the data
+            costs us plus a flat {Math.round((MARKUP - 1) * 100)}%, rounded up
+            to the nearest tenth of a cent, so a keyword search is about $0.05
+            and a rank check is up to 1.5 cents per keyword.
+          </p>
+          <p>
+            Your projects, saved results, exports, and Google Search Console
+            data never use any. When you need more than your plan includes, buy
+            extra usage or turn on auto-reload up to a monthly limit you set.
+            Extra usage never expires.
+          </p>
         </div>
       </section>
 
-      {/* 3. The estimator */}
-      <section className="mt-10">
+      {/* 4. The estimator */}
+      <section className="mx-auto mt-10 max-w-4xl">
         <div className="grid divide-y divide-[var(--color-border-subtle)] rounded-xl border border-[var(--color-border-subtle)] bg-white lg:grid-cols-[1.1fr_1fr] lg:divide-x lg:divide-y-0">
           {/* Inputs */}
           <div className="p-5 sm:p-6">
             <h2 className="text-lg font-semibold tracking-tight text-neutral-950">
-              Estimate your month
+              Estimate your monthly usage
             </h2>
 
             {/* Persona toggle */}
@@ -396,6 +506,9 @@ function Pricing() {
                       </span>
                     </dt>
                     <dd className="shrink-0 text-sm font-medium tabular-nums text-neutral-950">
+                      {line.key === "rank" && line.credits > 0
+                        ? "Up to "
+                        : null}
                       {usd(line.credits * CREDIT_USD)}
                     </dd>
                   </div>
@@ -421,8 +534,8 @@ function Pricing() {
         </div>
       </section>
 
-      {/* 4. FAQ */}
-      <section className="mt-14">
+      {/* 5. FAQ */}
+      <section className="mx-auto mt-14 max-w-4xl">
         <h2 className="text-xl font-semibold tracking-tight text-neutral-950">
           FAQ
         </h2>
@@ -433,7 +546,8 @@ function Pricing() {
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
               Yes. The free trial includes $0.50 of credits so you can test
-              OpenSEO before subscribing.
+              OpenSEO before subscribing. You don&apos;t need a credit card to
+              start.
             </dd>
           </div>
           <div className="py-4 first:pt-0 last:pb-0">
@@ -441,7 +555,8 @@ function Pricing() {
               What if I use all my credits for the month?
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
-              Buy top-up credits at any time to keep using paid features.
+              Buy top-up credits at any time, or turn on auto-reload so OpenSEO
+              buys them for you when you run low, up to a monthly limit you set.
             </dd>
           </div>
           <div className="py-4 first:pt-0 last:pb-0">
@@ -461,7 +576,7 @@ function Pricing() {
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
               Top-up credits roll over indefinitely. The Usage Credits included
-              with your Base Plan reset each billing cycle.
+              with your plan reset each billing cycle.
             </dd>
           </div>
           <div className="py-4 first:pt-0 last:pb-0">
@@ -478,13 +593,90 @@ function Pricing() {
               Do I need a subscription or just usage credits?
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
-              While top-up Usage Credits roll over and don&apos;t expire, you
-              need an active subscription in order to use OpenSEO.
+              You can try OpenSEO on the $0.50 of free trial credits. To keep
+              going after that, or to use rank checks and Prompt Research, you
+              need an active subscription. Top-up Usage Credits roll over and
+              don&apos;t expire, but you can only buy them on a paid plan.
             </dd>
           </div>
         </dl>
       </section>
     </article>
+  );
+}
+
+function PlanCard({ plan, yearly }: { plan: Plan; yearly: boolean }) {
+  const price = yearly ? plan.annualPriceUsd : plan.priceUsd;
+  return (
+    <div
+      className={`flex flex-col rounded-xl border bg-white p-6 ${
+        plan.featured
+          ? "border-neutral-950 shadow-md"
+          : "border-[var(--color-border-subtle)]"
+      }`}
+    >
+      <h2 className="font-semibold text-neutral-950">{plan.name}</h2>
+      <p className="mt-1 text-sm text-[var(--color-brand-muted)]">
+        {plan.audience}
+      </p>
+      <p className="mt-5 text-4xl font-semibold tabular-nums tracking-tight text-neutral-950">
+        ${price.toLocaleString()}
+        <span className="text-base font-normal text-[var(--color-brand-muted)]">
+          {yearly ? "/yr" : "/mo"}
+        </span>
+      </p>
+      <p className="mt-1 text-sm font-medium text-neutral-800">
+        Includes ${plan.includedUsageUsd} of usage every month
+      </p>
+      <a
+        href={signUpHref(plan.id, yearly)}
+        onClick={() =>
+          trackMetaEvent(MetaEvent.AddToCart, {
+            content_ids: [plan.id],
+            content_name: plan.name,
+            content_type: "product",
+            currency: "USD",
+            value: price,
+          })
+        }
+        className={`mt-6 inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${
+          plan.featured
+            ? "bg-neutral-950 text-white hover:bg-neutral-800"
+            : "border border-[var(--color-border-subtle)] text-neutral-950 hover:border-neutral-950"
+        }`}
+      >
+        Get started
+        <span aria-hidden="true" className="ml-1.5">
+          &rarr;
+        </span>
+      </a>
+      <p className="mt-2 h-4 text-center text-xs text-neutral-500">
+        {yearly ? null : plan.signUpNote}
+      </p>
+      <ul className="mt-4 space-y-2.5 border-t border-[var(--color-border-subtle)] pt-6">
+        {plan.features.map((item) => (
+          <li key={item} className="flex gap-2.5 text-sm text-neutral-700">
+            <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brand-accent)]">
+              <span className="sr-only">Included:</span>
+            </span>
+            {item}
+          </li>
+        ))}
+      </ul>
+      {plan.contactHref ? (
+        <p className="mt-auto pt-6 text-sm text-[var(--color-brand-muted)]">
+          Questions first?{" "}
+          <a
+            href={plan.contactHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
+          >
+            Book a call
+          </a>
+        </p>
+      ) : null}
+    </div>
   );
 }
 

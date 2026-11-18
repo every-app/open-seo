@@ -20,6 +20,11 @@ import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 export const RANK_TRACKING_HEADER_CLASS =
   "text-xs uppercase tracking-wide text-muted-foreground";
 
+const RIGHT_ALIGNED = {
+  headerClassName: "text-right",
+  cellClassName: "text-right tabular-nums",
+} as const;
+
 const HEADER_TOOLTIPS: Record<string, string> = {
   keyword: "The search term being tracked in Google",
   volume: "Estimated monthly search volume from Google",
@@ -50,6 +55,7 @@ function makeVolumeColumn(locationLabel?: string): ColumnDef<RankTrackingRow> {
             : HEADER_TOOLTIPS.volume
         }
         className={RANK_TRACKING_HEADER_CLASS}
+        align="right"
       />
     ),
     size: 90,
@@ -57,6 +63,7 @@ function makeVolumeColumn(locationLabel?: string): ColumnDef<RankTrackingRow> {
       <VolumeCell value={getValue<number | undefined>() ?? null} />
     ),
     sortUndefined: "last",
+    meta: RIGHT_ALIGNED,
   };
 }
 
@@ -69,6 +76,7 @@ const kdColumn: ColumnDef<RankTrackingRow> = {
       label="KD"
       title={HEADER_TOOLTIPS.kd}
       className={RANK_TRACKING_HEADER_CLASS}
+      align="right"
     />
   ),
   size: 70,
@@ -76,6 +84,7 @@ const kdColumn: ColumnDef<RankTrackingRow> = {
     <ScoreBadge value={getValue<number | undefined>() ?? null} />
   ),
   sortUndefined: "last",
+  meta: { headerClassName: "text-right", cellClassName: "text-right" },
 };
 
 const cpcColumn: ColumnDef<RankTrackingRow> = {
@@ -87,6 +96,7 @@ const cpcColumn: ColumnDef<RankTrackingRow> = {
       label="CPC"
       title={HEADER_TOOLTIPS.cpc}
       className={RANK_TRACKING_HEADER_CLASS}
+      align="right"
     />
   ),
   size: 80,
@@ -94,6 +104,7 @@ const cpcColumn: ColumnDef<RankTrackingRow> = {
     <CpcCell value={getValue<number | undefined>() ?? null} />
   ),
   sortUndefined: "last",
+  meta: RIGHT_ALIGNED,
 };
 
 // Hidden column. The table always sorts by it first, so pinned keywords stay

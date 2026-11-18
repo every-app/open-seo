@@ -2,15 +2,19 @@ import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 import type { EnsuredUserContext } from "@/middleware/ensure-user/types";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { autumn } from "@/server/billing/autumn";
+import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { AppError } from "@/server/lib/errors";
 import {
+  AUTUMN_AGENCY_ANNUAL_PLAN_ID,
+  AUTUMN_AGENCY_PLAN_ID,
   AUTUMN_CHECKOUT_SESSION_PARAMS,
+  AUTUMN_PAID_ANNUAL_PLAN_ID,
   AUTUMN_PAID_PLAN_ID,
+  AUTUMN_PRO_ANNUAL_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
   AUTUMN_SEO_DATA_CREDITS_PER_USD,
   AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-  AUTUMN_YC_CHECKOUT_SESSION_PARAMS,
-  AUTUMN_YC_PLAN_ID,
   BILLING_ROUTE,
   SUBSCRIBE_ROUTE,
   type CheckoutPlanId,
@@ -24,7 +28,11 @@ const PLAN_CHECKOUT_SESSION_PARAMS: Record<
   Record<string, unknown>
 > = {
   [AUTUMN_PAID_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
-  [AUTUMN_YC_PLAN_ID]: AUTUMN_YC_CHECKOUT_SESSION_PARAMS,
+  [AUTUMN_PRO_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
+  [AUTUMN_AGENCY_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
+  [AUTUMN_PAID_ANNUAL_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
+  [AUTUMN_PRO_ANNUAL_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
+  [AUTUMN_AGENCY_ANNUAL_PLAN_ID]: AUTUMN_CHECKOUT_SESSION_PARAMS,
 };
 
 // redirectMode "always" makes Autumn return a link instead of billing: Stripe
@@ -50,10 +58,20 @@ async function createCheckoutUrl(
   return paymentUrl;
 }
 
-export function createPlanCheckoutUrl(
+export async function createPlanCheckoutUrl(
   caller: BillingCaller,
   args: { planId: CheckoutPlanId; redirectTo: string; origin: string },
 ) {
+  // A paying organization changes tiers through upgradeOrganizationPlan,
+  // whose terms are priced by credits; a checkout here would apply Autumn's
+  // default proration.
+  if (await customerHasPaidPlan(caller.organizationId)) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `${caller.organizationId} already pays for a plan`,
+    );
+  }
+
   // /subscribe waits for Autumn to show the new plan, then forwards to
   // redirectTo.
   const successUrl = new URL(SUBSCRIBE_ROUTE, args.origin);

@@ -67,6 +67,14 @@ describe("withQueryRetries", () => {
     expect(unsafe).toHaveBeenCalledTimes(2);
   });
 
+  it("retries a select after workerd's codeless socket loss", async () => {
+    const { sql, unsafe } = fakeSql(1, new Error("Network connection lost."));
+    const rows = start(withQueryRetries(sql).unsafe("select 1"));
+    await flushRetries();
+    await expect(rows).resolves.toEqual([{ ok: 1 }]);
+    expect(unsafe).toHaveBeenCalledTimes(2);
+  });
+
   it("retries the .values() path drizzle uses", async () => {
     const { sql, unsafe } = fakeSql(1, connectionError("ECONNRESET"));
     const rows = start(withQueryRetries(sql).unsafe('select "id"').values());

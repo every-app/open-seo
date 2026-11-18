@@ -5,6 +5,14 @@ import type {
   RankCheckTriggerResult,
   RankTrackingConfig,
 } from "@/types/schemas/rank-tracking";
+import {
+  isWorkflowActive,
+  readWorkflowStatus,
+  startWorkflow,
+  STUCK_RUN_AFTER_MS,
+  terminateStuckWorkflow,
+  type WorkflowStatus,
+} from "@/server/lib/startWorkflow";
 
 type RunRow = Awaited<ReturnType<typeof RankTrackingRepository.getRunById>>;
 
@@ -17,22 +25,8 @@ type RunRow = Awaited<ReturnType<typeof RankTrackingRepository.getRunById>>;
 // - Flipping status to 'completed'/'failed' is what frees the slot.
 // - Missing/unknown workflow state is tolerated briefly during startup
 //   before we treat a run as stale and mark it failed.
-
-type RankCheckWorkflowStatus = {
-  status:
-    | "queued"
-    | "running"
-    | "paused"
-    | "errored"
-    | "terminated"
-    | "complete"
-    | "waiting"
-    | "waitingForPause"
-    | "unknown";
-  error?: {
-    message: string;
-  };
-};
+// - A run still active after STUCK_RUN_AFTER_MS is stuck: the next start
+//   terminates its workflow and fails it. Reads only report it.
 
 type RankCheckConfigForStart = Pick<
   RankTrackingConfig,
@@ -45,29 +39,10 @@ type RankCheckConfigForStart = Pick<
   | "serpDepth"
 >;
 
-const ACTIVE_WORKFLOW_STATUSES = new Set<RankCheckWorkflowStatus["status"]>([
-  "queued",
-  "running",
-  "waiting",
-  "waitingForPause",
-  "paused",
-]);
-
 const RANK_CHECK_STARTUP_GRACE_MS = 60 * 1000;
 
-async function getRankCheckWorkflowStatus(
-  runId: string,
-): Promise<RankCheckWorkflowStatus | null> {
-  try {
-    const instance = await env.RANK_CHECK_WORKFLOW.get(runId);
-    return (await instance.status()) as RankCheckWorkflowStatus;
-  } catch {
-    return null;
-  }
-}
-
 function getStaleReason(
-  workflowStatus: RankCheckWorkflowStatus | null,
+  workflowStatus: WorkflowStatus | null,
   run: RunRow,
 ): string {
   if (run?.status === "completed" || run?.status === "failed") {
@@ -93,10 +68,18 @@ async function getStaleRankCheckRunReason(input: {
   runId: string;
   ageMs: number;
 }) {
-  const workflowStatus = await getRankCheckWorkflowStatus(input.runId);
+  const workflowStatus = await readWorkflowStatus(
+    env.RANK_CHECK_WORKFLOW,
+    input.runId,
+  );
 
-  if (workflowStatus && ACTIVE_WORKFLOW_STATUSES.has(workflowStatus.status)) {
-    return null;
+  // A failed lookup says nothing about the workflow: treat it as still active.
+  if (
+    workflowStatus === null ||
+    (workflowStatus !== "missing" && isWorkflowActive(workflowStatus))
+  ) {
+    if (input.ageMs < STUCK_RUN_AFTER_MS) return null;
+    return `Workflow did not finish within ${STUCK_RUN_AFTER_MS / 3_600_000} hours`;
   }
 
   const startupWindow =
@@ -104,32 +87,23 @@ async function getStaleRankCheckRunReason(input: {
     (!input.run ||
       input.run.status === "pending" ||
       input.run.status === "running") &&
-    (!workflowStatus || workflowStatus.status === "unknown");
+    (workflowStatus === "missing" || workflowStatus.status === "unknown");
 
   if (startupWindow) {
     return null;
   }
 
-  return getStaleReason(workflowStatus, input.run);
+  return getStaleReason(
+    workflowStatus === "missing" ? null : workflowStatus,
+    input.run,
+  );
 }
 
 /**
  * Mark a run as failed if it's still in an active state. Idempotent — safe to
- * call on runs that are already completed/failed.
+ * call on runs that are already completed/failed (updateRun skips them).
  */
-export async function failRunIfActive(
-  runId: string,
-  reason: string,
-  run?: RunRow,
-) {
-  const current = run ?? (await RankTrackingRepository.getRunById(runId));
-  if (
-    !current ||
-    current.status === "completed" ||
-    current.status === "failed"
-  ) {
-    return;
-  }
+export async function failRunIfActive(runId: string, reason: string) {
   await RankTrackingRepository.updateRun(runId, {
     status: "failed",
     errorMessage: reason,
@@ -161,35 +135,34 @@ export async function beginRankCheckRun(input: {
 
     if (created) {
       try {
-        await input.workflow.create({
-          id: runId,
-          params: {
-            runId,
-            configId: input.config.id,
-            billingCustomer: input.billingCustomer,
-            projectId: input.projectId,
-            domain: input.config.domain,
-            locationCode: input.config.locationCode,
-            languageCode: input.config.languageCode,
-            locationName: input.config.locationName ?? undefined,
-            devices: input.config.devices,
-            serpDepth: input.config.serpDepth,
-            trigger: input.trigger,
-            keywordIds: input.keywordIds,
-            maxCostCredits: input.maxCostCredits,
+        await startWorkflow(
+          input.workflow,
+          {
+            id: runId,
+            params: {
+              runId,
+              configId: input.config.id,
+              billingCustomer: input.billingCustomer,
+              projectId: input.projectId,
+              domain: input.config.domain,
+              locationCode: input.config.locationCode,
+              languageCode: input.config.languageCode,
+              locationName: input.config.locationName ?? undefined,
+              devices: input.config.devices,
+              serpDepth: input.config.serpDepth,
+              trigger: input.trigger,
+              keywordIds: input.keywordIds,
+              maxCostCredits: input.maxCostCredits,
+            },
           },
-        });
+          "rank check",
+        );
       } catch (error) {
         // Workflow couldn't start — flip the run to failed so the
         // partial-index slot is released. Best-effort cleanup of any
         // zombie instance.
         await failRunIfActive(runId, input.workflowStartErrorMessage);
-        try {
-          const instance = await input.workflow.get(runId);
-          await instance.terminate();
-        } catch {
-          // Workflow may not have been created.
-        }
+        await terminateStuckWorkflow(input.workflow, runId);
         throw error;
       }
       return { ok: true, runId };
@@ -212,7 +185,10 @@ export async function beginRankCheckRun(input: {
         ageMs: Date.now() - new Date(blocker.startedAt).getTime(),
       });
       if (staleReason) {
-        await failRunIfActive(blocker.id, staleReason, blocker);
+        // A stuck instance may still be running: stop it before freeing the
+        // slot, so it can no longer post paid calls.
+        await terminateStuckWorkflow(input.workflow, blocker.id);
+        await failRunIfActive(blocker.id, staleReason);
         continue; // slot is free now — retry insert
       }
     }

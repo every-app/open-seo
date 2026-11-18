@@ -34,12 +34,12 @@ beforeEach(() => {
   state.database.exec(`
     PRAGMA foreign_keys = ON;
     CREATE TABLE user (id text PRIMARY KEY);
-    CREATE TABLE projects (id text PRIMARY KEY);
+    CREATE TABLE projects (id text PRIMARY KEY, organization_id text NOT NULL);
     CREATE TABLE member (id text PRIMARY KEY, organization_id text NOT NULL);
     CREATE TABLE invitation (id text PRIMARY KEY, organization_id text NOT NULL, status text NOT NULL, expires_at integer NOT NULL);
-    CREATE TABLE project_activation_state (project_id text PRIMARY KEY, mcp_card_dismissed_at text);
+    CREATE TABLE project_activation_state (project_id text PRIMARY KEY, competitor_step_clicked_at text, keyword_step_clicked_at text, mcp_card_dismissed_at text, ga4_card_dismissed_at text, updated_at text);
     INSERT INTO user VALUES ('alice'), ('bob');
-    INSERT INTO projects VALUES ('project-a'), ('project-b');
+    INSERT INTO projects VALUES ('project-a', 'org-a'), ('project-b', 'org-a'), ('project-c', 'org-b');
     INSERT INTO member VALUES ('member-a', 'org-a');
   `);
   state.database.exec(
@@ -48,48 +48,127 @@ beforeEach(() => {
 });
 
 describe("checklist persistence", () => {
-  it("isolates preferences by person and project and makes dismissal idempotent", async () => {
-    await ActivationRepository.setStepDismissed(
-      "alice",
-      "project-a",
-      "project",
-      true,
-    );
-    await ActivationRepository.setStepDismissed(
-      "alice",
-      "project-a",
-      "project",
-      true,
-    );
+  it("applies a person's skip and restore to every project in that workspace only", async () => {
+    const skip = (projectId: string, dismissed: boolean) =>
+      ActivationRepository.setStepDismissed({
+        userId: "alice",
+        organizationId: "org-a",
+        projectId,
+        step: "competitor",
+        dismissed,
+      });
+    await skip("project-a", true);
+    await skip("project-b", true);
     expect(
-      await ActivationRepository.getDismissedSteps("alice", "project-a"),
-    ).toEqual([{ step: "project" }]);
+      (
+        await ActivationRepository.getDismissals({
+          userId: "alice",
+          organizationId: "org-a",
+          projectId: "project-a",
+        })
+      ).skippedSteps,
+    ).toEqual(["competitor"]);
     expect(
-      await ActivationRepository.getDismissedSteps("bob", "project-a"),
+      (
+        await ActivationRepository.getDismissals({
+          userId: "bob",
+          organizationId: "org-a",
+          projectId: "project-a",
+        })
+      ).skippedSteps,
     ).toEqual([]);
     expect(
-      await ActivationRepository.getDismissedSteps("alice", "project-b"),
+      (
+        await ActivationRepository.getDismissals({
+          userId: "alice",
+          organizationId: "org-b",
+          projectId: "project-c",
+        })
+      ).skippedSteps,
     ).toEqual([]);
-    await ActivationRepository.setStepDismissed(
-      "alice",
-      "project-a",
-      "project",
-      false,
-    );
+    await skip("project-a", false);
     expect(
-      await ActivationRepository.getDismissedSteps("alice", "project-a"),
+      (
+        await ActivationRepository.getDismissals({
+          userId: "alice",
+          organizationId: "org-a",
+          projectId: "project-a",
+        })
+      ).skippedSteps,
     ).toEqual([]);
   });
-  it("restores legacy MCP dismissals without changing authorization milestones", async () => {
+  it("keeps the agent card and step separate, while older agent dismissals hide both", async () => {
+    await ActivationRepository.dismissAgentCard("alice", "project-a");
+    expect(
+      await ActivationRepository.getDismissals({
+        userId: "alice",
+        organizationId: "org-a",
+        projectId: "project-a",
+      }),
+    ).toEqual({
+      skippedSteps: [],
+      agentCardDismissed: true,
+    });
+    await ActivationRepository.setStepDismissed({
+      userId: "bob",
+      organizationId: "org-a",
+      projectId: "project-a",
+      step: "mcp",
+      dismissed: true,
+    });
+    expect(
+      await ActivationRepository.getDismissals({
+        userId: "bob",
+        organizationId: "org-a",
+        projectId: "project-a",
+      }),
+    ).toEqual({
+      skippedSteps: ["mcp"],
+      agentCardDismissed: false,
+    });
     state.database!.exec(
-      "INSERT INTO project_activation_state VALUES ('project-a', '2026-09-05')",
+      "INSERT INTO dashboard_step_dismissals VALUES ('alice', 'project-b', 'mcp')",
     );
-    await ActivationRepository.setStepDismissed(
-      "alice",
-      "project-a",
-      "mcp",
-      false,
-    );
+    expect(
+      await ActivationRepository.getDismissals({
+        userId: "alice",
+        organizationId: "org-a",
+        projectId: "project-a",
+      }),
+    ).toEqual({
+      skippedSteps: ["mcp"],
+      agentCardDismissed: true,
+    });
+  });
+  it("restores the agent step from dismissals made before the card and step were split", async () => {
+    state.database!.exec(`
+      INSERT INTO project_activation_state (project_id, mcp_card_dismissed_at) VALUES ('project-a', '2026-09-05');
+      INSERT INTO dashboard_step_dismissals VALUES ('alice', 'project-b', 'mcp');
+    `);
+    expect(
+      await ActivationRepository.getDismissals({
+        userId: "bob",
+        organizationId: "org-a",
+        projectId: "project-a",
+      }),
+    ).toEqual({ skippedSteps: ["mcp"], agentCardDismissed: true });
+    await ActivationRepository.setStepDismissed({
+      userId: "alice",
+      organizationId: "org-a",
+      projectId: "project-a",
+      step: "mcp",
+      dismissed: false,
+    });
+    expect(
+      await ActivationRepository.getDismissals({
+        userId: "alice",
+        organizationId: "org-a",
+        projectId: "project-a",
+      }),
+    ).toEqual({
+      skippedSteps: [],
+      agentCardDismissed: false,
+    });
     expect(
       state
         .database!.prepare(
@@ -97,6 +176,16 @@ describe("checklist persistence", () => {
         )
         .get()?.mcp_card_dismissed_at,
     ).toBeNull();
+  });
+  it("counts research on any project in the workspace", async () => {
+    await ActivationRepository.recordResearch("project-b", "keywords");
+    const research = await ActivationRepository.getWorkspaceResearch("org-a");
+    expect(research.competitorResearchedAt).toBeNull();
+    expect(research.keywordResearchedAt).not.toBeNull();
+    expect(await ActivationRepository.getWorkspaceResearch("org-b")).toEqual({
+      competitorResearchedAt: null,
+      keywordResearchedAt: null,
+    });
   });
   it("counts only teammates and unexpired pending invitations in this workspace", async () => {
     expect(await ActivationRepository.hasTeammate("org-a")).toBe(false);
@@ -112,18 +201,14 @@ describe("checklist persistence", () => {
     expect(await ActivationRepository.hasTeammate("org-b")).toBe(false);
   });
   it("removes preferences when their project or user is deleted", async () => {
-    await ActivationRepository.setStepDismissed(
-      "alice",
-      "project-a",
-      "team",
-      true,
-    );
-    await ActivationRepository.setStepDismissed(
-      "bob",
-      "project-b",
-      "audit",
-      true,
-    );
+    await ActivationRepository.setStepDismissed({
+      userId: "alice",
+      organizationId: "org-a",
+      projectId: "project-a",
+      step: "team",
+      dismissed: true,
+    });
+    await ActivationRepository.dismissAgentCard("bob", "project-b");
     state.database!.exec(
       "DELETE FROM user WHERE id = 'alice'; DELETE FROM projects WHERE id = 'project-b'",
     );

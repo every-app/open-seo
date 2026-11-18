@@ -13,9 +13,11 @@ import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthErrorRouteImport } from './routes/auth-error'
+import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRouteImport } from './routes/[.well-known]/http-message-signatures-directory'
 import { Route as Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport } from './routes/[.well-known]/openai-apps-challenge'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAiRouteImport } from './routes/_app/ai'
@@ -27,11 +29,13 @@ import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthenticatedOauthConsentRouteImport } from './routes/_authenticated.oauth-consent'
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated.subscribe'
-import { Route as AuthenticatedYcRouteImport } from './routes/_authenticated.yc'
 import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation.$id'
+import { Route as ApiCspReportRouteImport } from './routes/api/csp-report'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiPrivacyRegionRouteImport } from './routes/api/privacy-region'
+import { Route as ApiSignUpStatusRouteImport } from './routes/api/sign-up-status'
 import { Route as RReportIdRouteImport } from './routes/r/$reportId'
+import { Route as StripeProjectsLoginRouteImport } from './routes/stripe-projects.login'
 import { Route as AppBillingFixPaymentRouteImport } from './routes/_app/billing_.fix-payment'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as AppHelpOpenrouterApiKeyRouteImport } from './routes/_app/help/openrouter-api-key'
@@ -41,6 +45,7 @@ import { Route as AppSettingsOrganizationRouteImport } from './routes/_app/setti
 import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated.onboarding.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
+import { Route as ReportMapGrantCopyrightRouteImport } from './routes/report-map/$grant/copyright'
 import { Route as STokenIndexRouteImport } from './routes/s/$token/index'
 import { Route as STokenOgDotpngRouteImport } from './routes/s/$token/og[.]png'
 import { Route as STokenRawRouteImport } from './routes/s/$token/raw'
@@ -51,6 +56,7 @@ import { Route as AppPProjectIdBrandLookupRouteImport } from './routes/_app/p/$p
 import { Route as AppPProjectIdContextRouteImport } from './routes/_app/p/$projectId/context'
 import { Route as AppPProjectIdDomainRouteImport } from './routes/_app/p/$projectId/domain'
 import { Route as AppPProjectIdKeywordsRouteImport } from './routes/_app/p/$projectId/keywords'
+import { Route as AppPProjectIdLocalSeoRouteImport } from './routes/_app/p/$projectId/local-seo'
 import { Route as AppPProjectIdPromptExplorerRouteImport } from './routes/_app/p/$projectId/prompt-explorer'
 import { Route as AppPProjectIdRankTrackingRouteImport } from './routes/_app/p/$projectId/rank-tracking'
 import { Route as AppPProjectIdSamRouteImport } from './routes/_app/p/$projectId/sam'
@@ -63,6 +69,8 @@ import { Route as AppPProjectIdAiVisibilityIndexRouteImport } from './routes/_ap
 import { Route as AppPProjectIdAiVisibilityResearchRouteImport } from './routes/_app/p/$projectId/ai-visibility/research'
 import { Route as AppPProjectIdAuditIndexRouteImport } from './routes/_app/p/$projectId/audit/index'
 import { Route as AppPProjectIdLocalRankIndexRouteImport } from './routes/_app/p/$projectId/local-rank/index'
+import { Route as AppPProjectIdLocalSeoIndexRouteImport } from './routes/_app/p/$projectId/local-seo/index'
+import { Route as AppPProjectIdLocalSeoTrackerIdRouteImport } from './routes/_app/p/$projectId/local-seo/$trackerId'
 import { Route as AppPProjectIdRankTrackingIndexRouteImport } from './routes/_app/p/$projectId/rank-tracking/index'
 import { Route as AppPProjectIdRankTrackingConfigIdRouteImport } from './routes/_app/p/$projectId/rank-tracking/$configId'
 import { Route as AppPProjectIdReportsIndexRouteImport } from './routes/_app/p/$projectId/reports/index'
@@ -71,8 +79,10 @@ import { Route as AppPProjectIdReportsTemplatesRouteImport } from './routes/_app
 import { Route as AppPProjectIdSettingsIndexRouteImport } from './routes/_app/p/$projectId/settings/index'
 import { Route as AppPProjectIdSettingsContextRouteImport } from './routes/_app/p/$projectId/settings/context'
 import { Route as AppPProjectIdSettingsIntegrationsRouteImport } from './routes/_app/p/$projectId/settings/integrations'
+import { Route as ReportMapGrantZXYRouteImport } from './routes/report-map/$grant/$z/$x/$y'
 import { Route as AppPProjectIdAiVisibilityPromptsPromptIdRouteImport } from './routes/_app/p/$projectId/ai-visibility/prompts/$promptId'
 import { Route as AppPProjectIdAuditIssuesResultIdRouteImport } from './routes/_app/p/$projectId/audit/issues/$resultId'
+import { Route as ApiLocalSeoMapsProjectIdZXYRouteImport } from './routes/api/local-seo/maps/$projectId/$z/$x/$y'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
@@ -91,6 +101,11 @@ const AuthErrorRoute = AuthErrorRouteImport.update({
   path: '/auth-error',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnectRoute = ConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
@@ -106,6 +121,12 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
   path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute =
+  Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRouteImport.update({
+    id: '/.well-known/http-message-signatures-directory',
+    path: '/.well-known/http-message-signatures-directory',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const Char91DotwellKnownChar93OpenaiAppsChallengeRoute =
   Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport.update({
     id: '/.well-known/openai-apps-challenge',
@@ -163,14 +184,14 @@ const AuthenticatedSubscribeRoute = AuthenticatedSubscribeRouteImport.update({
   path: '/subscribe',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedYcRoute = AuthenticatedYcRouteImport.update({
-  id: '/yc',
-  path: '/yc',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AcceptInvitationIdRoute = AcceptInvitationIdRouteImport.update({
   id: '/accept-invitation/$id',
   path: '/accept-invitation/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCspReportRoute = ApiCspReportRouteImport.update({
+  id: '/api/csp-report',
+  path: '/api/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -183,9 +204,19 @@ const ApiPrivacyRegionRoute = ApiPrivacyRegionRouteImport.update({
   path: '/api/privacy-region',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSignUpStatusRoute = ApiSignUpStatusRouteImport.update({
+  id: '/api/sign-up-status',
+  path: '/api/sign-up-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RReportIdRoute = RReportIdRouteImport.update({
   id: '/r/$reportId',
   path: '/r/$reportId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StripeProjectsLoginRoute = StripeProjectsLoginRouteImport.update({
+  id: '/stripe-projects/login',
+  path: '/stripe-projects/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppBillingFixPaymentRoute = AppBillingFixPaymentRouteImport.update({
@@ -232,6 +263,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 const ApiAutumnSplatRoute = ApiAutumnSplatRouteImport.update({
   id: '/api/autumn/$',
   path: '/api/autumn/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportMapGrantCopyrightRoute = ReportMapGrantCopyrightRouteImport.update({
+  id: '/report-map/$grant/copyright',
+  path: '/report-map/$grant/copyright',
   getParentRoute: () => rootRouteImport,
 } as any)
 const STokenIndexRoute = STokenIndexRouteImport.update({
@@ -284,6 +320,11 @@ const AppPProjectIdDomainRoute = AppPProjectIdDomainRouteImport.update({
 const AppPProjectIdKeywordsRoute = AppPProjectIdKeywordsRouteImport.update({
   id: '/keywords',
   path: '/keywords',
+  getParentRoute: () => AppPProjectIdRouteRoute,
+} as any)
+const AppPProjectIdLocalSeoRoute = AppPProjectIdLocalSeoRouteImport.update({
+  id: '/local-seo',
+  path: '/local-seo',
   getParentRoute: () => AppPProjectIdRouteRoute,
 } as any)
 const AppPProjectIdPromptExplorerRoute =
@@ -352,6 +393,18 @@ const AppPProjectIdLocalRankIndexRoute =
     path: '/local-rank/',
     getParentRoute: () => AppPProjectIdRouteRoute,
   } as any)
+const AppPProjectIdLocalSeoIndexRoute =
+  AppPProjectIdLocalSeoIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppPProjectIdLocalSeoRoute,
+  } as any)
+const AppPProjectIdLocalSeoTrackerIdRoute =
+  AppPProjectIdLocalSeoTrackerIdRouteImport.update({
+    id: '/$trackerId',
+    path: '/$trackerId',
+    getParentRoute: () => AppPProjectIdLocalSeoRoute,
+  } as any)
 const AppPProjectIdRankTrackingIndexRoute =
   AppPProjectIdRankTrackingIndexRouteImport.update({
     id: '/',
@@ -400,6 +453,11 @@ const AppPProjectIdSettingsIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AppPProjectIdSettingsRoute,
   } as any)
+const ReportMapGrantZXYRoute = ReportMapGrantZXYRouteImport.update({
+  id: '/report-map/$grant/$z/$x/$y',
+  path: '/report-map/$grant/$z/$x/$y',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppPProjectIdAiVisibilityPromptsPromptIdRoute =
   AppPProjectIdAiVisibilityPromptsPromptIdRouteImport.update({
     id: '/prompts/$promptId',
@@ -412,13 +470,21 @@ const AppPProjectIdAuditIssuesResultIdRoute =
     path: '/audit/issues/$resultId',
     getParentRoute: () => AppPProjectIdRouteRoute,
   } as any)
+const ApiLocalSeoMapsProjectIdZXYRoute =
+  ApiLocalSeoMapsProjectIdZXYRouteImport.update({
+    id: '/api/local-seo/maps/$projectId/$z/$x/$y',
+    path: '/api/local-seo/maps/$projectId/$z/$x/$y',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/auth-error': typeof AuthErrorRoute
+  '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/.well-known/http-message-signatures-directory': typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
@@ -429,11 +495,13 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
-  '/yc': typeof AuthenticatedYcRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/api/health': typeof ApiHealthRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/sign-up-status': typeof ApiSignUpStatusRoute
   '/r/$reportId': typeof RReportIdRoute
+  '/stripe-projects/login': typeof StripeProjectsLoginRoute
   '/p/$projectId': typeof AppPProjectIdRouteRouteWithChildren
   '/billing/fix-payment': typeof AppBillingFixPaymentRoute
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
@@ -441,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/settings/organization': typeof AppSettingsOrganizationRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/report-map/$grant/copyright': typeof ReportMapGrantCopyrightRoute
   '/s/$token/og.png': typeof STokenOgDotpngRoute
   '/s/$token/raw': typeof STokenRawRoute
   '/settings/': typeof AppSettingsIndexRoute
@@ -452,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
+  '/p/$projectId/local-seo': typeof AppPProjectIdLocalSeoRouteWithChildren
   '/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingRouteWithChildren
   '/p/$projectId/sam': typeof AppPProjectIdSamRoute
@@ -462,26 +532,32 @@ export interface FileRoutesByFullPath {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof AppPProjectIdIndexRoute
   '/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
+  '/p/$projectId/local-seo/$trackerId': typeof AppPProjectIdLocalSeoTrackerIdRoute
   '/p/$projectId/rank-tracking/$configId': typeof AppPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/reports/$reportId': typeof AppPProjectIdReportsReportIdRoute
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
+  '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/p/$projectId/ai-visibility/': typeof AppPProjectIdAiVisibilityIndexRoute
   '/p/$projectId/audit/': typeof AppPProjectIdAuditIndexRoute
   '/p/$projectId/local-rank/': typeof AppPProjectIdLocalRankIndexRoute
+  '/p/$projectId/local-seo/': typeof AppPProjectIdLocalSeoIndexRoute
   '/p/$projectId/rank-tracking/': typeof AppPProjectIdRankTrackingIndexRoute
   '/p/$projectId/reports/': typeof AppPProjectIdReportsIndexRoute
   '/p/$projectId/settings/': typeof AppPProjectIdSettingsIndexRoute
   '/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
+  '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/auth-error': typeof AuthErrorRoute
+  '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/.well-known/http-message-signatures-directory': typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
@@ -491,17 +567,20 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
-  '/yc': typeof AuthenticatedYcRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/api/health': typeof ApiHealthRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/sign-up-status': typeof ApiSignUpStatusRoute
   '/r/$reportId': typeof RReportIdRoute
+  '/stripe-projects/login': typeof StripeProjectsLoginRoute
   '/billing/fix-payment': typeof AppBillingFixPaymentRoute
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
   '/settings/organization': typeof AppSettingsOrganizationRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/report-map/$grant/copyright': typeof ReportMapGrantCopyrightRoute
   '/s/$token/og.png': typeof STokenOgDotpngRoute
   '/s/$token/raw': typeof STokenRawRoute
   '/settings': typeof AppSettingsIndexRoute
@@ -520,19 +599,23 @@ export interface FileRoutesByTo {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId': typeof AppPProjectIdIndexRoute
   '/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
+  '/p/$projectId/local-seo/$trackerId': typeof AppPProjectIdLocalSeoTrackerIdRoute
   '/p/$projectId/rank-tracking/$configId': typeof AppPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/reports/$reportId': typeof AppPProjectIdReportsReportIdRoute
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
+  '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/p/$projectId/ai-visibility': typeof AppPProjectIdAiVisibilityIndexRoute
   '/p/$projectId/audit': typeof AppPProjectIdAuditIndexRoute
   '/p/$projectId/local-rank': typeof AppPProjectIdLocalRankIndexRoute
+  '/p/$projectId/local-seo': typeof AppPProjectIdLocalSeoIndexRoute
   '/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingIndexRoute
   '/p/$projectId/reports': typeof AppPProjectIdReportsIndexRoute
   '/p/$projectId/settings': typeof AppPProjectIdSettingsIndexRoute
   '/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
+  '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -540,9 +623,11 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth-error': typeof AuthErrorRoute
+  '/connect': typeof ConnectRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/.well-known/http-message-signatures-directory': typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/_app/ai': typeof AppAiRoute
   '/_app/billing': typeof AppBillingRoute
@@ -553,11 +638,13 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_authenticated/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
-  '/_authenticated/yc': typeof AuthenticatedYcRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/api/health': typeof ApiHealthRoute
   '/api/privacy-region': typeof ApiPrivacyRegionRoute
+  '/api/sign-up-status': typeof ApiSignUpStatusRoute
   '/r/$reportId': typeof RReportIdRoute
+  '/stripe-projects/login': typeof StripeProjectsLoginRoute
   '/_app/': typeof AppIndexRoute
   '/_app/p/$projectId': typeof AppPProjectIdRouteRouteWithChildren
   '/_app/billing_/fix-payment': typeof AppBillingFixPaymentRoute
@@ -566,6 +653,7 @@ export interface FileRoutesById {
   '/_app/settings/organization': typeof AppSettingsOrganizationRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/report-map/$grant/copyright': typeof ReportMapGrantCopyrightRoute
   '/s/$token/og.png': typeof STokenOgDotpngRoute
   '/s/$token/raw': typeof STokenRawRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
@@ -577,6 +665,7 @@ export interface FileRoutesById {
   '/_app/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/_app/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/_app/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
+  '/_app/p/$projectId/local-seo': typeof AppPProjectIdLocalSeoRouteWithChildren
   '/_app/p/$projectId/prompt-explorer': typeof AppPProjectIdPromptExplorerRoute
   '/_app/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingRouteWithChildren
   '/_app/p/$projectId/sam': typeof AppPProjectIdSamRoute
@@ -587,28 +676,34 @@ export interface FileRoutesById {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_app/p/$projectId/': typeof AppPProjectIdIndexRoute
   '/_app/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
+  '/_app/p/$projectId/local-seo/$trackerId': typeof AppPProjectIdLocalSeoTrackerIdRoute
   '/_app/p/$projectId/rank-tracking/$configId': typeof AppPProjectIdRankTrackingConfigIdRoute
   '/_app/p/$projectId/reports/$reportId': typeof AppPProjectIdReportsReportIdRoute
   '/_app/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/_app/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/_app/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
+  '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/_app/p/$projectId/ai-visibility/': typeof AppPProjectIdAiVisibilityIndexRoute
   '/_app/p/$projectId/audit/': typeof AppPProjectIdAuditIndexRoute
   '/_app/p/$projectId/local-rank/': typeof AppPProjectIdLocalRankIndexRoute
+  '/_app/p/$projectId/local-seo/': typeof AppPProjectIdLocalSeoIndexRoute
   '/_app/p/$projectId/rank-tracking/': typeof AppPProjectIdRankTrackingIndexRoute
   '/_app/p/$projectId/reports/': typeof AppPProjectIdReportsIndexRoute
   '/_app/p/$projectId/settings/': typeof AppPProjectIdSettingsIndexRoute
   '/_app/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/_app/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
+  '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth-error'
+    | '/connect'
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
+    | '/.well-known/http-message-signatures-directory'
     | '/.well-known/openai-apps-challenge'
     | '/ai'
     | '/billing'
@@ -619,11 +714,13 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/oauth-consent'
     | '/subscribe'
-    | '/yc'
     | '/accept-invitation/$id'
+    | '/api/csp-report'
     | '/api/health'
     | '/api/privacy-region'
+    | '/api/sign-up-status'
     | '/r/$reportId'
+    | '/stripe-projects/login'
     | '/p/$projectId'
     | '/billing/fix-payment'
     | '/help/dataforseo-api-key'
@@ -631,6 +728,7 @@ export interface FileRouteTypes {
     | '/settings/organization'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/report-map/$grant/copyright'
     | '/s/$token/og.png'
     | '/s/$token/raw'
     | '/settings/'
@@ -642,6 +740,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/local-seo'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/sam'
@@ -652,26 +751,32 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
     | '/p/$projectId/ai-visibility/research'
+    | '/p/$projectId/local-seo/$trackerId'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/reports/$reportId'
     | '/p/$projectId/reports/templates'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
+    | '/report-map/$grant/$z/$x/$y'
     | '/p/$projectId/ai-visibility/'
     | '/p/$projectId/audit/'
     | '/p/$projectId/local-rank/'
+    | '/p/$projectId/local-seo/'
     | '/p/$projectId/rank-tracking/'
     | '/p/$projectId/reports/'
     | '/p/$projectId/settings/'
     | '/p/$projectId/ai-visibility/prompts/$promptId'
     | '/p/$projectId/audit/issues/$resultId'
+    | '/api/local-seo/maps/$projectId/$z/$x/$y'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth-error'
+    | '/connect'
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
+    | '/.well-known/http-message-signatures-directory'
     | '/.well-known/openai-apps-challenge'
     | '/ai'
     | '/billing'
@@ -681,17 +786,20 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/oauth-consent'
     | '/subscribe'
-    | '/yc'
     | '/accept-invitation/$id'
+    | '/api/csp-report'
     | '/api/health'
     | '/api/privacy-region'
+    | '/api/sign-up-status'
     | '/r/$reportId'
+    | '/stripe-projects/login'
     | '/billing/fix-payment'
     | '/help/dataforseo-api-key'
     | '/help/openrouter-api-key'
     | '/settings/organization'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/report-map/$grant/copyright'
     | '/s/$token/og.png'
     | '/s/$token/raw'
     | '/settings'
@@ -710,28 +818,34 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/p/$projectId'
     | '/p/$projectId/ai-visibility/research'
+    | '/p/$projectId/local-seo/$trackerId'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/reports/$reportId'
     | '/p/$projectId/reports/templates'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
+    | '/report-map/$grant/$z/$x/$y'
     | '/p/$projectId/ai-visibility'
     | '/p/$projectId/audit'
     | '/p/$projectId/local-rank'
+    | '/p/$projectId/local-seo'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/reports'
     | '/p/$projectId/settings'
     | '/p/$projectId/ai-visibility/prompts/$promptId'
     | '/p/$projectId/audit/issues/$resultId'
+    | '/api/local-seo/maps/$projectId/$z/$x/$y'
   id:
     | '__root__'
     | '/_app'
     | '/_auth'
     | '/_authenticated'
     | '/auth-error'
+    | '/connect'
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
+    | '/.well-known/http-message-signatures-directory'
     | '/.well-known/openai-apps-challenge'
     | '/_app/ai'
     | '/_app/billing'
@@ -742,11 +856,13 @@ export interface FileRouteTypes {
     | '/_auth/sign-up'
     | '/_authenticated/oauth-consent'
     | '/_authenticated/subscribe'
-    | '/_authenticated/yc'
     | '/accept-invitation/$id'
+    | '/api/csp-report'
     | '/api/health'
     | '/api/privacy-region'
+    | '/api/sign-up-status'
     | '/r/$reportId'
+    | '/stripe-projects/login'
     | '/_app/'
     | '/_app/p/$projectId'
     | '/_app/billing_/fix-payment'
@@ -755,6 +871,7 @@ export interface FileRouteTypes {
     | '/_app/settings/organization'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/report-map/$grant/copyright'
     | '/s/$token/og.png'
     | '/s/$token/raw'
     | '/_app/settings/'
@@ -766,6 +883,7 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/context'
     | '/_app/p/$projectId/domain'
     | '/_app/p/$projectId/keywords'
+    | '/_app/p/$projectId/local-seo'
     | '/_app/p/$projectId/prompt-explorer'
     | '/_app/p/$projectId/rank-tracking'
     | '/_app/p/$projectId/sam'
@@ -776,19 +894,23 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/_app/p/$projectId/'
     | '/_app/p/$projectId/ai-visibility/research'
+    | '/_app/p/$projectId/local-seo/$trackerId'
     | '/_app/p/$projectId/rank-tracking/$configId'
     | '/_app/p/$projectId/reports/$reportId'
     | '/_app/p/$projectId/reports/templates'
     | '/_app/p/$projectId/settings/context'
     | '/_app/p/$projectId/settings/integrations'
+    | '/report-map/$grant/$z/$x/$y'
     | '/_app/p/$projectId/ai-visibility/'
     | '/_app/p/$projectId/audit/'
     | '/_app/p/$projectId/local-rank/'
+    | '/_app/p/$projectId/local-seo/'
     | '/_app/p/$projectId/rank-tracking/'
     | '/_app/p/$projectId/reports/'
     | '/_app/p/$projectId/settings/'
     | '/_app/p/$projectId/ai-visibility/prompts/$promptId'
     | '/_app/p/$projectId/audit/issues/$resultId'
+    | '/api/local-seo/maps/$projectId/$z/$x/$y'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -796,21 +918,29 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthErrorRoute: typeof AuthErrorRoute
+  ConnectRoute: typeof ConnectRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute: typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute: typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
+  ApiCspReportRoute: typeof ApiCspReportRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiPrivacyRegionRoute: typeof ApiPrivacyRegionRoute
+  ApiSignUpStatusRoute: typeof ApiSignUpStatusRoute
   RReportIdRoute: typeof RReportIdRoute
+  StripeProjectsLoginRoute: typeof StripeProjectsLoginRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
+  ReportMapGrantCopyrightRoute: typeof ReportMapGrantCopyrightRoute
   STokenOgDotpngRoute: typeof STokenOgDotpngRoute
   STokenRawRoute: typeof STokenRawRoute
   STokenIndexRoute: typeof STokenIndexRoute
   ApiGa4OauthCallbackRoute: typeof ApiGa4OauthCallbackRoute
   ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
+  ReportMapGrantZXYRoute: typeof ReportMapGrantZXYRoute
+  ApiLocalSeoMapsProjectIdZXYRoute: typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -843,6 +973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connect': {
+      id: '/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof ConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forgot-password': {
       id: '/forgot-password'
       path: '/forgot-password'
@@ -862,6 +999,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/http-message-signatures-directory': {
+      id: '/.well-known/http-message-signatures-directory'
+      path: '/.well-known/http-message-signatures-directory'
+      fullPath: '/.well-known/http-message-signatures-directory'
+      preLoaderRoute: typeof Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/openai-apps-challenge': {
@@ -941,18 +1085,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSubscribeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/yc': {
-      id: '/_authenticated/yc'
-      path: '/yc'
-      fullPath: '/yc'
-      preLoaderRoute: typeof AuthenticatedYcRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/accept-invitation/$id': {
       id: '/accept-invitation/$id'
       path: '/accept-invitation/$id'
       fullPath: '/accept-invitation/$id'
       preLoaderRoute: typeof AcceptInvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/csp-report': {
+      id: '/api/csp-report'
+      path: '/api/csp-report'
+      fullPath: '/api/csp-report'
+      preLoaderRoute: typeof ApiCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -969,11 +1113,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPrivacyRegionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sign-up-status': {
+      id: '/api/sign-up-status'
+      path: '/api/sign-up-status'
+      fullPath: '/api/sign-up-status'
+      preLoaderRoute: typeof ApiSignUpStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$reportId': {
       id: '/r/$reportId'
       path: '/r/$reportId'
       fullPath: '/r/$reportId'
       preLoaderRoute: typeof RReportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stripe-projects/login': {
+      id: '/stripe-projects/login'
+      path: '/stripe-projects/login'
+      fullPath: '/stripe-projects/login'
+      preLoaderRoute: typeof StripeProjectsLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/billing_/fix-payment': {
@@ -1037,6 +1195,13 @@ declare module '@tanstack/react-router' {
       path: '/api/autumn/$'
       fullPath: '/api/autumn/$'
       preLoaderRoute: typeof ApiAutumnSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report-map/$grant/copyright': {
+      id: '/report-map/$grant/copyright'
+      path: '/report-map/$grant/copyright'
+      fullPath: '/report-map/$grant/copyright'
+      preLoaderRoute: typeof ReportMapGrantCopyrightRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/s/$token/': {
@@ -1107,6 +1272,13 @@ declare module '@tanstack/react-router' {
       path: '/keywords'
       fullPath: '/p/$projectId/keywords'
       preLoaderRoute: typeof AppPProjectIdKeywordsRouteImport
+      parentRoute: typeof AppPProjectIdRouteRoute
+    }
+    '/_app/p/$projectId/local-seo': {
+      id: '/_app/p/$projectId/local-seo'
+      path: '/local-seo'
+      fullPath: '/p/$projectId/local-seo'
+      preLoaderRoute: typeof AppPProjectIdLocalSeoRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
     '/_app/p/$projectId/prompt-explorer': {
@@ -1193,6 +1365,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdLocalRankIndexRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
+    '/_app/p/$projectId/local-seo/': {
+      id: '/_app/p/$projectId/local-seo/'
+      path: '/'
+      fullPath: '/p/$projectId/local-seo/'
+      preLoaderRoute: typeof AppPProjectIdLocalSeoIndexRouteImport
+      parentRoute: typeof AppPProjectIdLocalSeoRoute
+    }
+    '/_app/p/$projectId/local-seo/$trackerId': {
+      id: '/_app/p/$projectId/local-seo/$trackerId'
+      path: '/$trackerId'
+      fullPath: '/p/$projectId/local-seo/$trackerId'
+      preLoaderRoute: typeof AppPProjectIdLocalSeoTrackerIdRouteImport
+      parentRoute: typeof AppPProjectIdLocalSeoRoute
+    }
     '/_app/p/$projectId/rank-tracking/': {
       id: '/_app/p/$projectId/rank-tracking/'
       path: '/'
@@ -1249,6 +1435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdSettingsIntegrationsRouteImport
       parentRoute: typeof AppPProjectIdSettingsRoute
     }
+    '/report-map/$grant/$z/$x/$y': {
+      id: '/report-map/$grant/$z/$x/$y'
+      path: '/report-map/$grant/$z/$x/$y'
+      fullPath: '/report-map/$grant/$z/$x/$y'
+      preLoaderRoute: typeof ReportMapGrantZXYRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/p/$projectId/ai-visibility/prompts/$promptId': {
       id: '/_app/p/$projectId/ai-visibility/prompts/$promptId'
       path: '/prompts/$promptId'
@@ -1262,6 +1455,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$projectId/audit/issues/$resultId'
       preLoaderRoute: typeof AppPProjectIdAuditIssuesResultIdRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
+    }
+    '/api/local-seo/maps/$projectId/$z/$x/$y': {
+      id: '/api/local-seo/maps/$projectId/$z/$x/$y'
+      path: '/api/local-seo/maps/$projectId/$z/$x/$y'
+      fullPath: '/api/local-seo/maps/$projectId/$z/$x/$y'
+      preLoaderRoute: typeof ApiLocalSeoMapsProjectIdZXYRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -1298,6 +1498,21 @@ const AppPProjectIdAiVisibilityRouteChildren: AppPProjectIdAiVisibilityRouteChil
 const AppPProjectIdAiVisibilityRouteWithChildren =
   AppPProjectIdAiVisibilityRoute._addFileChildren(
     AppPProjectIdAiVisibilityRouteChildren,
+  )
+
+interface AppPProjectIdLocalSeoRouteChildren {
+  AppPProjectIdLocalSeoTrackerIdRoute: typeof AppPProjectIdLocalSeoTrackerIdRoute
+  AppPProjectIdLocalSeoIndexRoute: typeof AppPProjectIdLocalSeoIndexRoute
+}
+
+const AppPProjectIdLocalSeoRouteChildren: AppPProjectIdLocalSeoRouteChildren = {
+  AppPProjectIdLocalSeoTrackerIdRoute: AppPProjectIdLocalSeoTrackerIdRoute,
+  AppPProjectIdLocalSeoIndexRoute: AppPProjectIdLocalSeoIndexRoute,
+}
+
+const AppPProjectIdLocalSeoRouteWithChildren =
+  AppPProjectIdLocalSeoRoute._addFileChildren(
+    AppPProjectIdLocalSeoRouteChildren,
   )
 
 interface AppPProjectIdRankTrackingRouteChildren {
@@ -1342,6 +1557,7 @@ interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdContextRoute: typeof AppPProjectIdContextRoute
   AppPProjectIdDomainRoute: typeof AppPProjectIdDomainRoute
   AppPProjectIdKeywordsRoute: typeof AppPProjectIdKeywordsRoute
+  AppPProjectIdLocalSeoRoute: typeof AppPProjectIdLocalSeoRouteWithChildren
   AppPProjectIdPromptExplorerRoute: typeof AppPProjectIdPromptExplorerRoute
   AppPProjectIdRankTrackingRoute: typeof AppPProjectIdRankTrackingRouteWithChildren
   AppPProjectIdSamRoute: typeof AppPProjectIdSamRoute
@@ -1364,6 +1580,7 @@ const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdContextRoute: AppPProjectIdContextRoute,
   AppPProjectIdDomainRoute: AppPProjectIdDomainRoute,
   AppPProjectIdKeywordsRoute: AppPProjectIdKeywordsRoute,
+  AppPProjectIdLocalSeoRoute: AppPProjectIdLocalSeoRouteWithChildren,
   AppPProjectIdPromptExplorerRoute: AppPProjectIdPromptExplorerRoute,
   AppPProjectIdRankTrackingRoute: AppPProjectIdRankTrackingRouteWithChildren,
   AppPProjectIdSamRoute: AppPProjectIdSamRoute,
@@ -1427,14 +1644,12 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 interface AuthenticatedRouteChildren {
   AuthenticatedOauthConsentRoute: typeof AuthenticatedOauthConsentRoute
   AuthenticatedSubscribeRoute: typeof AuthenticatedSubscribeRoute
-  AuthenticatedYcRoute: typeof AuthenticatedYcRoute
   AuthenticatedOnboardingIndexRoute: typeof AuthenticatedOnboardingIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOauthConsentRoute: AuthenticatedOauthConsentRoute,
   AuthenticatedSubscribeRoute: AuthenticatedSubscribeRoute,
-  AuthenticatedYcRoute: AuthenticatedYcRoute,
   AuthenticatedOnboardingIndexRoute: AuthenticatedOnboardingIndexRoute,
 }
 
@@ -1447,22 +1662,31 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthErrorRoute: AuthErrorRoute,
+  ConnectRoute: ConnectRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute:
+    Char91DotwellKnownChar93HttpMessageSignaturesDirectoryRoute,
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute:
     Char91DotwellKnownChar93OpenaiAppsChallengeRoute,
   AcceptInvitationIdRoute: AcceptInvitationIdRoute,
+  ApiCspReportRoute: ApiCspReportRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiPrivacyRegionRoute: ApiPrivacyRegionRoute,
+  ApiSignUpStatusRoute: ApiSignUpStatusRoute,
   RReportIdRoute: RReportIdRoute,
+  StripeProjectsLoginRoute: StripeProjectsLoginRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,
+  ReportMapGrantCopyrightRoute: ReportMapGrantCopyrightRoute,
   STokenOgDotpngRoute: STokenOgDotpngRoute,
   STokenRawRoute: STokenRawRoute,
   STokenIndexRoute: STokenIndexRoute,
   ApiGa4OauthCallbackRoute: ApiGa4OauthCallbackRoute,
   ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,
+  ReportMapGrantZXYRoute: ReportMapGrantZXYRoute,
+  ApiLocalSeoMapsProjectIdZXYRoute: ApiLocalSeoMapsProjectIdZXYRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

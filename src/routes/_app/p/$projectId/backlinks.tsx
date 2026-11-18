@@ -5,8 +5,10 @@ import {
   backlinksSearchSchema,
 } from "@/types/schemas/backlinks";
 import { defaultScopeForInput } from "@/shared/researchScope";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_app/p/$projectId/backlinks")({
+  head: () => pageHead("Backlinks"),
   validateSearch: backlinksSearchSchema,
   component: BacklinksRoute,
 });

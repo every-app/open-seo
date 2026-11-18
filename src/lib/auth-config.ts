@@ -11,13 +11,26 @@ export function createBaseAuthConfig(options?: {
 }) {
   return {
     ...baseAuthOptions,
+    // These list invitations, with the ids that accept them, to any member or
+    // to anyone signed in with an invited address. Where sign-up doesn't
+    // verify the email (password mode), a member could sign up as an invitee
+    // and accept an admin invitation. The team tab reads invitations through
+    // getTeam, which shows them only to members who can invite; server-side
+    // auth.api calls don't go through these routes.
+    disabledPaths: [
+      "/organization/get-full-organization",
+      "/organization/list-invitations",
+      "/organization/list-user-invitations",
+    ],
     advanced: {
       ipAddress: {
         // On Cloudflare Workers the client IP arrives in CF-Connecting-IP;
         // x-forwarded-for (better-auth's default) is absent, so without this
         // getIp() returns null and rate limiting is silently skipped on every
-        // /api/auth endpoint. Header lookup is case-insensitive.
-        ipAddressHeaders: ["cf-connecting-ip"],
+        // /api/auth endpoint. Header lookup is case-insensitive. The
+        // standalone Docker edition's Nginx strips CF-Connecting-IP and sets
+        // X-Real-IP instead (deploy/standalone/nginx.conf).
+        ipAddressHeaders: ["cf-connecting-ip", "x-real-ip"],
       },
       // Better Auth writes the OAuth state verification row with a 10-minute
       // expiry but sets the matching signed cookie with maxAge 300, and checks

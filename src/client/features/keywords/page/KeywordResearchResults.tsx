@@ -1,22 +1,10 @@
 import { FileDown, Save, Sheet } from "lucide-react";
 import {
-  lastTwelveMonths,
-  MONTH_SHORT_LABELS,
-} from "@/client/features/keywords/utils";
-import {
-  AreaTrendChart,
-  OverviewStats,
+  KeywordOverviewCard,
   SerpAnalysisCard,
 } from "@/client/features/keywords/components";
-import type { KeywordResearchRow } from "@/types/keywords";
 import { ExportMenu } from "@/client/components/ExportMenu";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/client/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import {
   DataTableFilterPanel,
@@ -41,29 +29,22 @@ import {
   TableBulkExportMenu,
 } from "@/client/components/table/TableBulkActionBar";
 
-function formatTrendRangeLabel(trend: KeywordResearchRow["trend"]): string {
-  const last12 = lastTwelveMonths(trend);
-  if (last12.length === 0) return "Last 12 available months";
-
-  const [startLabel, endLabel] = [last12[0], last12[last12.length - 1]].map(
-    (m) => `${MONTH_SHORT_LABELS[m.month - 1] ?? `M${m.month}`} ${m.year}`,
-  );
-  return startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`;
-}
-
 type Props = {
   controller: KeywordResearchControllerState;
 };
 
 // Below md the page shows one panel at a time behind tabs, and hides the
-// overview stats and the trend chart.
+// keyword overview. From xl the table is the list and the panel beside it
+// follows the selected row. The table sets the height of both, so their edges
+// line up, and the panel stays in view while a table taller than the screen
+// scrolls.
 export function KeywordResearchResults({ controller }: Props) {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden w-full">
+    <div className="flex w-full min-w-0 flex-col">
       <MobileTabs controller={controller} />
-      <div className="flex-1 flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden gap-4">
+      <div className="flex flex-col gap-4 xl:flex-row">
         <KeywordPanel controller={controller} />
-        <SerpPanel controller={controller} />
+        <KeywordDetailPanel controller={controller} />
       </div>
     </div>
   );
@@ -91,7 +72,7 @@ function KeywordPanel({ controller }: Props) {
 
   return (
     <div
-      className={`${mobileTab === "keywords" ? "flex" : "hidden md:flex"} order-2 xl:order-1 flex-col min-w-0 gap-2 xl:basis-3/5`}
+      className={`${mobileTab === "keywords" ? "flex" : "hidden md:flex"} order-2 xl:order-1 flex-col min-w-0 gap-2 xl:basis-3/5 xl:min-h-[32rem]`}
     >
       {showApproximateMatchNotice ? (
         <Alert variant="warning" role="status">
@@ -101,11 +82,6 @@ function KeywordPanel({ controller }: Props) {
             closest related keywords instead.
           </AlertDescription>
         </Alert>
-      ) : null}
-      {controller.overviewKeyword ? (
-        <div className="hidden md:block">
-          <OverviewStats keyword={controller.overviewKeyword} />
-        </div>
       ) : null}
       <TableCard controller={controller} />
     </div>
@@ -172,6 +148,9 @@ function TableCard({ controller }: Props) {
         isFiltered={activeFilterCount > 0}
         resetFilters={controller.resetFilters}
         handleRowClick={controller.handleRowClick}
+        serpLoadingKeyword={
+          controller.serpLoading ? controller.activeSerpKeyword : null
+        }
         toolbar={
           <>
             <DataTableToolbar
@@ -199,15 +178,17 @@ function TableCard({ controller }: Props) {
         }
         footer={
           filteredRows.length > 0 ? (
-            <TablePagination
-              page={page}
-              pageSize={pageSize}
-              pageSizes={KEYWORD_RESEARCH_PAGE_SIZES}
-              pageRange={pageRange}
-              totalCount={filteredRows.length}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-            />
+            <div className="mt-auto">
+              <TablePagination
+                page={page}
+                pageSize={pageSize}
+                pageSizes={KEYWORD_RESEARCH_PAGE_SIZES}
+                pageRange={pageRange}
+                totalCount={filteredRows.length}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            </div>
           ) : null
         }
       />
@@ -265,44 +246,38 @@ function TableFilters({ controller }: Props) {
   );
 }
 
-function SerpPanel({ controller }: Props) {
+function KeywordDetailPanel({ controller }: Props) {
   const { mobileTab, overviewKeyword } = controller;
 
   return (
+    // Size containment stops this column's content from adding height, so the
+    // table alone decides how tall the row is.
     <div
-      className={`${mobileTab === "serp" ? "flex" : "hidden md:flex"} order-1 xl:order-2 flex-col min-w-0 gap-2 xl:basis-2/5 xl:overflow-y-auto`}
+      className={`${mobileTab === "serp" ? "block" : "hidden md:block"} order-1 min-w-0 xl:order-2 xl:basis-2/5 xl:[contain:size]`}
     >
-      {overviewKeyword && overviewKeyword.trend.length > 0 ? (
-        <Card size="sm" className="hidden shrink-0 md:flex">
-          <CardHeader>
-            <CardTitle>
-              Search Trends{" "}
-              <span className="font-normal text-muted-foreground">
-                {formatTrendRangeLabel(overviewKeyword.trend)}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AreaTrendChart trend={overviewKeyword.trend} />
-          </CardContent>
-        </Card>
-      ) : null}
+      <div className="flex flex-col gap-2 xl:sticky xl:top-4 xl:h-full xl:max-h-[calc(100dvh-2.5rem)]">
+        {overviewKeyword ? (
+          <div className="hidden shrink-0 md:block">
+            <KeywordOverviewCard keyword={overviewKeyword} />
+          </div>
+        ) : null}
 
-      <SerpAnalysisCard
-        items={controller.serpResults}
-        keyword={controller.activeSerpKeyword}
-        loading={controller.serpLoading}
-        loadingMore={controller.serpLoadingMore}
-        canLoadMore={controller.canLoadMoreSerp}
-        error={controller.serpError}
-        outOfCredits={controller.serpOutOfCredits}
-        onRetry={controller.retrySerp}
-        retrying={controller.serpRetrying}
-        deepFetchFailed={controller.deepFetchFailed}
-        page={controller.serpPage}
-        pageSize={controller.SERP_PAGE_SIZE}
-        onPageChange={controller.setSerpPage}
-      />
+        <SerpAnalysisCard
+          items={controller.serpResults}
+          keyword={controller.activeSerpKeyword}
+          loading={controller.serpLoading}
+          loadingMore={controller.serpLoadingMore}
+          canLoadMore={controller.canLoadMoreSerp}
+          error={controller.serpError}
+          outOfCredits={controller.serpOutOfCredits}
+          onRetry={controller.retrySerp}
+          retrying={controller.serpRetrying}
+          deepFetchFailed={controller.deepFetchFailed}
+          page={controller.serpPage}
+          pageSize={controller.SERP_PAGE_SIZE}
+          onPageChange={controller.setSerpPage}
+        />
+      </div>
     </div>
   );
 }

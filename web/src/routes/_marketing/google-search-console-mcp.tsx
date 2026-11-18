@@ -4,6 +4,7 @@ import { DocsBody } from "fumadocs-ui/page";
 import GoogleSearchConsoleMcpContent, {
   frontmatter,
 } from "../../../content/marketing/google-search-console-mcp.mdx";
+import { AddToAgentButtons } from "@/components/add-to-agent-links";
 import {
   ComparisonTable,
   type ComparisonTableProps,
@@ -39,7 +40,7 @@ const comparison: ComparisonTableProps = {
       label: "Cost to run",
       cells: [
         {
-          text: "Included in the $10/mo plan, zero credits (free to self-host)",
+          text: "Included in the $10/mo plan, zero credits. Self-hosted: the software is free",
           tone: "positive",
         },
         { text: "Free (your time + your own quota)" },
@@ -106,7 +107,7 @@ const softwareApplicationLd = {
 export const Route = createFileRoute("/_marketing/google-search-console-mcp")({
   head: () =>
     buildPageSeo({
-      title: "Google Search Console MCP Server: No Google Cloud Setup",
+      title: frontmatter.title,
       description: frontmatter.description,
       path: PATH,
       titleSuffix: "OpenSEO",
@@ -151,6 +152,7 @@ function GoogleSearchConsoleMcpPage() {
         <GoogleSearchConsoleMcpContent
           components={{
             ...defaultMdxComponents,
+            AddToAgentButtons,
             ComparisonTable: () => <ComparisonTable {...comparison} />,
           }}
         />
@@ -176,8 +178,8 @@ function GoogleSearchConsoleMcpCta() {
         Point your AI at your real search data
       </p>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-        No Google Cloud project. Zero credits to read your own data. Works with
-        Claude, Codex, OpenClaw, OpenCode, and Gemini.
+        Sign in with Google and pick your property. Zero credits to read your
+        own data. Works with Claude, Codex, OpenClaw, OpenCode, and Gemini.
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a

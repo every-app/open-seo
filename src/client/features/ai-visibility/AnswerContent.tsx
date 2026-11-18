@@ -22,6 +22,7 @@ import {
 import { getAiVisibilityAnswer } from "@/serverFunctions/ai-visibility";
 import {
   aiObservationStatusLabel,
+  aiBrandLabel,
   type AiAnswer,
 } from "@/shared/ai-visibility";
 import { DomainFavicon } from "./DomainFavicon";
@@ -201,7 +202,7 @@ function AnswerEvidence({ answer }: { answer: AiAnswer }) {
                   >
                     <div className="flex items-center gap-2 text-sm font-medium">
                       <DomainFavicon domain={brand.domain} />
-                      {brand.name}
+                      {aiBrandLabel(brand)}
                       {brand.own && (
                         <Badge variant="secondary" size="sm">
                           You

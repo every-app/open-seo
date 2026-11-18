@@ -1,0 +1,125 @@
+---
+title: "Set up OpenSEO MCP"
+description: "Connect OpenSEO MCP to ChatGPT, Claude, Codex, and other AI clients."
+---
+
+OpenSEO MCP lets compatible AI clients call OpenSEO tools for keyword research, SERP inspection, local business research, competitive search intelligence, domain research, backlink overview, saved keywords, rank tracking, shared project context, and Google Search Console performance and URL inspection.
+
+In ChatGPT or Claude, add OpenSEO from their directories:
+
+<AddToAgentButtons />
+
+For other clients, the hosted MCP server URL is:
+
+```txt
+https://app.openseo.so/mcp
+```
+
+The first connection sends you through OpenSEO login. After authorization, your MCP client can call OpenSEO tools with the project context and account scopes you approved. For headless environments and CI, [connect with an API key](#connect-with-an-api-key) instead.
+
+For the most current setup UI and a copyable endpoint, open [Agent setup in OpenSEO](https://app.openseo.so/ai).
+
+For setup prompts, plugin commands, and skill updates, see [Agent setup](/docs/agent-setup).
+
+No account yet? Try the [free SEO tools](/tools).
+
+## Choose your client
+
+| Client | How to connect |
+| --- | --- |
+| ChatGPT on the web or desktop | [ChatGPT guide](/docs/chatgpt): the OpenSEO plugin, or a custom connection |
+| Claude on the web, desktop or mobile, Claude Code, Claude Cowork | [Claude guide](/docs/claude-code-plugin): the connector, the plugin, or a custom connector |
+| Codex in the ChatGPT desktop app or the CLI | [Codex guide](/docs/codex-plugin): the plugin, or MCP only |
+| Cursor | [Below](#cursor) |
+| Hermes or Grok Bot | Agent setup: [Hermes](/docs/agent-setup#hermes), [Grok Bot](/docs/agent-setup#grok-bot) |
+| Any other MCP client | Add the server URL above and approve the login, or [connect with an API key](#connect-with-an-api-key) |
+
+## Cursor
+
+1. Open Cursor Settings -> Tools & Integrations -> MCP Tools.
+2. Click New MCP Server. Cursor opens `mcp.json`.
+3. Add:
+
+```json
+{
+  "mcpServers": {
+    "openseo": {
+      "url": "https://app.openseo.so/mcp"
+    }
+  }
+}
+```
+
+4. Approve the OpenSEO login when prompted.
+
+## Connect with an API key
+
+Use an API key in headless environments, CI, or clients where OAuth is inconvenient. API keys are personal: anything an agent does with your key acts as you in the workspace that was active when you created it.
+
+In the [OpenSEO app](https://app.openseo.so/settings), open **Settings -> API keys**, create a key, and copy it when it appears. It won't be shown again.
+
+For Claude Code, run:
+
+```bash
+claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp --header "Authorization: Bearer oseo_YOUR_KEY"
+```
+
+For Cursor, add `headers` to the server entry in `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "openseo": {
+      "url": "https://app.openseo.so/mcp",
+      "headers": {
+        "Authorization": "Bearer oseo_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+For Codex CLI, put the key in an environment variable and reference it:
+
+```bash
+export OPENSEO_API_KEY=oseo_YOUR_KEY
+codex mcp add openseo --url https://app.openseo.so/mcp --bearer-token-env-var OPENSEO_API_KEY
+```
+
+Any other client that supports custom HTTP headers can send `Authorization: Bearer oseo_YOUR_KEY` or `x-api-key: oseo_YOUR_KEY`.
+
+## Workspaces and revoking access
+
+An OAuth connection or API key is tied to the workspace that was active when you authorized or created it. To use OpenSEO in another workspace, connect again and pick that workspace on the authorization page, or switch to it in the app before creating a key. To disconnect an agent, open [Settings](https://app.openseo.so/settings) and choose **Disconnect** under **Connected agents**. To revoke a key, choose **Revoke key** under **API keys**. A disconnected agent has to sign in again before it can call OpenSEO.
+
+## Available tools
+
+See [OpenSEO MCP tools](/docs/mcp-tools) for everything your agent can do through OpenSEO MCP, and which tools use credits.
+
+## What to do after setup
+
+See the [AI Visibility guide](/docs/ai-visibility) for supported engines, research coverage, and costs.
+
+Once OpenSEO MCP is connected, [set up OpenSEO Agent Skills](/docs/skills/setup). MCP gives your agent access to OpenSEO data. Skills are separate `SKILL.md` files that tell your agent how to use that data for specific SEO jobs.
+
+Start with one focused workflow instead of asking your agent to "do SEO" broadly.
+
+- Use [SEO project setup](/docs/skills/seo-project-setup) to save your goals, positioning, competitors, and key pages to your project context, so every other skill reuses them.
+- Use [SEO coach](/docs/skills/seo-coach) if you are new to SEO or are not sure which workflow to run first.
+- Use [AI Prompt Research](/docs/skills/ai-prompt-research) to find questions and cited sources before choosing what to track.
+- Use [AI Visibility Audit](/docs/skills/ai-visibility-audit) to investigate why competitors appear and which changes to try.
+- Use [keyword research](/docs/skills/keyword-research) to discover keyword opportunities.
+- Use [competitive landscape](/docs/skills/competitive-landscape) to map a market before choosing competitors or pages.
+- Use [competitor analysis](/docs/skills/competitor-analysis) to study one competitor.
+- Use [keyword clustering](/docs/skills/keyword-clustering) to turn keywords into page groups.
+- Use [link prospecting](/docs/skills/link-prospecting) to find outreach prospects for a linkable asset.
+
+## Troubleshooting
+
+If your client cannot connect, check that the server URL is exactly `https://app.openseo.so/mcp`.
+
+If authorization fails, disconnect the OpenSEO server in your client, add it again, and repeat the login flow.
+
+If your agent cannot find a project, ask it to list OpenSEO projects first and use the returned project ID in later tool calls.
+
+For client-specific errors, see the troubleshooting sections for [ChatGPT](/docs/chatgpt#troubleshooting), [Claude](/docs/claude-code-plugin#troubleshooting) and [Codex](/docs/codex-plugin#troubleshooting).

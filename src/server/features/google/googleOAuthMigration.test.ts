@@ -105,6 +105,6 @@ it("keeps one refreshable grant per user and Google identity without changing pr
     expect(concurrent.rows[0]?.refresh_token).toBe("new-refresh");
   } finally {
     client.close();
-    rmSync(directory, { recursive: true });
+    rmSync(directory, { recursive: true, force: true, maxRetries: 3 });
   }
 });

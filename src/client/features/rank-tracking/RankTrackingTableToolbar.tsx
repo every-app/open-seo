@@ -1,11 +1,37 @@
+import { useEffect, useState } from "react";
 import { CalendarDays, SlidersHorizontal, Table } from "lucide-react";
+import { clamp } from "remeda";
 import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { ExportMenu } from "@/client/components/ExportMenu";
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
 import { Progress } from "@/client/components/ui/progress";
 import { Spinner } from "@/client/components/ui/spinner";
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 import { MoreMenu } from "./ToolbarMenus";
+
+const USUAL_CHECK_MS = 60 * 60_000;
+
+/**
+ * An estimate, not a measure: the bar follows the time since the check started
+ * against how long one usually takes, and stops short of full for slower ones.
+ */
+function RankCheckProgress({ startedAt }: { startedAt: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const elapsedMs = now - parseDbTimestamp(startedAt).getTime();
+  return (
+    <Progress
+      className="ml-1 w-36"
+      aria-label="Rank check progress"
+      value={clamp(elapsedMs / USUAL_CHECK_MS, { min: 0.03, max: 0.95 })}
+      max={1}
+    />
+  );
+}
 
 export function RankTrackingTableToolbar({
   showFilters,
@@ -31,7 +57,7 @@ export function RankTrackingTableToolbar({
   activeFilterCount: number;
   isRunning: boolean;
   latestRun:
-    | { status: string; keywordsChecked: number; keywordsTotal: number }
+    | { status: string; keywordsTotal: number; startedAt: string }
     | null
     | undefined;
   keywordCount: number;
@@ -85,21 +111,15 @@ export function RankTrackingTableToolbar({
       </Button>
 
       {isRunning && latestRun ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner className="size-3.5 text-primary" />
+        <div className="ml-2 flex items-center gap-2.5 text-sm font-medium text-foreground">
+          <Spinner className="text-primary" />
           <span>
             {latestRun.status === "pending"
               ? "Preparing..."
-              : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}{" "}
-            {latestRun.keywordsChecked}/{latestRun.keywordsTotal || "?"}
+              : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}
           </span>
-          {latestRun.keywordsTotal > 0 && (
-            <Progress
-              className="w-24"
-              aria-label="Rank check progress"
-              value={latestRun.keywordsChecked}
-              max={latestRun.keywordsTotal}
-            />
+          {latestRun.status === "running" && (
+            <RankCheckProgress startedAt={latestRun.startedAt} />
           )}
         </div>
       ) : (

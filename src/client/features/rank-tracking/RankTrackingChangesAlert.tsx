@@ -8,12 +8,12 @@ export function RankTrackingChangesAlert() {
       <AlertDescription className="text-foreground">
         <p>
           <span className="font-medium">
-            Rank tracking now retries some results.
+            Rank tracking now detects and replaces incomplete Google results.
           </span>{" "}
           Since September, Google has been serving incomplete results to all
           rank trackers.{" "}
           <a
-            href="https://openseo.so/blogs/rank-tracking-changes"
+            href="https://openseo.so/blogs/state-of-rank-tracking-november-2026"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium underline underline-offset-4"

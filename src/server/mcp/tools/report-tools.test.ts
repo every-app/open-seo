@@ -25,11 +25,13 @@ const mocks = vi.hoisted(() => ({
   captureServerEvent: vi.fn(),
   setShareToken: vi.fn(),
   isHostedServerAuthMode: vi.fn(),
+  usesBetterAuthServer: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
+  usesBetterAuthServer: mocks.usesBetterAuthServer,
 }));
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
@@ -72,6 +74,7 @@ const storedReport = (
 
 beforeEach(() => {
   mocks.isHostedServerAuthMode.mockResolvedValue(true);
+  mocks.usesBetterAuthServer.mockResolvedValue(true);
   mocks.setShareToken.mockResolvedValue(true);
   mocks.getProjectForOrganization.mockResolvedValue({ id: projectId });
   mocks.countReports.mockResolvedValue(3);
@@ -316,6 +319,7 @@ describe("public report sharing", () => {
 
   it("hides unusable share URLs on self-hosted deployments but permits revocation", async () => {
     mocks.isHostedServerAuthMode.mockResolvedValue(false);
+    mocks.usesBetterAuthServer.mockResolvedValue(false);
     mocks.getReport.mockResolvedValue(
       storedReport({ shareToken: "a".repeat(32) }),
     );

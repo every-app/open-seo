@@ -8,8 +8,9 @@ const page = featurePages.savedKeywords;
 export const Route = createFileRoute("/_marketing/features/saved-keywords")({
   head: () =>
     buildPageSeo({
-      title: "Saved Keyword Lists",
-      description: page.description,
+      title:
+        "Keyword Manager: Save, Tag and Export SEO Keyword Lists with Volume and Difficulty",
+      description: page.seoDescription ?? page.description,
       path: "/features/saved-keywords",
       titleSuffix: "OpenSEO",
       imageAlt: page.imageAlt,

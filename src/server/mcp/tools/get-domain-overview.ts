@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DomainService } from "@/server/features/domain/services/DomainService";
+import { recordResearchStep } from "@/server/features/activation/researchActivation";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
@@ -46,7 +47,7 @@ export const getDomainOverviewTool = {
   config: {
     title: "Get domain overview",
     description:
-      "Returns a high-level view of a domain's organic footprint: estimated organic traffic, organic keyword count, backlinks, and referring domains. Use this first for domain research; for the detailed ranked-keyword list, call get_domain_keyword_suggestions next. Charges credits (~100-300 typical). Cached for 12 hours per domain.",
+      "Estimate a website's monthly organic search traffic and how many keywords it ranks for. Use it first when researching a domain, the user's own or a competitor's. Costs ~100-300 credits; cached for 12 hours per domain. For the keywords it ranks for, use get_domain_keyword_suggestions; for backlinks, use get_backlinks_overview.",
     inputSchema,
     outputSchema: z
       .object({
@@ -55,8 +56,6 @@ export const getDomainOverviewTool = {
         displayTarget: z.string().optional(),
         organicTraffic: z.number().nullable().optional(),
         organicKeywords: z.number().nullable().optional(),
-        backlinks: z.number().nullable().optional(),
-        referringDomains: z.number().nullable().optional(),
         ...optionalMetaOutputSchema,
       })
       .passthrough(),
@@ -90,12 +89,16 @@ export const getDomainOverviewTool = {
       },
       context.billing,
     );
+    await recordResearchStep(args.projectId, "competitor");
     const text = [
       `Target: ${result.displayTarget} (scope: ${result.scope})`,
       `Organic traffic: ${result.organicTraffic ?? "?"}`,
       `Organic keywords: ${result.organicKeywords ?? "?"}`,
-      `Backlinks: ${result.backlinks ?? "?"}`,
-      `Referring domains: ${result.referringDomains ?? "?"}`,
+      ...(result.hasData
+        ? []
+        : [
+            "No ranked keywords found for this domain in this market. Check the domain and market; for a new site, research_keywords on its main topics finds keywords to target.",
+          ]),
       ...(result.scope === "subdomains"
         ? []
         : [

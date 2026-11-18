@@ -158,9 +158,9 @@ function SiteAuditLibraryPage() {
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           The crawler is robots.txt-aware and stays on the same origin. It
-          checks 27 issue types across three severities: four critical (a
+          checks 33 issue types across three severities: four critical (a
           blocked crawler, a 5xx error, a broken internal link, a missing
-          title), 14 warnings covering duplicate titles and descriptions,
+          title), 20 warnings covering duplicate titles and descriptions,
           duplicate content, missing or multiple H1s, redirect chains and loops,
           canonical conflicts, thin content, missing image alt text, orphan
           pages and dead ends, and nine informational checks for length, heading

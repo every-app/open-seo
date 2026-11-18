@@ -1,4 +1,8 @@
+import { env } from "cloudflare:workers";
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
+import { AppError } from "@/server/lib/errors";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { formatCount } from "@/shared/format";
 import { jsonCodec } from "@/shared/json";
 import type {
   DeleteSavedKeywordTagInput,
@@ -31,12 +35,70 @@ function parseMonthlySearches(payload: string | null): MonthlySearch[] {
   return result.success ? result.data : [];
 }
 
-export async function saveKeywords(input: ResolvedSaveKeywordsInput) {
+// Hosted guardrails for the shared database, far above real use: the largest
+// workspace holds about 10k saved keywords and saves at most ~2k in a minute
+// (a 2,000-keyword import). One agent saving nonstop wrote 460k in a few hours,
+// and the write load stalled the database for every customer. Self-hosters run
+// their own database and keep saving without limits.
+const SAVED_KEYWORDS_MAX_PER_ORGANIZATION = 25_000;
+const SAVE_RATE_LIMIT_PER_MINUTE = 3_000;
+// The rate-limit binding counts calls, so each call stands for this many
+// keywords (SAVE_KEYWORDS_RATE_LIMIT allows 60 a minute).
+const KEYWORDS_PER_RATE_LIMIT_UNIT = 50;
+
+async function assertCanSaveKeywords(
+  input: ResolvedSaveKeywordsInput & { organizationId: string },
+  keywords: string[],
+) {
+  // Declared only on the hosted stack (deploy/alchemy/alchemy.run.ts). Counts
+  // every keyword sent, re-saves included: they still write metrics and tags.
+  const rateLimit = env.SAVE_KEYWORDS_RATE_LIMIT;
+  if (rateLimit) {
+    const units = Math.ceil(keywords.length / KEYWORDS_PER_RATE_LIMIT_UNIT);
+    const outcomes = await Promise.all(
+      Array.from({ length: units }, () =>
+        rateLimit.limit({ key: input.organizationId }),
+      ),
+    );
+    if (outcomes.some((outcome) => !outcome.success)) {
+      throw new AppError(
+        "RATE_LIMITED",
+        `Saving keywords is limited to ${formatCount(SAVE_RATE_LIMIT_PER_MINUTE)} a minute per workspace. Nothing was saved from this request. Wait a minute, then save the rest in smaller batches.`,
+      );
+    }
+  }
+
+  if (!(await isHostedServerAuthMode())) return;
+  // Plain read-then-write: concurrent saves can both pass just under the cap,
+  // so a workspace may briefly hold a few hundred more. Re-saving keywords the
+  // project already has stays allowed at the cap.
+  const total =
+    await KeywordResearchRepository.countSavedKeywordsForOrganization(
+      input.organizationId,
+    );
+  if (total + keywords.length <= SAVED_KEYWORDS_MAX_PER_ORGANIZATION) return;
+  const existing =
+    await KeywordResearchRepository.listSavedKeywordRowsByKeywords({
+      ...input,
+      keywords,
+    });
+  const added = keywords.length - existing.length;
+  if (total + added <= SAVED_KEYWORDS_MAX_PER_ORGANIZATION) return;
+  throw new AppError(
+    "VALIDATION_ERROR",
+    `This workspace has ${formatCount(total)} saved keywords across its projects, and the limit is ${formatCount(SAVED_KEYWORDS_MAX_PER_ORGANIZATION)}. Nothing was saved. Remove saved keywords you no longer need, then try again.`,
+  );
+}
+
+export async function saveKeywords(
+  input: ResolvedSaveKeywordsInput & { organizationId: string },
+) {
   const normalizedKeywords = [
     ...new Set(
       input.keywords.map(normalizeKeyword).filter((kw) => kw.length > 0),
     ),
   ];
+  await assertCanSaveKeywords(input, normalizedKeywords);
 
   const metricByKeyword = new Map(
     (input.metrics ?? [])
@@ -88,7 +150,10 @@ export async function saveKeywords(input: ResolvedSaveKeywordsInput) {
   if (input.tagMode === "replace") {
     const replacementTags = input.tags ?? [];
     if (replacementTags.length === 0) {
-      throw new Error("Replacement tags are required when tagMode is replace.");
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Replacement tags are required when tagMode is replace.",
+      );
     }
     await KeywordResearchRepository.replaceTagsForSavedKeywords({
       projectId: input.projectId,

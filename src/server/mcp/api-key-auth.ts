@@ -1,10 +1,17 @@
+import { z } from "zod";
 import { getAuth, getHostedBaseUrl } from "@/lib/auth";
 import { API_KEY_PREFIX } from "@/lib/auth-api-key";
 import { MCP_OAUTH_SCOPES } from "@/lib/oauth-resource";
-import { resolveExistingActiveHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { recordMcpAuthorized } from "@/server/features/activation/mcpActivation";
 import { createWorkersOAuthMcpProps, MCP_ROUTE } from "@/server/mcp/context";
+
+// Stamped server-side at creation by the /api-key/create before hook in
+// lib/auth.ts (and backfilled for older keys by migration), never by the
+// client. The plugin stores it as JSON text and parses it on read.
+const apiKeyMetadataSchema = z.looseObject({
+  organizationId: z.string().min(1),
+});
 
 function getApiKey(request: Request) {
   // Both branches require the oseo_ prefix: anything else (a Cloudflare OAuth
@@ -125,29 +132,32 @@ export async function handleMcpApiKeyRequest(
     const user = await AuthRepository.getHostedUser(userId);
     if (!user?.email) return apiKeyErrorResponse(null);
 
-    // API keys bill the user's active organization. Keys are user-scoped and
-    // the org derives from the project each tool call names (project-level
-    // authz) — not key→org binding. Fail closed if the user has no existing
-    // memberships; we never mint a default organization for an API key.
-    const resolved = await resolveExistingActiveHostedOrganization(userId);
-    if (!resolved) {
+    // A key is bound to the organization that was active when it was created
+    // and bills that org. The member row is the authorization fact, re-read
+    // per request so removing a member kills their keys immediately; the role
+    // is never stored on the key. A key with no organization predates the
+    // binding and was not backfilled, so it fails the same way rather than
+    // being rebound to some other org.
+    const organizationId = apiKeyMetadataSchema.safeParse(result.key.metadata)
+      .data?.organizationId;
+    const membership = organizationId
+      ? await AuthRepository.getMembership(userId, organizationId)
+      : null;
+    if (!organizationId || !membership) {
       return apiKeyErrorResponse({
         code: "FORBIDDEN",
-        message: "API key is not associated with an organization",
+        message:
+          "This API key's organization access was revoked. Create a new key in Settings.",
       });
     }
-    const { organizationId, role } = resolved;
 
     // clientId "api_key" satisfies the hosted transport's fail-closed props
     // schema and counts these calls as external MCP clients in telemetry.
-    // The key is the credential, not a key→org binding: the hosted transport
-    // stamps orgScope "user", and organizationId above is only the fallback
-    // for tools with no project argument.
     const props = createWorkersOAuthMcpProps({
       userId,
       userEmail: user.email,
       organizationId,
-      role,
+      role: membership.role,
       baseUrl: getHostedBaseUrl(),
       scopes: [...MCP_OAUTH_SCOPES],
       clientId: "api_key",

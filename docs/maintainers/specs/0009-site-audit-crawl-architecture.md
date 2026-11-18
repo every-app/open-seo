@@ -70,6 +70,50 @@ step re-receives exactly the URLs its failed attempt held, and refuses a fresh
 claim for an already-crawled chunk number), deterministic page-row ids, and
 insert-or-ignore/replace writes on stable keys.
 
+### Crawl order and the page limit
+
+A chunk leases pages a link has reached first, oldest first, then pages only
+the sitemap lists. Link-found pages go first because a link is what gives a
+page its click depth, which the deep-page check reads; a page crawled straight
+from the sitemap has none.
+
+Left at that, the order can spend the whole page limit on pages the sitemap
+doesn't list. Tag archives and filter pages link to more of themselves, so the
+link queue never runs dry and the crawl never gets back to the sitemap. So a
+chunk leases pages the sitemap doesn't list only while the limit, after that
+chunk, still has room for every sitemap page waiting. Once it doesn't, chunks
+lease sitemap pages and the start page until those are done, and unlisted
+pages take what is left.
+
+Rejected alternative: always lease sitemap pages before unlisted ones. It gives
+the same coverage, but a sitemap page that is only linked from unlisted pages
+(an older post behind `/page/2/`) would be crawled before the link that gives
+it a depth, on every audit, including the ones that fit the limit.
+
+### Excluded paths
+
+An audit can carry a short list of path patterns to skip, set on the launch
+form or the `run_site_audit` tool and stored in the audit's config. A pattern
+is matched against a URL's path and query string from the start, with `*` as a
+wildcard and a trailing `$` as an end anchor: the semantics of a robots.txt
+`Disallow` rule, which is the syntax people who run crawlers already know.
+
+The patterns are applied at the same gate as robots.txt, when a URL would
+enter the frontier (the start page, sitemap seeds, links, redirect targets).
+An excluded URL is therefore never fetched, never counted against the page
+limit, and never becomes a page row. The broken-link check only reports
+targets the crawl fetched, so links to excluded URLs are not reported. Orphan
+detection is skipped for an audit with excluded paths, the same way it is for
+a truncated crawl: links from the skipped pages are unknown, so "no inbound
+link" would not be evidence.
+
+Rejected alternatives: regular expressions (easy to get wrong, and user
+patterns run against every discovered URL, so backtracking is a cost risk);
+crawling excluded pages for their links but hiding them from results (keeps
+orphan detection, but the pages would still be fetched and would have to
+bypass the page limit); a separate patterns table (the list is a setting of
+one audit, read and written whole, like the rest of its config).
+
 ### Streaming HTML parsing
 
 Pages are parsed with htmlparser2's streaming tokenizer — no DOM is built, so

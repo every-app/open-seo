@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/lib/runtime-env", () => ({
+  // AUTH_MODE unset: the deployment holds the DataForSEO key.
+  getOptionalEnvValue: vi.fn(async () => undefined),
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
 }));
 
@@ -314,7 +316,7 @@ describe("LLM response country requests", () => {
 
   it.each([
     ["claude", "claude-sonnet-4-6", "BG"],
-    ["gemini", "gemini-2.5-pro", "US"],
+    ["gemini", "gemini-3.5-flash", "US"],
     ["chat_gpt", "gpt-5", "XX"],
   ] as const)(
     "rejects unsupported %s country hints before a paid dispatch",
@@ -341,12 +343,12 @@ describe("LLM response country requests", () => {
     await fetchLlmResponse({
       userPrompt: "Find local studios",
       modelSlug: "gemini",
-      modelName: "gemini-2.5-pro",
+      modelName: "gemini-3.5-flash",
     });
     expect(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])).toEqual([
       {
         user_prompt: "Find local studios",
-        model_name: "gemini-2.5-pro",
+        model_name: "gemini-3.5-flash",
         web_search: true,
         max_output_tokens: 1024,
       },

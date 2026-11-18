@@ -1,20 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  AUTUMN_AGENCY_PLAN_ID,
   AUTUMN_CHECKOUT_SESSION_PARAMS,
   AUTUMN_PAID_PLAN_ID,
   AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
 
-const { attachMock, portalMock } = vi.hoisted(() => ({
+const { attachMock, portalMock, hasPaidPlanMock } = vi.hoisted(() => ({
   attachMock: vi.fn(),
   portalMock: vi.fn(),
+  hasPaidPlanMock: vi.fn(),
 }));
 
 vi.mock("@/server/billing/autumn", () => ({
   autumn: {
     billing: { attach: attachMock, openCustomerPortal: portalMock },
   },
+}));
+vi.mock("@/server/billing/subscription", () => ({
+  customerHasPaidPlan: hasPaidPlanMock,
 }));
 
 import {
@@ -29,6 +34,7 @@ const owner = { organizationId: "org_1", role: "owner" };
 beforeEach(() => {
   attachMock.mockResolvedValue({ paymentUrl: "https://checkout/session" });
   portalMock.mockResolvedValue({ url: "https://portal/session" });
+  hasPaidPlanMock.mockResolvedValue(false);
 });
 
 describe("billing checkout links", () => {
@@ -50,6 +56,19 @@ describe("billing checkout links", () => {
       successUrl: `${origin}/subscribe?checkout=success&redirect=%2F`,
       checkoutSessionParams: AUTUMN_CHECKOUT_SESSION_PARAMS,
     });
+  });
+
+  it("refuses a paying organization, since tier changes go through the plan upgrade", async () => {
+    hasPaidPlanMock.mockResolvedValue(true);
+
+    await expect(
+      createPlanCheckoutUrl(owner, {
+        planId: AUTUMN_AGENCY_PLAN_ID,
+        redirectTo: "/billing",
+        origin,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(attachMock).not.toHaveBeenCalled();
   });
 
   it("buys the chosen dollars of top-up credits", async () => {

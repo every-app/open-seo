@@ -1,14 +1,11 @@
-import { AUTUMN_PAID_PLAN_ID, AUTUMN_YC_PLAN_ID } from "@/shared/billing";
 import type { BillingCustomerStatusSnapshot } from "./customer-status-model";
 
 // Leaf module (no runtime imports) so the transition rules are unit-testable.
-
-// Plans that charge money. A plan can grant `paid_plan` without a price
-// (friends and family), and those customers are not thanked for subscribing.
-const PRICED_PLAN_IDS: ReadonlySet<string> = new Set([
-  AUTUMN_PAID_PLAN_ID,
-  AUTUMN_YC_PLAN_ID,
-]);
+//
+// Only plans that charge a price send emails. A plan can grant `paid_plan`
+// without one (friends and family), and those customers are not thanked for
+// subscribing. Autumn says which plans are priced, so plans sold off-site
+// (annual plans on an invoice) need no code change.
 
 export type BillingLifecycleEvent = {
   name: "subscription_started" | "payment_failed" | "subscription_canceled";
@@ -17,7 +14,12 @@ export type BillingLifecycleEvent = {
 
 type LifecycleSnapshot = Pick<
   BillingCustomerStatusSnapshot,
-  "paidPlanId" | "paidPlanStatus" | "isPaying" | "pastDue" | "canceledAt"
+  | "paidPlanId"
+  | "paidPlanStatus"
+  | "isPaying"
+  | "pastDue"
+  | "canceledAt"
+  | "paidPlanPriced"
 >;
 
 /**
@@ -30,16 +32,17 @@ type LifecycleSnapshot = Pick<
  * and did not choose to leave).
  */
 export function deriveBillingLifecycleEvents(
-  previous: LifecycleSnapshot,
+  stored: LifecycleSnapshot,
   next: LifecycleSnapshot,
 ): BillingLifecycleEvent[] {
+  const previous = withPricing(stored, next);
   const events: BillingLifecycleEvent[] = [];
 
   if (isPricedSubscriber(next) && !isPricedSubscriber(previous)) {
     events.push({ name: "subscription_started", planId: next.paidPlanId! });
   }
 
-  if (next.pastDue && isPricedPlan(next.paidPlanId) && !previous.pastDue) {
+  if (next.pastDue && next.paidPlanPriced === true && !previous.pastDue) {
     events.push({ name: "payment_failed", planId: next.paidPlanId! });
   }
 
@@ -73,10 +76,24 @@ export function getBillingState(
   return snapshot.paidPlanStatus ?? "none";
 }
 
-function isPricedPlan(planId: string | null) {
-  return planId !== null && PRICED_PLAN_IDS.has(planId);
+function isPricedSubscriber(snapshot: LifecycleSnapshot) {
+  return snapshot.isPaying && snapshot.paidPlanPriced === true;
 }
 
-function isPricedSubscriber(snapshot: LifecycleSnapshot) {
-  return snapshot.isPaying && isPricedPlan(snapshot.paidPlanId);
+// Rows stored before the sync expanded plans don't say whether the plan was
+// priced. The same plan is priced now if it was then; a plan being left was
+// a paying one (the only other kind, friends and family, is rare enough to
+// risk one wrong or missed email).
+function withPricing(
+  stored: LifecycleSnapshot,
+  next: LifecycleSnapshot,
+): LifecycleSnapshot {
+  if (stored.paidPlanPriced !== null || stored.paidPlanId === null) {
+    return stored;
+  }
+  return {
+    ...stored,
+    paidPlanPriced:
+      stored.paidPlanId === next.paidPlanId ? next.paidPlanPriced : true,
+  };
 }

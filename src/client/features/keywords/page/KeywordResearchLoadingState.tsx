@@ -1,6 +1,6 @@
 import { Skeleton } from "@/client/components/ui/skeleton";
 
-// Mirrors KeywordResearchResults: tabs and the table below md, the SERP panel
+// Mirrors KeywordResearchResults: tabs and the table below md, the detail panel
 // above the table from md, and side by side from xl.
 export function KeywordResearchLoadingState() {
   return (
@@ -14,10 +14,7 @@ export function KeywordResearchLoadingState() {
         </div>
       </div>
       <div className="flex-1 flex flex-col xl:flex-row gap-4">
-        <div className="order-2 xl:order-1 flex flex-col min-w-0 gap-2 xl:basis-3/5">
-          <div className="hidden md:block rounded-xl border border-border bg-card p-4">
-            <Skeleton className="h-5 w-56" />
-          </div>
+        <div className="order-2 xl:order-1 flex flex-col min-w-0 gap-2 xl:basis-3/5 xl:min-h-[32rem]">
           <div className="flex-1 rounded-xl border border-border bg-card overflow-hidden">
             <div className="border-b border-border px-4 py-3 flex items-center gap-3">
               <Skeleton className="h-8 w-24" />
@@ -40,12 +37,13 @@ export function KeywordResearchLoadingState() {
             </div>
           </div>
         </div>
-        <div className="hidden md:flex order-1 xl:order-2 flex-col min-w-0 gap-2 xl:basis-2/5">
+        <div className="hidden md:flex order-1 xl:order-2 flex-col min-w-0 gap-2 xl:basis-2/5 xl:[contain:size]">
           <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-11 w-full" />
+            <Skeleton className="h-28 w-full" />
           </div>
-          <div className="flex-1 rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-border bg-card p-4 space-y-3">
             <Skeleton className="h-4 w-44" />
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="grid grid-cols-[24px_1fr_72px] gap-2">

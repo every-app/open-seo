@@ -16,9 +16,12 @@ export async function refreshSavedKeywordMetrics(
   input: RefreshSavedKeywordMetricsInput,
   billingCustomer: BillingCustomerContext,
 ): Promise<{ updated: number }> {
-  const { rows } = await KeywordResearchRepository.listSavedKeywordsByProject({
-    projectId: input.projectId,
-  });
+  const { rows: allRows } =
+    await KeywordResearchRepository.listSavedKeywordsByProject({
+      projectId: input.projectId,
+    });
+  const onlyIds = input.savedKeywordIds && new Set(input.savedKeywordIds);
+  const rows = onlyIds ? allRows.filter((r) => onlyIds.has(r.row.id)) : allRows;
 
   if (rows.length === 0) return { updated: 0 };
 

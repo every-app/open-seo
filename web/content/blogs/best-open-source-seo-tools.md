@@ -9,19 +9,19 @@ There are a lot of open source SEO projects on GitHub, but only a handful are ma
 
 In the past, open source SEO tools struggled because they lacked quality data. Beyond auditing, most SEO tasks have a cost, so most of the projects in this guide aren't totally free. For example, rank tracking requires SERP results from around the world. Coming up with a content strategy means you need accurate search volumes and backlink indexes. Most of the tools in this list rely on paid third-party services, but they still cost far less than the equivalent legacy SaaS tools.
 
-Note: OpenSEO publishes this guide, and OpenSEO is one of the tools listed, as the project has 2,000+ stars on GitHub. We have tried to make this useful even if you never touch it. We love open source and think it's the future of SEO tools: [openseo.so/open-source-seo](/open-source-seo).
+Note: OpenSEO publishes this guide, and OpenSEO is one of the tools listed, as the project has 27,000+ stars on GitHub. We have tried to make this useful even if you never touch it. We love open source and think it's the future of SEO tools: [why OpenSEO is open source](/blogs/why-openseo-is-open-source).
 
 ## The main tools at a glance
 
 | Tool                                                       | Stars | What it does                                                                       | Cost to run                                        | Self-hosting                       |
 | ---------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------- |
-| [OpenSEO](https://github.com/every-app/open-seo)           | 2.1k  | All-in-one: keyword research, rank tracking, backlinks, site audits, AI visibility | DataForSEO usage (your own API key, pay-as-you-go) | Docker or Cloudflare Workers       |
-| [SerpBear](https://github.com/towfiqi/serpbear)            | 2.0k  | Rank tracking                                                                      | SERP API usage (provider of your choice)           | Docker                             |
-| [SEONaut](https://github.com/StJudeWasHere/seonaut)        | 717   | Technical SEO and site audits                                                      | Free                                               | Docker                             |
-| [LibreCrawl](https://github.com/PhialsBasement/LibreCrawl) | 681   | Site crawling and SEO audits                                                       | Free                                               | Desktop or web                     |
-| [SEOMachine](https://github.com/TheCraigHewitt/seomachine) | 7.1k  | SEO content writing inside Claude Code                                             | Anthropic API usage                                | Clone the repo, run in Claude Code |
+| [OpenSEO](https://github.com/every-app/open-seo)           | 27.3k | All-in-one: keyword research, rank tracking, backlinks, site audits, AI visibility | DataForSEO usage (your own API key, pay-as-you-go) | Docker or Cloudflare Workers       |
+| [SerpBear](https://github.com/towfiqi/serpbear)            | 2.2k  | Rank tracking                                                                      | SERP API usage (provider of your choice)           | Docker                             |
+| [SEONaut](https://github.com/StJudeWasHere/seonaut)        | 866   | Technical SEO and site audits                                                      | Free                                               | Docker                             |
+| [LibreCrawl](https://github.com/PhialsBasement/LibreCrawl) | 1.1k  | Site crawling and SEO audits                                                       | Free                                               | Desktop or web                     |
+| [SEOMachine](https://github.com/TheCraigHewitt/seomachine) | 7.6k  | SEO content writing inside Claude Code                                             | Anthropic API usage                                | Clone the repo, run in Claude Code |
 
-_Star counts are updated monthly. Last updated June 5, 2026._
+_Star counts in this table were last updated November 11, 2026._
 
 ## OpenSEO
 

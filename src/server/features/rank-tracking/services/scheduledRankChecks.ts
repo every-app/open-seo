@@ -2,26 +2,43 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { FeatureFlag, isFeatureFlagOn } from "@/server/lib/featureFlags";
 import {
   computeNextCheckAt,
   devicesCount,
   isScheduledRankTrackingInterval,
 } from "@/shared/rank-tracking";
+import { describeError } from "@/server/lib/errors";
+import { STUCK_RUN_AFTER_MS } from "@/server/lib/startWorkflow";
 
 // Work admitted per tick, in task units (keywords × devices). Admission
 // control, not a hard rate limit: the first start of a tick is always
-// admitted, so a config bigger than the budget (legal max: 1,000 keywords ×
-// 2 devices = 2,000 units) can never starve. Sized against DataForSEO's
-// 2,000 requests/min account cap, where task_get polling is the binding
-// term: one call per unit per poll round, rounds wake synchronized per tick,
-// and up to three ticks' ~15-minute poll windows overlap the */5 cron — so a
-// full tick can burst ~1,000 polls into a single minute, stacking with the
-// residual rounds of the two prior ticks. Overruns aren't
-// loud failures: throttled polls leave tasks unfinished, which are retried
-// and billed to the customer again, so keep real headroom under the cap.
-// 1,000/tick ≈ 288,000 units/day, ~45× steady-state demand — it only binds
-// during backlog catch-up.
-const SCHEDULED_TASK_UNIT_BUDGET = 1000;
+// admitted, so a config bigger than the budget (legal max:
+// MAX_KEYWORDS_PER_CONFIG × 2 devices = 10,000 units) can never starve. Sized
+// against DataForSEO's requests-per-minute account cap, where task_get polling
+// is the binding term: one call per unit per poll round, rounds wake
+// synchronized per tick, and a unit gets up to two reads, so polling from
+// about six ticks overlaps the */5 cron — a full tick can burst ~500 polls
+// into a single minute, stacking with the rounds of the ticks before it. A
+// config admitted over the budget takes a tick of its own and polls at its own
+// paced rate (TASK_GET_BATCH_MS in rankCheckPaths.ts), which
+// MAX_TASK_UNITS_IN_FLIGHT bounds.
+// 500/tick ≈ 144,000 units/day of small trackers — it binds during backlog
+// catch-up and briefly during the 04:00–10:00 UTC default schedule window.
+const SCHEDULED_TASK_UNIT_BUDGET = 500;
+
+// A config bigger than the tick budget waits while this much work is in flight
+// (every active check, manual ones included), so large trackers due together
+// run a few at a time instead of all at once. One check polls at most 1,500
+// task_gets a minute, so 30,000 units is at most three trackers of 5,000
+// keywords on both devices and about 4,500 polls a minute, under half of
+// DataForSEO's 10,000 requests a minute. That leaves the rest for manual
+// checks, which nothing holds back, and for every other feature on the
+// account. Overruns aren't loud failures: throttled polls delay collection and
+// can leave tasks unfinished, which are read again and billed to the customer,
+// so keep real headroom under the cap. A waiting config stays due and is tried
+// again each tick; smaller configs behind it still start.
+const MAX_TASK_UNITS_IN_FLIGHT = 30_000;
 
 // Wall-clock guard for the per-config loop: sub-hourly crons are killed at 15
 // minutes, and a skip-heavy tick pays serial Autumn round-trips per distinct
@@ -36,12 +53,25 @@ const ALREADY_RUNNING_IDS_CAP = 20;
 // Cron body for the `scheduled` Worker handler: start a rank-check run for every
 // config that's due. Wrapped in `withPgClient` at the entrypoint (server.ts).
 export async function runScheduledRankChecks(env: Env) {
-  const nowIso = new Date().toISOString();
+  // Nothing is claimed while the pause flag is on, so every config stays due
+  // and the scheduler works through the backlog, oldest first and within the
+  // per-tick budget, once it's turned off. Runs already started keep going.
+  const pauseFlag = FeatureFlag.PauseScheduledRankChecks;
+  if (await isFeatureFlagOn(pauseFlag)) {
+    console.warn({ event: "rank_tracking_scheduler_paused", flag: pauseFlag });
+    return;
+  }
+
+  const now = new Date();
+  const nowIso = now.toISOString();
   const dueConfigs =
     await RankTrackingRepository.getDueConfigsWithOrganization(nowIso);
   const isHosted = await isHostedServerAuthMode();
   const keywordCounts = await RankTrackingRepository.getKeywordCountsForConfigs(
     dueConfigs.map((config) => config.id),
+  );
+  let unitsInFlight = await RankTrackingRepository.getTaskUnitsInFlight(
+    new Date(now.getTime() - STUCK_RUN_AFTER_MS),
   );
 
   // Function-local so it lives exactly one tick: at module scope this would be
@@ -63,6 +93,7 @@ export async function runScheduledRankChecks(env: Env) {
   let started = 0;
   let stoppedByBudget = false;
   let stoppedByDeadline = false;
+  let waitingForCapacity = 0;
   let skippedFree = 0;
   let skippedNoKeywords = 0;
   let concurrentChangeSkips = 0;
@@ -100,6 +131,14 @@ export async function runScheduledRankChecks(env: Env) {
       ) {
         stoppedByBudget = true;
         break;
+      }
+
+      if (
+        taskUnits > SCHEDULED_TASK_UNIT_BUDGET &&
+        unitsInFlight + taskUnits > MAX_TASK_UNITS_IN_FLIGHT
+      ) {
+        waitingForCapacity++;
+        continue;
       }
 
       const observedNextCheckAt = config.nextCheckAt;
@@ -186,7 +225,7 @@ export async function runScheduledRankChecks(env: Env) {
         // make hundreds of configs due again on the next tick.
         workflowStartErrors++;
         console.error(
-          `[cron] Failed to start scheduled rank check for config ${config.id} (${config.domain}):`,
+          `[cron] Failed to start scheduled rank check for config ${config.id} (${config.domain}): ${describeError(err)}`,
           err,
         );
         continue;
@@ -194,6 +233,7 @@ export async function runScheduledRankChecks(env: Env) {
 
       if (result.ok) {
         unitsStarted += taskUnits;
+        unitsInFlight += taskUnits;
         started++;
         continue;
       }
@@ -241,6 +281,8 @@ export async function runScheduledRankChecks(env: Env) {
     budget: SCHEDULED_TASK_UNIT_BUDGET,
     stoppedByBudget,
     stoppedByDeadline,
+    waitingForCapacity,
+    unitsInFlight,
     skippedFree,
     skippedNoKeywords,
     concurrentChangeSkips,

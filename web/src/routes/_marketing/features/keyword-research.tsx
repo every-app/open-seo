@@ -8,8 +8,9 @@ const page = featurePages.keywordResearch;
 export const Route = createFileRoute("/_marketing/features/keyword-research")({
   head: () =>
     buildPageSeo({
-      title: "Keyword Research Tool",
-      description: page.description,
+      title:
+        "Open Source Keyword Research Tool with Live SERPs: Volume, Difficulty and Saved Lists",
+      description: page.seoDescription ?? page.description,
       path: "/features/keyword-research",
       titleSuffix: "OpenSEO",
       imageAlt: page.imageAlt,

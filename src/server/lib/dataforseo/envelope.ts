@@ -299,6 +299,8 @@ export function assertOk<T extends DataforseoTaskLike>(
       console.warn("dataforseo.upstream-task-failed", {
         event: "dataforseo.upstream-task-failed",
         path,
+        // DataForSEO support needs the task id to look a failure up.
+        taskId: task.id,
         status: task.status_code,
         message: task.status_message,
       });

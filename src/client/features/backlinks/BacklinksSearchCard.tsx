@@ -9,7 +9,7 @@ import { ResearchScopeSelect } from "@/client/components/ResearchScopeSelect";
 import { SearchCard, SearchInput } from "@/client/components/SearchCard";
 import {
   defaultScopeForInput,
-  parseResearchTarget,
+  parseBacklinksTarget,
 } from "@/shared/researchScope";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
 
@@ -33,7 +33,7 @@ function getBacklinksValidationErrors(
   }
 
   if (validateFormat) {
-    const parsed = parseResearchTarget(value.target, value.scope);
+    const parsed = parseBacklinksTarget(value.target, value.scope);
     if (!parsed.ok) {
       return createFormValidationErrors({
         fields: { target: parsed.message },

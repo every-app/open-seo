@@ -13,7 +13,7 @@ const faqs = [
   {
     question: "What is included in a technical SEO audit?",
     answer:
-      "At minimum: crawlability and access, status codes, canonical and indexability signals, titles and meta descriptions, heading structure, internal linking including broken links and orphan pages, duplicate content, image alt coverage, and server response time. OpenSEO checks 27 issue types across those areas and can optionally run Lighthouse on a sample of up to 10 pages for performance and accessibility findings.",
+      "At minimum: crawlability and access, status codes, canonical and indexability signals, titles and meta descriptions, heading structure, internal linking including broken links and orphan pages, duplicate content, image alt coverage, and server response time. OpenSEO checks 33 issue types across those areas and can optionally run Lighthouse on a sample of up to 10 pages for performance and accessibility findings.",
   },
   {
     question: "How often should you run a technical SEO audit?",

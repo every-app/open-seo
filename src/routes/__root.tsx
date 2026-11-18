@@ -4,6 +4,7 @@ import {
   HeadContent,
   Outlet,
   Scripts,
+  ScriptOnce,
   createRootRoute,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
@@ -14,6 +15,7 @@ import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
 import { captureGoogleLinkError } from "@/client/features/integrations/googleLinkError";
 import { ExportToSheetsModal } from "@/client/components/table/ExportToSheetsModal";
 import { themePreferenceInitScript } from "@/client/lib/theme";
+import { runtimeAuthModeScript } from "@/lib/auth-mode";
 import { NotFound } from "@/client/components/NotFound";
 import { PrivacyBootstrap } from "@/client/components/PrivacyChoices";
 import { TooltipProvider } from "@/client/components/ui/tooltip";
@@ -24,6 +26,16 @@ import { queryClient } from "@/client/tanstack-db";
 // Capture Google link error params before the router starts — a route loader
 // redirect would otherwise replace the URL and lose them. See googleLinkError.ts.
 captureGoogleLinkError();
+
+// Zod speeds up object parsing with `new Function`, after probing once whether
+// the page allows it. A Content-Security-Policy without 'unsafe-eval' refuses
+// the probe and reports it on every page load, so the browser is told not to
+// try. Zod reads this global when it loads, which is before any app module
+// could call `z.config`.
+//
+// The three inline scripts below go through ScriptOnce, which gives each the
+// response's Content-Security-Policy nonce (router.tsx).
+const zodJitlessScript = "globalThis.__zod_globalConfig={jitless:true}";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -97,9 +109,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html suppressHydrationWarning translate="no">
       <head>
-        <script
-          dangerouslySetInnerHTML={{ __html: themePreferenceInitScript }}
-        />
+        <ScriptOnce>{themePreferenceInitScript}</ScriptOnce>
+        <ScriptOnce>{runtimeAuthModeScript()}</ScriptOnce>
+        <ScriptOnce>{zodJitlessScript}</ScriptOnce>
         <HeadContent />
       </head>
       <body>

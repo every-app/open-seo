@@ -16,7 +16,8 @@ type RenderOptions = {
   // Either renderer may be missing: Docker has no browser binding, and the
   // Context key is optional on self-hosted Cloudflare deployments.
   browser?: Pick<BrowserRun, "quickAction">;
-  contextApiKey?: string;
+  // Reaches Context.dev authenticated (provider-access.ts).
+  contextFetch?: typeof fetch | null;
   /** Logged with each attempt; reads outside an audit have none. */
   auditId?: string;
   // Counts every provider attempt, including rejected ones: both providers
@@ -114,7 +115,7 @@ async function renderWithCloudflare(
 
 async function renderWithContext(
   url: string,
-  contextApiKey: string,
+  contextFetch: typeof fetch,
 ): Promise<{
   html: string | null;
   credits: number;
@@ -135,8 +136,7 @@ async function renderWithContext(
   let creditsUsed: number | null = null;
   let httpStatus: number | null = null;
   try {
-    const response = await fetch(endpoint, {
-      headers: { Authorization: `Bearer ${contextApiKey}` },
+    const response = await contextFetch(endpoint, {
       signal: AbortSignal.timeout(35_000),
     });
     httpStatus = response.status;
@@ -182,10 +182,10 @@ async function renderPage(
     if (page) return page;
   }
 
-  if (options.contextApiKey) {
+  if (options.contextFetch) {
     const { html, credits, httpStatus } = await renderWithContext(
       url,
-      options.contextApiKey,
+      options.contextFetch,
     );
     options.usage.contextCredits += credits;
     console.info("site_audit:render", {

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { KeywordMode } from "@/client/features/keywords/keywordResearchTypes";
 import type { KeywordResearchRow } from "@/types/keywords";
+import { hasKeywordWildcard } from "@/shared/keyword-wildcard";
 
 export function useKeywordOverviewState({
   rows,
@@ -34,6 +35,7 @@ export function useKeywordOverviewState({
     rows.length > 0 &&
     searchedKeyword.trim() !== "" &&
     !hasExactMatchInResults &&
+    !hasKeywordWildcard(searchedKeyword) &&
     keywordMode !== "auto";
 
   const overviewKeyword: KeywordResearchRow | null = useMemo(() => {

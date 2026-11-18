@@ -180,6 +180,26 @@ export function parseResearchTarget(
 }
 
 /**
+ * Backlinks page lookups match the URL exactly, so a query string or fragment
+ * would target a different page than the one entered. Reject it instead of
+ * dropping it.
+ */
+export function parseBacklinksTarget(
+  input: string,
+  requestedScope?: ResearchScope,
+): ParseResearchTargetResult {
+  const parsed = parseResearchTarget(input, requestedScope);
+  if (parsed.ok && parsed.target.scope === "exact_url" && /[?#]/.test(input)) {
+    return {
+      ok: false,
+      message:
+        "Remove the query string or fragment (? or #) to look up an exact page",
+    };
+  }
+  return parsed;
+}
+
+/**
  * How many of DataForSEO's 8 filter conditions each scope consumes on the
  * Labs endpoints (see buildRankedKeywordsScopeFilter / buildRelevantPagesScopeFilter).
  * The client uses this to shrink the user-facing filter budget.

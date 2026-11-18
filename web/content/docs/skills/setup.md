@@ -1,96 +1,84 @@
 ---
-title: "Set up OpenSEO Agent Skills"
-description: "Add OpenSEO skill files to your AI agent after connecting OpenSEO MCP."
+title: "Install OpenSEO skills"
+description: "Which ways of adding OpenSEO include the SEO skills, how to check what your agent has, and how to add the skills where they're missing."
 ---
 
-OpenSEO Agent Skills are separate files from OpenSEO MCP.
+**The OpenSEO plugins include the skills. Connectors and MCP connections don't.**
 
-On Claude Code or Claude Cowork, skip the steps below and use the [OpenSEO plugin](/docs/claude-code-plugin) instead — it installs MCP and every skill in one step. On Codex CLI, use the [OpenSEO plugin](/docs/codex-plugin) the same way.
+Skills are instruction files that walk your agent through a complete SEO workflow, such as an audit or keyword research, and save the result as a report in your project. Every way of adding OpenSEO gives your agent the tools. Without the skills, it can still research what you ask for in plain language, but it won't follow OpenSEO's workflows.
 
-First, [set up OpenSEO MCP](/docs/mcp). MCP gives your agent access to OpenSEO data.
+| How you added OpenSEO                                                                                                                     | Skills included |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| OpenSEO plugin for [Claude](/docs/claude-code-plugin), [ChatGPT](/docs/chatgpt#install-the-openseo-plugin) or [Codex](/docs/codex-plugin) | Yes             |
+| [Claude connector](https://claude.ai/directory/connectors/openseo) from Claude's directory                                                | No              |
+| Custom connector, custom connection, or MCP server added by hand                                                                          | No              |
 
-Then add the OpenSEO `SKILL.md` files you want your agent to use. Each skill gives your agent one SEO workflow.
+The Claude connector is tools-only in every Claude app, including Claude Code and Cowork.
 
-## ChatGPT
+## Check what your agent has
 
-Use the [ChatGPT setup guide](/docs/chatgpt). A directory plugin can include skills; a custom MCP connection provides tools only. You can ask for SEO research in plain language with those tools. The terminal commands below apply to agents with a local skills installer, such as Codex or Claude Code.
+| Agent        | How to check                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------- |
+| Claude       | Type `/` and look for OpenSEO skills such as `seo-coach` or `openseo:seo-coach`.                   |
+| ChatGPT      | Select OpenSEO with `@`, then ask which OpenSEO skills it can use. The `@` menu doesn't list them. |
+| Codex        | Type `$` and look for OpenSEO skills such as `seo-coach`.                                          |
+| Other agents | Look in the agent's skill list or skills folder for `seo-coach`.                                   |
 
-## Choose an installation option
+If your agent can list your OpenSEO projects but has no OpenSEO skills, it has the tools only. Add the skills below.
 
-Pick the option that matches how you want to install the files.
+## Add the skills
 
-### Option 1: Install and choose interactively
+### Claude
 
-Use this if you want the installer to show the available skills and agents.
+On a paid Claude plan, install the OpenSEO plugin. It includes the same tools as the connector.
+
+- In the Claude app, claude.ai or Cowork: follow the [Customize → Plugins steps](/docs/claude-code-plugin#install-in-claude-cowork).
+- In Claude Code: run the [two plugin commands](/docs/claude-code-plugin#install-in-claude-code).
+
+On the Free plan, or with a self-hosted instance, upload the skills instead. The plugin needs a paid plan and connects only to hosted OpenSEO. Keep the connector, or use a [custom connector](/docs/claude-code-plugin#custom-connector) for a self-hosted instance, then:
+
+1. Download the [OpenSEO repository](https://github.com/every-app/open-seo) as a ZIP (**Code → Download ZIP**) and unzip it.
+2. Open `plugins/openseo/skills` and compress each skill folder you want into its own ZIP. Compress the folder itself, not the files inside it.
+3. Upload each ZIP under **Customize → Skills**, then turn the skill on.
+
+Skills in Claude chat and Cowork need **Code execution and file creation** turned on under **Settings → Capabilities**. On Team and Enterprise plans, an Owner controls this setting.
+
+### ChatGPT
+
+Install the [OpenSEO plugin for ChatGPT](/docs/chatgpt#install-the-openseo-plugin). A custom connection, including one to a self-hosted instance, has the tools only.
+
+### Codex
+
+Install the [OpenSEO plugin for Codex](/docs/codex-plugin), in the desktop app or the CLI.
+
+### Cursor, Hermes, Grok Bot and other agents
+
+Connect [OpenSEO MCP](/docs/mcp), then install the skills with the skills CLI:
 
 ```bash
-npx skills add every-app/open-seo
+npx skills add https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills
 ```
 
-### Option 2: Install all OpenSEO skills
+It asks which skills to install and for which agent. To skip the questions, add `--skill '*'` for every skill and `--agent` with your agent's name, such as `--agent cursor`.
 
-Use this if you want every OpenSEO skill.
+For Hermes, install each skill through its skills hub instead, so Hermes can check for updates:
 
 ```bash
-npx skills add every-app/open-seo --skill '*'
+hermes skills install every-app/open-seo/plugins/openseo/skills/seo-coach
 ```
 
-### Option 3: Install all skills for Claude Code only
+For Grok Bot, paste the [setup prompt](/docs/agent-setup#grok-bot) into your Bot.
 
-Use this if the skills should be available in Claude Code only.
+To copy the files yourself, clone the [OpenSEO repository](https://github.com/every-app/open-seo) and copy the folders in `plugins/openseo/skills` into your agent's skills folder, such as `~/.claude/skills` or `~/.codex/skills`.
 
-```bash
-npx skills add every-app/open-seo --skill '*' --agent claude-code
-```
+## Keep the skills up to date
 
-### Option 4: Install all skills for OpenAI Codex only
+OpenSEO updates the tools on its server. Skills are files in your agent, so they update through whatever installed them:
 
-Use this if the skills should be available in Codex only.
-
-```bash
-npx skills add every-app/open-seo --skill '*' --agent codex
-```
-
-### Option 5: Copy the skill files manually
-
-Use this if you prefer to copy files into your agent's skills folder.
-
-```bash
-git clone https://github.com/every-app/open-seo.git
-
-# Codex
-mkdir -p ~/.codex/skills
-cp -R open-seo/plugins/openseo/skills/* ~/.codex/skills/
-
-# Claude Code
-mkdir -p ~/.claude/skills
-cp -R open-seo/plugins/openseo/skills/* ~/.claude/skills/
-```
-
-You can also review the source skills on GitHub:
-
-- [OpenSEO Agent Skills on GitHub](https://github.com/every-app/open-seo/tree/main/.agents/skills)
-
-Each skill page also links to its source `SKILL.md`.
-
-## Update installed skills
-
-Use the [update prompt or commands for your installation method](/docs/agent-setup#update-your-skills). Update the OpenSEO plugin if it supplies your skills; otherwise use the installer you originally chose or update your manual copies.
-
-## Run a skill
-
-Use your agent's skill picker or ask for a workflow by name. In Codex, type `$`; Claude Code plugin skills use `/openseo:skill-name`. Other clients have their own invocation syntax. The available workflows include:
-
-- `seo-project-setup`
-- `seo-coach`
-- `keyword-research`
-- `keyword-clustering`
-- `competitive-landscape`
-- `competitor-analysis`
-- `link-prospecting`
-- `local-seo`
-- `seo-audit`
+- ChatGPT plugin: nothing to do. The skills update when OpenSEO publishes a new version of the plugin.
+- Claude plugin added under Customize: in **Customize → Plugins**, select **Check for updates**, or turn on **Sync automatically** for the OpenSEO marketplace.
+- Everything else: use the [update prompt or commands](/docs/agent-setup#update-your-skills) on Agent setup.
 
 ## Next step
 
-Start with [SEO Project Setup](/docs/skills/seo-project-setup) if this is a new SEO project, or [SEO Coach](/docs/skills/seo-coach) if you are not sure which workflow to run first.
+Start with [SEO Project Setup](/docs/skills/seo-project-setup) for a new SEO project, or [SEO Coach](/docs/skills/seo-coach) if you're not sure which workflow to run first.

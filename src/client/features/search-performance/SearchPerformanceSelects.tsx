@@ -1,6 +1,8 @@
 import {
   GSC_DEVICES,
   SEARCH_PERFORMANCE_RANGES,
+  SEARCH_PERFORMANCE_TYPES,
+  type SearchPerformanceType,
   type SearchPerformanceDateRange,
   type SearchPerformanceDevice,
   type SearchPerformanceSearch,
@@ -22,6 +24,20 @@ const RANGE_OPTIONS = SEARCH_PERFORMANCE_RANGES.map((value) => ({
   value,
   label: RANGE_LABELS[value],
 }));
+
+const TYPE_LABELS: Record<SearchPerformanceType, string> = {
+  web: "Web search",
+  discover: "Discover",
+  googleNews: "Google News",
+};
+const TYPE_OPTIONS = SEARCH_PERFORMANCE_TYPES.map((value) => ({
+  value,
+  label: TYPE_LABELS[value],
+}));
+
+function isSearchType(value: string): value is SearchPerformanceType {
+  return SEARCH_PERFORMANCE_TYPES.some((option) => option === value);
+}
 
 const DEVICE_LABELS: Record<SearchPerformanceDevice, string> = {
   DESKTOP: "Desktop",
@@ -45,7 +61,7 @@ function isDevice(value: string): value is SearchPerformanceDevice {
   return GSC_DEVICES.some((option) => option === value);
 }
 
-/** Device, country, and date range selects of the table toolbar. */
+/** Search type, device, country, and date range selects of the table toolbar. */
 export function SearchPerformanceSelects({
   search,
   countries,
@@ -71,27 +87,58 @@ export function SearchPerformanceSelects({
   return (
     <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
       <Select
-        items={DEVICE_ITEMS}
-        value={device}
+        items={TYPE_OPTIONS}
+        value={search.type ?? "web"}
         onValueChange={(value) => {
-          if (value == null) return;
+          if (value == null || !isSearchType(value)) return;
+          // Discover and Google News have no queries: drop the query filter
+          // and the query tabs along with the switch. Discover has no device
+          // filter either.
           onSearchChange({
+            type: value === "web" ? undefined : value,
+            tab: undefined,
             page: undefined,
-            device: isDevice(value) ? value : undefined,
+            queryText: undefined,
+            queryMatch: undefined,
+            ...(value === "discover" ? { device: undefined } : {}),
           });
         }}
       >
-        <SelectTrigger size="sm" className="w-36" aria-label="Device filter">
+        <SelectTrigger size="sm" className="w-36" aria-label="Search type">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {DEVICE_ITEMS.map((option) => (
+          {TYPE_OPTIONS.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+      {search.type === "discover" ? null : (
+        <Select
+          items={DEVICE_ITEMS}
+          value={device}
+          onValueChange={(value) => {
+            if (value == null) return;
+            onSearchChange({
+              page: undefined,
+              device: isDevice(value) ? value : undefined,
+            });
+          }}
+        >
+          <SelectTrigger size="sm" className="w-36" aria-label="Device filter">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DEVICE_ITEMS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
       <Select
         items={countryItems}
         value={country}
@@ -114,29 +161,46 @@ export function SearchPerformanceSelects({
           ))}
         </SelectContent>
       </Select>
-      <Select
-        items={RANGE_OPTIONS}
+      <DateRangeSelect
         value={range}
-        onValueChange={(value) => {
-          if (value != null && isDateRange(value)) {
-            onSearchChange({
-              page: undefined,
-              range: value,
-            });
-          }
-        }}
-      >
-        <SelectTrigger size="sm" className="w-36" aria-label="Date range">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {RANGE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        onChange={(value) => onSearchChange({ page: undefined, range: value })}
+        triggerClassName="w-36"
+      />
     </div>
+  );
+}
+
+export function DateRangeSelect({
+  value,
+  onChange,
+  triggerClassName,
+}: {
+  value: SearchPerformanceDateRange;
+  onChange: (value: SearchPerformanceDateRange) => void;
+  triggerClassName?: string;
+}) {
+  return (
+    <Select
+      items={RANGE_OPTIONS}
+      value={value}
+      onValueChange={(next) => {
+        if (next != null && isDateRange(next)) onChange(next);
+      }}
+    >
+      <SelectTrigger
+        size="sm"
+        className={triggerClassName}
+        aria-label="Date range"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {RANGE_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

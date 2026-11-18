@@ -8,8 +8,9 @@ const page = featurePages.rankTracking;
 export const Route = createFileRoute("/_marketing/features/rank-tracking")({
   head: () =>
     buildPageSeo({
-      title: "Rank Tracker",
-      description: page.description,
+      title:
+        "SEO Rank Tracker for Keyword Position Tracking: Daily to Monthly, Desktop and Mobile",
+      description: page.seoDescription ?? page.description,
       path: "/features/rank-tracking",
       titleSuffix: "OpenSEO",
       imageAlt: page.imageAlt,

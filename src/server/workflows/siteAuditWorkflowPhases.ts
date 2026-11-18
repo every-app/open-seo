@@ -9,6 +9,7 @@ import {
 } from "@/server/lib/audit/lighthouse";
 import {
   getOrigin,
+  isAuditablePageUrl,
   isSameOrigin,
   normalizeUrl,
 } from "@/server/lib/audit/url-utils";
@@ -53,6 +54,8 @@ type AuditPhasesParams = {
   config: AuditConfig;
   access?: CrawlerAccess | null;
   renderUsage: RenderUsage;
+  /** A metered rendered audit's credit hold, which the crawl must stay in. */
+  renderHold?: { deadlineAt: number; credits: number };
 };
 
 export async function runAuditPhases(
@@ -69,20 +72,20 @@ export async function runAuditPhases(
     access,
   } = params;
   const origin = getOrigin(startUrl);
-  const maxPages = config.maxPages;
+  const { maxPages, excludePaths } = config;
 
   const discovery = await runDiscoveryPhase(step, {
     auditId,
     workflowInstanceId,
     origin,
     startUrl,
-    maxPages,
+    config,
     access,
   });
   // Parsed outside the step from checkpointed text, so replays see the exact
   // robots rules the original run used (a live re-fetch could differ and
   // desync the frontier from already-persisted crawl batches).
-  const robots = parseRobotsTxt(origin, discovery.robotsText);
+  const robots = parseRobotsTxt(origin, discovery.robotsText, excludePaths);
   const crawl = await runCrawlPhase(step, {
     ...params,
     origin,
@@ -119,19 +122,19 @@ async function runDiscoveryPhase(
     workflowInstanceId: string;
     origin: string;
     startUrl: string;
-    maxPages: number;
+    config: AuditConfig;
     access?: CrawlerAccess | null;
   },
 ) {
-  const { auditId, workflowInstanceId, origin, startUrl, maxPages, access } =
-    input;
+  const { auditId, workflowInstanceId, origin, startUrl, access } = input;
+  const { maxPages, excludePaths } = input.config;
   // "-v2": the checkpoint shape changed (seeds now live in the scratchpad DO
   // instead of the step return). A pre-refactor instance replayed under this
   // code must re-run discovery — resuming from the old cached {sitemapUrls}
   // shape would leave the scratchpad empty and finalize a zero-page audit.
   return pgStep(step, "discover-urls-v2", DISCOVERY_STEP, async () => {
     const result = await discoverUrls(origin, maxPages, access);
-    const robots = parseRobotsTxt(origin, result.robotsText);
+    const robots = parseRobotsTxt(origin, result.robotsText, excludePaths);
     const scratchpad = getAuditScratchpad(auditId);
 
     // Seeds go straight into the scratchpad frontier — nothing large is
@@ -158,6 +161,7 @@ async function runDiscoveryPhase(
       seen.add(normalized);
       if (!isSameOrigin(normalized, origin)) continue;
       if (!isCrawlableUrl(normalized)) continue;
+      if (!isAuditablePageUrl(normalized)) continue;
       if (!robots.isAllowed(normalized)) continue;
       seeds.push(normalized);
     }
@@ -368,7 +372,10 @@ async function finalizeAudit(args: {
     const linksStartedAt = Date.now();
     const linkIssues = await runScratchpadLinkChecks(auditId, startUrl, {
       ...crawl,
-      completed: crawl.completed && !hasUnreadShells,
+      // Excluded pages are never read, so their links are unknown: a page
+      // linked only from them would be reported as an orphan.
+      completed:
+        crawl.completed && !hasUnreadShells && !config.excludePaths?.length,
     });
     console.info("Audit link checks completed", {
       auditId,
@@ -376,12 +383,8 @@ async function finalizeAudit(args: {
       issueCount: linkIssues.length,
     });
     issues.push(...linkIssues);
-    if (crawl.rateLimited) {
-      issues.push({
-        issueType: "crawl-rate-limited",
-        pageId: null,
-        pageUrl: startUrl,
-      });
+    if (crawl.stopIssue) {
+      issues.push({ ...crawl.stopIssue, pageId: null, pageUrl: startUrl });
     }
     const persistStartedAt = Date.now();
     await AuditRepository.insertIssues(auditId, issues);

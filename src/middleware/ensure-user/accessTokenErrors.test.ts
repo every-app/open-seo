@@ -28,10 +28,14 @@ describe("classifyAccessVerificationError", () => {
     expect(error.code).toBe("UNAUTHENTICATED");
   });
 
-  it("maps JWKS lookup failures to a TEAM_DOMAIN config error", () => {
-    const error = classifyAccessVerificationError(
-      new joseErrors.JWKSNoMatchingKey(),
-    );
+  it.each([
+    new joseErrors.JWKSNoMatchingKey(),
+    // What a TEAM_DOMAIN naming a team that doesn't exist (404) produces.
+    new joseErrors.JOSEError(
+      "Expected 200 OK from the JSON Web Key Set HTTP response",
+    ),
+  ])("maps JWKS lookup failures to a TEAM_DOMAIN config error: %s", (cause) => {
+    const error = classifyAccessVerificationError(cause);
 
     expect(error.code).toBe("AUTH_CONFIG_MISSING");
     expect(error.message).toContain("TEAM_DOMAIN");

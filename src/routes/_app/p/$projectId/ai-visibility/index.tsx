@@ -6,6 +6,7 @@ import {
   aiRunResultsQueryOptions,
   aiTrackerQueryOptions,
   aiTrendQueryOptions,
+  DEFAULT_AI_TREND_DAYS,
 } from "@/client/features/ai-visibility/shared";
 import { queryClient } from "@/client/tanstack-db/queryClient";
 
@@ -16,7 +17,9 @@ export const Route = createFileRoute("/_app/p/$projectId/ai-visibility/")({
     tab: z.enum(tabs).optional().catch(undefined),
   }),
   loader: ({ params: { projectId } }) => {
-    void queryClient.prefetchQuery(aiTrendQueryOptions(projectId, 7));
+    void queryClient.prefetchQuery(
+      aiTrendQueryOptions(projectId, DEFAULT_AI_TREND_DAYS),
+    );
     // The prompt table reads the latest run's answers, known from a fresh
     // tracker: a cached one can predate the latest run.
     void queryClient

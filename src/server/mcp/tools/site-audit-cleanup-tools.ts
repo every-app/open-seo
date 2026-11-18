@@ -17,7 +17,7 @@ export const listSiteAuditsTool = {
   config: {
     title: "List site audits",
     description:
-      "Lists this project's site audits with IDs, URLs, status, page counts, and dates, newest first. Uses no credits. Use this to find an older audit to read or delete; get_audit_status defaults to the newest audit only.",
+      "List a project's site audits with their IDs, URLs, status, page counts, and dates, newest first. Use it to find an older audit to read or delete; get_audit_status, get_audit_issues, and get_audit_pages default to the newest audit. Uses no credits.",
     inputSchema: listInputSchema,
     outputSchema: z.looseObject({
       audits: z.array(looseObjectOutputSchema),
@@ -37,7 +37,7 @@ export const listSiteAuditsTool = {
           ? audits
               .map(
                 (audit) =>
-                  `${audit.id}  ${audit.startUrl}  ${audit.status}  ${audit.pagesCrawled} pages  ${audit.startedAt}`,
+                  `${audit.id}  ${audit.startUrl}  ${audit.status}  ${audit.pagesCrawled} pages  ${audit.ranLighthouse ? "with" : "no"} Lighthouse  ${audit.startedAt}`,
               )
               .join("\n")
           : "No site audits in this project.",
@@ -67,7 +67,7 @@ export const deleteSiteAuditTool = {
   config: {
     title: "Delete site audit",
     description:
-      "Permanently deletes one site audit and its crawled pages, issues, and Lighthouse results, freeing audit capacity. Uses the same workflow-stop and cleanup behavior as the dashboard. Uses no credits. Requires an owner or admin, like deletion in the dashboard. Saved reports and project context are kept.",
+      "Permanently delete one site audit with its crawled pages, issues, and Lighthouse results, freeing audit capacity. A running audit is stopped first. Saved reports and project context are kept. Requires an owner or admin. Uses no credits. Call list_site_audits to find the auditId.",
     inputSchema: deleteInputSchema,
     outputSchema: z.looseObject({
       auditId: z.string(),

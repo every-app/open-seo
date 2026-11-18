@@ -162,9 +162,38 @@ async function hasDataGrantsForGoogleAccount(accountId: string) {
   return (result?.grants ?? 0) > 0;
 }
 
+/**
+ * Drops the organization's Search Console and GA4 mappings that read through
+ * a member's own Google grants, and returns the Search Console projects whose
+ * cached data came from them. Their other organizations keep theirs.
+ */
+async function removeMemberConnections(userId: string, organizationId: string) {
+  const gscByMember = and(
+    eq(gscConnections.organizationId, organizationId),
+    eq(gscConnections.connectedByUserId, userId),
+  );
+  const gscProjects = await db
+    .select({ projectId: gscConnections.projectId })
+    .from(gscConnections)
+    .where(gscByMember);
+  await runBatch((tx) => [
+    tx.delete(gscConnections).where(gscByMember),
+    tx
+      .delete(ga4Connections)
+      .where(
+        and(
+          eq(ga4Connections.organizationId, organizationId),
+          eq(ga4Connections.connectedByUserId, userId),
+        ),
+      ),
+  ]);
+  return gscProjects.map((row) => row.projectId);
+}
+
 export const GoogleAccountRepository = {
   getRemovalImpact,
   remove,
+  removeMemberConnections,
   listGscProjectIds,
   listUnusedGrants,
   deleteUnusedGrant,

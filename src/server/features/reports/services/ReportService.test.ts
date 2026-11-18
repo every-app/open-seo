@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { usesBetterAuthServer } from "@/server/lib/runtime-env";
 import { formatCount } from "@/shared/format";
 import {
   REPORT_MAX_BYTES_PER_ORG,
@@ -23,8 +23,14 @@ vi.mock("@/server/features/reports/repositories/ReportRepository", () => ({
   ReportRepository: mocks,
 }));
 vi.mock("@/server/lib/posthog", () => ({ captureServerEvent: vi.fn() }));
+// No request context here, so runAfterResponse awaits the capture.
+vi.mock("cloudflare:workers", () => ({
+  waitUntil: () => {
+    throw new Error("waitUntil() called outside a request context");
+  },
+}));
 vi.mock("@/server/lib/runtime-env", () => ({
-  isHostedServerAuthMode: vi.fn(),
+  usesBetterAuthServer: vi.fn(),
 }));
 
 const html = "<!doctype html><html><body>Hi</body></html>";
@@ -210,7 +216,7 @@ describe("sharing", () => {
 
   beforeEach(() => {
     mocks.setShareToken.mockResolvedValue(true);
-    vi.mocked(isHostedServerAuthMode).mockResolvedValue(true);
+    vi.mocked(usesBetterAuthServer).mockResolvedValue(true);
     mocks.getReport.mockResolvedValue(storedReport);
   });
 
@@ -265,7 +271,7 @@ describe("sharing", () => {
   // A self-hosted deployment cannot serve the link, so a minted token would be
   // a link that silently does nothing. Refused before the report is even read.
   it("refuses to mint when the deployment is not hosted", async () => {
-    vi.mocked(isHostedServerAuthMode).mockResolvedValue(false);
+    vi.mocked(usesBetterAuthServer).mockResolvedValue(false);
 
     await expect(share()).rejects.toThrow(
       "Sharing is only available on hosted OpenSEO.",

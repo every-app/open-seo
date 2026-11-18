@@ -1,4 +1,4 @@
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { usesBetterAuthServer } from "@/server/lib/runtime-env";
 
 // The two server-side gates every share path runs: is sharing on at all, and
 // does this path segment even look like a token. Server-only, so reading the
@@ -6,13 +6,14 @@ import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 // client half of sharing is `sharePath` in @/shared/report-share.
 
 /**
- * Sharing is a hosted-only feature: a self-hosted deployment is behind
- * Cloudflare Access or has no auth at all, and neither can serve a link to a
+ * Sharing needs a deployment with its own accounts (hosted and password modes): a
+ * public origin and a sign-in page. The other self-hosted modes are behind
+ * Cloudflare Access or have no auth at all, and neither can serve a link to a
  * reader who is not signed in. One predicate, so the mint, the share page and
  * the raw endpoint cannot disagree.
  */
 export function sharesEnabled(): Promise<boolean> {
-  return isHostedServerAuthMode();
+  return usesBetterAuthServer();
 }
 
 /**

@@ -128,6 +128,18 @@ describe("ga4Client admin API", () => {
       }).listProperties(),
     ).rejects.toBeInstanceOf(Ga4TokenError);
   });
+
+  it("reports a token endpoint timeout as an outage, not a revoked grant", async () => {
+    mocks.getAccessToken.mockRejectedValue(
+      new DOMException("timed out", "TimeoutError"),
+    );
+    await expect(
+      createGa4AdminClient({
+        userId: "u1",
+        ga4AccountId: "google-sub-a",
+      }).listProperties(),
+    ).rejects.toBeInstanceOf(Ga4AdminApiError);
+  });
 });
 
 const reportRequest = {

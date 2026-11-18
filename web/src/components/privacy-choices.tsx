@@ -1,4 +1,6 @@
+import { useLocation } from "@tanstack/react-router";
 import * as React from "react";
+import { trackMetaPageContent } from "@/lib/meta-pixel";
 import {
   effectivePrivacyChoices,
   hasGlobalPrivacyControl,
@@ -11,12 +13,12 @@ import {
 const OPEN_PRIVACY_CHOICES_EVENT = "openseo:open-privacy-choices";
 const PLAUSIBLE_IGNORE = "plausible_ignore";
 
-// Plausible counts visits without cookies for everyone (the dialog offers its
-// opt-out). The consent-based tracking here is the Meta Pixel and Dub's
-// referral cookie on partner links. Each loads where the visitor's choice or
-// region allows it; where opt-in is required, visitors from a partner link or
-// one of our Meta ads are asked. The footer's dialog also holds the app's
-// analytics choice (one shared cookie).
+// Plausible and OpenAnalytics count visits without cookies for everyone (the
+// dialog offers one opt-out for both). The consent-based tracking here is the
+// Meta Pixel and Dub's referral cookie on partner links. Each loads where the
+// visitor's choice or region allows it; where opt-in is required, visitors
+// from a partner link or one of our Meta ads are asked. The footer's dialog
+// also holds the app's analytics choice (one shared cookie).
 export function PrivacyChoices() {
   const [saved, setSaved] =
     React.useState<ReturnType<typeof readPrivacyCookie>>(null);
@@ -24,6 +26,11 @@ export function PrivacyChoices() {
   const [view, setView] = React.useState<"none" | "partner" | "ad" | "dialog">(
     "none",
   );
+  const { pathname } = useLocation();
+
+  // Moving between pages. The pixel isn't running yet for the page the visitor
+  // landed on, so loadMetaPixel reports that one when it loads.
+  React.useEffect(() => trackMetaPageContent(pathname), [pathname]);
 
   React.useEffect(() => {
     const savedChoices = readPrivacyCookie(document.cookie);
@@ -80,13 +87,22 @@ export function PrivacyChoices() {
         })
       : null;
 
+  // Panels open at the bottom of the screen, where /start keeps its sticky
+  // sign-up bar. The bar hides while this attribute is set.
+  const panelOpen = choices !== null && view !== "none";
+  React.useEffect(() => {
+    document.documentElement.toggleAttribute("data-privacy-panel", panelOpen);
+  }, [panelOpen]);
+
   function save(next: Choices) {
     // A loaded script can't be unloaded; a reload stops it.
     const stopScripts =
       (!next.referrals &&
         document.querySelector("script[data-openseo-dub]") !== null) ||
       (!next.advertising &&
-        document.querySelector("script[data-openseo-meta]") !== null);
+        document.querySelector("script[data-openseo-meta]") !== null) ||
+      (localStorage.getItem(PLAUSIBLE_IGNORE) === "true" &&
+        document.querySelector("script[data-openseo-openanalytics]") !== null);
     savePrivacyChoices(next);
     setSaved(next);
     setView("none");
@@ -110,7 +126,8 @@ export function PrivacyChoices() {
     return (
       <Prompt onAnswer={(advertising) => save({ ...choices, advertising })}>
         You came from one of our ads on Facebook or Instagram. Can Meta measure
-        whether it led to a sign-up or subscription?
+        whether it led to a sign-up, a setup step (adding a website, connecting
+        Search Console or an AI agent) or a subscription?
       </Prompt>
     );
   }
@@ -145,7 +162,8 @@ function ChoicesForm({
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        // Plausible's own opt-out: its script skips tracking while this is set.
+        // Plausible's own opt-out: its script skips tracking while this is set,
+        // and the root loader skips OpenAnalytics.
         if (countVisits) localStorage.removeItem(PLAUSIBLE_IGNORE);
         else localStorage.setItem(PLAUSIBLE_IGNORE, "true");
         onSave(draft);
@@ -155,7 +173,7 @@ function ChoicesForm({
       <div className="mt-3 space-y-3">
         <ChoiceRow
           label="Visit counts"
-          description="Anonymous, without cookies (Plausible)."
+          description="No cookies or IDs saved in your browser (Plausible and OpenAnalytics)."
           checked={countVisits}
           onChange={setCountVisits}
         />
@@ -181,7 +199,7 @@ function ChoicesForm({
           description={
             gpc
               ? "Off because your browser sends Global Privacy Control."
-              : "Lets Meta measure which of our ads lead to sign-ups and subscriptions (Meta Pixel)."
+              : "Lets Meta measure which of our ads lead to sign-ups, setup steps (adding a website, connecting Search Console or an AI agent) and subscriptions (Meta Pixel)."
           }
           checked={draft.advertising && !gpc}
           disabled={gpc}
@@ -328,7 +346,8 @@ function loadMetaPixel() {
   // that tag keeps a save from reloading the page to stop a pixel that never
   // ran, and lets an Allow on this page request the pixel again.
   script.onload = () => {
-    if (!("fbq" in window)) script.remove();
+    if ("fbq" in window) trackMetaPageContent(location.pathname);
+    else script.remove();
   };
   document.head.appendChild(script);
 }

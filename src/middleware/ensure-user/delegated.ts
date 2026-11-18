@@ -19,7 +19,7 @@ function deriveUserName(email: string) {
   return email.split("@")[0] || "OpenSEO";
 }
 
-async function ensureUserRecord(userId: string, userEmail: string) {
+export async function ensureUserRecord(userId: string, userEmail: string) {
   const existing = await db.query.user.findFirst({
     columns: { email: true },
     where: eq(user.id, userId),

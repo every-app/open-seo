@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin } from "lucide-react";
+import { MapPin, Search, X } from "lucide-react";
 import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
 import {
   Combobox,
   ComboboxContent,
@@ -9,6 +10,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
+  ComboboxTrigger,
   useComboboxAnchor,
 } from "@/client/components/ui/combobox";
 import { InputGroupAddon } from "@/client/components/ui/input-group";
@@ -40,17 +42,7 @@ function useDebounce<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
-/** Searches the cities, counties and regions of one country. */
-export function SerpLocationCombobox({
-  value,
-  onChange,
-  countryCode,
-  placeholder = "Search cities...",
-  id,
-  invalid,
-}: Props) {
-  // The list lines up with the whole field, not only the text input.
-  const anchor = useComboboxAnchor();
+function useSerpLocationSearch(countryCode: string) {
   const [query, setQuery] = useState("");
   const trimmed = query.trim();
   const debounced = useDebounce(trimmed, 350);
@@ -67,10 +59,6 @@ export function SerpLocationCombobox({
   // Only show matches for the text in the field right now.
   const results = searching || !trimmed ? [] : (searchQuery.data ?? []);
 
-  const selected: LocationItem | null = value
-    ? { locationName: value, displayLabel: formatLocationLabel(value) }
-    : null;
-
   const emptyMessage = !trimmed
     ? "Type a city, county, or region"
     : searching
@@ -79,10 +67,50 @@ export function SerpLocationCombobox({
         ? "Unable to load locations"
         : `No locations found for "${trimmed}"`;
 
+  return { setQuery, searching, results, emptyMessage };
+}
+
+function selectedItem(value: string | undefined): LocationItem | null {
+  return value
+    ? { locationName: value, displayLabel: formatLocationLabel(value) }
+    : null;
+}
+
+function LocationResults() {
+  return (
+    <ComboboxList>
+      {(item: LocationItem) => (
+        <ComboboxItem key={item.locationName} value={item}>
+          <span className="truncate">{item.displayLabel}</span>
+          {item.locationType ? (
+            <Badge variant="secondary" size="sm" className="ml-auto">
+              {item.locationType}
+            </Badge>
+          ) : null}
+        </ComboboxItem>
+      )}
+    </ComboboxList>
+  );
+}
+
+/** Searches the cities, counties and regions of one country. */
+export function SerpLocationCombobox({
+  value,
+  onChange,
+  countryCode,
+  placeholder = "Search cities...",
+  id,
+  invalid,
+}: Props) {
+  // The list lines up with the whole field, not only the text input.
+  const anchor = useComboboxAnchor();
+  const { setQuery, searching, results, emptyMessage } =
+    useSerpLocationSearch(countryCode);
+
   return (
     <Combobox
       items={results}
-      value={selected}
+      value={selectedItem(value)}
       // The server already matched the query.
       filter={null}
       itemToStringLabel={(item: LocationItem) => item.displayLabel}
@@ -120,19 +148,84 @@ export function SerpLocationCombobox({
           wider than a compact field, so the list sizes to its content. */}
       <ComboboxContent anchor={anchor} className="w-max">
         <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-        <ComboboxList>
-          {(item: LocationItem) => (
-            <ComboboxItem key={item.locationName} value={item}>
-              <span className="truncate">{item.displayLabel}</span>
-              {item.locationType ? (
-                <Badge variant="secondary" size="sm" className="ml-auto">
-                  {item.locationType}
-                </Badge>
-              ) : null}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
+        <LocationResults />
       </ComboboxContent>
     </Combobox>
+  );
+}
+
+/** `SerpLocationCombobox` as a compact button, with its search inside the list. */
+export function SerpLocationChip({
+  value,
+  onChange,
+  countryCode,
+  label,
+}: Pick<Props, "value" | "onChange" | "countryCode"> & { label: string }) {
+  const { setQuery, searching, results, emptyMessage } =
+    useSerpLocationSearch(countryCode);
+
+  return (
+    <div className="flex min-w-0">
+      <Combobox
+        items={results}
+        value={selectedItem(value)}
+        // The server already matched the query.
+        filter={null}
+        itemToStringLabel={(item: LocationItem) => item.displayLabel}
+        isItemEqualToValue={(item, current) =>
+          item.locationName === current.locationName
+        }
+        onValueChange={(item) => {
+          setQuery("");
+          onChange(item?.locationName);
+        }}
+        // A closed list drops its search, so the next open starts fresh.
+        onOpenChange={(open) => {
+          if (!open) setQuery("");
+        }}
+        onInputValueChange={(text, { reason }) => {
+          if (reason === "input-change") setQuery(text);
+        }}
+      >
+        <ComboboxTrigger
+          aria-label={value ? `${label}: ${formatLocationLabel(value)}` : label}
+          render={
+            <Button
+              variant="outline"
+              className={`min-w-0 font-normal focus-visible:z-10 ${value ? "rounded-r-none" : ""}`}
+            />
+          }
+        >
+          <MapPin />
+          <span className="max-w-40 truncate">
+            {value ? formatLocationLabel(value, 2) : label}
+          </span>
+        </ComboboxTrigger>
+        <ComboboxContent className="w-80">
+          <ComboboxInput
+            showTrigger={false}
+            placeholder="Search"
+            aria-label={`Search ${label.toLowerCase()}`}
+          >
+            <InputGroupAddon>
+              {searching ? <Spinner /> : <Search />}
+            </InputGroupAddon>
+          </ComboboxInput>
+          <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
+          <LocationResults />
+        </ComboboxContent>
+      </Combobox>
+      {value ? (
+        <Button
+          variant="outline"
+          size="icon"
+          className="-ml-px rounded-l-none focus-visible:z-10"
+          aria-label={`Clear ${label.toLowerCase()}`}
+          onClick={() => onChange(undefined)}
+        >
+          <X />
+        </Button>
+      ) : null}
+    </div>
   );
 }

@@ -1,0 +1,237 @@
+diff --git a/lib/Cloudflare/Access/Application.d.ts b/lib/Cloudflare/Access/Application.d.ts
+index 0f5153414a09a0eb1692be5ab010657ab812e389..83b284865bc28f9a6d405c16ca1ccb5e8434cb35 100644
+--- a/lib/Cloudflare/Access/Application.d.ts
++++ b/lib/Cloudflare/Access/Application.d.ts
+@@ -32,6 +32,31 @@ export type ApplicationDestination = {
+     type: "via_mcp_server_portal";
+     mcpServerId: string;
+ };
++/**
++ * Configuration for an OAuth authorization flow managed by Cloudflare Access.
++ */
++export interface OAuthConfiguration {
++    /** Whether Access acts as the OAuth authorization server. */
++    enabled?: boolean;
++    /** OAuth grant and token lifetimes. */
++    grant?: {
++        /** Lifetime of issued access tokens, as a Go-style duration. */
++        accessTokenLifetime?: string;
++        /** Lifetime of the authorization session, as a Go-style duration. */
++        sessionDuration?: string;
++    };
++    /** Settings for OAuth dynamic client registration. */
++    dynamicClientRegistration?: {
++        /** Whether dynamic client registration is enabled. */
++        enabled?: boolean;
++        /** Explicit redirect URIs that dynamically registered clients may use. */
++        allowedUris?: ReadonlyArray<string>;
++        /** Whether any localhost redirect URI is allowed. */
++        allowAnyOnLocalhost?: boolean;
++        /** Whether any loopback-address redirect URI is allowed. */
++        allowAnyOnLoopback?: boolean;
++    };
++}
+ export interface ApplicationProps {
+     /**
+      * The Access application type.
+@@ -73,6 +98,12 @@ export interface ApplicationProps {
+      * ```
+      */
+     destinations?: ReadonlyArray<ApplicationDestination>;
++    /**
++     * Optional OAuth authorization-server configuration managed by Access.
++     * Use this for non-browser clients such as MCP clients that authenticate
++     * through OAuth and may register redirect URIs dynamically.
++     */
++    oauthConfiguration?: OAuthConfiguration;
+     /**
+      * Token TTL for sessions issued by this application. Accepts Go-style
+      * duration strings, e.g. `"24h"`, `"720h"`, `"2h45m"`.
+diff --git a/lib/Cloudflare/Access/Application.js b/lib/Cloudflare/Access/Application.js
+index c8ab1322347095c9f7cfda63c382c0b6ad17775d..7e311e120658debd792d45e99a2818d74d5a42a5 100644
+--- a/lib/Cloudflare/Access/Application.js
++++ b/lib/Cloudflare/Access/Application.js
+@@ -194,6 +194,7 @@ export const ApplicationProvider = () => Provider.succeed(Application, {
+                 destinations: body.destinations === undefined
+                     ? undefined
+                     : Array.from(body.destinations),
++                oauthConfiguration: toRequestOAuthConfiguration(body.oauthConfiguration),
+             })
+                 .pipe(
+             // A referenced policy may be propagating, or the call may be
+@@ -235,6 +236,10 @@ export const ApplicationProvider = () => Provider.succeed(Application, {
+                 destinations: body.destinations === undefined
+                     ? undefined
+                     : Array.from(body.destinations),
++                // Preserve a live managed OAuth configuration when the caller
++                // does not manage it but another mutable field triggers this
++                // PUT-style update.
++                oauthConfiguration: toRequestOAuthConfiguration(mergeOAuthConfiguration(observed.oauthConfiguration, body.oauthConfiguration)),
+             })
+                 // A just-added policy reference may still be propagating, or the
+                 // call may be throttled (403) — ride out both.
+@@ -347,6 +352,25 @@ const observeById = (accountId, appId) => Effect.gen(function* () {
+ });
+ const undef = (v) => v == null ? undefined : v;
+ const undefArr = (v) => v == null ? undefined : v.filter((x) => x != null);
++const narrowOAuthConfiguration = (raw) => raw == null
++    ? undefined
++    : {
++        enabled: undef(raw.enabled),
++        grant: raw.grant == null
++            ? undefined
++            : {
++                accessTokenLifetime: undef(raw.grant.accessTokenLifetime),
++                sessionDuration: undef(raw.grant.sessionDuration),
++            },
++        dynamicClientRegistration: raw.dynamicClientRegistration == null
++            ? undefined
++            : {
++                enabled: undef(raw.dynamicClientRegistration.enabled),
++                allowedUris: undefArr(raw.dynamicClientRegistration.allowedUris),
++                allowAnyOnLocalhost: undef(raw.dynamicClientRegistration.allowAnyOnLocalhost),
++                allowAnyOnLoopback: undef(raw.dynamicClientRegistration.allowAnyOnLoopback),
++            },
++    };
+ const narrowApp = (raw) => ({
+     id: undef(raw.id),
+     aud: undef(raw.aud),
+@@ -356,6 +380,7 @@ const narrowApp = (raw) => ({
+     destinations: raw.destinations == null
+         ? undefined
+         : raw.destinations,
++    oauthConfiguration: narrowOAuthConfiguration(raw.oauthConfiguration),
+     allowedIdps: undefArr(raw.allowedIdps ?? undefined),
+     autoRedirectToIdentity: undef(raw.autoRedirectToIdentity),
+     appLauncherVisible: undef(raw.appLauncherVisible),
+@@ -394,6 +419,46 @@ const toRequestPolicy = (p) => {
+     };
+ };
+ const toRequestPolicies = (policies) => policies === undefined ? undefined : policies.map(toRequestPolicy);
++const mergeOAuthConfiguration = (observed, desired) => {
++    if (desired === undefined)
++        return observed;
++    return {
++        enabled: desired.enabled ?? observed?.enabled,
++        grant: desired.grant === undefined
++            ? observed?.grant
++            : {
++                accessTokenLifetime: desired.grant.accessTokenLifetime ??
++                    observed?.grant?.accessTokenLifetime,
++                sessionDuration: desired.grant.sessionDuration ?? observed?.grant?.sessionDuration,
++            },
++        dynamicClientRegistration: desired.dynamicClientRegistration === undefined
++            ? observed?.dynamicClientRegistration
++            : {
++                enabled: desired.dynamicClientRegistration.enabled ??
++                    observed?.dynamicClientRegistration?.enabled,
++                allowedUris: desired.dynamicClientRegistration.allowedUris ??
++                    observed?.dynamicClientRegistration?.allowedUris,
++                allowAnyOnLocalhost: desired.dynamicClientRegistration.allowAnyOnLocalhost ??
++                    observed?.dynamicClientRegistration?.allowAnyOnLocalhost,
++                allowAnyOnLoopback: desired.dynamicClientRegistration.allowAnyOnLoopback ??
++                    observed?.dynamicClientRegistration?.allowAnyOnLoopback,
++            },
++    };
++};
++const toRequestOAuthConfiguration = (config) => config === undefined
++    ? undefined
++    : {
++        enabled: config.enabled,
++        grant: config.grant,
++        dynamicClientRegistration: config.dynamicClientRegistration === undefined
++            ? undefined
++            : {
++                ...config.dynamicClientRegistration,
++                allowedUris: config.dynamicClientRegistration.allowedUris === undefined
++                    ? undefined
++                    : Array.from(config.dynamicClientRegistration.allowedUris),
++            },
++    };
+ const resolvePolicies = (policies) => policies === undefined
+     ? undefined
+     : // Inputs are concrete strings here — the Plan layer resolved them
+@@ -411,6 +476,9 @@ const buildMutableBody = (news, resolvedName, resolvedAllowedIdps, resolvedPolic
+     if (news.destinations !== undefined) {
+         body.destinations = news.destinations;
+     }
++    if (news.oauthConfiguration !== undefined) {
++        body.oauthConfiguration = news.oauthConfiguration;
++    }
+     if (news.sessionDuration !== undefined) {
+         body.sessionDuration = news.sessionDuration;
+     }
+@@ -460,6 +528,45 @@ const policiesEq = (desired, observed) => {
+     }
+     return true;
+ };
++const oauthConfigurationEquals = (desired, observed) => {
++    if (desired === undefined)
++        return true;
++    if (observed === undefined)
++        return false;
++    if (desired.enabled !== undefined && desired.enabled !== observed.enabled) {
++        return false;
++    }
++    const desiredGrant = desired.grant;
++    if (desiredGrant?.accessTokenLifetime !== undefined &&
++        desiredGrant.accessTokenLifetime !== observed.grant?.accessTokenLifetime) {
++        return false;
++    }
++    if (desiredGrant?.sessionDuration !== undefined &&
++        desiredGrant.sessionDuration !== observed.grant?.sessionDuration) {
++        return false;
++    }
++    const desiredRegistration = desired.dynamicClientRegistration;
++    const observedRegistration = observed.dynamicClientRegistration;
++    if (desiredRegistration?.enabled !== undefined &&
++        desiredRegistration.enabled !== observedRegistration?.enabled) {
++        return false;
++    }
++    if (desiredRegistration?.allowAnyOnLocalhost !== undefined &&
++        desiredRegistration.allowAnyOnLocalhost !==
++            observedRegistration?.allowAnyOnLocalhost) {
++        return false;
++    }
++    if (desiredRegistration?.allowAnyOnLoopback !== undefined &&
++        desiredRegistration.allowAnyOnLoopback !==
++            observedRegistration?.allowAnyOnLoopback) {
++        return false;
++    }
++    if (desiredRegistration?.allowedUris !== undefined &&
++        !arrayEquals([...desiredRegistration.allowedUris].sort(), [...(observedRegistration?.allowedUris ?? [])].sort(), jsonEq)) {
++        return false;
++    }
++    return true;
++};
+ const bodyEqualsObserved = (desired, observed) => {
+     if (desired.name !== undefined && desired.name !== observed.name) {
+         return false;
+@@ -500,6 +607,9 @@ const bodyEqualsObserved = (desired, observed) => {
+     if (!policiesEq(desired.policies, observed.policies)) {
+         return false;
+     }
++    if (!oauthConfigurationEquals(desired.oauthConfiguration, observed.oauthConfiguration)) {
++        return false;
++    }
+     return true;
+ };
+ //# sourceMappingURL=Application.js.map
+diff --git a/lib/Cloudflare/Workers/WorkerProvider.js b/lib/Cloudflare/Workers/WorkerProvider.js
+index 5c4c4555cbbe92330341c470079addd7af5e94cb..e345bbbf0fe2224cf5a7cb0be989a0b30ef6e88b 100644
+--- a/lib/Cloudflare/Workers/WorkerProvider.js
++++ b/lib/Cloudflare/Workers/WorkerProvider.js
+@@ -364,9 +364,10 @@ export const LiveWorkerProvider = () => Provider.effect(Worker, Effect.gen(funct
+         const cached = zoneCache.get(hostname);
+         if (cached)
+             return cached;
+-        const zoneList = yield* zones
+-            .listZones({})
+-            .pipe(Effect.map((response) => response.result ?? []));
++        // Read every page: an unpaginated listZones returns only the first 20
++        // zones, so larger accounts failed to find the hostname's zone.
++        const { accountId } = yield* yield* CloudflareEnvironment;
++        const zoneList = yield* listAllZones(accountId);
+         for (const zone of zoneList) {
+             zoneCache.set(zone.name, zone.id);
+         }

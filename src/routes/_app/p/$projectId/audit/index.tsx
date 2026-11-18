@@ -3,8 +3,10 @@ import { useCallback } from "react";
 import { auditSearchSchema } from "@/types/schemas/audit";
 import { LaunchView } from "@/client/features/audit/launch/LaunchView";
 import { AuditDetail } from "@/client/features/audit/AuditDetail";
+import { pageHead } from "@/client/lib/pageHead";
 
 export const Route = createFileRoute("/_app/p/$projectId/audit/")({
+  head: () => pageHead("Site Audit"),
   validateSearch: auditSearchSchema,
   component: SiteAuditPage,
 });

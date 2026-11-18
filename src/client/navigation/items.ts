@@ -41,6 +41,11 @@ const projectNavItems = [
     icon: TrendingUp,
   },
   {
+    to: "/p/$projectId/local-seo" as const,
+    label: "Local SEO",
+    icon: MapPin,
+  },
+  {
     to: "/p/$projectId/local-rank" as const,
     label: "Maps Grid Rank",
     icon: MapPin,
@@ -151,6 +156,7 @@ export function getProjectNavGroups(projectId: string) {
       items: [
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
+        byPath("/p/$projectId/local-seo"),
         byPath("/p/$projectId/local-rank"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),

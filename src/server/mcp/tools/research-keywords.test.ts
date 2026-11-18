@@ -19,6 +19,9 @@ vi.mock("@/server/auth/repositories/AuthRepository", () => ({
 vi.mock("@/server/features/keywords/services/KeywordResearchService", () => ({
   KeywordResearchService: { research: mocks.research },
 }));
+vi.mock("@/server/features/activation/researchActivation", () => ({
+  recordResearchStep: vi.fn(),
+}));
 
 describe("research_keywords", () => {
   beforeEach(() => {

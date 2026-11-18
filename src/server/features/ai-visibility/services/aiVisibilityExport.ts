@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { z } from "zod";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
+import { aiBrandLabel } from "@/shared/ai-visibility";
 import type { AiExportInput } from "@/types/schemas/ai-visibility";
 import { loadAiFullAnswers } from "./aiVisibilityResults";
 import { AiVisibilityError } from "./aiVisibilityErrors";
@@ -62,7 +63,7 @@ export async function exportAiData(input: AiExportInput, baseUrl: string) {
               a.observation.collectedAt,
               a.observation.brands
                 .filter((b) => b.mentioned)
-                .map((b) => b.name)
+                .map((b) => aiBrandLabel(b))
                 .join("; "),
               a.sources.map((s) => s.url).join("; "),
               a.answerText,

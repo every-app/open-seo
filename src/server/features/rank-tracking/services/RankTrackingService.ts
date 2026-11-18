@@ -21,9 +21,11 @@ import {
   reconcileActiveRankCheckRun,
 } from "./rankCheckRunGuards";
 import {
-  costPerSerpAtDepth,
+  costPerRankCheckRead,
   devicesCount,
+  MAX_READS_PER_CHECK,
   estimateRankCheckCredits,
+  isRankCheckDelayed,
   MAX_CONFIGS_PER_PROJECT,
   rankCheckCostApprovalError,
 } from "@/shared/rank-tracking";
@@ -243,7 +245,6 @@ async function triggerCheck(input: {
       keywords.map((kw) => kw.keyword),
       config.devices,
       config.serpDepth,
-      "live",
     );
     if (costCredits > input.maxCostCredits) {
       throw new AppError(
@@ -259,7 +260,8 @@ async function triggerCheck(input: {
     estimatedCostUsd: roundUsdForBilling(
       keywordCount *
         devicesCount(config.devices) *
-        costPerSerpAtDepth(config.serpDepth, "live"),
+        costPerRankCheckRead(config.serpDepth) *
+        MAX_READS_PER_CHECK,
     ),
   });
 
@@ -325,12 +327,7 @@ async function getLatestRun(configId: string, projectId: string) {
   // this read path caused a race where the original workflow kept running
   // while a replacement was started.
   const reconciliation = await reconcileActiveRankCheckRun(run);
-  if (reconciliation) {
-    return formatRun(run, {
-      maybeStale: true,
-      staleReason: reconciliation.errorMessage,
-    });
-  }
+  if (reconciliation) return formatRun(run, reconciliation.errorMessage);
 
   return formatRun(run);
 }
@@ -350,12 +347,13 @@ async function refreshKeywordMetrics(
   if (keywords.length === 0) return { updated: 0 };
 
   const client = createDataforseoClient(billingCustomer);
+  const lower = (text: string) => text.toLocaleLowerCase(config.languageCode);
   const metrics = await fetchKeywordMetricsForList(client, {
     // The keyword-data APIs are case-insensitive and echo keywords back
     // lowercased, so ask in lowercase. A match-case keyword can sit next to
     // its lowercase twin; both then map to the same metrics row and the
     // request carries no duplicates.
-    keywords: [...new Set(keywords.map((kw) => kw.keyword.toLowerCase()))],
+    keywords: [...new Set(keywords.map((kw) => lower(kw.keyword)))],
     locationCode: config.locationCode,
     // Trackers can pair any SERP language with any country; the keyword-data
     // APIs only serve the country's own languages.
@@ -369,13 +367,13 @@ async function refreshKeywordMetrics(
     creditFeature: "rank_tracking",
   });
   const byKeyword = new Map(
-    metrics.map((metric) => [metric.keyword.toLowerCase(), metric]),
+    metrics.map((metric) => [lower(metric.keyword), metric]),
   );
 
   const now = new Date().toISOString();
   const updates = keywords
     .map((kw) => {
-      const metric = byKeyword.get(kw.keyword.toLowerCase());
+      const metric = byKeyword.get(lower(kw.keyword));
       if (!metric) return null;
       // Rank tracking only tracks volume / difficulty / CPC.
       return {
@@ -405,6 +403,39 @@ async function getTracker(configId: string, projectId: string) {
   const config = await getValidatedConfig(configId, projectId);
   const results = await getLatestResults(configId, projectId);
   return { config, results };
+}
+
+/**
+ * Position history for one device over a tracker's last `runLimit` completed
+ * full runs, plus the keywords it currently tracks so callers can name rows.
+ */
+async function getPositionHistory(input: {
+  configId: string;
+  projectId: string;
+  /** Defaults to desktop, or mobile for a mobile-only tracker. */
+  device?: "desktop" | "mobile";
+  runLimit: number;
+}) {
+  // The project-scoped config lookup is the authorization gate for the
+  // configId-keyed reads, so it runs first.
+  const config = await getValidatedConfig(input.configId, input.projectId);
+  const device =
+    input.device ?? (config.devices === "mobile" ? "mobile" : "desktop");
+  if (config.devices !== "both" && config.devices !== device) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `This tracker only checks ${config.devices}.`,
+    );
+  }
+  const [keywords, cells] = await Promise.all([
+    RankTrackingRepository.getKeywordsForConfig(input.configId),
+    RankTrackingRepository.getPositionMatrix(
+      input.configId,
+      device,
+      input.runLimit,
+    ),
+  ]);
+  return { config, device, keywords, cells };
 }
 
 async function requireRankCheckAccess(organizationId: string) {
@@ -451,10 +482,7 @@ type RunRow = NonNullable<
   Awaited<ReturnType<typeof RankTrackingRepository.getLatestRunForConfig>>
 >;
 
-function formatRun(
-  run: RunRow,
-  stale?: { maybeStale: boolean; staleReason: string },
-) {
+function formatRun(run: RunRow, staleReason?: string) {
   return {
     id: run.id,
     status: run.status,
@@ -464,8 +492,9 @@ function formatRun(
     errorMessage: run.errorMessage,
     startedAt: run.startedAt,
     completedAt: run.completedAt,
-    maybeStale: stale?.maybeStale ?? false,
-    staleReason: stale?.staleReason ?? null,
+    isDelayed: isRankCheckDelayed(run),
+    maybeStale: staleReason !== undefined,
+    staleReason: staleReason ?? null,
   };
 }
 
@@ -481,5 +510,6 @@ export const RankTrackingService = {
   refreshKeywordMetrics,
   getConfigs,
   getTracker,
+  getPositionHistory,
   requireRankCheckAccess,
 };

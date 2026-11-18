@@ -1,0 +1,42 @@
+name: Something isn't working
+description: Report a problem in a short, plain-language issue.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please keep this short and plain-language. Focus on the problem and what should happen, not on how to build it.
+
+        Tip: the `/simple-issue-description` skill writes this format for you. Install it with `npx skills add every-app/open-seo --skill simple-issue-description`. See [CONTRIBUTING](https://github.com/every-app/open-seo/blob/main/.github/CONTRIBUTING.md).
+
+        One issue per problem. Security problems: report them privately (see [SECURITY.md](https://github.com/every-app/open-seo/blob/main/SECURITY.md)), not here.
+  - type: textarea
+    id: tldr
+    attributes:
+      label: TL;DR
+      description: In one or two sentences, what happens now and what should happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: happening
+    attributes:
+      label: What is happening?
+      description: The current behavior, with a concrete example if you have one.
+      placeholder: 'When I add keywords to a rank tracker and run a check, every keyword shows "Not checked".'
+    validations:
+      required: true
+  - type: textarea
+    id: should
+    attributes:
+      label: What should happen?
+      description: The behavior you want, without proposing how to build it.
+      placeholder: "Each keyword shows its current position after the check finishes."
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Extra context
+      description: Optional. Reproduction steps, error text, screenshots, links, OpenSEO version, and whether you use app.openseo.so, Docker or Cloudflare self-hosting.
+    validations:
+      required: false

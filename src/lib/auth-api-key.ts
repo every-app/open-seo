@@ -7,6 +7,10 @@ export const API_KEY_PREFIX = "oseo_";
 export function createApiKeyPlugin() {
   return apiKey({
     defaultPrefix: API_KEY_PREFIX,
+    // metadata is where the server stamps the key's organization
+    // ({ organizationId }) in the /api-key/create before hook in lib/auth.ts;
+    // the plugin rejects any metadata unless this is on.
+    enableMetadata: true,
     // Stored display prefix ("oseo_" + 4 key chars) shown in Settings so keys
     // are tellable apart; the plugin default of 6 barely clears the prefix.
     startingCharactersConfig: { shouldStore: true, charactersLength: 9 },

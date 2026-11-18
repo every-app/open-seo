@@ -4,19 +4,21 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import { Suspense } from "react";
 import { RunSkillCallout } from "@/components/run-skill-callout";
 import { AgentPrompt } from "@/components/agent-prompt";
+import { AddToAgentButtons } from "@/components/add-to-agent-links";
 
 type ContentPostProps = {
   backLabel: string;
   backTo: "/docs";
   title: string;
   description?: string;
-  Content: React.ComponentType;
+  children: React.ReactNode;
 };
 
 export const mdxComponents = {
   ...defaultMdxComponents,
   RunSkillCallout,
   AgentPrompt,
+  AddToAgentButtons,
 };
 
 export function ContentPost({
@@ -24,7 +26,7 @@ export function ContentPost({
   backTo,
   title,
   description,
-  Content,
+  children,
 }: ContentPostProps) {
   return (
     <article className="mx-auto w-full min-w-0 max-w-3xl px-6 py-12 text-fd-foreground [grid-area:main] md:py-24">
@@ -49,7 +51,7 @@ export function ContentPost({
       </header>
       <Suspense>
         <DocsBody className="min-w-0 text-fd-foreground [&_figure]:max-w-full [&_h2]:text-fd-foreground [&_h3]:text-fd-foreground [&_li]:text-fd-foreground/90 [&_p]:text-fd-foreground/90 [&_pre]:!min-w-0 [&_pre]:!w-full [&_strong]:text-fd-foreground">
-          <Content />
+          {children}
         </DocsBody>
       </Suspense>
     </article>

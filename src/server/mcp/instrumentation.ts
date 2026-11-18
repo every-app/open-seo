@@ -1,14 +1,26 @@
 import { waitUntil } from "cloudflare:workers";
-import type { CallToolResult } from "@modelcontextprotocol/server";
+import type {
+  CallToolResult,
+  StandardSchemaV1,
+  StandardSchemaWithJSON,
+} from "@modelcontextprotocol/server";
 import type { z } from "zod";
-import { AppError, asAppError } from "@/server/lib/errors";
+import { AppError, asAppError, describeError } from "@/server/lib/errors";
 import { recordExternalMcpToolCall } from "@/server/features/activation/mcpActivation";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
-import { type ToolContext } from "@/server/mcp/context";
+import {
+  createMcpToolContext,
+  type McpProps,
+  type ToolContext,
+} from "@/server/mcp/context";
 import { incrementSelfHostMcpToolCallCount } from "@/server/lib/self-host-telemetry";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
-import { buildDashboardUrl } from "@/server/mcp/urls";
+import {
+  buildDashboardUrl,
+  buildGuestSignUpUrl,
+  GUEST_SIGN_UP_NOTE,
+} from "@/server/mcp/urls";
 import { BILLING_ROUTE } from "@/shared/billing";
 
 type ToolHandler<TArgs> = (
@@ -43,6 +55,7 @@ function captureMcpToolCall(
     projectId?: string;
     rowCount?: number;
     quotaRemaining?: number;
+    invalidFields?: string[];
   },
 ) {
   waitUntil(incrementSelfHostMcpToolCallCount());
@@ -64,9 +77,62 @@ function captureMcpToolCall(
         project_id: outcome.projectId,
         row_count: outcome.rowCount,
         quota_remaining: outcome.quotaRemaining,
+        invalid_fields: outcome.invalidFields,
       },
     }),
   );
+}
+
+// Issue paths only: messages can quote what the caller sent (Zod names unknown
+// keys in them). Input schemas have no z.record, so a path holds schema keys and
+// array indexes, never caller data. Indexes collapse to `*` so paths group by
+// field and a 2,000-keyword list with bad rows stays one entry.
+function invalidFieldPaths(issues: readonly StandardSchemaV1.Issue[]) {
+  const paths = issues.map((issue) => {
+    const segments = (issue.path ?? []).map((segment) => {
+      const key = typeof segment === "object" ? segment.key : segment;
+      return typeof key === "number" ? "*" : String(key);
+    });
+    return segments.join(".") || "root";
+  });
+  return [...new Set(paths)];
+}
+
+/**
+ * Reports calls the SDK rejects on input validation. It validates before the
+ * tool handler runs and turns a failure into an isError result, so
+ * instrumentMcpToolHandler never sees them, and the schema's validate is the
+ * only hook on that path. It takes no request context, so auth comes from the
+ * props, which is also where hosted credentials get their client id today.
+ */
+export function instrumentMcpToolInput(
+  toolName: string,
+  schema: StandardSchemaWithJSON,
+  authProps: McpProps,
+): StandardSchemaWithJSON {
+  const standard = schema["~standard"];
+  return {
+    "~standard": {
+      ...standard,
+      validate: async (value, options) => {
+        const result = await standard.validate(value, options);
+        if (result.issues) {
+          const invalidFields = invalidFieldPaths(result.issues);
+          console.warn("mcp.tool-input-rejected", {
+            event: "mcp.tool-input-rejected",
+            tool: toolName,
+            fields: invalidFields,
+          });
+          captureMcpToolCall(toolName, createMcpToolContext({}, authProps), {
+            success: false,
+            errorCode: "INPUT_VALIDATION",
+            invalidFields,
+          });
+        }
+        return result;
+      },
+    },
+  };
 }
 
 /**
@@ -166,15 +232,16 @@ export function instrumentMcpToolHandler<TArgs>(
                   : undefined,
             },
       );
-      // Dashboard activation milestone: a successful call from an external
-      // MCP client (OAuth clientId; SAM and the self-hosted transport are
-      // first-party with clientId null). Awaited so the write stays inside
+      // Activation milestone for the dashboard and the onboarding emails: a
+      // successful call from an external MCP client (OAuth clientId or API
+      // key; SAM and the self-hosted transport are first-party with clientId
+      // null). Awaited so the write stays inside
       // the request's DB scope; a per-isolate memo keeps this off the hot
       // path after the first call.
       if (succeeded) {
         const auth = context.auth;
         if (auth.clientId) {
-          await recordExternalMcpToolCall(auth.organizationId);
+          await recordExternalMcpToolCall(auth);
         }
       }
       return result;
@@ -186,7 +253,10 @@ export function instrumentMcpToolHandler<TArgs>(
         durationMs: Math.round(performance.now() - startedAt),
       });
       if (shouldCaptureAppErrorCode(appError?.code)) {
-        console.error(`mcp.tool error (${toolName}):`, error);
+        console.error(
+          `mcp.tool error (${toolName}): ${describeError(error)}`,
+          error,
+        );
         waitUntil(
           captureServerError(
             error,
@@ -198,28 +268,46 @@ export function instrumentMcpToolHandler<TArgs>(
           ),
         );
       }
-      throw agentFacingError(error, appError, context.auth.baseUrl);
+      throw agentFacingError(error, appError, context.auth);
     }
   };
 }
 
 // The agent sees only the error message, and a bare INSUFFICIENT_CREDITS code
-// gives it nothing to tell the user, so it tends to retry. Explain it instead,
-// with a plain billing link and no upgrade or purchase pitch (directory
-// policies ban promotional content). A provider outage gets the same note as
-// per-item tool errors; every other error passes through unchanged.
+// or paid-plan refusal gives it nothing to tell the user, so it tends to
+// retry. Explain it instead, with a plain billing link and no upgrade or
+// purchase pitch (directory policies ban promotional content). A provider
+// outage gets the same note as per-item tool errors; every other error passes
+// through unchanged.
 function agentFacingError(
   error: unknown,
   appError: AppError | null,
-  baseUrl: string,
+  auth: Pick<ToolContext["auth"], "baseUrl" | "guestClaimToken">,
 ): unknown {
   if (appError?.code === "UPSTREAM_UNAVAILABLE")
     return new AppError("UPSTREAM_UNAVAILABLE", toolErrorMessage(appError));
+  if (appError?.code === "PAYMENT_REQUIRED" && !auth.guestClaimToken) {
+    const message = /[.!?]$/.test(appError.message)
+      ? appError.message
+      : `${appError.message}.`;
+    return new AppError(
+      "PAYMENT_REQUIRED",
+      `${message} Retrying won't help. The organization owner can manage the plan at ${buildDashboardUrl(auth.baseUrl, BILLING_ROUTE)}`,
+    );
+  }
   if (appError?.code !== "INSUFFICIENT_CREDITS") return error;
   const detail =
     appError.message === appError.code ? "" : `${appError.message} `;
+  // A guest can't buy credits until it has a real account, so its link
+  // creates one (keeping the guest's projects) and then opens Billing.
+  if (auth.guestClaimToken) {
+    return new AppError(
+      "INSUFFICIENT_CREDITS",
+      `${detail}This guest OpenSEO account has used its free credits. Retrying won't help. To add credits, the user needs a full OpenSEO account: they can create one, or sign in to an existing one, at ${buildGuestSignUpUrl(auth.baseUrl, BILLING_ROUTE)}. ${GUEST_SIGN_UP_NOTE}`,
+    );
+  }
   return new AppError(
     "INSUFFICIENT_CREDITS",
-    `${detail}This OpenSEO organization doesn't have enough credits for this request. Retrying won't help until the organization has more credits. The organization owner can add credits at ${buildDashboardUrl(baseUrl, BILLING_ROUTE)}`,
+    `${detail}This OpenSEO organization doesn't have enough credits for this request. Retrying won't help until the organization has more credits. The organization owner can add credits at ${buildDashboardUrl(auth.baseUrl, BILLING_ROUTE)}`,
   );
 }

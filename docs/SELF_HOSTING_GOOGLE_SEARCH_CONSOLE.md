@@ -28,8 +28,12 @@ Under **APIs & Services → OAuth consent screen**:
 - While the app is in **Testing**, add the Google accounts that will connect as
   **test users** — otherwise Google blocks the sign-in with `access_denied`.
 
-For personal or internal use you don't need to submit for verification; testing
-mode is enough.
+Once the test users can connect, click **Publish app** on the OAuth consent
+screen to move it from **Testing** to **In production**. Google expires refresh
+tokens for External apps in Testing after 7 days, so a Testing app makes Search
+Console disconnect every week. You don't need to submit for verification for
+personal or internal use: Google shows an "unverified app" warning during
+sign-in, which you can click through.
 
 ## 3) Create an OAuth client ID
 
@@ -59,7 +63,9 @@ Set these three values, then restart OpenSEO:
 | `BETTER_AUTH_SECRET`   | A random string of **at least 32 characters** (encrypts stored tokens). |
 
 `BETTER_AUTH_SECRET` is not needed for normal self-hosting — only for Search
-Console, because the stored OAuth tokens are encrypted at rest with it. Generate
+Console, because the stored OAuth tokens are encrypted at rest with it. The
+Cloudflare self-host with password accounts (`AUTH_MODE=password`) and the
+Docker setup (`deploy/standalone`) generate one already; leave it unset there. Generate
 one with:
 
 ```sh
@@ -68,18 +74,22 @@ openssl rand -base64 32
 
 Where to set them:
 
-- **Docker self-hosting:** `.env`
+- **Docker self-hosting:** `deploy/standalone/.env`
+- **Older Docker image:** `.env`
 - **Cloudflare:** the Workers dashboard (as secrets)
 - **Local development:** `.env.local`
 
 ## 5) Restart and connect
 
 Restart OpenSEO so it picks up the new variables. For Docker, changing `.env`
-means Compose has to recreate the container to reapply it:
+means Compose has to recreate the containers to reapply it:
 
 ```bash
-docker compose up -d --force-recreate open-seo
+docker compose up -d --force-recreate init web crawl-gateway
 ```
+
+On the older Docker image, run `docker compose up -d --force-recreate open-seo`
+instead.
 
 Then open **Integrations**, click **Connect with Google**, authorize the Google
 account that owns your verified property, and pick the property to bind to your
@@ -90,7 +100,8 @@ project.
 - OpenSEO uses your Google client to run the OAuth flow and stores the resulting
   grant in its database, with the access and refresh tokens **encrypted at rest**
   (keyed by `BETTER_AUTH_SECRET`).
-- Access tokens are minted and refreshed on demand — you only authorize once.
+- Access tokens are minted and refreshed on demand, so once your app is published
+  to production you only authorize once.
 - Search Console data comes from your own Google account, so OpenSEO never meters credits for it.
 
 ## Troubleshooting
@@ -103,15 +114,15 @@ must exactly equal `<your-origin>/api/gsc/oauth/callback`. Re-check scheme
 (in the app or via the MCP tools) — one of `GOOGLE_CLIENT_ID`,
 `GOOGLE_CLIENT_SECRET`, or `BETTER_AUTH_SECRET` is missing, or the secret is
 shorter than 32 characters. Set all three and restart. On Docker, recreate the
-container so Compose reapplies `.env`:
-
-```bash
-docker compose up -d --force-recreate open-seo
-```
+containers so Compose reapplies `.env`, as in [step 5](#5-restart-and-connect).
 
 **`access_denied` during sign-in** — the Google account isn't listed as a test
 user on the OAuth consent screen (while the app is in Testing mode). Add it under
 **OAuth consent screen → Test users**.
+
+**Search Console disconnects every week** — your OAuth app is still in Testing,
+where Google expires refresh tokens after 7 days. Publish it under **OAuth
+consent screen → Publish app**, then reconnect once.
 
 **"Search Console API isn't enabled"** — the API isn't enabled in the Google
 Cloud project that owns your OAuth client. Enable it (step 1), wait a minute,

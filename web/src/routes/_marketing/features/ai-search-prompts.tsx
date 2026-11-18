@@ -8,8 +8,9 @@ const page = featurePages.aiSearchPrompts;
 export const Route = createFileRoute("/_marketing/features/ai-search-prompts")({
   head: () =>
     buildPageSeo({
-      title: "AI Search Prompt Explorer",
-      description: page.description,
+      title:
+        "AI Prompt Explorer: Compare ChatGPT, Claude, Gemini and Perplexity Answers to One Prompt",
+      description: page.seoDescription ?? page.description,
       path: "/features/ai-search-prompts",
       titleSuffix: "OpenSEO",
       imageAlt: page.imageAlt,

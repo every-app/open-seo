@@ -13,7 +13,7 @@ type TurnstileApi = {
     element: HTMLElement,
     options: {
       sitekey: string;
-      size: "compact";
+      size: "flexible";
       callback: (token: string) => void;
       "expired-callback"?: () => void;
       "error-callback"?: () => void;
@@ -88,7 +88,7 @@ export function TurnstileWidget({
       }
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
-        size: "compact",
+        size: "flexible",
         callback: (token) => onTokenRef.current(token),
         "expired-callback": () => onTokenRef.current(null),
         "error-callback": () => onTokenRef.current(null),
@@ -141,5 +141,5 @@ export function TurnstileWidget({
       </p>
     );
   }
-  return <div ref={containerRef} className="flex justify-center" />;
+  return <div ref={containerRef} className="w-full" />;
 }

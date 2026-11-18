@@ -72,7 +72,7 @@ About five minutes start to finish:
 
 1. Create an OpenSEO account and add your website as a project.
 2. Connect Google Search Console from the sidebar of your project. This is the step that makes the rest work, since Search Console is where the real data about your site lives, and it's also why the report is free to run.
-3. Add OpenSEO as a connector in Claude, at _claude.ai/customize/connectors_, using the MCP URL from the agent setup page in OpenSEO. This is the step that matters for scheduling.
+3. Add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo) in Claude and sign in. This is the step that matters for scheduling.
 4. Paste the prompt into Claude and confirm the schedule when it asks.
 
 If you work in Claude Code, you can add the same server from the terminal:

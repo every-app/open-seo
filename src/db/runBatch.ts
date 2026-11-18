@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { getDatabaseProvider } from "./provider";
 import { d1Db } from "./d1/client";
 import { pgDb } from "./pg/client";
@@ -63,4 +64,17 @@ export async function executeInBatches<T>(
     if (chunk.length === 0) continue;
     await runBatch((tx) => chunk.map((item) => buildStatement(tx, item)));
   }
+}
+
+/**
+ * The standalone Docker edition's legacy import writes prepared D1 SQL rather
+ * than Drizzle statements (its raw SQL builder cannot be batched with bound
+ * values in 0.45.2). It lives here because every batch goes through this
+ * module, which schema-parity.test.ts enforces.
+ */
+export async function runD1ImportBatch(statements: D1PreparedStatement[]) {
+  if (getDatabaseProvider() !== "d1") {
+    throw new Error("Legacy Docker import requires SQLite");
+  }
+  if (statements.length) await env.DB.batch(statements);
 }

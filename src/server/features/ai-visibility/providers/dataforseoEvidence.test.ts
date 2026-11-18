@@ -33,31 +33,99 @@ describe("DataForSEO answer evidence", () => {
     });
   });
 
-  it("reads every Google AI Overview reference as a citation", () => {
+  it("removes NUL characters, which Postgres text columns reject", () => {
+    const result = parseDataforseoAnswer(
+      {
+        markdown: "Open\0SEO",
+        sources: [{ url: "https://openseo.so/", title: "Open\0SEO" }],
+      },
+      "chatgpt",
+    );
+    expect(result).toMatchObject({
+      answerMarkdown: "OpenSEO",
+      citations: [{ title: "OpenSEO" }],
+    });
+  });
+
+  // An AI Mode answer has the AI Overview's shape.
+  it.each(["google_ai_overview", "google_ai_mode"] as const)(
+    "reads every %s reference as a citation",
+    (engine) => {
+      const result = parseDataforseoAnswer(
+        {
+          items: [
+            {
+              type: "ai_overview",
+              markdown: "Use SerpBear.[[1]](https://ccbd.dev/blog)",
+              references: [{ url: "https://ccbd.dev/blog" }],
+              items: [
+                {
+                  references: [{ url: "https://matomo.org/" }],
+                  links: [{ url: "https://github.com/towfiqi/serpbear" }],
+                },
+              ],
+            },
+          ],
+        },
+        engine,
+      );
+      expect(result?.answerText).toBe("Use SerpBear.");
+      expect(result?.citations.map((citation) => citation.domain)).toEqual([
+        "ccbd.dev",
+        "matomo.org",
+      ]);
+    },
+  );
+
+  it("names the product and store on each Google AI Mode product card", () => {
     const result = parseDataforseoAnswer(
       {
         items: [
           {
             type: "ai_overview",
-            markdown: "Use SerpBear.[[1]](https://ccbd.dev/blog)",
-            references: [{ url: "https://ccbd.dev/blog" }],
+            // The answer's own markdown has the card's text without the card.
+            markdown: "### Top picks\n\n\n\n---\n\n- Steams milk.",
             items: [
               {
-                references: [{ url: "https://matomo.org/" }],
-                links: [{ url: "https://github.com/towfiqi/serpbear" }],
+                type: "ai_overview_shopping",
+                // The card's own name is HTML-escaped.
+                markdown:
+                  "---\n\n[![De&#39;Longhi Dedica](https://api.dataforseo.com/cdn/i/1)](https://www.google.com/search?ibp=oshop)\n\n- Steams milk.",
+                items: [{ title: "De'Longhi Dedica", seller: "Best Buy" }],
               },
             ],
           },
         ],
       },
-      "google_ai_overview",
+      "google_ai_mode",
     );
-    expect(result?.answerText).toBe("Use SerpBear.");
-    expect(result?.citations.map((citation) => citation.domain)).toEqual([
-      "ccbd.dev",
-      "matomo.org",
-    ]);
+    expect(result?.answerText).toBe(
+      "Top picks\n\n\n\n---\n\nDe'Longhi Dedica · Best Buy\n\nSteams milk.",
+    );
   });
+
+  it.each(["google_ai_overview", "google_ai_mode"] as const)(
+    "cites a page a %s answer links to in its text",
+    (engine) => {
+      const result = parseDataforseoAnswer(
+        {
+          items: [
+            {
+              type: "ai_overview",
+              markdown:
+                "Buy it via [LovelySkin](https://www.lovelyskin.com/o/spf).[[1]](https://ccbd.dev/blog) ![Tube](https://cdn.example/tube.png) [Shop](https://www.google.com/search?ibp=oshop)",
+              references: [{ url: "https://ccbd.dev/blog", title: "Guide" }],
+            },
+          ],
+        },
+        engine,
+      );
+      expect(result?.citations).toMatchObject([
+        { domain: "ccbd.dev", title: "Guide" },
+        { domain: "www.lovelyskin.com", title: null },
+      ]);
+    },
+  );
 
   it("treats a results page without an AI Overview as no answer", () => {
     expect(

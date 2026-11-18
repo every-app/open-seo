@@ -24,16 +24,19 @@ import {
   prepareWebsiteTracking,
   startWebsiteTrackingRun,
 } from "./websiteTrackingSetup";
+import { startWorkflow } from "@/server/lib/startWorkflow";
 
 /**
- * Prompt Research needs saved keywords. Website setup writes them; a
- * project set up before that, or with a website saved another way, gets them
- * here after the user confirms the spend. The paid work runs in the AI
- * visibility workflow under one instance per project, so a page reload reads
- * the same run instead of starting another. Without an overview or
- * competitors, the website research result waits in the instance output for
- * the same competitor review as onboarding; saving that review writes the
- * keywords.
+ * AI visibility is set up once the project has a tracker. Website setup
+ * creates one with the Prompt Research keywords; a project without one, set up
+ * before that or with a website saved another way, gets it here after the user
+ * confirms the spend. Keywords saved without a tracker, such as keyword
+ * research suggestions, are reused as its topics instead of generated again.
+ * The paid work runs in the AI visibility workflow under one instance per
+ * project, so a page reload reads the same run instead of starting another.
+ * Without an overview or competitors, the website research result waits in
+ * the instance output for the same competitor review as onboarding; saving
+ * that review creates the tracker.
  */
 const setupOutputSchema = z.object({
   // Reviews saved before suggested keywords existed still load.
@@ -67,14 +70,20 @@ async function readSetupRun(projectId: string) {
   if (RUNNING.includes(status.status))
     return { instance, status: "running" as const };
   // Only a known cause leaves the server; other workflow errors stay generic.
-  if (status.status !== "complete")
+  if (status.status !== "complete") {
+    const message = status.error?.message ?? "";
     return {
       instance,
       status: "failed" as const,
-      failure: status.error?.message.includes(WEBSITE_UNREADABLE_MESSAGE)
+      failure: message.includes(WEBSITE_UNREADABLE_MESSAGE)
         ? ("website_unreadable" as const)
-        : null,
+        : // Setup can make more outgoing requests than the 50
+          // Cloudflare Workers Free allows, so self-hosts there fail here.
+          message.includes("Too many subrequests")
+          ? ("subrequest_limit" as const)
+          : null,
     };
+  }
   const review = setupOutputSchema.safeParse(status.output).data?.review;
   return review
     ? { instance, status: "review" as const, review }
@@ -82,12 +91,16 @@ async function readSetupRun(projectId: string) {
 }
 
 export async function getAiResearchSetup(projectId: string) {
-  const [keywords, sections, competitors] = await Promise.all([
+  const [keywords, tracker, sections, competitors] = await Promise.all([
     repo.listResearchKeywords(projectId),
+    repo.getTracker(projectId),
     ProjectContextRepository.listSections(projectId),
     ProjectContextRepository.listCompetitors(projectId),
   ]);
-  const run = keywords.length
+  // A tracker saved through the MCP has no research keywords. Prompt Research
+  // lists its topics instead, so the project is already set up. Keywords alone
+  // don't set it up.
+  const run = tracker
     ? { status: "ready" as const }
     : await readSetupRun(projectId);
   return {
@@ -123,20 +136,24 @@ export async function startAiResearchSetup(
   const { instance } = await readSetupRun(input.projectId);
   if (instance) await instance.restart();
   else
-    await env.AI_VISIBILITY_WORKFLOW.create({
-      id: setupInstanceId(input.projectId),
-      // Only the billing fields: the request context is not serializable.
-      params: {
-        setupProjectId: input.projectId,
-        runSeededTracking,
-        customer: {
-          organizationId: customer.organizationId,
-          userId: customer.userId,
-          userEmail: customer.userEmail,
-          projectId: input.projectId,
+    await startWorkflow(
+      env.AI_VISIBILITY_WORKFLOW,
+      {
+        id: setupInstanceId(input.projectId),
+        // Only the billing fields: the request context is not serializable.
+        params: {
+          setupProjectId: input.projectId,
+          runSeededTracking,
+          customer: {
+            organizationId: customer.organizationId,
+            userId: customer.userId,
+            userEmail: customer.userEmail,
+            projectId: input.projectId,
+          },
         },
       },
-    });
+      "AI research setup",
+    );
   return { ...setup, status: "running" as const, failure: null };
 }
 
@@ -156,17 +173,19 @@ export async function runAiResearchSetup(
       "VALIDATION_ERROR",
       "Set your project's website before generating keywords.",
     );
-  const [keywords, sections, competitors] = await Promise.all([
-    repo.listResearchKeywords(input.projectId),
+  const [tracker, sections, competitors] = await Promise.all([
+    repo.getTracker(input.projectId),
     ProjectContextRepository.listSections(input.projectId),
     ProjectContextRepository.listCompetitors(input.projectId),
   ]);
-  // Website setup may have saved keywords since this run started.
-  if (keywords.length) return { review: null };
-  const review = await researchWebsite(project.domain, project, {
-    ...customer,
-    projectId: input.projectId,
-  });
+  // Website setup may have created a tracker since this run started.
+  if (tracker) return { review: null };
+  const review = await researchWebsite(
+    project.domain,
+    project,
+    { ...customer, projectId: input.projectId },
+    { promptSavedTopics: true },
+  );
   // Only newly researched basics/competitors need review. Existing context
   // stays authoritative; a topics-only result can be saved directly.
   const missing = missingContext(sections, competitors);

@@ -10,8 +10,9 @@ export const Route = createFileRoute(
 )({
   head: () =>
     buildPageSeo({
-      title: "AI Brand Visibility Tool",
-      description: page.description,
+      title:
+        "AI Visibility Tool for ChatGPT and AI Overviews: Brand Mentions, Citations and Competitors",
+      description: page.seoDescription ?? page.description,
       path: "/features/ai-brand-visibility",
       titleSuffix: "OpenSEO",
       imageAlt: page.imageAlt,

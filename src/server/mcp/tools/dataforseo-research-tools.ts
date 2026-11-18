@@ -226,14 +226,18 @@ const getRankedKeywordsInputSchema = {
     .describe("Rows to skip for pagination."),
 } as const;
 
-const searchLocalBusinessesInputSchema = {
+// Strict: the sibling local tools take `keyword`, and a stripped `keyword`
+// here returned every nearby business (hotels, hair salons) for "plumber".
+const searchLocalBusinessesInputSchema = z.strictObject({
   projectId: projectIdSchema,
   query: z
     .string()
     .min(1)
     .max(200)
     .optional()
-    .describe("Business name or title text to match."),
+    .describe(
+      "Text the business name must contain, such as a trade word. For a business type, use categories.",
+    ),
   near: nearSchema,
   categories: z
     .array(z.string().min(1).max(120))
@@ -277,7 +281,7 @@ const searchLocalBusinessesInputSchema = {
     .max(1000)
     .optional()
     .describe("Rows to skip for pagination."),
-} as const;
+});
 
 const localSearchTypeSchema = z.enum(["maps", "local_finder"]);
 
@@ -420,7 +424,7 @@ type GetKeywordMetricsArgs = z.infer<
   z.ZodObject<typeof getKeywordMetricsInputSchema>
 >;
 type SearchLocalBusinessesArgs = z.infer<
-  z.ZodObject<typeof searchLocalBusinessesInputSchema>
+  typeof searchLocalBusinessesInputSchema
 >;
 type GetLocalSerpResultsArgs = z.infer<
   z.ZodObject<typeof getLocalSerpResultsInputSchema>
@@ -874,7 +878,7 @@ export const getRankedKeywordsTool = {
   config: {
     title: "Get ranked keywords",
     description:
-      "Returns market-specific keyword, URL, rank, search volume, CPC, intent, and traffic rows for a domain or page. Accepts country-level DataForSEO Labs location/language codes. Use this for strategy evidence; use get_domain_overview for aggregate domain footprint. Charges credits.",
+      "List the keywords a domain or page ranks for in one country, each with its ranking URL, rank, search volume, CPC, intent, and estimated traffic. Use it as evidence for strategy: which keywords and pages earn a site its search traffic. Filter by maxRank, minSearchVolume, or excludeBrandTerms. Uses credits. For a site's total traffic and keyword count, use get_domain_overview.",
     inputSchema: getRankedKeywordsInputSchema,
     outputSchema: z.looseObject({
       keywords: z.array(looseObjectOutputSchema),
@@ -956,7 +960,7 @@ export const searchLocalBusinessesTool = {
   config: {
     title: "Search local businesses",
     description:
-      "Searches local business listings near a coordinate, with optional rating, review-count, and claimed-status filters. Use this to discover businesses you cannot name yet: local candidates, nearby competitors, or unclaimed listings. It does not run Maps rank checks or Q&A. When you already know the business, use get_business_profile instead — it returns the full profile and costs less than half the credits, so it is also the cheap way to check whether a Google Business Profile exists at all. Charges credits.",
+      "Search local business listings near a coordinate, with optional category, rating, review-count, and claimed-status filters. Use it to discover businesses you cannot name yet: local candidates, nearby competitors, or unclaimed listings. Uses credits. When you already know the business, use get_business_profile instead: it returns the full profile for less than half the credits, so it is also the cheap way to check whether a Google Business Profile exists. For Google Maps rankings, use get_local_serp_results or get_local_rank_grid.",
     inputSchema: searchLocalBusinessesInputSchema,
     outputSchema: z.looseObject({
       businesses: z.array(looseObjectOutputSchema),
@@ -989,7 +993,9 @@ export const searchLocalBusinessesTool = {
       return mcpResponse({
         text:
           businesses.length === 0
-            ? header
+            ? args.query
+              ? `${header} Missing from the listings database doesn't mean the business has no Google Business Profile: get_business_profile with the name and \`near\` checks Google directly, for fewer credits.`
+              : header
             : `${header}\n${formatMcpTable(businesses, LOCAL_BUSINESS_COLUMNS)}`,
         meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
         structuredContent: { businesses },
@@ -1003,7 +1009,7 @@ export const getLocalSerpResultsTool = {
   config: {
     title: "Get local SERP results",
     description:
-      "Fetches one Google Maps or Local Finder SERP near a coordinate. Returns trimmed provider rows (identity, rank, rating, categories, hours) with rank fields intact; callers decide how to match a target business. Charges credits.",
+      "Get the Google Maps or Local Finder results for one keyword searched from a coordinate. Returns each business's identity, rank, rating, categories, and hours; matching a target business in the rows is up to the caller. Uses credits. To map one business's rank across an area, use get_local_rank_grid.",
     inputSchema: getLocalSerpResultsInputSchema,
     outputSchema: z.looseObject({
       results: z.array(looseObjectOutputSchema),
@@ -1052,7 +1058,7 @@ export const getGoogleBusinessQuestionsTool = {
   config: {
     title: "Get Google business questions",
     description:
-      "Fetches Google Business Profile questions and answers for one business (by businessName, cid, or placeId) near a coordinate. Run this only when Q&A evidence is needed. Charges credits.",
+      "Get the questions and answers on one business's Google Business Profile. Identify the business by exactly one of businessName, cid, or placeId, near a coordinate. Google stopped taking new questions in late 2025, so most profiles, especially small local businesses, have none. Run it only when Q&A evidence is needed. Uses credits, the same amount when nothing is found. For the profile itself, use get_business_profile.",
     inputSchema: getGoogleBusinessQuestionsInputSchema,
     outputSchema: z.looseObject({
       questions: z.array(looseObjectOutputSchema),
@@ -1081,7 +1087,7 @@ export const getGoogleBusinessQuestionsTool = {
       return mcpResponse({
         text:
           questions.length === 0
-            ? header
+            ? `${header} Google stopped taking new questions in late 2025, so an empty Q&A section is normal and not a gap to fix.`
             : `${header} Columns: answers = answer count, latest answer = most recent answer text (truncated; every answer is in structuredContent).\n${formatMcpTable(questions, BUSINESS_QUESTION_COLUMNS)}`,
         meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
         structuredContent: { questions },
@@ -1095,7 +1101,7 @@ export const findSerpCompetitorsTool = {
   config: {
     title: "Find SERP competitors",
     description:
-      "Compares domains competing in Google results for a supplied keyword set in a country-level DataForSEO Labs market. Accepts location/language codes; not radius-based local SEO. Charges credits.",
+      "Find the domains that compete in Google results for a set of 1-100 keywords, sorted by visibility, estimated traffic, average position, or keyword count. Use it to learn who a site's real search competitors are for a topic. Works on a country-level market, not radius-based local SEO. Uses credits. For local competitors near a place, use search_local_businesses; for who ranks on one keyword, use get_serp_results.",
     inputSchema: findSerpCompetitorsInputSchema,
     outputSchema: z.looseObject({
       competitors: z.array(looseObjectOutputSchema),
@@ -1136,7 +1142,9 @@ export const findSerpCompetitorsTool = {
       return mcpResponse({
         text:
           sorted.length === 0
-            ? header
+            ? competitors.length === 0
+              ? `${header} There's no competitor data for these keywords in this market: get_keyword_metrics shows whether they have search volume, and get_serp_results reads one keyword's results live.`
+              : header
             : `${header}\n${formatMcpTable(sorted, SERP_COMPETITOR_COLUMNS)}`,
         meta: buildProjectMeta(
           context,
@@ -1154,7 +1162,7 @@ export const getKeywordMetricsTool = {
   config: {
     title: "Get keyword metrics",
     description:
-      "Hydrate up to 700 known keywords with search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends in a single call. Use it to score candidate or known keywords — including Search Console striking-distance queries — by real demand and ranking difficulty. For countries served from Google Ads data (e.g. Iceland), KD and intent are null. Charges credits.",
+      "Get search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends for up to 700 keywords you already have. Use it to score candidate or known keywords, including Search Console striking-distance queries, by real demand and ranking difficulty. For countries served from Google Ads data (such as Iceland), KD and intent are null. Uses credits. To find new keyword ideas from a seed, use research_keywords.",
     inputSchema: getKeywordMetricsInputSchema,
     outputSchema: z.looseObject({
       keywords: z.array(looseObjectOutputSchema),
@@ -1190,7 +1198,14 @@ export const getKeywordMetricsTool = {
         : row,
     );
 
-    const header = `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, trend = search volume for the last 3 months, oldest → newest, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.`;
+    const missingCount =
+      new Set(args.keywords.map((keyword) => keyword.trim().toLowerCase()))
+        .size - rows.length;
+    const header =
+      `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, trend = search volume for the last 3 months, oldest → newest, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.` +
+      (missingCount > 0
+        ? ` ${missingCount} requested keyword${missingCount === 1 ? "" : "s"} returned no data, usually because the search volume is too low to measure; research_keywords on a broader seed finds measurable variants.`
+        : "");
     return mcpResponse({
       text:
         rows.length === 0

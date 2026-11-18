@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { CircleSlash } from "lucide-react";
 import { sort } from "remeda";
 import type { RankPositionMatrixCell } from "@/serverFunctions/rank-tracking";
 import { EmptyState } from "@/client/components/EmptyState";
 import { Button } from "@/client/components/ui/button";
+import { TablePagination } from "@/client/components/table/TablePagination";
 import {
   Table,
   TableBody,
@@ -18,6 +19,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/client/components/ui/tooltip";
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 
 /**
  * "By date" view: keyword rows × recent check columns, each cell the position
@@ -34,6 +36,7 @@ export function RankTrackingHistoryMatrix({
   onClearFilters: () => void;
 }) {
   const { runs, cellByKeyword } = useMemo(() => buildMatrix(cells), [cells]);
+  const [page, setPage] = useState(1);
 
   // The History view is only offered once the matrix has loaded at least two
   // runs, so only filters can leave this empty.
@@ -70,41 +73,53 @@ export function RankTrackingHistoryMatrix({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {keywords.map((kw) => {
-            const byRun = cellByKeyword.get(kw.trackingKeywordId);
-            return (
-              <TableRow key={kw.trackingKeywordId}>
-                <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap">
-                  {kw.keyword}
-                </TableCell>
-                {runs.map((r, i) => {
-                  // No row for a run after the keyword's first result means
-                  // that check failed. Before the first result, the keyword
-                  // was not tracked yet.
-                  const notChecked =
-                    !byRun?.has(r.runId) &&
-                    runs.slice(0, i).some((prev) => byRun?.has(prev.runId));
-                  const position = byRun?.get(r.runId) ?? null;
-                  const previous =
-                    i > 0 ? (byRun?.get(runs[i - 1].runId) ?? null) : undefined;
-                  return (
-                    <TableCell key={r.runId} className="text-right">
-                      {notChecked ? (
-                        <NotCheckedCell />
-                      ) : (
-                        <MatrixCell position={position} previous={previous} />
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            );
-          })}
+          {keywords
+            .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+            .map((kw) => {
+              const byRun = cellByKeyword.get(kw.trackingKeywordId);
+              return (
+                <TableRow key={kw.trackingKeywordId}>
+                  <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap">
+                    {kw.keyword}
+                  </TableCell>
+                  {runs.map((r, i) => {
+                    // No cell at all means the keyword wasn't tracked yet.
+                    const cell = byRun?.get(r.runId);
+                    const notChecked = cell?.checked === false;
+                    const position = cell?.position ?? null;
+                    const previous =
+                      i > 0
+                        ? (byRun?.get(runs[i - 1].runId)?.position ?? null)
+                        : undefined;
+                    return (
+                      <TableCell key={r.runId} className="text-right">
+                        {notChecked ? (
+                          <NotCheckedCell />
+                        ) : (
+                          <MatrixCell position={position} previous={previous} />
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
         </TableBody>
       </Table>
+      {keywords.length > PAGE_SIZE ? (
+        <TablePagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          totalCount={keywords.length}
+          onPageChange={setPage}
+        />
+      ) : null}
     </TableCard>
   );
 }
+
+/** A tracker holds thousands of keywords, too many rows to draw at once. */
+const PAGE_SIZE = 100;
 
 function NotCheckedCell() {
   return (
@@ -120,9 +135,7 @@ function NotCheckedCell() {
       >
         <CircleSlash className="size-3.5" aria-hidden />
       </TooltipTrigger>
-      <TooltipContent>
-        Not checked: check failed, no position recorded.
-      </TooltipContent>
+      <TooltipContent>No result from Google on this check.</TooltipContent>
     </Tooltip>
   );
 }
@@ -166,10 +179,10 @@ export function countMatrixRuns(cells: RankPositionMatrixCell[]): number {
 
 function buildMatrix(cells: RankPositionMatrixCell[]): {
   runs: MatrixRun[];
-  cellByKeyword: Map<string, Map<string, number | null>>;
+  cellByKeyword: Map<string, Map<string, RankPositionMatrixCell>>;
 } {
   const runMap = new Map<string, string>(); // runId -> checkedAt
-  const cellByKeyword = new Map<string, Map<string, number | null>>();
+  const cellByKeyword = new Map<string, Map<string, RankPositionMatrixCell>>();
   for (const c of cells) {
     runMap.set(c.runId, c.checkedAt);
     let byRun = cellByKeyword.get(c.trackingKeywordId);
@@ -177,7 +190,7 @@ function buildMatrix(cells: RankPositionMatrixCell[]): {
       byRun = new Map();
       cellByKeyword.set(c.trackingKeywordId, byRun);
     }
-    byRun.set(c.runId, c.position);
+    byRun.set(c.runId, c);
   }
   const runs = sort(
     [...runMap.entries()].map(([runId, checkedAt]) => ({ runId, checkedAt })),
@@ -187,7 +200,7 @@ function buildMatrix(cells: RankPositionMatrixCell[]): {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("en-US", {
+  return parseDbTimestamp(value).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });

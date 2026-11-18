@@ -1,16 +1,16 @@
 import { waitUntil } from "cloudflare:workers";
-import {
-  checkUsageCreditsDepleted,
-  type BillingCustomerContext,
-} from "@/server/billing/subscription";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { type BillingCustomerContext } from "@/server/billing/subscription";
 import type { ContextAuthor } from "@/types/schemas/projectContext";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
+import { AiVisibilityRepository } from "@/server/features/ai-visibility/repositories/AiVisibilityRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { saveWebsiteSetup } from "@/server/features/projects/repositories/ProjectWebsiteRepository";
 import { researchWebsite } from "@/server/features/projects/services/websiteResearch";
+import { withResearchAdmission } from "@/server/billing/researchSpend";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 import { AppError } from "@/server/lib/errors";
+import { isDefaultProjectName } from "@/shared/ai-visibility";
+import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
 import {
   prepareWebsiteTracking,
   startWebsiteTrackingRun,
@@ -37,17 +37,11 @@ async function research(
   customer: BillingCustomerContext,
 ) {
   const project = await requireProject(customer, projectId);
-  // Any positive credit balance admits the whole research task. Its model
-  // calls and searches finish before billing, even if the balance goes negative.
-  if (
-    (await isHostedServerAuthMode()) &&
-    (await checkUsageCreditsDepleted(customer)).depleted
-  )
-    throw new AppError(
-      "INSUFFICIENT_CREDITS",
-      "You need usage credits to research your website.",
-    );
-  const work = researchWebsite(website, project, { ...customer, projectId });
+  const work = withResearchAdmission(
+    customer,
+    "You need usage credits to research your website.",
+    () => researchWebsite(website, project, { ...customer, projectId }),
+  );
   // Keep provider work and final settlement alive within the request's
   // background grace period if the client disconnects, as the shared meter does.
   waitUntil(work.catch(() => undefined));
@@ -63,15 +57,15 @@ async function save(
 ) {
   const accepted = saveProjectWebsiteSetupSchema.parse(input);
   const project = await requireProject(customer, accepted.projectId);
-  accepted.name = project.name;
   accepted.domain =
     project.domain ??
     normalizeBacklinksTarget(accepted.domain, {
       scope: "domain",
     }).apiTarget;
-  const existing = await ProjectContextRepository.listCompetitors(
-    accepted.projectId,
-  );
+  const [existing, savedKeywords] = await Promise.all([
+    ProjectContextRepository.listCompetitors(accepted.projectId),
+    AiVisibilityRepository.listResearchKeywords(accepted.projectId),
+  ]);
   // A saved competitor list is authoritative, even if it was added while
   // research was running or the review was open. Setup never edits that list.
   if (existing.length) accepted.competitors = [];
@@ -90,9 +84,31 @@ async function save(
     ...new Map(accepted.competitors.map((row) => [row.domain, row])).values(),
   ];
   const tracking = await prepareWebsiteTracking(accepted, project);
-  await saveWebsiteSetup(customer.organizationId, accepted, author, tracking);
+  const saved = new Set(savedKeywords.map(normalizeAiSuggestion));
+  await saveWebsiteSetup(
+    customer.organizationId,
+    accepted,
+    // "Default" is never tracked, so an agent passing the project name back
+    // must not save it as the brand.
+    isDefaultProjectName(accepted.name) ? null : accepted.name,
+    author,
+    tracking,
+  );
   if (tracking && runSeededTracking)
     await startWebsiteTrackingRun(accepted.projectId, customer);
-  return requireProject(customer, accepted.projectId);
+  return {
+    project: await requireProject(customer, accepted.projectId),
+    seededTracking: tracking !== null,
+    // Setup only fills missing keywords, so a list sent to change saved ones
+    // is dropped. Callers say so instead of reporting a save. Setup for a
+    // project that has keywords but no tracker sends the saved ones back as
+    // topics, which drops nothing.
+    keywordsIgnored:
+      saved.size > 0 &&
+      [
+        ...(accepted.suggestedTopics ?? []).map((topic) => topic.name),
+        ...(accepted.suggestedKeywords ?? []),
+      ].some((keyword) => !saved.has(normalizeAiSuggestion(keyword))),
+  };
 }
 export const ProjectWebsiteService = { research, save };

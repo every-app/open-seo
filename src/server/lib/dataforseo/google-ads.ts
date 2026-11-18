@@ -46,6 +46,33 @@ export function isAdsKeyword(keyword: string): boolean {
   );
 }
 
+// Every language Google Ads accepts, from the free
+// GET /v3/keywords_data/google_ads/languages (checked 2026-11-13).
+const ADS_LANGUAGE_CODES = new Set(
+  "ar bn bg ca zh_CN zh_TW hr cs da nl en et fa fi fr de el iw hi hu is id it ja ko lv lt ms no pl pt ro ru sr sk sl es sv tl ta te th tr uk ur vi".split(
+    " ",
+  ),
+);
+
+// Google Ads names these project-market languages differently.
+const ADS_LANGUAGE_ALIASES: Record<string, string> = {
+  nb: "no",
+  he: "iw",
+  "zh-CN": "zh_CN",
+  "zh-TW": "zh_TW",
+};
+
+/**
+ * The language to send Google Ads, or undefined for one it does not have
+ * (Albanian, Armenian, Azerbaijani, Bosnian, Macedonian). Sending such a code
+ * fails the task. Without a language, Google Ads returns the same volumes as
+ * it does for English.
+ */
+function adsLanguageCode(languageCode: string): string | undefined {
+  const code = ADS_LANGUAGE_ALIASES[languageCode] ?? languageCode;
+  return ADS_LANGUAGE_CODES.has(code) ? code : undefined;
+}
+
 export async function fetchAdsSearchVolume(input: {
   keywords: string[];
   locationCode: number;
@@ -66,7 +93,7 @@ export async function fetchAdsSearchVolume(input: {
       {
         keywords: input.keywords,
         ...locationParams,
-        language_code: input.languageCode,
+        language_code: adsLanguageCode(input.languageCode),
       },
     ],
   );
@@ -89,7 +116,7 @@ export async function fetchAdsKeywordIdeas(input: {
       {
         keywords: [input.keyword],
         location_code: input.locationCode,
-        language_code: input.languageCode,
+        language_code: adsLanguageCode(input.languageCode),
         sort_by: "search_volume",
       },
     ],

@@ -24,7 +24,10 @@ async function requestedModel(trace: () => Promise<Response>) {
     .mockImplementationOnce(trace)
     .mockResolvedValueOnce(completion());
   const { buildChatAgentModel } = await import("./openrouter");
-  await generateText({ model: buildChatAgentModel("key"), prompt: "hi" });
+  await generateText({
+    model: buildChatAgentModel({ apiKey: "key" }),
+    prompt: "hi",
+  });
   const body = z
     .object({ model: z.string() })
     .parse(JSON.parse(z.string().parse(fetchMock.mock.calls[1]?.[1]?.body)));
@@ -35,6 +38,25 @@ it("sends OpenAI calls to MiniMax M3 from a country where OpenAI is blocked", as
   expect(
     await requestedModel(async () => new Response("colo=HKG\nloc=HK\n")),
   ).toBe("minimax/minimax-m3");
+});
+
+it("sends requests to a custom base URL without the region lookup", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(completion());
+  const { buildChatAgentModel } = await import("./openrouter");
+  await generateText({
+    model: buildChatAgentModel({
+      apiKey: "key",
+      baseURL: "https://llm.example.com/v1",
+    }),
+    prompt: "hi",
+  });
+  expect(fetchMock).toHaveBeenCalledOnce();
+  expect(fetchMock).toHaveBeenCalledWith(
+    "https://llm.example.com/v1/chat/completions",
+    expect.anything(),
+  );
 });
 
 it("stays on OpenAI when the country lookup fails", async () => {

@@ -78,7 +78,8 @@ function rowsFor(
     error: publicAiAnswerError(o.error),
     citationCount: sources[o.id]?.length ?? 0,
     brands: (matches[o.id] ?? []).map((m) => ({
-      name: m.name,
+      // Runs collected before the aiBrands fallback stored "" for unnamed competitors.
+      name: m.name || m.domain,
       domain: m.domain,
       own: m.own,
       mentioned: m.mentioned,

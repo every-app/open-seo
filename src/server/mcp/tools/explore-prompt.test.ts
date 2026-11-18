@@ -104,6 +104,51 @@ describe("explore_prompt", () => {
     },
   );
 
+  it.each([
+    {
+      models: ["chat_gpt", "gemini"],
+      locationCode: 2724,
+      named: undefined,
+      sent: ["ES", undefined],
+    },
+    {
+      models: ["chat_gpt", "claude"],
+      locationCode: 2100,
+      named: undefined,
+      sent: [undefined, undefined],
+    },
+    {
+      models: ["chat_gpt"],
+      locationCode: 2724,
+      named: "BG",
+      sent: ["BG"],
+    },
+  ])(
+    "asks in the project's country unless a model would be skipped or one is named: $models in $locationCode, named $named",
+    async ({ models, locationCode, named, sent }) => {
+      mocks.authorize.mockResolvedValue({
+        id: projectId,
+        domain: "example.com",
+        locationCode,
+      });
+      const result = await explorePromptTool.handler(
+        input.parse({
+          projectId,
+          prompt: "Which tool?",
+          models,
+          webSearchCountryCode: named,
+        }),
+        context,
+      );
+      expect(
+        mocks.response.mock.calls.map(([call]) => call.webSearchCountryCode),
+      ).toEqual(sent);
+      expect(result.structuredContent.results).toMatchObject(
+        models.map(() => ({ status: "success" })),
+      );
+    },
+  );
+
   it("rejects a foreign project before a paid model call", async () => {
     mocks.authorize.mockResolvedValue(null);
     await expect(

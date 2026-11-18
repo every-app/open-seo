@@ -80,7 +80,7 @@ describe("handleReportRequest", () => {
       `<!doctype html><html><body>report<script>${PRINT_SCRIPT}</script></body></html>`,
     );
     expect(response.headers.get("content-security-policy")).toBe(
-      reportCsp(true),
+      reportCsp({ print: true }),
     );
   });
 

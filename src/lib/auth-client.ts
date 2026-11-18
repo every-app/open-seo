@@ -1,6 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 import { apiKeyClient } from "@better-auth/api-key/client";
 import {
+  genericOAuthClient,
   inferAdditionalFields,
   organizationClient,
 } from "better-auth/client/plugins";
@@ -19,6 +20,8 @@ export const authClient = createAuthClient({
     // disagrees with the server.
     organizationClient({ ac: orgAccessControl, roles: orgRoles }),
     inferAdditionalFields({ user: userAdditionalFields }),
+    // signIn.oauth2, for Sign in with ChatGPT (hosted only).
+    genericOAuthClient(),
   ],
 });
 

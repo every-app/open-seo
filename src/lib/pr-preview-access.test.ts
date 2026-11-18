@@ -57,7 +57,7 @@ ${script}`,
             ...process.env,
             PREVIEW_URL: "https://preview.example.invalid",
             STAGE: "test",
-            PREVIEW_RESPONSES: responseFile,
+            PREVIEW_RESPONSES: responseFile.replaceAll("\\", "/"),
           },
         },
       );

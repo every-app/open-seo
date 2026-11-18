@@ -33,7 +33,9 @@ vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
   AuditRepository: { getLatestAuditForProject: state.latestAudit },
 }));
 vi.mock("@/db", () => ({ db: state.db }));
-vi.mock("cloudflare:workers", () => ({ env: { DATABASE_PROVIDER: "d1" } }));
+vi.mock("cloudflare:workers", () => ({
+  env: { DATABASE_PROVIDER: "d1", AUDIT_BROWSER_RENDERING: "true" },
+}));
 vi.mock("@/server/lib/r2-cache", async (importOriginal) => ({
   ...(await importOriginal<typeof R2Cache>()),
   getCached: async (key: string) => state.cache.get(key) ?? null,
@@ -97,6 +99,23 @@ it("caches empty results rather than billing again on every visit", async () => 
     [],
   );
   expect(load).toHaveBeenCalledTimes(1);
+});
+
+it("does not cache a lost Google grant, so a reconnect shows data on the next visit", async () => {
+  const load = vi
+    .fn()
+    .mockResolvedValueOnce({ connected: false })
+    .mockResolvedValueOnce({ connected: true });
+  const read = () =>
+    DashboardCacheService.readThrough({
+      ...input(),
+      schema: z.object({ connected: z.boolean() }),
+      shouldCache: (value) => value.connected,
+      load,
+    });
+  expect((await read()).value).toEqual({ connected: false });
+  expect((await read()).value).toEqual({ connected: true });
+  expect(load).toHaveBeenCalledTimes(2);
 });
 
 it("keeps stale results and backs off after a failed paid refresh", async () => {

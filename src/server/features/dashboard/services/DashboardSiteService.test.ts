@@ -74,6 +74,22 @@ it("surfaces only queries above the threshold and absent from baseline data", as
   expect(result.value.rows.map((item) => item.query)).toEqual(["new"]);
 });
 
+it("leaves out bot searches that use Google search operators", async () => {
+  vi.mocked(GscService.getPerformance).mockResolvedValueOnce({
+    ...performanceBase,
+    rows: [
+      row("ads manager slideshow -filetype:pdf -site:youtube.com", 25),
+      row("site:example.com"),
+      row("new"),
+    ],
+  });
+  const result = await DashboardSiteService.getEmergingQueries(
+    "project",
+    "org",
+  );
+  expect(result.value.rows.map((item) => item.query)).toEqual(["new"]);
+});
+
 it("checks capped baseline candidates directly so omitted older queries are not called new", async () => {
   vi.mocked(GscService.getPerformance)
     .mockResolvedValueOnce({

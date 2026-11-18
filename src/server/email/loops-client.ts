@@ -1,3 +1,5 @@
+import { isGuestEmail } from "@/shared/guest-account";
+
 const LOOPS_CONTACT_UPDATE_URL = "https://app.loops.so/api/v1/contacts/update";
 const LOOPS_EVENT_SEND_URL = "https://app.loops.so/api/v1/events/send";
 
@@ -93,6 +95,10 @@ async function loopsRequest({
   label: string;
   logContext?: Record<string, unknown>;
 }) {
+  // A guest account's placeholder address can't receive mail, and a Loops
+  // contact for it would only skew audiences. It gets a real address when the
+  // guest is claimed.
+  if (isGuestEmail(payload.email)) return 200;
   const response = await fetch(url, {
     method,
     headers: {

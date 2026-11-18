@@ -21,7 +21,11 @@ vi.mock("cloudflare:workers", () => ({
   env: { DATABASE_PROVIDER: "d1" },
   waitUntil: vi.fn(),
 }));
-vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/db", () => ({
+  get db() {
+    return testDb;
+  },
+}));
 vi.mock("@/db/runBatch", () => ({
   runBatch: async (build: Parameters<typeof runBatch>[0]) => {
     if (beforeWrite) await beforeWrite();
@@ -74,6 +78,7 @@ const projectId = "4a5b6c7d-0000-4000-8000-000000000000";
 const project = {
   id: projectId,
   name: "Saved name",
+  brandName: null,
   domain: null,
   locationCode: 2840,
   languageCode: "en",
@@ -110,7 +115,7 @@ beforeAll(async () => {
   // Use the actual context migration so conflict keys match production.
   await client.executeMultiple(
     [
-      `CREATE TABLE projects (id text PRIMARY KEY, organization_id text, name text NOT NULL, domain text, archived_at text, ai_research_keywords text);`,
+      `CREATE TABLE projects (id text PRIMARY KEY, organization_id text, name text NOT NULL, brand_name text, domain text, archived_at text, ai_research_keywords text);`,
       ...readFileSync("drizzle/sqlite/0042_project_memory.sql", "utf8")
         .split("--> statement-breakpoint")
         .filter((sql) => !sql.includes("DROP TABLE")),
@@ -170,6 +175,54 @@ describe("ProjectWebsiteService.save", () => {
         .rows[0]?.content,
     ).toBe(accepted.overview);
   });
+
+  it("reports the keywords it ignored because the project already had some", async () => {
+    const first = await ProjectWebsiteService.save(accepted, customer, "mcp");
+    // Setup sends saved keywords back as topics; that drops nothing.
+    const same = await ProjectWebsiteService.save(
+      { ...accepted, suggestedTopics: [], suggestedKeywords: ["Site Audit"] },
+      customer,
+      "mcp",
+    );
+    const changed = await ProjectWebsiteService.save(
+      { ...accepted, suggestedTopics: [], suggestedKeywords: ["rank tracker"] },
+      customer,
+      "mcp",
+    );
+
+    expect(
+      [first, same, changed].map((result) => result.keywordsIgnored),
+    ).toEqual([false, false, true]);
+    expect(
+      (await client.execute("SELECT ai_research_keywords FROM projects")).rows,
+    ).toEqual([{ ai_research_keywords: "new keyword\nsite audit" }]);
+  });
+
+  it.each([
+    ["Default", "Acme", "Acme"],
+    ["Default", "Default", null],
+    ["Acme", "Acme", "Acme"],
+    ["Acme website", "Acme", "Acme"],
+  ])(
+    "a project named %s saving brand %s keeps its name with brand name %s",
+    async (name, reviewed, savedBrand) => {
+      getProject.mockResolvedValue({ ...project, name });
+      await client.execute({
+        sql: "UPDATE projects SET name = ?",
+        args: [name],
+      });
+
+      await ProjectWebsiteService.save(
+        { ...accepted, name: reviewed },
+        customer,
+        "user",
+      );
+
+      expect(
+        (await client.execute("SELECT name, brand_name FROM projects")).rows,
+      ).toEqual([{ name, brand_name: savedBrand }]);
+    },
+  );
 
   it.each(["before review", "during save"])(
     "preserves context saved %s, including the whole competitor list",

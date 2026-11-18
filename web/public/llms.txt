@@ -17,18 +17,19 @@ Working with OpenSEO:
 
 - [Agent setup prompt](https://openseo.so/agent-setup.txt): Plain-text setup instructions for an agent to follow.
 - [Agent setup](https://openseo.so/docs/agent-setup): The same prompt, manual steps for Claude Code, Codex, Hermes, Grok Bot, and other agents, and how to update skills.
-- [Claude plugin](https://openseo.so/docs/claude-code-plugin): Installs MCP and all twelve skills in Claude Code or Claude Cowork. Skills run as `/openseo:<skill>`.
+- [Claude connector](https://claude.ai/directory/connectors/openseo): Adds OpenSEO's tools to Claude on the web, desktop and mobile. The user adds it and signs in. It doesn't include the skills.
+- [Claude setup](https://openseo.so/docs/claude-code-plugin): The connector, the plugin that installs MCP and all twelve skills in Claude Code or Claude Cowork (skills run as `/openseo:<skill>`), and a custom connector for self-hosted instances.
 - [ChatGPT plugin](https://chatgpt.com/plugins/plugin_asdk_app_6abddd2c7e4c819191f1398c4bd8e9b3): Installs OpenSEO's tools and skills in ChatGPT on the web and in the desktop app. The user installs it and signs in. You cannot install it from a chat.
 - [ChatGPT setup](https://openseo.so/docs/chatgpt): Plugin install steps, and a custom connection for accounts without the plugin or for self-hosted instances.
-- [Codex plugin](https://openseo.so/docs/codex-plugin): Installs MCP and all twelve skills in Codex CLI. Type `$` to pick a skill.
-- [MCP setup](https://openseo.so/docs/mcp): Connect `https://app.openseo.so/mcp` in Claude Desktop, Cursor, Codex, or another MCP client, or use an API key for headless agents.
-- [Install skills without a plugin](https://openseo.so/docs/skills/setup): Add the skills to agents that don't support the plugin.
+- [Codex setup](https://openseo.so/docs/codex-plugin): The plugin installs MCP and all twelve skills in Codex, in the ChatGPT desktop app or the CLI. Type `$` to pick a skill.
+- [MCP setup](https://openseo.so/docs/mcp): Connect `https://app.openseo.so/mcp` in Cursor or another MCP client, or use an API key for headless agents.
+- [Install skills](https://openseo.so/docs/skills/setup): The OpenSEO plugins include the skills; connectors and MCP connections don't. How to check what an agent has and add the skills to any agent.
 - [Run SEO from your AI assistant](https://openseo.so/library/ai-agent-seo/run-seo-from-your-ai-assistant): What to run first after connecting, five starter prompts, and which calls cost credits.
 
 ## Why OpenSEO
 
 - [Why OpenSEO](https://openseo.so/why-openseo): Who it's for and what's different: your own agent, shared project context, skills, and saved reports.
-- [Open source SEO](https://openseo.so/open-source-seo): Why the code is open, where the data comes from, and why OpenSEO helps you work with your agent instead of automating SEO away.
+- [Open source SEO](https://openseo.so/open-source-seo): The MIT license, how to self-host with Docker or Cloudflare, what the software and the search data cost, and answers to common open source SEO questions.
 - [Pricing](https://openseo.so/pricing): One plan, what uses credits, and a cost estimator.
 - [OpenSEO vs DataForSEO](https://openseo.so/openseo-vs-dataforseo): What OpenSEO adds on top of the DataForSEO data it's built on, and what it costs.
 - [OpenSEO vs Semrush](https://openseo.so/semrush-alternative): Comparison with cost examples.
@@ -38,9 +39,18 @@ Working with OpenSEO:
 ## Features
 
 - [Features](https://openseo.so/features): Keyword research, domain overview, backlinks, rank tracking, site audit, saved keywords, and AI visibility.
-- [MCP tools](https://openseo.so/docs/mcp#available-tools): What the agent can do through MCP, including local SEO, reports, and project context.
+- [MCP tools](https://openseo.so/docs/mcp-tools): What the agent can do through MCP, including local SEO, reports, and project context.
 - [Google Search Console MCP](https://openseo.so/google-search-console-mcp): Read-only Search Console performance and URL inspection that use no credits. Hosted OpenSEO needs no Google Cloud project.
 - [AI visibility](https://openseo.so/docs/ai-visibility): Prompt Research, Prompt Explorer, and Prompt Tracking. Tracking covers ChatGPT, Gemini, Google AI Overviews, Claude, and Perplexity.
+- [Rank tracking](https://openseo.so/docs/rank-tracking): Trackers, schedules, the most a check can cost, and why a keyword marked "Not checked" hasn't lost its ranking.
+- [Site audits](https://openseo.so/docs/site-audits): Starting an audit, plan page limits, what Lighthouse and JavaScript rendering cost, and blocked or partial crawls.
+- [Reports](https://openseo.so/docs/reports): Finding saved reports, public share links, PDF export, and report templates.
+- [Search Console and Analytics](https://openseo.so/docs/google-integrations): Connecting Google to a project, changing or removing it, and the data available in the app and through MCP.
+
+## Account
+
+- [Plans, credits and billing](https://openseo.so/docs/billing): Plans, what uses credits and what doesn't, running out, top-ups and auto-reload, plan changes, and invoices.
+- [Teams](https://openseo.so/docs/teams): Inviting teammates, what owners and admins can do, what the organization shares, and which organization an agent works in.
 
 ## Skills
 

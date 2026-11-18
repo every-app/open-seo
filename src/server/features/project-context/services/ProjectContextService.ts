@@ -18,6 +18,8 @@ const RESEARCH_LOG_RETENTION_DAYS = 90;
 const RESEARCH_LOG_LIMIT = 20;
 
 type ProjectContext = {
+  /** The name AI visibility looks for. Null uses the project name. */
+  brandName: string | null;
   sections: {
     key: ProjectContextSectionKey;
     content: string;
@@ -67,14 +69,21 @@ type ProjectContext = {
 export async function getProjectContext(
   projectId: string,
 ): Promise<ProjectContext> {
-  const [sectionRows, competitors, keyPages, researchLog, reportTemplates] =
-    await Promise.all([
-      ProjectContextRepository.listSections(projectId),
-      ProjectContextRepository.listCompetitors(projectId),
-      ProjectContextRepository.listKeyPages(projectId),
-      ProjectContextRepository.listResearchLog(projectId, RESEARCH_LOG_LIMIT),
-      ReportTemplateRepository.listTemplates(projectId),
-    ]);
+  const [
+    brandName,
+    sectionRows,
+    competitors,
+    keyPages,
+    researchLog,
+    reportTemplates,
+  ] = await Promise.all([
+    ProjectContextRepository.getBrandName(projectId),
+    ProjectContextRepository.listSections(projectId),
+    ProjectContextRepository.listCompetitors(projectId),
+    ProjectContextRepository.listKeyPages(projectId),
+    ProjectContextRepository.listResearchLog(projectId, RESEARCH_LOG_LIMIT),
+    ReportTemplateRepository.listTemplates(projectId),
+  ]);
 
   const stored = new Map(sectionRows.map((row) => [row.key, row]));
   // Typed sections keep their declared order, which is also the order the
@@ -94,6 +103,7 @@ export async function getProjectContext(
   });
 
   return {
+    brandName,
     sections,
     missingSections: PROJECT_CONTEXT_SECTION_KEYS.filter(
       (key) => !stored.has(key),
@@ -158,6 +168,10 @@ export async function applyContextUpdates(
   await runBatch((tx) =>
     resolved.flatMap((op): Promise<unknown>[] => {
       switch (op.kind) {
+        case "setBrandName":
+          return [
+            ProjectContextRepository.setBrandName(tx, projectId, op.brandName),
+          ];
         case "upsertSection":
           return [
             ProjectContextRepository.upsertSection(tx, {
@@ -247,6 +261,8 @@ function pushSection(lines: string[], heading: string, body: string[]) {
  */
 export function renderProjectContextMarkdown(context: ProjectContext): string {
   const lines = ["# Project context", ""];
+
+  if (context.brandName) pushSection(lines, "Brand name", [context.brandName]);
 
   for (const key of PROJECT_CONTEXT_SECTION_KEYS) {
     const section = context.sections.find((entry) => entry.key === key);

@@ -11,6 +11,10 @@ import {
 import { useBacklinksDomainExpansion } from "./useBacklinksDomainExpansion";
 import { useBacklinksFilters } from "./useBacklinksFilters";
 import { useBacklinksSearchHistory } from "@/client/hooks/useBacklinksSearchHistory";
+import {
+  defaultScopeForInput,
+  type ResearchScope,
+} from "@/shared/researchScope";
 import type { SearchTabInput } from "@/client/features/search-tabs/types";
 import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
 import {
@@ -102,6 +106,11 @@ export function BacklinksPage({
     ),
     navigateToInput: navigateToTab,
   });
+  const runSearch = (values: { target: string; scope: ResearchScope }) => {
+    searchTabs.openTab({ type: "backlinks", ...values });
+    navigateToBacklinksSearch(navigate, values);
+    addSearch(values);
+  };
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -132,11 +141,7 @@ export function BacklinksPage({
 
         <BacklinksSearchCard
           initialValues={data.searchCardInitialValues}
-          onSubmit={(values) => {
-            searchTabs.openTab({ type: "backlinks", ...values });
-            navigateToBacklinksSearch(navigate, values);
-            addSearch({ target: values.target, scope: values.scope });
-          }}
+          onSubmit={runSearch}
         />
 
         <BacklinksBody
@@ -162,6 +167,9 @@ export function BacklinksPage({
             })
           }
           onRemoveHistoryItem={removeHistoryItem}
+          onSearchSite={(target) =>
+            runSearch({ target, scope: defaultScopeForInput(target) })
+          }
           onSortingChange={handleSortingChange}
           onTabChange={(tab) =>
             updateSearch({

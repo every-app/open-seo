@@ -71,7 +71,7 @@ describe("sanitizePostHogEvent", () => {
       },
     });
     expect(properties.$exception_list).toEqual([
-      { type: "SyntaxError", value: "" },
+      { type: "SyntaxError", value: "message redacted" },
       { type: "Error", value: "PAYMENT_REQUIRED" },
     ]);
   });

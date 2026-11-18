@@ -1,8 +1,36 @@
-import { dataforseoGet } from "@/server/lib/dataforseo/core";
+import { z } from "zod";
+import { dataforseoGet, dataforseoPost } from "@/server/lib/dataforseo/core";
 import {
   assertOk,
   type DataforseoTaskLike,
 } from "@/server/lib/dataforseo/envelope";
+
+const gotoConversionsSchema = z.array(
+  z.object({ goto: z.string(), url: z.string().url().nullish() }),
+);
+
+/** DataForSEO's limit for one goto_url_converter request. */
+export const MAX_GOTO_URLS_PER_REQUEST = 100;
+
+/**
+ * The real page behind each google.com/goto URL, keyed by that URL. A URL
+ * DataForSEO couldn't resolve is left out. POST /v3/appendix/goto_url_converter
+ * is free, so like fetchUserData this is deliberately not metered.
+ */
+export async function resolveGotoUrls(
+  gotoUrls: string[],
+): Promise<Map<string, string>> {
+  const task = assertOk(
+    await dataforseoPost("/v3/appendix/goto_url_converter", [
+      { goto_urls: gotoUrls },
+    ]),
+  );
+  return new Map(
+    gotoConversionsSchema
+      .parse(task.result ?? [])
+      .flatMap(({ goto, url }) => (url ? [[goto, url] as const] : [])),
+  );
+}
 
 /**
  * Account snapshot from the free GET /v3/appendix/user_data. Every field is

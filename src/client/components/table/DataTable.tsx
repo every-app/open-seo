@@ -18,6 +18,7 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
+import { cn } from "cn";
 import { EmptyState } from "@/client/components/EmptyState";
 import { Button } from "@/client/components/ui/button";
 import { Checkbox } from "@/client/components/ui/checkbox";
@@ -142,6 +143,11 @@ function SelectionCheckbox<TData>({
 export type DataTableFrameProps = {
   /** The first load: shows skeleton rows under the real headers. */
   isLoading?: boolean;
+  /**
+   * A later load, for example after a sort or page change. The current rows
+   * stay on screen, dimmed, until the new rows arrive.
+   */
+  isRefreshing?: boolean;
   /** True when filters are active. An empty table then offers `onClearFilters`. */
   isFiltered?: boolean;
   onClearFilters?: () => void;
@@ -152,6 +158,8 @@ export type DataTableFrameProps = {
   error?: ReactNode;
   toolbar?: ReactNode;
   footer?: ReactNode;
+  /** Layout classes for the card, for example to fill a column. */
+  className?: string;
 };
 
 /**
@@ -165,12 +173,14 @@ export type DataTableFrameProps = {
 export function DataTable<TData>({
   table,
   isLoading = false,
+  isRefreshing = false,
   empty,
   isFiltered = false,
   onClearFilters,
   error,
   toolbar,
   footer,
+  className,
   onRowClick,
   activeRowId,
   scrollClassName,
@@ -198,11 +208,14 @@ export function DataTable<TData>({
   const rows = table.getRowModel().rows;
 
   return (
-    <TableCard>
+    <TableCard className={className}>
       {toolbar}
       {error ? <div className="p-4">{error}</div> : null}
       {error && !isLoading && rows.length === 0 ? null : (
-        <Table containerClassName={scrollClassName}>
+        <Table
+          containerClassName={scrollClassName}
+          aria-busy={isLoading || isRefreshing || undefined}
+        >
           <TableHeader
             className={
               scrollClassName ? "sticky top-0 z-10 bg-card" : undefined
@@ -226,7 +239,9 @@ export function DataTable<TData>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody
+            className={cn("transition-opacity", isRefreshing && "opacity-50")}
+          >
             {isLoading ? (
               Array.from({ length: 8 }, (_, index) => (
                 <TableRow key={index} aria-hidden>

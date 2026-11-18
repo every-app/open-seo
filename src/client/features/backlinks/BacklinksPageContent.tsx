@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
-import { Link2 } from "lucide-react";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import {
   BacklinksOverviewPanels,
@@ -20,7 +19,9 @@ import type { BacklinksPageData } from "./useBacklinksPageData";
 import { SearchTabStrip } from "@/client/features/search-tabs/SearchTabStrip";
 import { QueryError } from "@/client/components/QueryState";
 import { Card } from "@/client/components/ui/card";
+import { BacklinksIllustration } from "@/client/components/EmptyIllustrations";
 import { RecentSearches } from "@/client/components/RecentSearches";
+import { SuggestedSites } from "@/client/features/projects/SuggestedSites";
 import {
   RESEARCH_SCOPE_LABELS,
   toScopeSearchParam,
@@ -40,6 +41,7 @@ type BacklinksBodyProps = {
   onPageChange: (nextPage: number) => void;
   onPageSizeChange: (nextPageSize: number) => void;
   onRemoveHistoryItem: (timestamp: number) => void;
+  onSearchSite: (target: string) => void;
   onSortingChange: OnChangeFn<SortingState>;
   onTabChange: (tab: BacklinksSearchState["tab"]) => void;
   onViewChange: (view: "all" | undefined) => void;
@@ -59,6 +61,7 @@ export function BacklinksBody({
   onPageChange,
   onPageSizeChange,
   onRemoveHistoryItem,
+  onSearchSite,
   onSortingChange,
   onTabChange,
   onViewChange,
@@ -98,8 +101,21 @@ export function BacklinksBody({
         items={history}
         loaded={historyLoaded}
         onRemove={onRemoveHistoryItem}
-        emptyIcon={Link2}
-        emptyTitle="Enter a domain or URL to get started"
+        emptyIllustration={<BacklinksIllustration />}
+        emptyTitle="Find sites that could link to you"
+        emptyDescription="Look up a competitor to see who links to them, or your own site to see links you gained and lost."
+        emptyAction={
+          <SuggestedSites
+            projectId={projectId}
+            renderLink={(domain, props) => (
+              <button
+                type="button"
+                onClick={() => onSearchSite(domain)}
+                {...props}
+              />
+            )}
+          />
+        }
         getTitle={(item) => item.target}
         getSubtitle={(item) => RESEARCH_SCOPE_LABELS[item.scope]}
         renderLink={(item, props) => (
@@ -176,6 +192,7 @@ export function BacklinksBody({
             isTabLoading={
               data.activeTabQuery.isPending && !data.activeTabFilterError
             }
+            isTabRefreshing={data.activeTabQuery.isPlaceholderData}
             // A failed refetch keeps the loaded rows; a filter budget error hides
             // them because the query never ran for the current filters.
             showTable={

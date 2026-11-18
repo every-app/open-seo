@@ -145,7 +145,12 @@ export async function getLatestResults(
           lastCheckedAt: latestStartedAt,
           completedAt: latestRun.completedAt,
           status: latestRun.status,
-          errorMessage: latestRun.errorMessage,
+          // An active run's error is provisional: its retries may still check
+          // those keywords, and finalize rewrites it when the run ends.
+          errorMessage:
+            latestRun.status === "completed" || latestRun.status === "failed"
+              ? latestRun.errorMessage
+              : null,
         }
       : null,
   };
@@ -172,6 +177,7 @@ function createEmptyDeviceResult(
     previousPosition,
     rankingUrl: null,
     serpFeatures: [],
+    checkedAt: null,
   };
 }
 
@@ -184,5 +190,6 @@ function toDeviceResult(
     previousPosition,
     rankingUrl: snapshot.url,
     serpFeatures: parseSerpFeatures(snapshot.serpFeatures),
+    checkedAt: snapshot.checkedAt,
   };
 }

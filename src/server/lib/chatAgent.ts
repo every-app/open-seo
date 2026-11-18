@@ -1,6 +1,7 @@
 import type { LanguageModelV3 } from "@openrouter/ai-sdk-provider";
 import { subscribe } from "agents/observability";
 import { z } from "zod";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
 // The chat agent's most common failure modes — a provider stream dying
 // mid-turn ("chat:request:failed", stage "stream") and a DO restart whose
@@ -35,8 +36,18 @@ export function openRouterCostUsd(providerMetadata: unknown): number {
   return parsed.success ? parsed.data.openrouter.usage.cost : 0;
 }
 
-export function requireOpenRouterCostUsd(providerMetadata: unknown): number {
-  return openRouterUsageSchema.parse(providerMetadata).openrouter.usage.cost;
+/**
+ * The cost hosted billing settles, so hosted fails closed when it is missing.
+ * Off hosted nothing is billed, and a self-host's own OPENROUTER_BASE_URL
+ * provider may report no cost at all.
+ */
+export async function requireOpenRouterCostUsd(
+  providerMetadata: unknown,
+): Promise<number> {
+  const parsed = openRouterUsageSchema.safeParse(providerMetadata);
+  if (parsed.success) return parsed.data.openrouter.usage.cost;
+  if (await isHostedServerAuthMode()) throw parsed.error;
+  return 0;
 }
 
 // The provider package re-exports only LanguageModelV3 itself, so the stream

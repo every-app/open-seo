@@ -1,12 +1,19 @@
 import { GoogleSearchConsoleLogo } from "@/client/features/integrations/GoogleProductLogos";
 import { startAudit } from "@/serverFunctions/audit";
+import { EmptyState } from "@/client/components/EmptyState";
 import { QueryError } from "@/client/components/QueryState";
-import { LoaderCircle, ScanSearch } from "lucide-react";
+import { Globe, LoaderCircle, ScanSearch } from "lucide-react";
 import { CardShell } from "@/client/components/CardShell";
 import { Progress } from "@/client/components/ui/progress";
 import { Button } from "@/client/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { SeverityBadge } from "@/client/features/audit/shared";
@@ -18,12 +25,21 @@ import {
   formatPosition,
 } from "@/client/features/search-performance/SearchPerformanceColumns";
 import { getSearchPerformanceReport } from "@/serverFunctions/searchPerformance";
+import { DateRangeSelect } from "@/client/features/search-performance/SearchPerformanceSelects";
 import {
+  cardMetaClass,
+  cardTableClass,
   formatDay,
   moreDetailsClass,
-  MetricsTableSkeleton,
 } from "@/client/features/dashboard/cardParts";
+import {
+  MetricRow,
+  MetricsSkeleton,
+  TrendChart,
+} from "@/client/features/dashboard/DashboardMetrics";
 import { percentChange } from "@/client/components/MetricsTable";
+import type { ChartConfig } from "@/client/components/ui/chart";
+import type { SearchPerformanceDateRange } from "@/types/schemas/search-performance";
 import {
   Table,
   TableBody,
@@ -40,6 +56,11 @@ const issueTitles: Record<string, string | undefined> = Object.fromEntries(
   Object.entries(AUDIT_ISSUE_TYPES).map(([key, value]) => [key, value.title]),
 );
 
+const gscChartConfig = {
+  clicks: { label: "Clicks", color: "var(--chart-1)" },
+  impressions: { label: "Impressions", color: "var(--chart-2)" },
+} satisfies ChartConfig;
+
 export function GscCard({
   projectId,
   connected,
@@ -49,14 +70,15 @@ export function GscCard({
   connected: boolean;
   siteUrl: string | null;
 }) {
+  const [dateRange, setDateRange] =
+    useState<SearchPerformanceDateRange>("last_28_days");
   const reportQuery = useQuery({
-    queryKey: ["dashboardGscReport", projectId, siteUrl],
+    queryKey: ["dashboardGscReport", projectId, siteUrl, dateRange],
     queryFn: () =>
-      getSearchPerformanceReport({
-        data: { projectId, dateRange: "last_28_days" },
-      }),
+      getSearchPerformanceReport({ data: { projectId, dateRange } }),
     enabled: connected,
     staleTime: 10 * 60_000,
+    placeholderData: keepPreviousData,
   });
   const report = reportQuery.data;
 
@@ -72,38 +94,38 @@ export function GscCard({
 
   return (
     <CardShell
-      title="Google Search Console Performance"
+      title="GSC"
       icon={<GoogleSearchConsoleLogo className="size-5" />}
+      titleInfo={
+        <DateRangeSelect
+          value={dateRange}
+          onChange={setDateRange}
+          triggerClassName="border-transparent bg-transparent pl-2 pr-1.5 font-normal text-muted-foreground hover:bg-foreground/5"
+        />
+      }
       action={
         <Link
           to="/p/$projectId/search-performance"
           params={{ projectId }}
+          search={{ range: dateRange }}
           className={moreDetailsClass}
         >
-          View GSC insights →
+          View GSC insights
         </Link>
       }
     >
-      <p className="mb-4 text-sm font-medium text-muted-foreground">
-        Last 28 days
-      </p>
       {reportQuery.isError ? (
         <p className="text-sm text-muted-foreground">
           Couldn&rsquo;t load Search Console data. Try again shortly.
         </p>
       ) : !report ? (
-        <MetricsTableSkeleton />
+        <MetricsSkeleton />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Metric</TableHead>
-              <TableHead className="text-right">Value</TableHead>
-              <TableHead className="text-right">Change</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {[
+        <div
+          className={`flex flex-1 flex-col gap-4 transition-opacity ${reportQuery.isPlaceholderData ? "opacity-50" : ""}`}
+        >
+          <MetricRow
+            metrics={[
               {
                 label: "Clicks",
                 value: formatCount(report.totals.clicks),
@@ -111,6 +133,7 @@ export function GscCard({
                   report.totals.clicks,
                   report.prevTotals.clicks,
                 ),
+                dotClass: "bg-chart-1",
               },
               {
                 label: "Impressions",
@@ -119,6 +142,7 @@ export function GscCard({
                   report.totals.impressions,
                   report.prevTotals.impressions,
                 ),
+                dotClass: "bg-chart-2",
               },
               {
                 label: "Click-through rate",
@@ -130,27 +154,22 @@ export function GscCard({
                 value: formatPosition(report.totals.position),
                 change: null,
               },
-            ].map((metric) => (
-              <TableRow key={metric.label}>
-                <TableCell>{metric.label}</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {metric.value}
-                </TableCell>
-                <TableCell
-                  className={`text-right tabular-nums ${metric.change === null || metric.change === 0 ? "text-muted-foreground" : metric.change > 0 ? "text-success" : "text-destructive"}`}
-                >
-                  {metric.change === null
-                    ? "—"
-                    : `${metric.change > 0 ? "+" : ""}${metric.change}%`}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            ]}
+          />
+          {report.totals.impressions > 0 ? (
+            <TrendChart config={gscChartConfig} data={report.trend} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No search data for this period yet.
+            </p>
+          )}
+        </div>
       )}
     </CardShell>
   );
 }
+
+const siteHealthIcon = <Globe className="size-5" />;
 
 export function AuditHealthCard({
   projectId,
@@ -180,35 +199,37 @@ export function AuditHealthCard({
   });
   if (!audit)
     return (
-      <CardShell title="Site health">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6 text-center">
-          <ScanSearch className="size-7 text-muted-foreground" />
-          <h3 className="font-medium">Find what's holding your website back</h3>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Scan up to 50 pages for broken links, missing titles and pages
-            Google can't index.
-          </p>
-          {domain ? (
-            <Button disabled={scan.isPending} onClick={() => scan.mutate()}>
-              {scan.isPending ? "Starting scan…" : "Scan my website"}
-            </Button>
-          ) : (
-            <Button
-              nativeButton={false}
-              render={
-                <Link to="/p/$projectId/settings" params={{ projectId }} />
-              }
-            >
-              Add your website
-            </Button>
-          )}
-          {scan.isError && (
-            <QueryError
-              error={scan.error}
-              fallback="Could not start your scan"
-            />
-          )}
-        </div>
+      <CardShell title="Site health" icon={siteHealthIcon}>
+        <EmptyState
+          variant="plain"
+          icon={ScanSearch}
+          title="Find what's holding your website back"
+          description="Scan up to 50 pages for broken links, missing titles and pages Google can't index."
+          action={
+            <>
+              {domain ? (
+                <Button disabled={scan.isPending} onClick={() => scan.mutate()}>
+                  {scan.isPending ? "Starting scan…" : "Scan my website"}
+                </Button>
+              ) : (
+                <Button
+                  nativeButton={false}
+                  render={
+                    <Link to="/p/$projectId/settings" params={{ projectId }} />
+                  }
+                >
+                  Add your website
+                </Button>
+              )}
+              {scan.isError && (
+                <QueryError
+                  error={scan.error}
+                  fallback="Could not start your scan"
+                />
+              )}
+            </>
+          }
+        />
       </CardShell>
     );
 
@@ -224,6 +245,7 @@ export function AuditHealthCard({
     return (
       <CardShell
         title="Site health"
+        icon={siteHealthIcon}
         action={
           <Link
             to="/p/$projectId/audit"
@@ -269,6 +291,14 @@ export function AuditHealthCard({
   return (
     <CardShell
       title="Site health"
+      icon={siteHealthIcon}
+      titleInfo={
+        audit.status === "completed" ? (
+          <span className={cardMetaClass}>
+            {audit.pagesCrawled} pages checked · {formatDay(audit.startedAt)}
+          </span>
+        ) : null
+      }
       action={
         <Link
           to="/p/$projectId/audit"
@@ -285,11 +315,6 @@ export function AuditHealthCard({
           The latest scan didn’t finish. Review the results or try again.
         </p>
       )}
-      {audit.status === "completed" && (
-        <p className="mb-4 text-sm text-muted-foreground">
-          {audit.pagesCrawled} pages checked · {formatDay(audit.startedAt)}
-        </p>
-      )}
       {audit.topIssues.length === 0 ? (
         audit.status === "completed" ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -302,7 +327,7 @@ export function AuditHealthCard({
           </p>
         )
       ) : (
-        <Table>
+        <Table className={cardTableClass}>
           <TableHeader>
             <TableRow>
               <TableHead>Issue</TableHead>

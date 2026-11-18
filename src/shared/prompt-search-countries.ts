@@ -1,3 +1,5 @@
+import { getIsoCountryCode } from "@/shared/keyword-locations";
+
 /**
  * Country hints for DataForSEO LLM Responses, checked 2026-09-30.
  * ChatGPT and Perplexity document ISO country codes (not dataset locations):
@@ -315,4 +317,30 @@ export function supportsWebSearchCountry(
   country: string,
 ): boolean {
   return MODEL_COUNTRIES[model].includes(country);
+}
+
+/** Gemini has no country setting, so it answers without one instead of being skipped. */
+export function ignoresWebSearchCountry(model: keyof typeof MODEL_COUNTRIES) {
+  return MODEL_COUNTRIES[model].length === 0;
+}
+
+/**
+ * The project's country as a web-search hint, or undefined when a model that
+ * would be skipped for it is among these, so the default alone never fails a
+ * model the caller already asked for.
+ */
+export function projectWebSearchCountry(
+  locationCode: number,
+  models: readonly (keyof typeof MODEL_COUNTRIES)[],
+) {
+  const iso = getIsoCountryCode(locationCode).toUpperCase();
+  const country = WEB_SEARCH_COUNTRY_CODES.find((code) => code === iso);
+  return country &&
+    models.every(
+      (model) =>
+        ignoresWebSearchCountry(model) ||
+        supportsWebSearchCountry(model, country),
+    )
+    ? country
+    : undefined;
 }

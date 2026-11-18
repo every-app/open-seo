@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as ResearchSpendModule from "@/server/billing/researchSpend";
 
 vi.mock("cloudflare:workers", () => ({ waitUntil: vi.fn() }));
 
@@ -12,6 +13,7 @@ const {
   getCached,
   getTracker,
   listResearchKeywords,
+  replaceResearchKeywords,
 } = vi.hoisted(() => ({
   assertPaidPlan: vi.fn(),
   mentionsSearch: vi.fn(),
@@ -22,13 +24,17 @@ const {
   getCached: vi.fn(),
   getTracker: vi.fn(),
   listResearchKeywords: vi.fn(),
+  replaceResearchKeywords: vi.fn(),
 }));
 
 vi.mock("ai", () => ({
   generateText,
   Output: { object: (value: unknown) => value },
 }));
-vi.mock("@/server/lib/openrouter", () => ({ buildChatAgentModel: vi.fn() }));
+vi.mock("@/server/lib/openrouter", () => ({
+  buildChatAgentModel: vi.fn(),
+  requireOpenRouterAccess: async () => ({ apiKey: "key" }),
+}));
 vi.mock("@/server/lib/chatAgent", () => ({
   requireOpenRouterCostUsd: () => 0.003,
 }));
@@ -37,9 +43,14 @@ vi.mock("@/server/lib/runtime-env", () => ({
   getOptionalEnvValue: vi.fn(),
   isHostedServerAuthMode: isHosted,
 }));
-vi.mock("@/server/billing/researchSpend", () => ({ billResearchSpend }));
+vi.mock("@/server/billing/researchSpend", async (importOriginal) => ({
+  ...(await importOriginal<typeof ResearchSpendModule>()),
+  billResearchSpend,
+}));
 vi.mock("@/server/billing/subscription", () => ({
   checkUsageCreditsDepleted: creditsDepleted,
+  holdTaskCredits: async () => ({ lockId: "task_hold" }),
+  releaseTaskCredits: async () => undefined,
 }));
 vi.mock("@/server/lib/dataforseo", () => ({
   CHATGPT_LANGUAGE_CODE: "en",
@@ -56,7 +67,7 @@ vi.mock("@/server/features/ai-search/services/access", () => ({
   assertPaidAiSearchPlan: assertPaidPlan,
 }));
 vi.mock("../repositories/AiVisibilityRepository", () => ({
-  AiVisibilityRepository: { listResearchKeywords },
+  AiVisibilityRepository: { listResearchKeywords, replaceResearchKeywords },
 }));
 vi.mock("@/server/features/projects/repositories/ProjectRepository", () => ({
   ProjectRepository: { getProjectForOrganization: async () => null },
@@ -66,7 +77,11 @@ vi.mock(
   () => ({ ProjectContextRepository: { listSections: async () => [] } }),
 );
 
-import { listAiResearchKeywords, researchAiPrompts } from "./aiPromptResearch";
+import {
+  listAiResearchKeywords,
+  researchAiPrompts,
+  updateAiResearchKeywords,
+} from "./aiPromptResearch";
 import { customer } from "./aiVisibilityTestFixtures";
 
 const input = { projectId: "project", keyword: "seo tool" } as const;
@@ -193,6 +208,32 @@ describe("listAiResearchKeywords", () => {
 
     const result = await listAiResearchKeywords({ projectId: "project" });
 
-    expect(result.keywords).toEqual(["rank tracker", "seo tool", "backlinks"]);
+    expect(result).toEqual({
+      keywords: ["rank tracker", "seo tool", "backlinks"],
+      trackedTopics: ["backlinks", "seo tool"],
+    });
+  });
+});
+
+describe("updateAiResearchKeywords", () => {
+  it("swaps saved keywords whatever their case, keeping the rest in order", async () => {
+    getTracker.mockResolvedValue({ topics: [] });
+    listResearchKeywords.mockResolvedValue([
+      "Fitness studio",
+      "Rank tracker",
+      "pilates",
+    ]);
+
+    await updateAiResearchKeywords({
+      projectId: "project",
+      remove: ["fitness  STUDIO"],
+      add: ["Reformer pilates", "Pilates"],
+    });
+
+    expect(replaceResearchKeywords).toHaveBeenCalledWith("project", [
+      "Reformer pilates",
+      "Pilates",
+      "Rank tracker",
+    ]);
   });
 });

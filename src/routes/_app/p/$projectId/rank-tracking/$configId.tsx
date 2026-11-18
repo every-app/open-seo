@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRankTrackingConfigs } from "@/serverFunctions/rank-tracking";
 import { RankTrackingDomainDetail } from "@/client/features/rank-tracking/RankTrackingDomainDetail";
-import { SkeletonPage } from "@/client/components/SkeletonPresets";
+import { SkeletonCard } from "@/client/components/SkeletonPresets";
 import { QueryError } from "@/client/components/QueryState";
 import { EmptyState } from "@/client/components/EmptyState";
 import { Button } from "@/client/components/ui/button";
@@ -47,8 +47,9 @@ function RankTrackingConfigRoute() {
     });
   };
 
+  // The layout already draws the page header; this fills the detail's table.
   if (configsQuery.isPending) {
-    return <SkeletonPage />;
+    return <SkeletonCard />;
   }
 
   if (!configsQuery.data) {

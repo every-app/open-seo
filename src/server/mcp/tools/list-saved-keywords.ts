@@ -64,7 +64,7 @@ export const listSavedKeywordsTool = {
   config: {
     title: "List saved keywords",
     description:
-      "Lists keywords saved to a project (with cached metrics like search volume, difficulty, CPC, and tags if available). Uses no credits — reads from OpenSEO's database, no DataForSEO call. Each row includes its saved-keyword ID for remove_saved_keywords. Use tag filters when the user asks for a saved segment; multiple tags match ANY tag.",
+      "List the keywords saved to a project, with cached search volume, difficulty, CPC, and tags when available. Filter by tag when the user asks for a saved segment; multiple tags match any of them. Uses no credits. To delete rows, pass their saved-keyword IDs to remove_saved_keywords; for fresh metrics, use get_keyword_metrics.",
     inputSchema,
     outputSchema: z.looseObject({
       rows: z.array(savedKeywordOutputSchema),
@@ -94,7 +94,9 @@ export const listSavedKeywordsTool = {
         });
       const text =
         rows.length === 0
-          ? "No saved keywords yet."
+          ? args.search || args.tags?.length
+            ? "No saved keywords match this search or tag filter. Call again without it to see every saved keyword."
+            : "No saved keywords yet."
           : `Saved keywords (${rows.length} of ${totalCount}):\n` +
             rows
               .map((row) => {

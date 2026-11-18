@@ -16,7 +16,11 @@ import {
 import { Field, FieldLabel } from "@/client/components/ui/field";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { domainField, normalizeDomain } from "@/types/schemas/domain";
-import { pagesToDepth, estimateRankCheckCredits } from "@/shared/rank-tracking";
+import {
+  estimateRankCheckCredits,
+  pagesToDepth,
+  RANK_CHECK_DURATION_COPY,
+} from "@/shared/rank-tracking";
 import { getLanguageCode } from "@/client/features/keywords/locations";
 import {
   SERP_LANGUAGE_OPTIONS,
@@ -39,6 +43,7 @@ import {
   withBrowserTimeZone,
   type LocalScheduleTime,
 } from "./scheduleTime";
+import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 
 type Props = {
   projectId: string;
@@ -178,7 +183,7 @@ function RankTrackingConfigModalContent({
     // Shown and edited in the browser's timezone; the server converts it to UTC.
     scheduleTime: localScheduleTimeFrom(
       existingConfig?.nextCheckAt
-        ? new Date(existingConfig.nextCheckAt)
+        ? parseDbTimestamp(existingConfig.nextCheckAt)
         : randomScheduleDate(),
     ),
     serpDepth: existingConfig?.serpDepth ?? 40,
@@ -380,13 +385,10 @@ function CostEstimate({
   serpDepth,
   schedule,
 }: Pick<ConfigFormValues, "devices" | "serpDepth" | "schedule">) {
-  // Scheduled checks run through the cheaper task queue; manual configs only
-  // ever pay the live price.
   const { costUsd: costPerKeyword } = estimateRankCheckCredits(
     ["plain keyword"],
     devices,
     serpDepth,
-    schedule === "manual" ? "live" : "queued",
   );
   const checksPerMonth =
     schedule === "daily" ? 30 : schedule === "weekly" ? 4 : 1;
@@ -398,6 +400,7 @@ function CostEstimate({
         </span>{" "}
         per keyword per check
       </div>
+      <div>{RANK_CHECK_DURATION_COPY}</div>
       {schedule !== "manual" && (
         <div>
           50 keywords would cost up to{" "}

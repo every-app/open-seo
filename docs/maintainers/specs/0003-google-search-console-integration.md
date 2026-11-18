@@ -16,7 +16,7 @@ Add a native GSC connection plus two read-only MCP tools.
 
 The first version used a Better Auth `genericOAuth` provider. Better Auth treats every linked account as a login identity, so it refused to link one Google account to a second OpenSEO user. That blocked people with two OpenSEO logins and members of one organization who share a client Google account, so the flow moved out of Better Auth.
 
-**Scoping.** A connection maps one verified property to one project (`gsc_connections`, unique per project). The connection belongs to the project/workspace; any member can query it, and requests run under the connecting member's grant. Property selection lives in the Integrations UI (account dropdown), not an MCP tool.
+**Scoping.** A connection maps one verified property to one project (`gsc_connections`, unique per project). The connection belongs to the project/workspace; any member can query it, and requests run under the connecting member's grant. Property selection lives in the Integrations UI (account dropdown) and, for agent-driven setup, in the `list_search_console_sites` / `set_search_console_site` MCP tools, which run the same service checks; connecting a Google account is dashboard-only.
 
 **MCP tools** — read-only, free (no Autumn metering), scoped to a project the caller's workspace owns:
 

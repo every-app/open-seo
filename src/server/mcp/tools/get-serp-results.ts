@@ -1,16 +1,13 @@
-import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
-import {
-  createDataforseoClient,
-  SERP_ANALYSIS_DEPTH,
-} from "@/server/lib/dataforseo";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import { SERP_ANALYSIS_DEPTH } from "@/server/lib/dataforseo";
+import { buildCacheKey } from "@/server/lib/r2-cache";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
-import { serpSchema, serpItemSchema } from "@/shared/mcp-contracts";
+import { serpSchema, type serpItemSchema } from "@/shared/mcp-contracts";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { resolveMarket } from "@/shared/keyword-locations";
 import { assertLocalResearchLocation } from "@/server/features/keywords/services/research/local-volume";
+import { readMergedSerps } from "@/server/features/keywords/services/research/serpReads";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
 import {
   formatMcpTable,
@@ -24,9 +21,10 @@ import {
   projectIdSchema,
 } from "@/server/mcp/schemas";
 
-// A repeat within this window is answered from the saved rows, uncharged, so a
-// caller that lost a response can call again instead of paying twice.
-const SERP_RESULTS_CACHE_TTL_SECONDS = 12 * 60 * 60;
+// In the response too, not only the description: `rank` comes first and is
+// otherwise the obvious number to quote.
+const SERP_READING_NOTE =
+  "Sites the reads agree on come first, so read the top rows as who ranks. `rank` is only a row's place in this list; quote `best position` as a site's position.";
 
 type SerpItem = z.infer<typeof serpItemSchema>;
 
@@ -37,7 +35,8 @@ type SerpItem = z.infer<typeof serpItemSchema>;
 const SERP_ITEM_COLUMNS: McpTableColumn<SerpItem>[] = [
   { header: "rank", value: (item) => item.rank },
   { header: "type", value: (item) => item.type },
-  { header: "organic rank", value: (item) => item.organicRank },
+  { header: "best position", value: (item) => item.bestPosition },
+  { header: "seen in (of 3 reads)", value: (item) => item.seenIn },
   { header: "domain", value: (item) => item.domain },
   { header: "title", value: (item) => item.title },
   { header: "url", value: (item) => item.url },
@@ -84,7 +83,13 @@ const inputSchema = {
     .multipleOf(10)
     .optional()
     .describe(
-      "How many SERP rows to crawl per keyword — a multiple of 10 from 10 to 100, default 20. Google has no offset, so a deeper crawl re-fetches the top too: each additional 10 adds ~2.5 credits per keyword. Only raise it when you need ranks past the top 20.",
+      "How many Google results to read per keyword — a multiple of 10 from 10 to 100, default 10 (page 1). Merging the reads usually returns more sites than this. Google has no offset, so a deeper read re-fetches the top too: each additional 10 adds ~3.5 credits per keyword. Only raise it when you need ranks past page 1.",
+    ),
+  finalUrls: z
+    .boolean()
+    .optional()
+    .describe(
+      "Set true to get each result's page URL instead of a google.com/goto redirect. The search then takes a few minutes instead of seconds: the first call starts it and answers that it is still running, and the same call again 2-3 minutes later returns the results at no extra charge. For batch jobs, not while someone waits. Costs about half the credits.",
     ),
 } as const;
 
@@ -95,7 +100,7 @@ export const getSerpResultsTool = {
   config: {
     title: "Get Google SERP results",
     description:
-      "Fetch live Google organic search results for 1-10 keywords. Use this to inspect who ranks for a query, verify competitors, compare SERPs across keywords, or gather source URLs before content planning. Returns the top `depth` result rows per keyword (default 20). `rank` counts every SERP element (ads, People Also Ask, ...); `organicRank` counts organic results only and matches rank tracker positions. Charges credits per keyword: ~5 each at the default depth 20, and each additional 10 of depth adds ~2.5. A keyword fetched in this project in the last 12 hours with the same market, device, and depth returns those rows again at no charge once the original call has finished, so if a response is lost, wait a minute and repeat the same call. Per-keyword errors don't fail the batch.",
+      "Get live Google organic search results for 1-10 keywords. Use it to see who ranks for a query, verify competitors, compare SERPs across keywords, or gather source URLs before content planning. Google serves automated readers pages that vary, so each keyword is read 3 times and merged into one row per site; expect 10-30 seconds. Quote bestPosition as a site's position: `rank` only numbers the merged rows, and a site with seenIn 1 is weak evidence. `url` can be a google.com/goto redirect that a plain fetch won't follow; `domain` is the reliable field, and finalUrls returns the page URLs for a job that can wait a few minutes. Costs ~5 credits per keyword at the default depth 10, and each additional 10 of depth adds ~3.5. Repeating the same call within 12 hours returns the same reads at no charge, so if a response is lost or a keyword is still running, wait a minute and repeat it. Per-keyword errors don't fail the batch. For a site's position over time, use get_rank_tracker or get_search_console_performance.",
     inputSchema,
     outputSchema: serpSchema,
     annotations: {
@@ -105,93 +110,97 @@ export const getSerpResultsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const client = createDataforseoClient(context.billing);
     const depth = args.depth ?? SERP_ANALYSIS_DEPTH;
-    const results = await Promise.all(
+    const lookups = await Promise.all(
       args.queries.map(async (q) => {
         try {
           const market = resolveMarket(q, context.project);
-          const scope = {
-            ...market,
-            locationName: q.locationName,
-            device: q.device ?? "desktop",
-          };
+          const device = q.device ?? "desktop";
           if (q.locationName) {
             await assertLocalResearchLocation(
               market.locationCode,
               q.locationName,
             );
           }
-          const cacheKey = await buildCacheKey("mcp:serp-results", {
-            organizationId: context.billing.organizationId,
-            projectId: args.projectId,
+          return {
+            ok: true as const,
             keyword: q.keyword,
-            ...market,
-            locationName: q.locationName,
-            depth,
-            // Omitted for desktop, explicit or default, so desktop keys match
-            // rows cached before the device option existed.
-            device: q.device === "mobile" ? "mobile" : undefined,
-          });
-          const cached = z
-            .array(serpItemSchema)
-            .safeParse(await getCached(cacheKey));
-          if (cached.success) {
-            return {
+            scope: { ...market, locationName: q.locationName, device },
+            query: {
               keyword: q.keyword,
-              ok: true as const,
-              items: cached.data,
-              ...scope,
-            };
-          }
+              ...market,
+              locationName: q.locationName,
+              depth,
+              device,
+              finalUrls: args.finalUrls,
+            },
+            receiptKey: await buildCacheKey("mcp:serp-reads", {
+              organizationId: context.billing.organizationId,
+              projectId: args.projectId,
+              keyword: q.keyword,
+              ...market,
+              locationName: q.locationName,
+              depth,
+              device,
+              // Only when set, so a call without it keeps its receipt key.
+              ...(args.finalUrls && { finalUrls: true }),
+            }),
+          };
+        } catch (error) {
+          return { ok: false as const, keyword: q.keyword, error };
+        }
+      }),
+    );
 
-          const items = await client.serp.live({
-            keyword: q.keyword,
-            ...market,
-            locationName: q.locationName,
-            depth,
-            device: q.device,
-          });
-          // Trim noise — return only essentials per item.
-          const trimmed = items.slice(0, depth).map((item) => ({
+    const requests = lookups.flatMap((lookup) => (lookup.ok ? [lookup] : []));
+    const outcomes = await readMergedSerps(context.billing, requests);
+
+    const results = lookups.map((lookup) => {
+      if (!lookup.ok) {
+        return {
+          keyword: lookup.keyword,
+          ok: false as const,
+          error: toolErrorMessage(lookup.error),
+        };
+      }
+      const outcome = outcomes[requests.indexOf(lookup)];
+      if (outcome.status === "failed") {
+        return {
+          keyword: lookup.keyword,
+          ok: false as const,
+          error: toolErrorMessage(outcome.error),
+        };
+      }
+      if (outcome.status === "processing") {
+        return {
+          keyword: lookup.keyword,
+          ok: false as const,
+          error: args.finalUrls
+            ? "Reading final URLs takes a few minutes. Call get_serp_results again with the same arguments in 2-3 minutes to collect this search at no extra charge."
+            : "This search is still running. Call get_serp_results again with the same arguments in about a minute to collect it at no extra charge.",
+        };
+      }
+      return {
+        keyword: lookup.keyword,
+        ok: true as const,
+        // Trim noise — return only essentials per item.
+        items: outcome.items.map((item, index) => {
+          const organic = item.type === "organic";
+          return {
             type: item.type,
-            rank: item.rank_absolute ?? item.rank_group ?? null,
-            organicRank:
-              item.type === "organic" ? (item.rank_group ?? null) : null,
+            // Organic rows come first, so the index is their place in the list.
+            rank: organic ? index + 1 : null,
+            bestPosition: organic ? (item.rank_group ?? null) : null,
+            seenIn: item.seenIn,
             title: item.title ?? null,
             url: item.url ?? null,
             domain: item.domain ?? null,
             description: item.description ?? null,
-          }));
-          // DataForSEO reports "no results" transiently; don't pin that for
-          // the whole window. waitUntil, not void: workerd cancels
-          // unregistered pending I/O once the response is sent.
-          if (trimmed.length > 0) {
-            waitUntil(
-              setCached(
-                cacheKey,
-                trimmed,
-                SERP_RESULTS_CACHE_TTL_SECONDS,
-              ).catch((error) => {
-                console.error("mcp.serp-results.cache-write failed:", error);
-              }),
-            );
-          }
-          return {
-            keyword: q.keyword,
-            ok: true as const,
-            items: trimmed,
-            ...scope,
           };
-        } catch (error) {
-          return {
-            keyword: q.keyword,
-            ok: false as const,
-            error: toolErrorMessage(error),
-          };
-        }
-      }),
-    );
+        }),
+        ...lookup.scope,
+      };
+    });
 
     const okCount = results.filter((r) => r.ok).length;
     // One budget for the whole response: ten queries split it, so a 10 × depth
@@ -209,7 +218,8 @@ export const getSerpResultsTool = {
           return `"${r.keyword}" (${r.items.length} results):\n${formatMcpTable(r.items, SERP_ITEM_COLUMNS, budget)}`;
         })
         .join("\n\n") +
-      `\n\n${okCount} of ${results.length} queries succeeded.`;
+      `\n\n${okCount} of ${results.length} queries succeeded.` +
+      (okCount > 0 ? `\n${SERP_READING_NOTE}` : "");
 
     return mcpResponse({
       text,

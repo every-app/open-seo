@@ -4,7 +4,7 @@ import { buildPageSeo } from "@/lib/seo";
 
 const homeTitle = "OpenSEO - Open Source SEO Platform";
 const homeDescription =
-  "OpenSEO is the open source alternative to Ahrefs and Semrush. Keyword research, backlinks, rank tracking, and site audits, billed by usage instead of a $100-plus monthly subscription. Self-host it free, or connect it to your AI agents over MCP.";
+  "OpenSEO is the open source alternative to Ahrefs and Semrush. Keyword research, backlinks, rank tracking, and site audits, billed by usage instead of a $100-plus monthly subscription. Self-host the software for free, or connect it to your AI agents over MCP.";
 
 export const Route = createFileRoute("/_marketing/")({
   head: () => {

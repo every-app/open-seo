@@ -25,7 +25,10 @@ import {
   tabInputKey,
   useSearchTabNavigation,
 } from "@/client/features/search-tabs/useSearchTabNavigation";
-import { KeywordResearchEmptyState } from "./KeywordResearchEmptyState";
+import {
+  KeywordResearchNoResults,
+  KeywordSearchHistory,
+} from "./KeywordResearchEmptyState";
 import { KeywordResearchLoadingState } from "./KeywordResearchLoadingState";
 import { KeywordResearchResults } from "./KeywordResearchResults";
 import { KeywordResearchSearchBar } from "./KeywordResearchSearchBar";
@@ -196,11 +199,15 @@ export function KeywordResearchPage(input: Props) {
   });
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
+    <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-4">
         <PageHeader
           title="Keyword Research"
-          description="Discover keyword ideas, search demand, and ranking opportunities."
+          description={
+            controller.hasSearched
+              ? undefined
+              : "Discover keyword ideas, search demand, and ranking opportunities."
+          }
           backLink={
             controller.hasSearched ? (
               <BackButton
@@ -213,21 +220,27 @@ export function KeywordResearchPage(input: Props) {
           }
         />
 
-        <KeywordResearchSearchBar controller={controller} />
+        <KeywordResearchSearchBar controller={controller}>
+          {controller.hasSearched ? (
+            <SearchTabStrip
+              embedded
+              projectId={projectId}
+              tabs={searchTabs.tabs}
+              activeTabId={searchTabs.activeTabId}
+              onSelect={searchTabs.selectTab}
+              onClose={searchTabs.closeTab}
+              onViewed={searchTabs.markTabViewed}
+            />
+          ) : (
+            <KeywordSearchHistory
+              controller={controller}
+              projectId={projectId}
+            />
+          )}
+        </KeywordResearchSearchBar>
         {controller.hasSearched ? (
-          <SearchTabStrip
-            projectId={projectId}
-            tabs={searchTabs.tabs}
-            activeTabId={searchTabs.activeTabId}
-            onSelect={searchTabs.selectTab}
-            onClose={searchTabs.closeTab}
-            onViewed={searchTabs.markTabViewed}
-          />
+          <KeywordResearchContent controller={controller} />
         ) : null}
-        <KeywordResearchContent
-          controller={controller}
-          projectId={input.projectId}
-        />
         <KeywordSaveDialog controller={controller} />
       </div>
     </div>
@@ -236,10 +249,8 @@ export function KeywordResearchPage(input: Props) {
 
 function KeywordResearchContent({
   controller,
-  projectId,
 }: {
   controller: KeywordResearchControllerState;
-  projectId: string;
 }) {
   if (controller.isLoading) {
     return <KeywordResearchLoadingState />;
@@ -253,14 +264,7 @@ function KeywordResearchContent({
   ) : null;
 
   if (controller.rows.length === 0) {
-    return (
-      errorCard ?? (
-        <KeywordResearchEmptyState
-          controller={controller}
-          projectId={projectId}
-        />
-      )
-    );
+    return errorCard ?? <KeywordResearchNoResults controller={controller} />;
   }
 
   // A failed refetch keeps the loaded results on screen, under the error.

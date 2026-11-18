@@ -32,23 +32,25 @@ import {
   useDeleteReport,
 } from "@/client/features/reports/shared";
 import { formatRelativeTime } from "@/client/lib/relative-time";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getReport } from "@/serverFunctions/reports";
+import { pageHead } from "@/client/lib/pageHead";
 
 // Expand lives in the URL, not in state, so a refresh (or a link someone
 // pasted) comes back expanded.
 const reportDetailSearchSchema = z.object({ full: z.boolean().optional() });
 
 export const Route = createFileRoute("/_app/p/$projectId/reports/$reportId")({
+  head: () => pageHead("Reports"),
   validateSearch: reportDetailSearchSchema,
   component: ReportDetailPage,
 });
 
 function ReportDetailPage() {
   const { projectId, reportId } = Route.useParams();
-  const hosted = isHostedClientAuthMode();
+  const canShare = usesBetterAuthClient();
   const { full } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [showDelete, setShowDelete] = useState(false);
@@ -190,12 +192,12 @@ function ReportDetailPage() {
         }
         actions={
           <>
-            {/* Share links are hosted-only (see shareAccess.ts), so a
-                self-hosted deployment keeps Export as its primary action
-                rather than offering a button the server would refuse. The
+            {/* Share links need Better Auth accounts (see shareAccess.ts),
+                so an Access / no-auth self-hosted deployment keeps Export as
+                its primary action rather than a button the server refuses. The
                 icon carries the state: a globe once a public link is live, a
                 lock while only members can open it. */}
-            {hosted ? (
+            {canShare ? (
               <Button onClick={() => setShowShare(true)}>
                 {report.shareToken ? (
                   <Globe data-icon="inline-start" />
@@ -223,7 +225,7 @@ function ReportDetailPage() {
                 <MoreHorizontal />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                {hosted ? (
+                {canShare ? (
                   <>
                     <DropdownMenuItem onClick={exportPdf}>
                       <FileDown />

@@ -12,7 +12,8 @@ import {
   type McpTableColumn,
 } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
-import { buildDashboardUrl } from "@/server/mcp/urls";
+import { buildConnectGscUrl } from "@/server/mcp/urls";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { GscService } from "@/server/features/gsc/services/GscService";
 import {
@@ -53,12 +54,6 @@ type ProjectAuthContext = {
   baseUrl: string;
 };
 
-function connectGscUrl(baseUrl: string, projectId: string): string {
-  // GSC Insights hosts the connection card AND the data the user came for,
-  // so land them there rather than in settings.
-  return buildDashboardUrl(baseUrl, `/p/${projectId}/search-performance`);
-}
-
 /** Self-hosted GSC requires the operator to provide a Google OAuth client and
  *  BETTER_AUTH_SECRET. Return this setup nudge before attempting a token lookup
  *  when either is missing. */
@@ -67,6 +62,18 @@ async function missingSelfHostedGoogleClientResponse(
   projectId: string,
 ) {
   if (await hasGoogleOAuthConfig()) return null;
+
+  if ((await getGoogleAccessMode()) === "gateway") {
+    return mcpResponse({
+      text: "Google isn't set up in Every App yet. An owner or admin adds it once: create a Google OAuth client with the redirect URI https://<your gateway>/connect/google-workspace/callback, then paste it in Every App under Manage workspace → Providers, or run `pnpm everyapp secret set GOOGLE_WORKSPACE_CLIENT_ID GOOGLE_WORKSPACE_CLIENT_SECRET` (guide: https://everyapp.com/docs/providers/google#connect-accounts). Then connect Search Console from the project's settings page.",
+      meta: buildProjectMeta(context, projectId),
+      structuredContent: {
+        ok: false,
+        connected: false,
+        reason: "gsc_oauth_not_configured",
+      },
+    });
+  }
 
   return mcpResponse({
     text: `This self-hosted OpenSEO deployment is not configured for Search Console yet. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET, then reconnect Search Console from the project's settings page. Setup docs: ${GSC_SELF_HOSTED_SETUP_DOCS_URL}`,
@@ -243,7 +250,7 @@ export const getSearchConsolePerformanceTool = {
   config: {
     title: "Get Google Search Console performance",
     description:
-      "Query the connected Search Console property's Search Analytics: clicks, impressions, CTR, and average position by query/page/country/device/date. First-party data — use it for what already ranks, near-ranking queries, and pages with real demand. Google sorts by clicks and can't filter by position, so minPosition/maxPosition/minImpressions are applied server-side over the top 1000 rows of the window — use them instead of fetching everything. ctr is a 0-1 fraction; position is a 1-based average and is omitted from rows when type is 'discover' or 'googleNews' (Google does not report it there — treat it as unavailable, not a failure); dates are Pacific Time; the last ~3 days may be incomplete. Reads only the Search Console property already connected to an OpenSEO project the caller is authorized to access. The server selects the Google account and property from that project's saved connection. Read-only; uses no credits.",
+      "Get Google Search Console performance for the project's connected property: clicks, impressions, CTR, and average position by query, page, country, device, or date. This is first-party data: use it for what already ranks, near-ranking queries, and pages with real demand. Use minPosition, maxPosition, and minImpressions instead of fetching everything: Google can't filter by position, so they are applied server-side over the top 1000 rows by clicks. ctr is a 0-1 fraction; position is a 1-based average, omitted for type 'discover' or 'googleNews' because Google does not report it there. Dates are Pacific Time, and the last ~3 days may be incomplete. Reads only the project's connected Search Console property. Uses no credits. For a page's index status, use inspect_urls.",
     inputSchema: perfInputSchema,
     outputSchema: searchConsoleSchema,
     annotations: {
@@ -259,7 +266,11 @@ export const getSearchConsolePerformanceTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      Boolean(context.auth.guestClaimToken),
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,
@@ -472,7 +483,7 @@ export const inspectUrlsTool = {
   config: {
     title: "Inspect URLs in Google Search Console",
     description:
-      "Read Google Search Console's existing index status for up to 10 URLs of the connected property: index/coverage state, last crawl time, Google-selected vs declared canonical, and mobile/rich-results verdicts. Use it to answer 'is this page indexed? why not?'. Google requires each URL to belong to that property. This does not run a live crawl. Per-URL failures are reported inline. Reads only the Search Console property already connected to an OpenSEO project the caller is authorized to access. The server selects the Google account and property from that project's saved connection. Read-only; uses no credits.",
+      "Check whether Google has indexed up to 10 pages, and why not: index and coverage state, last crawl time, the canonical Google selected versus the declared one, and mobile and rich-results verdicts. Use it to answer 'is this page indexed? why not?'. It reads Search Console's existing index status and does not run a live crawl. Each URL must belong to the project's connected Search Console property, the only property this reads. Uses no credits. For clicks, impressions, and positions, use get_search_console_performance.",
     inputSchema: inspectInputSchema,
     outputSchema: z.looseObject({
       ok: z.boolean(),
@@ -506,7 +517,11 @@ export const inspectUrlsTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      Boolean(context.auth.guestClaimToken),
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,

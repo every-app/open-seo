@@ -1,6 +1,6 @@
 ---
 name: observability-triage
-description: Triage OpenSEO production errors in Cloudflare Workers Observability — verified query recipes, counting gotchas, and a known-noise filter list applied automatically. Use when asked to review Cloudflare logs/observability, count OOMs or worker errors, compare error rates between periods, or investigate a prod error spike.
+description: Triage OpenSEO production errors in Cloudflare Workers Observability — verified query recipes, counting gotchas, a known-noise filter list applied automatically, and the on-demand CPU/heap profiling recipe. Use when asked to review Cloudflare logs/observability, count OOMs or worker errors, compare error rates between periods, investigate a prod error spike, or find where a worker spends CPU or memory (profiles, flamegraphs).
 metadata:
   internal: true
 ---
@@ -55,6 +55,32 @@ Query Cloudflare Workers Observability for prod errors, count them correctly, an
 - **One isolate death fans out.** An OOM kills every request pinned to the isolate at the same instant — cluster raw OOM events by timestamp before reading the count as user impact.
 - **Message prefixes fragment groups.** Logs with leading timestamps (better-auth's format) split one error into N single-count groups; grouped-by-message counts badly understate them. Sample events and merge client-side.
 - **Prod deploys are manual** — main being fixed doesn't mean prod runs the fix. Check `$workers.scriptVersion` and the scripts' `modified_on` before concluding a fix didn't work.
+
+## Workflow failures
+
+- **An Error logged as an argument loses its message.** `console.error("x failed:", error)` lands in Workers Logs as `x failed:     at async …` (frames only, no `Error: message` line), and an Error inside a logged object serializes to `{remote: true}` or `{}`. Grep the stack for the call site, then read the real message from `describeError(error)` in the newer log lines (`src/server/lib/errors.ts`) or from the Workflows instance below.
+- **The engine records why a step attempt failed.** `GET /accounts/{account_id}/workflows/{workflow_name}/instances?status=errored&date_start=<iso>` lists errored instances (workflow names are in `wrangler.jsonc`: `ai-visibility-workflow`, `rank-check-workflow`, `site-audit-workflow` on the audit worker, `local-rank-workflow`); `GET …/instances/{id}` returns `error` plus every step with its attempts and each attempt's `error.name`/`error.message`. This is the only place the message of a step failure survives.
+- **`WorkflowInternalError: Attempt failed due to internal workflows error`** on an attempt is the engine's own failure, not app code: the invocation running the step is reported `canceled` about 30 s later. It comes in bursts that line up with Cloudflare status incidents (Workflows, Durable Objects, or a network incident in the Ashburn region that hosts prod). The same bursts make the binding's `create()` reject (`at async WorkflowImpl.create (cloudflare-internal:workflows-api…)`). Check `cloudflarestatus.com/history` for the window before reading code.
+- **`canceled` is normal for workflow invocations.** The engine cancels an invocation after its steps finished or while it sleeps (hundreds a day per workflow with no errored instance behind them), so count errored *instances*, not canceled invocations.
+
+## Profiling (CPU and heap flamegraphs)
+
+Cloudflare captures an on-demand CPU or allocation profile from a live production isolate (shipped 2026-10-09). Reach for it only when the question is "where does the CPU or memory go", which logs and invocation metrics cannot answer; routine error triage never needs it. A capture only samples one already-running isolate for the requested window; keep windows at 10 to 15 s.
+
+- Capture with the `cf` CLI (`npm i -g cf`, `cf login` once). It writes the pprof protobuf to stdout (the raw API response is gzipped; the reader below accepts both):
+
+  ```
+  cf workers versions profile latest --worker-id open-seo --duration-ms 10000 --profile-type cpu > open-seo-cpu.pprof
+  cf workers versions profile latest --worker-id open-seo --duration-ms 15000 --profile-type heap > open-seo-heap.pprof
+  ```
+
+  API equivalent: `POST /accounts/{account_id}/workers/workers/{worker_id}/versions/latest/profile` with `{ "duration_ms": 10000, "profile_type": "cpu" }` (worker ids from `GET /accounts/{account_id}/workers/workers`). The dashboard shows the same capture as a flamegraph: Worker → Observability → Flamegraph view.
+- Read it without Go: `node .agents/skills/observability-triage/scripts/pprof-top.mjs open-seo-cpu.pprof` prints the hottest self and inclusive frames. Google's `pprof` opens the file too.
+- **It only samples an isolate that is already serving traffic**; nothing is started for you. The app worker always qualifies. The audit worker returns 0 samples unless an audit is running, so start one first. Idle preview and self-host workers fail with "The Worker has no loaded isolate in its recent execution locations" or "No recent executions were found".
+- One capture is one isolate in one colo, chosen among the ones that ran recently, so repeat a capture before trusting a small frame. A 10 s CPU capture under normal load yields ~2,000 samples at 1 ms intervals.
+- Function names are readable without source maps (the Vite build keeps them); file names are chunk hashes like `index-OuwxKDQa.js`. The production deploy uploads its source maps to PostHog error tracking and deletes them before deploying, so Cloudflare never has them and chunk names here stay hashes.
+- A heap profile shows allocations made during the window (one stack per ~512 kB allocated), not retained memory: it finds churn, not leaks.
+- Pair it with invocation data to see which route pays for the frames: group `cf-worker-event` by `$metadata.trigger` with `sum`, `median`, and `p90` of `$workers.cpuTimeMs`. A 10 s capture of one isolate weights whatever that isolate happened to serve, so convert a hot frame's share into milliseconds against the route's mean before acting on it: a frame at a third of a profile dominated by 2 ms auth failures is worth well under 1 ms per request.
 
 ## Known noise — filter these out, do not re-investigate
 

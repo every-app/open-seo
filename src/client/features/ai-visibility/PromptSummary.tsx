@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui/table";
-import type { AiBrandSummary } from "@/shared/ai-visibility";
+import { aiBrandLabel, type AiBrandSummary } from "@/shared/ai-visibility";
 import { DomainFavicon } from "./DomainFavicon";
 import { aiRate } from "./shared";
 
@@ -48,7 +48,7 @@ export function PromptSummary({ summaries }: { summaries: AiBrandSummary[] }) {
               <TableCell>
                 <span className="flex items-center gap-2">
                   <DomainFavicon domain={brand.domain} />
-                  {brand.name}
+                  {aiBrandLabel(brand)}
                   {brand.own && (
                     <Badge variant="secondary" size="sm">
                       You

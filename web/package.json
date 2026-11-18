@@ -19,17 +19,17 @@
     "test:protection": "vitest run && node scripts/check-free-tool-budget.cjs"
   },
   "dependencies": {
+    "@radix-ui/react-popover": "^1.1.15",
     "@tanstack/react-router": "^1.170.41",
     "@tanstack/react-router-devtools": "^1.167.2",
     "@tanstack/react-start": "^1.168.60",
-    "fumadocs-core": "^16.15.8",
-    "fumadocs-mdx": "^13.0.8",
-    "fumadocs-ui": "^16.15.8",
+    "fumadocs-core": "^16.17.9",
+    "fumadocs-mdx": "^15.4.10",
+    "fumadocs-ui": "^16.17.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "vite": "^7.3.6",
-    "zod": "^4.6.1",
-    "@radix-ui/react-popover": "^1.1.15"
+    "zod": "^4.6.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.13.3",

@@ -2,35 +2,39 @@ import { waitUntil } from "cloudflare:workers";
 import { generateText, Output } from "ai";
 import { sortBy } from "remeda";
 import { z } from "zod";
-import { billResearchSpend } from "@/server/billing/researchSpend";
 import {
-  checkUsageCreditsDepleted,
-  type BillingCustomerContext,
-} from "@/server/billing/subscription";
+  billResearchSpend,
+  withResearchAdmission,
+} from "@/server/billing/researchSpend";
+import { type BillingCustomerContext } from "@/server/billing/subscription";
 import { assertPaidAiSearchPlan } from "@/server/features/ai-search/services/access";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { requireOpenRouterCostUsd } from "@/server/lib/chatAgent";
+import { AppError } from "@/server/lib/errors";
 import {
   CHATGPT_LANGUAGE_CODE,
   CHATGPT_LOCATION_CODE,
   createDataforseoClient,
 } from "@/server/lib/dataforseo";
-import { AppError } from "@/server/lib/errors";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import {
-  getOptionalEnvValue,
-  getRequiredEnvValue,
-  isHostedServerAuthMode,
-} from "@/server/lib/runtime-env";
+  buildChatAgentModel,
+  requireOpenRouterAccess,
+  type OpenRouterAccess,
+} from "@/server/lib/openrouter";
+import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import { normalizeAiSuggestion } from "@/shared/ai-prompt-suggestions";
 import {
   AI_DEFAULT_TOPIC,
   type AiPromptResearchResult,
   type AiResearchedPrompt,
 } from "@/shared/ai-visibility";
-import type { ResearchAiPromptsInput } from "@/types/schemas/aiPromptResearch";
+import {
+  MAX_AI_RESEARCH_KEYWORDS,
+  type ResearchAiPromptsInput,
+  type UpdateAiResearchKeywordsInput,
+} from "@/types/schemas/aiPromptResearch";
 import { aiPromptIsBranded, ownedAiDomain } from "./aiVisibilityMatching";
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
 import { getTracker } from "./aiVisibilityState";
@@ -66,20 +70,52 @@ const relevanceOutputSchema = z.object({
   relevant: z.array(z.number().int()),
 });
 
-/** Website setup keywords first, then tracker topics the user added. */
+/**
+ * Saved keywords first, then tracker topics the user added. Tracked topics
+ * are always listed, so they are named for callers that edit the saved ones.
+ */
 export async function listAiResearchKeywords(input: {
   projectId: string;
-}): Promise<{ keywords: string[] }> {
+}): Promise<{ keywords: string[]; trackedTopics: string[] }> {
   const [state, researchKeywords] = await Promise.all([
     getTracker({ projectId: input.projectId }),
     repo.listResearchKeywords(input.projectId),
   ]);
-  const keywords = [
-    ...researchKeywords,
+  const trackedTopics = state.topics
     // The default topic is a catch-all, not a keyword.
-    ...state.topics.filter((topic) => topic !== AI_DEFAULT_TOPIC),
-  ].map(normalizeAiSuggestion);
-  return { keywords: [...new Set(keywords)] };
+    .filter((topic) => topic !== AI_DEFAULT_TOPIC)
+    .map(normalizeAiSuggestion);
+  const keywords = [
+    ...researchKeywords.map(normalizeAiSuggestion),
+    ...trackedTopics,
+  ];
+  return {
+    keywords: [...new Set(keywords)],
+    trackedTopics: [...new Set(trackedTopics)],
+  };
+}
+
+/** Edits the saved keywords. The app and the MCP both edit through here. */
+export async function updateAiResearchKeywords(
+  input: UpdateAiResearchKeywordsInput,
+) {
+  if (input.add.length || input.remove.length) {
+    // An added keyword moves to the top, so its saved copy goes too.
+    const changed = new Set(
+      [...input.remove, ...input.add].map(normalizeAiSuggestion),
+    );
+    const kept = (await repo.listResearchKeywords(input.projectId)).filter(
+      (keyword) => !changed.has(normalizeAiSuggestion(keyword)),
+    );
+    const keywords = [...input.add, ...kept];
+    if (keywords.length > MAX_AI_RESEARCH_KEYWORDS)
+      throw new AppError(
+        "VALIDATION_ERROR",
+        `Prompt Research keeps up to ${MAX_AI_RESEARCH_KEYWORDS} keywords. Remove some before adding more.`,
+      );
+    await repo.replaceResearchKeywords(input.projectId, keywords);
+  }
+  return listAiResearchKeywords({ projectId: input.projectId });
 }
 
 export async function researchAiPrompts(
@@ -87,43 +123,42 @@ export async function researchAiPrompts(
   customer: BillingCustomerContext,
 ): Promise<AiPromptResearchResult> {
   await assertPaidAiSearchPlan(customer.organizationId, "Prompt Research");
-  // Admit the whole search before buying prompt data, so a search that pays
-  // for questions can always finish the relevance check that shows them.
-  if (
-    (await isHostedServerAuthMode()) &&
-    (await checkUsageCreditsDepleted(customer)).depleted
-  )
-    throw new AppError(
-      "INSUFFICIENT_CREDITS",
-      "You need usage credits to research prompts.",
-    );
-  const openRouterApiKey = await getRequiredEnvValue("OPENROUTER_API_KEY");
   const state = await getTracker({ projectId: input.projectId });
   const keyword = normalizeAiSuggestion(input.keyword);
-  // DataForSEO has ChatGPT prompt data only in US English.
-  const loaded = await loadPrompts(
-    {
-      topic: keyword,
-      platform: "chat_gpt",
-      locationCode: CHATGPT_LOCATION_CODE,
-      languageCode: CHATGPT_LANGUAGE_CODE,
-    },
+  // Admit the whole search before buying prompt data, so a search that pays
+  // for questions can always finish the relevance check that shows them.
+  const { loaded, relevant } = await withResearchAdmission(
     customer,
+    "You need usage credits to research prompts.",
+    async () => {
+      const openRouter = await requireOpenRouterAccess();
+      // DataForSEO has ChatGPT prompt data only in US English.
+      const found = await loadPrompts(
+        {
+          topic: keyword,
+          platform: "chat_gpt",
+          locationCode: CHATGPT_LOCATION_CODE,
+          languageCode: CHATGPT_LANGUAGE_CODE,
+        },
+        customer,
+      );
+      const matched = await relevantQuestions(
+        {
+          projectId: input.projectId,
+          keyword,
+          prompts: found.prompts,
+          openRouter,
+        },
+        customer,
+      );
+      return { loaded: found, relevant: matched };
+    },
   );
   const ownBrand = state.brands.find((brand) => brand.own);
   const tracked = new Set(
     state.prompts
       .filter((prompt) => !prompt.archived)
       .map((prompt) => normalizeAiSuggestion(prompt.text)),
-  );
-  const relevant = await relevantQuestions(
-    {
-      projectId: input.projectId,
-      keyword,
-      prompts: loaded.prompts,
-      openRouterApiKey,
-    },
-    customer,
   );
   const prompts = mergeNearDuplicates(
     loaded.prompts.filter((item) => relevant.has(item.question)),
@@ -223,7 +258,7 @@ async function relevantQuestions(
     projectId: string;
     keyword: string;
     prompts: CachedPrompt[];
-    openRouterApiKey: string;
+    openRouter: OpenRouterAccess;
   },
   customer: BillingCustomerContext,
 ): Promise<Set<string>> {
@@ -258,7 +293,7 @@ async function relevantQuestions(
 
   const result = await generateText({
     model: buildChatAgentModel(
-      input.openRouterApiKey,
+      input.openRouter,
       await getOptionalEnvValue("OPENROUTER_MODEL"),
       "low",
     ),
@@ -270,7 +305,7 @@ async function relevantQuestions(
     prompt,
     // Admitted above, so settle the actual cost even if credits ran out since.
     onStepFinish: async (step) => {
-      const costUsd = requireOpenRouterCostUsd(step.providerMetadata);
+      const costUsd = await requireOpenRouterCostUsd(step.providerMetadata);
       await billResearchSpend({ ...customer, projectId: input.projectId }, [
         {
           provider: "openrouter",

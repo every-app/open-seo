@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 import {
   getWorkspaceMergeStatus,
   mergeLegacyWorkspaces,
@@ -18,7 +18,7 @@ export function WorkspaceMergeBanner() {
   const statusQuery = useQuery({
     queryKey: ["workspaceMergeStatus"],
     queryFn: () => getWorkspaceMergeStatus(),
-    enabled: !isHostedClientAuthMode(),
+    enabled: !usesBetterAuthClient(),
   });
 
   const mergeMutation = useMutation({

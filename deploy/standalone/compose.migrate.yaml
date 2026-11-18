@@ -1,0 +1,33 @@
+# Moves an installation of the old Docker image (ghcr.io/every-app/open-seo,
+# Miniflare state in its open_seo_data volume) into this stack. Add this file
+# for one start, with the old installation stopped and LEGACY_VOLUME set to its
+# data volume (docker volume ls):
+#   docker compose -f deploy/standalone/compose.yaml \
+#     -f deploy/standalone/compose.migrate.yaml up -d --build
+# See docs/SELF_HOSTING_DOCKER.md, "Move from the old Docker image".
+services:
+  migrate:
+    # The image's build stage: it has Miniflare, the only reader of the old
+    # storage format, which the runtime image deliberately leaves out.
+    image: openseo-standalone-migrate:local
+    build:
+      context: ../..
+      dockerfile: deploy/standalone/Dockerfile
+      target: build
+    command: [node, scripts/celld/migrate-legacy.mjs]
+    network_mode: service:runtime
+    volumes:
+      - legacy:/legacy:ro
+      - config:/config
+    depends_on:
+      init: { condition: service_completed_successfully }
+    restart: "no"
+  web:
+    # The import needs a database nobody has used yet, so the app stays
+    # unreachable until the import has finished.
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+volumes:
+  legacy:
+    name: ${LEGACY_VOLUME:?Set LEGACY_VOLUME to the old installation's data volume (docker volume ls)}
+    external: true

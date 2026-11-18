@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useAppForm } from "@/client/components/form/useAppForm";
+import { useAuditCapabilities } from "@/client/features/audit/shared";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import { saveCrawlerCredential } from "@/serverFunctions/crawlerAccess";
 import {
   isCrawlerAccessExpired,
@@ -11,6 +13,35 @@ import {
 
 export const crawlerCredentialsQueryKey = ["crawler-credentials"];
 export const saveCrawlerCredentialMutationKey = ["save-crawler-credential"];
+
+/**
+ * CRAWLER_ACCESS_SECRET is optional on Every App and on self-hosts, so the form
+ * and the Shopify crawl warning say how to set it instead of failing on save.
+ */
+export function CrawlerAccessSetupHint() {
+  if (isEveryAppClientAuthMode()) {
+    return (
+      <>
+        An admin sets <code>CRAWLER_ACCESS_SECRET</code> with{" "}
+        <code>
+          pnpm everyapp secret set CRAWLER_ACCESS_SECRET --app openseo
+        </code>
+        .
+      </>
+    );
+  }
+  return (
+    <>
+      An admin sets <code>CRAWLER_ACCESS_SECRET</code> to at least 32 random
+      characters in the deployment's environment, then redeploys.
+    </>
+  );
+}
+
+/** Whether to show the setup hint, once the server has said. */
+export function useCrawlerAccessNeedsSetup(projectId: string) {
+  return useAuditCapabilities(projectId).data?.canStoreCrawlerAccess === false;
+}
 
 const signatureSchema = z.object({
   host: z.string().trim().min(1, "Enter a domain."),
@@ -82,6 +113,14 @@ export function CrawlerAccessForm({
       formApi.reset({ ...value, signatureInput: "", signature: "" });
     },
   });
+
+  if (useCrawlerAccessNeedsSetup(projectId)) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Crawler access isn't set up yet. <CrawlerAccessSetupHint />
+      </p>
+    );
+  }
 
   return (
     <form.AppForm>

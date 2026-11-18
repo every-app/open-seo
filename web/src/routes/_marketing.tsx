@@ -11,7 +11,7 @@ import { featureGroups } from "@/lib/feature-pages";
 
 const GITHUB_REPO = "every-app/open-seo";
 // Used if GitHub is unreachable at build time so the header never renders empty.
-const FALLBACK_STAR_COUNT = "2.1k";
+const FALLBACK_STAR_COUNT = "27k";
 
 // Round to the nearest hundred and render in thousands, e.g. 3140 -> "3.1k".
 function formatStarCount(count: number): string {
@@ -46,36 +46,14 @@ function loadGithubStarCount(): Promise<string> {
   return starCountPromise;
 }
 
-function getMobileNavItems(githubStarCount: string) {
-  return [
-    {
-      label: "Product",
-      links: [
-        { label: "Features", href: "/features" },
-        { label: "Pricing", href: "/pricing" },
-      ],
-    },
-    {
-      label: "Resources",
-      links: [
-        { label: "Agent setup", href: "/docs/agent-setup" },
-        { label: "Skills", href: "/docs/skills" },
-        { label: "Strategy Library", href: "/library" },
-        { label: "Blog", href: "/blogs" },
-        { label: "Docs", href: "/docs" },
-      ],
-    },
-    {
-      label: "Community",
-      links: [
-        {
-          label: `GitHub ${githubStarCount}`,
-          href: "https://github.com/every-app/open-seo",
-        },
-      ],
-    },
-  ];
-}
+// Ordered by how often mobile visitors open them. Skills, Strategy Library and
+// Blog stay reachable from Docs, the footer and the desktop nav.
+const mobileNavLinks = [
+  { label: "Pricing", href: "/pricing" },
+  { label: "Features", href: "/features" },
+  { label: "Agent setup", href: "/docs/agent-setup" },
+  { label: "Docs", href: "/docs" },
+];
 
 function GitHubIcon({ size = 18 }: { size?: number }) {
   return (
@@ -122,6 +100,25 @@ function CloseIcon({ size = 28 }: { size?: number }) {
   );
 }
 
+function ArrowRightIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 export const Route = createFileRoute("/_marketing")({
   // Fetch once at SSR/prerender time, not once per visitor.
   loader: async () => ({ githubStarCount: await loadGithubStarCount() }),
@@ -135,7 +132,6 @@ function MarketingLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { pathname } = useLocation();
 
-  const mobileNavItems = getMobileNavItems(githubStarCount);
   // The home route owns the full viewport width and footer;
   // every other marketing page gets the shared marketing canvas and footer.
   const isHome = pathname === "/";
@@ -157,17 +153,21 @@ function MarketingLayout() {
 
   // Keep the page behind the open mobile menu from scrolling. The menu is
   // md:hidden, so close it at desktop widths to release the lock.
+  // Lock <html>, not <body>: app.css clips overflow-x on both, so overflow on
+  // <body> no longer reaches the viewport and would make <body> the sticky
+  // header's scroll container, leaving the header and menu scrolled off screen.
   useEffect(() => {
     if (!mobileMenuOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const root = document.documentElement;
+    const prevOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
     const desktop = window.matchMedia("(min-width: 768px)");
     const closeOnDesktop = () => {
       if (desktop.matches) setMobileMenuOpen(false);
     };
     desktop.addEventListener("change", closeOnDesktop);
     return () => {
-      document.body.style.overflow = prevOverflow;
+      root.style.overflow = prevOverflow;
       desktop.removeEventListener("change", closeOnDesktop);
     };
   }, [mobileMenuOpen]);
@@ -204,7 +204,7 @@ function MarketingLayout() {
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileMenuOpen}
                 onClick={() => setMobileMenuOpen((open) => !open)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-900 transition-colors hover:bg-[#f5f1ec] md:hidden"
+                className="-mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-neutral-900 transition-colors hover:bg-[#ebe5dd] md:hidden"
               >
                 {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
               </button>
@@ -230,45 +230,51 @@ function MarketingLayout() {
           </nav>
 
           {mobileMenuOpen ? (
-            <div className="absolute inset-x-0 top-full h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-[#ded9d2] bg-[#f5f1ec] p-4 md:hidden">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="absolute inset-x-0 top-full h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-[#ded9d2] bg-[#f5f1ec] px-6 pb-8 md:hidden">
+              <nav aria-label="Mobile navigation">
+                {mobileNavLinks.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex min-h-15 items-center justify-between gap-4 border-b border-[#ded9d2] text-[28px] font-medium tracking-[-0.02em] text-neutral-900 transition-colors active:text-neutral-500"
+                  >
+                    {item.label}
+                    <span className="text-neutral-400">
+                      <ArrowRightIcon />
+                    </span>
+                  </a>
+                ))}
+              </nav>
+
+              <div className="mt-8 grid gap-3">
                 <a
                   href="https://app.openseo.so/sign-in"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+                  className="flex h-13 items-center justify-center rounded-xl bg-neutral-950 px-3 text-base font-medium text-white transition-colors hover:bg-neutral-800"
                 >
                   Try OpenSEO
                 </a>
                 <a
                   href="https://app.openseo.so/sign-in"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-11 items-center justify-center rounded-xl border border-[#ded9d2] bg-white px-3 text-sm font-medium text-neutral-800 transition-colors hover:border-neutral-900"
+                  className="flex h-13 items-center justify-center rounded-xl border border-[#ded9d2] bg-white px-3 text-base font-medium text-neutral-800 transition-colors hover:border-neutral-900"
                 >
                   Sign in
                 </a>
               </div>
 
-              <div className="mt-3 space-y-3">
-                {mobileNavItems.map((section) => (
-                  <div key={section.label}>
-                    <p className="px-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                      {section.label}
-                    </p>
-                    <div className="mt-1 space-y-1">
-                      {section.links.map((item) => (
-                        <a
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex min-h-10 items-center rounded-xl px-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-[#ebe5dd] hover:text-neutral-950"
-                        >
-                          {item.label}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <a
+                href="https://github.com/every-app/open-seo"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label={`GitHub, ${githubStarCount} stars`}
+                className="mt-4 inline-flex h-12 items-center gap-2 rounded-full border border-[#ded9d2] px-5 text-base font-medium text-neutral-900 transition-colors hover:border-neutral-900"
+              >
+                <GitHubIcon size={18} />
+                <span className="text-neutral-500">{githubStarCount}</span>
+              </a>
             </div>
           ) : null}
         </div>
@@ -351,6 +357,32 @@ function ResourcesDropdown() {
   );
 }
 
+const featureColumns = [
+  ...featureGroups.map((group) => ({
+    label: group.label,
+    links: group.pages.map((page) => ({
+      href: `/features/${page.slug}`,
+      title: page.eyebrow,
+      description: page.navDescription,
+    })),
+  })),
+  {
+    label: "AI agents",
+    links: [
+      {
+        href: "/features/mcp",
+        title: "OpenSEO MCP",
+        description: "Connect Claude, Codex, and agents.",
+      },
+      {
+        href: "/google-search-console-mcp",
+        title: "Search Console MCP",
+        description: "Search Console data for agents.",
+      },
+    ],
+  },
+];
+
 function FeatureDropdown() {
   return (
     <div className="group relative">
@@ -368,65 +400,42 @@ function FeatureDropdown() {
       </button>
       <div className="pointer-events-none absolute left-0 top-[calc(100%-2px)] z-20 hidden w-[560px] pt-2 opacity-0 transition md:block group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
         <div className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-5 shadow-xl shadow-neutral-900/10">
+          {/* Each column spans the same four subgrid rows (heading + three
+              links), so links in neighboring columns line up even when a
+              description wraps. */}
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-            {featureGroups.map((group) => (
-              <div key={group.label}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                  {group.label}
+            {featureColumns.map((column, index) => (
+              <div
+                key={column.label}
+                className="row-span-4 grid grid-rows-subgrid gap-y-1"
+              >
+                <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  {column.label}
                 </p>
-                <div className="mt-3 space-y-1">
-                  {group.pages.map((page) => (
-                    <a
-                      key={page.slug}
-                      href={`/features/${page.slug}`}
-                      className="block rounded-md px-2 py-1.5 transition-colors hover:bg-[#f5f1ec]"
-                    >
-                      <span className="block text-sm font-semibold text-neutral-900">
-                        {page.eyebrow}
-                      </span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
-                        {page.navDescription}
-                      </span>
-                    </a>
-                  ))}
-                </div>
+                {column.links.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="self-start rounded-md px-2 py-1.5 transition-colors hover:bg-[#f5f1ec]"
+                  >
+                    <span className="block text-sm font-semibold text-neutral-900">
+                      {link.title}
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
+                      {link.description}
+                    </span>
+                  </a>
+                ))}
+                {index === featureColumns.length - 1 ? (
+                  <a
+                    href="/features"
+                    className="self-start rounded-md border border-[var(--color-border-subtle)] bg-[#f5f1ec] px-2 py-1.5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
+                  >
+                    View all features <span aria-hidden="true">&rarr;</span>
+                  </a>
+                ) : null}
               </div>
             ))}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                AI agents
-              </p>
-              <div className="mt-3 space-y-2">
-                <a
-                  href="/features/mcp"
-                  className="block rounded-md p-2 transition-colors hover:bg-[#f5f1ec]"
-                >
-                  <span className="text-sm font-semibold text-neutral-900">
-                    OpenSEO MCP
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
-                    Connect Claude, Codex, and agents.
-                  </span>
-                </a>
-                <a
-                  href="/google-search-console-mcp"
-                  className="block rounded-md p-2 transition-colors hover:bg-[#f5f1ec]"
-                >
-                  <span className="text-sm font-semibold text-neutral-900">
-                    Search Console MCP
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
-                    Search Console data for agents.
-                  </span>
-                </a>
-                <a
-                  href="/features"
-                  className="block rounded-md border border-[var(--color-border-subtle)] bg-[#f5f1ec] px-2 py-1.5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
-                >
-                  View all features <span aria-hidden="true">&rarr;</span>
-                </a>
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -1,17 +1,14 @@
 import { useState } from "react";
 import { cn } from "cn";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import {
-  AI_ENGINE_LABELS,
-  aiNoAnswerLabel,
-  type AiEngine,
-  type AiObservationRow,
-  type AiPrompt,
+import type {
+  AiEngine,
+  AiObservationRow,
+  AiPrompt,
 } from "@/shared/ai-visibility";
 import { ConfirmDialog } from "@/client/components/ConfirmDialog";
 import { Button } from "@/client/components/ui/button";
-import { Skeleton } from "@/client/components/ui/skeleton";
 import { Spinner } from "@/client/components/ui/spinner";
 import {
   Table,
@@ -21,17 +18,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui/table";
-import { EngineLabel } from "./EngineLabel";
 import { PromptActionsMenu } from "./PromptActions";
 import { RenameTopicDialog } from "./RenameTopicDialog";
-import { aiRate } from "./shared";
+import {
+  CompetitorStack,
+  EngineResults,
+  PromptRate,
+} from "./PromptResultCells";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
+
+export enum BrandedFilter {
+  All = "all",
+  NonBranded = "neutral",
+  Branded = "branded",
+}
 
 export function PromptInventory({
   projectId,
   prompts,
   topics,
   search,
+  brandedFilter,
   engines,
   rows,
   loading,
@@ -46,6 +53,7 @@ export function PromptInventory({
   prompts: AiPrompt[];
   topics: string[];
   search: string;
+  brandedFilter: BrandedFilter;
   engines: AiEngine[];
   rows: AiObservationRow[] | undefined;
   /** The run's answers are still loading; prompts show before their rates. */
@@ -58,6 +66,7 @@ export function PromptInventory({
   onReduce: (patch: AiTrackerPatch) => void;
   onReview: (patch: AiTrackerPatch) => void;
 }) {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [archiving, setArchiving] = useState<{
     kind: "prompt" | "topic";
@@ -66,12 +75,14 @@ export function PromptInventory({
   } | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const matches = (prompt: AiPrompt) =>
-    !search ||
-    prompt.text.toLocaleLowerCase().includes(search.toLocaleLowerCase());
+    (brandedFilter === BrandedFilter.All ||
+      prompt.branded === (brandedFilter === BrandedFilter.Branded)) &&
+    (!search ||
+      prompt.text.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   if (!prompts.some(matches))
     return (
       <p className="p-8 text-center text-sm text-muted-foreground">
-        No matching prompts. Add prompts or adjust your search.
+        No matching prompts. Add prompts or adjust your search and filter.
       </p>
     );
   return (
@@ -81,6 +92,7 @@ export function PromptInventory({
           <TableRow>
             <TableHead className="w-full">Prompts by topic</TableHead>
             <TableHead>Engines</TableHead>
+            <TableHead>Competitors named</TableHead>
             <TableHead>Brand mentions</TableHead>
             <TableHead>Owned citations</TableHead>
             <TableHead>
@@ -126,6 +138,9 @@ export function PromptInventory({
                       </span>
                     </span>
                   </Button>
+                </TableCell>
+                <TableCell>
+                  <CompetitorStack rows={topicRows} loading={loading} />
                 </TableCell>
                 <TableCell>
                   <PromptRate
@@ -181,7 +196,20 @@ export function PromptInventory({
                   // prompt and its result cells are grayed out.
                   const dim = ready ? undefined : "opacity-60";
                   return (
-                    <TableRow key={prompt.id}>
+                    // Any cell opens the prompt; the link keeps it keyboard reachable.
+                    <TableRow
+                      key={prompt.id}
+                      className={ready ? "cursor-pointer" : undefined}
+                      onClick={
+                        ready
+                          ? () =>
+                              void navigate({
+                                to: "/p/$projectId/ai-visibility/prompts/$promptId",
+                                params: { projectId, promptId: prompt.id },
+                              })
+                          : undefined
+                      }
+                    >
                       <TableCell
                         className={cn("min-w-72 py-4 pl-10 first:pl-10", dim)}
                       >
@@ -191,6 +219,8 @@ export function PromptInventory({
                             params={{ projectId, promptId: prompt.id }}
                             className="whitespace-pre-wrap text-sm font-medium underline-offset-4 hover:text-primary hover:underline"
                             data-ph-mask
+                            // The row navigates too; this keeps new-tab clicks to one tab.
+                            onClick={(event) => event.stopPropagation()}
                           >
                             {prompt.text}
                           </Link>
@@ -213,17 +243,10 @@ export function PromptInventory({
                         </p>
                       </TableCell>
                       <TableCell className={dim}>
-                        <div className="flex min-w-64 items-center gap-3">
-                          {engines.map((engine) => (
-                            <EngineResult
-                              key={engine}
-                              engine={engine}
-                              row={promptRows?.find(
-                                (row) => row.engine === engine,
-                              )}
-                            />
-                          ))}
-                        </div>
+                        <EngineResults engines={engines} rows={promptRows} />
+                      </TableCell>
+                      <TableCell className={dim}>
+                        <CompetitorStack rows={promptRows} loading={loading} />
                       </TableCell>
                       <TableCell className={dim}>
                         <PromptRate
@@ -239,7 +262,8 @@ export function PromptInventory({
                           loading={loading}
                         />
                       </TableCell>
-                      <TableCell>
+                      {/* Menu items portal out, but their clicks still bubble to the row. */}
+                      <TableCell onClick={(event) => event.stopPropagation()}>
                         <div className="flex justify-end">
                           <PromptActionsMenu
                             label={`Actions for ${prompt.text}`}
@@ -332,74 +356,5 @@ export function promptHasResults(
     !!rows?.some(
       (row) => row.promptId === prompt.id && row.answerStatus === "answered",
     )
-  );
-}
-
-function PromptRate({
-  rows,
-  kind,
-  loading,
-}: {
-  rows: AiObservationRow[] | undefined;
-  kind: "mentioned" | "cited";
-  loading: boolean;
-}) {
-  if (loading) return <Skeleton className="h-4 w-10" />;
-  const eligible =
-    rows?.filter(
-      (row) =>
-        row.answerStatus === "answered" &&
-        row.brands.some((brand) => brand.own),
-    ) ?? [];
-  const count = eligible.filter((row) =>
-    row.brands.some((brand) => brand.own && brand[kind]),
-  ).length;
-  return (
-    <span
-      className="flex flex-col text-sm tabular-nums"
-      title={
-        rows
-          ? `${count} of ${eligible.length} eligible answers`
-          : "No results available"
-      }
-    >
-      {aiRate(count, eligible.length)}
-      {eligible.length > 0 && (
-        <span className="text-xs text-muted-foreground">
-          {count} of {eligible.length}
-        </span>
-      )}
-    </span>
-  );
-}
-
-function EngineResult({
-  engine,
-  row,
-}: {
-  engine: AiEngine;
-  row: AiObservationRow | undefined;
-}) {
-  const own = row?.brands.find((brand) => brand.own);
-  const result = !row
-    ? "No result available"
-    : row.status === "failed"
-      ? "Failed"
-      : row.status === "pending"
-        ? "Running"
-        : row.answerStatus === "no_answer"
-          ? aiNoAnswerLabel(engine)
-          : row.answerStatus !== "answered"
-            ? "Answer unavailable"
-            : own?.mentioned
-              ? "Mentioned"
-              : "Not mentioned";
-  return (
-    <span
-      title={`${AI_ENGINE_LABELS[engine]}: ${result}`}
-      className={`inline-flex h-6 items-center text-xs ${result === "Mentioned" ? "text-success" : result === "Failed" ? "text-destructive" : "text-muted-foreground"}`}
-    >
-      <EngineLabel engine={engine} />
-    </span>
   );
 }

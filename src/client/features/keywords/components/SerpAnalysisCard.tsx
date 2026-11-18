@@ -96,8 +96,8 @@ export function SerpAnalysisCard({
   const table = useDataTable({ data: pageItems, columns });
   const hasItems = !loading && items.length > 0;
 
-  // Out of credits, a retry can't help, but "Show top 20" still brings back
-  // the results already paid for.
+  // Out of credits, a retry can't help, but "Show top results" still brings
+  // back the results already paid for.
   const errorAction = (
     <>
       {outOfCredits && <GetCreditsButton />}
@@ -108,7 +108,7 @@ export function SerpAnalysisCard({
           pending={retrying}
           onClick={onRetry}
         >
-          {deepFetchFailed ? "Show top 20" : "Retry"}
+          {deepFetchFailed ? "Show top results" : "Retry"}
         </Button>
       )}
     </>
@@ -117,6 +117,9 @@ export function SerpAnalysisCard({
   return (
     <DataTable
       table={table}
+      // Fills what the column has left, and its rows scroll inside.
+      className="flex min-h-0 flex-1 flex-col"
+      scrollClassName="min-h-0 flex-1 overflow-y-auto"
       isLoading={loading || (pageItems.length === 0 && loadingMore)}
       toolbar={
         <>
@@ -156,6 +159,10 @@ export function SerpAnalysisCard({
               {hasItems ? (
                 <span className="text-xs text-muted-foreground">
                   {items.length} organic results
+                </span>
+              ) : loading ? (
+                <span className="text-xs text-muted-foreground" role="status">
+                  Fetching live results… This can take up to a minute.
                 </span>
               ) : null}
             </div>

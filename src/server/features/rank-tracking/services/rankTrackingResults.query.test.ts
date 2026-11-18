@@ -116,3 +116,31 @@ describe.each(["d1", "postgres"])(
     });
   },
 );
+
+describe("position matrix", () => {
+  it("marks a keyword tracked at a run's start with no snapshot as not checked", async () => {
+    await runtime.client!.executeMultiple(`
+      DELETE FROM rank_snapshots; DELETE FROM rank_check_runs;
+      INSERT INTO rank_tracking_keywords (id, config_id, keyword, created_at) VALUES
+        ('ranked', 'config', 'ranked', '2026-07-01 00:00:00'),
+        ('failed', 'config', 'failed', '2026-07-01 00:00:00'),
+        ('added-later', 'config', 'added later', '2026-07-20 00:00:00');
+      INSERT INTO rank_check_runs (id, config_id, project_id, status, is_subset_run, started_at)
+        VALUES ('run', 'config', 'project', 'completed', 0, '2026-07-10 00:00:00');
+      INSERT INTO rank_snapshots (run_id, tracking_keyword_id, keyword, device, position) VALUES
+        ('run', 'ranked', 'ranked', 'desktop', 3),
+        ('run', 'failed', 'failed', 'mobile', 5);
+    `);
+
+    const cells = await RankTrackingRepository.getPositionMatrix(
+      "config",
+      "desktop",
+      10,
+    );
+
+    expect(cells).toEqual([
+      expect.objectContaining({ trackingKeywordId: "ranked", checked: true }),
+      expect.objectContaining({ trackingKeywordId: "failed", checked: false }),
+    ]);
+  });
+});

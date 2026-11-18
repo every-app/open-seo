@@ -6,6 +6,7 @@ import {
 } from "@/shared/billing";
 import { creditFeatureLabel } from "@/shared/billing-credit-features";
 import { autumn } from "@/server/billing/autumn";
+import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 
 const USAGE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -29,36 +30,30 @@ export async function getOrganizationBillingUsage(
     binSize: "day" as const,
     timezone,
   };
-  const [byDay, byFeature] = await Promise.all([
-    autumn.events.aggregate(params),
+  const groupedBy = (property: string) =>
     autumn.events.aggregate({
       ...params,
-      // Every billed usage event names its feature here. More groups than
-      // credit features, so Autumn never folds one into its own "Other".
-      groupBy: "properties.creditFeature",
+      groupBy: `properties.${property}`,
+      // More groups than credit features, so Autumn never folds one into its
+      // own "Other". Past 20 projects in a day, the rest land in Other.
       maxGroups: 20,
-    }),
-  ]);
+    });
+  const [byDay, byFeature, byProject, projects, archivedProjects] =
+    await Promise.all([
+      autumn.events.aggregate(params),
+      // Every billed usage event names its feature, and its project when it
+      // has one.
+      groupedBy("creditFeature"),
+      groupedBy("projectId"),
+      ProjectRepository.listProjects(organizationId),
+      ProjectRepository.listArchivedProjects(organizationId),
+    ]);
 
-  const creditsByLabel = new Map<string, number>();
-  const addCredits = (label: string, credits: number) =>
-    creditsByLabel.set(label, (creditsByLabel.get(label) ?? 0) + credits);
-  let groupedCredits = 0;
-  for (const bin of byFeature.list) {
-    for (const featureId of USAGE_FEATURE_IDS) {
-      const groups = bin.groupedValues?.[featureId] ?? {};
-      for (const [feature, credits] of Object.entries(groups)) {
-        addCredits(creditFeatureLabel(feature), credits);
-        groupedCredits += credits;
-      }
-    }
-  }
-  // Grouping drops events without a credit feature; they count as Other.
-  const totalCredits = sumBy(
-    USAGE_FEATURE_IDS,
-    (featureId) => byFeature.total[featureId]?.sum ?? 0,
-  );
-  addCredits("Other", totalCredits - groupedCredits);
+  // Only this organization's projects get a name; any other id reads as Other.
+  const projectNames = new Map([
+    ...projects.map((p) => [p.id, p.name] as const),
+    ...archivedProjects.map((p) => [p.id, `${p.name} (archived)`] as const),
+  ]);
 
   return {
     days: byDay.list.map((bin) => ({
@@ -67,17 +62,54 @@ export async function getOrganizationBillingUsage(
         sumBy(USAGE_FEATURE_IDS, (featureId) => bin.values[featureId] ?? 0),
       ),
     })),
-    // Refunds can leave a feature at or below zero; those rows are hidden.
-    features: sort(
-      [...creditsByLabel]
-        .map(([label, credits]) => ({
-          label,
-          usd: autumnSeoDataCreditsToUsd(credits),
-        }))
-        .filter((row) => row.usd > 0),
-      (a, b) => b.usd - a.usd,
+    features: usageRows(byFeature, creditFeatureLabel, "Other"),
+    // Usage before projects were recorded, or with no project, is Workspace.
+    projects: usageRows(
+      byProject,
+      (id) => projectNames.get(id) ?? "Other",
+      "Workspace",
     ),
   };
+}
+
+type GroupedUsage = Awaited<ReturnType<typeof autumn.events.aggregate>>;
+
+/** USD per group label, largest first. Events without the property count
+ *  under `ungroupedLabel`. */
+function usageRows(
+  usage: GroupedUsage,
+  labelFor: (group: string) => string,
+  ungroupedLabel: string,
+) {
+  const creditsByLabel = new Map<string, number>();
+  const addCredits = (label: string, credits: number) =>
+    creditsByLabel.set(label, (creditsByLabel.get(label) ?? 0) + credits);
+  let groupedCredits = 0;
+  for (const bin of usage.list) {
+    for (const featureId of USAGE_FEATURE_IDS) {
+      const groups = bin.groupedValues?.[featureId] ?? {};
+      for (const [group, credits] of Object.entries(groups)) {
+        addCredits(labelFor(group), credits);
+        groupedCredits += credits;
+      }
+    }
+  }
+  const totalCredits = sumBy(
+    USAGE_FEATURE_IDS,
+    (featureId) => usage.total[featureId]?.sum ?? 0,
+  );
+  addCredits(ungroupedLabel, totalCredits - groupedCredits);
+
+  // Refunds can leave a group at or below zero; those rows are hidden.
+  return sort(
+    [...creditsByLabel]
+      .map(([label, credits]) => ({
+        label,
+        usd: autumnSeoDataCreditsToUsd(credits),
+      }))
+      .filter((row) => row.usd > 0),
+    (a, b) => b.usd - a.usd,
+  );
 }
 
 export type BillingUsage = Awaited<

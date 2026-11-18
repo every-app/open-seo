@@ -28,7 +28,7 @@ const faqs = [
   {
     question: "Does it cost more to track more keywords?",
     answer:
-      "Yes, in proportion. In OpenSEO the cost of a check is the number of keywords times the number of devices times the depth of results inspected, and scheduled checks run through a cheaper queue than one-off live checks. The app shows an estimate before you add keywords or start a run. On the hosted app, rank checks need the $10/month plan, which includes $10 of credits.",
+      "Yes, in proportion. In OpenSEO the cost of a check is the number of keywords times the number of devices times the depth of results inspected, times the three to six reads each check takes. The app shows the most it can cost before you add keywords or start a run. On the hosted app, rank checks need the $10/month plan, which includes $10 of credits.",
   },
   {
     question: "How often should I re-pick the keywords?",

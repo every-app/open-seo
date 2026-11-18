@@ -3,8 +3,12 @@ import {
   getUsageCreditsRemaining,
 } from "@/server/billing/subscription";
 import { mcpResponse } from "@/server/mcp/formatters";
+import { buildGuestSignUpUrl, GUEST_SIGN_UP_NOTE } from "@/server/mcp/urls";
 import { type ToolContext } from "@/server/mcp/context";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import {
+  isEveryAppServerAuthMode,
+  isHostedServerAuthMode,
+} from "@/server/lib/runtime-env";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { z } from "zod";
 
@@ -13,12 +17,12 @@ export const whoamiTool = {
   config: {
     title: "Who am I",
     description:
-      "Confirms the connected OpenSEO account, server mode, token scopes, and current credit balance when the user asks to check their account or connection. Initializes billing for new hosted accounts. Uses no credits — does not call DataForSEO. Returns creditsRemaining: null when the balance is unavailable.",
+      "Show the connected OpenSEO account, server mode, token scopes, and remaining credits. Use it when the user asks to check their account, connection, or credit balance. Sets up billing on a new hosted account's first call. Uses no credits.",
     inputSchema: {} as Record<string, never>,
     outputSchema: z.looseObject({
       userEmail: z.string(),
       scopes: z.array(z.string()),
-      mode: z.enum(["hosted", "self-hosted"]),
+      mode: z.enum(["hosted", "self-hosted", "every-app"]),
       creditsRemaining: z.number().nullable(),
       ...optionalMetaOutputSchema,
     }),
@@ -33,24 +37,41 @@ export const whoamiTool = {
     const auth = context.auth;
     const isHosted = await isHostedServerAuthMode();
     let creditsRemaining: number | null = null;
+    let budgetReached = false;
     if (isHosted) {
       try {
         const customer = await getOrCreateOrganizationCustomer(auth);
-        const { monthlyRemaining, topupRemaining } =
+        const { monthlyRemaining, topupRemaining, topupBudgetReached } =
           await getUsageCreditsRemaining(customer.id);
         creditsRemaining = monthlyRemaining + topupRemaining;
+        budgetReached = topupBudgetReached;
       } catch {
         // Account identity is still available when billing is unavailable.
       }
     }
+    const mode = isHosted
+      ? "hosted"
+      : (await isEveryAppServerAuthMode())
+        ? "every-app"
+        : "self-hosted";
     const lines = [
-      `Account: ${auth.userEmail}`,
-      `Mode: ${isHosted ? "hosted" : "self-hosted"}`,
+      `Account: ${auth.guestClaimToken ? "guest (no sign-up yet)" : auth.userEmail}`,
+      `Mode: ${mode === "every-app" ? "Every App" : mode}`,
       `Scopes: ${auth.scopes.length > 0 ? auth.scopes.join(", ") : "none"}`,
     ];
     if (isHosted) {
       lines.push(
         `Credits remaining: ${creditsRemaining != null ? creditsRemaining.toLocaleString() : "unknown"}`,
+      );
+      if (budgetReached) {
+        lines.push(
+          "Top-up credits: paused until the owner raises the monthly auto-reload budget on the Billing page.",
+        );
+      }
+    }
+    if (auth.guestClaimToken) {
+      lines.push(
+        `Guest account: the user connected without signing up. To add credits, connect Google Search Console or Google Analytics, or use the OpenSEO web app, they need a full account. They can create one, or sign in to an existing one, at ${buildGuestSignUpUrl(auth.baseUrl)}. ${GUEST_SIGN_UP_NOTE}`,
       );
     }
     return mcpResponse({
@@ -61,7 +82,7 @@ export const whoamiTool = {
       structuredContent: {
         userEmail: auth.userEmail,
         scopes: auth.scopes,
-        mode: isHosted ? "hosted" : "self-hosted",
+        mode,
         creditsRemaining,
       },
     });

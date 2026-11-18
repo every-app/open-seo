@@ -22,13 +22,23 @@ function getServerPostHogClient(): PostHog | null {
  * frames, never its message. Messages can quote customer content (DataForSEO
  * echoes request params, failed queries print their values, model errors
  * include output), so call sites log the full error to Cloudflare instead.
+ * In the message's place goes a code safe to show: the AppError code, else
+ * the status or code the error carries (GscApiError's 403, a Postgres
+ * SQLSTATE), else the cause's, so issues and their alerts never read blank.
  */
 function withoutMessage(error: unknown, depth = 0): Error {
-  const redacted = new Error(asAppError(error)?.code ?? "");
   if (!(error instanceof Error)) {
+    const redacted = new Error(asAppError(error)?.code ?? REDACTED);
     redacted.stack = `Error: ${redacted.message}`;
     return redacted;
   }
+  const cause =
+    error.cause !== undefined && depth < 4
+      ? withoutMessage(error.cause, depth + 1)
+      : undefined;
+  const redacted = new Error(
+    asAppError(error)?.code ?? safeCode(error) ?? cause?.message ?? REDACTED,
+  );
   redacted.name = error.name;
   // Only real frames: a multi-line message would otherwise be parsed into
   // frames, content included.
@@ -36,10 +46,23 @@ function withoutMessage(error: unknown, depth = 0): Error {
     .split("\n")
     .filter((line) => /^\s+at /.test(line));
   redacted.stack = [`${error.name}: ${redacted.message}`, ...frames].join("\n");
-  if (error.cause !== undefined && depth < 4) {
-    redacted.cause = withoutMessage(error.cause, depth + 1);
-  }
+  if (cause) redacted.cause = cause;
   return redacted;
+}
+
+const REDACTED = "message redacted";
+
+// Only numbers and SCREAMING_CASE tokens, so a `code` field that holds free
+// text can't carry customer content through.
+function safeCode(error: Error): string | undefined {
+  for (const key of ["code", "status"]) {
+    const value: unknown = Reflect.get(error, key);
+    if (typeof value === "number") return String(value);
+    if (typeof value === "string" && /^[A-Z0-9_]{1,40}$/.test(value)) {
+      return value;
+    }
+  }
+  return undefined;
 }
 
 /**

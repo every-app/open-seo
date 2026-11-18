@@ -1,9 +1,11 @@
-import type { SVGProps } from "react";
+// SVGAttributes, not SVGProps: the icons take no ref, and leaving ref out lets
+// web/, which has its own copy of React's types, render them too.
+import type { SVGAttributes } from "react";
 
 // Monochrome marks from @lobehub/icons (MIT). Rendered with currentColor so
 // they follow the surrounding text color in both themes.
 
-export function ClaudeIcon(props: SVGProps<SVGSVGElement>) {
+export function ClaudeIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -18,7 +20,7 @@ export function ClaudeIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export function OpenAIIcon(props: SVGProps<SVGSVGElement>) {
+export function OpenAIIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -33,7 +35,7 @@ export function OpenAIIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export function GrokIcon(props: SVGProps<SVGSVGElement>) {
+export function GrokIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -48,7 +50,7 @@ export function GrokIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export function OpenClawIcon(props: SVGProps<SVGSVGElement>) {
+export function OpenClawIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -70,7 +72,7 @@ export function OpenClawIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export function HermesIcon(props: SVGProps<SVGSVGElement>) {
+export function HermesIcon(props: SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

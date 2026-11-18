@@ -84,12 +84,18 @@ describe("crawlPage with JavaScript rendering", () => {
     expect(await crawl(rendered())).toMatchObject({ javascriptShell: false });
   });
 
-  it("does not analyze a challenge page returned by the renderer", async () => {
-    stubFetch({ status: 200 });
-    expect(
-      await crawl(rendered("<title>Just a moment...</title>")),
-    ).toMatchObject({ statusCode: 200, fetchClass: "blocked", wordCount: 0 });
-  });
+  // Cloudflare's interstitial, then Imunify360's bot check.
+  it.each(["Just a moment...", "One moment, please..."])(
+    'does not analyze a "%s" challenge page returned by the renderer',
+    async (title) => {
+      stubFetch({ status: 200 });
+      expect(await crawl(rendered(`<title>${title}</title>`))).toMatchObject({
+        statusCode: 200,
+        fetchClass: "blocked",
+        wordCount: 0,
+      });
+    },
+  );
 
   it.each([
     { status: 202, body: SITEGROUND_CHALLENGE },

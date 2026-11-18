@@ -10,8 +10,8 @@ import { buildDubSaleRequest } from "./dub-sale";
 //     the marketing site persists it as a `dub_id` cookie on `.openseo.so`.
 //  2. On signup we send a Dub lead and pin `referred-user:<userId>` in KV.
 //     The lead creates a pseudonymous Dub customer record (random name +
-//     our user id) — GDPR erasure deletes the KV pins here and the Dub-side
-//     record via the erasure runbook.
+//     our user id) — account deletion deletes the KV pins here; the Dub-side
+//     record is not deleted (docs/maintainers/account-deletion.md).
 //  3. The pin is copied to `referred-org:<orgId>` (= the Autumn customer id)
 //     on every session, so billing events need no member lookup.
 //  4. Paid Autumn invoices for referred orgs are sent as Dub sales — from the

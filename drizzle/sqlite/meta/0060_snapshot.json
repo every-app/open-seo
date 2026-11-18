@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a2a3e51c-a836-4bcf-8a1e-3b6808161338",
+  "id": "72d53aff-f5fc-4044-90cb-767c592684d6",
   "prevId": "f0ac6b52-7ab6-4917-9b76-b5588103339b",
   "tables": {
     "backlink_snapshots": {
@@ -4881,8 +4881,104 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "local_map_campaigns": {
-      "name": "local_map_campaigns",
+    "local_rank_businesses": {
+      "name": "local_rank_businesses",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "scan_id": {
+          "name": "scan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "identity": {
+          "name": "identity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cid": {
+          "name": "cid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "place_id": {
+          "name": "place_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "rating": {
+          "name": "rating",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reviews": {
+          "name": "reviews",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "local_rank_businesses_scan_identity_idx": {
+          "name": "local_rank_businesses_scan_identity_idx",
+          "columns": [
+            "scan_id",
+            "identity"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "local_rank_businesses_scan_id_local_rank_scans_id_fk": {
+          "name": "local_rank_businesses_scan_id_local_rank_scans_id_fk",
+          "tableFrom": "local_rank_businesses",
+          "tableTo": "local_rank_scans",
+          "columnsFrom": [
+            "scan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "local_rank_checks": {
+      "name": "local_rank_checks",
       "columns": {
         "id": {
           "name": "id",
@@ -4898,106 +4994,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "tracker_id": {
+          "name": "tracker_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "center_latitude": {
-          "name": "center_latitude",
-          "type": "real",
+        "status": {
+          "name": "status",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "center_longitude": {
-          "name": "center_longitude",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "grid_size": {
-          "name": "grid_size",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 5
-        },
-        "radius_km": {
-          "name": "radius_km",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 5
-        },
-        "target_place_id": {
-          "name": "target_place_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "target_cid": {
-          "name": "target_cid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "language_code": {
-          "name": "language_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'en'"
-        },
-        "device": {
-          "name": "device",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'desktop'"
-        },
-        "schedule_interval": {
-          "name": "schedule_interval",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'weekly'"
-        },
-        "serp_depth": {
-          "name": "serp_depth",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 20
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "last_checked_at": {
-          "name": "last_checked_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "next_check_at": {
-          "name": "next_check_at",
+        "error": {
+          "name": "error",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -5008,27 +5020,54 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
+          "autoincrement": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
-        "local_map_campaigns_project_idx": {
-          "name": "local_map_campaigns_project_idx",
+        "local_rank_checks_tracker_created_idx": {
+          "name": "local_rank_checks_tracker_created_idx",
           "columns": [
-            "project_id",
-            "is_active"
+            "tracker_id",
+            "created_at"
           ],
           "isUnique": false
+        },
+        "local_rank_checks_one_active_idx": {
+          "name": "local_rank_checks_one_active_idx",
+          "columns": [
+            "tracker_id"
+          ],
+          "isUnique": true,
+          "where": "\"local_rank_checks\".\"status\" IN ('queued', 'running')"
         }
       },
       "foreignKeys": {
-        "local_map_campaigns_project_id_projects_id_fk": {
-          "name": "local_map_campaigns_project_id_projects_id_fk",
-          "tableFrom": "local_map_campaigns",
+        "local_rank_checks_project_id_projects_id_fk": {
+          "name": "local_rank_checks_project_id_projects_id_fk",
+          "tableFrom": "local_rank_checks",
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_checks_tracker_id_local_rank_trackers_id_fk": {
+          "name": "local_rank_checks_tracker_id_local_rank_trackers_id_fk",
+          "tableFrom": "local_rank_checks",
+          "tableTo": "local_rank_trackers",
+          "columnsFrom": [
+            "tracker_id"
           ],
           "columnsTo": [
             "id"
@@ -5041,8 +5080,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "local_map_keywords": {
-      "name": "local_map_keywords",
+    "local_rank_keywords": {
+      "name": "local_rank_keywords",
       "columns": {
         "id": {
           "name": "id",
@@ -5051,8 +5090,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "campaign_id": {
-          "name": "campaign_id",
+        "tracker_id": {
+          "name": "tracker_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -5065,32 +5104,31 @@
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "archived_at": {
+          "name": "archived_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
-        "local_map_keywords_campaign_keyword_idx": {
-          "name": "local_map_keywords_campaign_keyword_idx",
+        "local_rank_keywords_tracker_keyword_idx": {
+          "name": "local_rank_keywords_tracker_keyword_idx",
           "columns": [
-            "campaign_id",
+            "tracker_id",
             "keyword"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "local_map_keywords_campaign_id_local_map_campaigns_id_fk": {
-          "name": "local_map_keywords_campaign_id_local_map_campaigns_id_fk",
-          "tableFrom": "local_map_keywords",
-          "tableTo": "local_map_campaigns",
+        "local_rank_keywords_tracker_id_local_rank_trackers_id_fk": {
+          "name": "local_rank_keywords_tracker_id_local_rank_trackers_id_fk",
+          "tableFrom": "local_rank_keywords",
+          "tableTo": "local_rank_trackers",
           "columnsFrom": [
-            "campaign_id"
+            "tracker_id"
           ],
           "columnsTo": [
             "id"
@@ -5103,8 +5141,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "local_map_scan_results": {
-      "name": "local_map_scan_results",
+    "local_rank_points": {
+      "name": "local_rank_points",
       "columns": {
         "id": {
           "name": "id",
@@ -5113,22 +5151,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "run_id": {
-          "name": "run_id",
+        "scan_id": {
+          "name": "scan_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "keyword_id": {
-          "name": "keyword_id",
-          "type": "text",
+        "row": {
+          "name": "row",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "pin_index": {
-          "name": "pin_index",
+        "col": {
+          "name": "col",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -5148,54 +5186,128 @@
           "notNull": true,
           "autoincrement": false
         },
-        "rank_absolute": {
-          "name": "rank_absolute",
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rank": {
+          "name": "rank",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "matched_title": {
-          "name": "matched_title",
+        "results_count": {
+          "name": "results_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "error": {
+          "name": "error",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "snapshot_json": {
-          "name": "snapshot_json",
+        "collected_at": {
+          "name": "collected_at",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "checked_at": {
-          "name": "checked_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
         }
       },
       "indexes": {
-        "local_map_scan_results_run_keyword_pin_idx": {
-          "name": "local_map_scan_results_run_keyword_pin_idx",
+        "local_rank_points_scan_position_idx": {
+          "name": "local_rank_points_scan_position_idx",
           "columns": [
-            "run_id",
-            "keyword_id",
-            "pin_index"
+            "scan_id",
+            "row",
+            "col"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "local_map_scan_results_run_id_local_map_scan_runs_id_fk": {
-          "name": "local_map_scan_results_run_id_local_map_scan_runs_id_fk",
-          "tableFrom": "local_map_scan_results",
-          "tableTo": "local_map_scan_runs",
+        "local_rank_points_scan_id_local_rank_scans_id_fk": {
+          "name": "local_rank_points_scan_id_local_rank_scans_id_fk",
+          "tableFrom": "local_rank_points",
+          "tableTo": "local_rank_scans",
           "columnsFrom": [
-            "run_id"
+            "scan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "local_rank_results": {
+      "name": "local_rank_results",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "point_id": {
+          "name": "point_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "business_id": {
+          "name": "business_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "local_rank_results_point_business_idx": {
+          "name": "local_rank_results_point_business_idx",
+          "columns": [
+            "point_id",
+            "business_id"
+          ],
+          "isUnique": true
+        },
+        "local_rank_results_business_idx": {
+          "name": "local_rank_results_business_idx",
+          "columns": [
+            "business_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "local_rank_results_point_id_local_rank_points_id_fk": {
+          "name": "local_rank_results_point_id_local_rank_points_id_fk",
+          "tableFrom": "local_rank_results",
+          "tableTo": "local_rank_points",
+          "columnsFrom": [
+            "point_id"
           ],
           "columnsTo": [
             "id"
@@ -5203,10 +5315,160 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "local_map_scan_results_keyword_id_local_map_keywords_id_fk": {
-          "name": "local_map_scan_results_keyword_id_local_map_keywords_id_fk",
-          "tableFrom": "local_map_scan_results",
-          "tableTo": "local_map_keywords",
+        "local_rank_results_business_id_local_rank_businesses_id_fk": {
+          "name": "local_rank_results_business_id_local_rank_businesses_id_fk",
+          "tableFrom": "local_rank_results",
+          "tableTo": "local_rank_businesses",
+          "columnsFrom": [
+            "business_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "local_rank_scans": {
+      "name": "local_rank_scans",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "check_id": {
+          "name": "check_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tracker_id": {
+          "name": "tracker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "keyword_id": {
+          "name": "keyword_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "local_rank_scans_tracker_created_idx": {
+          "name": "local_rank_scans_tracker_created_idx",
+          "columns": [
+            "tracker_id",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "local_rank_scans_project_idx": {
+          "name": "local_rank_scans_project_idx",
+          "columns": [
+            "project_id"
+          ],
+          "isUnique": false
+        },
+        "local_rank_scans_check_keyword_idx": {
+          "name": "local_rank_scans_check_keyword_idx",
+          "columns": [
+            "check_id",
+            "keyword_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "local_rank_scans_check_id_local_rank_checks_id_fk": {
+          "name": "local_rank_scans_check_id_local_rank_checks_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "local_rank_checks",
+          "columnsFrom": [
+            "check_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_scans_project_id_projects_id_fk": {
+          "name": "local_rank_scans_project_id_projects_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_scans_tracker_id_local_rank_trackers_id_fk": {
+          "name": "local_rank_scans_tracker_id_local_rank_trackers_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "local_rank_trackers",
+          "columnsFrom": [
+            "tracker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_scans_keyword_id_local_rank_keywords_id_fk": {
+          "name": "local_rank_scans_keyword_id_local_rank_keywords_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "local_rank_keywords",
           "columnsFrom": [
             "keyword_id"
           ],
@@ -5221,20 +5483,13 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "local_map_scan_runs": {
-      "name": "local_map_scan_runs",
+    "local_rank_trackers": {
+      "name": "local_rank_trackers",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "campaign_id": {
-          "name": "campaign_id",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -5245,64 +5500,67 @@
           "notNull": true,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "'pending'"
+          "autoincrement": false
         },
-        "trigger": {
-          "name": "trigger",
+        "address": {
+          "name": "address",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'manual'"
+          "notNull": false,
+          "autoincrement": false
         },
-        "pins_total": {
-          "name": "pins_total",
-          "type": "integer",
+        "cid": {
+          "name": "cid",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
+          "notNull": false,
+          "autoincrement": false
         },
-        "pins_completed": {
-          "name": "pins_completed",
-          "type": "integer",
+        "place_id": {
+          "name": "place_id",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
+          "notNull": false,
+          "autoincrement": false
         },
-        "cost_usd": {
-          "name": "cost_usd",
+        "latitude": {
+          "name": "latitude",
           "type": "real",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "error_message": {
-          "name": "error_message",
-          "type": "text",
+        "longitude": {
+          "name": "longitude",
+          "type": "real",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "started_at": {
-          "name": "started_at",
-          "type": "text",
+        "grid_size": {
+          "name": "grid_size",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "completed_at": {
-          "name": "completed_at",
+        "spacing_km": {
+          "name": "spacing_km",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "language_code": {
+          "name": "language_code",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "created_at": {
@@ -5310,199 +5568,25 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
+          "autoincrement": false
         }
       },
       "indexes": {
-        "local_map_scan_runs_campaign_idx": {
-          "name": "local_map_scan_runs_campaign_idx",
+        "local_rank_trackers_project_idx": {
+          "name": "local_rank_trackers_project_idx",
           "columns": [
-            "campaign_id",
-            "created_at"
+            "project_id"
           ],
           "isUnique": false
-        },
-        "local_map_scan_runs_active_idx": {
-          "name": "local_map_scan_runs_active_idx",
-          "columns": [
-            "campaign_id"
-          ],
-          "isUnique": true,
-          "where": "\"local_map_scan_runs\".\"status\" IN ('pending', 'running')"
         }
       },
       "foreignKeys": {
-        "local_map_scan_runs_campaign_id_local_map_campaigns_id_fk": {
-          "name": "local_map_scan_runs_campaign_id_local_map_campaigns_id_fk",
-          "tableFrom": "local_map_scan_runs",
-          "tableTo": "local_map_campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "local_map_scan_runs_project_id_projects_id_fk": {
-          "name": "local_map_scan_runs_project_id_projects_id_fk",
-          "tableFrom": "local_map_scan_runs",
+        "local_rank_trackers_project_id_projects_id_fk": {
+          "name": "local_rank_trackers_project_id_projects_id_fk",
+          "tableFrom": "local_rank_trackers",
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "organization_usage_ledger": {
-      "name": "organization_usage_ledger",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "credit_feature": {
-          "name": "credit_feature",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cost_usd": {
-          "name": "cost_usd",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "api_path": {
-          "name": "api_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
-        }
-      },
-      "indexes": {
-        "organization_usage_ledger_org_created_idx": {
-          "name": "organization_usage_ledger_org_created_idx",
-          "columns": [
-            "organization_id",
-            "created_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "organization_usage_ledger_organization_id_organization_id_fk": {
-          "name": "organization_usage_ledger_organization_id_organization_id_fk",
-          "tableFrom": "organization_usage_ledger",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "organization_usage_settings": {
-      "name": "organization_usage_settings",
-      "columns": {
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "monthly_budget_usd": {
-          "name": "monthly_budget_usd",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "alert_threshold_pct": {
-          "name": "alert_threshold_pct",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 80
-        },
-        "daily_agent_budget_usd": {
-          "name": "daily_agent_budget_usd",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "organization_usage_settings_organization_id_organization_id_fk": {
-          "name": "organization_usage_settings_organization_id_organization_id_fk",
-          "tableFrom": "organization_usage_settings",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
           ],
           "columnsTo": [
             "id"

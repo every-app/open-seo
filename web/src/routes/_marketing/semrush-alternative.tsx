@@ -43,7 +43,7 @@ const comparison: ComparisonTableProps = {
       label: "Trial and refunds",
       cells: [
         {
-          text: "Free trial credits, no card. 30-day money-back guarantee",
+          text: "$0.50 of free trial credits, no card. 30-day money-back guarantee",
           tone: "positive",
         },
         {
@@ -56,7 +56,7 @@ const comparison: ComparisonTableProps = {
       label: "Keyword research",
       cells: [
         {
-          text: "Volume, difficulty, CPC, intent, and trends in 143 countries",
+          text: "Volume and CPC in 211 countries. Difficulty and intent in 94 of them",
           tone: "positive",
         },
         {
@@ -69,7 +69,7 @@ const comparison: ComparisonTableProps = {
       label: "Rank tracking",
       cells: [
         {
-          text: "Daily, weekly, or monthly. 100 keywords weekly is about $1/month",
+          text: "Daily, weekly, or monthly. 100 keywords weekly on one device is up to $6/month",
           tone: "positive",
         },
         {

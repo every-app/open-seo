@@ -1,8 +1,4 @@
-import { waitUntil } from "cloudflare:workers";
-import {
-  type CreditFeature,
-  mapDataforseoPathToCreditFeature,
-} from "@/shared/billing-credit-features";
+import type { CreditFeature } from "@/shared/billing-credit-features";
 import { creditsForProviderUsd } from "@/shared/billing";
 import {
   getOrCreateOrganizationCustomer,
@@ -14,6 +10,7 @@ import {
   DataforseoChargedTaskError,
   type DataforseoApiCallCost,
   type DataforseoApiResponse,
+  invalidFieldName,
 } from "@/server/lib/dataforseo/envelope";
 import { dataforseoPricing } from "@/server/lib/dataforseo/pricing";
 import {
@@ -45,10 +42,10 @@ import {
   fetchAdsSearchVolume,
 } from "@/server/lib/dataforseo/google-ads";
 import {
-  fetchLiveSerp,
   fetchLocalSerp,
-  fetchRankCheckSerp,
   postLocalSerpTasks,
+  postSerpReadTasks,
+  type SerpReadsQuery,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
@@ -59,35 +56,38 @@ import {
   fetchLlmResponse,
   fetchLlmTopPages,
 } from "@/server/lib/dataforseo/ai";
+import { fetchAiTrackingLiveAnswer } from "@/server/lib/dataforseo/ai-tracking";
 import {
-  fetchAiTrackingLiveAnswer,
-  postAiTrackingTasks,
-} from "@/server/lib/dataforseo/ai-tracking";
+  postAiTrackingTasksOnHold,
+  settleAiTrackingHold,
+  type AiTrackingHold,
+} from "@/server/lib/dataforseo/ai-tracking-billing";
+import {
+  inDataforseoSlot,
+  settleAfterCalls,
+} from "@/server/lib/dataforseo/request-slots";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
 import { recordSelfHostedUsage } from "@/server/features/usage/services/UsageService";
 
-export { mapDataforseoPathToCreditFeature };
-
 /**
  * Wraps a section fetcher with billing metering. Each entry on the client is
- * `meter(customer, fetchX, dataforseoPricing.section.x, defaultFeature?)`,
+ * `meter(customer, fetchX, dataforseoPricing.section.x, defaultFeature)`,
  * which returns a function with the fetcher's own input type and resolves to
  * its unwrapped `.data`.
  *
  * `estimateRawUsd` is required: it is the upper bound reserved before the
  * call, so an entry cannot be added without a price (see pricing.ts).
  *
- * `defaultFeature` is the fallback credit feature; a caller can override it per
- * call by passing `creditFeature` in the input (e.g. an MCP tool attributing
- * spend to its own feature). The extra field is ignored by the fetchers, which
- * read named fields rather than spreading the input.
+ * `defaultFeature` goes on the hold: Autumn keeps the hold and its settle as
+ * separate events, so a feature set only at settle reads as "Other". Callers
+ * can override it with `creditFeature` in the input (fetchers ignore it).
  */
 function meter<I, T>(
   customer: BillingCustomerContext,
   fetcher: (input: I) => Promise<DataforseoApiResponse<T>>,
   estimateRawUsd: (input: I) => number,
-  defaultFeature?: CreditFeature,
+  defaultFeature: CreditFeature,
 ): (input: I & { creditFeature?: CreditFeature }) => Promise<T> {
   return (input) =>
     meterDataforseoCall(
@@ -139,26 +139,31 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         customer,
         fetchBacklinksSummary,
         dataforseoPricing.backlinks.summary,
+        "backlinks",
       ),
       rows: meter(
         customer,
         fetchBacklinksRows,
         dataforseoPricing.backlinks.rows,
+        "backlinks",
       ),
       referringDomains: meter(
         customer,
         fetchReferringDomains,
         dataforseoPricing.backlinks.referringDomains,
+        "backlinks",
       ),
       domainPages: meter(
         customer,
         fetchDomainPagesSummary,
         dataforseoPricing.backlinks.domainPages,
+        "backlinks",
       ),
       history: meter(
         customer,
         fetchBacklinksHistory,
         dataforseoPricing.backlinks.history,
+        "backlinks",
       ),
     },
     keywords: {
@@ -166,27 +171,32 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         customer,
         fetchRelatedKeywords,
         dataforseoPricing.keywords.related,
+        "keyword_research",
       ),
       suggestions: meter(
         customer,
         fetchKeywordSuggestions,
         dataforseoPricing.keywords.suggestions,
+        "keyword_research",
       ),
       ideas: meter(
         customer,
         fetchKeywordIdeas,
         dataforseoPricing.keywords.ideas,
+        "keyword_research",
       ),
       // Google Ads endpoints for countries Labs doesn't support.
       adsIdeas: meter(
         customer,
         fetchAdsKeywordIdeas,
         dataforseoPricing.keywords.adsIdeas,
+        "keyword_research",
       ),
       adsSearchVolume: meter(
         customer,
         fetchAdsSearchVolume,
         dataforseoPricing.keywords.adsSearchVolume,
+        "keyword_research",
       ),
     },
     domain: {
@@ -194,30 +204,34 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         customer,
         fetchDomainRankOverview,
         dataforseoPricing.domain.rankOverview,
+        "domain_overview",
       ),
       rankedKeywords: meter(
         customer,
         fetchRankedKeywords,
         dataforseoPricing.domain.rankedKeywords,
+        "domain_overview",
       ),
       relevantPages: meter(
         customer,
         fetchRelevantPages,
         dataforseoPricing.domain.relevantPages,
+        "domain_overview",
       ),
     },
     serp: {
-      live: meter(customer, fetchLiveSerp, dataforseoPricing.serp.live),
-      // A rank check batch shares one credit hold and one settle across its
-      // live calls (see meterDataforseoCalls). Resolves per call, in order.
-      rankCheckBatch: (inputs: Parameters<typeof fetchRankCheckSerp>[0][]) =>
+      // Posts each query's reads; one credit hold covers the batch, and each
+      // query is placed and refused as its own hold would be (see
+      // meterDataforseoCalls). DataForSEO bills task_post, collection is free.
+      // Resolves per query, in order.
+      readsTaskPostBatch: (inputs: SerpReadsQuery[]) =>
         meterDataforseoCalls(
           customer,
-          inputs.map((input) => () => fetchRankCheckSerp(input)),
+          inputs.map((input) => () => postSerpReadTasks(input)),
           inputs.map((input) =>
-            creditsForProviderUsd(dataforseoPricing.serp.rankCheck(input)),
+            creditsForProviderUsd(dataforseoPricing.serp.readsTaskPost(input)),
           ),
-          "rank_tracking",
+          "keyword_research",
         ),
       // Posts up to 100 queued rank check tasks; one metered charge covers the
       // whole batch (DataForSEO bills task_post at post time, collection is
@@ -234,6 +248,17 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         dataforseoPricing.serp.local,
         "local_seo",
       ),
+      // Live Maps searches for a Local SEO check, one per grid point; one
+      // credit hold covers the batch.
+      localBatch: (inputs: Parameters<typeof fetchLocalSerp>[0][]) =>
+        meterDataforseoCalls(
+          customer,
+          inputs.map((input) => () => fetchLocalSerp(input)),
+          inputs.map((input) =>
+            creditsForProviderUsd(dataforseoPricing.serp.local(input)),
+          ),
+          "local_seo",
+        ),
       // One queued Maps task per rank grid point; one metered charge covers
       // them all (DataForSEO bills task_post, collection is free).
       localTaskPost: meter(
@@ -257,6 +282,7 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         customer,
         fetchSerpCompetitors,
         dataforseoPricing.labs.serpCompetitors,
+        "keyword_research",
       ),
     },
     lighthouse: {
@@ -264,6 +290,7 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         customer,
         fetchLighthouseResult,
         dataforseoPricing.lighthouse.live,
+        "site_audit",
       ),
     },
     aiSearch: {
@@ -271,35 +298,44 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         customer,
         fetchLlmMentionsSearch,
         dataforseoPricing.aiSearch.mentionsSearch,
+        "ai_citations",
       ),
       aggregatedMetrics: meter(
         customer,
         fetchLlmAggregatedMetrics,
         dataforseoPricing.aiSearch.aggregatedMetrics,
+        "ai_citations",
       ),
       topPages: meter(
         customer,
         fetchLlmTopPages,
         dataforseoPricing.aiSearch.topPages,
+        "ai_citations",
       ),
       crossAggregatedMetrics: meter(
         customer,
         fetchLlmCrossAggregatedMetrics,
         dataforseoPricing.aiSearch.crossAggregatedMetrics,
+        "ai_citations",
       ),
       llmResponse: meter(
         customer,
         fetchLlmResponse,
         dataforseoPricing.aiSearch.llmResponse,
-      ),
-      // Posts up to 100 tracked prompts for one engine; one metered charge
-      // covers the batch (DataForSEO bills task_post, collection is free).
-      trackingTaskPost: meter(
-        customer,
-        postAiTrackingTasks,
-        dataforseoPricing.aiSearch.trackingTaskPost,
         "ai_prompt_responses",
       ),
+      // Posts up to 100 tracked prompts for one engine on an open credit
+      // hold. DataForSEO bills task_post, but the customer pays only for the
+      // answers that arrive: the caller settles the hold with
+      // settleTrackingHold once collection ends.
+      trackingTaskPost: (
+        input: Parameters<typeof postAiTrackingTasksOnHold>[1],
+      ) => postAiTrackingTasksOnHold(customer, input),
+      settleTrackingHold: (input: {
+        hold: AiTrackingHold;
+        /** One per task whose answer arrived. */
+        costs: number[];
+      }) => settleAiTrackingHold(customer, input),
       // A manual run's live answers share one credit hold and one settle (see
       // meterDataforseoCalls). Resolves per call, in order.
       trackingLiveBatch: (
@@ -323,7 +359,10 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
  * The one seam every DataForSEO charge passes through (hosted mode only).
  * Order: reserve the estimate on the org's credits -> provider calls -> settle
  * the hold on their real cost. The hold is atomic in Autumn, so concurrent
- * calls cannot all pass on one stale balance reading.
+ * calls cannot all pass on one stale balance reading. In a request the
+ * results return before the settle, which runs after the response
+ * (settleAfterCalls): the hold already covers the calls, and the settle never
+ * throws, so the customer needn't wait on Autumn.
  *
  * A batch of calls shares one hold and one settle per credit pool it draws
  * on, with each call placed and refused as its own hold would be (see
@@ -335,7 +374,7 @@ async function meterDataforseoCalls<T>(
   customer: BillingCustomerContext,
   executes: Array<() => Promise<DataforseoApiResponse<T>>>,
   callCredits: number[],
-  creditFeature?: CreditFeature,
+  creditFeature: CreditFeature,
 ): Promise<PromiseSettledResult<T>[]> {
   if (executes.length === 0) return [];
   const isHostedMode = await isHostedServerAuthMode();
@@ -344,11 +383,9 @@ async function meterDataforseoCalls<T>(
     return Promise.allSettled(
       executes.map(async (execute) => {
         const result = await execute();
-        const feature =
-          creditFeature ?? mapDataforseoPathToCreditFeature(result.billing.path);
         await recordSelfHostedUsage({
           organizationId: customer.organizationId,
-          creditFeature: feature,
+          creditFeature,
           costUsd: result.billing.costUsd,
           apiPath: result.billing.path.join("/"),
           projectId: customer.projectId,
@@ -366,11 +403,9 @@ async function meterDataforseoCalls<T>(
     creditFeature,
   });
 
-  const work = (async () => {
-    const billed: Array<DataforseoApiCallCost | null> = executes.map(
-      () => null,
-    );
-    const settled = await Promise.allSettled(
+  const billed: Array<DataforseoApiCallCost | null> = executes.map(() => null);
+  return settleAfterCalls(
+    Promise.allSettled(
       executes.map(async (execute, index) => {
         if (refusedCalls.includes(index)) {
           throw new AppError("INSUFFICIENT_CREDITS");
@@ -388,53 +423,51 @@ async function meterDataforseoCalls<T>(
           // DataForSEO still billed us (costUsd > 0), charge that cost so the
           // spend stays metered and visible instead of silently eaten.
           if (error.isInvalidField && error.billing.costUsd <= 0) {
+            // Non-reportable, so this is the only record. The field name, not
+            // the message, which quotes the value that was sent.
+            console.warn("dataforseo.invalid-field", {
+              event: "dataforseo.invalid-field",
+              path: `/${error.billing.path.join("/")}`,
+              field: invalidFieldName(error.message),
+            });
             throw new AppError("VALIDATION_ERROR", error.message);
           }
           billed[index] = error.billing;
           throw error;
         }
       }),
-    );
-
-    for (const hold of holds) {
-      const costs = hold.callIndexes
-        .map((index) => billed[index])
-        .filter((cost) => cost !== null);
-      await settleUsageCredits({
-        customer,
-        hold,
-        creditFeature:
-          creditFeature ??
-          (costs.length > 0
-            ? mapDataforseoPathToCreditFeature(costs[0].path)
-            : undefined),
-        costs,
-      });
-    }
-    return settled;
-  })();
-
-  // Register the calls + settle with the request: workerd cancels pending I/O
-  // once the client goes away, and a hold that never settles would let a
-  // disconnect-after-dispatch skip the deduction. The rejection is handled by
-  // the await below; the background handle only keeps the chain alive.
-  try {
-    waitUntil(work.catch(() => undefined));
-  } catch {
-    // No request context (Workflow step, tests): the await below runs it.
-  }
-  return await work;
+    ),
+    // Both holds of a split batch at once, so two finalizes that each retry
+    // after a timeout still fit the time a Worker gets after its response.
+    async () => {
+      await Promise.all(
+        holds.map((hold) =>
+          settleUsageCredits({
+            customer,
+            hold,
+            creditFeature,
+            costs: hold.callIndexes
+              .map((index) => billed[index])
+              .filter((cost) => cost !== null),
+          }),
+        ),
+      );
+    },
+  );
 }
 
 async function meterDataforseoCall<T>(
   customer: BillingCustomerContext,
   execute: () => Promise<DataforseoApiResponse<T>>,
   estimatedCredits: number,
-  creditFeature?: CreditFeature,
+  creditFeature: CreditFeature,
 ): Promise<T> {
+  // Cap how many single calls run at once per request (request-slots.ts), so
+  // a settle always has a connection. Batches skip the cap: the live ones run
+  // only in Workflows, and the batch a request makes posts quick tasks.
   const [result] = await meterDataforseoCalls(
     customer,
-    [execute],
+    [() => inDataforseoSlot(execute)],
     [estimatedCredits],
     creditFeature,
   );

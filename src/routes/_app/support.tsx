@@ -9,11 +9,13 @@ import {
   CardTitle,
 } from "@/client/components/ui/card";
 import { SUPPORT_EMAIL } from "@/client/lib/support";
+import { pageHead } from "@/client/lib/pageHead";
 
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 const GITHUB_URL = "https://github.com/every-app/open-seo";
 
 export const Route = createFileRoute("/_app/support")({
+  head: () => pageHead("Help & Community"),
   component: SupportPage,
 });
 

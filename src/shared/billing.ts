@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export const BILLING_ROUTE = "/billing";
 export const SUBSCRIBE_ROUTE = "/subscribe";
 
@@ -13,14 +15,52 @@ export type BillingTab = (typeof BILLING_TABS)[number]["value"];
 export type PlanStatus = "free" | "paid";
 
 export const AUTUMN_PAID_PLAN_ID = "base-plan";
-// YC deal: same entitlements as the base plan with $50 of monthly credits.
-export const AUTUMN_YC_PLAN_ID = "yc-plan";
+// Base Plan entitlements with 20% more monthly credits than the price.
+export const AUTUMN_PRO_PLAN_ID = "pro-plan";
+export const AUTUMN_AGENCY_PLAN_ID = "agency-plan";
+// The tiers billed yearly, at ten months' price. Credits still refill monthly.
+export const AUTUMN_PAID_ANNUAL_PLAN_ID = "base-plan-annual";
+export const AUTUMN_PRO_ANNUAL_PLAN_ID = "pro-plan-annual";
+export const AUTUMN_AGENCY_ANNUAL_PLAN_ID = "agency-plan-annual";
 /** The plans the app sells through checkout. */
 export const CHECKOUT_PLAN_IDS = [
   AUTUMN_PAID_PLAN_ID,
-  AUTUMN_YC_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
+  AUTUMN_AGENCY_PLAN_ID,
+  AUTUMN_PAID_ANNUAL_PLAN_ID,
+  AUTUMN_PRO_ANNUAL_PLAN_ID,
+  AUTUMN_AGENCY_ANNUAL_PLAN_ID,
 ] as const;
 export type CheckoutPlanId = (typeof CHECKOUT_PLAN_IDS)[number];
+// The monthly plans by price, cheapest first. Moving up to a pricier tier is
+// self-serve. Moving down goes through support: a downgrade after spending
+// the bigger plan's credits would buy them at the smaller plan's price.
+const MONTHLY_PLANS_BY_PRICE: readonly string[] = [
+  AUTUMN_PAID_PLAN_ID,
+  AUTUMN_PRO_PLAN_ID,
+  AUTUMN_AGENCY_PLAN_ID,
+];
+const UPGRADE_PLAN_IDS: readonly string[] = [
+  AUTUMN_PRO_PLAN_ID,
+  AUTUMN_AGENCY_PLAN_ID,
+];
+
+/** Whether the plan is one the app can upgrade from. Checkout sells annual
+ *  plans to organizations without a plan; a change to or from one, like a
+ *  plan granted by hand, goes through support. */
+export function isMonthlyPlan(planId: string | null) {
+  return planId !== null && MONTHLY_PLANS_BY_PRICE.includes(planId);
+}
+
+export function canUpgradePlan(fromPlanId: string | null, toPlanId: string) {
+  const from =
+    fromPlanId === null ? -1 : MONTHLY_PLANS_BY_PRICE.indexOf(fromPlanId);
+  return (
+    from !== -1 &&
+    UPGRADE_PLAN_IDS.includes(toPlanId) &&
+    MONTHLY_PLANS_BY_PRICE.indexOf(toPlanId) > from
+  );
+}
 export const AUTUMN_SEO_DATA_TOP_UP_PLAN_ID = "credit-top-up";
 export const AUTUMN_PAID_PLAN_FEATURE_ID = "paid_plan";
 // Granted by both the free plan (now the Autumn Default, so every non-paid
@@ -34,6 +74,62 @@ export const AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID = "topup_credits";
 export const AUTUMN_SEO_DATA_CREDITS_PER_USD = 1000;
 const SEO_DATA_COST_MARKUP = 1.28;
 export const LOW_CREDITS_THRESHOLD_USD = 0.25;
+
+// Auto-reload: Autumn buys top-up credits with the saved card whenever the
+// top-up balance is at or below the threshold, and a monthly budget caps
+// what the organization spends on top-up credits per billing cycle. The
+// threshold is fixed: it only needs to cover the largest single hold, and a
+// user-set one that reached the reload amount would make every reload
+// trigger the next. The reload amount shares the one-off top-up bounds
+// because both buy through the same Autumn plan.
+export const TOP_UP_MIN_USD = 10;
+export const TOP_UP_MAX_USD = 99;
+export const AUTO_RELOAD_THRESHOLD_USD = 5;
+// Reloads are charged off-session, without Stripe Checkout's confirmation,
+// and only happen as top-up credits are spent, so the budget bounds what a
+// card can be charged in a cycle; raise on request.
+export const AUTO_RELOAD_MAX_MONTHLY_USD = 1000;
+export const AUTO_RELOAD_DEFAULTS = {
+  amountUsd: 20,
+  monthlyLimitUsd: 100,
+} as const;
+// Autumn refuses the hold that would take the cycle's spend past the budget
+// while the balance still shows credits, so the spend rarely lands on the
+// limit itself: the budget is as good as spent once less than the largest
+// single hold (the threshold) is left of it, and the pages say so then.
+export function isAutoReloadBudgetSpent(
+  spentUsd: number,
+  monthlyLimitUsd: number,
+) {
+  return monthlyLimitUsd - spentUsd < AUTO_RELOAD_THRESHOLD_USD;
+}
+// Autumn's reasons a reload did not go through that the customer can act on:
+// the card, not our setup. Everything else is ours to look at.
+export const AUTO_RELOAD_CARD_FAILURE_REASONS: ReadonlySet<string> = new Set([
+  "charge_failed",
+  "suspended_after_failures",
+  "missing_payment_method",
+  "payment_method_not_supported",
+  "payment_method_delayed",
+]);
+
+export const autoReloadSettingsSchema = z
+  .object({
+    amountUsd: z.number().int().min(TOP_UP_MIN_USD).max(TOP_UP_MAX_USD),
+    /** The most the organization spends on top-up credits per billing
+     *  cycle, in USD. Every top-up credit counts, not only reloaded ones. */
+    monthlyLimitUsd: z
+      .number()
+      .int()
+      .min(TOP_UP_MIN_USD)
+      .max(AUTO_RELOAD_MAX_MONTHLY_USD),
+  })
+  .refine((settings) => settings.monthlyLimitUsd >= settings.amountUsd, {
+    message: "The monthly budget must be at least the reload amount.",
+    path: ["monthlyLimitUsd"],
+  });
+export type AutoReloadSettings = z.infer<typeof autoReloadSettingsSchema>;
+
 // DataForSEO's raw price for one Google Ads search_volume live call (up to
 // 1,000 keywords). Local keyword research adds one call to each search.
 export const LOCAL_VOLUME_COST_USD = 0.09;
@@ -46,13 +142,6 @@ export const AUTUMN_CHECKOUT_SESSION_PARAMS = {
   tax_id_collection: { enabled: true },
   billing_address_collection: "required",
   customer_update: { name: "auto", address: "auto" },
-} as const;
-
-// YC checkout additionally shows Stripe's promotion code field so founders
-// can redeem the YC deal code for their first month.
-export const AUTUMN_YC_CHECKOUT_SESSION_PARAMS = {
-  ...AUTUMN_CHECKOUT_SESSION_PARAMS,
-  allow_promotion_codes: true,
 } as const;
 
 export function roundUsdForBilling(value: number) {

@@ -1,5 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppForm } from "@/client/components/form/useAppForm";
 import { Button } from "@/client/components/ui/button";
 import {
@@ -11,7 +12,8 @@ import {
   authRedirectSearchSchema,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
-import { useGoogleAuth } from "@/client/features/auth/useGoogleAuth";
+import { signUpStatusQueryOptions } from "@/client/features/auth/signUpStatus";
+import { useSocialAuth } from "@/client/features/auth/useSocialAuth";
 import { getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
@@ -20,14 +22,19 @@ import {
   getVerifyEmailSearch,
   toAuthCallbackURL,
 } from "@/lib/auth-redirect";
+import { asksForChatGptSignIn } from "@/shared/chatgpt-sign-in";
 import { z } from "zod";
+import { pageHead } from "@/client/lib/pageHead";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
   password: z.string().min(1, "Enter your password."),
 });
 
+const CHATGPT_AUTO_STARTED_KEY = "chatgpt-sign-in-auto-started";
+
 export const Route = createFileRoute("/_auth/sign-in")({
+  head: () => pageHead("Sign in"),
   validateSearch: authRedirectSearchSchema,
   component: SignInPage,
 });
@@ -35,11 +42,53 @@ export const Route = createFileRoute("/_auth/sign-in")({
 function SignInPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { redirectTo, oauthQuery, isHostedMode } = useAuthPageState(
-    search.redirect,
-  );
+  const {
+    redirectTo,
+    oauthQuery,
+    isHostedMode,
+    isBetterAuthMode,
+    chatGptEnabled,
+  } = useAuthPageState(search.redirect);
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const google = useGoogleAuth({ redirectTo });
+  // The standalone Docker edition has accounts but no Google sign-in and no
+  // emailed password reset: go straight to the email form. Accounts come from
+  // invitations, and a fresh installation has nobody to sign in, so its first
+  // visitor is sent to create the admin account instead.
+  const emailOnly = isBetterAuthMode && !isHostedMode;
+  const emailFormVisible = showEmailForm || emailOnly;
+  const google = useSocialAuth("google", { redirectTo });
+  const chatGpt = useSocialAuth("chatgpt", { redirectTo });
+  // Someone who chose "Continue with ChatGPT" in ChatGPT's connect window has
+  // already picked how to sign in, so start it without another click. Once
+  // per connection: coming back here (the browser's back button) shows the
+  // buttons, so nobody is trapped bouncing to ChatGPT.
+  useEffect(() => {
+    if (!chatGptEnabled || !asksForChatGptSignIn(redirectTo)) return;
+    try {
+      if (sessionStorage.getItem(CHATGPT_AUTO_STARTED_KEY) === redirectTo) {
+        return;
+      }
+      sessionStorage.setItem(CHATGPT_AUTO_STARTED_KEY, redirectTo);
+    } catch {
+      // Without sessionStorage nothing stops the bounce, so leave the click.
+      return;
+    }
+    void chatGpt.start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- start is a new function each render
+  }, [chatGptEnabled, redirectTo]);
+  const signUpStatus = useQuery({
+    ...signUpStatusQueryOptions(),
+    enabled: emailOnly,
+  });
+  const firstAccount = signUpStatus.data?.firstAccount === true;
+  useEffect(() => {
+    if (!firstAccount) return;
+    void navigate({
+      to: "/sign-up",
+      search: getSignInSearch(redirectTo),
+      replace: true,
+    });
+  }, [firstAccount, navigate, redirectTo]);
 
   const form = useAppForm({
     defaultValues: {
@@ -105,7 +154,12 @@ function SignInPage() {
     <AuthPageCard
       title="Sign in"
       footer={
-        isHostedMode ? (
+        emailOnly ? (
+          <p className="text-sm text-foreground/50">
+            Need an account? Ask an administrator for an invitation. Forgot your
+            password? Ask your server administrator to reset it.
+          </p>
+        ) : isHostedMode ? (
           <div
             className={
               showEmailForm
@@ -133,25 +187,32 @@ function SignInPage() {
         ) : null
       }
     >
-      {!showEmailForm ? (
+      {!emailFormVisible ? (
         <>
           <AuthMethodChooser
             googleLabel="Continue with Google"
             disabled={!isHostedMode}
-            isBusy={google.isStarting}
-            onContinueWithGoogle={() => {
-              void google.start();
-            }}
+            google={google}
+            chatGpt={chatGptEnabled ? chatGpt : undefined}
             onContinueWithEmail={() => {
               setShowEmailForm(true);
               google.clearError();
+              chatGpt.clearError();
             }}
           />
           {isHostedMode ? (
-            <TermsAgreementNotice action="By continuing with Google" />
+            <TermsAgreementNotice
+              action={
+                chatGptEnabled
+                  ? "By continuing with Google or ChatGPT"
+                  : "By continuing with Google"
+              }
+            />
           ) : null}
-          {google.error ? (
-            <p className="text-sm text-destructive">{google.error}</p>
+          {(google.error ?? chatGpt.error) ? (
+            <p className="text-sm text-destructive">
+              {google.error ?? chatGpt.error}
+            </p>
           ) : null}
         </>
       ) : (

@@ -10,6 +10,7 @@ import {
   PROSE_MAX_CHARS,
   type ProjectContextSectionKey,
 } from "@/types/schemas/projectContext";
+import { BrandNameSection } from "./BrandNameSection";
 import { CompetitorsSection } from "./CompetitorsSection";
 import { KeyPagesSection } from "./KeyPagesSection";
 import {
@@ -68,6 +69,11 @@ export function ProjectContextPage({ projectId }: { projectId: string }) {
             project. They read it before they work and write back what they
             learn, so correct anything that looks wrong.
           </p>
+
+          <BrandNameSection
+            projectId={projectId}
+            brandName={context.brandName}
+          />
 
           <ProseSections
             projectId={projectId}

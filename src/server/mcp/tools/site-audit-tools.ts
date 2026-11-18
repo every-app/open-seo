@@ -1,12 +1,23 @@
 /* eslint-disable max-lines -- all site-audit MCP tools are intentionally kept in one module */
-import { sort } from "remeda";
+import { sort, sortBy } from "remeda";
 import { z } from "zod";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import { AUDIT_LIMITS } from "@/server/features/audit/services/audit-capacity";
 import { AuditService } from "@/server/features/audit/services/AuditService";
+import {
+  getAuditIssueGroups,
+  listAuditIssues,
+  listAuditLighthouseResults,
+  listAuditPages,
+} from "@/server/features/audit/repositories/auditResultsQueries";
 import { AppError } from "@/server/lib/errors";
+import { readStoredLighthousePayload } from "@/server/lib/lighthousePayload";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { runAfterResponse } from "@/server/lib/background";
+import { getJsonFromR2 } from "@/server/lib/r2";
 import {
   AUDIT_ISSUE_TYPES,
+  CRAWL_STOP_ISSUE_TYPES,
   getIssueDescriptor,
   ISSUE_SEVERITY_ORDER,
 } from "@/shared/audit-issues";
@@ -25,8 +36,19 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { buildDashboardUrl } from "@/server/mcp/urls";
 import { renderingEstimateText } from "@/shared/audit-rendering";
-import { RENDERED_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
+import {
+  excludePathsSchema,
+  MAX_EXCLUDE_PATHS,
+} from "@/shared/audit-exclude-paths";
+import {
+  DEFAULT_AUDIT_PAGES,
+  FREE_MAX_AUDIT_PAGES,
+  RENDERED_CRAWL_TIME_LIMIT_HOURS,
+} from "@/shared/audit-limits";
+import { BILLING_ROUTE } from "@/shared/billing";
+import { auditPagesSortFields } from "@/types/schemas/audit";
 
 const auditIdSchema = z
   .string()
@@ -63,12 +85,19 @@ const runInputSchema = {
     .min(10)
     .max(10_000)
     .optional()
-    .describe("Page budget for the crawl (default 50)."),
+    .describe(
+      `Page budget for the crawl (default ${DEFAULT_AUDIT_PAGES}). Free plans audit at most ${FREE_MAX_AUDIT_PAGES} pages: a larger budget runs at ${FREE_MAX_AUDIT_PAGES} and the reply says so.`,
+    ),
   renderJavaScript: z
     .boolean()
     .optional()
     .describe(
-      `Render JavaScript before auditing, for sites whose content or links load client-side or whose bot protection blocks the plain crawler. Slower, and limited to ${RENDERED_MAX_AUDIT_PAGES.toLocaleString("en-US")} pages. On hosted plans: ${renderingEstimateText(100)} Billing counts pages actually rendered. Hosted plans hold the high end until the audit ends; an account that cannot cover it is refused. Default false.`,
+      `Render JavaScript before auditing, for sites whose content or links load client-side or whose bot protection blocks the plain crawler. Slower. On hosted plans, for 100 pages: ${renderingEstimateText(100)} Hosted plans hold that amount until the audit ends; an account that cannot cover it is refused. A hosted rendered crawl stops after ${RENDERED_CRAWL_TIME_LIMIT_HOURS} hours. Default false.`,
+    ),
+  excludePaths: excludePathsSchema
+    .optional()
+    .describe(
+      `Paths to leave out of the audit, up to ${MAX_EXCLUDE_PATHS}. Each is matched against the URL's path and query string from the start, like a robots.txt Disallow rule: "/blog/" skips everything under /blog/, "*" matches any characters ("/*/print", "/*?sort="), and a trailing "$" pins the end ("/*.pdf$"). No regex. Excluded URLs are not fetched, do not count against maxPages, and are left out of pages and issues; links to them are not checked, and the orphan-page check is skipped because links from excluded pages are unknown. The start URL must not match.`,
     ),
   runLighthouse: z
     .boolean()
@@ -85,7 +114,7 @@ export const runSiteAuditTool = {
   config: {
     title: "Run site audit",
     description:
-      "Start a site audit: crawls the site (robots.txt-aware, same-origin), checks every page for SEO issues (broken links, duplicate/missing titles and descriptions, redirect chains, orphan pages, canonical problems, thin content, and more), and optionally runs Lighthouse on a sample of pages. Runs in the background — poll get_audit_status, then read get_audit_issues. If the site rate limits the crawler it slows down and retries; pages it still cannot read are honestly flagged as blocked or rate-limited rather than misreported.",
+      "Start a site audit: crawls the site (robots.txt-aware, same-origin) and checks every page for SEO issues such as broken links, duplicate or missing titles and descriptions, redirect chains, orphan pages, canonical problems, and thin content. Optionally runs Lighthouse on a sample of pages. Pass excludePaths to leave sections of the site out. If the site rate limits the crawler it slows down and retries; pages it still cannot read are flagged as blocked or rate-limited rather than misreported. The audit runs in the background: poll get_audit_status, then read the findings with get_audit_issues.",
     inputSchema: runInputSchema,
     outputSchema: z
       .object({
@@ -107,6 +136,13 @@ export const runSiteAuditTool = {
     // own explicit lighthouseStrategy, so this default only governs agents.
     const lighthouseStrategy = (args.runLighthouse ?? false) ? "auto" : "none";
     const limitTier = await AuditService.resolveAuditLimitTier(context.billing);
+    // Agents can't see the account's plan, so an oversized budget runs at the
+    // plan limit instead of failing. The app's launch form keeps its refusal.
+    const requestedPages = args.maxPages ?? DEFAULT_AUDIT_PAGES;
+    const maxPages = Math.min(
+      requestedPages,
+      AUDIT_LIMITS[limitTier].maxPagesPerAudit,
+    );
     let auditId: string;
     try {
       ({ auditId } = await AuditService.startAudit({
@@ -114,17 +150,18 @@ export const runSiteAuditTool = {
         billingCustomer: context.billing,
         projectId: args.projectId,
         startUrl: args.url,
-        maxPages: args.maxPages,
+        maxPages,
         lighthouseStrategy,
         limitTier,
         renderJavaScript: args.renderJavaScript,
+        excludePaths: args.excludePaths,
       }));
     } catch (error) {
       // Expected refusals become readable answers instead of protocol errors:
       // no audit started, so there is no auditId to report.
       const refusalText =
         error instanceof AppError && error.code === "AUDIT_CAPACITY_REACHED"
-          ? "Audit capacity reached for this account — delete old audits in the dashboard to free capacity, then try again."
+          ? "Audit capacity reached for this account. list_site_audits shows a project's audits, and delete_site_audit frees capacity, but deleting permanently removes an audit's results and needs an owner or admin. Confirm with the user which audit to delete, then try again."
           : error instanceof AppError && error.code === "AUDIT_ALREADY_RUNNING"
             ? "This account is at its limit of concurrently running audits. Poll get_audit_status until one finishes, then try again."
             : // startAudit refuses only rendering with FORBIDDEN; its message
@@ -147,20 +184,32 @@ export const runSiteAuditTool = {
       throw error;
     }
 
-    await captureServerEvent({
-      distinctId: context.auth.userId,
-      event: "site_audit:start",
-      organizationId: context.auth.organizationId,
-      properties: {
-        project_id: args.projectId,
-        max_pages: args.maxPages ?? 50,
-        run_lighthouse: lighthouseStrategy !== "none",
-        source: "mcp",
-      },
-    });
+    await runAfterResponse(
+      captureServerEvent({
+        distinctId: context.auth.userId,
+        event: "site_audit:start",
+        organizationId: context.auth.organizationId,
+        properties: {
+          project_id: args.projectId,
+          max_pages: maxPages,
+          requested_max_pages: requestedPages,
+          run_lighthouse: lighthouseStrategy !== "none",
+          source: "mcp",
+        },
+      }),
+    );
+
+    const capNote =
+      maxPages < requestedPages
+        ? ` Free plan audits are limited to ${maxPages} pages, so this audit covers at most ${maxPages} of the ${requestedPages} requested. Mention this limit when you report the results. Larger audits need a paid plan, which the organization owner can manage at ${buildDashboardUrl(context.baseUrl, BILLING_ROUTE)}.`
+        : "";
+
+    const excludeNote = args.excludePaths?.length
+      ? ` Skipping URLs that match: ${args.excludePaths.join(", ")}.`
+      : "";
 
     return mcpResponse({
-      text: `Audit ${auditId} started for ${args.url}. Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
+      text: `Audit ${auditId} started for ${args.url}.${capNote}${excludeNote} Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
       meta: buildProjectMeta(
         context,
         args.projectId,
@@ -185,7 +234,7 @@ export const getAuditStatusTool = {
   config: {
     title: "Get site audit status",
     description:
-      "Check the progress of a site audit (phase, pages crawled, Lighthouse progress). Free — reads OpenSEO state and may reconcile a dead workflow by marking its audit failed. Omit auditId for the most recent audit.",
+      "Check the progress of a site audit: phase, pages crawled, and Lighthouse progress. Omit auditId for the most recent audit. An audit whose run has died is marked failed. Uses no credits. When the audit has finished, read it with get_audit_issues and get_audit_pages.",
     inputSchema: statusInputSchema,
     outputSchema: z
       .object({
@@ -209,22 +258,39 @@ export const getAuditStatusTool = {
       status.lighthouseTotal > 0
         ? `, lighthouse ${status.lighthouseCompleted + status.lighthouseFailed}/${status.lighthouseTotal}`
         : "";
+    // A completed audit can still have stopped with URLs left unvisited. Say
+    // so here, or "completed" reads as "the whole site".
+    const crawlStop =
+      status.status === "completed"
+        ? (await getAuditIssueGroups(status.id)).find((group) =>
+            CRAWL_STOP_ISSUE_TYPES.some((type) => type === group.issueType),
+          )?.issueType
+        : undefined;
+    const partialNote = crawlStop
+      ? ` ${getIssueDescriptor(crawlStop)?.title}, so the results cover part of the site.`
+      : "";
     // Failed audits keep partial results — point agents at them instead of
     // letting a mid-crawl death read as "no data".
+    const excludeNote =
+      status.excludePaths.length > 0
+        ? ` Excluded paths: ${status.excludePaths.join(", ")}.`
+        : "";
     const nextStep =
       status.status === "completed"
-        ? " Call get_audit_issues for the issue report."
+        ? ` Call get_audit_issues for the issue report${status.lighthouseTotal > 0 ? " and get_audit_lighthouse for the Lighthouse results" : ""}.`
         : status.status === "failed" && status.pagesCrawled > 0
           ? ` The audit stopped early but kept results for the ${status.pagesCrawled} pages it crawled — call get_audit_issues for the partial issue report.`
           : "";
     return mcpResponse({
-      text: `Audit ${status.id} (${status.startUrl}): ${status.status}${status.errorCode ? ` (${status.errorCode})` : ""} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${nextStep}`,
+      text: `Audit ${status.id} (${status.startUrl}): ${status.status}${status.errorCode ? ` (${status.errorCode})` : ""} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${excludeNote}${partialNote}${nextStep}`,
       meta: buildProjectMeta(
         context,
         args.projectId,
         auditPath(args.projectId, status.id),
       ),
-      structuredContent: { status },
+      structuredContent: {
+        status: { ...status, crawlStop: crawlStop ?? null },
+      },
     });
   }),
 };
@@ -266,13 +332,21 @@ const issuesInputSchema = {
     .describe(
       `Only return issues of this type. One of: ${Object.keys(AUDIT_ISSUE_TYPES).join(", ")}`,
     ),
+  page: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      "Page of issue rows, 1-based (default 1). Rows are ordered critical first.",
+    ),
   limit: z
     .number()
     .int()
     .min(1)
     .max(1_000)
     .optional()
-    .describe("Max issues to return (default 200)."),
+    .describe("Issue rows per page (default 200)."),
 } as const;
 
 type IssuesArgs = z.infer<z.ZodObject<typeof issuesInputSchema>>;
@@ -282,12 +356,14 @@ export const getAuditIssuesTool = {
   config: {
     title: "Get site audit issues",
     description:
-      "Read the prioritized issue report from a completed site audit. Every issue carries a how_to_fix with concrete remediation steps an agent can act on. Free — reads OpenSEO state. Omit auditId for the most recent audit.",
+      "Read the prioritized issue report from a completed site audit. Every issue carries a how_to_fix with concrete remediation steps an agent can act on. Filter by severity or issueType; omit auditId for the most recent audit. Uses no credits. For per-page data on every crawled page, use get_audit_pages.",
     inputSchema: issuesInputSchema,
     outputSchema: z
       .object({
         summary: z.array(looseObjectOutputSchema),
         issues: z.array(looseObjectOutputSchema),
+        total: z.number(),
+        page: z.number(),
         ...optionalMetaOutputSchema,
       })
       .passthrough(),
@@ -299,22 +375,30 @@ export const getAuditIssuesTool = {
   },
   handler: withMcpProjectAuth(async (args: IssuesArgs, context) => {
     const audit = await resolveAudit(args.projectId, args.auditId);
-    const unsorted = await AuditRepository.getIssuesForAudit(audit.id, {
-      severity: args.severity,
-      issueType: args.issueType,
-    });
-    // Severity-first so truncation drops info rows, never critical ones.
-    const rows = sort(
-      unsorted,
-      (a, b) =>
-        ISSUE_SEVERITY_ORDER[a.severity] - ISSUE_SEVERITY_ORDER[b.severity] ||
-        a.issueType.localeCompare(b.issueType),
-    );
+    const page = args.page ?? 1;
+    const limit = args.limit ?? 200;
+    // Counts come from a grouped query and rows a page at a time: a large
+    // audit has tens of thousands of issue rows.
+    const [groups, rows] = await Promise.all([
+      getAuditIssueGroups(audit.id),
+      listAuditIssues(audit.id, {
+        severity: args.severity,
+        issueType: args.issueType,
+        page,
+        pageSize: limit,
+      }),
+    ]);
 
     const counts = new Map<string, number>();
-    for (const row of rows) {
-      counts.set(row.issueType, (counts.get(row.issueType) ?? 0) + 1);
+    for (const group of groups) {
+      if (args.severity && group.severity !== args.severity) continue;
+      if (args.issueType && group.issueType !== args.issueType) continue;
+      counts.set(
+        group.issueType,
+        (counts.get(group.issueType) ?? 0) + group.count,
+      );
     }
+    const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
     const summary = sort(
       Array.from(counts.entries()).map(([issueType, count]) => {
         const descriptor = getIssueDescriptor(issueType);
@@ -330,8 +414,7 @@ export const getAuditIssuesTool = {
         b.count - a.count,
     );
 
-    const limit = args.limit ?? 200;
-    const issues = rows.slice(0, limit).map((row) => {
+    const issues = rows.map((row) => {
       const descriptor = getIssueDescriptor(row.issueType);
       return {
         severity: row.severity,
@@ -344,6 +427,8 @@ export const getAuditIssuesTool = {
         howToFix: descriptor?.howToFix ?? null,
       };
     });
+    const firstRow = (page - 1) * limit + 1;
+    const lastRow = firstRow + issues.length - 1;
 
     // Sample affected URLs from the returned rows, keyed by issue type; counts
     // still come from `summary`, which covers every matching row.
@@ -366,10 +451,10 @@ export const getAuditIssuesTool = {
         ...shown.map(
           (issue) => `  - ${issue.url}${formatIssueDetails(issue.details)}`,
         ),
-        // A low-severity type can fall entirely outside the limit-truncated
-        // rows, leaving counts with no rows to sample from.
+        // A low-severity type can fall entirely outside this page of rows,
+        // leaving counts with no rows to sample from.
         shown.length === 0
-          ? `  (no sample URLs within the first ${limit} issue rows — raise limit to see examples)`
+          ? `  (no sample URLs on this page of issue rows — filter by issueType or request another page)`
           : remaining > 0
             ? `  …and ${remaining} more affected URL${remaining === 1 ? "" : "s"} in this issue.`
             : null,
@@ -379,19 +464,25 @@ export const getAuditIssuesTool = {
     });
 
     const text =
-      rows.length === 0
+      total === 0
         ? args.severity || args.issueType
           ? `No issues found for audit ${audit.id} matching the given filters.`
-          : `No issues recorded for audit ${audit.id}. Note: audits run before issue checks existed have no issue data — re-run the audit with run_site_audit to get a real report.`
+          : audit.status === "running"
+            ? `Audit ${audit.id} is still running; issues are recorded when it finishes. Poll get_audit_status.`
+            : audit.status === "failed" && audit.pagesCrawled === 0
+              ? `Audit ${audit.id} failed before crawling any pages, so it has no results. get_audit_status shows the error; call run_site_audit to try again.`
+              : `Audit ${audit.id} found no issues across ${audit.pagesCrawled} crawled page${audit.pagesCrawled === 1 ? "" : "s"}.`
         : [
-            `Audit ${audit.id} (${audit.startUrl}): ${rows.length} issues across ${summary.length} issue type${summary.length === 1 ? "" : "s"}.`,
+            `Audit ${audit.id} (${audit.startUrl}): ${total} issues across ${summary.length} issue type${summary.length === 1 ? "" : "s"}.`,
             ...sections,
             sampled
               ? `Up to ${ISSUE_SAMPLE_SIZE} affected URLs are listed per issue type — open the audit in the dashboard for the full list.`
               : null,
-            rows.length > limit
-              ? `Structured issue rows are capped at the ${limit} highest-severity issues; raise limit (max 1000) for more.`
-              : null,
+            issues.length === 0
+              ? `Page ${page} has no issue rows; there are ${total} in total.`
+              : lastRow < total
+                ? `Structured issue rows ${firstRow}–${lastRow} of ${total} are returned, critical first; call again with page ${page + 1} for the next ${limit}.`
+                : null,
           ]
             .filter((block) => block !== null)
             .join("\n\n");
@@ -403,7 +494,7 @@ export const getAuditIssuesTool = {
         args.projectId,
         auditPath(args.projectId, audit.id),
       ),
-      structuredContent: { summary, issues },
+      structuredContent: { summary, issues, total, page },
     });
   }),
 };
@@ -426,22 +517,54 @@ const pagesInputSchema = {
     .describe("Filter by exact HTTP status code."),
   urlContains: z
     .string()
+    .max(200)
     .optional()
-    .describe("Filter to URLs containing this substring."),
+    .describe("Filter to URLs containing this text (case-insensitive)."),
+  minWords: z.number().int().min(0).optional().describe("Minimum word count."),
+  maxWords: z.number().int().min(0).optional().describe("Maximum word count."),
+  minResponseMs: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Minimum response time in ms."),
+  maxResponseMs: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Maximum response time in ms."),
+  missingAlt: z
+    .boolean()
+    .optional()
+    .describe(
+      "true: only pages with images missing alt text; false: only pages without.",
+    ),
+  sort: z
+    .enum(auditPagesSortFields)
+    .optional()
+    .describe(
+      'Sort column (default "url"; "images" sorts by images missing alt text). Blank values sort last.',
+    ),
+  order: z.enum(["asc", "desc"]).optional().describe('Default "asc".'),
+  page: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe("Page of results, 1-based (default 1)."),
   limit: z
     .number()
     .int()
     .min(1)
     .max(1_000)
     .optional()
-    .describe("Max pages to return (default 100)."),
+    .describe("Pages per result page (default 100)."),
 } as const;
 
 type PagesArgs = z.infer<z.ZodObject<typeof pagesInputSchema>>;
 
-type AuditPageRow = Awaited<
-  ReturnType<typeof AuditRepository.getPagesForAudit>
->[number];
+type AuditPageRow = Awaited<ReturnType<typeof listAuditPages>>["rows"][number];
 
 const PAGE_COLUMNS: McpTableColumn<AuditPageRow>[] = [
   { header: "url", value: (page) => page.url },
@@ -467,12 +590,13 @@ export const getAuditPagesTool = {
   config: {
     title: "Get site audit pages",
     description:
-      "List crawled pages from a site audit with per-page SEO data (status, title, description, word count, indexability, crawl depth, link counts). Free — reads OpenSEO state. Omit auditId for the most recent audit.",
+      "List the pages a site audit crawled, with per-page SEO data: status, title, description, word count, indexability, crawl depth, and link counts. Filter and sort the rows; omit auditId for the most recent audit. Uses no credits. For the prioritized problems and how to fix them, use get_audit_issues.",
     inputSchema: pagesInputSchema,
     outputSchema: z
       .object({
         pages: z.array(looseObjectOutputSchema),
         total: z.number(),
+        page: z.number(),
         ...optionalMetaOutputSchema,
       })
       .passthrough(),
@@ -484,22 +608,36 @@ export const getAuditPagesTool = {
   },
   handler: withMcpProjectAuth(async (args: PagesArgs, context) => {
     const audit = await resolveAudit(args.projectId, args.auditId);
-    const allPages = await AuditRepository.getPagesForAudit(audit.id);
-
-    const filtered = allPages.filter(
-      (page) =>
-        (!args.fetchClass || page.fetchClass === args.fetchClass) &&
-        (args.statusCode === undefined ||
-          page.statusCode === args.statusCode) &&
-        (!args.urlContains || page.url.includes(args.urlContains)),
-    );
+    const page = args.page ?? 1;
     const limit = args.limit ?? 100;
-    const pages = filtered.slice(0, limit);
+    // Filtered, sorted and paged in SQL: an audit can hold 10,000 pages.
+    const { rows: pages, totalCount: total } = await listAuditPages(audit.id, {
+      page,
+      pageSize: limit,
+      sort: args.sort ?? "url",
+      order: args.order ?? "asc",
+      status: "all",
+      fetchClass: args.fetchClass ?? "all",
+      statusCode: args.statusCode,
+      urlContains: args.urlContains,
+      minWords: args.minWords,
+      maxWords: args.maxWords,
+      minResponseMs: args.minResponseMs,
+      maxResponseMs: args.maxResponseMs,
+      missingAlt:
+        args.missingAlt === undefined ? "all" : args.missingAlt ? "yes" : "no",
+    });
 
-    const header = `Audit ${audit.id}: ${filtered.length} page${filtered.length === 1 ? "" : "s"}${filtered.length > limit ? ` (showing ${limit}; raise limit (max 1000) or narrow with urlContains/fetchClass/statusCode for the rest)` : ""}.`;
+    const firstRow = (page - 1) * limit + 1;
+    const lastRow = firstRow + pages.length - 1;
+    const header = `Audit ${audit.id}: ${total} page${total === 1 ? "" : "s"}${
+      pages.length > 0 && (page > 1 || lastRow < total)
+        ? ` (showing ${firstRow}–${lastRow}${lastRow < total ? `; call again with page ${page + 1} for more, or narrow with filters` : ""})`
+        : ""
+    }.`;
     const text =
       pages.length === 0
-        ? `${header}\nNo crawled pages match these filters.`
+        ? `${header}\n${total > 0 ? `Page ${page} is past the last page.` : "No crawled pages match these filters."}`
         : `${header}\n${formatMcpTable(pages, PAGE_COLUMNS)}`;
 
     return mcpResponse({
@@ -509,7 +647,219 @@ export const getAuditPagesTool = {
         args.projectId,
         auditPath(args.projectId, audit.id),
       ),
-      structuredContent: { pages, total: filtered.length },
+      structuredContent: { pages, total, page },
+    });
+  }),
+};
+
+// ─── get_audit_lighthouse ────────────────────────────────────────────────────
+
+// Lighthouse names up to ten resources per issue, some with long DOM paths.
+// Each issue keeps a short sample so one page's result stays a size clients
+// can read; itemCount says how many there were.
+const LIGHTHOUSE_ITEM_SAMPLE_SIZE = 3;
+const lighthouseItemCell = truncatedCell(200);
+
+const lighthouseInputSchema = {
+  projectId: projectIdSchema,
+  auditId: auditIdSchema,
+  url: z
+    .string()
+    .max(2048)
+    .optional()
+    .describe(
+      "A tested page's URL, exactly as the results list it. Returns that page's result for one device, with the issues Lighthouse found.",
+    ),
+  device: z
+    .enum(["mobile", "desktop"])
+    .optional()
+    .describe(
+      "Only return this device's results. With url, defaults to mobile.",
+    ),
+} as const;
+
+type LighthouseArgs = z.infer<z.ZodObject<typeof lighthouseInputSchema>>;
+
+type LighthouseRow = Awaited<
+  ReturnType<typeof listAuditLighthouseResults>
+>[number];
+
+function toLighthouseResult(row: LighthouseRow) {
+  return {
+    url: row.pageUrl,
+    device: row.strategy,
+    performanceScore: row.performanceScore,
+    accessibilityScore: row.accessibilityScore,
+    bestPracticesScore: row.bestPracticesScore,
+    seoScore: row.seoScore,
+    lcpMs: row.lcpMs,
+    cls: row.cls,
+    inpMs: row.inpMs,
+    ttfbMs: row.ttfbMs,
+    error: row.errorMessage,
+  };
+}
+
+type LighthouseResult = ReturnType<typeof toLighthouseResult>;
+
+const roundedCell = (value: unknown) =>
+  typeof value === "number" ? String(Math.round(value)) : "—";
+
+const LIGHTHOUSE_COLUMNS: McpTableColumn<LighthouseResult>[] = [
+  { header: "url", value: (result) => result.url },
+  { header: "device", value: (result) => result.device },
+  { header: "performance", value: (result) => result.performanceScore },
+  { header: "accessibility", value: (result) => result.accessibilityScore },
+  { header: "best practices", value: (result) => result.bestPracticesScore },
+  { header: "seo", value: (result) => result.seoScore },
+  { header: "lcp ms", value: (result) => result.lcpMs, format: roundedCell },
+  {
+    header: "cls",
+    value: (result) => result.cls,
+    format: (value) => (typeof value === "number" ? value.toFixed(3) : "—"),
+  },
+  { header: "inp ms", value: (result) => result.inpMs, format: roundedCell },
+  { header: "ttfb ms", value: (result) => result.ttfbMs, format: roundedCell },
+  { header: "error", value: (result) => result.error },
+];
+
+/** The issues Lighthouse found on one tested page, largest savings first. */
+async function readLighthouseIssues(row: LighthouseRow) {
+  // A failed test stored no report.
+  if (!row.r2Key) return { hasIssueDetails: false, issues: [] };
+  const { report } = readStoredLighthousePayload(
+    await getJsonFromR2(row.r2Key),
+  );
+  return {
+    hasIssueDetails: report.hasIssueDetails,
+    issues: report.issues.map((issue) => ({
+      ...issue,
+      items: issue.items
+        .slice(0, LIGHTHOUSE_ITEM_SAMPLE_SIZE)
+        .map(lighthouseItemCell),
+      itemCount: issue.items.length,
+    })),
+  };
+}
+
+type LighthouseIssues = Awaited<ReturnType<typeof readLighthouseIssues>>;
+
+function formatLighthouseIssues(
+  result: LighthouseResult,
+  { hasIssueDetails, issues }: LighthouseIssues,
+) {
+  if (result.error) return `Lighthouse failed on this page: ${result.error}`;
+  if (!hasIssueDetails) {
+    return "This Lighthouse run was saved without issue details. Run the audit again to see them.";
+  }
+  if (issues.length === 0) return "Lighthouse found no issues on this page.";
+  return [
+    `${issues.length} issue${issues.length === 1 ? "" : "s"}, largest savings first:`,
+    ...issues.flatMap((issue) => {
+      const savings = [
+        issue.impactMs ? `${Math.round(issue.impactMs)} ms` : null,
+        issue.impactBytes
+          ? `${Math.round(issue.impactBytes / 1024)} KiB`
+          : null,
+      ].filter((part) => part !== null);
+      const more = issue.itemCount - issue.items.length;
+      return [
+        `[${issue.severity}] ${issue.title} (${issue.category})${issue.displayValue ? `: ${issue.displayValue}` : ""}${savings.length > 0 ? `; saves ${savings.join(", ")}` : ""}`,
+        ...issue.items.map((item) => `  - ${item}`),
+        more > 0 ? `  …and ${more} more.` : null,
+      ].filter((line) => line !== null);
+    }),
+  ].join("\n");
+}
+
+export const getAuditLighthouseTool = {
+  name: "get_audit_lighthouse",
+  config: {
+    title: "Get site audit Lighthouse results",
+    description:
+      "Get the Lighthouse results from a site audit: performance, accessibility, best practices and SEO scores (0–100) plus LCP, CLS, INP and TTFB for each tested page, on mobile and desktop. Pass url for one page's issues, largest savings first, with the resources behind them. Omit auditId for the most recent audit; an audit has results only when it ran with Lighthouse on. Uses no credits. For crawl issues such as broken links and missing titles, use get_audit_issues.",
+    inputSchema: lighthouseInputSchema,
+    outputSchema: z
+      .object({
+        auditId: z.string(),
+        results: z.array(looseObjectOutputSchema),
+        ...optionalMetaOutputSchema,
+      })
+      .passthrough(),
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
+  },
+  handler: withMcpProjectAuth(async (args: LighthouseArgs, context) => {
+    const audit = await resolveAudit(args.projectId, args.auditId);
+    const meta = buildProjectMeta(
+      context,
+      args.projectId,
+      auditPath(args.projectId, audit.id),
+    );
+    const tested = sortBy(
+      await listAuditLighthouseResults(audit.id),
+      (row) => row.pageUrl ?? "",
+      (row) => row.strategy,
+    );
+    if (tested.length === 0) {
+      return mcpResponse({
+        text:
+          audit.lighthouseTotal === 0
+            ? `Audit ${audit.id} ran without Lighthouse, so it has no results. Call list_site_audits to find an audit that ran it, or start one with run_site_audit and runLighthouse: true.`
+            : `Audit ${audit.id} has no Lighthouse results yet. get_audit_status shows its progress.`,
+        meta,
+        structuredContent: { auditId: audit.id, results: [] },
+      });
+    }
+
+    if (!args.url) {
+      const results = tested
+        .filter((row) => !args.device || row.strategy === args.device)
+        .map(toLighthouseResult);
+      return mcpResponse({
+        text: [
+          `Audit ${audit.id} (${audit.startUrl}): ${results.length} Lighthouse result${results.length === 1 ? "" : "s"}. Scores are 0–100.${audit.status === "running" ? " The audit is still running, so more results may follow." : ""}`,
+          formatMcpTable(results, LIGHTHOUSE_COLUMNS),
+          "Pass url to list the issues Lighthouse found on a page.",
+        ].join("\n"),
+        meta,
+        structuredContent: { auditId: audit.id, results },
+      });
+    }
+
+    // One device per call: a page's two issue lists together can pass the
+    // size many clients accept from one tool result.
+    const device = args.device ?? "mobile";
+    const row = tested.find(
+      (candidate) =>
+        candidate.pageUrl === args.url && candidate.strategy === device,
+    );
+    if (!row) {
+      const testedUrls = [
+        ...new Set(tested.map((candidate) => candidate.pageUrl)),
+      ];
+      throw new AppError(
+        "NOT_FOUND",
+        `Lighthouse has no ${device} result for ${args.url} in audit ${audit.id}. It tested: ${testedUrls.join(", ")}.`,
+      );
+    }
+    const report = await readLighthouseIssues(row);
+    const result = toLighthouseResult(row);
+    return mcpResponse({
+      text: [
+        `Audit ${audit.id} (${audit.startUrl}): Lighthouse on ${args.url}, ${device}. Scores are 0–100.`,
+        formatMcpTable([result], LIGHTHOUSE_COLUMNS),
+        formatLighthouseIssues(result, report),
+        `Pass device: "${device === "mobile" ? "desktop" : "mobile"}" for the other run of this page.`,
+      ].join("\n"),
+      meta,
+      structuredContent: {
+        auditId: audit.id,
+        results: [{ ...result, issues: report.issues }],
+      },
     });
   }),
 };

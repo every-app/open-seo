@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/client/components/ui/card";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { getClientAuthMode, usesBetterAuthClient } from "@/lib/auth-mode";
 import { getSignInHref, getSignInHrefForLocation } from "@/lib/auth-redirect";
 
 const CLOUDFLARE_SETUP_GUIDE_URL =
@@ -59,10 +59,9 @@ export function AuthErrorCard({
 }
 
 function AuthConfigErrorCard({ message, onRetry }: CardProps) {
-  // Only name a mode's settings when the client build names that mode. With
-  // AUTH_MODE unset here the server mode is unknown, and the alert above
-  // already carries the server's exact message.
-  const clientAuthMode = import.meta.env.AUTH_MODE;
+  // The hint names the settings of the mode the server actually runs; the
+  // alert above already carries the server's exact message.
+  const clientAuthMode = getClientAuthMode();
 
   return (
     <Card className="w-full max-w-2xl">
@@ -83,6 +82,14 @@ function AuthConfigErrorCard({ message, onRetry }: CardProps) {
             <code className="mx-1">BETTER_AUTH_SECRET</code>
             (32+ characters), <code className="mx-1">BETTER_AUTH_URL</code>, and
             Google OAuth credentials on the deployment.
+          </p>
+        ) : null}
+        {clientAuthMode === "everyapp" ? (
+          <p className="text-muted-foreground">
+            OpenSEO runs behind an Every App gateway, which signs people in.
+            Install it with <code className="mx-1">pnpm everyapp install</code>{" "}
+            so it gets the gateway&apos;s identity keys, and open it through the
+            gateway.
           </p>
         ) : null}
         {clientAuthMode === "cloudflare_access" ? (
@@ -116,21 +123,22 @@ function AuthConfigErrorCard({ message, onRetry }: CardProps) {
 }
 
 function UnauthenticatedErrorCard({ message, onRetry }: CardProps) {
-  const isHostedMode = isHostedClientAuthMode();
+  // A sign-in page exists wherever Better Auth accounts do.
+  const hasSignIn = usesBetterAuthClient();
   const signInHref =
     typeof window === "undefined"
       ? getSignInHref("/")
       : getSignInHrefForLocation(window.location);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !isHostedMode) {
+    if (typeof window === "undefined" || !hasSignIn) {
       return;
     }
 
     window.location.replace(signInHref);
-  }, [isHostedMode, signInHref]);
+  }, [hasSignIn, signInHref]);
 
-  if (isHostedMode) {
+  if (hasSignIn) {
     return null;
   }
 

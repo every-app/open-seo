@@ -17,6 +17,8 @@ type Props = {
  *
  * Anchor URLs are sanitized to http(s) only — LLMs can be coaxed into
  * emitting `javascript:` payloads.
+ *
+ * Images render as links, never as <img>: see MARKDOWN_COMPONENTS.
  */
 export function Markdown({ children, className }: Props) {
   return (
@@ -51,6 +53,12 @@ function SafeAnchor({ href, children, ...rest }: AnchorProps) {
   );
 }
 
+/**
+ * How every surface renders a model's Markdown. Images are links, never <img>:
+ * a browser loads an image the moment it renders, so a page the model read
+ * could talk it into writing an image whose address carries the user's data
+ * to someone else's server, with no click.
+ */
 export const MARKDOWN_COMPONENTS = {
   h1: ({ children }: { children?: ReactNode }) => (
     <h1 className="mt-5 mb-2 text-base font-semibold first:mt-0">{children}</h1>
@@ -121,5 +129,10 @@ export const MARKDOWN_COMPONENTS = {
   ),
   td: ({ children }: { children?: ReactNode }) => (
     <td className="px-2 py-1.5 align-top">{children}</td>
+  ),
+  img: ({ src, alt }: ComponentPropsWithoutRef<"img">) => (
+    <SafeAnchor href={typeof src === "string" ? src : undefined}>
+      {alt || "image"}
+    </SafeAnchor>
   ),
 };

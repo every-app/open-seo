@@ -7,15 +7,24 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
+const URL_A = "https://example.com/a";
+const URL_B = "https://example.com/b";
+const URL_C = "https://example.com/c";
+const URL_D = "https://example.com/d";
+
 describe("createCrawlThrottle", () => {
   it("keeps oversized Retry-After values finite even with overlapping refusals", async () => {
     const throttle = createCrawlThrottle(90_000);
     await Promise.all([
-      throttle.backoff(1, "9".repeat(310)),
-      throttle.backoff(1, "60"),
+      throttle.backoff(URL_A, "9".repeat(310)),
+      throttle.backoff(URL_B, "60"),
     ]);
     expect(throttle.stopped).toBe(true);
-    expect(Object.values(throttle.state).every(Number.isFinite)).toBe(true);
+    expect(
+      Object.values(throttle.state)
+        .filter((value): value is number => typeof value === "number")
+        .every(Number.isFinite),
+    ).toBe(true);
     expect(await throttle.ready()).toBe(false);
   });
 
@@ -29,7 +38,7 @@ describe("createCrawlThrottle", () => {
           save = resolve;
         }),
     );
-    const backoff = throttle.backoff(1, "1");
+    const backoff = throttle.backoff(URL_A, "1");
     await vi.advanceTimersByTimeAsync(0);
     let started = false;
     const request = throttle.ready().then(() => {
@@ -59,7 +68,7 @@ describe("createCrawlThrottle", () => {
   it("pauses for thirty seconds on the first 429 and spaces retries", async () => {
     const throttle = createCrawlThrottle(90_000);
     expect(await throttle.ready()).toBe(true);
-    expect(await throttle.backoff(1, null)).toBe(true);
+    expect(await throttle.backoff(URL_A, null)).toBe(true);
     const starts: number[] = [];
     const requests = Promise.all(
       Array.from({ length: 3 }, async () => {
@@ -75,11 +84,11 @@ describe("createCrawlThrottle", () => {
 
   it("rechecks a cooldown extended while requests are waiting", async () => {
     const throttle = createCrawlThrottle(90_000);
-    await throttle.backoff(1, "5");
+    await throttle.backoff(URL_A, "5");
     const starts: number[] = [];
     const request = throttle.ready().then(() => starts.push(Date.now()));
     await vi.advanceTimersByTimeAsync(4_000);
-    await throttle.backoff(1, "10");
+    await throttle.backoff(URL_B, "10");
     await vi.advanceTimersByTimeAsync(9_999);
     expect(starts).toEqual([]);
     await vi.advanceTimersByTimeAsync(1);
@@ -91,7 +100,7 @@ describe("createCrawlThrottle", () => {
     "honors Retry-After: %s",
     async (header) => {
       const throttle = createCrawlThrottle(90_000);
-      await throttle.backoff(1, header);
+      await throttle.backoff(URL_A, header);
       let started = false;
       const request = throttle.ready().then(() => {
         started = true;
@@ -104,35 +113,50 @@ describe("createCrawlThrottle", () => {
     },
   );
 
-  it("backs off across chunks and stops after four consecutive refusals", async () => {
+  // Shopify's Retry-After outlasts most of a chunk, so the retry usually
+  // happens in the next one, after other pages have been served in between.
+  it("gives a URL one retry across chunks and served pages, then gives it up", async () => {
     let throttle = createCrawlThrottle(90_000);
-    for (const [index, delay] of [30_000, 60_000, 120_000, 240_000].entries()) {
-      expect(await throttle.backoff(1, null)).toBe(index < 3);
-      expect(throttle.state.pausedUntil - Date.now()).toBe(delay);
-      if (index < 3) {
-        await vi.advanceTimersByTimeAsync(delay);
-        throttle = createCrawlThrottle(Date.now() + 90_000, throttle.state);
-      }
-    }
-    expect(throttle.stopped).toBe(true);
-    expect(await throttle.ready()).toBe(false);
+    expect(await throttle.backoff(URL_A, "60")).toBe(true);
+    await vi.advanceTimersByTimeAsync(60_000);
+    throttle = createCrawlThrottle(Date.now() + 90_000, throttle.state);
+    await throttle.recovered(URL_B);
+    expect(await throttle.backoff(URL_A, "60")).toBe(false);
+    expect(throttle.stopped).toBe(false);
   });
 
-  it("retains slower pacing after recovery and caps further slowdowns", async () => {
-    let throttle = createCrawlThrottle(90_000);
-    for (let i = 0; i < 8; i++) {
-      await throttle.backoff(1, "1");
-      await vi.advanceTimersByTimeAsync(30_000);
-      await throttle.recovered();
-      throttle = createCrawlThrottle(Date.now() + 90_000, throttle.state);
+  it("stops after three URLs are given up on with nothing served between", async () => {
+    const throttle = createCrawlThrottle(90_000);
+    for (const url of [URL_A, URL_B]) {
+      await throttle.refuse(url, "1");
+      await vi.advanceTimersByTimeAsync(1_000);
     }
-    expect(throttle.state.intervalMs).toBe(30_000);
+    await throttle.recovered(URL_C);
+    for (const url of [URL_C, URL_D]) {
+      await throttle.refuse(url, "1");
+      await vi.advanceTimersByTimeAsync(1_000);
+    }
     expect(throttle.stopped).toBe(false);
+    await throttle.refuse(URL_A, "1");
+    expect(throttle.stopped).toBe(true);
+  });
+
+  it("returns to normal pacing after twenty served pages, counted across chunks", async () => {
+    let throttle = createCrawlThrottle(90_000);
+    for (const url of [URL_A, URL_B, URL_C, URL_D]) {
+      await throttle.backoff(url, "1");
+      await vi.advanceTimersByTimeAsync(1_000);
+    }
+    expect(throttle.state.intervalMs).toBe(10_000);
+    for (let i = 0; i < 9; i++) await throttle.recovered(URL_A);
+    throttle = createCrawlThrottle(Date.now() + 90_000, throttle.state);
+    for (let i = 0; i < 11; i++) await throttle.recovered(URL_A);
+    expect(throttle.state.intervalMs).toBe(1_000);
   });
 
   it("defers a ten-minute wait without marking the audit stopped", async () => {
     const throttle = createCrawlThrottle(90_000);
-    expect(await throttle.backoff(1, "600")).toBe(true);
+    expect(await throttle.backoff(URL_A, "600")).toBe(true);
     expect(await throttle.ready()).toBe(false);
     expect(throttle.stopped).toBe(false);
     expect(throttle.state.pausedUntil).toBe(600_000);
@@ -162,15 +186,13 @@ describe("createCrawlThrottle", () => {
     expect(throttle.stopped).toBe(false);
   });
 
-  it("stops when cumulative cooldowns exceed thirty minutes, without retrying early", async () => {
+  it("stops once two hours of waiting have accrued, served pages included, without retrying early", async () => {
     let throttle = createCrawlThrottle(90_000);
-    for (let i = 0; i < 3; i++) {
-      expect(await throttle.backoff(1, "600")).toBe(true);
-      await vi.advanceTimersByTimeAsync(600_000);
-      await throttle.recovered();
-      throttle = createCrawlThrottle(Date.now() + 90_000, throttle.state);
-    }
-    expect(await throttle.backoff(1, "600")).toBe(false);
+    expect(await throttle.backoff(URL_A, "4000")).toBe(true);
+    await vi.advanceTimersByTimeAsync(4_000_000);
+    await throttle.recovered(URL_A);
+    throttle = createCrawlThrottle(Date.now() + 90_000, throttle.state);
+    expect(await throttle.backoff(URL_B, "4000")).toBe(false);
     expect(await throttle.ready()).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
   });

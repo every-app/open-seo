@@ -1,12 +1,13 @@
 import type {
   ArchiveProjectInput,
   CreateProjectInput,
-  RestoreProjectInput,
+  ArchivedProjectInput,
   SetProjectWebsiteInput,
   UpdateProjectInput,
 } from "@/types/schemas/projects";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
+import { isUniqueViolation } from "@/db/isUniqueViolation";
 import { AppError } from "@/server/lib/errors";
 import { assertLanguageForLocation } from "@/server/lib/market";
 import { getLanguageCode } from "@/shared/keyword-locations";
@@ -14,6 +15,7 @@ import { getLanguageCode } from "@/shared/keyword-locations";
 function mapProject(project: {
   id: string;
   name: string;
+  brandName: string | null;
   domain: string | null;
   locationCode: number;
   languageCode: string;
@@ -22,6 +24,7 @@ function mapProject(project: {
   return {
     id: project.id,
     name: project.name,
+    brandName: project.brandName,
     domain: project.domain,
     // Default market for the project's data calls (MCP tools and the web UI
     // fall back to these when a call omits locationCode/languageCode).
@@ -45,15 +48,6 @@ function resolveMarketInput(input: {
   const languageCode = input.languageCode ?? getLanguageCode(locationCode);
   assertLanguageForLocation(locationCode, languageCode);
   return { locationCode, languageCode };
-}
-
-// Drizzle wraps the driver error in a "Failed query" error, so check the cause
-// chain. SQLite reports the violation in the message, Postgres as code 23505.
-function isUniqueViolation(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  if (error.message.includes("UNIQUE constraint failed")) return true;
-  if ("code" in error && error.code === "23505") return true;
-  return isUniqueViolation(error.cause);
 }
 
 // The projects table's only unique index guards the auto-created ("Default",
@@ -136,6 +130,7 @@ export async function updateProject(
       organizationId,
       {
         name: input.name,
+        brandName: input.brandName,
         domain: normalizeProjectDomain(input.domain),
         market: resolveMarketInput(input),
       },
@@ -169,7 +164,7 @@ export async function listArchivedProjects(organizationId: string) {
 
 export async function restoreProject(
   organizationId: string,
-  input: RestoreProjectInput,
+  input: ArchivedProjectInput,
 ) {
   try {
     await ProjectRepository.restoreProject(
@@ -206,16 +201,12 @@ export async function getProjectForOrganization(
   return mapProject(project);
 }
 
-// Project lookup that reveals which org owns it, for user-scoped credentials
-// (MCP API keys): the caller derives the org FROM the project and must then
-// authorize the user's membership in that org before acting on the result.
-export async function getProjectWithOrganization(projectId: string) {
+/** The organization a live project belongs to, without scoping to one. Only
+ *  for picking which of the caller's organizations to open; access to the
+ *  project itself is still checked against that organization. */
+export async function getProjectOrganizationId(projectId: string) {
   const project = await ProjectRepository.getProjectById(projectId);
-  if (!project) return null;
-  return {
-    organizationId: project.organizationId,
-    project: mapProject(project),
-  };
+  return project?.organizationId ?? null;
 }
 
 export async function setProjectWebsite(

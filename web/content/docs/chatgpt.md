@@ -55,7 +55,7 @@ See [OpenAI's connection guide](https://developers.openai.com/plugins/deploy/con
 
 If you already use Codex in the desktop app, start a new **Codex** chat, then copy the [agent setup prompt](/docs/agent-setup#set-up-your-agent) into that chat. Codex can configure its own connection and guide you through sign-in. Approve the OpenSEO login when prompted.
 
-If you prefer manual setup, follow the [Codex plugin guide](/docs/codex-plugin#desktop-app), or add the [MCP connection alone](/docs/mcp#codex-in-the-chatgpt-desktop-app). Start a new Codex chat after installation if needed, then run the connection check below.
+If you prefer manual setup, follow the [Codex plugin guide](/docs/codex-plugin#desktop-app), or add the [MCP connection alone](/docs/codex-plugin#mcp-only-in-the-desktop-app). Start a new Codex chat after installation if needed, then run the connection check below.
 
 Codex and ChatGPT chats use separate connections. Run the connection check in the chat where you want to use OpenSEO. For the current mode controls, see [OpenAI's desktop guide](https://learn.chatgpt.com/docs/app).
 
@@ -77,7 +77,7 @@ Once the check succeeds, try:
 Use OpenSEO to help me choose one SEO task for my website. Ask about my goal before starting paid research.
 ```
 
-The OpenSEO plugin also includes SEO skills, such as SEO Audit. Use the available skill picker or ask for a workflow by name.
+The OpenSEO plugin also includes SEO skills, such as SEO Audit. The `@` menu shows OpenSEO itself, not its skills. Select OpenSEO and ask for a workflow by name, for example: "Use the OpenSEO SEO Audit skill on example.com."
 
 ## Troubleshooting
 
@@ -97,7 +97,7 @@ If setup still fails, contact [support@openseo.so](mailto:support@openseo.so) wi
 
 ## Update OpenSEO
 
-For the OpenSEO plugin, start a new chat to load the latest tools and skills. Reconnect if ChatGPT reports that sign-in needs attention. Local Codex update commands do not update ChatGPT web.
+For the OpenSEO plugin, start a new chat to load the latest tools. The plugin's skills update when OpenSEO publishes a new version of the plugin. Reconnect if ChatGPT reports that sign-in needs attention. Local Codex update commands do not update ChatGPT web.
 
 For a custom MCP connection, open its details under **Plugins**, select **Refresh** to reload the tools, and start a new chat. Refresh updates tool definitions; it does not add repository skills. If sign-in has expired, authenticate again.
 

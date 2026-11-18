@@ -16,6 +16,7 @@ import {
   getCurrentAuthRedirectFromHref,
   getSignInSearch,
 } from "@/lib/auth-redirect";
+import { switchToProjectOrganization } from "@/serverFunctions/organization";
 import { getProjectAccess } from "@/serverFunctions/projects";
 
 export const Route = createFileRoute("/_app/p/$projectId")({
@@ -27,8 +28,8 @@ export const Route = createFileRoute("/_app/p/$projectId")({
 
 // Redirect-only guard, deliberately NOT a blocking beforeLoad: the shell
 // renders immediately while the access check runs in the background, and the
-// browser only gets bounced if it lands on a project it can't see (stale
-// last-project id, foreign URL). Real authorization is enforced on every data
+// browser only switches organization or gets bounced if it lands on a project
+// outside the active one (stale last-project id, foreign URL). Real authorization is enforced on every data
 // call; nothing sensitive renders from this check.
 function useProjectAccessRedirect(projectId: string) {
   const navigate = useNavigate();
@@ -54,10 +55,17 @@ function useProjectAccessRedirect(projectId: string) {
       });
       return;
     }
-    // Forget it if it's the remembered project, or the landing redirect
-    // would bring the user straight back here.
-    if (getLastProjectId() === projectId) clearLastProjectId();
-    void navigate({ to: "/", replace: true });
+    // The project may be in another of the user's organizations (one an
+    // agent set up before they signed up, or a teammate's): open it there.
+    // Otherwise forget it if it's the remembered project, or the landing
+    // redirect would bring the user straight back here.
+    switchToProjectOrganization({ data: { projectId } }).then(
+      () => window.location.reload(),
+      () => {
+        if (getLastProjectId() === projectId) clearLastProjectId();
+        void navigate({ to: "/", replace: true });
+      },
+    );
   }, [error, navigate, projectId]);
   return access.isSuccess;
 }

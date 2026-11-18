@@ -19,5 +19,5 @@ LEFT JOIN user_onboarding_answers a
   ON a.organization_id = b.organization_id
 LEFT JOIN "user" u
   ON u.id = a.user_id
-WHERE b.is_paying = 1
+WHERE b.is_paying
 ORDER BY b.synced_at DESC, a.completed_at DESC;

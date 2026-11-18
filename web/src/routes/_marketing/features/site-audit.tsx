@@ -8,8 +8,9 @@ const page = featurePages.siteAudit;
 export const Route = createFileRoute("/_marketing/features/site-audit")({
   head: () =>
     buildPageSeo({
-      title: "SEO Audit Tool",
-      description: page.description,
+      title:
+        "Open Source SEO Audit Tool: Find Technical Issues and Sort Them by Severity",
+      description: page.seoDescription ?? page.description,
       path: "/features/site-audit",
       titleSuffix: "OpenSEO",
       imageAlt: page.imageAlt,

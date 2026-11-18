@@ -2,6 +2,8 @@ import { sort } from "remeda";
 import type { AiTrackerPatch } from "@/types/schemas/ai-visibility";
 import {
   AI_DEFAULT_TOPIC,
+  AI_PROMPT_LIMIT,
+  ownBrandName,
   type AiBrand,
   type AiEngine,
 } from "@/shared/ai-visibility";
@@ -14,7 +16,6 @@ import type {
 } from "../repositories/AiVisibilityRepository";
 import { AiVisibilityError } from "./aiVisibilityErrors";
 
-const PROMPT_LIMIT = 100;
 const TOPIC_LIMIT = 30;
 
 export function trackerEngines(tracker: TrackerRow): AiEngine[] {
@@ -22,6 +23,7 @@ export function trackerEngines(tracker: TrackerRow): AiEngine[] {
     ...(tracker.chatgpt ? (["chatgpt"] as const) : []),
     ...(tracker.gemini ? (["gemini"] as const) : []),
     ...(tracker.googleAiOverview ? (["google_ai_overview"] as const) : []),
+    ...(tracker.googleAiMode ? (["google_ai_mode"] as const) : []),
     ...(tracker.claude ? (["claude"] as const) : []),
     ...(tracker.perplexity ? (["perplexity"] as const) : []),
   ];
@@ -32,6 +34,7 @@ function engineColumns(engines: AiEngine[]) {
     chatgpt: engines.includes("chatgpt"),
     gemini: engines.includes("gemini"),
     googleAiOverview: engines.includes("google_ai_overview"),
+    googleAiMode: engines.includes("google_ai_mode"),
     claude: engines.includes("claude"),
     perplexity: engines.includes("perplexity"),
   };
@@ -67,17 +70,21 @@ export function aiScope(config: ConfigurationRows, promptIds?: string[]) {
 
 /** The project's own brand, then its competitors, from shared project context. */
 export function aiBrands(
-  project: { name: string; domain: string | null },
+  project: { name: string; brandName: string | null; domain: string | null },
   competitors: { name: string | null; domain: string }[],
 ): AiBrand[] {
   if (!project.domain) return [];
   const brands = new Map<string, AiBrand>([
-    [project.domain, { name: project.name, domain: project.domain, own: true }],
+    [
+      project.domain,
+      { name: ownBrandName(project), domain: project.domain, own: true },
+    ],
   ]);
   for (const c of competitors)
     if (!brands.has(c.domain))
       brands.set(c.domain, {
-        name: c.name ?? c.domain,
+        // The settings form saves a blank name as "" so it can clear a stored one.
+        name: c.name || c.domain,
         domain: c.domain,
         own: false,
       });
@@ -132,10 +139,10 @@ export function projectAiConfiguration(input: {
   applyMarket(rows, patch, !previous, trackerEngines(rows.tracker));
   const counts = applyPrompts(rows, patch, now);
   const unarchived = rows.prompts.filter((p) => !p.archived);
-  if (unarchived.length > PROMPT_LIMIT)
+  if (unarchived.length > AI_PROMPT_LIMIT)
     throw new AiVisibilityError(
       "PROMPT_LIMIT",
-      "Tracking supports up to 100 unarchived prompts per project. Archive unused prompts first.",
+      `Tracking supports up to ${AI_PROMPT_LIMIT} unarchived prompts per project. Archive unused prompts first.`,
     );
   if (new Set(unarchived.map((p) => p.topic)).size > TOPIC_LIMIT)
     throw new AiVisibilityError(

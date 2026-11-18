@@ -1,49 +1,51 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { computeNextCheckAt, estimateRankCheckCredits } from "./rank-tracking";
+import {
+  computeNextCheckAt,
+  estimateRankCheckCredits,
+  keywordLimitMessage,
+  keywordsPerConfigForPlan,
+} from "./rank-tracking";
+
+describe("rank tracking keyword limits", () => {
+  it.each([
+    [
+      "base-plan",
+      "This tracker is at its limit of 1,000 keywords. The Pro plan allows 2,500 per tracker and the Agency plan 5,000.",
+    ],
+    [
+      "pro-plan",
+      "This tracker is at its limit of 2,500 keywords. The Agency plan allows 5,000 per tracker.",
+    ],
+    ["agency-plan", "This tracker is at its limit of 5,000 keywords."],
+  ])("tells a full tracker on %s which plans allow more", (planId, message) => {
+    expect(keywordLimitMessage(keywordsPerConfigForPlan(planId))).toBe(message);
+  });
+});
 
 describe("rank tracking cost estimates", () => {
   it.each([
     {
-      method: "live" as const,
-      keywordCount: 4,
-      devices: "desktop" as const,
-      depth: 10,
-      costUsd: 0.01638,
-      costCredits: 20,
-    },
-    {
-      method: "live" as const,
-      keywordCount: 1000,
-      devices: "both" as const,
-      depth: 40,
-      costUsd: 26.624,
-      costCredits: 28_000,
-    },
-    {
-      method: "queued" as const,
       keywordCount: 104,
       devices: "desktop" as const,
       depth: 10,
-      costUsd: 0.23961,
-      costCredits: 243,
+      costUsd: 0.31948,
+      costCredits: 322,
     },
     {
-      method: "queued" as const,
       keywordCount: 1000,
       devices: "both" as const,
       depth: 40,
-      costUsd: 14.976,
-      costCredits: 15_000,
+      costUsd: 13.056,
+      costCredits: 13_080,
     },
   ])(
-    "matches per-call billing for a $method check plus two queued retries",
-    ({ keywordCount, devices, depth, method, costUsd, costCredits }) => {
+    "matches per-call billing for two queued reads of $keywordCount keywords",
+    ({ keywordCount, devices, depth, costUsd, costCredits }) => {
       expect(
         estimateRankCheckCredits(
           Array.from({ length: keywordCount }, (_, i) => `kw ${i}`),
           devices,
           depth,
-          method,
         ),
       ).toEqual({ costUsd, costCredits });
     },

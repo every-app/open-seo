@@ -20,6 +20,7 @@ import {
   member,
   organization,
   user as authUser,
+  userSignupCampaigns,
 } from "@/db/schema";
 
 type DelegatedOrganizationInput = {
@@ -274,6 +275,11 @@ async function hasPendingInvitationForEmail(email: string) {
   return pending !== undefined;
 }
 
+async function hasAnyUser() {
+  const [first] = await db.select({ id: authUser.id }).from(authUser).limit(1);
+  return first !== undefined;
+}
+
 async function getLastActiveOrganizationId(userId: string) {
   const record = await db.query.user.findFirst({
     columns: { lastActiveOrganizationId: true },
@@ -300,6 +306,21 @@ async function isAnalyticsOptedOut(userId: string) {
     .where(eq(authUser.id, userId))
     .limit(1);
   return record?.analyticsOptedOut === true;
+}
+
+async function saveSignupCampaign(
+  userId: string,
+  campaign: {
+    entry: "mcp" | "app";
+    wasGuest: boolean;
+    agent: string | null;
+    utmMedium: string | null;
+    utmSource: string | null;
+    utmCampaign: string | null;
+    utmContent: string | null;
+  },
+) {
+  await db.insert(userSignupCampaigns).values({ userId, ...campaign });
 }
 
 async function setTermsAcceptance(
@@ -341,5 +362,7 @@ export const AuthRepository = {
   getHostedUserNames,
   getOrganizationOwner,
   hasPendingInvitationForEmail,
+  hasAnyUser,
   isAnalyticsOptedOut,
+  saveSignupCampaign,
 } as const;

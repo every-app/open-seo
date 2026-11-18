@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AddToAgentLinks } from "@/components/add-to-agent-links";
 import { aiAgentSeoStrategies } from "@/lib/strategy-libraries";
 import { buildPageSeo } from "@/lib/seo";
 
 const mcpDescription =
-  "Give Claude, Cursor, or any MCP client real SEO tools: keyword research, live SERPs, backlinks, rank tracking, and Search Console data via one MCP server.";
+  "Give Claude, Cursor, or any MCP client more than 80 SEO tools: keyword research, live SERPs, backlinks, rank tracking, and Search Console data.";
 
 const toolCategories = [
   {
@@ -118,6 +119,7 @@ function McpPage() {
         >
           Set up OpenSEO MCP
         </a>
+        <AddToAgentLinks className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-neutral-300 px-5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900" />
         <a
           href="/docs/skills"
           className="inline-flex h-10 items-center justify-center rounded-md border border-neutral-300 px-5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
@@ -171,6 +173,19 @@ function McpPage() {
 
       <section className="mt-12">
         <h2 className="text-xl font-semibold">Available tool groups</h2>
+        <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+          OpenSEO MCP has more than 80 tools. These nine are the ones most
+          people start with. The rest cover rank tracking setup, site audits,
+          local SEO, AI visibility, Google Analytics and reports, and are
+          described in the{" "}
+          <a
+            href="/docs/mcp-tools"
+            className="font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 transition-colors hover:text-neutral-700"
+          >
+            MCP tools docs
+          </a>
+          .
+        </p>
         <div className="mt-5 grid gap-x-8 gap-y-8 md:grid-cols-3">
           {toolCategories.map((category) => (
             <div key={category.label}>
@@ -228,7 +243,7 @@ function McpPage() {
 
       <section className="mt-12 rounded-lg border border-neutral-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-neutral-900">
-          Google Search Console MCP — no Google Cloud setup
+          Google Search Console MCP for Claude and ChatGPT
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600">
           OpenSEO MCP can read Search Console performance and URL inspection

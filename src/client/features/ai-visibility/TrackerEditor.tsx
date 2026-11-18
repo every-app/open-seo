@@ -17,10 +17,14 @@ import {
   aiTrackerPatchSchema,
   type AiTrackerPatch,
 } from "@/types/schemas/ai-visibility";
-import type { AiTrackerState, AiRun } from "@/shared/ai-visibility";
+import {
+  aiEnginesWithoutLocation,
+  type AiTrackerState,
+  type AiRun,
+} from "@/shared/ai-visibility";
+import { DEFAULT_LOCATION_CODE } from "@/shared/keyword-locations";
 import {
   TrackerTrackingFields,
-  collectableMarket,
   type TrackerDraft,
 } from "./TrackerTrackingFields";
 import { TrackerPromptFields } from "./TrackerPromptFields";
@@ -73,6 +77,13 @@ export function TrackerEditor({
   const engines = state.engines.length
     ? state.engines
     : state.capabilities.slice(0, 1).map((capability) => capability.engine);
+  // A new tracker starts in the project's market when its engines support it.
+  const newMarket = aiEnginesWithoutLocation(
+    engines,
+    defaultMarket.locationCode,
+  ).length
+    ? { locationCode: DEFAULT_LOCATION_CODE, languageCode: "en" }
+    : defaultMarket;
   const defaultDraft: TrackerDraft = {
     engines,
     ...(state.tracker
@@ -80,7 +91,7 @@ export function TrackerEditor({
           locationCode: state.tracker.locationCode,
           languageCode: state.tracker.languageCode,
         }
-      : collectableMarket(engines, defaultMarket)),
+      : newMarket),
     topic: { name: topic, prompts: ["", "", ""] },
   };
   const prepare = useMutation({
@@ -241,7 +252,6 @@ export function TrackerEditor({
                     {!adding && (
                       <TrackerTrackingFields
                         state={state}
-                        defaultMarket={defaultMarket}
                         value={field.state.value}
                         onChange={field.handleChange}
                         disabled={prepare.isPending}

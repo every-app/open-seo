@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
     vi.fn<(nowIso: string) => Promise<DueConfigRow[]>>(),
   getKeywordCountsForConfigs:
     vi.fn<(configIds: string[]) => Promise<Map<string, number>>>(),
+  getTaskUnitsInFlight: vi.fn<(since: Date) => Promise<number>>(),
   claimDueConfig: vi.fn<(input: ClaimInput) => Promise<boolean>>(),
   beginRankCheckRun:
     vi.fn<
@@ -46,15 +47,19 @@ const mocks = vi.hoisted(() => ({
     >(),
   customerHasPaidPlan: vi.fn<(organizationId: string) => Promise<boolean>>(),
   isHostedServerAuthMode: vi.fn<() => Promise<boolean>>(),
+  getFlag: vi.fn<(flag: string) => Promise<boolean>>(),
 }));
 
-vi.mock("cloudflare:workers", () => ({ env: {} }));
+vi.mock("cloudflare:workers", () => ({
+  env: { FLAGS: { getBooleanValue: mocks.getFlag } },
+}));
 vi.mock(
   "@/server/features/rank-tracking/repositories/RankTrackingRepository",
   () => ({
     RankTrackingRepository: {
       getDueConfigsWithOrganization: mocks.getDueConfigsWithOrganization,
       getKeywordCountsForConfigs: mocks.getKeywordCountsForConfigs,
+      getTaskUnitsInFlight: mocks.getTaskUnitsInFlight,
       claimDueConfig: mocks.claimDueConfig,
     },
   }),
@@ -92,6 +97,7 @@ function dueConfig(overrides: Partial<DueConfigRow> = {}): DueConfigRow {
 describe("runScheduledRankChecks", () => {
   beforeEach(() => {
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
+    mocks.getFlag.mockResolvedValue(false);
     mocks.customerHasPaidPlan.mockResolvedValue(true);
     mocks.claimDueConfig.mockResolvedValue(true);
     mocks.beginRankCheckRun.mockResolvedValue({ ok: true, runId: "run_1" });
@@ -99,6 +105,17 @@ describe("runScheduledRankChecks", () => {
       new Map([["config_1", 5]]),
     );
     mocks.getDueConfigsWithOrganization.mockResolvedValue([dueConfig()]);
+    mocks.getTaskUnitsInFlight.mockResolvedValue(0);
+  });
+
+  it("starts and claims nothing while the pause flag is on, so configs stay due", async () => {
+    mocks.getFlag.mockResolvedValue(true);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await runScheduledRankChecks(testEnv);
+
+    expect(mocks.claimDueConfig).not.toHaveBeenCalled();
+    expect(mocks.beginRankCheckRun).not.toHaveBeenCalled();
   });
 
   it("advances a free config with plan_required instead of starting a workflow", async () => {
@@ -274,6 +291,35 @@ describe("runScheduledRankChecks", () => {
     );
     expect(logSpy).toHaveBeenCalledWith(
       expect.objectContaining({ stoppedByBudget: true, unitsStarted: 10 }),
+    );
+  });
+
+  it("keeps a large tracker due while the checks in flight leave it no room, and starts the small one behind it", async () => {
+    mocks.getDueConfigsWithOrganization.mockResolvedValue([
+      dueConfig({ id: "config_big" }),
+      dueConfig({
+        id: "config_small",
+        nextCheckAt: "2026-01-02T00:00:00.000Z",
+      }),
+    ]);
+    mocks.getKeywordCountsForConfigs.mockResolvedValue(
+      new Map([
+        ["config_big", MAX_KEYWORDS_PER_CONFIG],
+        ["config_small", 5],
+      ]),
+    );
+    // Room for the small tracker only.
+    mocks.getTaskUnitsInFlight.mockResolvedValue(29_000);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runScheduledRankChecks(testEnv);
+
+    expect(mocks.claimDueConfig).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ configId: "config_small" }),
+    );
+    expect(mocks.beginRankCheckRun).toHaveBeenCalledTimes(1);
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ waitingForCapacity: 1, started: 1 }),
     );
   });
 

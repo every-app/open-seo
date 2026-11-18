@@ -27,7 +27,7 @@ In hosted mode, an ordinary metered call:
 1. Estimates an upper bound for its cost from the request input. Each client entry requires an estimator from `pricing.ts`, so an entry without a price does not compile.
 2. Holds that estimate on `usage_credits`, or on `topup_credits` when the monthly balance cannot cover it, with Autumn's balance lock. Autumn grants or refuses the hold atomically. When neither balance covers it, the call fails with `INSUFFICIENT_CREDITS` and DataForSEO is never called.
 3. Calls DataForSEO.
-4. Confirms the hold at the cost DataForSEO reported, or releases it when the call was not billed. The call and the settlement are registered with the request, so a client that disconnects mid-call cannot skip the deduction.
+4. Confirms the hold at the cost DataForSEO reported, or releases it when the call was not billed. The call and the settlement are registered with the request, so a client that disconnects mid-call cannot skip the deduction. In a request the data returns as soon as DataForSEO answers and the settlement runs after the response, one at a time per request so it never waits behind the request's own DataForSEO calls for a connection. Workflows and other background work, which have no response to send early, wait for the settlement.
 
 Estimate and deduction use one formula (`creditsForProviderUsd`), so they cannot drift apart. A hold that is never settled expires on its own and returns the credits.
 
@@ -45,7 +45,7 @@ This makes the metered path the easiest path. Feature code asks for DataForSEO d
 
 Concurrent calls each take their own hold and do not wait on each other, so normal parallel work is unchanged. The sum of in-flight holds can never exceed the balance, so an organization can spend at most its balance plus any amount by which an estimate undershoots the real cost. An undershoot is reported so the price table can be corrected.
 
-A hold costs two Autumn round trips (hold, finalize), which is no more than the balance reads and usage tracking it replaces. A live rank check batch shares its holds because it starts many calls for one organization at once: a hold and a finalize for each call sent dozens of concurrent Autumn requests for one customer, and a finalize that times out loses its charge.
+A hold costs two Autumn round trips (hold, finalize), which is no more than the balance reads and usage tracking it replaces. Only the hold delays the customer: the held estimate already reserves the call's cost, so a request made right after already sees the estimate taken out of the balance, and a settlement that never lands only leaves the call unbilled when the hold expires. A live rank check batch shares its holds because it starts many calls for one organization at once: a hold and a finalize for each call sent dozens of concurrent Autumn requests for one customer, and a finalize that times out loses its charge.
 
 ## Alternatives considered
 

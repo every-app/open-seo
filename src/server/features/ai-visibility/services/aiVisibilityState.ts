@@ -1,5 +1,4 @@
 import { AiVisibilityRepository as repo } from "../repositories/AiVisibilityRepository";
-import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import {
   aiEngineUsesModelApi,
   AI_ENGINE_LABELS,
@@ -16,6 +15,7 @@ import {
 } from "./aiVisibilityConfiguration";
 import { aiRunView } from "./aiVisibilityResults";
 import { reconcileAiRun } from "./aiVisibilityRuns";
+import { hasDataforseoAccess } from "@/server/lib/provider-access";
 
 const CONSUMER_NOTE =
   "One consumer-site answer. Collects in any project market country except unsupportedLocationCodes.";
@@ -26,6 +26,8 @@ const AI_ENGINE_NOTES: Record<AiEngine, string> = {
   gemini: CONSUMER_NOTE,
   google_ai_overview:
     "The AI Overview on one Google results page. A page without an AI Overview is a no-answer result, not a missing brand.",
+  google_ai_mode:
+    "One answer from Google AI Mode, the AI tab of Google Search. Collects in every project market country.",
   claude: LIVE_NOTE,
   perplexity: LIVE_NOTE,
 };
@@ -38,7 +40,7 @@ export async function getTracker(input: {
       repo.getConfiguration(input.projectId),
       repo.listCompetitors(input.projectId),
       repo.listRuns(input.projectId, 10),
-      getOptionalEnvValue("DATAFORSEO_API_KEY"),
+      hasDataforseoAccess(),
       repo.getProject(input.projectId),
     ],
   );

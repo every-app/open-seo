@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- application table declarations */
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -55,6 +56,80 @@ export const userOnboardingAnswers = pgTable(
   ],
 );
 
+// Where a hosted signup came from: whether an AI agent sent them, and the UTM
+// tags (paid ads, AI chat links, shared reports) carried onto the sign-up
+// link. Campaign-level tags only: no click ids or other per-person ad
+// identifiers. One row per hosted signup since this was recorded; older rows
+// exist only for paid-social ads.
+export const userSignupCampaigns = pgTable("user_signup_campaigns", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // Where the sign-up started: "mcp" when an AI agent's connection drove it
+  // (straight from its connect window, or by claiming a guest account an
+  // agent made), else "app". Null on rows saved before it was recorded.
+  entry: text("entry"),
+  // Whether an mcp sign-up used a guest account first.
+  wasGuest: boolean("was_guest"),
+  // The agent behind an mcp sign-up, from where its connection sends the code
+  // back: a host (claude.ai, chatgpt.com), "localhost" for a CLI, or a desktop
+  // app's URL scheme (cursor).
+  agent: text("agent"),
+  utmMedium: text("utm_medium"),
+  utmSource: text("utm_source"),
+  utmCampaign: text("utm_campaign"),
+  utmContent: text("utm_content"),
+});
+
+// A guest account created when someone connects an AI agent over MCP without
+// signing up (src/server/auth/guest-accounts.ts). The row outlives the guest
+// user on purpose: user_id is not a foreign key, so claiming or deleting the
+// guest keeps the row, and the per-IP guest limit keeps counting it. ip_hash
+// is a keyed hash of the client IP, never the raw address. Each guest takes
+// the next slot for its IP, and the unique (ip_hash, slot) index is what
+// enforces the limit: concurrent requests that all counted the same guests
+// pick the same slot, and only one insert lands.
+export const guestAccounts = pgTable(
+  "guest_accounts",
+  {
+    userId: text("user_id").primaryKey(),
+    ipHash: text("ip_hash").notNull(),
+    slot: integer("slot").notNull().default(0),
+    // Random secret in the claim cookie that the connect page leaves in the
+    // browser, which hands the guest's organization to whoever signs in there.
+    claimToken: text("claim_token").notNull().unique(),
+    // The agent that made the guest, as in user_signup_campaigns.agent.
+    agent: text("agent"),
+    // The account that claimed the guest. The guest user is deleted then, so
+    // the agent's connection, still issued to the guest, acts as this user.
+    claimedByUserId: text("claimed_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("guest_accounts_ip_hash_slot_idx").on(table.ipHash, table.slot),
+  ],
+);
+
+// A self-serve account deletion the user asked for. Sign-in is blocked while
+// the row exists; the daily cron erases the account once deleteAfter passes
+// (src/server/account-deletion). Both timestamps are ISO strings written by
+// the app, so they compare the same way on both dialects.
+export const accountDeletionRequests = pgTable(
+  "account_deletion_requests",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    requestedAt: text("requested_at").notNull(),
+    deleteAfter: text("delete_after").notNull(),
+  },
+  (table) => [
+    index("account_deletion_requests_delete_after_idx").on(table.deleteAfter),
+  ],
+);
+
 // Projects for keyword research
 export const projects = pgTable(
   "projects",
@@ -64,6 +139,8 @@ export const projects = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    // The name AI visibility looks for in answers. Null uses the project name.
+    brandName: text("brand_name"),
     domain: text("domain"),
     // Default DataForSEO location/language for the project, set during
     // onboarding and reused by every project-scoped data call.
@@ -378,19 +455,24 @@ export const organizationActivationState = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     firstMcpAuthorizedAt: timestampColumn("first_mcp_authorized_at"),
     firstMcpToolCallAt: timestampColumn("first_mcp_tool_call_at"),
+    // When the owner was invited to review OpenSEO on Trustpilot (hosted).
+    trustpilotInvitedAt: timestampColumn("trustpilot_invited_at"),
     updatedAt: timestampColumn("updated_at").notNull().default(isoNow),
   },
 );
 
 // Per-project state for the dashboard's onboarding checklist. Most steps
-// complete via real product state (projects.domain, gsc_connections, MCP
-// activation); the competitor and keyword steps complete on click-through.
+// complete via real product state (audits, teammates, MCP activation). The
+// competitor and keyword steps record the first domain overview or keyword
+// research run on the project, from the app or an agent; the column names
+// predate that. The checklist counts a step done on any of the workspace's
+// projects.
 export const projectActivationState = pgTable("project_activation_state", {
   projectId: text("project_id")
     .primaryKey()
     .references(() => projects.id, { onDelete: "cascade" }),
-  competitorStepClickedAt: timestampColumn("competitor_step_clicked_at"),
-  keywordStepClickedAt: timestampColumn("keyword_step_clicked_at"),
+  competitorResearchedAt: timestampColumn("competitor_step_clicked_at"),
+  keywordResearchedAt: timestampColumn("keyword_step_clicked_at"),
   // "I already connected" on the MCP card: hides the card for this project
   // without faking the org-level first-tool-call milestone, which stays
   // truthful and self-heals when a real external call lands.

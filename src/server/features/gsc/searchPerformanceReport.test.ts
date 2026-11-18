@@ -1,9 +1,40 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildDailyTrend,
   buildStrikingDistanceRows,
   previousPeriod,
   sumSearchTotals,
 } from "@/server/features/gsc/searchPerformanceReport";
+
+describe("buildDailyTrend", () => {
+  it("runs oldest first across the whole range, with zeros for days GSC omits", () => {
+    const trend = buildDailyTrend(
+      [
+        {
+          keys: ["2026-10-03"],
+          clicks: 7,
+          impressions: 90,
+          ctr: 0,
+          position: 1,
+        },
+        {
+          keys: ["2026-10-01"],
+          clicks: 2,
+          impressions: 40,
+          ctr: 0,
+          position: 1,
+        },
+      ],
+      "2026-10-01",
+      "2026-10-03",
+    );
+    expect(trend).toEqual([
+      { date: "2026-10-01", clicks: 2, impressions: 40 },
+      { date: "2026-10-02", clicks: 0, impressions: 0 },
+      { date: "2026-10-03", clicks: 7, impressions: 90 },
+    ]);
+  });
+});
 
 describe("sumSearchTotals", () => {
   it("sums clicks/impressions and impression-weights position", () => {

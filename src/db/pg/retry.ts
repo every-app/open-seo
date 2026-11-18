@@ -64,12 +64,25 @@ const PRE_EXECUTION_CODES = new Set([
 // so concurrent requests don't reconnect in lockstep.
 const RETRY_DELAYS_MS = [250, 1000, 2500];
 
+// On Workers, postgres.js passes the socket's own error through when the
+// connection drops, and workerd's is a plain Error with no code.
+function isWorkerdConnectionLost(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.startsWith("Network connection lost")
+  );
+}
+
 function isRetryable(error: unknown, query: string): boolean {
   const code = (error as { code?: unknown } | null)?.code;
-  if (typeof code !== "string" || !TRANSIENT_ERROR_CODES.has(code)) {
+  const transient =
+    typeof code === "string"
+      ? TRANSIENT_ERROR_CODES.has(code)
+      : isWorkerdConnectionLost(error);
+  if (!transient) {
     return false;
   }
-  if (PRE_EXECUTION_CODES.has(code)) {
+  if (typeof code === "string" && PRE_EXECUTION_CODES.has(code)) {
     return true;
   }
   // The connection dropped with the query possibly in flight: the server may

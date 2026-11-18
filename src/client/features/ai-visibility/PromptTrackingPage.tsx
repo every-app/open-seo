@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Play, Plus, Settings2 } from "lucide-react";
+import { Play, Plus, Settings2 } from "lucide-react";
+import { AiMentionIllustration } from "@/client/components/EmptyIllustrations";
 import { toast } from "sonner";
 import { EmptyState } from "@/client/components/EmptyState";
 import { SkeletonPageContent } from "@/client/components/SkeletonPresets";
@@ -14,6 +15,7 @@ import {
 } from "@/serverFunctions/ai-visibility";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
+  aiBrandLabel,
   type AiPrompt,
   type AiRun,
   type AiTrackerState,
@@ -105,7 +107,12 @@ function PromptTrackingContent({
   const [costMode, setCostMode] = useState<"check" | "schedule" | null>(null);
   const [editingPrompt, setEditingPrompt] = useState<AiPrompt | null>(null);
   const [change, setChange] = useState<AiTrackerPatch | null>(null);
-  const currentRun = selectedRun ?? state.recentRuns[0] ?? null;
+  // A run started here shows at once, before the tracker refetch lists it.
+  // Once listed, the newest run wins, so a later scheduled run takes over.
+  const currentRun =
+    (selectedRun && !state.recentRuns.some((run) => run.id === selectedRun.id)
+      ? selectedRun
+      : state.recentRuns[0]) ?? null;
   const progress = useAiRunProgress(projectId, currentRun);
   const tracker = state.tracker;
   const ownBrand = state.brands.find((brand) => brand.own);
@@ -176,9 +183,9 @@ function PromptTrackingContent({
       {!state.configured ? (
         <EmptyState
           variant="card"
-          icon={MessageSquare}
-          title="Start with the prompts that matter to your business"
-          description="Add a topic and its prompts using your saved project settings."
+          illustration={<AiMentionIllustration />}
+          title="Add the questions your customers ask AI"
+          description="We run them on a schedule and show which answers mention or cite you."
           action={
             <Button onClick={() => setEditorMode(TrackerEditorMode.Prompts)}>
               <Plus />
@@ -195,7 +202,9 @@ function PromptTrackingContent({
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold">{ownBrand?.name}</h2>
+                    <h2 className="text-lg font-semibold">
+                      {ownBrand && aiBrandLabel(ownBrand)}
+                    </h2>
                     <Badge variant={tracker?.enabled ? "success" : "secondary"}>
                       {tracker?.enabled
                         ? `${scheduleLabel(tracker.scheduleInterval)} tracking`
@@ -229,7 +238,9 @@ function PromptTrackingContent({
                 </div>
               </div>
               <RunStatusLine run={progress.run} tracker={tracker} />
-              {tracker?.lastSkipReason === "INSUFFICIENT_CREDITS" ? (
+              {/* A notice about the last check is stale while one runs. */}
+              {busy ? null : tracker?.lastSkipReason ===
+                "INSUFFICIENT_CREDITS" ? (
                 <InsufficientCreditsError variant="inline" />
               ) : (
                 tracker?.lastSkipReason && (

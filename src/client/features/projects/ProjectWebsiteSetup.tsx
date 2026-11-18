@@ -10,6 +10,7 @@ import { Field, FieldLabel } from "@/client/components/ui/field";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { InsufficientCreditsError } from "@/client/features/billing/InsufficientCreditsError";
 import { getErrorCode } from "@/client/lib/error-messages";
+import { isEveryAppClientAuthMode } from "@/lib/auth-mode";
 import { projectsQueryOptions } from "@/client/features/projects/projectQueries";
 import { projectContextQueryKey } from "@/client/features/projects/project-context/shared";
 import { getProjectContext } from "@/serverFunctions/projectContext";
@@ -138,8 +139,9 @@ export function ProjectWebsiteSetup({ projectId }: { projectId: string }) {
               Start research
             </Button>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Research and a first run of your prompts use a small amount of
-              usage credits.
+              {isEveryAppClientAuthMode()
+                ? "Research and a first run of your prompts use the DataForSEO and OpenRouter keys on your Every App gateway."
+                : "Research and a first run of your prompts use a small amount of usage credits."}
             </p>
           </div>
         </form>

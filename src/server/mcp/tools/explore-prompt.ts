@@ -4,6 +4,7 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { projectWebSearchCountry } from "@/shared/prompt-search-countries";
 import {
   promptExplorerInputSchema,
   promptExplorerModelResultSchema,
@@ -26,7 +27,7 @@ const inputSchema = promptExplorerInputSchema.extend({
   ),
   webSearchCountryCode:
     promptExplorerInputSchema.shape.webSearchCountryCode.describe(
-      "Optional two-letter web-search country code. Omit for no country preference. Gemini does not support country selection; unsupported model/country combinations return per-model errors without a paid call.",
+      "Optional two-letter web-search country code. Omit to use the project's country, or no country preference when a selected model cannot use it. Gemini always answers without a country. A country you name returns per-model errors for other models that cannot use it, without a paid call.",
     ),
 });
 
@@ -45,7 +46,7 @@ export const explorePromptTool = {
   config: {
     title: "Explore an AI prompt",
     description:
-      "Ask one prompt in ChatGPT, or compare answers from selected AI models. Returns answer text, citations, search queries, brand mentions, and per-model errors. Use for a one-off answer comparison; use AI visibility tracking tools for consumer-site observations and recurring monitoring. Charges actual model usage per uncached model; web search may make one additional paid attempt if the first answer did not search. Cached answers are free for seven days. Requires a paid plan in hosted mode. Does not configure tracking or start project setup.",
+      "Ask one prompt in ChatGPT, or compare answers from ChatGPT, Claude, Gemini, and Perplexity. Returns answer text, citations, search queries, brand mentions, and per-model errors. Use it for a one-off look at how AI answers a question. Costs credits for actual model usage per uncached model, and web search may make one more paid attempt if the first answer did not search; cached answers are free for seven days. Requires a paid plan on hosted OpenSEO. For consumer-site observations and recurring monitoring, use the AI visibility tracking tools, starting with get_ai_visibility_tracker.",
     inputSchema: inputSchema.shape,
     outputSchema: promptExplorerResultSchema
       .extend({
@@ -63,7 +64,13 @@ export const explorePromptTool = {
     async (args: z.infer<typeof inputSchema>, context) => {
       const { explorePrompt } =
         await import("@/server/features/ai-search/services/promptExplorer");
-      const result = await explorePrompt(args, context.billing);
+      const webSearchCountryCode =
+        args.webSearchCountryCode ??
+        projectWebSearchCountry(context.project.locationCode, args.models);
+      const result = await explorePrompt(
+        { ...args, webSearchCountryCode },
+        context.billing,
+      );
       const meta = buildProjectMeta(
         context,
         args.projectId,
@@ -72,7 +79,7 @@ export const explorePromptTool = {
           q: args.prompt,
           models: JSON.stringify(args.models),
           web: String(args.webSearch),
-          cc: args.webSearchCountryCode ?? "default",
+          cc: webSearchCountryCode ?? "default",
           hb: args.highlightBrand,
         },
       );

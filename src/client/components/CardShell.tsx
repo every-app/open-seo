@@ -8,7 +8,7 @@ import {
 } from "@/client/components/ui/card";
 
 /**
- * Card with a header row and a divided body: dashboard and connection cards.
+ * Card with a header row above its body: dashboard and connection cards.
  * It fills its grid cell, and the body grows so content marked `mt-auto`
  * (such as action rows) sits at the bottom of equal-height cards.
  */
@@ -27,13 +27,9 @@ export function CardShell({
 }) {
   return (
     <Card size="lg" className="h-full">
-      <CardHeader className="border-b">
-        <CardTitle className="flex min-w-0 items-center gap-2.5">
-          {icon ? (
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-card shadow-sm">
-              {icon}
-            </span>
-          ) : null}
+      <CardHeader>
+        <CardTitle className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          {icon ? <span className="shrink-0">{icon}</span> : null}
           <h2 className="leading-tight">{title}</h2>
           {titleInfo}
         </CardTitle>

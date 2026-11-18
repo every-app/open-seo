@@ -16,7 +16,11 @@ import {
 import type { AiTrend, AiTrendMetric } from "@/shared/ai-visibility";
 import { EngineLabel } from "./EngineLabel";
 import { trendSeries, VisibilityTrendChart } from "./VisibilityTrendChart";
-import { AiQueryError, type AiTrendDays, aiTrendQueryOptions } from "./shared";
+import {
+  AiQueryError,
+  aiTrendQueryOptions,
+  DEFAULT_AI_TREND_DAYS,
+} from "./shared";
 
 const periods = [
   { value: "7", icon: null, label: "7d" },
@@ -51,7 +55,7 @@ export function VisibilityTrend({
   projectId: string;
   collecting: boolean;
 }) {
-  const [days, setDays] = useState<AiTrendDays>(7);
+  const [days, setDays] = useState(DEFAULT_AI_TREND_DAYS);
   const query = useQuery(aiTrendQueryOptions(projectId, days));
   const trend = query.data;
   const message = trend && notice(trend, collecting);
@@ -163,8 +167,8 @@ function TrendSummary({ trend }: { trend: AiTrend }) {
       <TableHeader>
         <TableRow>
           <TableHead />
-          <TableHead>Brand mentions</TableHead>
-          <TableHead>Owned citations</TableHead>
+          <TableHead className="text-right">Brand mentions</TableHead>
+          <TableHead className="text-right">Owned citations</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -172,8 +176,8 @@ function TrendSummary({ trend }: { trend: AiTrend }) {
           <TableRow key={row.key}>
             <TableCell>{row.label}</TableCell>
             {[row.mentions, row.citations].map((metric, index) => (
-              <TableCell key={index}>
-                <span className="flex items-baseline gap-2 tabular-nums">
+              <TableCell key={index} className="text-right">
+                <span className="flex items-baseline justify-end gap-2 tabular-nums">
                   <span
                     className={cn(
                       row.key === "all"

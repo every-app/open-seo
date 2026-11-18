@@ -30,19 +30,32 @@ describe("getOrganizationBillingAccount", () => {
       },
       balances: {
         [AUTUMN_SEO_DATA_BALANCE_FEATURE_ID]: {
-          granted: 20000,
           remaining: 1500,
           nextResetAt: 1_790_000_000_000,
+          // Credits left from the plan before an upgrade share the balance
+          // until the refill; they are not part of the monthly grant.
+          breakdown: [
+            { planId: null, includedGrant: 7000 },
+            { planId: "friends_and_family_2", includedGrant: 20000 },
+          ],
         },
         [AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID]: { remaining: 2500 },
       },
-      subscriptions: [{ planId: "friends_and_family_2", pastDue: true }],
+      subscriptions: [
+        {
+          planId: "friends_and_family_2",
+          pastDue: true,
+          plan: { name: "Friends & Family" },
+        },
+      ],
+      purchases: [],
       sendEmailReceipts: true,
     });
 
     await expect(getOrganizationBillingAccount(context)).resolves.toEqual({
       planStatus: "paid",
       paidPlanId: "friends_and_family_2",
+      paidPlanName: "Friends & Family",
       monthlyCreditsUsd: 20,
       monthlyRemainingUsd: 1.5,
       topUpRemainingUsd: 2.5,
@@ -50,11 +63,15 @@ describe("getOrganizationBillingAccount", () => {
       isPastDue: true,
       monthlyRefillsAt: 1_790_000_000_000,
       invoiceEmailsEnabled: true,
+      autoReload: null,
+      // No top-up purchase to price a reload from, so turning it on buys one.
+      autoReloadPrimesOnEnable: true,
     });
     // The organization is the billing identity.
     expect(getOrCreateMock).toHaveBeenCalledWith({
       customerId: "org_1",
       email: "owner@example.com",
+      expand: ["subscriptions.plan"],
     });
 
     getOrCreateMock.mockResolvedValueOnce({
@@ -62,6 +79,7 @@ describe("getOrganizationBillingAccount", () => {
       flags: { [AUTUMN_MANAGED_ACCESS_FEATURE_ID]: {} },
       balances: {},
       subscriptions: [{ pastDue: false }],
+      purchases: [],
     });
 
     await expect(getOrganizationBillingAccount(context)).resolves.toMatchObject(
@@ -79,10 +97,61 @@ describe("getOrganizationBillingAccount", () => {
         },
       },
       subscriptions: [{ planId: "base-plan", canceledAt: 1_789_000_000_000 }],
+      purchases: [],
     });
 
     await expect(getOrganizationBillingAccount(context)).resolves.toMatchObject(
       { monthlyRefillsAt: null },
+    );
+  });
+
+  it("reads auto-reload in USD with the cycle's spend against the budget and the last failure", async () => {
+    getOrCreateMock.mockResolvedValueOnce({
+      id: "org_1",
+      flags: {},
+      balances: {
+        [AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID]: { remaining: 12000 },
+      },
+      subscriptions: [],
+      purchases: [{ planId: "credit-top-up" }],
+      billingControls: {
+        autoTopups: [
+          {
+            featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+            enabled: true,
+            threshold: 5000,
+            quantity: 20000,
+            purchaseLimit: { interval: "month", intervalCount: 1, limit: 11 },
+          },
+        ],
+        usageLimits: [
+          {
+            featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+            enabled: true,
+            limit: 100000,
+            interval: "month",
+            anchor: "billing_cycle",
+            usage: 42500,
+          },
+        ],
+      },
+      metadata: { autoReloadFailure: { reason: "charge_failed", at: 1_000 } },
+    });
+
+    await expect(getOrganizationBillingAccount(context)).resolves.toMatchObject(
+      {
+        autoReload: {
+          enabled: true,
+          thresholdUsd: 5,
+          amountUsd: 20,
+          monthlyLimitUsd: 100,
+          spentUsd: 42.5,
+          failure: { reason: "charge_failed", at: 1_000 },
+        },
+        // Credits above the threshold: the failed reload is retried by
+        // Autumn when they run low, not charged again now.
+        autoReloadPrimesOnEnable: false,
+      },
     );
   });
 

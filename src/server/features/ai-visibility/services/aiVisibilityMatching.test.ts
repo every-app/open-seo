@@ -7,7 +7,7 @@ import {
   ownedAiDomain,
 } from "./aiVisibilityMatching";
 
-const brand = { name: "OpenSEO", domain: "openseo.so" };
+const brand = { name: "OpenSEO", domain: "openseo.so", own: true };
 function answer(text: string, citedHosts: string[] = []): ParsedAiAnswer {
   return {
     answerMarkdown: text,
@@ -43,8 +43,19 @@ describe("brand mentions", () => {
     ["shop.acmeride.com", false],
   ])("bare name mentions a brand named %s: %s", (domain, mentioned) => {
     const text = "- [Acmeride](https://www.acmeride.com/): Connects directly.";
-    expect(matchAiBrand(answer(text), { name: domain, domain }).mentioned).toBe(
-      mentioned,
+    expect(
+      matchAiBrand(answer(text), { name: domain, domain, own: true }).mentioned,
+    ).toBe(mentioned);
+  });
+
+  it("matches a competitor named Default, but not a project named Default", () => {
+    const text = "Default is the default choice.";
+    const named = { name: "Default", domain: "acme.com" };
+    expect(matchAiBrand(answer(text), { ...named, own: false }).mentioned).toBe(
+      true,
+    );
+    expect(matchAiBrand(answer(text), { ...named, own: true }).mentioned).toBe(
+      false,
     );
   });
 
@@ -103,5 +114,12 @@ describe("branded prompt cohort", () => {
     "Review https://notopenseo.so",
   ])("excludes %s", (prompt) => {
     expect(aiPromptIsBranded(prompt, brand)).toBe(false);
+  });
+  it("never treats the word default as a project named Default", () => {
+    const named = { name: "Default", domain: "acme.com" };
+    expect(aiPromptIsBranded("What is the default setting?", named)).toBe(
+      false,
+    );
+    expect(aiPromptIsBranded("Review acme.com", named)).toBe(true);
   });
 });

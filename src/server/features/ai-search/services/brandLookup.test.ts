@@ -47,6 +47,7 @@ vi.mock("@/server/lib/r2-cache", () => cacheMock);
 import { getBrandLookup } from "./brandLookup";
 import { shapeResult } from "./brandLookupShaping";
 import { brandLookupSearchSchema } from "@/types/schemas/ai-search";
+import { AppError } from "@/server/lib/errors";
 import type {
   LlmMentionItem,
   LlmTopPagesItem,
@@ -117,6 +118,26 @@ describe("getBrandLookup", () => {
     await getBrandLookup(input, billingCustomer);
     expect(cacheMock.setCached).toHaveBeenCalledTimes(1);
     consoleError.mockRestore();
+  });
+
+  it("fails the lookup when one call is refused for credits, even though the rest succeed", async () => {
+    dataforseoClientMock.aiSearch.mentionsSearch.mockRejectedValueOnce(
+      new AppError("INSUFFICIENT_CREDITS"),
+    );
+
+    await expect(
+      getBrandLookup(
+        {
+          projectId: "project_123",
+          query: "acme.com",
+          competitors: [],
+          locationCode: 2840,
+          languageCode: "en",
+        },
+        billingCustomer,
+      ),
+    ).rejects.toMatchObject({ code: "INSUFFICIENT_CREDITS" });
+    expect(cacheMock.setCached).not.toHaveBeenCalled();
   });
 
   it("uses semantic cache keys and reapplies the current display query", async () => {

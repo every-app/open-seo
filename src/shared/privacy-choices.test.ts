@@ -34,7 +34,7 @@ describe("privacy choices", () => {
   });
 
   it("lets Global Privacy Control override a saved advertising choice", () => {
-    const saved = readPrivacyCookie("other=1; openseo_privacy=a1.d1.m1");
+    const saved = readPrivacyCookie("other=1; openseo_privacy=a1.d1.m2");
     expect(
       effectivePrivacyChoices({
         saved,
@@ -42,6 +42,21 @@ describe("privacy choices", () => {
         globalPrivacyControl: true,
       }),
     ).toEqual({ analytics: true, referrals: false, advertising: false });
+  });
+
+  it("asks again for a Meta yes given under the old wording, but keeps a no", () => {
+    const choices = (cookie: string) =>
+      effectivePrivacyChoices({
+        saved: readPrivacyCookie(cookie),
+        optIn: true,
+        globalPrivacyControl: false,
+      });
+    expect(readPrivacyCookie("openseo_privacy=a1.d1.m1")?.advertising).toBe(
+      undefined,
+    );
+    expect(choices("openseo_privacy=a1.d1.m1").advertising).toBe(false);
+    expect(choices("openseo_privacy=a1.d1.m0").advertising).toBe(false);
+    expect(choices("openseo_privacy=a1.d1.m2").advertising).toBe(true);
   });
 
   it("applies the region default to Meta in a cookie saved before that choice existed", () => {

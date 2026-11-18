@@ -5,9 +5,13 @@ import { RankTrackingService } from "@/server/features/rank-tracking/services/Ra
 import { RankTrackingKeywordService } from "@/server/features/rank-tracking/services/RankTrackingKeywordService";
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
 import { AppError, asAppError } from "@/server/lib/errors";
+import { FeatureFlag, isFeatureFlagOn } from "@/server/lib/featureFlags";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
-import { requireProjectContext } from "@/serverFunctions/middleware";
+import {
+  requireAuthenticatedContext,
+  requireProjectContext,
+} from "@/serverFunctions/middleware";
 import {
   getConfigsSchema,
   createConfigSchema,
@@ -46,6 +50,8 @@ export interface RankPositionMatrixCell {
   checkedAt: string;
   trackingKeywordId: string;
   position: number | null;
+  /** False when the keyword was tracked but this run got no result for it. */
+  checked: boolean;
 }
 
 async function requireConfig(configId: string, projectId: string) {
@@ -72,6 +78,10 @@ export const getRankTrackingConfigSummaries = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     return RankTrackingRepository.getConfigSummaries(context.projectId);
   });
+
+export const getScheduledRankChecksPaused = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .handler(() => isFeatureFlagOn(FeatureFlag.PauseScheduledRankChecks));
 
 export const createRankTrackingConfig = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
@@ -184,7 +194,11 @@ export const estimateRankCheckCost = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(estimateCostSchema)
   .handler(async ({ data, context }) => {
-    return RankTrackingService.estimateCost(data.configId, context.projectId);
+    return RankTrackingService.estimateCost(
+      data.configId,
+      context.projectId,
+      context.organizationId,
+    );
   });
 
 function logAutoActionFailure(action: string, err: unknown) {
@@ -218,8 +232,11 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
   .validator(addKeywordsSchema)
   .handler(async ({ data, context }) => {
     const result = await RankTrackingService.addKeywords(
-      data.configId,
-      context.projectId,
+      {
+        configId: data.configId,
+        projectId: context.projectId,
+        organizationId: context.organizationId,
+      },
       data.keywords,
       { kind: "direct_user_action" },
       data.matchCase,

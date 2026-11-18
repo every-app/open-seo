@@ -17,7 +17,7 @@ export const researchProjectWebsiteTool = {
   config: {
     title: "Research project website",
     description:
-      "Fill missing project basics, business competitors, and Prompt Research topics using saved context and verified website pages. Each field is independent: reuse existing name, domain, overview, and competitors; search for competitors only when none are saved. Requires a positive usage-credit balance to start; completes research before billing actual model and search costs, even if that makes the balance negative. Newly researched competitors have evidence links, and the list is empty if live search was unavailable; preserveCompetitors=true means the existing list is reused and competitors is empty. Returns five suggested topics with five prompts each, plus up to fifteen suggested keywords, only when research keywords are missing. Results are drafts, not saved or tracked. Review newly researched competitors before save_project_website_setup.",
+      "Research a project's website to draft its missing setup: brand name, domain, business overview, competitors, and Prompt Research topics. Saved values are reused, and competitors are searched for only when none are saved; preserveCompetitors=true means the saved list is kept and competitors is empty, and a researched list is also empty if live search was unavailable. Returns five suggested topics with five prompts each, plus up to fifteen suggested keywords, only when research keywords are missing. Needs a positive credit balance to start, then bills actual model and search costs, even if that makes the balance negative. Results are drafts, not saved or tracked: review them with the user, then save with save_project_website_setup.",
     inputSchema: researchProjectWebsiteSchema.shape,
     outputSchema: z.looseObject({
       name: z.string(),
@@ -43,7 +43,11 @@ export const researchProjectWebsiteTool = {
         context.billing,
       );
       return mcpResponse({
-        text: JSON.stringify(research),
+        text:
+          JSON.stringify(research) +
+          (research.suggestedTopics.length > 0
+            ? "\nSaving suggestedTopics with save_project_website_setup also starts weekly paid AI tracking of the first three topics, unless the project already tracks prompts. Mention this when the user confirms setup."
+            : ""),
         structuredContent: research,
         meta: buildProjectMeta(
           context,
@@ -59,7 +63,7 @@ export const saveProjectWebsiteSetupTool = {
   config: {
     title: "Save reviewed website setup",
     description:
-      "Fill missing website domain, business overview, and competitors after the user confirms setup. Existing project values and competitor lists are authoritative and never overwritten, including values saved while research was running. Pass suggestedTopics and suggestedKeywords from research: when research keywords are missing, the topic names and keywords fill them, and the first three topics seed initial AI tracking on a weekly schedule, with its first paid check about a week later. Existing keywords and tracking stay intact. New competitor lists can include reviewed manual additions without research evidence. Use update_project_context for explicit edits to saved context. Uses no credits now and never starts answer collection immediately.",
+      "Save a website setup drafted by research_project_website or complete_ai_research_setup once the user confirms it: fills the project's missing website domain, business overview, and competitors. name sets the brand name AI visibility looks for in answers, so confirm it with the user too. Existing project values and competitor lists are never overwritten; a new competitor list can include manual additions the user reviewed. Pass suggestedTopics and suggestedKeywords from the research: when research keywords are missing they fill them (saved keywords are kept, the response warns that the list was ignored, and update_ai_research_keywords changes them), and the first three topics start weekly AI tracking, with its first paid check about a week later, unless the project already tracks prompts. Saving uses no credits and starts no answer collection. For explicit edits to saved context, use update_project_context.",
     inputSchema: saveProjectWebsiteSetupSchema.shape,
     outputSchema: z.looseObject({
       project: looseObjectOutputSchema,
@@ -73,14 +77,18 @@ export const saveProjectWebsiteSetupTool = {
   },
   handler: withMcpProjectAuth(
     async (args: z.infer<typeof saveProjectWebsiteSetupSchema>, context) => {
-      const project = await ProjectWebsiteService.save(
-        args,
-        context.billing,
-        "mcp",
-      );
+      const { project, seededTracking, keywordsIgnored } =
+        await ProjectWebsiteService.save(args, context.billing, "mcp");
+      const warning = keywordsIgnored
+        ? "The project already has Prompt Research keywords, so the suggested topics and keywords were not added to them. To change the saved keywords, use update_ai_research_keywords."
+        : null;
       return mcpResponse({
-        text: "Saved reviewed website setup to project context.",
-        structuredContent: { project },
+        text:
+          (seededTracking
+            ? "Saved reviewed website setup to project context. Weekly AI tracking now covers the first three suggested topics on ChatGPT, and its first paid check runs in about a week. Tell the user; set_ai_visibility_schedule pauses it if they don't want it."
+            : "Saved reviewed website setup to project context.") +
+          (warning ? `\nWarning: ${warning}` : ""),
+        structuredContent: { project, ...(warning ? { warning } : {}) },
         meta: buildProjectMeta(
           context,
           args.projectId,

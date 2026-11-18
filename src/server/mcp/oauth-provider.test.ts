@@ -8,6 +8,8 @@ import {
 import type * as WorkersOAuthProvider from "@cloudflare/workers-oauth-provider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
+import { checkGuestEligibility } from "@/server/auth/guest-accounts";
 import { createOpenSeoOAuthProvider } from "./oauth-provider";
 
 const mocks = vi.hoisted(() => ({
@@ -61,9 +63,14 @@ vi.mock("@/middleware/ensure-user/hosted", () => ({
   resolveHostedContext: vi.fn(),
 }));
 
+vi.mock("@/server/auth/guest-accounts", () => ({
+  checkGuestEligibility: vi.fn(),
+}));
+
 vi.mock("@/server/features/activation/mcpActivation", () => ({
   recordMcpAuthorized: vi.fn(),
   completeOnboardingFromAgent: vi.fn(),
+  markMcpConnected: vi.fn(),
 }));
 
 vi.mock("@/server/lib/posthog", () => ({
@@ -148,6 +155,16 @@ describe("OpenSEO OAuth provider configuration", () => {
     mocks.options.length = 0;
     mocks.requests.length = 0;
     mocks.purges.length = 0;
+    // Nobody is signed in, and the browser may have a guest account.
+    vi.mocked(resolveHostedContext).mockRejectedValue(
+      new Error("UNAUTHENTICATED"),
+    );
+    vi.mocked(checkGuestEligibility).mockResolvedValue({
+      eligible: true,
+      ipHash: "hash",
+      slot: 0,
+      agent: "chatgpt.com",
+    });
   });
 
   it("binds tokens and protected-resource metadata to the canonical MCP URL", async () => {
@@ -287,5 +304,30 @@ describe("OpenSEO OAuth provider configuration", () => {
         },
       ),
     ).rejects.toThrow("internal storage detail");
+  });
+
+  it("sends someone who chose Continue with ChatGPT to sign in, not to a guest account", async () => {
+    const provider = createOpenSeoOAuthProvider(() => new Response("app"));
+    await dispatch(provider, new Request("https://app.openseo.so/health"));
+    const authorize = async (query: string) => {
+      const response = await invokeDefaultHandler(
+        new Request(`https://app.openseo.so/api/auth/oauth2/authorize${query}`),
+        {
+          OAUTH_PROVIDER: {
+            parseAuthRequest: () =>
+              Promise.resolve({ redirectUri: "https://chatgpt.com/callback" }),
+          },
+        },
+      );
+      return new URL(response.headers.get("Location") ?? "");
+    };
+
+    expect((await authorize("?state=1")).pathname).toBe("/connect");
+
+    const signIn = await authorize("?state=1&target_flow=chatgpt_siwc");
+    expect(signIn.pathname).toBe("/sign-in");
+    expect(signIn.searchParams.get("redirect")).toBe(
+      "/api/auth/oauth2/authorize?state=1&target_flow=chatgpt_siwc",
+    );
   });
 });

@@ -60,16 +60,3 @@ it("preserves Bulgarian prompts and country choices in Prompt Explorer URLs", ()
     "default",
   );
 });
-
-it("starts new prompt searches without a country while preserving older US links", () => {
-  expect(promptExplorerSearchSchema.parse({}).cc).toBe("default");
-  expect(
-    promptExplorerSearchSchema.parse({ q: "Find a local studio" }).cc,
-  ).toBe("US");
-  expect(
-    promptExplorerSearchSchema.parse({
-      q: "Find a local studio",
-      cc: "default",
-    }).cc,
-  ).toBe("default");
-});

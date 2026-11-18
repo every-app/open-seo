@@ -1,5 +1,5 @@
 {
-  "id": "d1f1b9fc-e970-4324-a6dc-d65e54ce8238",
+  "id": "a156bda4-a81b-4021-a388-c42d8e1b6fc9",
   "prevId": "a2811087-9d43-412c-ac54-3a079a463e02",
   "version": "7",
   "dialect": "postgresql",
@@ -5378,8 +5378,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.local_map_campaigns": {
-      "name": "local_map_campaigns",
+    "public.local_rank_businesses": {
+      "name": "local_rank_businesses",
       "schema": "",
       "columns": {
         "id": {
@@ -5388,141 +5388,85 @@
           "primaryKey": true,
           "notNull": true
         },
-        "project_id": {
-          "name": "project_id",
+        "scan_id": {
+          "name": "scan_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "name": {
-          "name": "name",
+        "identity": {
+          "name": "identity",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "center_latitude": {
-          "name": "center_latitude",
-          "type": "real",
+        "title": {
+          "name": "title",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "center_longitude": {
-          "name": "center_longitude",
-          "type": "real",
+        "cid": {
+          "name": "cid",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "grid_size": {
-          "name": "grid_size",
+        "place_id": {
+          "name": "place_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rating": {
+          "name": "rating",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviews": {
+          "name": "reviews",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 5
-        },
-        "radius_km": {
-          "name": "radius_km",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 5
-        },
-        "target_place_id": {
-          "name": "target_place_id",
-          "type": "text",
-          "primaryKey": false,
           "notNull": false
-        },
-        "target_cid": {
-          "name": "target_cid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "language_code": {
-          "name": "language_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'en'"
-        },
-        "device": {
-          "name": "device",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'desktop'"
-        },
-        "schedule_interval": {
-          "name": "schedule_interval",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'weekly'"
-        },
-        "serp_depth": {
-          "name": "serp_depth",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 20
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "last_checked_at": {
-          "name": "last_checked_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "next_check_at": {
-          "name": "next_check_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
         }
       },
       "indexes": {
-        "local_map_campaigns_project_idx": {
-          "name": "local_map_campaigns_project_idx",
+        "local_rank_businesses_scan_identity_idx": {
+          "name": "local_rank_businesses_scan_identity_idx",
           "columns": [
             {
-              "expression": "project_id",
+              "expression": "scan_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "is_active",
+              "expression": "identity",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "local_map_campaigns_project_id_projects_id_fk": {
-          "name": "local_map_campaigns_project_id_projects_id_fk",
-          "tableFrom": "local_map_campaigns",
-          "tableTo": "projects",
+        "local_rank_businesses_scan_id_local_rank_scans_id_fk": {
+          "name": "local_rank_businesses_scan_id_local_rank_scans_id_fk",
+          "tableFrom": "local_rank_businesses",
+          "tableTo": "local_rank_scans",
           "columnsFrom": [
-            "project_id"
+            "scan_id"
           ],
           "columnsTo": [
             "id"
@@ -5537,8 +5481,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.local_map_keywords": {
-      "name": "local_map_keywords",
+    "public.local_rank_checks": {
+      "name": "local_rank_checks",
       "schema": "",
       "columns": {
         "id": {
@@ -5547,8 +5491,128 @@
           "primaryKey": true,
           "notNull": true
         },
-        "campaign_id": {
-          "name": "campaign_id",
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tracker_id": {
+          "name": "tracker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "local_rank_checks_tracker_created_idx": {
+          "name": "local_rank_checks_tracker_created_idx",
+          "columns": [
+            {
+              "expression": "tracker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "local_rank_checks_one_active_idx": {
+          "name": "local_rank_checks_one_active_idx",
+          "columns": [
+            {
+              "expression": "tracker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"local_rank_checks\".\"status\" IN ('queued', 'running')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "local_rank_checks_project_id_projects_id_fk": {
+          "name": "local_rank_checks_project_id_projects_id_fk",
+          "tableFrom": "local_rank_checks",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_checks_tracker_id_local_rank_trackers_id_fk": {
+          "name": "local_rank_checks_tracker_id_local_rank_trackers_id_fk",
+          "tableFrom": "local_rank_checks",
+          "tableTo": "local_rank_trackers",
+          "columnsFrom": [
+            "tracker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.local_rank_keywords": {
+      "name": "local_rank_keywords",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tracker_id": {
+          "name": "tracker_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -5559,20 +5623,19 @@
           "primaryKey": false,
           "notNull": true
         },
-        "created_at": {
-          "name": "created_at",
+        "archived_at": {
+          "name": "archived_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "notNull": false
         }
       },
       "indexes": {
-        "local_map_keywords_campaign_keyword_idx": {
-          "name": "local_map_keywords_campaign_keyword_idx",
+        "local_rank_keywords_tracker_keyword_idx": {
+          "name": "local_rank_keywords_tracker_keyword_idx",
           "columns": [
             {
-              "expression": "campaign_id",
+              "expression": "tracker_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -5591,12 +5654,12 @@
         }
       },
       "foreignKeys": {
-        "local_map_keywords_campaign_id_local_map_campaigns_id_fk": {
-          "name": "local_map_keywords_campaign_id_local_map_campaigns_id_fk",
-          "tableFrom": "local_map_keywords",
-          "tableTo": "local_map_campaigns",
+        "local_rank_keywords_tracker_id_local_rank_trackers_id_fk": {
+          "name": "local_rank_keywords_tracker_id_local_rank_trackers_id_fk",
+          "tableFrom": "local_rank_keywords",
+          "tableTo": "local_rank_trackers",
           "columnsFrom": [
-            "campaign_id"
+            "tracker_id"
           ],
           "columnsTo": [
             "id"
@@ -5611,8 +5674,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.local_map_scan_results": {
-      "name": "local_map_scan_results",
+    "public.local_rank_points": {
+      "name": "local_rank_points",
       "schema": "",
       "columns": {
         "id": {
@@ -5621,80 +5684,85 @@
           "primaryKey": true,
           "notNull": true
         },
-        "run_id": {
-          "name": "run_id",
+        "scan_id": {
+          "name": "scan_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "keyword_id": {
-          "name": "keyword_id",
-          "type": "text",
+        "row": {
+          "name": "row",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "pin_index": {
-          "name": "pin_index",
+        "col": {
+          "name": "col",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
         "latitude": {
           "name": "latitude",
-          "type": "real",
+          "type": "double precision",
           "primaryKey": false,
           "notNull": true
         },
         "longitude": {
           "name": "longitude",
-          "type": "real",
+          "type": "double precision",
           "primaryKey": false,
           "notNull": true
         },
-        "rank_absolute": {
-          "name": "rank_absolute",
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank": {
+          "name": "rank",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "matched_title": {
-          "name": "matched_title",
+        "results_count": {
+          "name": "results_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "snapshot_json": {
-          "name": "snapshot_json",
+        "collected_at": {
+          "name": "collected_at",
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "checked_at": {
-          "name": "checked_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
         }
       },
       "indexes": {
-        "local_map_scan_results_run_keyword_pin_idx": {
-          "name": "local_map_scan_results_run_keyword_pin_idx",
+        "local_rank_points_scan_position_idx": {
+          "name": "local_rank_points_scan_position_idx",
           "columns": [
             {
-              "expression": "run_id",
+              "expression": "scan_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "keyword_id",
+              "expression": "row",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "pin_index",
+              "expression": "col",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -5707,12 +5775,100 @@
         }
       },
       "foreignKeys": {
-        "local_map_scan_results_run_id_local_map_scan_runs_id_fk": {
-          "name": "local_map_scan_results_run_id_local_map_scan_runs_id_fk",
-          "tableFrom": "local_map_scan_results",
-          "tableTo": "local_map_scan_runs",
+        "local_rank_points_scan_id_local_rank_scans_id_fk": {
+          "name": "local_rank_points_scan_id_local_rank_scans_id_fk",
+          "tableFrom": "local_rank_points",
+          "tableTo": "local_rank_scans",
           "columnsFrom": [
-            "run_id"
+            "scan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.local_rank_results": {
+      "name": "local_rank_results",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "point_id": {
+          "name": "point_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "business_id": {
+          "name": "business_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "local_rank_results_point_business_idx": {
+          "name": "local_rank_results_point_business_idx",
+          "columns": [
+            {
+              "expression": "point_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "business_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "local_rank_results_business_idx": {
+          "name": "local_rank_results_business_idx",
+          "columns": [
+            {
+              "expression": "business_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "local_rank_results_point_id_local_rank_points_id_fk": {
+          "name": "local_rank_results_point_id_local_rank_points_id_fk",
+          "tableFrom": "local_rank_results",
+          "tableTo": "local_rank_points",
+          "columnsFrom": [
+            "point_id"
           ],
           "columnsTo": [
             "id"
@@ -5720,10 +5876,188 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "local_map_scan_results_keyword_id_local_map_keywords_id_fk": {
-          "name": "local_map_scan_results_keyword_id_local_map_keywords_id_fk",
-          "tableFrom": "local_map_scan_results",
-          "tableTo": "local_map_keywords",
+        "local_rank_results_business_id_local_rank_businesses_id_fk": {
+          "name": "local_rank_results_business_id_local_rank_businesses_id_fk",
+          "tableFrom": "local_rank_results",
+          "tableTo": "local_rank_businesses",
+          "columnsFrom": [
+            "business_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.local_rank_scans": {
+      "name": "local_rank_scans",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "check_id": {
+          "name": "check_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tracker_id": {
+          "name": "tracker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "keyword_id": {
+          "name": "keyword_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "local_rank_scans_tracker_created_idx": {
+          "name": "local_rank_scans_tracker_created_idx",
+          "columns": [
+            {
+              "expression": "tracker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "local_rank_scans_project_idx": {
+          "name": "local_rank_scans_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "local_rank_scans_check_keyword_idx": {
+          "name": "local_rank_scans_check_keyword_idx",
+          "columns": [
+            {
+              "expression": "check_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "keyword_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "local_rank_scans_check_id_local_rank_checks_id_fk": {
+          "name": "local_rank_scans_check_id_local_rank_checks_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "local_rank_checks",
+          "columnsFrom": [
+            "check_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_scans_project_id_projects_id_fk": {
+          "name": "local_rank_scans_project_id_projects_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_scans_tracker_id_local_rank_trackers_id_fk": {
+          "name": "local_rank_scans_tracker_id_local_rank_trackers_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "local_rank_trackers",
+          "columnsFrom": [
+            "tracker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "local_rank_scans_keyword_id_local_rank_keywords_id_fk": {
+          "name": "local_rank_scans_keyword_id_local_rank_keywords_id_fk",
+          "tableFrom": "local_rank_scans",
+          "tableTo": "local_rank_keywords",
           "columnsFrom": [
             "keyword_id"
           ],
@@ -5740,8 +6074,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.local_map_scan_runs": {
-      "name": "local_map_scan_runs",
+    "public.local_rank_trackers": {
+      "name": "local_rank_trackers",
       "schema": "",
       "columns": {
         "id": {
@@ -5750,90 +6084,79 @@
           "primaryKey": true,
           "notNull": true
         },
-        "campaign_id": {
-          "name": "campaign_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "status": {
-          "name": "status",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
+          "notNull": true
         },
-        "trigger": {
-          "name": "trigger",
+        "address": {
+          "name": "address",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'manual'"
+          "notNull": false
         },
-        "pins_total": {
-          "name": "pins_total",
+        "cid": {
+          "name": "cid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "place_id": {
+          "name": "place_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grid_size": {
+          "name": "grid_size",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": true
         },
-        "pins_completed": {
-          "name": "pins_completed",
-          "type": "integer",
+        "spacing_km": {
+          "name": "spacing_km",
+          "type": "double precision",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": true
         },
-        "cost_usd": {
-          "name": "cost_usd",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "error_message": {
-          "name": "error_message",
+        "language_code": {
+          "name": "language_code",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
-        },
-        "started_at": {
-          "name": "started_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "notNull": true
         }
       },
       "indexes": {
-        "local_map_scan_runs_campaign_idx": {
-          "name": "local_map_scan_runs_campaign_idx",
+        "local_rank_trackers_project_idx": {
+          "name": "local_rank_trackers_project_idx",
           "columns": [
             {
-              "expression": "campaign_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
+              "expression": "project_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -5843,201 +6166,15 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "local_map_scan_runs_active_idx": {
-          "name": "local_map_scan_runs_active_idx",
-          "columns": [
-            {
-              "expression": "campaign_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"local_map_scan_runs\".\"status\" IN ('pending', 'running')",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
-        "local_map_scan_runs_campaign_id_local_map_campaigns_id_fk": {
-          "name": "local_map_scan_runs_campaign_id_local_map_campaigns_id_fk",
-          "tableFrom": "local_map_scan_runs",
-          "tableTo": "local_map_campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "local_map_scan_runs_project_id_projects_id_fk": {
-          "name": "local_map_scan_runs_project_id_projects_id_fk",
-          "tableFrom": "local_map_scan_runs",
+        "local_rank_trackers_project_id_projects_id_fk": {
+          "name": "local_rank_trackers_project_id_projects_id_fk",
+          "tableFrom": "local_rank_trackers",
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.organization_usage_ledger": {
-      "name": "organization_usage_ledger",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "credit_feature": {
-          "name": "credit_feature",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "cost_usd": {
-          "name": "cost_usd",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "api_path": {
-          "name": "api_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
-        }
-      },
-      "indexes": {
-        "organization_usage_ledger_org_created_idx": {
-          "name": "organization_usage_ledger_org_created_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "organization_usage_ledger_organization_id_organization_id_fk": {
-          "name": "organization_usage_ledger_organization_id_organization_id_fk",
-          "tableFrom": "organization_usage_ledger",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.organization_usage_settings": {
-      "name": "organization_usage_settings",
-      "schema": "",
-      "columns": {
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "monthly_budget_usd": {
-          "name": "monthly_budget_usd",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "alert_threshold_pct": {
-          "name": "alert_threshold_pct",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 80
-        },
-        "daily_agent_budget_usd": {
-          "name": "daily_agent_budget_usd",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "organization_usage_settings_organization_id_organization_id_fk": {
-          "name": "organization_usage_settings_organization_id_organization_id_fk",
-          "tableFrom": "organization_usage_settings",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
           ],
           "columnsTo": [
             "id"

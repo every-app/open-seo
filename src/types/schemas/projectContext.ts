@@ -74,6 +74,8 @@ const keyPageInputSchema = z.object({
 // Content length and per-project row caps are NOT enforced here — the service
 // owns them so every writer (server fn, MCP tool, SAM) hits the same limits.
 const projectContextUpdateSchema = z.union([
+  // An empty string goes back to using the project name.
+  z.strictObject({ brandName: z.string().trim().max(120) }),
   z.strictObject({
     section: projectContextSectionKeySchema,
     // An empty string clears the section.

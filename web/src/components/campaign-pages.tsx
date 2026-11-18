@@ -21,6 +21,7 @@ import {
   type Testimonial,
   Testimonials,
 } from "@/components/landing-page";
+import { AddToAgentLinks } from "@/components/add-to-agent-links";
 import { MoneyBackGuarantee } from "@/components/money-back-guarantee";
 import { DEFAULT_COUNTRY_CODE } from "@/lib/free-tools/countries";
 import { FIELD_CLASS, SubmitButton, ToolForm } from "@/lib/free-tools/form";
@@ -34,6 +35,22 @@ const EXAMPLE_REPORT_URL =
 
 // ─── Shared pieces ───────────────────────────────────────────────────
 
+function CampaignNav() {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 md:pt-8">
+      <nav className="itc-campaign-nav mx-auto flex min-h-14 max-w-5xl items-center justify-between gap-3 rounded-full border border-[var(--color-border-subtle)] bg-white/90 py-2 pl-5 pr-2 shadow-sm shadow-neutral-900/5">
+        <span className="text-sm font-semibold">OpenSEO</span>
+        <a
+          href={SIGNUP_URL}
+          className="inline-flex h-9 items-center rounded-full bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+        >
+          Start free trial
+        </a>
+      </nav>
+    </div>
+  );
+}
+
 function ProofRow() {
   return (
     <div className="itc-proof">
@@ -43,14 +60,14 @@ function ProofRow() {
         ))}
       </span>
       <span>
-        <strong>3,000+</strong> users
+        <strong>90,000+</strong> users
       </span>
       <span className="itc-proof-divider" aria-hidden="true" />
       <span>
         <span className="itc-proof-star" aria-hidden="true">
           ★
         </span>{" "}
-        <strong>22k+</strong> GitHub stars
+        <strong>26k+</strong> GitHub stars
       </span>
     </div>
   );
@@ -187,22 +204,24 @@ const SELF_HOST_ANSWER = (
 );
 
 const BILLING_ANSWER =
-  "One plan at $10/mo includes $10 of usage every month. Buy extra usage when you need it; top-ups never expire. Cancel anytime from your billing portal.";
+  "Starting from $10/mo, with $10 of usage every month. Buy extra usage when you need it, or let auto-reload buy it for you up to a monthly limit; top-ups never expire. Cancel anytime from your billing portal.";
 
 // ─── /agencies ───────────────────────────────────────────────────────
 
+export const GABE_TESTIMONIAL: Testimonial = {
+  quote:
+    "Our agency killed $2,000 in Semrush and $1,000 in Ahrefs costs because of OpenSEO & DataForSEO. We went from $3,000 a month to $30 in API calls to DataForSEO.",
+  name: "Gabe Fletcher",
+  role: "NannerAds",
+  initial: "G",
+  handle: "@gabefletcher",
+  href: "https://x.com/gabefletcher/status/2108388926281167057",
+  network: "x",
+  avatarSrc: "/avatars/gabe-avatar.jpg",
+};
+
 const AGENCY_TESTIMONIALS: Testimonial[] = [
-  {
-    quote:
-      "Our agency killed $2,000 in Semrush and $1,000 in Ahrefs costs because of OpenSEO & DataForSEO. We went from $3,000 a month to $30 in API calls to DataForSEO.",
-    name: "Gabe Fletcher",
-    role: "NannerAds",
-    initial: "G",
-    handle: "@gabefletcher",
-    href: "https://x.com/gabefletcher/status/2108388926281167057",
-    network: "x",
-    avatarSrc: "/avatars/gabe-avatar.jpg",
-  },
+  GABE_TESTIMONIAL,
   ...TESTIMONIALS.filter((t) => t.name !== "Tom Raine"),
 ];
 
@@ -433,6 +452,7 @@ function GateCta({ label, domain }: { label: string; domain: string }) {
 export function AgencyLandingPage() {
   return (
     <>
+      <CampaignNav />
       <section className="itc-campaign-hero">
         <Container>
           <h1
@@ -502,9 +522,9 @@ export function AgencyLandingPage() {
 
       <PriceCompare
         heading="Priced for client work"
-        body="One plan at $10/mo with $10 of usage included. More clients means more usage, not a bigger plan."
+        body="Starting from $10/mo with $10 of usage included. Every plan has every feature, so more clients just means more usage."
         openSeo={{
-          price: "~$27",
+          price: "~$41",
           caption:
             "15 client sites with rankings checked weekly, plus regular keyword research.",
         }}
@@ -554,6 +574,7 @@ const AGENT_FAQ: FaqItem[] = [
 export function AgentLandingPage() {
   return (
     <>
+      <CampaignNav />
       <section className="itc-campaign-hero">
         <Container>
           <h1
@@ -583,6 +604,9 @@ export function AgentLandingPage() {
               <SkillsList />
               <AgentIcons />
               <div className="itc-mcp-ctas">
+                <div className="flex flex-wrap gap-3">
+                  <AddToAgentLinks className="itc-btn itc-btn-secondary" />
+                </div>
                 <a href="/docs/agent-setup" className="itc-textlink">
                   Setup guide <IconArrowRight size={15} className="itc-arrow" />
                 </a>

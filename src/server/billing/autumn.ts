@@ -55,6 +55,8 @@ export const autumn = {
       loadAutumn().then((client) => client.customers.get(...args)),
     update: (...args: Parameters<Autumn["customers"]["update"]>) =>
       loadAutumn().then((client) => client.customers.update(...args)),
+    delete: (...args: Parameters<Autumn["customers"]["delete"]>) =>
+      loadAutumn().then((client) => client.customers.delete(...args)),
   },
   events: {
     aggregate: (...args: Parameters<Autumn["events"]["aggregate"]>) =>
@@ -69,16 +71,36 @@ export const autumn = {
     // SDK's fail-open set, so a lost deduction surfaces as an error.
     finalize: (...args: Parameters<Autumn["balances"]["finalize"]>) =>
       loadAutumn().then((client) => client.balances.finalize(...args)),
+    update: (...args: Parameters<Autumn["balances"]["update"]>) =>
+      loadAutumn().then((client) => client.balances.update(...args)),
   },
   billing: {
     attach: (...args: Parameters<Autumn["billing"]["attach"]>) =>
       loadAutumn().then((client) => client.billing.attach(...args)),
+    previewAttach: (...args: Parameters<Autumn["billing"]["previewAttach"]>) =>
+      loadAutumn().then((client) => client.billing.previewAttach(...args)),
     openCustomerPortal: (
       ...args: Parameters<Autumn["billing"]["openCustomerPortal"]>
     ) =>
       loadAutumn().then((client) => client.billing.openCustomerPortal(...args)),
+    update: (...args: Parameters<Autumn["billing"]["update"]>) =>
+      loadAutumn().then((client) => client.billing.update(...args)),
   },
 };
+
+// The SDK's own errors for a request that did not get an answer: a charge
+// may still have gone through on Autumn's side. Matched by class name, as
+// the SDK does not set `name` on them.
+const NO_ANSWER_ERROR_NAMES = new Set([
+  "RequestTimeoutError",
+  "ConnectionError",
+  "RequestAbortedError",
+  "UnexpectedClientError",
+]);
+export const isNoAnswerError = (error: unknown): error is Error =>
+  error instanceof Error &&
+  (NO_ANSWER_ERROR_NAMES.has(error.name) ||
+    NO_ANSWER_ERROR_NAMES.has(error.constructor.name));
 
 // track() has no idempotency key, so replaying a deduction Autumn already
 // processed (5xx after a successful write, dropped connection) would

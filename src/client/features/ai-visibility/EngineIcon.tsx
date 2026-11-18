@@ -37,12 +37,42 @@ const PERPLEXITY = [
   "M19.785 0v7.272H22.5V17.62h-2.935V24l-7.037-6.194v6.145h-1.091v-6.152L4.392 24v-6.465H1.5V7.188h2.884V0l7.053 6.494V.19h1.09v6.49L19.786 0zm-7.257 9.044v7.319l5.946 5.234V14.44l-5.946-5.397zm-1.099-.08l-5.946 5.398v7.235l5.946-5.234V8.965zm8.136 7.58h1.844V8.349H13.46l6.105 5.54v2.655zm-8.982-8.28H2.59v8.195h1.8v-2.576l6.192-5.62zM5.475 2.476v4.71h5.115l-5.115-4.71zm13.219 0l-5.115 4.71h5.115v-4.71z",
 ];
 
+/**
+ * Google marks AI Mode with a search glass that holds a spark, which keeps it
+ * apart from AI Overviews. The glass is lucide's Search (ISC). The spark is
+ * wide enough at 16px that it does not read as the plus of a zoom icon.
+ */
+function AiModeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="m21 21-4.34-4.34" />
+      <circle cx="11" cy="11" r="8" />
+      <path
+        fill="currentColor"
+        stroke="none"
+        d="M11 5.5C11.66 8.525 13.475 10.34 16.5 11C13.475 11.66 11.66 13.475 11 16.5C10.34 13.475 8.525 11.66 5.5 11C8.525 10.34 10.34 8.525 11 5.5Z"
+      />
+    </svg>
+  );
+}
+
 export function EngineIcon({
   engine,
   ...props
 }: SVGProps<SVGSVGElement> & { engine: AiEngine }) {
   if (engine === "chatgpt") return <OpenAIIcon {...props} />;
   if (engine === "gemini") return <Mark paths={GEMINI} {...props} />;
+  if (engine === "google_ai_mode") return <AiModeIcon {...props} />;
   if (engine === "claude") return <ClaudeIcon {...props} />;
   if (engine === "perplexity") return <Mark paths={PERPLEXITY} {...props} />;
   return <Mark paths={GOOGLE} {...props} />;

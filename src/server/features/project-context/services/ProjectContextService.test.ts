@@ -6,6 +6,8 @@ import {
 } from "./ProjectContextService";
 
 const mocks = vi.hoisted(() => ({
+  getBrandName: vi.fn(),
+  setBrandName: vi.fn(),
   listSections: vi.fn(),
   upsertSection: vi.fn(),
   deleteSection: vi.fn(),
@@ -57,6 +59,7 @@ const section = (
 
 describe("project context service", () => {
   beforeEach(() => {
+    mocks.getBrandName.mockResolvedValue(null);
     mocks.listSections.mockResolvedValue([]);
     mocks.listCompetitors.mockResolvedValue([]);
     mocks.listKeyPages.mockResolvedValue([]);
@@ -86,6 +89,19 @@ describe("project context service", () => {
     expect(context.customSections).toEqual([
       expect.objectContaining({ slug: "launch-plan", title: "Launch plan" }),
     ]);
+  });
+
+  it.each([
+    ["Acme", "Acme"],
+    ["", null],
+  ])("saves brand name %j as %j", async (brandName, saved) => {
+    await applyContextUpdates("project_1", [{ brandName }], "user");
+
+    expect(mocks.setBrandName).toHaveBeenCalledWith(
+      expect.anything(),
+      "project_1",
+      saved,
+    );
   });
 
   it("clears a typed section when the content is empty", async () => {
@@ -306,6 +322,7 @@ describe("project context service", () => {
   it("says so when the research log is rendered at its limit", () => {
     const render = (entryCount: number) =>
       renderProjectContextMarkdown({
+        brandName: null,
         sections: [],
         missingSections: [],
         customSections: [],

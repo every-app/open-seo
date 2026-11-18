@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClientLoader } from "fumadocs-mdx/runtime/vite";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { ContentPost, mdxComponents } from "@/components/content-post";
 import { baseOptions } from "@/lib/layout.shared";
 import { getDocsPageTree, getDocsPost } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
-import { docs } from "../../../.source/index";
+import browserCollections from "fumadocs-mdx:collections/browser";
 
 export const Route = createFileRoute("/docs/$")({
   loader: async ({ params }: { params: { _splat?: string } }) => {
@@ -31,7 +30,7 @@ export const Route = createFileRoute("/docs/$")({
   component: DocsPost,
 });
 
-const clientMdxLoader = createClientLoader(docs, {
+const clientMdxLoader = browserCollections.docs.createClientLoader({
   id: "docs",
   component({ default: MDX }) {
     return <MDX components={mdxComponents} />;
@@ -40,7 +39,6 @@ const clientMdxLoader = createClientLoader(docs, {
 
 function DocsPost() {
   const data = Route.useLoaderData();
-  const Content = clientMdxLoader.getComponent(data.path);
 
   return (
     <DocsLayout tree={data.pageTree} {...baseOptions()}>
@@ -49,8 +47,9 @@ function DocsPost() {
         backTo="/docs"
         title={data.title}
         description={data.description}
-        Content={Content}
-      />
+      >
+        {clientMdxLoader.useContent(data.path)}
+      </ContentPost>
     </DocsLayout>
   );
 }

@@ -10,21 +10,30 @@ const resultSchema = z.object({
   // ChatGPT and Gemini LLM Scraper fields.
   markdown: optionalMarkdown,
   sources: sourceList,
-  // Google organic SERP field.
+  // Google organic and AI Mode SERP field.
   items: z.array(z.unknown()).max(500).nullish(),
+});
+const aiOverviewElementSchema = z.object({
+  type: z.string().nullish(),
+  references: sourceList,
+  // A shopping element's product cards, and its text with each card in place.
+  markdown: optionalMarkdown,
+  items: z
+    .array(
+      z.object({ title: z.string().nullish(), seller: z.string().nullish() }),
+    )
+    .max(500)
+    .nullish(),
 });
 const aiOverviewSchema = z.object({
   type: z.literal("ai_overview"),
   markdown: optionalMarkdown,
   references: sourceList,
-  items: z
-    .array(z.object({ references: sourceList }))
-    .max(500)
-    .nullish(),
+  items: z.array(aiOverviewElementSchema).max(500).nullish(),
 });
 const sourceSchema = z.object({
   url: z.string().max(16_384),
-  title: z.string().max(10_000).nullish(),
+  title: z.string().max(10_000).transform(withoutNul).nullish(),
 });
 
 export interface AiCitation {
@@ -64,19 +73,26 @@ export function parseDataforseoAnswer(
   const result = parsed.data;
   let markdown: string | null;
   let sources: unknown[];
-  if (engine === "google_ai_overview") {
+  // An AI Mode answer comes back as an `ai_overview` item too.
+  if (engine === "google_ai_overview" || engine === "google_ai_mode") {
     const overview = result.items
       ?.map((item) => aiOverviewSchema.safeParse(item))
       .find((item) => item.success)?.data;
-    markdown = overview?.markdown ?? null;
+    markdown = overview?.markdown
+      ? withProductCards(overview.markdown, overview.items ?? [])
+      : null;
     sources = [
       ...(overview?.references ?? []),
       ...(overview?.items ?? []).flatMap((item) => item.references ?? []),
+      // A store or site the answer links to in its text is cited too, even
+      // when Google lists no source for it.
+      ...(markdown ? linkedPages(markdown) : []),
     ];
   } else {
     markdown = result.markdown ?? null;
     sources = result.sources ?? [];
   }
+  if (markdown) markdown = withoutNul(markdown);
   const answerText = markdown ? markdownToText(markdown) : "";
   return {
     answerMarkdown: answerText.trim() ? markdown : null,
@@ -84,6 +100,50 @@ export function parseDataforseoAnswer(
     citations: citationsFrom(sources),
     collectedAt: dateOrNull(result.datetime),
   };
+}
+
+/**
+ * Pages the answer links to in its text, leaving out images and Google's own
+ * links: redirects that hide where they go, and Google Shopping pages.
+ */
+function linkedPages(markdown: string): { url: string }[] {
+  return Array.from(
+    markdown.matchAll(
+      /(?<!!)\[(?:[^[\]]|\[[^\]]*\])*\]\((https?:\/\/[^)\s]+)\)/g,
+    ),
+    ([, url]) => ({ url }),
+  ).filter(({ url }) => !/^https?:\/\/([a-z0-9-]+\.)*google\.com\//i.test(url));
+}
+
+/** A product card in a shopping element: `[![name](image)](product page)`. */
+const PRODUCT_CARD = /\[!\[([^\]]*)\]\([^)\s]*\)\]\([^)\s]*\)\s*/g;
+
+/**
+ * Google AI Mode shows product cards, each with a product's name and a store.
+ * DataForSEO leaves the cards out of the answer's markdown and keeps them in
+ * the shopping element, whose markdown is the same text with each card in
+ * place. This puts each card back as its name and store, which are text the
+ * answer shows.
+ */
+function withProductCards(
+  markdown: string,
+  elements: z.infer<typeof aiOverviewElementSchema>[],
+): string {
+  for (const element of elements) {
+    const cards = element.markdown;
+    if (element.type !== "ai_overview_shopping" || !cards) continue;
+    markdown = markdown.replace(cards.replace(PRODUCT_CARD, ""), () => {
+      let card = 0;
+      // The cards and the products are in the same order. A card's own name
+      // is HTML-escaped, so the product's title is used when there is one.
+      return cards.replace(PRODUCT_CARD, (_, name: string) => {
+        const product = element.items?.[card++];
+        const store = product?.seller ? ` · ${product.seller}` : "";
+        return `**${product?.title ?? name}**${store}\n\n`;
+      });
+    });
+  }
+  return markdown;
 }
 
 /**
@@ -96,10 +156,12 @@ export function parseLlmResponseAnswer(
   const sections = (result.items ?? [])
     .filter((item) => item.type === "message")
     .flatMap((item) => item.sections ?? []);
-  const markdown = sections
-    .map((section) => section.text ?? "")
-    .filter(Boolean)
-    .join("\n\n");
+  const markdown = withoutNul(
+    sections
+      .map((section) => section.text ?? "")
+      .filter(Boolean)
+      .join("\n\n"),
+  );
   const answerText = markdownToText(markdown);
   return {
     answerMarkdown: answerText.trim() ? markdown : null,
@@ -109,6 +171,11 @@ export function parseLlmResponseAnswer(
     ),
     collectedAt: null,
   };
+}
+
+/** Postgres text columns reject NUL, which scraped answers and titles can carry. */
+function withoutNul(text: string): string {
+  return text.replaceAll("\0", "");
 }
 
 function dateOrNull(value: string | null | undefined): string | null {

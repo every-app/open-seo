@@ -9,6 +9,7 @@ import {
   type GscPerformanceFilter,
 } from "@/server/features/gsc/searchAnalytics";
 import {
+  buildDailyTrend,
   buildStrikingDistanceRows,
   previousPeriod,
   sumSearchTotals,
@@ -16,6 +17,7 @@ import {
 } from "@/server/features/gsc/searchPerformanceReport";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
+  type SearchPerformanceType,
   searchPerformanceInputSchema,
   searchPerformanceTableExportInputSchema,
   searchPerformanceTableInputSchema,
@@ -32,8 +34,11 @@ const EXPORT_ROW_LIMIT = 1000;
 
 /** Build GSC filter groups shared by every call. Device, page, and query apply everywhere;
  *  country applies everywhere except the country breakdown itself (so the
- *  dropdown keeps every option visible while one country is selected). */
+ *  dropdown keeps every option visible while one country is selected).
+ *  Google rejects a device filter on Discover, so a leftover device in an old
+ *  link is dropped there. */
 function buildGscFilters(data: {
+  searchType: SearchPerformanceType;
   device?: string;
   country?: string;
   pageFilter?: { operator: "contains" | "equals"; expression: string };
@@ -42,12 +47,14 @@ function buildGscFilters(data: {
   nonCountryFilters: GscPerformanceFilter[];
   filters: GscPerformanceFilter[];
 } {
-  const nonCountryFilters: GscPerformanceFilter[] = data.device
-    ? [{ dimension: "device", operator: "equals", expression: data.device }]
-    : [];
+  const nonCountryFilters: GscPerformanceFilter[] =
+    data.device && data.searchType !== "discover"
+      ? [{ dimension: "device", operator: "equals", expression: data.device }]
+      : [];
   if (data.pageFilter)
     nonCountryFilters.push({ dimension: "page", ...data.pageFilter });
-  if (data.queryFilter)
+  // Discover and Google News have no query dimension to filter on.
+  if (data.queryFilter && data.searchType === "web")
     nonCountryFilters.push({ dimension: "query", ...data.queryFilter });
   const filters: GscPerformanceFilter[] = data.country
     ? [
@@ -81,6 +88,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
     const prev = previousPeriod(startDate, endDate);
     const projectId = context.projectId;
     const { nonCountryFilters, filters } = buildGscFilters(data);
+    const type = data.searchType;
 
     try {
       const [current, previous, queryPages, countries] = await Promise.all([
@@ -88,6 +96,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
           projectId,
           startDate,
           endDate,
+          type,
           dimensions: ["date"],
           filters,
           rowLimit: DAILY_ROW_LIMIT,
@@ -96,22 +105,28 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
           projectId,
           startDate: prev.startDate,
           endDate: prev.endDate,
+          type,
           dimensions: ["date"],
           filters,
           rowLimit: DAILY_ROW_LIMIT,
         }),
+        // Striking distance needs queries and positions, which only web has.
+        type === "web"
+          ? GscService.getPerformance({
+              projectId,
+              startDate,
+              endDate,
+              type,
+              dimensions: ["query", "page"],
+              filters,
+              rowLimit: STRIKING_DISTANCE_FETCH_LIMIT,
+            })
+          : { rows: [] },
         GscService.getPerformance({
           projectId,
           startDate,
           endDate,
-          dimensions: ["query", "page"],
-          filters,
-          rowLimit: STRIKING_DISTANCE_FETCH_LIMIT,
-        }),
-        GscService.getPerformance({
-          projectId,
-          startDate,
-          endDate,
+          type,
           dimensions: ["country"],
           filters: nonCountryFilters,
           rowLimit: COUNTRY_ROW_LIMIT,
@@ -128,6 +143,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
         },
         totals: sumSearchTotals(current.rows),
         prevTotals: sumSearchTotals(previous.rows),
+        trend: buildDailyTrend(current.rows, startDate, endDate),
         strikingDistance: buildStrikingDistanceRows(queryPages.rows),
         countries: toDimensionRows(countries.rows),
       };
@@ -159,6 +175,7 @@ export const getSearchPerformanceTable = createServerFn({ method: "POST" })
         projectId: context.projectId,
         startDate,
         endDate,
+        type: data.searchType,
         dimensions: [data.dimension],
         filters,
         // One extra row tells us whether a further page exists.
@@ -207,6 +224,7 @@ export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
       projectId: context.projectId,
       startDate,
       endDate,
+      type: data.searchType,
       dimensions: [data.dimension],
       filters,
       rowLimit: EXPORT_ROW_LIMIT,

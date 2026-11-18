@@ -81,7 +81,7 @@ beforeAll(async () => {
 
 afterAll(() => {
   client.close();
-  rmSync(directory, { recursive: true });
+  rmSync(directory, { recursive: true, force: true, maxRetries: 3 });
 });
 beforeEach(async () => {
   oauth.getGoogleAccessToken.mockImplementation(
@@ -202,6 +202,23 @@ for (const provider of ["gsc", "ga4"] as const) {
     });
   });
 }
+
+it("disconnects a removed member's mappings in that organization only", async () => {
+  for (const provider of ["gsc", "ga4"] as const) {
+    await mapping(provider, "p1"); // org1, the member leaving
+    await mapping(provider, "p2"); // org2, where they stay
+    await mapping(provider, "p3", "google-a", "u2"); // org1, a teammate
+  }
+  await service.disconnectMember("u1", "org1");
+  for (const table of ["gsc_connections", "ga4_connections"] as const) {
+    expect((await rows(table)).map((row) => row.project_id)).toEqual([
+      "p2",
+      "p3",
+    ]);
+  }
+  // Only the disconnected project's cached Search Console data goes.
+  expect(oauth.deleteGscCache.mock.calls).toEqual([["p1"]]);
+});
 
 it("includes legacy GSC mappings in removal without touching another user's legacy mappings", async () => {
   await grant("google-search-console");

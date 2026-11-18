@@ -5,9 +5,10 @@
 // gracefully (less text); a Browser Rendering upgrade can slot in behind this
 // same interface later.
 
+import { publicFetch } from "@/server/lib/public-fetch";
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { RenderedPageService } from "@/server/lib/audit/rendered-page";
-import { getOptionalEnvValue } from "@/server/lib/runtime-env";
+import { getContextFetch } from "@/server/lib/provider-access";
 import type { RenderUsage } from "@/shared/audit-rendering";
 
 const MAX_PAGES = 5;
@@ -67,7 +68,7 @@ async function fetchText(
   let current = url;
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      const response = await fetch(current, {
+      const response = await publicFetch(current, {
         headers: { "user-agent": USER_AGENT, accept: "text/html,*/*" },
         // Manual redirects so we can re-validate each hop against the SSRF guard;
         // redirect:"follow" would let a 30x to an internal host bypass it.
@@ -96,12 +97,12 @@ async function fetchText(
     // Timeouts, TLS and network errors fall through to Context.
   }
   if (!contextUsage) return null;
-  const contextApiKey = await getOptionalEnvValue("CONTEXT_API_KEY");
-  if (!contextApiKey) return null;
+  const contextFetch = await getContextFetch();
+  if (!contextFetch) return null;
   try {
     return (
       await RenderedPageService.renderPage(current, {
-        contextApiKey,
+        contextFetch,
         usage: contextUsage,
       })
     ).html;

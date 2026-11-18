@@ -14,6 +14,7 @@ import { db } from "@/db";
 import { runBatch } from "@/db/runBatch";
 import {
   keywordMetrics,
+  projects,
   savedKeywordTagAssignments,
   savedKeywords,
 } from "@/db/schema";
@@ -309,6 +310,18 @@ async function listSavedKeywordsByProject(
   };
 }
 
+// Saved keywords across every project the organization owns.
+async function countSavedKeywordsForOrganization(
+  organizationId: string,
+): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(savedKeywords)
+    .innerJoin(projects, eq(projects.id, savedKeywords.projectId))
+    .where(eq(projects.organizationId, organizationId));
+  return row?.value ?? 0;
+}
+
 async function listSavedKeywordRowsByKeywords(params: {
   projectId: string;
   keywords: string[];
@@ -365,6 +378,8 @@ export const KeywordResearchRepository = {
   upsertKeywordMetric,
   countSavedKeywords,
   saveKeywordsToProject,
+  countSavedKeywordsForOrganization,
+  listSavedKeywordRowsByKeywords,
   listSavedKeywordsByProject,
   addTagsToSavedKeywords: SavedKeywordTagsRepository.addTagsToSavedKeywords,
   replaceTagsForSavedKeywords:

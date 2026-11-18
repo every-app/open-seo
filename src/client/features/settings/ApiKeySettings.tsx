@@ -29,6 +29,7 @@ import {
   TableRow,
 } from "@/client/components/ui/table";
 import { CopyButton } from "@/client/components/CopyButton";
+import { useOrganizations } from "@/client/features/settings/useOrganizations";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 
@@ -39,6 +40,13 @@ const createKeySchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
 });
 
+// Stamped server-side when the key is created (see the /api-key/create hook
+// in lib/auth.ts). Older keys were backfilled; only keys whose user had no
+// organization at the time have none.
+const apiKeyMetadataSchema = z.looseObject({
+  organizationId: z.string().optional(),
+});
+
 export function ApiKeySettings() {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -46,6 +54,11 @@ export function ApiKeySettings() {
   const [revoking, setRevoking] = useState<{ id: string; name: string } | null>(
     null,
   );
+  const {
+    hasMultiple: showOrganization,
+    activeOrganizationName,
+    organizationName,
+  } = useOrganizations();
 
   const mcpUrl =
     typeof window === "undefined"
@@ -65,6 +78,9 @@ export function ApiKeySettings() {
         start: key.start,
         createdAt: new Date(key.createdAt),
         lastRequest: key.lastRequest ? new Date(key.lastRequest) : null,
+        organizationId:
+          apiKeyMetadataSchema.safeParse(key.metadata).data?.organizationId ??
+          null,
       }));
     },
   });
@@ -156,6 +172,9 @@ export function ApiKeySettings() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Key</TableHead>
+                    {showOrganization ? (
+                      <TableHead>Organization</TableHead>
+                    ) : null}
                     <TableHead>Created</TableHead>
                     <TableHead>Last used</TableHead>
                     <TableHead className="w-10" />
@@ -173,6 +192,11 @@ export function ApiKeySettings() {
                       >
                         {key.start || "oseo_"}…
                       </TableCell>
+                      {showOrganization ? (
+                        <TableCell className="text-xs text-muted-foreground">
+                          {organizationName(key.organizationId) ?? "—"}
+                        </TableCell>
+                      ) : null}
                       <TableCell className="text-xs text-muted-foreground">
                         {key.createdAt.toLocaleDateString()}
                       </TableCell>
@@ -284,6 +308,11 @@ export function ApiKeySettings() {
                     />
                   )}
                 </form.AppField>
+                {showOrganization ? (
+                  <p className="text-sm text-muted-foreground">
+                    This key works in {activeOrganizationName}.
+                  </p>
+                ) : null}
                 <DialogFooter>
                   <Button variant="ghost" onClick={closeCreateModal}>
                     Cancel

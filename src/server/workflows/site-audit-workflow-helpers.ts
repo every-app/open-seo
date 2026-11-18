@@ -6,9 +6,9 @@ import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
+import { publicFetch } from "@/server/lib/public-fetch";
 import { crawlerHeadersFor, type CrawlerAccess } from "@/shared/crawler-access";
-
-const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
+import { auditRequestHeaders } from "@/server/lib/audit/web-bot-auth";
 
 /** Parse `Link: <url>; rel="canonical"` response headers. */
 function parseLinkHeaderCanonical(
@@ -20,16 +20,54 @@ function parseLinkHeaderCanonical(
     const match = part.match(/<([^>]+)>\s*;([^]*)/);
     if (!match) continue;
     if (/rel\s*=\s*"?canonical"?/i.test(match[2])) {
-      return normalizeUrl(match[1].trim(), pageUrl);
+      return normalizeUrl(match[1].trim(), pageUrl, {
+        keepTrackingParams: true,
+      });
     }
   }
   return null;
 }
 
 /**
- * Fetch one URL, pausing the whole chunk and retrying while the site 429s
- * (see crawl-throttle.ts). `responseTimeMs` is measured from the last attempt
- * so backoff waiting never looks like a slow server.
+ * One warning per 429 so production shows what the edge answers: the
+ * Retry-After, how fast it came back (Shopify refuses at its edge within
+ * milliseconds), whether the request carried a crawler signature, and the
+ * body's first words (Shopify writes `local_rate_limited`).
+ */
+async function logRateLimited(input: {
+  url: string;
+  response: Response;
+  responseTimeMs: number;
+  attempt: number;
+  signed: boolean;
+}) {
+  const { url, response, responseTimeMs, attempt, signed } = input;
+  let body = "";
+  try {
+    body = (await readTextUpTo(response.clone(), 80)).trim();
+  } catch {
+    // The snippet is only context for the log line.
+  }
+  console.warn("site_audit:rate_limited", {
+    url,
+    attempt,
+    signed,
+    responseTimeMs,
+    retryAfter: response.headers.get("retry-after"),
+    // Shopify's edge answers warm pages from Cloudflare's cache without
+    // consulting its limiter; a HIT here would mean the 429 was cached.
+    cfCacheStatus: response.headers.get("cf-cache-status"),
+    // The two ids Shopify support asks for before it looks into a refusal.
+    xRequestId: response.headers.get("x-request-id"),
+    cfRay: response.headers.get("cf-ray"),
+    body,
+  });
+}
+
+/**
+ * Fetch one URL, pausing the whole chunk and retrying once while the site
+ * 429s (see crawl-throttle.ts). `responseTimeMs` is measured from the last
+ * attempt so backoff waiting never looks like a slow server.
  */
 async function fetchPage(
   url: string,
@@ -47,11 +85,10 @@ async function fetchPage(
     // /docs/) need no special handling: normalizeUrl preserves trailing
     // slashes, so /docs and /docs/ are distinct URLs and the redirect resolves
     // to its canonical target instead of cycling back to its own source.
-    const response = await fetch(url, {
+    const response = await publicFetch(url, {
       headers: {
-        "User-Agent": CRAWL_USER_AGENT,
         Accept: "text/html,application/xhtml+xml",
-        ...crawlerHeadersFor(url, access),
+        ...(await auditRequestHeaders(url, access)),
       },
       redirect: "manual",
       signal: AbortSignal.timeout(15_000),
@@ -64,13 +101,20 @@ async function fetchPage(
       rateLimited: attempt > 1,
     };
     if (response.status !== 429) {
-      await throttle.recovered();
+      await throttle.recovered(url);
       return result;
     }
+    await logRateLimited({
+      url,
+      response,
+      responseTimeMs: result.responseTimeMs,
+      attempt,
+      signed: Object.keys(crawlerHeadersFor(url, access)).length > 0,
+    });
     if (skipBackoff) return result;
 
     const retry = await throttle.backoff(
-      attempt,
+      url,
       response.headers.get("retry-after"),
     );
     // The shared cooldown applies even when this URL has no retries left.
@@ -141,7 +185,8 @@ export async function crawlPage(
     );
 
     // Rendering replaces the body of a readable HTML page, a bot challenge, or
-    // a throttled Shopify page with what the browser loaded. Redirects,
+    // a throttled Shopify page with what the browser loaded. A block can be
+    // any content type: a host's firewall need not answer with HTML. Redirects,
     // non-HTML files, origin errors, login walls and other rate limits keep
     // their existing paths. The direct response's timing and headers stay
     // authoritative.
@@ -150,8 +195,11 @@ export async function crawlPage(
     if (
       render &&
       (throttled ||
-        (isHtml && (challenged || (fetchClass === "ok" && statusCode < 400))))
+        challenged ||
+        (isHtml && fetchClass === "ok" && statusCode < 400))
     ) {
+      // Nothing reads a non-HTML refusal, and a render can take many seconds.
+      if (!isHtml) await response.body?.cancel();
       try {
         const page = await render(url);
         body = page.html;
@@ -164,10 +212,11 @@ export async function crawlPage(
       } catch (error) {
         // A challenge that neither renderer passed stays blocked.
         if (!challenged && !throttled) throw error;
-        // A throttled page neither renderer read stays rate limited, and
-        // pauses or stops the crawl like any other 429.
-        if (throttled)
-          await throttle.backoff(1, response.headers.get("retry-after"));
+        // A throttled page neither renderer read is given up on as rate
+        // limited, which pauses or stops the crawl like any other refusal.
+        if (throttled) {
+          await throttle.refuse(url, response.headers.get("retry-after"));
+        }
       }
     }
 
@@ -218,7 +267,9 @@ export async function crawlPage(
       title: analysis.title,
       metaDescription: analysis.metaDescription,
       canonicalUrl: analysis.canonical
-        ? (normalizeUrl(analysis.canonical, url) ?? analysis.canonical)
+        ? (normalizeUrl(analysis.canonical, url, {
+            keepTrackingParams: true,
+          }) ?? analysis.canonical)
         : null,
       robotsMeta: analysis.robotsMeta,
       xRobotsTag,

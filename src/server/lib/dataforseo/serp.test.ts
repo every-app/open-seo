@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/lib/runtime-env", () => ({
+  // AUTH_MODE unset: the deployment holds the DataForSEO key.
+  getOptionalEnvValue: vi.fn(async () => undefined),
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
 }));
 
@@ -9,6 +11,7 @@ import {
   fetchLiveSerp,
   fetchLocalSerpTaskResult,
   fetchRankCheckTaskResult,
+  fetchSerpTaskResult,
   postLocalSerpTasks,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
@@ -97,7 +100,6 @@ describe("rank check task queue", () => {
       locationCode: 2840,
       languageCode: "en",
       depth: 20,
-      targetDomain: "example.com",
     });
 
     expect(
@@ -108,18 +110,13 @@ describe("rank check task queue", () => {
       ),
     ).toEqual(["https://api.dataforseo.com/v3/serp/google/organic/task_post"]);
 
-    // Every posted task asks DataForSEO to stop crawling at the target's
-    // organic listing — that is what cuts the actual crawl cost for ranking
-    // domains without false "not ranking" stops on sitelinks/PAA mentions.
-    const stopCrawl = {
-      stop_crawl_on_match: [
-        { match_value: "example.com", match_type: "with_subdomains" },
-      ],
-      find_targets_in: ["organic"],
-    };
+    // DataForSEO rejects tasks carrying stop_crawl_on_match or its related
+    // parameters from November 23, 2026.
     expect(
-      parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1]),
-    ).toMatchObject([stopCrawl, stopCrawl, stopCrawl]);
+      JSON.stringify(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])),
+    ).not.toMatch(
+      /stop_crawl_on_match|target_search_mode|find_targets_in|ignore_targets_in/,
+    );
     expect(result.data).toEqual([
       {
         keyword: "alpha",
@@ -210,6 +207,55 @@ describe("rank check task queue", () => {
         serpFeatures: ["organic"],
       },
     });
+  });
+  it("credits results wrapped in a google.com/goto redirect to the site in their breadcrumb", async () => {
+    const goto = {
+      domain: "google.com",
+      url: "https://google.com/goto?url=CAES",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json({
+          status_code: 20000,
+          tasks: [
+            {
+              id: "task-a",
+              status_code: 20000,
+              cost: 0,
+              path: ["v3", "serp", "google", "organic", "task_get", "advanced"],
+              result: [
+                {
+                  items: [
+                    {
+                      type: "organic",
+                      rank_group: 1,
+                      ...goto,
+                      breadcrumb: "230+ comments · 2 years ago",
+                    },
+                    {
+                      type: "organic",
+                      rank_group: 2,
+                      ...goto,
+                      breadcrumb: "https://www.example.com › blog",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    );
+
+    const outcome = await fetchRankCheckTaskResult({
+      taskId: "task-a",
+      keywordId: "kw-1",
+      keyword: "alpha",
+      targetDomain: "example.com",
+    });
+
+    expect(outcome).toMatchObject({ result: { position: 2 } });
   });
 });
 
@@ -335,5 +381,23 @@ describe("Maps task queue", () => {
       status: "completed",
       items: [],
     });
+  });
+});
+
+describe("fetchSerpTaskResult", () => {
+  it("stops waiting on a poll when its signal fires", async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Timed out", "TimeoutError"));
+          });
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchSerpTaskResult("read-1", AbortSignal.timeout(1)),
+    ).rejects.toMatchObject({ code: "UPSTREAM_UNAVAILABLE" });
   });
 });

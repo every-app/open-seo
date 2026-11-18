@@ -1,10 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { DocsBody } from "fumadocs-ui/page";
 import OpenSourceSeoContent, {
   frontmatter as openSourceSeoFrontmatter,
 } from "../../../content/marketing/open-source-seo.md";
 import { buildPageSeo } from "@/lib/seo";
+
+const GITHUB_URL = "https://github.com/every-app/open-seo";
+
+// The star count is fetched once per build by the marketing layout.
+const marketingRoute = getRouteApi("/_marketing");
 
 export const Route = createFileRoute("/_marketing/open-source-seo")({
   head: () =>
@@ -19,6 +24,14 @@ export const Route = createFileRoute("/_marketing/open-source-seo")({
 });
 
 function OpenSourceSeoPage() {
+  const { githubStarCount } = marketingRoute.useLoaderData();
+  const facts = [
+    { label: "License", value: "MIT" },
+    { label: "GitHub stars", value: githubStarCount },
+    { label: "Self-host with", value: "Docker or Cloudflare" },
+    { label: "Hosted", value: "From $10 a month" },
+  ];
+
   return (
     <article className="mx-auto max-w-4xl text-neutral-900">
       <header className="mb-10 border-b border-[var(--color-border-subtle)] pb-8">
@@ -33,6 +46,35 @@ function OpenSourceSeoPage() {
             {openSourceSeoFrontmatter.description}
           </p>
         ) : null}
+        <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+          {facts.map((fact) => (
+            <div key={fact.label}>
+              <dt className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                {fact.label}
+              </dt>
+              <dd className="mt-1 text-base font-semibold text-neutral-950">
+                {fact.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+          >
+            <GitHubIcon />
+            View the code on GitHub
+          </a>
+          <a
+            href="https://app.openseo.so/sign-up"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-white px-4 text-sm font-medium text-neutral-950 transition-colors hover:border-neutral-950"
+          >
+            Try the hosted app
+          </a>
+        </div>
       </header>
 
       <DocsBody className="min-w-0 text-neutral-800 [&_a]:!text-neutral-950 [&_h2]:!text-neutral-950 [&_h2_a]:!no-underline [&_h3]:!text-neutral-950 [&_h3_a]:!no-underline [&_h4]:!text-neutral-950 [&_h4_a]:!no-underline [&_h5_a]:!no-underline [&_h6_a]:!no-underline [&_li]:!text-neutral-700 [&_li_a]:font-medium [&_li_a]:underline [&_li_a]:decoration-[var(--color-brand-accent)] [&_li_a]:underline-offset-4 [&_li_a:hover]:!text-neutral-700 [&_p]:!text-neutral-700 [&_p_a]:font-medium [&_p_a]:underline [&_p_a]:decoration-[var(--color-brand-accent)] [&_p_a]:underline-offset-4 [&_p_a:hover]:!text-neutral-700 [&_strong]:!text-neutral-950">
@@ -65,7 +107,7 @@ function OpenSourceSeoCta() {
           </span>
         </a>
         <a
-          href="https://github.com/every-app/open-seo"
+          href={GITHUB_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-4 text-sm font-medium text-neutral-950 transition-colors hover:border-neutral-950"

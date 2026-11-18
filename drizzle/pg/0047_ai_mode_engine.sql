@@ -1,0 +1,1 @@
+ALTER TABLE "ai_trackers" ADD COLUMN "google_ai_mode" boolean DEFAULT false NOT NULL;

@@ -10,8 +10,11 @@ import {
   serpAnalysisSchema,
   updateSavedKeywordTagSchema,
   updateSavedKeywordTagsSchema,
+  keywordSuggestionsSchema,
 } from "@/types/schemas/keywords";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import { KeywordSuggestionService } from "@/server/features/keywords/services/KeywordSuggestionService";
+import { recordResearchStep } from "@/server/features/activation/researchActivation";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import { resolveMarket } from "@/shared/keyword-locations";
 
@@ -37,7 +40,9 @@ export const researchKeywords = createServerFn({ method: "POST" })
       return fixtures.getKeywordResearchFixture(input);
     }
 
-    return KeywordResearchService.research(input, context);
+    const result = await KeywordResearchService.research(input, context);
+    await recordResearchStep(context.projectId, "keywords");
+    return result;
   });
 
 export const saveKeywords = createServerFn({ method: "POST" })
@@ -48,6 +53,7 @@ export const saveKeywords = createServerFn({ method: "POST" })
       ...data,
       ...resolveMarket(data, context.project),
       projectId: context.projectId,
+      organizationId: context.organizationId,
     });
   });
 
@@ -113,9 +119,9 @@ export const removeSavedKeywords = createServerFn({
 export const refreshSavedKeywordMetrics = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(refreshSavedKeywordMetricsSchema)
-  .handler(async ({ context }) => {
+  .handler(async ({ data, context }) => {
     return KeywordResearchService.refreshSavedKeywordMetrics(
-      { projectId: context.projectId },
+      { projectId: context.projectId, savedKeywordIds: data.savedKeywordIds },
       context,
     );
   });
@@ -132,4 +138,20 @@ export const getSerpAnalysis = createServerFn({ method: "POST" })
       },
       context,
     ),
+  );
+
+/** Searches worth running for the project: free, from saved topics and Search Console. */
+export const getKeywordSuggestions = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(keywordSuggestionsSchema)
+  .handler(({ context }) =>
+    KeywordSuggestionService.getSuggestions(context.project),
+  );
+
+/** Paid: researches the website once to save topics for a project without any. */
+export const generateKeywordSuggestions = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(keywordSuggestionsSchema)
+  .handler(({ context }) =>
+    KeywordSuggestionService.generate(context.project, context),
   );

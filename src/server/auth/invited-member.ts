@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { userOnboardingAnswers } from "@/db/schema";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
@@ -28,8 +29,9 @@ export async function onInvitationAccepted(input: {
     })
     .onConflictDoUpdate({
       target: userOnboardingAnswers.userId,
+      // Keep an earlier completion, as the wizard and agent paths do.
       set: {
-        completedAt: now,
+        completedAt: sql`coalesce(${userOnboardingAnswers.completedAt}, ${now})`,
         gscNudgeDismissedAt: now,
         updatedAt: now,
       },

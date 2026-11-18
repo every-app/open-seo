@@ -14,12 +14,12 @@ import { DashboardNewQueries } from "./DashboardNewQueries";
 import { DashboardLinkActivity } from "./DashboardLinkActivity";
 import { dashboardSiteTabSchema } from "@/types/schemas/dashboard";
 import type { z } from "zod";
-import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { sort } from "remeda";
 import { DashboardOnboarding } from "./DashboardOnboarding";
-import { DashboardAgentCard } from "./DashboardAgentCard";
-import { getStepStatus } from "./dashboardSteps";
+import {
+  DashboardAgentCard,
+  DashboardAgentPromptCard,
+} from "./DashboardAgentCard";
 import {
   AuditHealthCard,
   GscCard,
@@ -32,7 +32,7 @@ import {
   getDashboardOverview,
 } from "@/serverFunctions/dashboard";
 import { Skeleton } from "@/client/components/ui/skeleton";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 
 export function DashboardPage({
   projectId,
@@ -46,6 +46,9 @@ export function DashboardPage({
   const activationQuery = useQuery({
     queryKey: ["dashboardActivation", projectId],
     queryFn: () => getDashboardActivation({ data: { projectId } }),
+    // Setup steps complete from research pages and agents, so recheck on
+    // every return to the dashboard.
+    refetchOnMount: "always",
     refetchOnWindowFocus: "always",
   });
   const overviewQuery = useQuery({
@@ -72,101 +75,30 @@ export function DashboardPage({
   }
 
   // Wait for the overview too: rendering cards from `overview === undefined`
-  // flashes their empty states (and reshuffles the data-first sort) once the
-  // real data lands. An overview error falls through so the page still loads,
-  // with the error in place of the audit card.
+  // flashes their empty states once the real data lands. An overview error
+  // falls through so the page still loads, with the error in place of the
+  // audit card.
   if (!activation || overviewQuery.isPending) {
-    return (
-      <div className="px-4 py-4 md:px-6 md:py-6" aria-busy>
-        <div className="mx-auto flex max-w-7xl flex-col gap-5">
-          <Skeleton className="h-8 w-52" />
-          <Skeleton className="h-36" />
-          <div className="grid gap-5 lg:grid-cols-2">
-            <Skeleton className="h-44" />
-            <Skeleton className="h-44" />
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
   const ga4Connected = activation.ga4.connected;
-
-  // Search Console always renders: connected shows the report, otherwise the
-  // connect pitch. It sits ahead of the optional GA4 pitch.
-  const cards = [
-    {
-      key: "newQueries",
-      hasData: gscConnected,
-      node: (
-        <DashboardNewQueries
-          projectId={projectId}
-          connected={gscConnected}
-          siteUrl={activation.gsc.siteUrl}
-        />
-      ),
-    },
-    {
-      key: "gsc",
-      hasData: gscConnected,
-      node: (
-        <GscCard
-          projectId={projectId}
-          connected={gscConnected}
-          siteUrl={activation.gsc.siteUrl}
-        />
-      ),
-    },
-    ...(ga4Connected || !activation.ga4.cardDismissedAt
-      ? [
-          {
-            key: "ga4",
-            hasData: ga4Connected,
-            node: <Ga4Card projectId={projectId} connected={ga4Connected} />,
-          },
-        ]
-      : []),
-    ...(overview
-      ? [
-          {
-            key: "audit",
-            hasData: overview.audit != null,
-            node: (
-              <AuditHealthCard
-                projectId={projectId}
-                audit={overview.audit}
-                domain={activation.domain}
-              />
-            ),
-          },
-        ]
-      : []),
-    ...(showBacklinks
-      ? [
-          {
-            key: "backlinks",
-            hasData: true,
-            node: (
-              <DashboardLinkActivity
-                projectId={projectId}
-                domain={activation.domain!}
-              />
-            ),
-          },
-        ]
-      : []),
-  ];
+  const agentConnected =
+    activation.mcp.authorizedAt !== null ||
+    activation.mcp.firstToolCallAt !== null;
+  // An agent is connected, but no one in the organization has used OpenSEO
+  // from one yet.
+  const agentNeverUsed =
+    activation.mcp.authorizedAt !== null &&
+    activation.mcp.firstToolCallAt === null;
 
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Your website
-            </p>
             <h1 className="text-2xl font-semibold">
               {activation.domain || "Dashboard"}
             </h1>
@@ -184,9 +116,18 @@ export function DashboardPage({
           </Button>
         </div>
 
-        {isHostedClientAuthMode() &&
-        getStepStatus(activation, "mcp") === "todo" ? (
-          <DashboardAgentCard projectId={projectId} />
+        {/* The agent cards are separate from the checklist's agent step:
+            skipping the step leaves the cards, and dismissing the cards leaves
+            the step. */}
+        {usesBetterAuthClient() && !activation.mcp.cardDismissed ? (
+          !agentConnected ? (
+            <DashboardAgentCard projectId={projectId} />
+          ) : agentNeverUsed ? (
+            <DashboardAgentPromptCard
+              projectId={projectId}
+              domain={activation.domain}
+            />
+          ) : null
         ) : null}
 
         <WorkspaceMergeBanner />
@@ -240,14 +181,38 @@ export function DashboardPage({
           {/* Base UI unmounts inactive panels, so paid detail queries load only on opening their tab. */}
           <TabsContent
             value="overview"
-            className="grid gap-5 lg:grid-cols-2"
+            className="grid gap-4 lg:grid-cols-2 lg:[&>*:last-child:nth-child(odd)]:col-span-2"
             keepMounted={false}
           >
-            {sort(cards, (a, b) => Number(b.hasData) - Number(a.hasData)).map(
-              (card) => (
-                <Fragment key={card.key}>{card.node}</Fragment>
-              ),
-            )}
+            {/* One fixed order for every project, so connecting or scanning
+                fills a card in place. Search Console always renders:
+                connected shows the report, otherwise the connect pitch. */}
+            <DashboardNewQueries
+              projectId={projectId}
+              connected={gscConnected}
+              siteUrl={activation.gsc.siteUrl}
+            />
+            <GscCard
+              projectId={projectId}
+              connected={gscConnected}
+              siteUrl={activation.gsc.siteUrl}
+            />
+            {ga4Connected || !activation.ga4.cardDismissedAt ? (
+              <Ga4Card projectId={projectId} connected={ga4Connected} />
+            ) : null}
+            {overview ? (
+              <AuditHealthCard
+                projectId={projectId}
+                audit={overview.audit}
+                domain={activation.domain}
+              />
+            ) : null}
+            {showBacklinks ? (
+              <DashboardLinkActivity
+                projectId={projectId}
+                domain={activation.domain!}
+              />
+            ) : null}
           </TabsContent>
 
           <TabsContent value="keywords" keepMounted={false}>
@@ -288,6 +253,24 @@ export function DashboardPage({
             )}
           </TabsContent>
         </Tabs>
+      </div>
+    </div>
+  );
+}
+
+/** The dashboard before its data arrives; the landing redirect shows it too. */
+export function DashboardSkeleton() {
+  return (
+    <div className="px-4 py-4 md:px-6 md:py-6" aria-busy>
+      <div className="mx-auto flex max-w-7xl flex-col gap-5">
+        <Skeleton className="h-8 w-52" />
+        <Skeleton className="h-36" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+          <Skeleton className="h-52" />
+          <Skeleton className="h-52" />
+        </div>
       </div>
     </div>
   );

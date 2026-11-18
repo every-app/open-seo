@@ -62,7 +62,7 @@ export function DashboardInfo({
     <Popover.Root>
       <Popover.Trigger
         aria-label={label}
-        className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="-mx-1.5 grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
       >
         <Info className="size-4" />
       </Popover.Trigger>

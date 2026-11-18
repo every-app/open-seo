@@ -43,8 +43,9 @@ const dimensionHelper = createColumnHelper<DimensionRow>();
 
 export function buildDimensionColumns(
   keyLabel: string,
+  showPosition: boolean,
 ): ColumnDef<DimensionRow>[] {
-  return [
+  const columns: ColumnDef<DimensionRow>[] = [
     dimensionHelper.accessor("key", {
       enableSorting: false,
       header: () => keyLabel,
@@ -75,6 +76,10 @@ export function buildDimensionColumns(
       cell: ({ getValue }) => formatCtr(getValue()),
       meta: rightAligned,
     }),
+  ];
+  if (!showPosition) return columns;
+  return [
+    ...columns,
     dimensionHelper.accessor("position", {
       header: ({ column }) => (
         <SortableHeader column={column} label="Position" align="right" />

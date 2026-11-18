@@ -9,15 +9,17 @@ import {
 } from "@/client/features/auth/AuthPage";
 import { getFormError } from "@/client/lib/forms";
 import { authClient } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { isHostedClientAuthMode, usesBetterAuthClient } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
+import { pageHead } from "@/client/lib/pageHead";
 
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
 });
 
 export const Route = createFileRoute("/forgot-password")({
+  head: () => pageHead("Forgot password"),
   validateSearch: authRedirectSearchSchema,
   component: ForgotPasswordPage,
 });
@@ -26,6 +28,9 @@ function ForgotPasswordPage() {
   const search = Route.useSearch();
   const redirectTo = normalizeAuthRedirect(search.redirect);
   const isHostedMode = isHostedClientAuthMode();
+  // Self-hosted accounts have no email transport; the operator resets
+  // passwords with the admin command.
+  const isOperatorReset = !isHostedMode && usesBetterAuthClient();
 
   const form = useAppForm({
     defaultValues: {
@@ -85,7 +90,9 @@ function ForgotPasswordPage() {
                   ? undefined
                   : isHostedMode
                     ? "Enter your email and we'll send you a password reset link."
-                    : "Password reset isn't available right now."
+                    : isOperatorReset
+                      ? "Ask your server administrator to reset your password."
+                      : "Password reset isn't available right now."
               }
               footer={
                 <p className="text-sm">

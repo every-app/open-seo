@@ -57,6 +57,8 @@ export const updateProjectSchema = z
   .object({
     projectId: z.string().min(1),
     name: projectNameField,
+    // Saved with a rename to keep tracking the old name. Omitted leaves it as it is.
+    brandName: z.string().trim().min(1).max(120).optional(),
     domain: projectDomainField,
     locationCode: projectLocationCodeField,
     languageCode: projectLanguageCodeField,
@@ -82,13 +84,13 @@ export const archiveProjectSchema = z.object({
 // Deliberately not named `projectId`: ensureUserMiddleware resolves any
 // `projectId` in input data against active projects and 404s on archived
 // ones before the handler runs.
-export const restoreProjectSchema = z.object({
+export const archivedProjectSchema = z.object({
   archivedProjectId: z.string().min(1),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type ArchiveProjectInput = z.infer<typeof archiveProjectSchema>;
-export type RestoreProjectInput = z.infer<typeof restoreProjectSchema>;
+export type ArchivedProjectInput = z.infer<typeof archivedProjectSchema>;
 
 export type SetProjectWebsiteInput = z.infer<typeof setProjectWebsiteSchema>;

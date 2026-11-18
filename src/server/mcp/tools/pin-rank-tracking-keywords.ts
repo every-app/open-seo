@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_KEYWORDS_PER_CONFIG } from "@/shared/rank-tracking";
 import { RankTrackingKeywordService } from "@/server/features/rank-tracking/services/RankTrackingKeywordService";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -15,7 +16,7 @@ const inputSchema = {
   keywordIds: z
     .array(z.string().uuid())
     .min(1)
-    .max(2000)
+    .max(MAX_KEYWORDS_PER_CONFIG)
     .describe(
       "Tracking keyword IDs to pin or unpin. Use `trackingKeywordId` values returned by get_rank_tracker.",
     ),
@@ -31,7 +32,7 @@ export const pinRankTrackingKeywordsTool = {
   config: {
     title: "Pin rank tracking keywords",
     description:
-      "Pin or unpin tracked keywords by their trackingKeywordId. Pinned keywords stay at the top of the tracker's keyword table for everyone in the project, and get_rank_tracker lists them first. Uses no credits. Missing, stale, foreign, and repeated IDs are ignored; `updated` is the number of keywords actually changed in this tracker.",
+      "Pin or unpin tracked keywords by their trackingKeywordId from get_rank_tracker. Pinned keywords stay at the top of the tracker's keyword table for everyone in the project, and get_rank_tracker lists them first. Missing, stale, foreign, and repeated IDs are ignored. Uses no credits.",
     inputSchema,
     outputSchema: z
       .object({

@@ -11,14 +11,25 @@ describe("getSubscribeRouteState", () => {
     hasManagedAccess: true,
     planStatus: "free" as const,
     isUpgradeFlow: false,
+    isPlanChange: false,
     checkoutCompleted: false,
     finalizingTimedOut: false,
   };
 
-  it("redirects paying customers into the app", () => {
-    expect(getSubscribeRouteState({ ...base, planStatus: "paid" })).toBe(
-      "redirectToApp",
+  it("redirects paying customers into the app unless they came to change plans", () => {
+    const paid = { ...base, planStatus: "paid" as const };
+
+    expect(getSubscribeRouteState(paid)).toBe("redirectToApp");
+    expect(getSubscribeRouteState({ ...paid, isPlanChange: true })).toBe(
+      "changePlan",
     );
+    expect(
+      getSubscribeRouteState({
+        ...paid,
+        isPlanChange: true,
+        checkoutCompleted: true,
+      }),
+    ).toBe("redirectToApp");
   });
 
   it("redirects free-plan users with managed access into the app unless they asked to upgrade", () => {

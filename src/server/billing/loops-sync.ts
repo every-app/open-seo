@@ -93,7 +93,8 @@ export async function syncBillingStatusToLoops({
   }
 }
 
-async function getOrganizationContacts(organizationId: string) {
+/** Every member with their role, for billing email. */
+export async function getOrganizationContacts(organizationId: string) {
   return db
     .select({
       userId: user.id,

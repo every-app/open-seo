@@ -10,11 +10,11 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
   it.each([
     {
       name: "an active paid plan is paying",
-      flags: paidFlags("yc-plan"),
-      subscriptions: [{ planId: "yc-plan", status: "active" }],
+      flags: paidFlags("pro-plan"),
+      subscriptions: [{ planId: "pro-plan", status: "active" }],
       expected: {
         isPaying: true,
-        paidPlanId: "yc-plan",
+        paidPlanId: "pro-plan",
         paidPlanStatus: "active",
         pastDue: false,
         canceledAt: null,
@@ -57,6 +57,19 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
         subscriptions,
       }),
     ).toMatchObject({ organizationId: "org_123", ...expected });
+  });
+
+  it("reads whether the paid plan is priced off the expanded plan", () => {
+    const pricedWith = (plan?: { price: unknown }) =>
+      deriveBillingCustomerStatusSnapshot({
+        id: "org_1",
+        flags: paidFlags("base-plan"),
+        subscriptions: [{ planId: "base-plan", status: "active", plan }],
+      }).paidPlanPriced;
+
+    expect(pricedWith({ price: { amount: 10, interval: "month" } })).toBe(true);
+    expect(pricedWith({ price: null })).toBe(false);
+    expect(pricedWith()).toBeNull();
   });
 
   it("prefers the active row when the plan has several subscriptions", () => {

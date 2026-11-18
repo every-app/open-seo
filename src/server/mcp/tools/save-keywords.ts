@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
+import { AppError } from "@/server/lib/errors";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
@@ -50,7 +52,7 @@ export const saveKeywordsTool = {
   config: {
     title: "Save keywords",
     description:
-      "Save keywords to a project's saved-keywords list. Uses no credits — does not call DataForSEO. Idempotent: re-saving an existing keyword is a no-op. If tags are provided, missing tags may be created. By default tags are appended; set tagMode=replace to remove existing tags from these saved keywords before applying the provided tags, which is useful for reorganizing keywords into page/topic clusters. Ask the user for confirmation before applying or replacing tags broadly.",
+      "Save keywords to a project's saved-keywords list, optionally with metrics and tags. Re-saving an existing keyword is a no-op. Tags are appended by default; tagMode=replace removes the keywords' existing tags first, which is useful for regrouping keywords into page or topic clusters. Ask the user for confirmation before applying or replacing tags broadly. Uses no credits. To track rankings for keywords, use add_rank_tracking_keywords.",
     inputSchema,
     outputSchema: z.looseObject({
       projectId: z.string(),
@@ -70,12 +72,16 @@ export const saveKeywordsTool = {
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     if (args.tagMode === "replace" && (args.tags?.length ?? 0) === 0) {
-      throw new Error("Replacement tags are required when tagMode is replace.");
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Replacement tags are required when tagMode is replace.",
+      );
     }
 
     const { locationCode, languageCode } = resolveMarket(args, context.project);
 
     await KeywordResearchService.saveKeywords({
+      organizationId: context.auth.organizationId,
       projectId: args.projectId,
       keywords: args.keywords,
       metrics: args.metrics,
@@ -90,9 +96,14 @@ export const saveKeywordsTool = {
         ? ` with tag(s): ${args.tags.join(", ")}`
         : "";
     const modeText = args.tagMode === "replace" ? " Replaced tags." : "";
+    const trackers = await RankTrackingService.getConfigs(args.projectId);
+    const trackingText =
+      trackers.length === 0
+        ? " If the user wants their rankings tracked, create_rank_tracker sets up a tracker."
+        : " If the user wants their rankings tracked, add_rank_tracking_keywords adds them to a tracker.";
 
     return mcpResponse({
-      text: `Saved ${args.keywords.length} keyword(s)${tagText} to project ${args.projectId}.${modeText}`,
+      text: `Saved ${args.keywords.length} keyword(s)${tagText} to project ${args.projectId}.${modeText}${trackingText}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

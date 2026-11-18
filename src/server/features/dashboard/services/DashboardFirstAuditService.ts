@@ -1,10 +1,11 @@
 import { waitUntil } from "cloudflare:workers";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
 import { AuditService } from "@/server/features/audit/services/AuditService";
+import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { DataRefreshClaimRepository } from "../repositories/DataRefreshClaimRepository";
 import { buildCacheKey } from "@/server/lib/r2-cache";
-import { asAppError } from "@/server/lib/errors";
+import { asAppError, describeError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 
@@ -44,7 +45,9 @@ async function start(
       projectId,
       startUrl: `https://${domain}`,
       maxPages: 50,
-      renderJavaScript: true,
+      // Installs with no renderer (Docker without a Context key) crawl
+      // without JavaScript instead of failing the first audit.
+      renderJavaScript: await isAuditRenderingAllowed(),
       lighthouseStrategy: "none",
       limitTier,
     });
@@ -79,7 +82,7 @@ async function start(
     if (shouldCaptureAppErrorCode(code))
       console.error(
         "dashboard:first-audit startup failed",
-        { projectId, code },
+        { projectId, code, error: describeError(error) },
         error,
       );
     else

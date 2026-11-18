@@ -17,7 +17,7 @@ The project-context tools are free and shared with the app and other agents.
 
 1. External MCP clients: resolve the project with `list_projects`, ask only if the match is ambiguous, then call `get_project_context`. In SAM, use the current project and context already injected into the conversation; SAM has no `get_project_context` tool and needs no project selection or connection setup.
 2. This workflow needs a brand, its website and a rough idea of what it sells. Reuse `business_overview`, audience, competitors and key pages. If `business_overview` is empty, infer it from the site, confirm it in one question, and save it with `update_project_context`.
-3. Read `get_ai_visibility_tracker` to learn the saved topics and prompts. Prompts already tracked are marked `tracked` in research results; do not present them as new ideas. `brandMentioned` matches the tracker's own brand, whose name is the project name; if the project is not named as people write the brand, treat brand mentions as unknown and say so.
+3. Read `get_ai_visibility_tracker` to learn the saved topics and prompts. Prompts already tracked are marked `tracked` in research results; do not present them as new ideas. `brandMentioned` matches the tracker's own brand, the `brands` row with `own: true`; if that name is not how people write the brand, treat brand mentions as unknown and say so.
 4. Check the research log for prompt research under 30 days old on the same keywords. Reuse it instead of paying again unless the user asks for fresh data.
 5. On finish, append one line with `update_project_context`: `{ updates: [{ appendResearchLog: { summary: "AI prompt research: <keywords>. Verdict: <conclusion>" } }] }`.
 

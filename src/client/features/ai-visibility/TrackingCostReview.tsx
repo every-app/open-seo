@@ -19,10 +19,11 @@ import {
   runAiVisibilityCheck,
   setAiVisibilitySchedule,
 } from "@/serverFunctions/ai-visibility";
-import type {
-  AiRun,
-  AiScheduleInterval,
-  AiTracker,
+import {
+  aiLiveRunDuration,
+  type AiRun,
+  type AiScheduleInterval,
+  type AiTracker,
 } from "@/shared/ai-visibility";
 import { ScheduleField } from "@/client/features/rank-tracking/ScheduleField";
 import {
@@ -227,8 +228,14 @@ export function TrackingCostReview({
               </span>
               <FieldDescription>
                 {/* No per-answer price: engines cost different amounts. */}
-                {`${cost.observations} ${cost.observations === 1 ? "answer" : "answers"}${mode === "schedule" ? ` · about ${aiMoney(cost.monthlyCostUsd)} a month (${cost.checksPerMonth} ${cost.checksPerMonth === 1 ? "run" : "runs"})` : " · live answers, ready in a few minutes"}`}
+                {`${cost.observations} ${cost.observations === 1 ? "answer" : "answers"}${mode === "schedule" ? ` · about ${aiMoney(cost.monthlyCostUsd)} a month (${cost.checksPerMonth} ${cost.checksPerMonth === 1 ? "run" : "runs"})` : ` · live answers, ready in ${aiLiveRunDuration(cost.observations)}`}`}
               </FieldDescription>
+              {/* Pausing keeps the next check, so only a tracker never scheduled has none. */}
+              {mode === "check" && tracker.nextCheckAt && (
+                <FieldDescription>
+                  Your scheduled tracking doesn't change.
+                </FieldDescription>
+              )}
             </Field>
             {start.error && <AiQueryError error={start.error} />}
           </>

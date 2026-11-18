@@ -1,17 +1,41 @@
 ---
-title: "Google Search Console MCP Server: No Google Cloud Setup"
-description: Connect Google Search Console to Claude, Cursor, or any MCP client — no Google Cloud project needed. Query clicks, impressions, CTR, position, and indexing.
+title: "Google Search Console MCP Server for Claude and ChatGPT"
+description: "Connect Google Search Console to Claude, ChatGPT or Cursor by signing in with Google. Ask about clicks, impressions, rankings and indexing. Read-only."
 ---
 
-Most Google Search Console (GSC) MCP servers are open source, but they take a lot of effort to set up. You need to create a Google Cloud project, enable an API, build an OAuth client, download a `credentials.json`, then keep a local server running. OpenSEO handles the Google connection for you. You sign up, connect your property, and start asking.
+## Is there a Google Search Console MCP server?
 
-## Setup: no Google Cloud project
+There are several, all from other developers. As of November 2026, Google does not publish an official MCP server for Search Console. It does publish [one for Google Analytics](https://github.com/googleanalytics/google-analytics-mcp), which is why many people expect a Search Console one too.
+
+You have two kinds of option:
+
+- An open-source server you run yourself. These are free. You create a Google Cloud project, enable the Search Console API, make your own credentials, and keep the server running on your computer.
+- A hosted server. The provider handles the Google connection, and you sign in with Google. OpenSEO is one of these.
+
+### The open-source servers
+
+These are the two that come up most often when people compare:
+
+- [mcp-gsc](https://github.com/AminForou/mcp-gsc) is written in Python, MIT-licensed, and the most starred, with about 2,200 GitHub stars. It covers search analytics, URL inspection and sitemaps. You sign in with your own OAuth client or a service account. It is read-only unless you turn on the tools that add or remove properties and sitemaps.
+- [mcp-server-gsc](https://github.com/ahonn/mcp-server-gsc) is written in TypeScript and MIT-licensed. It focuses on search analytics, with up to 25,000 rows per request and regex filters. It signs in with a service account that you add to your property.
+
+Both are good if you are comfortable in the Google Cloud console and only need Search Console data. Both need a Google Cloud project.
+
+### Where OpenSEO fits
+
+OpenSEO's Search Console MCP is hosted, so there is no Google Cloud project to create. You sign up, connect your property, and start asking. It is read-only: your agent can read performance data and inspect URLs, and it can't change anything in your account. The same connection also gives your agent keyword research, rank tracking and backlink data, which Search Console doesn't have. It costs $10 a month, and the Search Console tools use no credits. OpenSEO is open source too, so you can [self-host it](/docs/self-hosting) with your own Google OAuth client.
+
+## Set up in three steps
 
 1. Sign up for OpenSEO ($10/month).
 2. Go through the onboarding. When prompted, click **Connect Search Console** and pick your property.
 3. Add the OpenSEO MCP endpoint to your client (steps below) and approve the OpenSEO login when prompted.
 
-The hosted MCP server URL is:
+In ChatGPT or Claude, add OpenSEO from their directories:
+
+<AddToAgentButtons />
+
+For other clients, the hosted MCP server URL is:
 
 ```txt
 https://app.openseo.so/mcp
@@ -23,11 +47,9 @@ https://app.openseo.so/mcp
 claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
 ```
 
-### Claude Desktop
+### Claude
 
-1. Open Customize → Connectors.
-2. Click **Add** (or **+**), then choose **Add custom connector**.
-3. Paste `https://app.openseo.so/mcp`.
+Add the [OpenSEO connector](https://claude.ai/directory/connectors/openseo) from Claude's directory and sign in. It works in Claude on the web, desktop and mobile. You can also open **Customize → Connectors** in Claude, search for OpenSEO, and select **Connect to Claude**.
 
 ### Cursor
 
@@ -52,7 +74,7 @@ codex mcp add openseo --url https://app.openseo.so/mcp
 
 For ChatGPT web or desktop, follow the [ChatGPT setup steps and plan requirements](/docs/chatgpt). For other remote MCP clients, add `https://app.openseo.so/mcp` and sign in. Full setup and troubleshooting live in the [MCP docs](/docs/mcp).
 
-### The DIY way (every other GSC MCP)
+### The DIY way (open-source GSC MCP servers)
 
 1. Create a Google Cloud project
 2. Enable the Search Console API
@@ -81,7 +103,7 @@ The agent can read and inspect. It cannot change anything in your account.
 
 ## What it costs
 
-The Search Console tools use zero credits — Google doesn't charge you to read your own data, so reading it through OpenSEO never burns usage. They're included with the OpenSEO plan ($10/month, which includes monthly usage credits for the research tools), alongside the credit-based tools (keyword research, rank tracking, backlinks) that run through the same MCP endpoint. If you'd rather not pay at all, OpenSEO is open source and free to self-host — see the FAQ below.
+The Search Console tools use zero credits — Google doesn't charge you to read your own data, so reading it through OpenSEO never burns usage. They're included with the OpenSEO plan ($10/month, which includes monthly usage credits for the research tools), alongside the credit-based tools (keyword research, rank tracking, backlinks) that run through the same MCP endpoint. OpenSEO is also open source, so you can self-host it instead. See the FAQ below.
 
 ## OpenSEO vs. the alternatives
 
@@ -91,11 +113,11 @@ The Search Console tools use zero credits — Google doesn't charge you to read 
 
 ### What does it cost?
 
-The Search Console MCP tools are included with the $10/month OpenSEO plan (which comes with a 30-day money-back guarantee) and use zero credits. OpenSEO's other tools (keyword research, rank tracking, backlinks) use the usage credits included with the plan, through the same endpoint. Self-hosting is free.
+The Search Console MCP tools are included with the $10/month OpenSEO plan (which comes with a 30-day money-back guarantee) and use zero credits. OpenSEO's other tools (keyword research, rank tracking, backlinks) use the usage credits included with the plan, through the same endpoint. If you self-host, the software costs nothing and the Search Console tools use no paid data.
 
 ### Is it open source?
 
-Yes. OpenSEO is open source, so you can self-host the whole thing for free, including the Search Console MCP. The one-click connection here uses OpenSEO's hosted Google app. If you self-host, you bring your own Google OAuth client, the same Cloud-console step the hosted version saves you. Hosted means no setup; self-hosted means full control.
+Yes. OpenSEO is open source under the MIT license, so you can [self-host](/docs/self-hosting) the whole thing, including the Search Console MCP. The software is free and Google doesn't charge for Search Console data. The keyword, rank and backlink tools need your own DataForSEO account, where the minimum top-up is $50. The one-click connection here uses OpenSEO's hosted Google app. If you self-host, you bring your own Google OAuth client, the same Cloud-console step the hosted version saves you.
 
 ### Is it read-only?
 

@@ -17,6 +17,7 @@ import {
 export async function saveWebsiteSetup(
   organizationId: string,
   input: SaveProjectWebsiteSetup,
+  brandName: string | null,
   author: ContextAuthor,
   tracking: ConfigurationRows | null,
 ) {
@@ -32,6 +33,7 @@ export async function saveWebsiteSetup(
     tx
       .update(projects)
       .set({
+        brandName,
         domain: sql`coalesce(${projects.domain}, ${input.domain})`,
       })
       .where(
@@ -53,7 +55,8 @@ export async function saveWebsiteSetup(
         updatedAt,
       })
       .onConflictDoNothing(),
-    ...chunk(competitors, 10).map((rows) =>
+    // D1 rejects a compound SELECT with more than 5 terms.
+    ...chunk(competitors, 5).map((rows) =>
       tx
         .insert(projectCompetitors)
         .select(

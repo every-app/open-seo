@@ -1,0 +1,16 @@
+{
+  // The report widget runs in a browser, not the worker: DOM lib only, and
+  // none of the worker's ambient types. Checked by `pnpm build:report-widgets`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["vite/client"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": ["src/report-widgets/**/*.ts", "src/shared/report-map.ts"]
+}

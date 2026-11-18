@@ -27,7 +27,7 @@ The first answer is a list of ideas. The second is a decision you can act on.
 
 ## How to set up Claude Code for SEO
 
-Two commands in Claude Code install the OpenSEO MCP server and all nine SEO agent skills:
+Two commands in Claude Code install the OpenSEO MCP server and all twelve SEO agent skills:
 
 ```
 /plugin marketplace add every-app/open-seo
@@ -96,7 +96,7 @@ That works with or without OpenSEO connected. With it, the answers come with rea
 
 ## What each SEO skill does
 
-If you ran the two plugin commands above, you already have all ten skills, and the Codex plugin installs the same set. Anywhere else, [connect MCP](/docs/mcp) first and then [add the skill files](/docs/skills/setup).
+If you ran the two plugin commands above, you already have all twelve skills, and the Codex plugin installs the same set. Anywhere else, [connect MCP](/docs/mcp) first and then [add the skill files](/docs/skills/setup).
 
 Each skill hands Claude a complete workflow. The ones you'll reach for most:
 

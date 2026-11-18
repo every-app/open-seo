@@ -5,6 +5,11 @@ import { AppError } from "@/server/lib/errors";
 import { createGa4AdminClient } from "@/server/lib/ga4Client";
 import { Ga4AdminApiError, Ga4TokenError } from "@/server/lib/ga4Errors";
 import { GA4_OAUTH_PROVIDER_ID } from "@/shared/ga4";
+import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
+import {
+  GATEWAY_GOOGLE_ACCOUNT_ID,
+  getGatewayGoogleStatus,
+} from "@/server/features/google/gatewayGoogle";
 import {
   Ga4ConnectionRepository,
   type Ga4Connection,
@@ -14,7 +19,18 @@ async function getConnection(projectId: string): Promise<Ga4Connection | null> {
   return Ga4ConnectionRepository.getByProjectId(projectId);
 }
 
+/** Behind the gateway a member's one account is their gateway connection (gatewayGoogle.ts). */
 async function listGrantsForUser(userId: string) {
+  if ((await getGoogleAccessMode()) === "gateway") {
+    return (await getGatewayGoogleStatus()).connected
+      ? [
+          {
+            id: GATEWAY_GOOGLE_ACCOUNT_ID,
+            accountId: GATEWAY_GOOGLE_ACCOUNT_ID,
+          },
+        ]
+      : [];
+  }
   return db
     .select({ id: account.id, accountId: account.accountId })
     .from(account)

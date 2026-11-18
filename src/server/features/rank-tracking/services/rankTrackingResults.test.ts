@@ -64,4 +64,18 @@ describe("getLatestResults", () => {
       },
     });
   });
+
+  it("hides a running run's first-pass error while its retries are still going", async () => {
+    mocks.getLatestRunForConfig.mockResolvedValue({
+      id: "run_3",
+      status: "running",
+      errorMessage: "UPSTREAM_UNAVAILABLE",
+    });
+
+    await expect(
+      getLatestResults("config_1", "project_1"),
+    ).resolves.toMatchObject({
+      run: { id: "run_3", status: "running", errorMessage: null },
+    });
+  });
 });

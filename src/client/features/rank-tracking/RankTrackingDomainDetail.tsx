@@ -15,8 +15,8 @@ import { SkeletonCard } from "@/client/components/SkeletonPresets";
 import { useHostedPlanGate } from "@/client/features/billing/HostedPlanGate";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { FreePlanAlert } from "./FreePlanAlert";
-import { RankTrackingChangesAlert } from "./RankTrackingChangesAlert";
 import { RankRunAlerts } from "./RankRunAlerts";
+import { ScheduledChecksPausedAlert } from "./ScheduledChecksPausedAlert";
 import { RankTrackingDetailHeader } from "./RankTrackingDetailHeader";
 import { RankTrackingOverview } from "./RankTrackingOverview";
 import { RankTrackingTable } from "./RankTrackingTable";
@@ -27,6 +27,10 @@ import {
 import { RankTrackingTableToolbar } from "./RankTrackingTableToolbar";
 import { exportRankTracking } from "./RankTrackingTableParts";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
+import {
+  isScheduledRankTrackingInterval,
+  keywordLimitMessage,
+} from "@/shared/rank-tracking";
 import {
   rankTrackingDetailSearchSchema,
   type ComparePeriod,
@@ -149,6 +153,7 @@ export function RankTrackingDomainDetail({
 
   const handleKeywordsAdded = (result: {
     added: number;
+    overLimit?: { limit: number; notAdded: number };
     checkTriggered: boolean;
     checkScheduledSoon: boolean;
   }) => {
@@ -163,9 +168,17 @@ export function RankTrackingDomainDetail({
     });
     setShowAddKeywords(false);
     captureClientEvent("rank_tracking:keywords_add");
-    toast.success(
-      `${result.added} keyword${result.added !== 1 ? "s" : ""} added`,
-    );
+    if (result.added > 0 || !result.overLimit) {
+      toast.success(
+        `${result.added} keyword${result.added !== 1 ? "s" : ""} added`,
+      );
+    }
+    if (result.overLimit) {
+      const { notAdded, limit } = result.overLimit;
+      toast.warning(
+        `${notAdded} keyword${notAdded !== 1 ? "s" : ""} not added. ${keywordLimitMessage(limit)}`,
+      );
+    }
     if (result.checkScheduledSoon) {
       toast.info("The scheduled check within the hour covers these keywords");
     } else if (
@@ -191,11 +204,6 @@ export function RankTrackingDomainDetail({
     useMetricsRefresh(projectId, config.id);
 
   const requestCheck = (count: number, keywordIds?: string[]) => {
-    if (count < 50) {
-      startCheck({ keywordIds });
-      return;
-    }
-
     if (isBusy) return;
     setPendingCheck({ count, keywordIds });
   };
@@ -234,11 +242,15 @@ export function RankTrackingDomainDetail({
 
   return (
     <div className="space-y-3">
-      <RankTrackingChangesAlert />
-
       <RankRunAlerts run={latestRun} />
 
       <FreePlanAlert visible={planStatus === "free"} />
+
+      <ScheduledChecksPausedAlert
+        hasScheduledCheck={isScheduledRankTrackingInterval(
+          config.scheduleInterval,
+        )}
+      />
 
       {/* Results card */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -342,6 +354,7 @@ export function RankTrackingDomainDetail({
                   key={defaultSortId}
                   totalCount={results.rows.length}
                   rows={filtered}
+                  pageResetKey={JSON.stringify(filters)}
                   showDesktop={showDesktop}
                   showMobile={showMobile}
                   sorting={
@@ -378,6 +391,7 @@ export function RankTrackingDomainDetail({
           keywordCount={pendingCheck.count}
           devices={config.devices}
           costUsd={costEstimate?.costUsd}
+          isScheduled={isScheduledRankTrackingInterval(config.scheduleInterval)}
           isPending={isPending}
           onRunNow={() =>
             startCheck({

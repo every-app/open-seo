@@ -24,7 +24,7 @@ Owners are the only recipients because only they can act on billing, and a found
 | Not past due          | Past due                         | `payment_failed`        |
 | Active, not cancelled | Cancelled at period end, or gone | `subscription_canceled` |
 
-"Priced" means the base plan or the YC plan. A plan can grant the paid entitlement without charging, and those customers are not thanked for subscribing.
+"Priced" means a plan with a price. A plan can grant the paid entitlement without charging, and those customers are not thanked for subscribing.
 
 A customer with no stored snapshot produces no events. Every new organization gets a snapshot on its first webhook, because the free plan auto-enables at signup before anyone can pay, so a missing snapshot means a customer from before the table existed, whose next renewal or top-up must not read as a new subscription.
 
@@ -44,7 +44,6 @@ Event sends happen before the snapshot is written. If Loops is unreachable the w
 - **Delaying the check-in with a Cloudflare Workflow or cron** instead of a Loops timer. The app would then own send timing for a marketing email and have to re-check billing state itself before sending. Loops already does both.
 - **Embedding a billing portal link in the payment email.** Portal sessions expire in minutes. The app page mints one on click.
 - **A "Pay invoice" button that opens Stripe's hosted invoice page.** Immediate, but a new card entered there is not saved as the default when one already exists, so an expired card fails again next month. The portal fixes both.
-- **Different copy for the YC plan.** Same emails; a Slack alert on YC activations covers the warmer outreach.
 - **Emailing every member.** Only the owner can fix billing or cancel.
 
 ## Not in scope

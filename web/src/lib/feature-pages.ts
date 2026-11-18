@@ -6,6 +6,8 @@ export type FeaturePage = {
   navDescription: string;
   title: string;
   description: string;
+  /** Meta description override. Falls back to `description`, which also renders on the page. */
+  seoDescription?: string;
   primaryKeyword: string;
   secondaryKeywords: string[];
   imageAlt: string;
@@ -47,6 +49,40 @@ export type FeaturePage = {
       href: string;
     };
   };
+  /** Per-page section headings. Each falls back to the template's default label. */
+  headings?: {
+    workflows?: string;
+    metrics?: string;
+    useCases?: string;
+    differentiators?: string;
+    related?: string;
+    faq?: string;
+  };
+  /** Free tools shown as cards under the hero. Takes the place of `featuredLink`. */
+  toolCallout?: {
+    title: string;
+    description: string;
+    links: Array<{
+      title: string;
+      description: string;
+      href: string;
+    }>;
+  };
+  /** Longer sections that answer the questions competing pages answer. */
+  contextSections?: Array<{
+    title: string;
+    body: string;
+  }>;
+  /** A data image shown with the context sections. */
+  contextImage?: {
+    src: string;
+    alt: string;
+    caption: string;
+    width: number;
+    height: number;
+  };
+  /** Emit SoftwareApplication, FAQPage and BreadcrumbList JSON-LD. */
+  structuredData?: boolean;
 };
 
 export const featurePages = {
@@ -54,9 +90,11 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.keywordResearch,
     eyebrow: "Keyword Research",
     navDescription: "Find keyword ideas and SERPs.",
-    title: "Keyword research tool for practical SEO planning",
+    title: "Keyword research tool that shows the SERP behind every number",
     description:
       "Find keyword ideas, compare search volume and difficulty, inspect SERP results, and save the opportunities worth building around.",
+    seoDescription:
+      "Find keyword ideas with search volume and difficulty, check the Google results behind each one, and save the ones worth writing. Free to start, then $10/month.",
     primaryKeyword: "keyword research tool",
     secondaryKeywords: [
       "seo keyword research tool",
@@ -100,12 +138,55 @@ export const featurePages = {
       "DataForSEO-backed metrics without locking the research process into a black box.",
       "MCP access so AI agents can research and save keywords for you.",
     ],
-    featuredLink: {
-      title: "Free competitor analysis tool",
-      description:
-        "Pull a competitor's top organic keywords and the terms they rank for that you don't. No signup required.",
-      href: "/competitor-analysis",
+    headings: {
+      workflows: "Find ideas, check the SERP, save what's worth writing",
+      metrics: "What comes with every keyword",
+      useCases: "When teams open keyword research",
+      differentiators: "Why research here instead of a $100+ suite",
+      related: "Where the research goes next",
+      faq: "Keyword research questions",
     },
+    toolCallout: {
+      title: "Start with one topic before you sign up",
+      description: "Two free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free keyword generator",
+          description:
+            "Type a topic and get up to 20 keyword ideas with search volume and difficulty.",
+          href: "/keyword-generator",
+        },
+        {
+          title: "Free competitor analysis",
+          description:
+            "See a competitor's top 20 keywords and up to 20 they rank for that you don't.",
+          href: "/competitor-analysis",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Why the SERP matters more than the numbers",
+        body: 'Volume and difficulty don\'t tell you what an idea means. Seed "keyword research" and you get 300 ideas, but only 45 of them contain the word "keyword". The biggest, easiest-looking one is "research synonyms", with 14,800 searches a month and a difficulty of 0, and nobody searching it wants an SEO tool. Open the results page for an idea before you write for it. If the pages ranking don\'t match what you sell, the numbers don\'t matter.',
+      },
+      {
+        title: "How it compares with Google Keyword Planner and free tools",
+        body: "Google Keyword Planner is the free option most guides point to, and it sits inside Google Ads. OpenSEO's free keyword generator is the quick version of this tool: one topic in, up to 20 ideas out, with volume and difficulty and no account. The full tool returns up to 500 ideas per search and adds CPC, search intent and the live results page for each keyword. Keyword data covers 211 countries. 94 of them have full metrics. In the other 117 the data comes from Google Ads, which has volume and CPC but no difficulty or intent.",
+      },
+      {
+        title: "Keyword research with ChatGPT or Claude, using real numbers",
+        body: "Ask a chat assistant for search volumes and it will guess. Connect OpenSEO over MCP and the assistant pulls keyword ideas and metrics from the same data this page uses. The keyword research skill gives it an order of work: expand a seed, check who ranks, then save the keepers to your list. You keep the conversation, and every number can be checked.",
+      },
+    ],
+    contextImage: {
+      src: "/features/keyword-research/openseo-keyword-research-ideas-on-topic.png",
+      alt: "Scatter chart of 290 keyword ideas for the seed keyword research, plotting monthly US searches against keyword difficulty. 45 ideas that contain the word keyword are orange; the rest are grey, led by research synonyms at 14,800 searches a month and difficulty 0.",
+      caption:
+        "300 ideas from one seed. The easiest, biggest ones are off-topic.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Keyword Clustering", href: "/docs/skills/keyword-clustering" },
       {
@@ -129,6 +210,16 @@ export const featurePages = {
         question: "Does OpenSEO show live search results?",
         answer:
           "Yes. Keyword research can be paired with SERP inspection so you can see ranking pages alongside the metrics.",
+      },
+      {
+        question: "How many keyword ideas does one search return?",
+        answer:
+          "Up to 500. You pick 150, 300 or 500 before you run the search. The free keyword generator returns up to 20 without signup.",
+      },
+      {
+        question: "Which countries have keyword data?",
+        answer:
+          "211 countries. 94 of them get full metrics, including keyword difficulty and search intent. The other 117 are served from Google Ads data, which has search volume and CPC but no difficulty or intent.",
       },
     ],
     guides: {
@@ -170,9 +261,12 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.siteAudit,
     eyebrow: "Site Audit",
     navDescription: "Audit page-level SEO signals.",
-    title: "SEO audit tool for finding technical issues fast",
+    title:
+      "SEO audit tool that crawls, renders and sorts every issue by severity",
     description:
-      "Crawl a site, collect page-level technical signals, and optionally run Lighthouse checks for performance, SEO, accessibility, and best-practice issues.",
+      "Crawl a site, check every page for 32 types of technical issue, and work through them in order: critical first, then warnings, then info. Optional Lighthouse checks add performance, accessibility and best-practice findings.",
+    seoDescription:
+      "Crawl your site and get every technical issue sorted by severity: broken links, blocked pages, missing titles, optional Lighthouse checks. Free up to 50 pages.",
     primaryKeyword: "seo audit tool",
     secondaryKeywords: [
       "seo site audit",
@@ -186,42 +280,79 @@ export const featurePages = {
       {
         title: "Run a site crawl",
         description:
-          "Inspect pages for status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, response time, and optional Lighthouse findings.",
+          "Enter a URL and a page limit. The crawler follows robots.txt, stays on your domain, and checks status codes, titles, meta descriptions, headings, canonicals, links, image alt text and response time on every page.",
       },
       {
-        title: "Prioritize issues",
+        title: "Work the issues by severity",
         description:
-          "Review crawled pages and optional Lighthouse results so the team can focus on visible page and performance problems.",
+          "Critical issues come first: blocked pages, server errors, broken internal links and missing titles. Warnings and info follow, so the report reads as a queue instead of a score.",
       },
       {
         title: "Drill into affected URLs",
         description:
-          "Move into URLs with missing titles, metadata, heading and image-alt signals, status-code issues, response-time data, or optional Lighthouse findings.",
+          "Each issue opens to the exact URLs it affects, with the flagged title or meta description shown. Export the list for a developer or a content writer.",
       },
     ],
     metrics: [
       { label: "Crawled URLs", value: "Coverage" },
-      { label: "Page fields", value: "Checks" },
+      { label: "Issue severity", value: "Priority" },
       { label: "Affected pages", value: "Scope" },
       { label: "Audit history", value: "Progress" },
     ],
     showMetrics: true,
     useCases: [
       "Audit a new site before publishing SEO work.",
-      "Find technical issues after a migration or redesign.",
-      "Export crawled page data and Lighthouse findings for developers and content teams.",
+      "Find what broke after a migration or redesign.",
+      "Hand developers a list of URLs to fix instead of a generic score.",
     ],
     differentiators: [
-      "A practical crawler built into the same workspace as keyword and domain research.",
-      "Open-source implementation for teams that want to inspect or extend the audit flow.",
-      "Simple reports that expose page-level signals and optional Lighthouse findings instead of relying only on a generic score.",
+      "The crawler is built into the same workspace as keyword, rank and backlink research.",
+      "Your AI agent can run an audit and read the issues over MCP, then work through them with you.",
+      "Open source, so you can read exactly what each check looks for.",
     ],
-    featuredLink: {
-      title: "Free SERP simulator",
-      description:
-        "Preview how a title and meta description render on Google, with pixel widths. No signup required.",
-      href: "/serp-simulator",
+    headings: {
+      workflows: "Run a crawl, get a ranked work queue",
+      metrics: "What one audit covers",
+      useCases: "When to run an audit",
+      differentiators: "Why audit here",
+      related: "Tools to use alongside the audit",
+      faq: "Site audit questions",
     },
+    toolCallout: {
+      title: "Fix the title and meta issues the audit finds",
+      description: "A free tool from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free SERP simulator",
+          description:
+            "The audit flagged a title as too long? Paste it in and see where Google cuts it, on desktop and mobile.",
+          href: "/serp-simulator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "33 issue types, sorted by what to fix first",
+        body: "Every issue the crawler reports carries a severity. Four are critical: the crawler was blocked, a server error, a broken internal link, or a missing title. Twenty are warnings, including duplicate titles and content, redirect chains and loops, conflicting canonicals, thin content and orphan pages. Four of those warnings tell you when the crawl itself stopped early, so a short report never passes for a clean one. The other nine are info, like title length and pages buried deep in the site. Each issue opens to the URLs it affects.",
+      },
+      {
+        title: "Audits that see JavaScript sites",
+        body: "A crawler that reads only raw HTML sees an empty shell on many modern sites. Turn on rendering and OpenSEO loads each page in a browser before checking it, up to your plan's page limit. Pages that come back as a bot challenge get a second try with a different renderer. Rendered audits use credits for the pages they render and stop after 22 hours. When a site rate-limits the crawl, the audit slows down and retries instead of marking every page blocked, and site owners can verify the OpenSEO-Audit crawler before letting it through.",
+      },
+      {
+        title: "Run an audit from your AI agent",
+        body: "Connect OpenSEO to Claude, Cursor or ChatGPT over MCP and the agent can start an audit, check its progress and read the issues by severity. Ask it which critical issues to fix first, or to draft new titles for every page flagged as too long, and it works from the same report you see in the app.",
+      },
+    ],
+    contextImage: {
+      src: "/features/site-audit/openseo-site-audit-issue-types-by-severity.png",
+      alt: "List of the 32 issue types an OpenSEO site audit checks, in three columns: 4 critical (crawler was blocked, server error, broken internal link, missing title tag), 19 warnings and 9 info.",
+      caption:
+        "The check list, grouped the way the report sorts it. A page-limit warning has been added since.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Domain Overview", href: "/features/domain-overview" },
       { label: "Backlinks", href: "/features/backlink-checker" },
@@ -231,7 +362,7 @@ export const featurePages = {
       {
         question: "What does the OpenSEO site audit tool check?",
         answer:
-          "Status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, and response time for every crawled page. Enable Lighthouse and each page also gets performance, SEO, accessibility, and best-practice issues.",
+          "33 issue types across every crawled page, including status codes, titles, meta descriptions, headings, canonicals, redirects, internal links, image alt text and response time. Enable Lighthouse and a sample of pages also gets performance, SEO, accessibility and best-practice findings.",
       },
       {
         question: "Is OpenSEO a free SEO audit tool?",
@@ -239,9 +370,19 @@ export const featurePages = {
           "For smaller sites, yes: the free plan includes site audits up to 50 pages per crawl. Larger crawls need a paid plan, starting at $10/month. OpenSEO is also open source and self-hostable.",
       },
       {
+        question: "How many pages can one audit crawl?",
+        answer:
+          "Up to 50 pages per audit on the free plan and up to 10,000 on a paid plan. Rendered audits follow the same page limit and stop after 22 hours.",
+      },
+      {
+        question: "Can OpenSEO audit a JavaScript site?",
+        answer:
+          "Yes. Turn on rendering and OpenSEO loads each page in a browser before checking it. Rendered audits use more credits than a plain crawl.",
+      },
+      {
         question: "Who should use OpenSEO Site Audit?",
         answer:
-          "It is useful for founders, marketers, agencies, and developers who need a shared crawl report and optional Lighthouse issue export.",
+          "Founders, marketers, agencies and developers who need a shared crawl report they can work through and export.",
       },
     ],
     guides: {
@@ -281,6 +422,8 @@ export const featurePages = {
     title: "Backlink checker for understanding a domain's link profile",
     description:
       "Analyze backlinks, referring domains, and linked pages without separating link research from the rest of your SEO workspace.",
+    seoDescription:
+      "Go past a quick backlink check: page through every link, see anchors, filter out spam and lost links, and export the list for any domain. $10/month.",
     primaryKeyword: "backlink analysis",
     secondaryKeywords: [
       "backlink analysis tool",
@@ -510,9 +653,11 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.rankTracking,
     eyebrow: "Rank Tracking",
     navDescription: "Monitor keyword positions.",
-    title: "Rank tracker for monitoring keyword positions",
+    title: "Rank tracker for keyword positions on desktop and mobile",
     description:
       "Track the keywords that matter, optionally compare desktop and mobile results, and keep ranking changes connected to your research workflow.",
+    seoDescription:
+      "Track keyword positions on desktop and mobile, daily, weekly or monthly. 100 keywords checked weekly on one device costs $3 to $6 a month, shown before each run.",
     primaryKeyword: "rank tracker",
     secondaryKeywords: [
       "seo rank tracking tool",
@@ -526,7 +671,7 @@ export const featurePages = {
       {
         title: "Add tracked domains",
         description:
-          "Create rank tracking configurations for the domains and locations you care about.",
+          "Create a tracker for each domain, country or city, and language you sell in.",
       },
       {
         title: "Track important keywords",
@@ -556,12 +701,55 @@ export const featurePages = {
       "Optional desktop and mobile tracking helps teams avoid one-dimensional rank reports.",
       "OpenSEO can expose ranking data to AI agents through MCP.",
     ],
-    featuredLink: {
-      title: "Free competitor keyword finder",
-      description:
-        "Find the keywords a competitor ranks for before choosing what to track. No signup required.",
-      href: "/competitor-keyword-finder",
+    headings: {
+      workflows: "Set up a tracker, add keywords, read the movement",
+      metrics: "What each check records",
+      useCases: "When to track rankings",
+      differentiators: "Why track where you research",
+      related: "Where to find keywords worth tracking",
+      faq: "Rank tracking questions",
     },
+    toolCallout: {
+      title: "Pick what to track before you pay to track it",
+      description: "Two free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free competitor keyword finder",
+          description:
+            "See up to 20 keywords a competitor ranks for, with search demand, difficulty and the pages that rank.",
+          href: "/competitor-keyword-finder",
+        },
+        {
+          title: "Free SERP simulator",
+          description:
+            "Holding a position but not getting clicks? Preview your title and description on desktop and mobile.",
+          href: "/serp-simulator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Schedules, limits and what a check costs",
+        body: "Each tracker checks on the schedule you pick: daily, weekly, monthly, or only when you click. It holds up to 1,000 keywords (2,500 on the Pro plan, 5,000 on the Agency plan), on desktop, mobile or both, and reads 1 to 10 pages of results (top 40 by default). Before you save, the app shows what the tracker will cost per month. Every check catches the incomplete results Google serves some rank trackers and replaces them with the real ones, and reads a keyword a second time when it seems to have dropped out. The app shows the most a check can cost. 100 keywords on one device, checked weekly, costs about $1.30 to $2.60 a month; on both devices, about $2.60 to $5.20. Rank tracking runs on the paid plans; the free plan shows the setup but doesn't check positions.",
+      },
+      {
+        title: "Track a city, not just a country",
+        body: 'A national rank says little to a plumber in Pittsburgh. Set a tracker to a city, county or region and every check reads the results a searcher there sees. Search volume switches to the local number too. "rv storage near me" gets about 135,000 searches a month nationally and about 70 in Pittsburgh, so a national figure on a local tracker overstates demand. Language is set per tracker, so you can track Spanish searches in the US next to English ones.',
+      },
+      {
+        title: "Why Search Console's average position isn't a rank",
+        body: "Search Console averages every impression across countries, devices and personalized results into one number. That number can hold steady while your result in the one market you sell to moves. A tracker checks a fixed country or city, on a fixed device, on a schedule, so a drop shows up as a drop. Use Search Console to find the keywords worth tracking, and the tracker to watch them.",
+      },
+    ],
+    contextImage: {
+      src: "/features/rank-tracking/openseo-rank-tracker-monthly-cost.png",
+      alt: "Grid of rank tracking costs for one read of 100, 250, 500 and 1,000 keywords on desktop and mobile at top 40. One read per check costs $0.50 to $4.99 a month on a monthly schedule, $2.00 to $19.97 weekly, and $14.98 to $149.76 daily.",
+      caption:
+        "The cost of one read of each keyword, by keyword count and schedule, before the incomplete-results check that every read now includes.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Keyword Clustering", href: "/docs/skills/keyword-clustering" },
       {
@@ -585,6 +773,21 @@ export const featurePages = {
         question: "How should I choose keywords to track?",
         answer:
           "Start with keywords tied to important pages, active content work, and competitor opportunities discovered in keyword research.",
+      },
+      {
+        question: "How often does OpenSEO check rankings?",
+        answer:
+          "Daily, weekly or monthly, set per tracker, or only when you run a check yourself. Monthly checks run at the end of the month.",
+      },
+      {
+        question: "How much does rank tracking cost?",
+        answer:
+          "It depends on the number of keywords, devices, result depth and how often you check. 100 keywords on one device, checked weekly, costs $3 to $6 a month, and twice that on desktop and mobile. The app shows the most a tracker can cost per month before you save it, and checks draw from the usage included in your plan.",
+      },
+      {
+        question: "Can I track rankings in a specific city?",
+        answer:
+          "Yes. Pick a city, county or region when you set up the tracker. Positions come from that location's results, and search volume shows the local figure.",
       },
     ],
     guides: {
@@ -629,6 +832,8 @@ export const featurePages = {
     title: "Saved keywords for turning SEO research into a plan",
     description:
       "Keep useful keyword ideas organized so they can inform content planning, rank tracking decisions, and AI-agent workflows.",
+    seoDescription:
+      "Save keyword ideas with volume and difficulty attached, tag them by page or topic, and reuse the list for content plans, rank tracking and AI agents.",
     primaryKeyword: "saved keywords",
     secondaryKeywords: [
       "seo keyword list",
@@ -701,6 +906,8 @@ export const featurePages = {
     title: "Track your brand in AI answers",
     description:
       "Research prompts, then track brand mentions, cited pages, and competitor appearances in ChatGPT, Gemini, and Google AI Overviews.",
+    seoDescription:
+      "See where ChatGPT, Gemini and Google AI Overviews mention your brand, which pages they cite, and which competitors appear instead. Open source, $10/month.",
     primaryKeyword: "ai visibility tool",
     secondaryKeywords: [
       "brand visibility ai search",
@@ -774,6 +981,8 @@ export const featurePages = {
     title: "AI search prompt explorer for visibility research",
     description:
       "Start with ChatGPT, or add Claude, Gemini, and Perplexity to compare API model answers and available citations.",
+    seoDescription:
+      "Run one prompt through ChatGPT, Claude, Gemini and Perplexity, then compare the answers and any sources each model cites. Answers come from each model's API.",
     primaryKeyword: "ai search visibility",
     secondaryKeywords: [
       "chatgpt search visibility",

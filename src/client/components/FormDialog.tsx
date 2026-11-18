@@ -16,11 +16,14 @@ export function FormDialog({
   title,
   onClose,
   actions,
+  wide = false,
   children,
 }: {
   title: string;
   onClose: () => void;
   actions: ReactNode;
+  /** Room for side-by-side content, such as a list next to a map. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -30,7 +33,7 @@ export function FormDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={wide ? "sm:max-w-3xl" : "sm:max-w-md"}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

@@ -1,7 +1,7 @@
 /* eslint-disable max-lines, max-lines-per-function -- Domain Overview keeps page-only orchestration colocated to avoid fake indirection. */
 import { useCallback, useEffect, useMemo, useRef, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
-import { Globe, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { BackButton, PageHeader } from "@/client/components/PageHeader";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
@@ -24,7 +24,9 @@ import {
 } from "@/client/features/domain/domainSearchValidation";
 import { useDomainOverviewQuery } from "@/client/features/domain/hooks/useDomainOverviewQuery";
 import { DomainOverviewLoadingState } from "@/client/features/domain/components/DomainOverviewLoadingState";
+import { DomainProfileIllustration } from "@/client/components/EmptyIllustrations";
 import { RecentSearches } from "@/client/components/RecentSearches";
+import { SuggestedSites } from "@/client/features/projects/SuggestedSites";
 import { QueryError } from "@/client/components/QueryState";
 import { DomainSearchCard } from "@/client/features/domain/components/DomainSearchCard";
 import { KeywordsTab } from "@/client/features/domain/components/KeywordsTab";
@@ -551,7 +553,7 @@ export function DomainOverviewPage({
       <div className="mx-auto max-w-7xl space-y-4">
         <PageHeader
           title="Domain Overview"
-          description="Analyze any domain's SEO profile: traffic, keywords, and backlinks."
+          description="See what brings a site its search traffic."
           backLink={
             routeState.domain ? (
               <BackButton
@@ -596,8 +598,26 @@ export function DomainOverviewPage({
               items={state.history}
               loaded={state.historyLoaded}
               onRemove={state.removeHistoryItem}
-              emptyIcon={Globe}
-              emptyTitle="Enter a domain to get started"
+              emptyIllustration={<DomainProfileIllustration />}
+              emptyTitle="Look up your site or a competitor's"
+              emptyDescription="See how much search traffic they get, the keywords they rank for and their top pages."
+              emptyAction={
+                <SuggestedSites
+                  projectId={projectId}
+                  renderLink={(domain, props) => (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate({
+                          search: (prev) => ({ ...prev, domain }),
+                          replace: true,
+                        })
+                      }
+                      {...props}
+                    />
+                  )}
+                />
+              }
               getTitle={(item) => item.domain}
               getSubtitle={(item) => RESEARCH_SCOPE_LABELS[item.scope]}
               renderLink={(item, props) => (
