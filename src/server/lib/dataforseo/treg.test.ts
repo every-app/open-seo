@@ -63,14 +63,19 @@ describe("DataForSEO through treg", () => {
   it("names TREG_API_TOKEN when treg refuses the token", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn<typeof fetch>()
-        .mockImplementation(async () =>
-          Response.json(
-            { error: "unauthorized" },
-            { status: 401, headers: { "X-Treg-Error": "1" } },
-          ),
-        ),
+      vi.fn<typeof fetch>().mockImplementation(async () => {
+        const response = Response.json(
+          { error: "unauthorized" },
+          { status: 401, headers: { "X-Treg-Error": "1" } },
+        );
+        // The Docker edition's runtime can't clone a fetched response.
+        response.clone = () => {
+          throw new TypeError(
+            "Cannot clone a streaming response before consumption",
+          );
+        };
+        return response;
+      }),
     );
 
     await expect(

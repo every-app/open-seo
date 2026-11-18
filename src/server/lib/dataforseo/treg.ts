@@ -23,10 +23,11 @@ function tregUrlFor(dataforseoUrl: string): string {
   return TREG_DATAFORSEO_BASE + dataforseoUrl.slice(DATAFORSEO_BASE.length);
 }
 
-/**
- * A refusal treg made itself, as OpenSEO's error; null for the ones the
- * DataForSEO error ladder already handles (429 and 5xx: retry later).
- */
+// The refusals treg makes itself that retrying can't fix. Its 429 and 5xx
+// go through the DataForSEO error ladder instead (retry later).
+const TREG_REFUSAL_STATUSES = new Set([401, 402, 403, 404]);
+
+/** A refusal treg made itself (one of TREG_REFUSAL_STATUSES), as OpenSEO's error. */
 async function tregRefusalError(response: Response, path: string) {
   // treg's refusals are JSON with a `detail`: a sentence, or an object with
   // an `error` and what to do about it. Kept whole for the server log.
@@ -56,16 +57,13 @@ async function tregRefusalError(response: Response, path: string) {
       details,
     );
   }
-  if (response.status === 404) {
-    // treg relays only the paths its catalog lists. INTERNAL_ERROR because
-    // the app's copy for it sends a self-hoster to the server log.
-    return new AppError(
-      "INTERNAL_ERROR",
-      `treg doesn't serve DataForSEO's ${path} yet. Set DATAFORSEO_API_KEY to use this feature.`,
-      details,
-    );
-  }
-  return null;
+  // 404: treg relays only the paths its catalog lists. INTERNAL_ERROR because
+  // the app's copy for it sends a self-hoster to the server log.
+  return new AppError(
+    "INTERNAL_ERROR",
+    `treg doesn't serve DataForSEO's ${path} yet. Set DATAFORSEO_API_KEY to use this feature.`,
+    details,
+  );
 }
 
 /**
@@ -87,14 +85,14 @@ export function createTregDataforseoFetch(apiKey: string): typeof fetch {
     const response = await fetch(tregUrlFor(rawUrl), { ...init, headers });
     // treg marks its own refusals; without the header the status and body
     // are DataForSEO's (a 402 there is treg's DataForSEO account, not yours).
-    if (response.ok || response.headers.get("X-Treg-Error") !== "1") {
+    // Decide from the status, not the body: a body read here can't be read
+    // again downstream, and the Docker edition's runtime can't clone it.
+    if (
+      response.headers.get("X-Treg-Error") !== "1" ||
+      !TREG_REFUSAL_STATUSES.has(response.status)
+    ) {
       return response;
     }
-    const refused = await tregRefusalError(
-      response.clone(),
-      new URL(rawUrl).pathname,
-    );
-    if (refused) throw refused;
-    return response;
+    throw await tregRefusalError(response, new URL(rawUrl).pathname);
   };
 }
