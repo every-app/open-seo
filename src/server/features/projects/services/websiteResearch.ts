@@ -37,6 +37,7 @@ import {
   toTopicName,
 } from "@/shared/ai-prompt-suggestions";
 import {
+  describeMarket,
   dropRepeatedTopics,
   keepVerifiedCompetitors,
 } from "./websiteResearchSuggestions";
@@ -218,7 +219,7 @@ export async function researchWebsite(
             ? "Summarize the business's actual offering and customers from its website."
             : "",
           missingCompetitors
-            ? "Always call search_competitors, then read candidate websites to verify that they sell competing products/services to the same customers. Ranking sites, publishers, directories, customers, and cited domains are not competitors merely because they appear in results. Return up to five verified competitors, or fewer if evidence is insufficient. Each needs an explanation under 180 characters and sourceUrl copied exactly from a page returned by read_business_sites."
+            ? "Always call search_competitors, then read candidate websites to verify that they sell competing products/services to the same customers. Ranking sites, publishers, directories, customers, and cited domains are not competitors merely because they appear in results. App store, marketplace, and social media listings are not competitors; a competitor has its own website. Return up to five verified competitors, or fewer if evidence is insufficient. Each needs an explanation under 180 characters and sourceUrl copied exactly from a page returned by read_business_sites."
             : "",
           missingTopics
             ? 'Generate five suggested topics, most important first, each with exactly five distinct natural-language prompts, based on the supplied business context and customer needs. Name each topic with a short head term of one to three words, such as "rank tracker" or "backlink checker", because the names also serve as keyword research terms. Use buyer questions people would ask AI when comparing or finding these products/services. Do not insert the brand into neutral prompts. Write for the supplied country and language. These suggestions are drafts, not tracked prompts. Also suggest up to fifteen more short head-term keywords of one to three words, different from the topic names, covering other products/services, use cases, and categories buyers would ask AI about.'
@@ -231,7 +232,7 @@ export async function researchWebsite(
           .join("\n"),
         prompt: JSON.stringify({
           domain,
-          market,
+          market: describeMarket(market),
           name: preserved.name,
           sections: sections.map(({ key, content }) => ({
             key,
@@ -251,7 +252,7 @@ export async function researchWebsite(
           ? {
               search_competitors: tool({
                 description:
-                  "Search live Google results for competing businesses. Call once with one or two targeted queries based on the business offering.",
+                  "Search live Google results for competing businesses. Call once with one or two targeted queries based on the business offering, written in the market's language the way local buyers search.",
                 inputSchema: z.object({
                   queries: z.array(z.string().min(1).max(200)).min(1).max(2),
                 }),
