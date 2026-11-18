@@ -1277,6 +1277,11 @@ body:has(.itc-campaign) {
 .itc-start-proof strong {
   font-weight: 600;
 }
+/* Sits close under the sign-up line, so the two read as one proof block. */
+.itc-start-rating {
+  justify-self: center;
+  margin-top: -8px;
+}
 .itc-start-avatars {
   display: inline-flex;
 }
@@ -1571,8 +1576,10 @@ html[data-privacy-panel] .itc-start-sticky {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     /* The outer rows soak up the difference, so the shorter side centers on
        the taller one. */
-    grid-template-rows: 1fr auto auto auto 1fr;
-    grid-template-areas: ". card" "copy card" "cta card" "proof card" ". card";
+    grid-template-rows: 1fr auto auto auto auto 1fr;
+    grid-template-areas:
+      ". card" "copy card" "cta card" "proof card" "rating card"
+      ". card";
     column-gap: 56px;
     row-gap: 24px;
   }
@@ -1629,6 +1636,10 @@ html[data-privacy-panel] .itc-start-sticky {
     grid-area: proof;
     justify-content: flex-start;
     font-size: 14px;
+  }
+  .itc-start-rating {
+    grid-area: rating;
+    justify-self: start;
   }
   .itc-start-section,
   .itc-start-steps,

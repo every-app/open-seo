@@ -9,6 +9,7 @@ import { type RefObject, useEffect, useRef, useState } from "react";
 import { GABE_TESTIMONIAL } from "@/components/campaign-pages";
 import { SIGNUP_URL, TESTIMONIALS } from "@/components/landing-page";
 import { MoneyBackGuarantee } from "@/components/money-back-guarantee";
+import { TrustpilotRating } from "@/components/trustpilot";
 import type { StartAngle } from "@/lib/start-angles";
 
 // The app's sign-up page reads `method`: Google goes straight to Google's
@@ -143,9 +144,10 @@ export function StartLandingPage({ angle }: { angle: StartAngle }) {
           {/* Recent sign-ups read as momentum. Kept by hand, so check it
               against last week's count when it's updated. */}
           <span>
-            <strong>7,000+</strong> people signed up last week
+            <strong>10,000+</strong> people signed up last week
           </span>
         </p>
+        <TrustpilotRating className="itc-start-rating" />
       </section>
 
       <section className="itc-start-section itc-start-steps">
