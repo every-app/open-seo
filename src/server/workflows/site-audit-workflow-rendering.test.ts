@@ -84,8 +84,13 @@ describe("crawlPage with JavaScript rendering", () => {
     expect(await crawl(rendered())).toMatchObject({ javascriptShell: false });
   });
 
-  // Cloudflare's interstitial, then Imunify360's bot check.
-  it.each(["Just a moment...", "One moment, please..."])(
+  // Cloudflare's interstitial, Imunify360's bot check, then Brilliant
+  // Directories' browser check.
+  it.each([
+    "Just a moment...",
+    "One moment, please...",
+    "Checking your browser",
+  ])(
     'does not analyze a "%s" challenge page returned by the renderer',
     async (title) => {
       stubFetch({ status: 200 });
