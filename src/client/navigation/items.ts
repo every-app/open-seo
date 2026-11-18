@@ -46,11 +46,6 @@ const projectNavItems = [
     icon: MapPin,
   },
   {
-    to: "/p/$projectId/local-rank" as const,
-    label: "Maps Grid Rank",
-    icon: MapPin,
-  },
-  {
     to: "/p/$projectId/search-performance" as const,
     label: "GSC Insights",
     icon: GoogleGlyphMuted,
@@ -157,7 +152,6 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/local-seo"),
-        byPath("/p/$projectId/local-rank"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
       ],

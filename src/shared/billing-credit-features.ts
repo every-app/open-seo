@@ -7,7 +7,6 @@ export type CreditFeature =
   | "ai_citations"
   | "ai_prompt_responses"
   | "local_seo"
-  | "local_map_rank"
   | "agent";
 
 const CREDIT_FEATURE_LABELS: Record<string, string> = {
@@ -20,6 +19,7 @@ const CREDIT_FEATURE_LABELS: Record<string, string> = {
   ai_prompt_responses: "AI Prompt Responses",
   ai_search: "AI Search",
   local_seo: "Local SEO",
+  // Historical self-host ledger rows from the removed Maps grid addon.
   local_map_rank: "Maps Grid Rank",
   // The onboarding chat is gone, but historical usage events still carry this
   // key — keep the label so old billing breakdowns don't render "Other".

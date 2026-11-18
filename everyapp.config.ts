@@ -35,7 +35,6 @@ export default {
     workflows: [
       { name: "RANK_CHECK_WORKFLOW", className: "RankCheckWorkflow" },
       { name: "AI_VISIBILITY_WORKFLOW", className: "AiVisibilityWorkflow" },
-      { name: "LOCAL_MAP_RANK_WORKFLOW", className: "LocalMapRankWorkflow" },
       { name: "LOCAL_RANK_WORKFLOW", className: "LocalRankWorkflow" },
       {
         name: "SITE_AUDIT_WORKFLOW",

@@ -20,11 +20,6 @@
       "class_name": "AiVisibilityWorkflow"
     },
     {
-      "binding": "LOCAL_MAP_RANK_WORKFLOW",
-      "name": "local-map-rank-workflow",
-      "class_name": "LocalMapRankWorkflow"
-    },
-    {
       "binding": "LOCAL_RANK_WORKFLOW",
       "name": "local-rank-workflow",
       "class_name": "LocalRankWorkflow"

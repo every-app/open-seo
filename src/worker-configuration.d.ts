@@ -31,7 +31,6 @@ declare namespace Cloudflare {
 		SITE_AUDIT_WORKFLOW: Workflow<Parameters<import("./audit-worker").SiteAuditWorkflow['run']>[0]['payload']>;
 		RANK_CHECK_WORKFLOW: Workflow<Parameters<import("./server").RankCheckWorkflow['run']>[0]['payload']>;
 		AI_VISIBILITY_WORKFLOW: Workflow<Parameters<import("./server").AiVisibilityWorkflow['run']>[0]['payload']>;
-		LOCAL_MAP_RANK_WORKFLOW: Workflow<Parameters<import("./server").LocalMapRankWorkflow['run']>[0]['payload']>;
 	}
 }
 interface Env extends Cloudflare.Env {}

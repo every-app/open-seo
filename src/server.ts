@@ -10,7 +10,6 @@ import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve"
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
-import { runScheduledLocalMapScans } from "@/server/features/local-map-rank/services/scheduledLocalMapScans";
 import { reconcileStaleAudits } from "@/server/features/audit/services/auditReconciler";
 import { sendFirstAuditEmails } from "@/server/features/audit/services/firstAuditEmails";
 import {
@@ -269,7 +268,6 @@ async function handleAppRequest(
 // (src/audit-worker.ts); this worker reaches them via cross-script bindings.
 export { RankCheckWorkflow } from "./server/workflows/RankCheckWorkflow";
 export { AiVisibilityWorkflow } from "./server/workflows/AiVisibilityWorkflow";
-export { LocalMapRankWorkflow } from "./server/workflows/LocalMapRankWorkflow";
 export { LocalRankWorkflow } from "./server/workflows/LocalRankWorkflow";
 // Durable Object class for the SAM in-app agent (Agents SDK).
 export { SamChatAgent } from "./server/features/sam/SamChatAgent";
@@ -349,7 +347,6 @@ export default {
     // run makes names (gateway-attribution.ts).
     const checks = await Promise.allSettled([
       withPgClient(() => runScheduledRankChecks(env)),
-      withPgClient(() => runScheduledLocalMapScans()),
       withPgClient(async () => {
         const { runScheduledAiVisibility } =
           await import("@/server/features/ai-visibility/services/scheduledAiVisibility");

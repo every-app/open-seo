@@ -11,7 +11,6 @@ import * as sqliteGa4 from "./ga4.schema";
 import * as sqliteGsc from "./gsc.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as sqliteAiVisibility from "./ai-visibility.schema";
-import * as sqliteLocalMapRank from "./local-map-rank.schema";
 import * as sqliteUsageBudget from "./usage-budget.schema";
 import * as sqliteLocalSeo from "./local-seo.schema";
 import * as sqliteStripeProjects from "./stripe-projects.schema";
@@ -27,7 +26,6 @@ import * as pgGa4 from "./pg/ga4.schema";
 import * as pgGsc from "./pg/gsc.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 import * as pgAiVisibility from "./pg/ai-visibility.schema";
-import * as pgLocalMapRank from "./pg/local-map-rank.schema";
 import * as pgUsageBudget from "./pg/usage-budget.schema";
 import * as pgLocalSeo from "./pg/local-seo.schema";
 import * as pgStripeProjects from "./pg/stripe-projects.schema";
@@ -54,7 +52,6 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteGsc &
   typeof sqliteTelemetry &
   typeof sqliteAiVisibility &
-  typeof sqliteLocalMapRank &
   typeof sqliteUsageBudget &
   typeof sqliteLocalSeo &
   typeof sqliteStripeProjects;
@@ -74,7 +71,6 @@ const runtimeSchema =
         ...pgGsc,
         ...pgTelemetry,
         ...pgAiVisibility,
-        ...pgLocalMapRank,
         ...pgUsageBudget,
         ...pgLocalSeo,
         ...pgStripeProjects,
@@ -92,7 +88,6 @@ const runtimeSchema =
         ...sqliteGsc,
         ...sqliteTelemetry,
         ...sqliteAiVisibility,
-        ...sqliteLocalMapRank,
         ...sqliteUsageBudget,
         ...sqliteLocalSeo,
         ...sqliteStripeProjects,
@@ -150,10 +145,6 @@ export const {
   aiObservations,
   aiSources,
   aiMatches,
-  localMapCampaigns,
-  localMapKeywords,
-  localMapScanRuns,
-  localMapScanResults,
   organizationUsageSettings,
   organizationUsageLedger,
   localRankTrackers,
