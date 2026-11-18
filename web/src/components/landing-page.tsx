@@ -16,6 +16,11 @@ import { AddToAgentLinks } from "@/components/add-to-agent-links";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { ProductHuntLaurel } from "@/components/product-hunt-laurel";
 import { SiteFooter } from "@/components/site-footer";
+import {
+  hasTrustpilotReviews,
+  TrustpilotRating,
+  TrustpilotReviews,
+} from "@/components/trustpilot";
 import { featurePages } from "@/lib/feature-pages";
 import { getAgentSetupPrompt } from "../../../src/client/features/ai-mcp/agentSetupPrompt";
 import "./landing-page.css";
@@ -248,6 +253,7 @@ function Hero() {
               <p className="itc-hero-cta-note">No credit card required</p>
             </div>
           </div>
+          <TrustpilotRating className="itc-hero-rating" />
         </Container>
       </section>
       <div className="itc-hero-followup">
@@ -330,6 +336,29 @@ export function Testimonials({
               </figure>
             ))}
           </div>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+// ─── Trustpilot reviews (same band as the testimonials) ──────────────
+
+function TrustpilotSection() {
+  return (
+    <section className="itc-inverse">
+      <Container>
+        <div className="itc-testimonials">
+          <h2
+            className="itc-display-md itc-testimonials-title"
+            style={{ margin: "0 auto" }}
+          >
+            Trusted by 90,000+ entrepreneurs
+          </h2>
+          <p className="itc-testimonials-rating">
+            <TrustpilotRating />
+          </p>
+          <TrustpilotReviews layout="carousel" />
         </div>
       </Container>
     </section>
@@ -1153,7 +1182,7 @@ export function LandingPage() {
     <div className="itc">
       <Hero />
       <McpSection />
-      <Testimonials />
+      {hasTrustpilotReviews ? <TrustpilotSection /> : <Testimonials />}
       <BeyondDataSection />
       <OpenSourceSection />
       <ProductSection />

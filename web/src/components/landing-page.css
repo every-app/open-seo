@@ -413,6 +413,13 @@
   text-align: center;
   white-space: nowrap;
 }
+.itc-testimonials-rating {
+  margin: 12px 0 32px;
+  text-align: center;
+}
+.itc-hero-rating {
+  margin-top: 20px;
+}
 .itc-quote-mark {
   color: var(--q-mark);
   font-size: 48px;

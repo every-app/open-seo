@@ -13,8 +13,9 @@
     "types:check": "fumadocs-mdx && tsc --noEmit",
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",
-    "deploy": "VITE_REQUIRE_TURNSTILE=1 npm run build && wrangler deploy",
-    "deploy:prod": "VITE_REQUIRE_TURNSTILE=1 npm run build && wrangler deploy",
+    "refresh:trustpilot": "node scripts/refresh-trustpilot.js",
+    "deploy": "npm run refresh:trustpilot && VITE_REQUIRE_TURNSTILE=1 npm run build && wrangler deploy",
+    "deploy:prod": "npm run refresh:trustpilot && VITE_REQUIRE_TURNSTILE=1 npm run build && wrangler deploy",
     "deploy:preview": "CLOUDFLARE_ENV=preview VITE_REQUIRE_TURNSTILE=1 npm run build && wrangler deploy",
     "test:protection": "vitest run && node scripts/check-free-tool-budget.cjs"
   },

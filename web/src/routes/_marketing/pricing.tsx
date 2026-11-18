@@ -1,5 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import {
+  hasTrustpilotReviews,
+  TrustpilotRating,
+  TrustpilotReviews,
+} from "@/components/trustpilot";
 import { MetaEvent, trackMetaEvent } from "@/lib/meta-pixel";
 import { buildPageSeo } from "@/lib/seo";
 
@@ -333,6 +338,15 @@ function Pricing() {
           <PlanCard key={plan.name} plan={plan} yearly={yearly} />
         ))}
       </section>
+
+      {hasTrustpilotReviews ? (
+        <section aria-label="Reviews" className="mt-12 text-center">
+          <TrustpilotRating />
+          <div className="mt-5">
+            <TrustpilotReviews layout="grid" limit={3} />
+          </div>
+        </section>
+      ) : null}
 
       {/* 3. How usage works */}
       <section className="mx-auto mt-16 max-w-4xl">

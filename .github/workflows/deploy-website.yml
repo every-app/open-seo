@@ -8,6 +8,10 @@ on:
     paths:
       - web/**
       - .github/workflows/deploy-website.yml
+  # Trustpilot requires its content to be refreshed at least every 24 hours;
+  # the build refreshes web/src/data/trustpilot.json.
+  schedule:
+    - cron: "17 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -85,3 +89,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           VITE_TURNSTILE_SITE_KEY: ${{ vars.WEBSITE_TURNSTILE_SITE_KEY }}
+          # The API application the app uses for review invitations. Without
+          # these the site shows no Trustpilot content.
+          TRUSTPILOT_API_KEY: ${{ secrets.TRUSTPILOT_API_KEY }}
+          TRUSTPILOT_BUSINESS_UNIT_ID: ${{ vars.TRUSTPILOT_BUSINESS_UNIT_ID }}

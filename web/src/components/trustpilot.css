@@ -1,0 +1,154 @@
+/**
+ * Trustpilot rating line and review cards. Self-contained (no .itc palette
+ * vars) so they also work on the Tailwind-styled pages such as /pricing.
+ */
+
+.tp-stars {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  color: #d3cec6;
+}
+.tp-stars svg {
+  position: absolute;
+  inset: 0;
+  fill: currentColor;
+}
+/* Trustpilot's green, so the stars read as theirs at a glance. */
+.tp-stars-fill,
+.tp-wordmark svg {
+  color: #00b67a;
+  fill: currentColor;
+}
+
+.tp-rating {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+  color: #626260;
+  font-size: 13px;
+  line-height: 1.4;
+  text-decoration: none;
+}
+.tp-rating strong {
+  color: #111111;
+  font-weight: 600;
+}
+.tp-rating:hover {
+  color: #111111;
+}
+.tp-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #111111;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tp-wordmark svg {
+  position: relative;
+  top: -1px;
+}
+
+/* ── Review cards ── */
+.tp-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid #d0c9bb;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #111111;
+  text-align: left;
+}
+.tp-card blockquote {
+  margin: 0;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.tp-card-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+.tp-card-text {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+}
+.tp-card figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  font-size: 13px;
+}
+.tp-card-name {
+  font-weight: 500;
+}
+.tp-card a {
+  color: #7b7b78;
+  text-decoration: none;
+}
+.tp-card a:hover {
+  color: #111111;
+  text-decoration: underline;
+}
+
+/* Grid: even rows of three. */
+.tp-reviews-grid .tp-track {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 768px) {
+  .tp-reviews-grid .tp-track {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Carousel: one swipeable row that snaps card by card. */
+.tp-reviews-carousel .tp-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.tp-reviews-carousel .tp-track::-webkit-scrollbar {
+  display: none;
+}
+.tp-reviews-carousel .tp-card {
+  flex: 0 0 min(360px, 85%);
+  scroll-snap-align: start;
+}
+.tp-nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.tp-nav button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d0c9bb;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 16px;
+  cursor: pointer;
+}
+.tp-nav button:hover {
+  border-color: #111111;
+}
