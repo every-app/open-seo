@@ -5,11 +5,9 @@ import { AppError } from "@/server/lib/errors";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   createLocalMapCampaignSchema,
-  estimateLocalMapScanCostSchema,
-  getLocalMapCampaignDetailSchema,
   getLocalMapCampaignsSchema,
   getLocalMapRunResultsSchema,
-  triggerLocalMapScanSchema,
+  localMapCampaignIdSchema,
 } from "@/types/schemas/local-map-rank";
 
 export const getLocalMapCampaigns = createServerFn({ method: "POST" })
@@ -42,7 +40,7 @@ export const createLocalMapCampaign = createServerFn({ method: "POST" })
 
 export const triggerLocalMapScan = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(triggerLocalMapScanSchema)
+  .validator(localMapCampaignIdSchema)
   .handler(async ({ data, context }) =>
     LocalMapRankService.triggerScan({
       campaignId: data.campaignId,
@@ -58,14 +56,14 @@ export const triggerLocalMapScan = createServerFn({ method: "POST" })
 
 export const estimateLocalMapScanCostFn = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(estimateLocalMapScanCostSchema)
+  .validator(localMapCampaignIdSchema)
   .handler(async ({ data, context }) =>
     LocalMapRankService.estimateScanCost(data.campaignId, context.projectId),
   );
 
 export const getLocalMapCampaignDetail = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(getLocalMapCampaignDetailSchema)
+  .validator(localMapCampaignIdSchema)
   .handler(async ({ data, context }) =>
     LocalMapRankService.getCampaignDetail(data.campaignId, context.projectId),
   );

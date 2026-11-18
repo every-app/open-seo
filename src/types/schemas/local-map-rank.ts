@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-export const localMapScheduleIntervalSchema = z.enum([
-  "weekly",
-  "monthly",
-  "manual",
-]);
+const localMapScheduleIntervalSchema = z.enum(["weekly", "monthly", "manual"]);
 
 const projectIdSchema = z.object({
   projectId: z.string().min(1),
@@ -34,13 +30,9 @@ export const createLocalMapCampaignSchema = projectIdSchema.extend({
   keywords: z.array(z.string().min(1).max(700)).min(1).max(20),
 });
 
-export const triggerLocalMapScanSchema = projectIdSchema.extend({
+export const localMapCampaignIdSchema = projectIdSchema.extend({
   campaignId: z.string().uuid(),
 });
-
-export const estimateLocalMapScanCostSchema = triggerLocalMapScanSchema;
-
-export const getLocalMapCampaignDetailSchema = triggerLocalMapScanSchema;
 
 export const getLocalMapRunResultsSchema = projectIdSchema.extend({
   runId: z.string().uuid(),
