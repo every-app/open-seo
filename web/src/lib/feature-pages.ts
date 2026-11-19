@@ -829,7 +829,8 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.savedKeywords,
     eyebrow: "Saved Keywords",
     navDescription: "Organize SEO opportunities.",
-    title: "Saved keywords for turning SEO research into a plan",
+    title:
+      "Keyword list manager: save, tag and export the keywords worth acting on",
     description:
       "Keep useful keyword ideas organized so they can inform content planning, rank tracking decisions, and AI-agent workflows.",
     seoDescription:
@@ -847,17 +848,17 @@ export const featurePages = {
       {
         title: "Save promising keywords",
         description:
-          "Collect useful ideas from keyword research instead of losing them after each search.",
+          "Save ideas from keyword research, a competitor's domain overview or your Search Console queries, or paste in a list of your own.",
       },
       {
         title: "Organize by topic",
         description:
-          "Tag keywords by page, campaign, content cluster, or priority so planning stays readable.",
+          "Tag keywords by page, campaign, content cluster, or priority, then filter the list by tag, volume, CPC, difficulty or the words a keyword contains.",
       },
       {
         title: "Reuse saved keywords across workflows",
         description:
-          "Use saved keywords and tags as a planning reference for rank tracking, content planning, or MCP-powered research.",
+          "Export the list to CSV or Google Sheets, or let an AI agent read and update it over MCP.",
       },
     ],
     metrics: [
@@ -874,8 +875,50 @@ export const featurePages = {
     differentiators: [
       "Saved keywords bridge research, tracking, and AI workflows.",
       "Saved keywords preserve available metrics like volume, CPC, difficulty, intent, and tags.",
-      "The workflow stays simple enough for repeated planning sessions.",
+      "Saving, tagging and exporting use no credits.",
     ],
+    headings: {
+      workflows: "Save it, tag it, use it again",
+      useCases: "When the list earns its keep",
+      differentiators: "Why keep the list next to the research",
+      related: "Where saved keywords go next",
+      faq: "Saved keyword questions",
+    },
+    toolCallout: {
+      title: "Build the first draft of the list for free",
+      description: "A free tool from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free keyword generator",
+          description:
+            "Type a topic and get up to 20 keyword ideas with search volume and difficulty: the first candidates for your list.",
+          href: "/keyword-generator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Tag by the page you'll build, not the intent label",
+        body: 'The keyword research page\'s example search for "keyword research" returned 300 ideas, and 45 of them contain the word "keyword". Tagged by the page each one belongs on, they make four pages and one pile to drop. 19 belong on a tool page, with 4,600 searches a month between them. Nine fit a how-to guide, five a definition page and two an examples page. The other ten use "keywords" in the academic sense, like "keywords in research". The intent column called 16 of the 19 tool-page keywords informational, including "free keyword research tool". Read the keyword, then tag it.',
+      },
+      {
+        title: "Bring in a list you already have",
+        body: "Paste up to 2,000 keywords at a time, one per line, or a CSV with keywords in the first column. Add a tag as you import, and choose whether to fetch volume, difficulty and CPC now. Fetching the numbers uses credits. Saving, tagging and exporting don't. Keywords are saved for the project's country and language, so the numbers match the market you're planning for.",
+      },
+      {
+        title: "Hand the list to a writer, a developer or an AI agent",
+        body: "Select keywords and export them to CSV or Google Sheets for a writer's brief or a client sheet. Your AI assistant can work with the same list over MCP: save keywords with their metrics and tags, read the list back filtered by tag, retag a group into page clusters, and remove what you no longer need. The list stays one source of truth whether a person or an agent did the research.",
+      },
+    ],
+    contextImage: {
+      src: "/features/saved-keywords/openseo-saved-keywords-tagged-by-page.png",
+      alt: "Bar chart of 45 keyword ideas containing the word keyword, tagged by page: tool page 19 keywords and 4,600 monthly searches, how-to guide 9 and 930, definition guide 5 and 530, examples 2 and 220, other meanings 10 and 560. 16 of the 19 tool-page keywords carry an informational intent label.",
+      caption:
+        "One search, tagged by the page each keyword belongs on. The intent label alone would have hidden the tool page.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Keyword Research", href: "/features/keyword-research" },
       { label: "Rank Tracking", href: "/features/rank-tracking" },
@@ -896,6 +939,21 @@ export const featurePages = {
         question: "How do saved keywords fit into SEO planning?",
         answer:
           "Research fills the list, tags group it into pages and campaigns, and the shortlist feeds rank tracking. Saved keywords are the bridge between finding an opportunity and acting on it.",
+      },
+      {
+        question: "Can I export saved keywords?",
+        answer:
+          "Yes. Select keywords in the list and export them to CSV or Google Sheets, or copy them.",
+      },
+      {
+        question: "Can I import a keyword list?",
+        answer:
+          "Yes. Paste up to 2,000 keywords at a time, or a CSV with keywords in the first column, and add a tag on the way in. Fetching volume, difficulty and CPC for them is optional and uses credits.",
+      },
+      {
+        question: "Can an AI assistant add keywords to my list?",
+        answer:
+          "Yes. Through the OpenSEO MCP server, an assistant can save up to 100 keywords at a time with their metrics and tags, read the list back, and remove keywords you no longer need. Saving uses no credits.",
       },
     ],
   },
