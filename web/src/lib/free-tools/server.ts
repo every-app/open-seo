@@ -123,21 +123,38 @@ export async function readToolBody(
   }
 }
 
-/** Production protection must be present; development bypass is build-time only. */
-export async function guardToolRequest(input: {
+/** Why a tool request was turned away before it reached the tool. */
+export enum ToolGuard {
+  CrossSite = "cross_site",
+  RateLimited = "rate_limited",
+  NotHuman = "not_human",
+  /** Protection is missing or didn't answer. Never fail open. */
+  Unavailable = "unavailable",
+}
+
+/**
+ * Checks that a request is from a person on a site allowed to send it: its
+ * origin, the per-visitor rate limit, then Turnstile. Answers with the
+ * hostname Turnstile says the widget was solved on, or why it is refused.
+ *
+ * `partnerOrigins` are other sites whose forms may submit to this tool. They
+ * are trusted for nothing else: the token must be for the same site the
+ * request says it came from, and every later limit applies as usual.
+ *
+ * Production protection must be present; development bypass is build-time only.
+ */
+export async function verifyToolRequest(input: {
   tool: string;
   request: Request;
   turnstileToken?: string;
-}): Promise<Response | null> {
+  partnerOrigins?: string[];
+}): Promise<{ host: string } | { refused: ToolGuard }> {
   const { TURNSTILE_SECRET_KEY, BACKLINK_CHECK_RATE_LIMIT } = bindings();
   const url = new URL(input.request.url);
+  const allowed = [url.origin, ...(input.partnerOrigins ?? [])];
   const origin = input.request.headers.get("origin");
-  if (origin && origin !== url.origin) {
-    return jsonResponse(
-      { error: "Cross-site submissions are not allowed" },
-      403,
-    );
-  }
+  if (origin && !allowed.includes(origin))
+    return { refused: ToolGuard.CrossSite };
   const ip = input.request.headers.get("cf-connecting-ip");
   const secret = TURNSTILE_SECRET_KEY?.trim();
   if (
@@ -145,7 +162,7 @@ export async function guardToolRequest(input: {
     (!secret || /^[123]x0+/.test(secret) || !BACKLINK_CHECK_RATE_LIMIT || !ip)
   ) {
     console.error(`Missing production abuse protection for ${input.tool}`);
-    return jsonResponse({ error: UNAVAILABLE }, 503);
+    return { refused: ToolGuard.Unavailable };
   }
   // Across all tools, before Siteverify, so switching tools cannot reset the
   // allowance and invalid tokens cannot flood the verification service.
@@ -154,23 +171,15 @@ export async function guardToolRequest(input: {
       const { success } = await BACKLINK_CHECK_RATE_LIMIT.limit({
         key: `free-tools:${ip ?? "local"}`,
       });
-      if (!success)
-        return jsonResponse(
-          { error: "Too many checks. Try again in a minute." },
-          429,
-          { "Retry-After": "60" },
-        );
+      if (!success) return { refused: ToolGuard.RateLimited };
     } catch {
-      return jsonResponse({ error: UNAVAILABLE }, 503);
+      return { refused: ToolGuard.Unavailable };
     }
   }
-  if (!secret && import.meta.env.DEV) return null;
-  if (!input.turnstileToken || input.turnstileToken.length > 2048) {
-    return jsonResponse(
-      { error: "Human verification failed. Refresh the page and try again." },
-      403,
-    );
-  }
+  const claimed = new URL(origin ?? url.origin).hostname;
+  if (!secret && import.meta.env.DEV) return { host: claimed };
+  if (!input.turnstileToken || input.turnstileToken.length > 2048)
+    return { refused: ToolGuard.NotHuman };
   try {
     const body = new URLSearchParams({
       secret: secret!,
@@ -185,22 +194,53 @@ export async function guardToolRequest(input: {
         signal: AbortSignal.timeout(5_000),
       },
     );
-    if (!response.ok) return jsonResponse({ error: UNAVAILABLE }, 503);
+    if (!response.ok) return { refused: ToolGuard.Unavailable };
     const result = turnstileResultSchema.safeParse(await response.json());
+    const host = result.success ? result.data.hostname : undefined;
     if (
       !result.success ||
       !result.data.success ||
-      result.data.hostname !== url.hostname ||
-      result.data.action !== "free_tool"
+      result.data.action !== "free_tool" ||
+      !host ||
+      !allowed.some((site) => new URL(site).hostname === host) ||
+      // A token solved on one allowed site can't be spent from another.
+      (origin !== null && host !== claimed)
     ) {
+      return { refused: ToolGuard.NotHuman };
+    }
+    return { host };
+  } catch {
+    return { refused: ToolGuard.Unavailable };
+  }
+}
+
+/** verifyToolRequest for this site's own tools, as the response to send when it refuses. */
+export async function guardToolRequest(input: {
+  tool: string;
+  request: Request;
+  turnstileToken?: string;
+}): Promise<Response | null> {
+  const verified = await verifyToolRequest(input);
+  if (!("refused" in verified)) return null;
+  switch (verified.refused) {
+    case ToolGuard.CrossSite:
+      return jsonResponse(
+        { error: "Cross-site submissions are not allowed" },
+        403,
+      );
+    case ToolGuard.RateLimited:
+      return jsonResponse(
+        { error: "Too many checks. Try again in a minute." },
+        429,
+        { "Retry-After": "60" },
+      );
+    case ToolGuard.NotHuman:
       return jsonResponse(
         { error: "Human verification failed. Refresh the page and try again." },
         403,
       );
-    }
-    return null;
-  } catch {
-    return jsonResponse({ error: UNAVAILABLE }, 503);
+    case ToolGuard.Unavailable:
+      return jsonResponse({ error: UNAVAILABLE }, 503);
   }
 }
 
@@ -295,6 +335,7 @@ const taskEnvelopeSchema = z.object({
         .object({
           status_code: z.number().optional(),
           status_message: z.string().optional(),
+          cost: z.number().optional(),
           result: z
             .array(z.record(z.string(), z.unknown()))
             .nullable()
@@ -306,6 +347,15 @@ const taskEnvelopeSchema = z.object({
 });
 
 export async function fetchDataforseoResult(
+  path: string,
+  payload: Record<string, unknown>,
+  apiKey: string,
+) {
+  return (await fetchDataforseoTask(path, payload, apiKey)).result;
+}
+
+/** The task's first result block, and what DataForSEO charged for the task. */
+export async function fetchDataforseoTask(
   path: string,
   payload: Record<string, unknown>,
   apiKey: string,
@@ -335,7 +385,7 @@ export async function fetchDataforseoResult(
       `DataForSEO task ${task?.status_code ?? "missing"} on ${path}: ${task?.status_message ?? "no task"}`,
     );
   }
-  return task.result?.[0] ?? null;
+  return { result: task.result?.[0] ?? null, cost: task.cost ?? 0 };
 }
 
 /** `result[0].items` for the endpoints that return a single result block. */

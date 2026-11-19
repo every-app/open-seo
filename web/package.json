@@ -20,15 +20,20 @@
     "test:protection": "vitest run && node scripts/check-free-tool-budget.cjs"
   },
   "dependencies": {
+    "@openrouter/ai-sdk-provider": "^2.9.0",
     "@radix-ui/react-popover": "^1.1.15",
     "@tanstack/react-router": "^1.170.41",
     "@tanstack/react-router-devtools": "^1.167.2",
     "@tanstack/react-start": "^1.168.60",
+    "ai": "^6.0.199",
     "fumadocs-core": "^16.17.9",
     "fumadocs-mdx": "^15.4.10",
     "fumadocs-ui": "^16.17.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tldts": "^7.4.21",
     "vite": "^7.3.6",
     "zod": "^4.6.1"
   },

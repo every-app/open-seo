@@ -108,6 +108,19 @@ export const freeTools = {
       "website-traffic-checker",
     ],
   },
+  "seo-report": {
+    slug: "seo-report",
+    path: FREE_TOOL_PATHS["seo-report"],
+    name: "SEO Report",
+    shortDescription:
+      "A written report on the searches a site's customers make and the pages to build for them, sent by email.",
+    featureHref: "/features/keyword-research",
+    related: [
+      "keyword-generator",
+      "competitor-keyword-finder",
+      "website-traffic-checker",
+    ],
+  },
 } satisfies Record<FreeToolSlug, FreeTool>;
 
 /** Registry order drives the hub and the footer column. */

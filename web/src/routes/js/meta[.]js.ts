@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
 import { requestPrivacyChoices } from "../../../../src/shared/privacy-choices";
+import { isReportPath } from "@/lib/seo-report/links";
 
 // Meta Pixel, served first-party. The browser requests it unless the visitor
 // turned advertising off or sends Global Privacy Control
@@ -16,7 +17,10 @@ export const Route = createFileRoute("/js/meta.js")({
       GET: ({ request }) => {
         const value: unknown = Reflect.get(env, "META_PIXEL_ID");
         const pixelId = typeof value === "string" ? value : "";
-        const allowed = pixelId && requestPrivacyChoices(request).advertising;
+        const allowed =
+          pixelId &&
+          requestPrivacyChoices(request).advertising &&
+          !fromReportPage(request);
         return new Response(allowed ? buildPixelScript(pixelId) : "", {
           headers: {
             "content-type": "application/javascript; charset=utf-8",
@@ -28,6 +32,18 @@ export const Route = createFileRoute("/js/meta.js")({
     },
   },
 });
+
+/**
+ * The pixel reports the address of the page it runs on, and a written
+ * report's address is the only way to it. The page doesn't ask for the pixel
+ * (routes/__root.tsx); this refuses if something there asks anyway.
+ */
+function fromReportPage(request: Request) {
+  const referer = request.headers.get("referer");
+  return referer !== null && URL.canParse(referer)
+    ? isReportPath(new URL(referer).pathname)
+    : false;
+}
 
 // Meta's base code, with automatic configuration turned off before init so the
 // pixel doesn't collect button text or page metadata. PageView is sent here;

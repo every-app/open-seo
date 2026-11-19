@@ -2,16 +2,38 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "open-seo-landing",
   "compatibility_date": "2026-02-19",
-  "compatibility_flags": ["nodejs_compat"],
+  // global_fetch_strictly_public: the SEO report reads pages of sites it is
+  // asked about. With the flag, a request to a site on this Cloudflare account
+  // goes through Cloudflare's front door like any other, not to the origin.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "main": "./src/worker.ts",
-  "vars": { "FREE_TOOLS_DAILY_BUDGET_USD": "100" },
+  "vars": {
+    "FREE_TOOLS_DAILY_BUDGET_USD": "100",
+    // The SEO report tool (docs/maintainers/free-seo-report.md).
+    // Other sites whose own forms may submit to it, comma-separated origins.
+    "SEO_REPORT_PARTNER_ORIGINS": "https://sfseo.dev",
+    // The OpenRouter model that writes a report, and its reasoning effort.
+    // The model must be one priced in SEO_REPORT_MODEL_PRICES
+    // (src/lib/free-tools/spend.ts): a report counts its spend from that.
+    "SEO_REPORT_MODEL": "openai/gpt-6.2-sol",
+    "SEO_REPORT_MODEL_EFFORT": "medium",
+  },
   "durable_objects": {
     "bindings": [
       { "name": "FREE_TOOL_BUDGET", "class_name": "FreeToolBudget" },
+      { "name": "SEO_REPORT_DESK", "class_name": "SeoReportDesk" },
     ],
   },
   "migrations": [
     { "tag": "free-tool-budget-v1", "new_sqlite_classes": ["FreeToolBudget"] },
+    { "tag": "seo-report-desk-v1", "new_sqlite_classes": ["SeoReportDesk"] },
+  ],
+  "workflows": [
+    {
+      "name": "seo-report",
+      "binding": "SEO_REPORT_WORKFLOW",
+      "class_name": "SeoReportWorkflow",
+    },
   ],
   "assets": {
     "directory": "./dist/client",
@@ -51,12 +73,26 @@
       "preview_urls": true,
       "routes": [],
       // Preview has its own budget; it cannot consume the production allowance.
-      "vars": { "FREE_TOOLS_DAILY_BUDGET_USD": "10" },
+      "vars": {
+        "FREE_TOOLS_DAILY_BUDGET_USD": "10",
+        "SEO_REPORT_PARTNER_ORIGINS": "",
+        "SEO_REPORT_MODEL": "openai/gpt-6.2-sol",
+        "SEO_REPORT_MODEL_EFFORT": "medium",
+      },
       "durable_objects": {
         "bindings": [
           { "name": "FREE_TOOL_BUDGET", "class_name": "FreeToolBudget" },
+          { "name": "SEO_REPORT_DESK", "class_name": "SeoReportDesk" },
         ],
       },
+      // A Workflow's name is the account's, so preview has its own.
+      "workflows": [
+        {
+          "name": "seo-report-preview",
+          "binding": "SEO_REPORT_WORKFLOW",
+          "class_name": "SeoReportWorkflow",
+        },
+      ],
       "ratelimits": [
         {
           "name": "BACKLINK_CHECK_RATE_LIMIT",

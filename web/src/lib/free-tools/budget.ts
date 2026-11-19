@@ -15,6 +15,7 @@ const reservationSchema = z.object({
     "website-traffic-checker",
     "competitor-analysis",
     "spam-score-checker",
+    "seo-report",
   ]),
   calls: z.number().int().min(1).max(6),
   visitor: z.string().regex(/^[a-f0-9]{64}$/),

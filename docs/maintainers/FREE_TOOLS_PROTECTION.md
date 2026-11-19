@@ -25,6 +25,9 @@ Turnstile secret, but still uses the local rate limiter and budget object.
   Visitor identifiers are date-scoped IP hashes, not raw addresses; hashes are
   not anonymous. Old objects delete their stored counters after three days.
 
+The SEO report tool reserves in the same budget, one whole report at a time,
+and adds limits of its own: [free-seo-report.md](./free-seo-report.md).
+
 ## Budget and deployment
 
 `FREE_TOOLS_DAILY_BUDGET_USD` in `web/wrangler.jsonc` is $100 per UTC day for
