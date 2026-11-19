@@ -4,6 +4,7 @@ import {
   FolderPlus,
   Globe,
   Lightbulb,
+  Sparkles,
   Users,
 } from "lucide-react";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
@@ -45,6 +46,13 @@ export const setupSteps: {
     skipLabel: "Skip for now",
   },
   {
+    id: "skills",
+    label: "Try OpenSEO skills",
+    detail: "Give your agent repeatable SEO workflows.",
+    icon: Sparkles,
+    skipLabel: "Dismiss",
+  },
+  {
     id: "team",
     label: "Invite a teammate",
     detail: "Share the work, or keep things solo for now.",
@@ -61,6 +69,24 @@ export const setupSteps: {
   },
 ];
 
+export function isAgentConnected(activation: DashboardActivation) {
+  return (
+    activation.mcp.authorizedAt !== null ||
+    activation.mcp.firstToolCallAt !== null
+  );
+}
+
+export function getVisibleSteps(
+  activation: DashboardActivation,
+  includeTeam: boolean,
+) {
+  return setupSteps.filter((step) => {
+    if (step.id === "team") return includeTeam;
+    if (step.id === "skills") return isAgentConnected(activation);
+    return true;
+  });
+}
+
 export function getStepStatus(
   activation: DashboardActivation,
   step: DashboardSetupStep,
@@ -69,9 +95,8 @@ export function getStepStatus(
     competitor: activation.competitorResearchedAt !== null,
     keywords: activation.keywordsResearchedAt !== null,
     audit: activation.hasAudit,
-    mcp:
-      activation.mcp.authorizedAt !== null ||
-      activation.mcp.firstToolCallAt !== null,
+    mcp: isAgentConnected(activation),
+    skills: activation.hasSkillReport,
     team: activation.hasTeammate,
     project: activation.hasMultipleProjects,
   };
@@ -81,4 +106,8 @@ export function getStepStatus(
 }
 
 // Skipping these marks them complete, so they never wait in "saved for later".
-const completeWhenSkipped = new Set<DashboardSetupStep>(["team", "project"]);
+const completeWhenSkipped = new Set<DashboardSetupStep>([
+  "skills",
+  "team",
+  "project",
+]);

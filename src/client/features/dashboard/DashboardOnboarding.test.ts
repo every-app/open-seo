@@ -21,6 +21,7 @@ const fresh: DashboardActivation = {
   competitorResearchedAt: null,
   keywordsResearchedAt: null,
   hasAudit: false,
+  hasSkillReport: false,
   hasMultipleProjects: false,
   hasTeammate: false,
   dismissedSteps: [],
@@ -48,16 +49,32 @@ describe("dashboard onboarding visibility", () => {
     expect(markup).toContain("saved for later");
   });
 
-  it("renders nothing once every step is complete", () => {
+  it("shows the skills step only once an agent is connected, and hides the checklist once dismissed", () => {
+    expect(renderChecklist(fresh)).not.toContain("Try OpenSEO skills");
+
+    const allOtherStepsComplete: DashboardActivation = {
+      ...fresh,
+      competitorResearchedAt: "2026-09-28",
+      keywordsResearchedAt: "2026-09-28",
+      hasAudit: true,
+      mcp: { ...fresh.mcp, authorizedAt: "2026-09-28" },
+      hasTeammate: true,
+      hasMultipleProjects: true,
+    };
+
+    expect(renderChecklist(allOtherStepsComplete)).toContain(
+      "Try OpenSEO skills",
+    );
     expect(
       renderChecklist({
-        ...fresh,
-        competitorResearchedAt: "2026-09-28",
-        keywordsResearchedAt: "2026-09-28",
-        hasAudit: true,
-        mcp: { ...fresh.mcp, authorizedAt: "2026-09-28" },
-        hasTeammate: true,
-        hasMultipleProjects: true,
+        ...allOtherStepsComplete,
+        hasSkillReport: true,
+      }),
+    ).toBe("");
+    expect(
+      renderChecklist({
+        ...allOtherStepsComplete,
+        dismissedSteps: ["skills"],
       }),
     ).toBe("");
   });

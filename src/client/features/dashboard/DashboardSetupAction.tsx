@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ONE_CLICK_INSTALLS } from "@/client/features/ai-mcp/agentInstalls";
 import { getAgentSetupPrompt } from "@/client/features/ai-mcp/agentSetupPrompt";
 import {
   AgentSetupPanel,
@@ -21,7 +22,9 @@ import {
 import { organizationContextQueryOptions } from "@/client/features/team/organizationQueries";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { usesBetterAuthClient } from "@/lib/auth-mode";
 import { hasOrgPermission } from "@/lib/org-permissions";
+import { listMcpConnections } from "@/serverFunctions/mcp-connections";
 import type { DashboardSetupStep } from "@/types/schemas/dashboard";
 import { parseResearchTarget } from "@/shared/researchScope";
 
@@ -124,6 +127,7 @@ export function DashboardSetupAction({
         />
       </div>
     );
+  if (step === "skills") return <DashboardSkillsAction domain={domain} />;
 
   const canManage =
     org.data &&
@@ -203,6 +207,74 @@ export function DashboardSetupAction({
           }}
         />
       )}
+    </div>
+  );
+}
+
+function getSkillsSetupPrompt(domain: string | null) {
+  const site = domain ? ` for ${domain}` : "";
+  return `Check whether I have the OpenSEO skills set up in this agent. If not, walk me through installing them using https://openseo.so/docs/skills/setup. Then recommend the single most useful OpenSEO skill to try first${site} and show me how to run it.`;
+}
+
+function DashboardSkillsAction({ domain }: { domain: string | null }) {
+  const connections = useQuery({
+    queryKey: ["mcpConnections"],
+    queryFn: () => listMcpConnections(),
+    enabled: usesBetterAuthClient(),
+  });
+  const grants = connections.data ?? [];
+  const chats = ONE_CLICK_INSTALLS.filter(({ agent }) =>
+    grants.some((grant) => grant.webChat === agent),
+  );
+  const prompt = getSkillsSetupPrompt(domain);
+
+  return (
+    <div className="max-w-2xl space-y-4">
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        Skills guide your agent through complete SEO workflows and save results
+        as reports.{" "}
+        {chats.length > 0
+          ? "Open a chat to check your skills setup and pick one to try."
+          : "Paste this prompt into your agent to check your skills setup and pick one to try."}
+      </p>
+      <pre className="whitespace-pre-wrap break-words rounded-lg border border-border bg-background/25 p-3.5 font-sans text-sm leading-relaxed text-muted-foreground">
+        {prompt}
+      </pre>
+      <div className="flex flex-wrap items-center gap-2">
+        {chats.map(({ agent, name, newChatUrl, Icon }) => (
+          <Button
+            key={agent}
+            variant={chats.length === 1 ? "default" : "outline"}
+            nativeButton={false}
+            render={
+              <a href={newChatUrl(prompt)} target="_blank" rel="noreferrer" />
+            }
+            onClick={() =>
+              captureClientEvent("dashboard:skills_open_in_agent_click", {
+                agent,
+              })
+            }
+          >
+            <Icon data-icon="inline-start" />
+            Open in {name}
+          </Button>
+        ))}
+        <CopyButton
+          value={prompt}
+          label="Copy prompt"
+          successMessage="Prompt copied"
+          variant={chats.length === 0 ? "default" : "outline"}
+          size="default"
+          onCopy={() => captureClientEvent("dashboard:skills_prompt_copy")}
+        />
+        <Link
+          to="/ai"
+          search={{ tab: "skills" }}
+          className="ml-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          Browse skills
+        </Link>
+      </div>
     </div>
   );
 }

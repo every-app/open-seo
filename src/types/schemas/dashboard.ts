@@ -9,6 +9,7 @@ export const dashboardSetupStepSchema = z.enum([
   "keywords",
   "audit",
   "mcp",
+  "skills",
   "team",
   "project",
 ]);

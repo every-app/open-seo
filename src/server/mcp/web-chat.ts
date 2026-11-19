@@ -5,7 +5,8 @@ import { safeHostname } from "@/shared/safe-url";
 // Agents on the user's computer redirect to localhost or an app scheme.
 export function getWebChat(redirectUris: string[]) {
   const hosts = redirectUris.map(safeHostname);
-  if (hosts.includes("claude.ai")) return "claude" as const;
+  if (hosts.includes("claude.ai") || hosts.includes("claude.com"))
+    return "claude" as const;
   if (hosts.includes("chatgpt.com")) return "chatgpt" as const;
   return null;
 }

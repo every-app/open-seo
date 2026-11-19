@@ -6,7 +6,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { setDashboardStepDismissed } from "@/serverFunctions/dashboard";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
 import type { DashboardSetupStep } from "@/types/schemas/dashboard";
-import { getStepStatus, setupSteps } from "./dashboardSteps";
+import { getStepStatus, getVisibleSteps } from "./dashboardSteps";
 import { DashboardSetupAction } from "./DashboardSetupAction";
 import {
   Accordion,
@@ -46,9 +46,7 @@ export function DashboardOnboarding({
       captureClientEvent("dashboard:setup_step_defer", { step, dismissed });
     },
   });
-  const steps = setupSteps.filter(
-    (step) => step.id !== "team" || usesBetterAuthClient(),
-  );
+  const steps = getVisibleSteps(activation, usesBetterAuthClient());
   const remaining = steps.filter(
     (step) => getStepStatus(activation, step.id) === "todo",
   );

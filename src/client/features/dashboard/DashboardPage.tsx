@@ -16,6 +16,7 @@ import { dashboardSiteTabSchema } from "@/types/schemas/dashboard";
 import type { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardOnboarding } from "./DashboardOnboarding";
+import { isAgentConnected } from "./dashboardSteps";
 import {
   DashboardAgentCard,
   DashboardAgentPromptCard,
@@ -85,9 +86,7 @@ export function DashboardPage({
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
   const ga4Connected = activation.ga4.connected;
-  const agentConnected =
-    activation.mcp.authorizedAt !== null ||
-    activation.mcp.firstToolCallAt !== null;
+  const agentConnected = isAgentConnected(activation);
   // An agent is connected, but no one in the organization has used OpenSEO
   // from one yet.
   const agentNeverUsed =

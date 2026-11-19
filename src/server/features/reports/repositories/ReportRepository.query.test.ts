@@ -32,6 +32,11 @@ beforeAll(async () => {
   // Load the real repository and service after installing the runtime database.
   vi.doMock("@/db", () => ({ db: testDb }));
   await client.executeMultiple(`
+    CREATE TABLE projects (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL
+    );
+    INSERT INTO projects VALUES ('project_1', 'org_1'), ('project_2', 'org_2');
     CREATE TABLE reports (
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
@@ -175,5 +180,60 @@ describe("report sharing persistence", () => {
     await expect(
       ReportRepository.getReport("project_1", "report_1"),
     ).resolves.toMatchObject(share);
+  });
+});
+
+describe("skill report detection", () => {
+  it("counts only non-empty skill reports within the requested organization", async () => {
+    await expect(
+      ReportRepository.hasSkillReportInOrganization("org_1"),
+    ).resolves.toBe(true);
+    await expect(
+      ReportRepository.hasSkillReportInOrganization("org_2"),
+    ).resolves.toBe(false);
+
+    await ReportRepository.insertReport({
+      id: "report_plain",
+      projectId: "project_2",
+      title: "Plain report",
+      summary: "No skill",
+      html: "<html><body>Report</body></html>",
+      skill: null,
+      templateId: null,
+      createdBy: "Codex",
+      createdByUserId: "user_2",
+      sizeBytes: 32,
+    });
+    await ReportRepository.insertReport({
+      id: "report_empty",
+      projectId: "project_2",
+      title: "Empty skill report",
+      summary: "Empty skill",
+      html: "<html><body>Report</body></html>",
+      skill: "",
+      templateId: null,
+      createdBy: "Codex",
+      createdByUserId: "user_2",
+      sizeBytes: 32,
+    });
+    await expect(
+      ReportRepository.hasSkillReportInOrganization("org_2"),
+    ).resolves.toBe(false);
+
+    await ReportRepository.insertReport({
+      id: "report_skill",
+      projectId: "project_2",
+      title: "Keyword report",
+      summary: "From skill",
+      html: "<html><body>Report</body></html>",
+      skill: "keyword-research",
+      templateId: null,
+      createdBy: "Codex",
+      createdByUserId: "user_2",
+      sizeBytes: 32,
+    });
+    await expect(
+      ReportRepository.hasSkillReportInOrganization("org_2"),
+    ).resolves.toBe(true);
   });
 });
