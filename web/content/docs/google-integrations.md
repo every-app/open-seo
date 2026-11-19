@@ -43,11 +43,14 @@ Open **GSC Insights** in the project sidebar, under My Site.
 - **Date range:** last 7 days, 28 days (the default) or 3 months. Search Console data runs about 3 days behind, so ranges end 3 days ago.
 - **Search type:** Web search, Discover or Google News. Discover and Google News show pages only; Google reports no queries or positions for them.
 - **Device and country:** narrow everything on the page to one device or country.
-- **Totals:** clicks, impressions, click-through rate and average position, each compared with the period before.
+- **Chart:** clicks, impressions, click-through rate and average position, each compared with the period before. Click a metric to show or hide its line. With one metric on, the chart adds the period before as a dashed line.
+- **Biggest changes:** the five queries and the five pages that gained the most clicks since the period before, and the five that lost the most, with how their position moved.
 - **Striking distance:** queries where your best page ranks 5th to 20th, sorted by impressions, up to 100. These are often the quickest wins. Select rows to **Copy keywords**, **Save as keywords** or **Track rankings**.
-- **Queries** and **Pages** show clicks, impressions, click-through rate and position for each query or page.
+- **Queries** and **Pages** show clicks, the change in clicks since the period before, impressions, click-through rate and position for each query or page. A dash in **Change** means Google returned 1,000 queries or pages for the period before, every one with clicks, and this one was not among them, so its earlier clicks are unknown.
 
-Click **Filters** to filter by **Page URL** or **Query**. **Contains** ignores case and matches anywhere in the text, so `/blog/` matches a whole folder. **Exactly matches** compares the full URL or query, including case. Filters change the totals, striking distance, tables and exports.
+Click a row in Queries, Pages or Biggest changes to open its details: its own chart, and the pages that rank for that query or the queries that page ranks for. From a query you can **Save as keyword** or **Track rankings**.
+
+Click **Filters** to filter by **Page URL** or **Query**. **Contains** ignores case and matches anywhere in the text, so `/blog/` matches a whole folder. **Exactly matches** compares the full URL or query, including case. Filters change the chart, biggest changes, striking distance, tables and exports.
 
 **Export** sends the Queries or Pages table to Google Sheets or a CSV file, up to 1,000 rows.
 

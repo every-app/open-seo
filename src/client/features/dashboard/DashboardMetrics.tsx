@@ -98,7 +98,7 @@ export function TrendChart({
   data,
 }: {
   config: ChartConfig;
-  data: Record<string, string | number>[];
+  data: Record<string, string | number | null>[];
 }) {
   const series = Object.keys(config);
   return (

@@ -19,6 +19,8 @@ export function DimensionSection({
   onPageSizeChange,
   isFiltered,
   onClearFilters,
+  selectedKey,
+  onSelect,
 }: {
   projectId: string;
   tableQuery: UseQueryResult<
@@ -32,6 +34,8 @@ export function DimensionSection({
   onPageSizeChange: (pageSize: number) => void;
   isFiltered: boolean;
   onClearFilters: () => void;
+  selectedKey: string | null;
+  onSelect: (key: string) => void;
 }) {
   if (tableQuery.isPending) {
     return <SkeletonTableRows className="p-4" />;
@@ -75,6 +79,8 @@ export function DimensionSection({
           isPastEnd={isPastEnd}
           onClearFilters={onClearFilters}
           onFirstPage={() => onPageChange(1)}
+          selectedKey={selectedKey}
+          onSelect={onSelect}
         />
       </div>
       {!isPastEnd && (

@@ -5,21 +5,24 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { SlidersHorizontal } from "lucide-react";
+import { ArrowLeftRight, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { QueryError } from "@/client/components/QueryState";
 import { ExportMenu } from "@/client/components/ExportMenu";
+import { PageHeader } from "@/client/components/PageHeader";
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
-import { Spinner } from "@/client/components/ui/spinner";
 import { DataTableTabs } from "@/client/components/table/DataTableToolbar";
 import { TabsTrigger } from "@/client/components/ui/tabs";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
+import { SearchPerformanceDetailSheet } from "@/client/features/search-performance/SearchPerformanceDetailSheet";
 import { DimensionSection } from "@/client/features/search-performance/SearchPerformanceDimensionSection";
-import { SearchPerformanceSelects } from "@/client/features/search-performance/SearchPerformanceSelects";
+import { SearchPerformanceOverview } from "@/client/features/search-performance/SearchPerformanceOverview";
+import { DATE_RANGE_LABELS } from "@/client/features/search-performance/SearchPerformanceSelects";
 import { SearchPerformanceLoadingState } from "@/client/features/search-performance/SearchPerformanceLoadingState";
 import {
   tableQueryOptions,
+  type DetailSelection,
   type FilterInput,
 } from "@/client/features/search-performance/searchPerformanceQueries";
 import {
@@ -30,7 +33,6 @@ import {
   exportDimensionRows,
   exportStriking,
   StrikingDistanceTable,
-  TotalsTable,
   type ExportTarget,
 } from "@/client/features/search-performance/SearchPerformanceParts";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -110,6 +112,8 @@ export function SearchPerformancePage({
   );
   const [showFilters, setShowFilters] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  // The query or page whose details are open beside the table.
+  const [selection, setSelection] = useState<DetailSelection | null>(null);
   const activeFilterCount =
     Number(Boolean(textFilters.pageFilter)) +
     Number(Boolean(textFilters.queryFilter)) +
@@ -245,24 +249,28 @@ export function SearchPerformancePage({
   return (
     <div className="overflow-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Search Performance</h1>
-            <p className="text-sm text-muted-foreground">
-              See your site&apos;s clicks, impressions, CTR, and position from
-              Google Search Console.
-            </p>
-          </div>
-          {report?.connected ? (
-            <Link
-              to="/p/$projectId/settings/integrations"
-              params={{ projectId }}
-              className="shrink-0 self-start text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline sm:mt-1"
-            >
-              Change property
-            </Link>
-          ) : null}
-        </div>
+        <PageHeader
+          title="Search Performance"
+          description="See your site's clicks, impressions, CTR, and position from Google Search Console."
+          actions={
+            report?.connected ? (
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/p/$projectId/settings/integrations"
+                    params={{ projectId }}
+                  />
+                }
+              >
+                <ArrowLeftRight data-icon="inline-start" />
+                Change property
+              </Button>
+            ) : null
+          }
+        />
 
         {reportQuery.isPending ? (
           <SearchPerformanceLoadingState />
@@ -282,11 +290,17 @@ export function SearchPerformancePage({
         ) : (
           <>
             {reportQuery.isError ? reportError : null}
-            {reportQuery.isPlaceholderData ? (
-              <SearchPerformanceLoadingState />
-            ) : (
-              <TotalsTable report={report} showPosition={isWeb} />
-            )}
+            <SearchPerformanceOverview
+              projectId={projectId}
+              report={report}
+              search={search}
+              onSearchChange={onSearchChange}
+              filterInput={filterInput}
+              isWeb={isWeb}
+              isFetching={reportQuery.isFetching}
+              isPlaceholderData={reportQuery.isPlaceholderData}
+              onSelect={setSelection}
+            />
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               <DataTableTabs
                 value={tab}
@@ -334,14 +348,6 @@ export function SearchPerformancePage({
                     <Badge size="sm">{activeFilterCount}</Badge>
                   ) : null}
                 </Button>
-                {reportQuery.isFetching && !reportQuery.isPending ? (
-                  <Spinner className="size-4 text-muted-foreground" />
-                ) : null}
-                <SearchPerformanceSelects
-                  search={search}
-                  countries={report.countries}
-                  onSearchChange={onSearchChange}
-                />
               </div>
 
               {showFilters ? filtersPanel : null}
@@ -380,9 +386,21 @@ export function SearchPerformancePage({
                   }
                   isFiltered={activeFilterCount > 0}
                   onClearFilters={resetFilters}
+                  selectedKey={
+                    selection?.dimension === dimension ? selection.key : null
+                  }
+                  onSelect={(key) => setSelection({ dimension, key })}
                 />
               )}
             </div>
+            <SearchPerformanceDetailSheet
+              projectId={projectId}
+              selection={selection}
+              filterInput={filterInput}
+              isWeb={isWeb}
+              periodLabel={DATE_RANGE_LABELS[range ?? "last_28_days"]}
+              onClose={() => setSelection(null)}
+            />
           </>
         )}
       </div>

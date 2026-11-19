@@ -9,8 +9,10 @@ import {
   type GscPerformanceFilter,
 } from "@/server/features/gsc/searchAnalytics";
 import {
+  buildClickChanges,
   buildDailyTrend,
   buildStrikingDistanceRows,
+  previousClicksLookup,
   previousPeriod,
   sumSearchTotals,
   toDimensionRows,
@@ -18,8 +20,9 @@ import {
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   type SearchPerformanceType,
+  searchPerformanceDetailInputSchema,
+  searchPerformanceDimensionInputSchema,
   searchPerformanceInputSchema,
-  searchPerformanceTableExportInputSchema,
   searchPerformanceTableInputSchema,
 } from "@/types/schemas/search-performance";
 
@@ -31,6 +34,9 @@ const COUNTRY_ROW_LIMIT = 25;
 // Export pulls the whole dimension in one shot, capped at GSC's per-call max
 // (GSC_MAX_ROW_LIMIT). Large stores get everything up to this ceiling.
 const EXPORT_ROW_LIMIT = 1000;
+// Each period's top rows by clicks, compared to find what changed.
+const COMPARISON_ROW_LIMIT = 1000;
+const RELATED_ROW_LIMIT = 10;
 
 /** Build GSC filter groups shared by every call. Device, page, and query apply everywhere;
  *  country applies everywhere except the country breakdown itself (so the
@@ -144,6 +150,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
         totals: sumSearchTotals(current.rows),
         prevTotals: sumSearchTotals(previous.rows),
         trend: buildDailyTrend(current.rows, startDate, endDate),
+        prevTrend: buildDailyTrend(previous.rows, prev.startDate, prev.endDate),
         strikingDistance: buildStrikingDistanceRows(queryPages.rows),
         countries: toDimensionRows(countries.rows),
       };
@@ -158,7 +165,8 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
 /**
  * One page of the queries or pages table, paginated server-side against GSC via
  * `startRow` so it scales to large properties. GSC returns no total count, so we
- * fetch one extra row to detect a next page. All first-party GSC data, free.
+ * fetch one extra row to detect a next page. Each row also carries its clicks
+ * in the previous period. All first-party GSC data, free.
  */
 export const getSearchPerformanceTable = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
@@ -167,23 +175,42 @@ export const getSearchPerformanceTable = createServerFn({ method: "POST" })
     const { startDate, endDate } = resolveDateRange({
       dateRange: data.dateRange,
     });
+    const prev = previousPeriod(startDate, endDate);
     const { filters } = buildGscFilters(data);
     const offset = (data.page - 1) * data.pageSize;
+    const dimension = {
+      projectId: context.projectId,
+      type: data.searchType,
+      dimensions: [data.dimension],
+      filters,
+    };
 
     try {
-      const result = await GscService.getPerformance({
-        projectId: context.projectId,
-        startDate,
-        endDate,
-        type: data.searchType,
-        dimensions: [data.dimension],
-        filters,
-        // One extra row tells us whether a further page exists.
-        rowLimit: data.pageSize + 1,
-        startRow: offset,
-      });
+      const [result, previous] = await Promise.all([
+        GscService.getPerformance({
+          ...dimension,
+          startDate,
+          endDate,
+          // One extra row tells us whether a further page exists.
+          rowLimit: data.pageSize + 1,
+          startRow: offset,
+        }),
+        GscService.getPerformance({
+          ...dimension,
+          startDate: prev.startDate,
+          endDate: prev.endDate,
+          rowLimit: COMPARISON_ROW_LIMIT,
+        }),
+      ]);
 
-      const fetched = toDimensionRows(result.rows);
+      const previousClicks = previousClicksLookup(
+        previous.rows,
+        COMPARISON_ROW_LIMIT,
+      );
+      const fetched = toDimensionRows(result.rows).map((row) => ({
+        ...row,
+        prevClicks: previousClicks(row.key),
+      }));
       const hasNextPage = fetched.length > data.pageSize;
       const rows = hasNextPage ? fetched.slice(0, data.pageSize) : fetched;
 
@@ -213,7 +240,7 @@ export const getSearchPerformanceTable = createServerFn({ method: "POST" })
  */
 export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(searchPerformanceTableExportInputSchema)
+  .validator(searchPerformanceDimensionInputSchema)
   .handler(async ({ data, context }) => {
     const { startDate, endDate } = resolveDateRange({
       dateRange: data.dateRange,
@@ -234,4 +261,110 @@ export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
       dimension: data.dimension,
       rows: toDimensionRows(result.rows),
     };
+  });
+
+/**
+ * The queries or pages that gained and lost the most clicks against the
+ * previous period, under the page's filters.
+ */
+export const getSearchPerformanceChanges = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(searchPerformanceDimensionInputSchema)
+  .handler(async ({ data, context }) => {
+    const { startDate, endDate } = resolveDateRange({
+      dateRange: data.dateRange,
+    });
+    const prev = previousPeriod(startDate, endDate);
+    const { filters } = buildGscFilters(data);
+    const dimension = {
+      projectId: context.projectId,
+      type: data.searchType,
+      dimensions: [data.dimension],
+      filters,
+      rowLimit: COMPARISON_ROW_LIMIT,
+    };
+
+    try {
+      const [current, previous] = await Promise.all([
+        GscService.getPerformance({ ...dimension, startDate, endDate }),
+        GscService.getPerformance({
+          ...dimension,
+          startDate: prev.startDate,
+          endDate: prev.endDate,
+        }),
+      ]);
+      return {
+        connected: true as const,
+        ...buildClickChanges(current.rows, previous.rows, COMPARISON_ROW_LIMIT),
+      };
+    } catch (error) {
+      if (isExpectedConnectionFailure(error)) {
+        return { connected: false as const };
+      }
+      throw error;
+    }
+  });
+
+/**
+ * One query or page under the page's filters: its totals and daily trend for
+ * both periods, and the pages that rank for the query (or the queries the page
+ * ranks for). Discover and Google News have no queries, so nothing related.
+ */
+export const getSearchPerformanceDetail = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(searchPerformanceDetailInputSchema)
+  .handler(async ({ data, context }) => {
+    const { startDate, endDate } = resolveDateRange({
+      dateRange: data.dateRange,
+    });
+    const prev = previousPeriod(startDate, endDate);
+    // The row's own key replaces any text filter on its dimension.
+    const key = { operator: "equals" as const, expression: data.key };
+    const { filters } = buildGscFilters({
+      ...data,
+      ...(data.dimension === "page"
+        ? { pageFilter: key }
+        : { queryFilter: key }),
+    });
+    const scope = { projectId: context.projectId, type: data.searchType };
+    const daily = {
+      ...scope,
+      dimensions: ["date" as const],
+      filters,
+      rowLimit: DAILY_ROW_LIMIT,
+    };
+
+    try {
+      const [current, previous, related] = await Promise.all([
+        GscService.getPerformance({ ...daily, startDate, endDate }),
+        GscService.getPerformance({
+          ...daily,
+          startDate: prev.startDate,
+          endDate: prev.endDate,
+        }),
+        data.searchType === "web"
+          ? GscService.getPerformance({
+              ...scope,
+              startDate,
+              endDate,
+              dimensions: [data.dimension === "page" ? "query" : "page"],
+              filters,
+              rowLimit: RELATED_ROW_LIMIT,
+            })
+          : { rows: [] },
+      ]);
+      return {
+        connected: true as const,
+        totals: sumSearchTotals(current.rows),
+        prevTotals: sumSearchTotals(previous.rows),
+        trend: buildDailyTrend(current.rows, startDate, endDate),
+        prevTrend: buildDailyTrend(previous.rows, prev.startDate, prev.endDate),
+        related: toDimensionRows(related.rows),
+      };
+    } catch (error) {
+      if (isExpectedConnectionFailure(error)) {
+        return { connected: false as const };
+      }
+      throw error;
+    }
   });

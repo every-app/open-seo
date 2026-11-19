@@ -18,15 +18,18 @@ import {
 } from "@/serverFunctions/rank-tracking";
 import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
 
-/** Bulk action: add the selected queries to one of the project's rank trackers. */
+/** Adds the given queries to one of the project's rank trackers. */
 export function TrackRankingsMenu({
   projectId,
   queries,
   onAdded,
+  variant = "ghost",
 }: {
   projectId: string;
   queries: string[];
-  onAdded: () => void;
+  onAdded?: () => void;
+  /** Ghost in the bulk action bar; outline beside other outline buttons. */
+  variant?: "ghost" | "outline";
 }) {
   const queryClient = useQueryClient();
   const configsQuery = useQuery({
@@ -71,14 +74,14 @@ export function TrackRankingsMenu({
       if (result.checkScheduledSoon) {
         toast.info("The scheduled check within the hour covers these keywords");
       }
-      onAdded();
+      onAdded?.();
     },
   });
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" size="sm" pending={add.isPending} />}
+        render={<Button variant={variant} size="sm" pending={add.isPending} />}
       >
         {add.isPending ? null : <LineChart data-icon="inline-start" />}
         Track rankings

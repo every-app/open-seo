@@ -34,6 +34,19 @@ export function formatPosition(value: number): string {
   return value.toFixed(1);
 }
 
+// The --success and --destructive tokens are too light for small text on a
+// white card.
+export function changeClass(improved: boolean): string {
+  return improved
+    ? "text-green-700 dark:text-success"
+    : "text-red-700 dark:text-destructive";
+}
+
+/** A change in clicks with its sign, for example +137 or −21. */
+export function formatClickChange(change: number): string {
+  return `${change >= 0 ? "+" : "−"}${formatCount(Math.abs(change))}`;
+}
+
 const rightAligned = {
   headerClassName: "text-right",
   cellClassName: "text-right tabular-nums",
@@ -49,10 +62,16 @@ export function buildDimensionColumns(
     dimensionHelper.accessor("key", {
       enableSorting: false,
       header: () => keyLabel,
+      // A button, so the keyboard can open the row's details too. Its click
+      // bubbles to the row, which is what opens them.
       cell: ({ getValue }) => (
-        <span className="block max-w-xl truncate" title={getValue()}>
+        <button
+          type="button"
+          className="block max-w-xl cursor-pointer truncate rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          title={getValue()}
+        >
           {getValue()}
-        </span>
+        </button>
       ),
     }),
     dimensionHelper.accessor("clicks", {
@@ -62,6 +81,32 @@ export function buildDimensionColumns(
       cell: ({ getValue }) => formatCount(getValue()),
       meta: rightAligned,
     }),
+    // Against the previous period. Unknown when the row was outside that
+    // period's top rows, so it sorts last.
+    dimensionHelper.accessor(
+      (row) =>
+        row.prevClicks === null ? undefined : row.clicks - row.prevClicks,
+      {
+        id: "change",
+        sortUndefined: "last",
+        header: ({ column }) => (
+          <SortableHeader column={column} label="Change" align="right" />
+        ),
+        cell: ({ getValue }) => {
+          const change = getValue();
+          if (change === undefined)
+            return <span className="text-muted-foreground">—</span>;
+          return (
+            <span
+              className={change === 0 ? undefined : changeClass(change > 0)}
+            >
+              {formatClickChange(change)}
+            </span>
+          );
+        },
+        meta: rightAligned,
+      },
+    ),
     dimensionHelper.accessor("impressions", {
       header: ({ column }) => (
         <SortableHeader column={column} label="Impressions" align="right" />

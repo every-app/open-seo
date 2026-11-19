@@ -15,14 +15,14 @@ import {
   SelectValue,
 } from "@/client/components/ui/select";
 
-const RANGE_LABELS: Record<SearchPerformanceDateRange, string> = {
+export const DATE_RANGE_LABELS: Record<SearchPerformanceDateRange, string> = {
   last_7_days: "Last 7 days",
   last_28_days: "Last 28 days",
   last_3_months: "Last 3 months",
 };
 const RANGE_OPTIONS = SEARCH_PERFORMANCE_RANGES.map((value) => ({
   value,
-  label: RANGE_LABELS[value],
+  label: DATE_RANGE_LABELS[value],
 }));
 
 const TYPE_LABELS: Record<SearchPerformanceType, string> = {
@@ -61,7 +61,7 @@ function isDevice(value: string): value is SearchPerformanceDevice {
   return GSC_DEVICES.some((option) => option === value);
 }
 
-/** Search type, device, country, and date range selects of the table toolbar. */
+/** Search type, device, country, and date range selects for the whole page. */
 export function SearchPerformanceSelects({
   search,
   countries,
@@ -85,7 +85,7 @@ export function SearchPerformanceSelects({
     })),
   ];
   return (
-    <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Select
         items={TYPE_OPTIONS}
         value={search.type ?? "web"}

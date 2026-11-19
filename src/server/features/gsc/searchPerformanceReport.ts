@@ -131,6 +131,15 @@ export function buildStrikingDistanceRows(
   ).slice(0, limit);
 }
 
+type SearchPerformanceTrendDay = {
+  date: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  /** Null on a day with no impressions, so a chart skips it, not rank 0. */
+  position: number | null;
+};
+
 /** One point per day across the range, oldest first, from `["date"]` rows.
  *  GSC omits days with no impressions, which would silently shrink a chart's
  *  x-axis. Dates are YYYY-MM-DD in UTC. */
@@ -138,9 +147,9 @@ export function buildDailyTrend(
   rows: GscSearchAnalyticsRow[],
   startDate: string,
   endDate: string,
-): { date: string; clicks: number; impressions: number }[] {
+): SearchPerformanceTrendDay[] {
   const rowsByDate = new Map(rows.map((row) => [row.keys?.[0], row]));
-  const days: { date: string; clicks: number; impressions: number }[] = [];
+  const days: SearchPerformanceTrendDay[] = [];
   const end = Date.parse(`${endDate}T00:00:00Z`);
   for (
     let day = Date.parse(`${startDate}T00:00:00Z`);
@@ -153,9 +162,97 @@ export function buildDailyTrend(
       date,
       clicks: row?.clicks ?? 0,
       impressions: row?.impressions ?? 0,
+      ctr: row?.ctr ?? 0,
+      position: row && row.impressions > 0 ? row.position : null,
     });
   }
   return days;
+}
+
+type ClickChangeRow = {
+  key: string;
+  clicks: number;
+  prevClicks: number;
+  /** Null in a period where the key did not appear. */
+  position: number | null;
+  prevPosition: number | null;
+};
+
+const CLICK_CHANGE_ROW_LIMIT = 5;
+
+function clickChange(row: ClickChangeRow): number {
+  return row.clicks - row.prevClicks;
+}
+
+/** One period's single-dimension rows by key, for comparing two periods.
+ *
+ *  GSC returns the rows with the most clicks first, so a key missing from a
+ *  full page (`limit` rows) had at most as many clicks as the page's weakest
+ *  row. When that is zero, or the page is not full, a missing key had exactly
+ *  zero clicks. Otherwise its clicks are unknown. */
+function indexPeriodRows(rows: GscSearchAnalyticsRow[], limit: number) {
+  const byKey = new Map<string, GscSearchAnalyticsRow>();
+  for (const row of rows) {
+    const key = row.keys?.[0];
+    if (key) byKey.set(key, row);
+  }
+  const missingIsZero =
+    rows.length < limit || rows.some((row) => row.clicks === 0);
+  return { byKey, missingIsZero };
+}
+
+/** Previous-period clicks for the keys of a table page. Null when unknown. */
+export function previousClicksLookup(
+  previousRows: GscSearchAnalyticsRow[],
+  limit: number,
+): (key: string) => number | null {
+  const previous = indexPeriodRows(previousRows, limit);
+  return (key) =>
+    previous.byKey.get(key)?.clicks ?? (previous.missingIsZero ? 0 : null);
+}
+
+/** The keys that gained and lost the most clicks between two periods, from
+ *  each period's top `limit` rows. A key whose clicks are unknown in either
+ *  period is left out rather than guessed. */
+export function buildClickChanges(
+  currentRows: GscSearchAnalyticsRow[],
+  previousRows: GscSearchAnalyticsRow[],
+  limit: number,
+): { gained: ClickChangeRow[]; lost: ClickChangeRow[] } {
+  const current = indexPeriodRows(currentRows, limit);
+  const previous = indexPeriodRows(previousRows, limit);
+  const changes: ClickChangeRow[] = [];
+  for (const [key, row] of current.byKey) {
+    const before = previous.byKey.get(key);
+    if (!before && !previous.missingIsZero) continue;
+    changes.push({
+      key,
+      clicks: row.clicks,
+      prevClicks: before?.clicks ?? 0,
+      position: row.position,
+      prevPosition: before?.position ?? null,
+    });
+  }
+  for (const [key, before] of previous.byKey) {
+    if (current.byKey.has(key) || !current.missingIsZero) continue;
+    changes.push({
+      key,
+      clicks: 0,
+      prevClicks: before.clicks,
+      position: null,
+      prevPosition: before.position,
+    });
+  }
+  return {
+    gained: sort(
+      changes.filter((row) => clickChange(row) > 0),
+      (a, b) => clickChange(b) - clickChange(a),
+    ).slice(0, CLICK_CHANGE_ROW_LIMIT),
+    lost: sort(
+      changes.filter((row) => clickChange(row) < 0),
+      (a, b) => clickChange(a) - clickChange(b),
+    ).slice(0, CLICK_CHANGE_ROW_LIMIT),
+  };
 }
 
 /** The same-length period immediately before [startDate, endDate], for the

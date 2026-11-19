@@ -82,10 +82,18 @@ export const searchPerformanceTableInputSchema = z.object({
     .default(SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE),
 });
 
-/** Export pulls the full dataset (capped) rather than a single page. */
-export const searchPerformanceTableExportInputSchema = z.object({
+/** One whole dimension under the page's filters: the export (capped, rather
+ *  than a single page) and the biggest changes between periods. */
+export const searchPerformanceDimensionInputSchema = z.object({
   ...searchPerformanceFilterShape,
   dimension: z.enum(SEARCH_PERFORMANCE_TABLE_DIMENSIONS),
+});
+
+/** One query or page, opened from a table row. */
+export const searchPerformanceDetailInputSchema = z.object({
+  ...searchPerformanceFilterShape,
+  dimension: z.enum(SEARCH_PERFORMANCE_TABLE_DIMENSIONS),
+  key: z.string().min(1).max(4096),
 });
 
 export const SEARCH_PERFORMANCE_TABS = [

@@ -1,37 +1,52 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildClickChanges,
   buildDailyTrend,
   buildStrikingDistanceRows,
+  previousClicksLookup,
   previousPeriod,
   sumSearchTotals,
 } from "@/server/features/gsc/searchPerformanceReport";
 
 describe("buildDailyTrend", () => {
-  it("runs oldest first across the whole range, with zeros for days GSC omits", () => {
+  it("runs oldest first across the whole range, with zeros and no position for days GSC omits", () => {
     const trend = buildDailyTrend(
       [
         {
           keys: ["2026-10-03"],
           clicks: 7,
           impressions: 90,
-          ctr: 0,
-          position: 1,
+          ctr: 0.08,
+          position: 4,
         },
         {
           keys: ["2026-10-01"],
           clicks: 2,
           impressions: 40,
-          ctr: 0,
-          position: 1,
+          ctr: 0.05,
+          position: 6,
         },
       ],
       "2026-10-01",
       "2026-10-03",
     );
     expect(trend).toEqual([
-      { date: "2026-10-01", clicks: 2, impressions: 40 },
-      { date: "2026-10-02", clicks: 0, impressions: 0 },
-      { date: "2026-10-03", clicks: 7, impressions: 90 },
+      {
+        date: "2026-10-01",
+        clicks: 2,
+        impressions: 40,
+        ctr: 0.05,
+        position: 6,
+      },
+      // A zero position would chart the empty day as the best rank there is.
+      { date: "2026-10-02", clicks: 0, impressions: 0, ctr: 0, position: null },
+      {
+        date: "2026-10-03",
+        clicks: 7,
+        impressions: 90,
+        ctr: 0.08,
+        position: 4,
+      },
     ]);
   });
 });
@@ -111,6 +126,69 @@ describe("buildStrikingDistanceRows", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].page).toBe("https://x.com/b");
     expect(rows[0].position).toBe(8);
+  });
+});
+
+const keyRow = (key: string, clicks: number, position: number) => ({
+  keys: [key],
+  clicks,
+  impressions: 100,
+  ctr: clicks / 100,
+  position,
+});
+
+describe("buildClickChanges", () => {
+  it("ranks gains and losses, counting keys that appear in only one period from zero", () => {
+    const { gained, lost } = buildClickChanges(
+      [keyRow("steady", 50, 2), keyRow("up", 40, 3), keyRow("new", 30, 8)],
+      [keyRow("steady", 49, 2), keyRow("up", 25, 6), keyRow("gone", 20, 5)],
+      1000,
+    );
+    expect(gained).toEqual([
+      {
+        key: "new",
+        clicks: 30,
+        prevClicks: 0,
+        position: 8,
+        prevPosition: null,
+      },
+      { key: "up", clicks: 40, prevClicks: 25, position: 3, prevPosition: 6 },
+      {
+        key: "steady",
+        clicks: 50,
+        prevClicks: 49,
+        position: 2,
+        prevPosition: 2,
+      },
+    ]);
+    expect(lost).toEqual([
+      {
+        key: "gone",
+        clicks: 0,
+        prevClicks: 20,
+        position: null,
+        prevPosition: 5,
+      },
+    ]);
+  });
+
+  it("leaves a change unknown when the other period's page is full of rows with clicks", () => {
+    // GSC returns the top rows by clicks. "new" is missing from a full page
+    // whose weakest row had 9 clicks, so it had anywhere from 0 to 9 before.
+    const current = [keyRow("a", 50, 2), keyRow("new", 30, 8)];
+    const previous = [keyRow("a", 40, 2), keyRow("b", 9, 4)];
+    expect(buildClickChanges(current, previous, 2).gained).toEqual([
+      expect.objectContaining({ key: "a" }),
+    ]);
+    const previousClicks = previousClicksLookup(previous, 2);
+    expect(previousClicks("a")).toBe(40);
+    expect(previousClicks("new")).toBeNull();
+    // A full page that reaches down to a zero-click row leaves no doubt.
+    const toZero = previousClicksLookup(
+      [keyRow("a", 40, 2), keyRow("b", 0, 4)],
+      2,
+    );
+    expect(toZero("new")).toBe(0);
   });
 });
 
