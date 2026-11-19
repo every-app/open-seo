@@ -88,10 +88,17 @@ export async function persistCrawledPages(input: {
       }
       if (
         discovered.size < MAX_DISCOVERED_PER_BATCH &&
-        !discovered.has(link.targetUrl) &&
         shouldQueueCrawlLink(link.targetUrl, origin, robots, sitePlatform)
       ) {
-        discovered.set(link.targetUrl, childDepth);
+        const existing = discovered.get(link.targetUrl);
+        if (existing === undefined) {
+          discovered.set(link.targetUrl, childDepth);
+        } else if (
+          childDepth !== null &&
+          (existing === null || childDepth < existing)
+        ) {
+          discovered.set(link.targetUrl, childDepth);
+        }
       }
     }
     if (targets.length > 0) {
@@ -101,10 +108,17 @@ export async function persistCrawledPages(input: {
     // Redirect targets continue the same navigation path: same depth.
     if (
       page.redirectUrl &&
-      !discovered.has(page.redirectUrl) &&
       shouldQueueCrawlLink(page.redirectUrl, origin, robots, sitePlatform)
     ) {
-      discovered.set(page.redirectUrl, pageDepth);
+      const existing = discovered.get(page.redirectUrl);
+      if (existing === undefined) {
+        discovered.set(page.redirectUrl, pageDepth);
+      } else if (
+        pageDepth !== null &&
+        (existing === null || pageDepth < existing)
+      ) {
+        discovered.set(page.redirectUrl, pageDepth);
+      }
     }
   }
 
