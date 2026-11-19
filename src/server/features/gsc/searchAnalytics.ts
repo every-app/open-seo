@@ -41,6 +41,8 @@ export const GSC_DEFAULT_ROW_LIMIT = 250;
 export const GSC_MAX_ROW_LIMIT = 1000;
 // GSC data trails by ~2-3 days; default the end of convenience ranges before it.
 const GSC_DATA_LAG_DAYS = 3;
+// GSC defines request dates and daily boundaries in Pacific time (America/Los_Angeles).
+const GSC_TIMEZONE = "America/Los_Angeles";
 
 export type GscDimension = (typeof GSC_DIMENSIONS)[number];
 type GscFilterOperator = (typeof GSC_FILTER_OPERATORS)[number];
@@ -72,6 +74,25 @@ function clamp(value: number, min: number, max: number): number {
 
 function formatDate(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Normalizes an instant into a UTC-midnight Date representing the calendar day
+ * in Pacific time (America/Los_Angeles), handling PST/PDT automatically.
+ */
+function toPacificCalendarDate(date: Date): Date {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: GSC_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = Number(parts.find((p) => p.type === "year")!.value);
+  const month = Number(parts.find((p) => p.type === "month")!.value);
+  const day = Number(parts.find((p) => p.type === "day")!.value);
+
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 // Subtract calendar months in UTC, clamping the day to the target month's length.
@@ -114,12 +135,14 @@ function sixteenMonthFloor(today: Date): string {
 }
 
 /** Resolve a convenience `dateRange` or explicit start/end into GSC dates.
- *  `today` is injectable for deterministic tests. */
+ *  Presets roll over at Pacific midnight (`America/Los_Angeles`) to match GSC's
+ *  date boundary convention. `today` is injectable for deterministic tests. */
 export function resolveDateRange(
   input: Pick<GscPerformanceInput, "dateRange" | "startDate" | "endDate">,
   today: Date = new Date(),
 ): { startDate: string; endDate: string } {
-  const floor = sixteenMonthFloor(today);
+  const pacificToday = toPacificCalendarDate(today);
+  const floor = sixteenMonthFloor(pacificToday);
 
   if (input.startDate && input.endDate) {
     // Clamp the start to GSC's 16-month lower bound.
@@ -127,7 +150,7 @@ export function resolveDateRange(
     return { startDate, endDate: input.endDate };
   }
 
-  const end = new Date(today);
+  const end = new Date(pacificToday);
   end.setUTCDate(end.getUTCDate() - GSC_DATA_LAG_DAYS);
   const start = subtractRange(end, input.dateRange ?? "last_28_days");
   const startDate = formatDate(start);
