@@ -96,7 +96,10 @@ export const saveKeywordsTool = {
         ? ` with tag(s): ${args.tags.join(", ")}`
         : "";
     const modeText = args.tagMode === "replace" ? " Replaced tags." : "";
-    const trackers = await RankTrackingService.getConfigs(args.projectId);
+    const trackers = await RankTrackingService.getConfigs(
+      args.projectId,
+      context.project.domain,
+    );
     const trackingText =
       trackers.length === 0
         ? " If the user wants their rankings tracked, create_rank_tracker sets up a tracker."

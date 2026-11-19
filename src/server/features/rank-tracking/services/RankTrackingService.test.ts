@@ -221,6 +221,36 @@ describe("RankTrackingService.createConfig", () => {
   });
 });
 
+describe("RankTrackingService.getConfigs", () => {
+  it("lists the project's own site first, however its website was entered", async () => {
+    mocks.getConfigsForProject.mockResolvedValue([
+      { id: "competitor", domain: "rival.com" },
+      { id: "own", domain: "acme.com" },
+    ]);
+
+    const configs = await RankTrackingService.getConfigs(
+      "project_1",
+      "https://www.Acme.com/services",
+    );
+
+    expect(configs.map((config) => config.id)).toEqual(["own", "competitor"]);
+  });
+
+  it("keeps creation order when the project website has no domain in it", async () => {
+    mocks.getConfigsForProject.mockResolvedValue([
+      { id: "first", domain: "rival.com" },
+      { id: "second", domain: "acme.com" },
+    ]);
+
+    const configs = await RankTrackingService.getConfigs(
+      "project_1",
+      "https://",
+    );
+
+    expect(configs.map((config) => config.id)).toEqual(["first", "second"]);
+  });
+});
+
 describe("RankTrackingService.updateConfig schedule", () => {
   beforeEach(() => {
     mocks.getConfigById.mockResolvedValue({

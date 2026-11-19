@@ -43,7 +43,10 @@ const call = (body: unknown) =>
 
 beforeEach(() => {
   mocks.getLinkByToken.mockResolvedValue(LINK);
-  mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+  mocks.getProjectForOrganization.mockResolvedValue({
+    id: "project_1",
+    domain: null,
+  });
   mocks.getConfigs.mockResolvedValue([]);
 });
 
@@ -59,7 +62,7 @@ describe("runEmbedCall", () => {
       "org_1",
       "project_1",
     );
-    expect(mocks.getConfigs).toHaveBeenCalledWith("project_1");
+    expect(mocks.getConfigs).toHaveBeenCalledWith("project_1", null);
   });
 
   it("refuses tools the widgets don't use, such as paid research", async () => {

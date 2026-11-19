@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { sortBy } from "remeda";
 import {
   customerHasPaidPlan,
   type BillingCustomerContext,
@@ -379,8 +380,15 @@ async function refreshKeywordMetrics(
 // MCP/browser read models and access policy
 // ---------------------------------------------------------------------------
 
-async function getConfigs(projectId: string) {
-  return RankTrackingRepository.getConfigsForProject(projectId);
+/**
+ * The project's trackers, oldest first, except that the project's own site
+ * comes first when it has a tracker: it is the one a reader expects to see.
+ */
+async function getConfigs(projectId: string, projectDomain: string | null) {
+  const configs = await RankTrackingRepository.getConfigsForProject(projectId);
+  const ownDomain = projectDomain ? bareDomain(projectDomain) : "";
+  if (!ownDomain) return configs;
+  return sortBy(configs, (config) => (config.domain === ownDomain ? 0 : 1));
 }
 
 async function getTracker(configId: string, projectId: string) {
@@ -447,6 +455,15 @@ async function getValidatedConfig(configId: string, projectId: string) {
 }
 
 function normalizeDomain(domain: string): string {
+  const d = bareDomain(domain);
+  if (!d) {
+    throw new AppError("INTERNAL_ERROR", "Invalid domain");
+  }
+  return d;
+}
+
+/** The hostname part of a domain or URL, as trackers store it; "" if none. */
+function bareDomain(domain: string): string {
   let d = domain.trim().toLowerCase();
   // Strip protocol
   d = d.replace(/^https?:\/\//, "");
@@ -455,11 +472,7 @@ function normalizeDomain(domain: string): string {
   // Strip trailing slash
   d = d.replace(/\/+$/, "");
   // Strip www. prefix
-  d = d.replace(/^www\./, "");
-  if (!d) {
-    throw new AppError("INTERNAL_ERROR", "Invalid domain");
-  }
-  return d;
+  return d.replace(/^www\./, "");
 }
 
 type RunRow = NonNullable<

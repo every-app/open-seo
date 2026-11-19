@@ -202,7 +202,10 @@ export const getRankTrackerTool = {
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     if (!args.trackerId) {
-      const configs = await RankTrackingService.getConfigs(args.projectId);
+      const configs = await RankTrackingService.getConfigs(
+        args.projectId,
+        context.project.domain,
+      );
       const text =
         configs.length === 0
           ? "No rank trackers configured for this project."
