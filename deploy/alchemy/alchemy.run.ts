@@ -170,7 +170,10 @@ const readCustomDomain = (prod: boolean) =>
   });
 
 const optionalSecret = (name: string) =>
-  Config.redacted(name).pipe(Config.withDefault(Redacted.make("")));
+  Config.redacted(name).pipe(
+    Config.withDefault(Redacted.make("")),
+    Config.map((value) => Redacted.make(Redacted.value(value).trim())),
+  );
 
 const accessScopeHint =
   " (if this is a permissions error, re-run `pnpm alchemy login deploy/alchemy/alchemy.run.ts --configure`, answer yes to “Customize OAuth scopes?”, and select access:write alongside the defaults)";
@@ -299,7 +302,8 @@ const dataEnv = {
   // AUTH_MODE, DATABASE_PROVIDER, BETTER_AUTH_URL, TEAM_DOMAIN, POLICY_AUD,
   // and OPENSEO_OPERATOR_SECRET are stage-dependent and set in the stack body
   // below, which also replaces an unset BETTER_AUTH_SECRET in password mode.
-  DATAFORSEO_API_KEY: Config.redacted("DATAFORSEO_API_KEY"),
+  DATAFORSEO_API_KEY: optionalSecret("DATAFORSEO_API_KEY"),
+  TREG_API_TOKEN: optionalSecret("TREG_API_TOKEN"),
   BYPASS_EMAIL_VERIFICATION: optionalVar("BYPASS_EMAIL_VERIFICATION"),
   BETTER_AUTH_SECRET: optionalSecret("BETTER_AUTH_SECRET"),
   CRAWLER_ACCESS_SECRET: optionalSecret("CRAWLER_ACCESS_SECRET"),
@@ -356,6 +360,24 @@ const dataEnv = {
   OPENSEO_TELEMETRY_DISABLED: optionalVar("OPENSEO_TELEMETRY_DISABLED"),
 };
 
+const requireDataForSeoCredentials = (prod: boolean) =>
+  Effect.gen(function* () {
+    const dataforseoApiKey = Redacted.value(yield* dataEnv.DATAFORSEO_API_KEY);
+    const tregApiToken = Redacted.value(yield* dataEnv.TREG_API_TOKEN);
+    if (prod && !dataforseoApiKey) {
+      return yield* Effect.die(
+        new Error("hosted-prod requires DATAFORSEO_API_KEY."),
+      );
+    }
+    if (!dataforseoApiKey && !tregApiToken) {
+      return yield* Effect.die(
+        new Error(
+          "Set DATAFORSEO_API_KEY or TREG_API_TOKEN — see docs/DATAFORSEO_API_KEY.md.",
+        ),
+      );
+    }
+  });
+
 export default Alchemy.Stack(
   "open-seo",
   {
@@ -384,6 +406,7 @@ export default Alchemy.Stack(
         ),
       );
     }
+    yield* requireDataForSeoCredentials(prod);
     const workersSubdomain = yield* readWorkersSubdomain({ required: false });
     const customDomain = yield* readCustomDomain(prod);
 
@@ -486,8 +509,8 @@ export default Alchemy.Stack(
         R2: resources.R2,
         // Deliberately NOT ...dataEnv: this worker crawls and parses
         // attacker-influenced HTML, so it gets only the secrets its code
-        // path reads — DataForSEO (Lighthouse), Autumn (metering), PostHog
-        // (capture), CRAWLER_ACCESS_SECRET (Shopify signatures),
+        // path reads — DataForSEO / treg (Lighthouse), Autumn (metering),
+        // PostHog (capture), CRAWLER_ACCESS_SECRET (Shopify signatures),
         // WEB_BOT_AUTH_JWK (request signing). No auth/OAuth/Loops/Turnstile
         // secrets.
         BROWSER: Cloudflare.Browser(),
@@ -495,6 +518,7 @@ export default Alchemy.Stack(
         WEB_BOT_AUTH_JWK: dataEnv.WEB_BOT_AUTH_JWK,
         CONTEXT_API_KEY: dataEnv.CONTEXT_API_KEY,
         DATAFORSEO_API_KEY: dataEnv.DATAFORSEO_API_KEY,
+        TREG_API_TOKEN: dataEnv.TREG_API_TOKEN,
         AUTUMN_SECRET_KEY: dataEnv.AUTUMN_SECRET_KEY,
         POSTHOG_PUBLIC_KEY: dataEnv.POSTHOG_PUBLIC_KEY,
         POSTHOG_HOST: dataEnv.POSTHOG_HOST,

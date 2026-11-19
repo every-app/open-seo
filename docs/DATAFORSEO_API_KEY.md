@@ -22,7 +22,7 @@ Set the value as `DATAFORSEO_API_KEY`:
 [treg](https://treg.to) is a third-party reseller, unaffiliated with OpenSEO. It sells DataForSEO calls one at a time from a prepaid balance, at DataForSEO's own rates, so you can skip the DataForSEO signup and its $50 minimum top-up. New treg accounts include $1 of free credit.
 
 1. Create a team at [treg.to](https://treg.to) and copy its API token.
-2. Set it as `TREG_API_TOKEN` instead of `DATAFORSEO_API_KEY`: in `deploy/standalone/.env` for Docker self-hosting, or `.env.local` for local development. Cloudflare self-hosting does not support treg yet.
+2. Set it as `TREG_API_TOKEN` instead of `DATAFORSEO_API_KEY`: in `deploy/standalone/.env` for Docker self-hosting, `.env.selfhost` for Cloudflare self-hosting, or `.env.local` for local development. EveryApp deployments do not support treg yet.
 
 When both are set, OpenSEO uses `DATAFORSEO_API_KEY`.
 
