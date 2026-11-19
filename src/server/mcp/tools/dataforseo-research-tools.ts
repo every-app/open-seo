@@ -46,6 +46,8 @@ import {
   type ScopeFilter,
 } from "@/server/lib/dataforseo/researchScopeFilters";
 import { parseResearchTargetOrThrow } from "@/server/lib/domainUtils";
+import { assertLocalResearchLocation } from "@/server/features/keywords/services/research/local-volume";
+import { LOCAL_VOLUME_COST_USD, creditsForProviderUsd } from "@/shared/billing";
 import {
   RESEARCH_SCOPE_PARAM_DESCRIPTION,
   researchScopeSchema,
@@ -398,6 +400,13 @@ const getKeywordMetricsInputSchema = {
     .describe("Keywords to fetch metrics for (1-700)."),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
+  locationName: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      `Optional city, county, or region inside the country, for local metrics. Call search_serp_locations first and pass its locationName verbatim. Volume, trend, CPC, and competition then come from Google Ads for that area; KD and intent stay national. Adds ~${creditsForProviderUsd(LOCAL_VOLUME_COST_USD)} credits per 700 keywords, except in countries served from Google Ads data.`,
+    ),
   includeMonthlyTrends: z
     .boolean()
     .optional()
@@ -406,7 +415,7 @@ const getKeywordMetricsInputSchema = {
     .boolean()
     .optional()
     .describe(
-      "Refine search volumes with clickstream data, which disaggregates Google Ads' grouped close-variant volumes (plurals/misspellings). DOUBLES the credit cost of the call. Default false. No effect for countries served from Google Ads data.",
+      "Refine search volumes with clickstream data, which disaggregates Google Ads' grouped close-variant volumes (plurals/misspellings). DOUBLES the credit cost of the call. Default false. No effect for countries served from Google Ads data or with locationName.",
     ),
   sortBy: keywordMetricsSortSchema
     .optional()
@@ -1162,7 +1171,7 @@ export const getKeywordMetricsTool = {
   config: {
     title: "Get keyword metrics",
     description:
-      "Get search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends for up to 700 keywords you already have. Use it to score candidate or known keywords, including Search Console striking-distance queries, by real demand and ranking difficulty. For countries served from Google Ads data (such as Iceland), KD and intent are null. Uses credits. To find new keyword ideas from a seed, use research_keywords.",
+      "Get search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends for up to 700 keywords you already have, nationally or for one city, county, or region (locationName). Use it to score candidate or known keywords, including Search Console striking-distance queries, by real demand and ranking difficulty. For countries served from Google Ads data (such as Iceland), KD and intent are null. Uses credits. To find new keyword ideas from a seed, use research_keywords.",
     inputSchema: getKeywordMetricsInputSchema,
     outputSchema: z.looseObject({
       keywords: z.array(looseObjectOutputSchema),
@@ -1179,11 +1188,15 @@ export const getKeywordMetricsTool = {
     // Assert against the RESOLVED pair: an explicit language with an omitted
     // location must validate against the project's default location.
     assertLanguageForLocation(locationCode, languageCode);
+    if (args.locationName) {
+      await assertLocalResearchLocation(locationCode, args.locationName);
+    }
     const client = createDataforseoClient(context.billing);
     const metrics = await fetchKeywordMetricsForList(client, {
       keywords: args.keywords,
       locationCode,
       languageCode,
+      locationName: args.locationName,
       includeClickstreamData: args.includeClickstreamData ?? false,
       creditFeature: "keyword_research",
     });
@@ -1198,13 +1211,18 @@ export const getKeywordMetricsTool = {
         : row,
     );
 
+    // A local request returns a row for every keyword, with null volume where
+    // Google Ads has none, so count keywords without volume, not missing rows.
     const missingCount =
       new Set(args.keywords.map((keyword) => keyword.trim().toLowerCase()))
-        .size - rows.length;
+        .size - metrics.filter((row) => row.searchVolume != null).length;
+    const scope = args.locationName
+      ? ` Volume, trend, CPC, and competition are for ${args.locationName}; KD and intent are national.`
+      : "";
     const header =
-      `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, trend = search volume for the last 3 months, oldest → newest, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.` +
+      `Fetched metrics for ${rows.length} keywords.${scope} Columns: volume = monthly searches, trend = search volume for the last 3 months, oldest → newest, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.` +
       (missingCount > 0
-        ? ` ${missingCount} requested keyword${missingCount === 1 ? "" : "s"} returned no data, usually because the search volume is too low to measure; research_keywords on a broader seed finds measurable variants.`
+        ? ` ${missingCount} requested keyword${missingCount === 1 ? "" : "s"} returned no search volume, usually because it is too low to measure; research_keywords on a broader seed finds measurable variants.`
         : "");
     return mcpResponse({
       text:
@@ -1216,7 +1234,7 @@ export const getKeywordMetricsTool = {
         args.projectId,
         `/p/${args.projectId}/keywords`,
       ),
-      structuredContent: { keywords: rows },
+      structuredContent: { locationName: args.locationName, keywords: rows },
     });
   }),
 };

@@ -17,21 +17,14 @@ import {
 } from "@/server/mcp/table";
 import { assertLanguageForLocation } from "@/server/lib/market";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
-import {
-  AUTUMN_SEO_DATA_CREDITS_PER_USD,
-  LOCAL_VOLUME_COST_USD,
-  applyBillingMarkupUsd,
-} from "@/shared/billing";
+import { LOCAL_VOLUME_COST_USD, creditsForProviderUsd } from "@/shared/billing";
 import {
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
 
-const LOCAL_VOLUME_CREDITS = Math.ceil(
-  applyBillingMarkupUsd(LOCAL_VOLUME_COST_USD) *
-    AUTUMN_SEO_DATA_CREDITS_PER_USD,
-);
+const LOCAL_VOLUME_CREDITS = creditsForProviderUsd(LOCAL_VOLUME_COST_USD);
 
 const seedSchema = z.object({
   seed: z

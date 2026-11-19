@@ -174,11 +174,13 @@ export async function fetchKeywordMetricsForList(
           languageCode: params.languageCode,
           creditFeature: params.creditFeature,
         }),
+        // Only KD and intent are read from Labs here, so clickstream volume
+        // would be paid for and thrown away.
         client.labs.keywordOverview({
           keywords,
           locationCode: params.locationCode,
           languageCode: params.languageCode,
-          includeClickstreamData: params.includeClickstreamData ?? false,
+          includeClickstreamData: false,
           creditFeature: params.creditFeature,
         }),
       ]);

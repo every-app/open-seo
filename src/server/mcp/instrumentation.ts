@@ -277,15 +277,18 @@ export function instrumentMcpToolHandler<TArgs>(
 // or paid-plan refusal gives it nothing to tell the user, so it tends to
 // retry. Explain it instead, with a plain billing link and no upgrade or
 // purchase pitch (directory policies ban promotional content). A provider
-// outage gets the same note as per-item tool errors; every other error passes
-// through unchanged.
+// outage or an unknown area gets the same note as per-item tool errors; every
+// other error passes through unchanged.
 function agentFacingError(
   error: unknown,
   appError: AppError | null,
   auth: Pick<ToolContext["auth"], "baseUrl" | "guestClaimToken">,
 ): unknown {
-  if (appError?.code === "UPSTREAM_UNAVAILABLE")
-    return new AppError("UPSTREAM_UNAVAILABLE", toolErrorMessage(appError));
+  if (
+    appError?.code === "UPSTREAM_UNAVAILABLE" ||
+    appError?.code === "UNKNOWN_LOCATION"
+  )
+    return new AppError(appError.code, toolErrorMessage(appError));
   if (appError?.code === "PAYMENT_REQUIRED" && !auth.guestClaimToken) {
     const message = /[.!?]$/.test(appError.message)
       ? appError.message
