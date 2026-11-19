@@ -1,7 +1,9 @@
+import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   runSelfhostScheduler,
   scheduledUrl,
+  serveWithScheduler,
   triggerScheduled,
 } from "../../../scripts/selfhost-scheduler.mjs";
 beforeEach(() => {
@@ -98,6 +100,32 @@ describe("Docker local scheduler", () => {
     expect(log).toHaveBeenCalledExactlyOnceWith(
       "[scheduler] Local scheduled handler failed; retrying at the next five-minute tick.",
     );
+  });
+  it("keeps the preview serving when the scheduler stops", async () => {
+    const preview = Object.assign(new EventEmitter(), { kill: vi.fn() });
+    const spawnPreview = vi.fn(() => preview);
+    const runScheduler = vi.fn(async () => {
+      throw new Error("preview never became ready");
+    });
+    const log = vi.fn();
+    let done = false;
+    const running = serveWithScheduler({
+      port: 3001,
+      spawnPreview,
+      runScheduler,
+      log,
+    }).then(() => {
+      done = true;
+    });
+    await vi.waitFor(() => expect(runScheduler).toHaveBeenCalled());
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      "[scheduler] Local scheduler stopped unexpectedly; the preview keeps serving.",
+    );
+    expect(preview.kill).not.toHaveBeenCalled();
+    expect(done).toBe(false);
+    preview.emit("exit", 0);
+    await running;
+    expect(done).toBe(true);
   });
   it("bounds startup retries and stops immediately on cancellation", async () => {
     const stop = new AbortController();

@@ -100,11 +100,27 @@ export async function runSelfhostScheduler(options) {
   }
 }
 
-async function serveWithScheduler() {
-  const port = process.env.PORT ?? "3001";
+/**
+ * Supervise the local preview. The scheduler is optional: when it stops, the
+ * preview keeps serving, because the preview is what runs the app. Killing the
+ * preview here would restart the container and take the app offline.
+ * @param {{
+ *   port?: string | number,
+ *   spawnPreview?: (command: string, args: string[], options: { stdio: "inherit" }) => NodeJS.EventEmitter & { kill: (signal?: NodeJS.Signals) => boolean },
+ *   runScheduler?: (options: { port: string | number, signal: AbortSignal }) => Promise<void>,
+ *   log?: (message: string) => void,
+ * }} [options]
+ */
+export async function serveWithScheduler(options = {}) {
+  const {
+    port = process.env.PORT ?? "3001",
+    spawnPreview = spawn,
+    runScheduler = runSelfhostScheduler,
+    log = console.error,
+  } = options;
   scheduledUrl(port); // Validate before spawning anything.
   const stop = new AbortController();
-  const preview = spawn(
+  const preview = spawnPreview(
     process.execPath,
     [
       "node_modules/vite/bin/vite.js",
@@ -123,24 +139,28 @@ async function serveWithScheduler() {
   };
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
-  preview.once("error", () => {
-    console.error("[scheduler] Could not start local preview.");
-    process.exitCode = 1;
-    stop.abort();
-  });
-  preview.once("exit", (code) => {
-    stop.abort();
-    process.exitCode = process.exitCode || code || 0;
+  const exited = new Promise((resolve) => {
+    preview.once("exit", (code) => {
+      stop.abort();
+      process.exitCode = process.exitCode || code || 0;
+      resolve(code);
+    });
+    preview.once("error", () => {
+      log("[scheduler] Could not start local preview.");
+      process.exitCode = 1;
+      stop.abort();
+      resolve();
+    });
   });
   try {
-    await runSelfhostScheduler({ port, signal: stop.signal });
+    await runScheduler({ port, signal: stop.signal });
   } catch {
-    if (!stop.signal.aborted) {
-      console.error("[scheduler] Local scheduler stopped unexpectedly.");
-      process.exitCode = 1;
-      shutdown();
-    }
+    if (!stop.signal.aborted)
+      log(
+        "[scheduler] Local scheduler stopped unexpectedly; the preview keeps serving.",
+      );
   }
+  await exited;
 }
 
 if (
