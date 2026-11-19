@@ -1321,6 +1321,25 @@ export function isSupportedLocationCode(locationCode: number): boolean {
   return LOCATION_CODES.has(locationCode);
 }
 
+/**
+ * The country whose keyword data serves a location. Trackers saved before
+ * location codes were validated can hold a city's code (1001634, Curitiba)
+ * next to its canonical name ("Curitiba,State of Parana,Brazil"). DataForSEO
+ * Labs only takes countries, so read the country from the name's last segment.
+ * A code with no recognizable country is returned as is.
+ */
+export function getKeywordDataCountryCode(location: {
+  locationCode: number;
+  locationName: string | null;
+}): number {
+  if (LOCATION_CODES.has(location.locationCode)) return location.locationCode;
+  const countryName = location.locationName?.split(",").at(-1)?.trim();
+  const country = LOCATION_OPTIONS.find(
+    (option) => option.label === countryName,
+  );
+  return country?.code ?? location.locationCode;
+}
+
 export function isLabsLocationCode(locationCode: number): boolean {
   return LABS_LOCATION_CODES.has(locationCode);
 }

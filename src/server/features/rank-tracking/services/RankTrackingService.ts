@@ -30,6 +30,7 @@ import {
 import { resolveNextCheckAt } from "./configSchedule";
 import {
   getIsoCountryCode,
+  getKeywordDataCountryCode,
   resolveKeywordDataLanguage,
   resolveMarket,
 } from "@/shared/keyword-locations";
@@ -331,6 +332,7 @@ async function refreshKeywordMetrics(
   const keywords = await RankTrackingRepository.getKeywordsForConfig(configId);
   if (keywords.length === 0) return { updated: 0 };
 
+  const countryCode = getKeywordDataCountryCode(config);
   const client = createDataforseoClient(billingCustomer);
   const lower = (text: string) => text.toLocaleLowerCase(config.languageCode);
   const metrics = await fetchKeywordMetricsForList(client, {
@@ -339,13 +341,10 @@ async function refreshKeywordMetrics(
     // its lowercase twin; both then map to the same metrics row and the
     // request carries no duplicates.
     keywords: [...new Set(keywords.map((kw) => lower(kw.keyword)))],
-    locationCode: config.locationCode,
+    locationCode: countryCode,
     // Trackers can pair any SERP language with any country; the keyword-data
     // APIs only serve the country's own languages.
-    languageCode: resolveKeywordDataLanguage(
-      config.locationCode,
-      config.languageCode,
-    ),
+    languageCode: resolveKeywordDataLanguage(countryCode, config.languageCode),
     // Local configs get volume/CPC scoped to the tracked city; national
     // numbers can overstate local demand by orders of magnitude.
     locationName: config.locationName ?? undefined,

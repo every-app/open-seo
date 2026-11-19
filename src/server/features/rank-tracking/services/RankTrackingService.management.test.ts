@@ -354,6 +354,33 @@ describe("RankTrackingService management invariants", () => {
     ]);
   });
 
+  it("fetches keyword stats for a city-code tracker by its country", async () => {
+    mocks.isHostedServerAuthMode.mockResolvedValue(false);
+    mocks.createDataforseoClient.mockReturnValue({});
+    mocks.fetchKeywordMetricsForList.mockResolvedValue([]);
+    // Saved before location codes were validated: Curitiba's own code.
+    mocks.getConfigById.mockResolvedValue({
+      ...config,
+      locationCode: 1001634,
+      languageCode: "pt",
+      locationName: "Curitiba,State of Parana,Brazil",
+    });
+
+    await RankTrackingService.refreshKeywordMetrics(
+      "config_1",
+      "project_1",
+      billingCustomer,
+    );
+    expect(mocks.fetchKeywordMetricsForList).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        locationCode: 2076,
+        languageCode: "pt",
+        locationName: "Curitiba,State of Parana,Brazil",
+      }),
+    );
+  });
+
   it("rejects missing or foreign trackers with NOT_FOUND before mutation", async () => {
     mocks.getConfigById.mockResolvedValue(null);
 
