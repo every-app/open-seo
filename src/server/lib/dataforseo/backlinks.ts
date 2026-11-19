@@ -205,6 +205,27 @@ export async function fetchBacklinksSummary(input: BacklinksRequest) {
   };
 }
 
+const bulkRankItemSchema = z
+  .object({ target: z.string(), rank: z.number().nullable().optional() })
+  .passthrough();
+
+/** Backlink rank (0-100) of up to 1,000 domains in one request. */
+export async function fetchBulkRanks(input: { targets: string[] }) {
+  const response = await dataforseoPost(
+    "/v3/backlinks/bulk_ranks/live",
+    [{ targets: input.targets, rank_scale: "one_hundred" }],
+    { classify: classifyBacklinksError },
+  );
+  const task = assertOk(
+    response,
+    assertOptions("/v3/backlinks/bulk_ranks/live"),
+  );
+  return {
+    data: parseTaskItems("backlinks-bulk-ranks-live", task, bulkRankItemSchema),
+    billing: buildTaskBilling(task),
+  } satisfies DataforseoApiResponse<z.infer<typeof bulkRankItemSchema>[]>;
+}
+
 // Shared with pricing.ts, whose estimate must reserve for the rows this
 // module actually requests.
 export const BACKLINKS_DEFAULT_LIMIT = 100;
