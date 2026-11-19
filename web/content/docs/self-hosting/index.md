@@ -10,7 +10,7 @@ There are two self-hosting paths. Both use email and password accounts: the firs
 - **[Docker](/docs/self-hosting/docker)**, on your own server or computer. A prebuilt image that is ready in seconds, and works with Compose-based platforms such as Coolify, Portainer and Dokploy.
 - **[Cloudflare](/docs/self-hosting/cloudflare)**, with no server to run. One deploy command puts OpenSEO on your own Cloudflare account, with automatic database backups, and it works on Cloudflare's free plan.
 
-OpenSEO also runs on [EveryApp](https://everyapp.com/docs/apps/openseo), which installs it on your own Cloudflare account with sign-in, team access and your DataForSEO key handled for you.
+OpenSEO also runs on [EveryApp](https://everyapp.com/docs/apps/openseo), which installs it on your own Cloudflare account with sign-in, team access and your DataForSEO key handled for you. To move an install you already run, open Settings and click Move to Every App: it copies your projects, history, reports and SAM chats there.
 
 For security-conscious setups, you can replace the accounts with your own network controls: Cloudflare Access in front of the Cloudflare deploy, or Docker without sign-in behind Tailscale or a private network.
 

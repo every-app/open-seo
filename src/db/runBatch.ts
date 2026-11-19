@@ -74,7 +74,7 @@ export async function executeInBatches<T>(
  */
 export async function runD1ImportBatch(statements: D1PreparedStatement[]) {
   if (getDatabaseProvider() !== "d1") {
-    throw new Error("Legacy Docker import requires SQLite");
+    throw new Error("Data import requires SQLite");
   }
   if (statements.length) await env.DB.batch(statements);
 }

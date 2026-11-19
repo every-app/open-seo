@@ -39,6 +39,7 @@ import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleOperatorRequest } from "@/server/standalone/admin";
 import { handleImport, isLegacyImportActive } from "@/server/standalone/import";
+import { EVERY_APP_TRANSFER_PATH } from "@/server/features/every-app-transfer/protocol";
 import { hasOperatorSecret } from "@/server/standalone/operator-auth";
 
 const startHandler = createStartHandler(defaultStreamHandler);
@@ -177,11 +178,18 @@ async function handleEveryAppRequest(
     return everyAppTools.fetch(request, env, ctx);
   }
   // everyApp() also drops any Set-Cookie on the way out.
-  return everyApp<Env>((verified, _env, _ctx, user) =>
-    serveEveryAppRequest(verified, user, () =>
+  return everyApp<Env>(async (verified, _env, _ctx, user) => {
+    // The one public route (everyapp.config.ts): a self-hosted install
+    // moving here, gated by the transfer code's secret, not a member.
+    if (new URL(verified.url).pathname === EVERY_APP_TRANSFER_PATH) {
+      const { EveryAppTransferReceiver } =
+        await import("@/server/features/every-app-transfer/EveryAppTransferReceiver");
+      return EveryAppTransferReceiver.handleTransferRequest(verified);
+    }
+    return serveEveryAppRequest(verified, user, () =>
       handleAppRequest(verified, env, ctx),
-    ),
-  ).fetch(request, env, ctx);
+    );
+  }).fetch(request, env, ctx);
 }
 
 function handleFetch(
@@ -284,6 +292,13 @@ export default {
   ) {
     // A legacy Docker import owns the database until it finishes.
     if (hasOperatorSecret() && (await isLegacyImportActive())) return;
+    // So does a move from a self-hosted install: a tracker that arrived
+    // before its keywords would run half a check.
+    if (getAuthMode(env.AUTH_MODE) === "everyapp") {
+      const { EveryAppTransferReceiver } =
+        await import("@/server/features/every-app-transfer/EveryAppTransferReceiver");
+      if (await EveryAppTransferReceiver.isTransferRunning()) return;
+    }
     if (controller.cron === MCP_OAUTH_PURGE_CRON) {
       const authMode = getAuthMode(env.AUTH_MODE);
       // Only the modes with their own accounts run the OAuth provider (and

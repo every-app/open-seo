@@ -512,6 +512,13 @@
       "when": 1795027967479,
       "tag": "0072_project_embeds",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "6",
+      "when": 1795118529545,
+      "tag": "0073_every_app_transfers",
+      "breakpoints": true
     }
   ]
 }

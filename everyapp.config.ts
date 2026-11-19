@@ -86,6 +86,12 @@ export default {
     // google/gatewayGoogle.ts). Google's own scopes, read only; the gateway
     // adds the identity scopes and refuses a token carrying more. Without
     // a Google client the Google cards say so.
+    // A move from a self-hosted OpenSEO matches each person there to the
+    // member with the same email.
+    members: {
+      access: "read",
+      why: "Moving a self-hosted OpenSEO here keeps each person's chats and work with the member who has the same email.",
+    },
     "google-workspace": {
       scopes: ["webmasters.readonly", "analytics.readonly"],
       why: "Search Console and GA4 reads for your sites, with the Google account you connect in OpenSEO.",
@@ -139,13 +145,16 @@ export default {
   // Both Workers, from cloudflare.config.ts and vite-plugin-every-app.ts.
   build: "pnpm build:report-widgets && AUTH_MODE=everyapp pnpm exec vite build",
   dev: "pnpm build:report-widgets && AUTH_MODE=everyapp pnpm exec vite dev --host 127.0.0.1",
-  // Nothing reaches OpenSEO without a signed-in member: report sharing and
-  // the other unauthenticated routes are hosted-only, and the gateway's tool
-  // calls (`/__everyapp/tools/*`) carry their own gateway-signed tokens.
   // Every member opens OpenSEO once it is installed, like the other three
   // launch apps (OpenCRM, OpenAnalytics, Agentic Inbox): the documented
   // default for them. Without it a fresh install opens to owners and admins
   // only, and an admin grants the rest by hand.
   access: "everyone",
-  public: [],
+  // Everything else needs a signed-in member: report sharing and the other
+  // unauthenticated routes are hosted-only, and the gateway's tool calls
+  // (`/__everyapp/tools/*`) carry their own gateway-signed tokens. The one
+  // public route takes a move from a self-hosted OpenSEO and answers only to
+  // the secret of a transfer code an owner or admin made
+  // (src/server/features/every-app-transfer/).
+  public: [{ path: "/api/every-app-transfer", methods: ["POST"] }],
 } as const;
