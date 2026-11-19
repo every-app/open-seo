@@ -138,6 +138,46 @@ describe("get_serp_results", () => {
     ]);
   });
 
+  it("returns the text of People also ask, related searches and the AI Overview", async () => {
+    mockReads({
+      t1: completed(
+        organic(1, "a.com"),
+        {
+          type: "ai_overview",
+          rank_absolute: 1,
+          markdown: "Audits cost **$5k to $15k**.",
+          references: [{ url: "https://a.com/rates", title: "Rates" }],
+        },
+        {
+          type: "people_also_ask",
+          rank_absolute: 3,
+          items: [{ title: "What is an SEO audit?" }, { title: "" }],
+        },
+        {
+          type: "related_searches",
+          rank_absolute: 4,
+          items: ["seo audit checklist", ""],
+        },
+      ),
+    });
+
+    const result = await getSerpResultsTool.handler(args, toolContext);
+
+    const [row, overview, paa, related] = itemsOf(result);
+    expect(row).not.toHaveProperty("questions");
+    expect(overview).toMatchObject({
+      text: "Audits cost **$5k to $15k**.",
+      references: [
+        { url: "https://a.com/rates", domain: "a.com", title: "Rates" },
+      ],
+    });
+    expect(paa).toMatchObject({ questions: ["What is an SEO audit?"] });
+    expect(related).toMatchObject({ relatedSearches: ["seo audit checklist"] });
+    expect(textContent(result)).toContain(
+      "People also ask: What is an SEO audit?",
+    );
+  });
+
   it("reads to the requested depth and returns every merged site", async () => {
     const post = mockReads({
       t1: completed(organic(1, "a.com"), organic(2, "b.com")),
