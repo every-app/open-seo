@@ -98,6 +98,30 @@ it("profiles only the summary and history for the overview and reuses cache on r
   expect(second).toEqual(first);
 });
 
+it("ends the trend with today's summary totals when subdomains are included", async () => {
+  vi.useFakeTimers({ now: new Date("2026-11-19T18:00:00Z") });
+  mockTarget({ scope: "subdomains", includeSubdomains: true });
+  backlinksSummaryMock.mockResolvedValue({
+    backlinks: 1636,
+    referring_domains: 161,
+    rank: 40,
+  });
+  backlinksHistoryMock.mockResolvedValue([
+    { date: "2026-10-31", backlinks: 786, referring_domains: 120, rank: 35 },
+  ]);
+
+  const { overview } = await service.profileOverview(
+    { target: "example.com" },
+    billingCustomer,
+  );
+  vi.useRealTimers();
+
+  expect(overview.trends).toEqual([
+    { date: "2026-10-31", backlinks: 786, referringDomains: 120, rank: 35 },
+    { date: "2026-11-19", backlinks: 1636, referringDomains: 161, rank: 40 },
+  ]);
+});
+
 it("shows a subdomain's summary without trends when its history fails", async () => {
   mockTarget({ apiTarget: "health.oregonstate.edu" });
   backlinksSummaryMock.mockResolvedValue({ backlinks: 1200 });

@@ -372,12 +372,28 @@ function buildOverviewResult(args: {
         args.summary.lost_reffering_domains ??
         null,
     },
-    trends: historyRows.map((item) => ({
-      date: item.date,
-      backlinks: item.backlinks,
-      referringDomains: item.referringDomains,
-      rank: item.rank,
-    })),
+    trends: [
+      ...historyRows.map((item) => ({
+        date: item.date,
+        backlinks: item.backlinks,
+        referringDomains: item.referringDomains,
+        rank: item.rank,
+      })),
+      // History has one snapshot per finished month, so the chart would stop
+      // at last month's end. The summary is current; plot it as today's point.
+      // History is always subdomain-inclusive, so a summary that excludes
+      // subdomains would not line up with it.
+      ...(historyRows.length > 0 && args.normalizedTarget.includeSubdomains
+        ? [
+            {
+              date: args.now.toISOString().slice(0, 10),
+              backlinks: args.summary.backlinks ?? null,
+              referringDomains: args.summary.referring_domains ?? null,
+              rank: args.summary.rank ?? null,
+            },
+          ]
+        : []),
+    ],
     newLostTrends: historyRows.map((item) => ({
       date: item.date,
       newBacklinks: item.newBacklinks,
