@@ -1378,6 +1378,17 @@ body:has(.itc-campaign) {
   background: var(--ink);
   color: #ffffff;
 }
+.itc-start-quotes-trustpilot {
+  background: var(--q-bg);
+  color: var(--q-text);
+}
+.itc-start-quotes-trustpilot .itc-start-h3 {
+  text-align: center;
+}
+.itc-start-quotes-rating {
+  margin: 10px 0 24px;
+  text-align: center;
+}
 .itc-start-quote-list {
   margin-top: 16px;
   display: grid;
@@ -1661,6 +1672,9 @@ html[data-privacy-panel] .itc-start-sticky {
     margin-top: 32px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 32px;
+  }
+  .itc-start-quotes-rating {
+    margin: 12px 0 32px;
   }
   .itc-start-quote-list {
     margin-top: 24px;
