@@ -110,7 +110,7 @@ Deployments created before password accounts existed have no `AUTH_MODE` in `.en
 
 ## Workers Free plan limits
 
-A Cloudflare Workflow on the Workers Free plan can make 50 outgoing requests per run. Each site audit runs as one Workflow, so an audit stops loading pages after about 40 of them. AI visibility setup can fail the same way, with "Too many subrequests". The Workers Paid plan raises the limit to 10,000; see [Workflows limits](https://developers.cloudflare.com/workflows/reference/limits/). For full audits and AI visibility, use Workers Paid or [Docker](./SELF_HOSTING_DOCKER.md).
+A Cloudflare Workflow on the Workers Free plan can make 50 outgoing requests per run. Each site audit runs as one Workflow, so an audit stops loading pages after about 40 of them. AI visibility setup and checks can fail the same way, with "Too many subrequests". On Workers Paid, `pnpm deploy:selfhost` raises the limit to 1,000,000 requests per run; on Free, the deploy says so and keeps Cloudflare's default. See [Workflows limits](https://developers.cloudflare.com/workflows/reference/limits/). For full audits and AI visibility, use Workers Paid or [Docker](./SELF_HOSTING_DOCKER.md).
 
 ## Site audits
 

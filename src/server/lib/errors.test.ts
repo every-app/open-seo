@@ -19,6 +19,11 @@ describe("toClientError", () => {
       ),
       message: "AUTH_CONFIG_MISSING",
     },
+    {
+      label: "names Cloudflare's subrequest limit",
+      error: new Error("Too many subrequests by single Worker invocation."),
+      message: "SUBREQUEST_LIMIT",
+    },
   ])("$label", ({ error, message }) => {
     expect(toClientError(error).message).toBe(message);
   });

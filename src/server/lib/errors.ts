@@ -16,6 +16,10 @@ export function asAppError(error: unknown): AppError | null {
   if (error instanceof Error && isErrorCode(error.message)) {
     return new AppError(error.message, error.message);
   }
+  // Cloudflare's own error when a Worker invocation or a workflow run has
+  // spent its subrequest budget.
+  if (error instanceof Error && error.message.includes("Too many subrequests"))
+    return new AppError("SUBREQUEST_LIMIT", error.message);
   return null;
 }
 

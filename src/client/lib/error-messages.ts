@@ -53,6 +53,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:
     "The data provider is temporarily unavailable. Please retry in a moment.",
+  SUBREQUEST_LIMIT:
+    "Cloudflare stopped this at its limit on requests per run. On Workers Paid, redeploy OpenSEO to raise it.",
   CONFLICT: "This request conflicts with existing data.",
   INTERNAL_ERROR: UNEXPECTED_ERROR_MESSAGE,
 };

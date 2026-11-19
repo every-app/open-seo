@@ -294,6 +294,72 @@ const resolveSelfHostAccess = (
     return { teamDomain, policyAud };
   });
 
+// Paid-plan Worker limits. A workflow run shares one subrequest budget across
+// its steps: a 10,000-page audit spent the 10,000 default before its
+// Lighthouse and billing calls, and a self-hosted AI visibility check spent it
+// partway through its answers.
+const PAID_WORKER_LIMITS = { cpuMs: 300_000, subrequests: 1_000_000 };
+
+/**
+ * The `limits` both workers deploy with. Hosted runs on Workers Paid. A
+ * self-host may run on Workers Free, which refuses PAID_WORKER_LIMITS (it caps
+ * subrequests at 50) and keeps the plan's defaults. The deploy's login can't
+ * read the account's plan, so a throwaway plan-check Worker asks Cloudflare:
+ * one upload with the limits and, only when that is refused, one without. A
+ * failure of the second upload is a real deploy problem, so it fails the
+ * deploy.
+ */
+const resolveWorkerLimits = (stage: string, selfHost: boolean) =>
+  Effect.gen(function* () {
+    if (!selfHost) return { limits: PAID_WORKER_LIMITS };
+    const { accountId } = yield* yield* Cloudflare.CloudflareEnvironment;
+    // A fixed name, so a check left behind by an interrupted deploy is
+    // replaced and deleted by the next one.
+    const scriptName = `${workerName(stage)}-plan-check`;
+    const upload = (limits?: typeof PAID_WORKER_LIMITS) =>
+      CfWorkers.putScript({
+        accountId,
+        scriptName,
+        metadata: {
+          mainModule: "probe.js",
+          compatibilityDate: wrangler.compatibility_date,
+          limits,
+        },
+        files: [
+          new File(
+            [
+              "export default { fetch: () => new Response(null, { status: 404 }) };",
+            ],
+            "probe.js",
+            { type: "application/javascript+module" },
+          ),
+        ],
+      });
+    const accepted = yield* upload(PAID_WORKER_LIMITS).pipe(
+      Effect.as(true),
+      Effect.catch(() => upload().pipe(Effect.as(false))),
+      Effect.catch((error) =>
+        Effect.die(
+          new Error(
+            `Could not upload a Worker to check the account's limits: ${String(error)}`,
+          ),
+        ),
+      ),
+    );
+    yield* CfWorkers.deleteScript({ accountId, scriptName }).pipe(
+      Effect.catch((error) =>
+        Effect.die(
+          new Error(`Could not delete ${scriptName}: ${String(error)}`),
+        ),
+      ),
+    );
+    if (accepted) return { limits: PAID_WORKER_LIMITS };
+    yield* Console.log(
+      "Workers Free: deploying with the plan's default limits. Site audits and AI visibility need Workers Paid (docs/SELF_HOSTING_CLOUDFLARE.md).",
+    );
+    return {};
+  });
+
 // Secrets/vars resolve from Config (`Config.redacted` → Cloudflare
 // `secret_text`, `Config.string` → plaintext var). Previews and self-host pass
 // an `--env-file`, which the alchemy CLI loads into Config, NOT process.env;
@@ -465,10 +531,10 @@ export default Alchemy.Stack(
     // sets a secret for them.
     const operatorSecret = yield* optionalSecret("OPENSEO_OPERATOR_SECRET");
 
-    // Self-host deploys may run on the free Workers plan, which rejects the
-    // paid-plan CPU limits below.
-    const selfHostPlan =
-      authMode === "cloudflare_access" || authMode === "password";
+    const workerLimits = yield* resolveWorkerLimits(
+      stage,
+      authMode === "cloudflare_access" || authMode === "password",
+    );
 
     // Created once and bound into BOTH workers — they share the same
     // D1/KV/R2 (and prod Hyperdrive). OAUTH_KV and FLAGS stay
@@ -491,14 +557,8 @@ export default Alchemy.Stack(
         flags: wrangler.compatibility_flags,
       },
       // Audit workflow steps parse and persist batches of HTML — the same
-      // CPU allowance the app worker used to carry for them. A workflow run
-      // shares one subrequest budget across its steps, and a 10,000-page
-      // audit spent the 10,000 default before its Lighthouse and billing
-      // calls. Configurable limits are a paid-plan feature (see
-      // selfHostPlan).
-      ...(selfHostPlan
-        ? {}
-        : { limits: { cpuMs: 300_000, subrequests: 200_000 } }),
+      // CPU allowance the app worker used to carry for them.
+      ...workerLimits,
       observability: {
         enabled: wrangler.observability?.enabled ?? true,
         traces: { enabled: wrangler.observability?.traces?.enabled ?? false },
@@ -563,12 +623,9 @@ export default Alchemy.Stack(
         date: wrangler.compatibility_date,
         flags: wrangler.compatibility_flags,
       },
-      // Site audits moved to the open-seo-audit worker, but RankCheckWorkflow
-      // still parses SERP batches here — keep the CPU allowance until that
-      // workflow's per-tick CPU is measured or it moves too. Configurable CPU
-      // limits are a paid-plan feature; self-host deploys get the plan
-      // default instead (see selfHostPlan).
-      ...(selfHostPlan ? {} : { limits: { cpuMs: 300_000 } }),
+      // RankCheckWorkflow parses SERP batches here, and AI visibility runs
+      // make an outgoing request per answer.
+      ...workerLimits,
       observability: {
         enabled: wrangler.observability?.enabled ?? true,
         traces: { enabled: wrangler.observability?.traces?.enabled ?? false },
