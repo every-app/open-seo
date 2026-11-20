@@ -67,19 +67,21 @@ Deliver through the `seo-report` skill, saving with `skill: "competitor-analysis
 
 ## Output format
 
-`h1`: the competitor domain.
+Title: "Competitor analysis" and the competitor's hostname, such as "Competitor analysis: example.com".
 
 If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Sections in this order:
+Use the report shape in `seo-report`: the verdict, "What to do", the moves, then the data. For a competitor analysis:
 
-1. **Snapshot** — one or two opening sentences, then a table of the competitor's organic footprint (traffic estimate, keyword count, referring domains). Add the user's domain as a second row when comparing.
-2. **The biggest lesson** — one finding.
-3. **Where they are vulnerable** — one finding per opening, ordered by how winnable it is.
-4. **Keyword themes** — a table of theme, example keywords, volume, and whether the user competes there. A bar chart when a few themes dominate the footprint.
-5. **Content patterns and authority** — prose, with a note for anything inferred from keyword rows rather than seen on a page.
-6. **What to do next** — an ordered list, shortest useful.
-7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/competitor-analysis` ("OpenSEO Competitor Analysis skill"), then which tools reported what, and what you checked yourself.
+1. **Verdict**: the biggest lesson in one sentence. What the competitor does that works, and where they can be beaten, with the number behind it.
+2. **The moves**: one per opening worth acting on, most winnable first, three at most.
+   - **Facts**: the theme's estimated demand, the competitor's position, and the user's position or "No page".
+   - **Do this**: the page to build or improve and the angle that answers the same intent better. Never "copy their page".
+   - **Why**: the evidence of the weakness, each bullet marked as seen on the page or inferred from keyword rows.
+3. **Snapshot**: a table of the competitor's organic footprint (traffic estimate, keyword count, referring domains), with the user's domain as a second row when comparing. One line above it on what the gap means.
+4. **Keyword themes**: Theme | Example keywords | Est. searches a month | Do you compete?. The themes the moves act on are the `pick` rows. A bar chart when a few themes dominate the footprint.
+5. **What they do well**: one table: Pattern | Evidence | What it means for you. Content patterns and authority go here, each ending in a decision: match it, beat it, or leave it.
+6. **How this report was made**: opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/competitor-analysis` ("OpenSEO Competitor Analysis skill"), then which tools reported what, and what you checked yourself.
 
 ## Guardrails
 

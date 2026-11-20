@@ -65,7 +65,7 @@ const saveInputSchema = {
     .string()
     .min(1)
     .describe(
-      `Report type or specific subject and full report date, e.g. "Competitive Landscape — Sep 17, 2026". Omit the project's website; include the subject's bare hostname only when it differs from the project website or the project has no website. Use the same title in the HTML title and h1. Never a generic label like "SEO Report". Max ${REPORT_MAX_TITLE_CHARS} characters.`,
+      `Report type, then its subject when it has one, e.g. "Keyword research: self-hosted apps" or just "SEO audit". No date, unless list_reports shows the title is taken by an earlier report that this one does not replace: then add the month, e.g. "SEO audit, December 2026". Omit the project's website; include the subject's bare hostname only when it differs from the project website or the project has no website. Use the same title in the HTML title and h1. Never a generic label like "SEO report". Max ${REPORT_MAX_TITLE_CHARS} characters.`,
     ),
   summary: z
     .string()

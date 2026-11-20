@@ -7,7 +7,7 @@ description: "Audit a website, investigate its real search opportunities, and de
 
 ## Goal
 
-Find the work that would most improve a site's useful organic traffic, then explain it so a non-expert can act on it. Research broadly; recommend selectively. The report leads with one to three recommendations that either capture meaningfully more qualified search demand or stop a real loss.
+Find the work that would most improve a site's useful organic traffic, then explain it so a non-expert can act on it. Research broadly; recommend selectively. The report leads with one to three moves that either capture meaningfully more qualified search demand or stop a real loss.
 
 Use this when asked for an SEO audit or review of a domain, especially for a shareable report. For expert-facing analysis of a competitor or market, use `competitor-analysis` or `competitive-landscape` instead.
 
@@ -85,53 +85,79 @@ Every shortlist row ends in one of two places: a recommendation, or a row in the
 
 ### 6. Review, then write
 
-Draft the report body (markdown or HTML, not yet saved). Give the reviewer (a second agent or model if your environment can run one, otherwise a fresh self-review) that draft and the shortlist. The reviewer must: argue the case for the strongest rejected row and say whether the draft answers it; confirm the leading recommendation's evidence is in the draft; confirm every material diagnosis from step 2 survived as a recommendation or a table row; check dates, geography, and rank conventions; and flag paragraph-length bullets and jargon. Fix what it finds, verify any new factual claim against the evidence, then write and save through `seo-report`.
+Draft the report body (markdown or HTML, not yet saved). Give the reviewer (a second agent or model if your environment can run one, otherwise a fresh self-review) that draft and the shortlist. The reviewer must: argue the case for the strongest rejected row and say whether the draft answers it; confirm the leading recommendation's evidence is in the draft; confirm every material diagnosis from step 2 survived as a recommendation or a table row; check dates, geography, and rank conventions; and flag jargon and any Do this step that names a kind of content without saying what goes in it. The reviewer argues the substance and leaves the wording alone. Fix what it finds and verify any new factual claim against the evidence. Then write the report through `seo-report` and run its "Clean the copy" pass on the result before saving: that pass cuts words, and it may not cut the leading recommendation's evidence or the answer to the strongest rejected row.
 
 ## Output format
 
-Use the title conventions in `seo-report`. Sections, in order:
+Title: "SEO audit", with the site's hostname after a colon only when it is not the project's own site. Use the report shape in `seo-report`: the verdict, "What to do", one move per recommendation, then the data. For an audit:
 
-1. **Your next SEO move**: two or three bullets. First action, next action if any, and what is already working. These bullets replace the starter template's opening paragraph and its closing "What to do next" section; include neither.
-2. **Recommendations**: one to three, in priority order. Each is an `h3` naming the action and the page or small group, then:
-   - **Do this**: two to four bullets. Start with a verb, name what changes, link the page.
-   - **Why**: two to four bullets. The observed gap, who searches and why they matter, the plausible benefit, the main uncertainty. Benefit and confidence stay together.
-   - A small evidence table (demand and current visibility, or stronger-versus-weaker sibling, or observed content versus proposed). Make the table explain itself: put geography and date in the column header, write positions as "#10 (page 1)" or "not in the first 20 results" (never "10/17", arrows, or listing counts), and say "estimated" in the volume header. Add a "How to read this" bullet only for a limit the headers cannot carry. Optionally a two-row scenario table labeled hypothetical.
-3. **What else we checked**: one table: Opportunity | What we found | Decision. One row per shortlist row that did not become a recommendation, starting with the runner-up and its sentence from step 4, plus one row grouping maintenance. Keep cells to a line.
-4. **How this report was made**: the fixed skill link line from `seo-report` (URL `https://openseo.so/docs/skills/seo-audit`, text "OpenSEO SEO Audit skill"), a two-line coverage and limits note, then a `<details><summary>Evidence and methodology</summary>` block, closed by default, holding the crawl sample, page families read, the full live-check table (query, volume, position, organic listings returned, time), calculations, and sources. Keep it self-contained; local file paths are not evidence.
+1. **Verdict**: one sentence naming the leading move and the observation or number that decides it.
+2. **What to do**: one to three moves in priority order. A page that already works is not a move; it is a "Leave alone" row in the checked table.
+3. **The moves**, each naming the page or small group in its heading:
+   - **Facts**: the estimated demand of the query cluster, where the page stands today ("#10 (page 1)", "Not in top 20"), and the size of the work ("One page", "New page"). A hypothetical visit scenario goes in Why, labeled as one.
+   - **Do this**: two to four steps. Start with a verb, link the page, and nest what changes under the step: the draft title, the sections to add, the pages to link from.
+   - **Why**: two or three bullets. The observed gap, who searches and why they matter, the plausible benefit and its main uncertainty together.
+   - A small evidence table when it shows what the facts cannot (the rest of the query cluster, a stronger-versus-weaker sibling, observed content versus proposed). When every row would show the same position, leave the table out: the facts already say it. Make the table explain itself: put geography and date in the column header, write positions as "#10 (page 1)" or "not in the first 20 results" (never "10/17", arrows, or listing counts), and say "est." in the volume header. Optionally a two-row scenario table labeled hypothetical.
+4. **What else we checked**: one table: Opportunity | What we found | Decision. One row per shortlist row that did not become a move, starting with the runner-up and its sentence from step 4, then pages to leave alone, then one row grouping maintenance. Keep cells to a line. Open with one line saying nothing here needs work now, and show the whole table: the runner-up is part of the answer, so this section is never a closed block.
+5. **How this report was made**: the fixed skill link line from `seo-report` (URL `https://openseo.so/docs/skills/seo-audit`, text "OpenSEO SEO Audit skill"), the Tools, Verified and Not established bullets, then the closed "Evidence and methodology" block holding the crawl sample, page families read, the full live-check table (query, volume, position, organic listings returned, time), calculations, and sources. Keep it self-contained; local file paths are not evidence.
 
-Writing rules: short bullets, one idea each, usually 8–20 words. No Problem / Change / Expected effect paragraphs and no repeated summaries. There is no word target; if the main body outgrows about two screens, move supporting detail into the disclosure instead of deleting it. If the research establishes no worthwhile action, say what is working and what the audit could not establish rather than filling the format.
+There is no word target. If the moves and the checked table outgrow about two screens, move supporting detail into the evidence block instead of deleting it. If the research establishes no worthwhile action, say what is working and what the audit could not establish rather than filling the format.
 
-Skeleton for one recommendation and the checked table (keep the `seo-report` CSS unchanged; every `h2` needs an id and a contents-rail entry):
+Skeleton for one move and the checked table (keep the `seo-report` CSS unchanged; every `h2` needs an id and a contents-rail entry):
 
 ```html
-<h2 id="recommendations">Recommendations</h2>
-<h3>Make the Northwind comparison answer a switching decision</h3>
-<p><strong>Do this</strong></p>
-<ul>
-  <li>Replace the shared table on <a href="URL" target="_blank" rel="noopener">/northwind-alternative</a> with Northwind-specific tradeoffs.</li>
-  <li>Add a sourced migration section: policies, evidence, audit continuity.</li>
-</ul>
-<p><strong>Why</strong></p>
-<ul>
-  <li>Same comparison text as two siblings; only the vendor name changes.</li>
-  <li>Searchers are already evaluating a switch, the closest fit to a demo.</li>
-  <li>Position-one scenario: about 40–60 total US visits a month. Hypothetical, not a forecast.</li>
-</ul>
-<div class="tw"><table>
-  <thead><tr><th>Query</th><th class="n">Est. US searches/mo</th><th>Acme position, US, Sep 18, 2026</th></tr></thead>
-  <tbody><tr><td>northwind alternative</td><td class="n">50</td><td>#9 (page 1)</td></tr></tbody>
-</table></div>
+<p class="verdict">The Northwind comparison page repeats its siblings word for word and sits at #9 for a search buyers make just before switching; rewrite it first.</p>
+
+<h2 id="what-to-do">What to do</h2>
+<ol class="plan">
+  <li><a href="#move-1">Make the Northwind comparison answer a switching decision</a><span>50 est. US searches a month from people already evaluating a switch; #9 today.</span></li>
+</ol>
+
+<section class="move" id="move-1">
+  <h3>Make the Northwind comparison answer a switching decision</h3>
+  <div class="facts">
+    <p><b>50</b> est. US searches a month</p>
+    <p><b>#9 (page 1)</b> Acme today, US, Sep 18</p>
+    <p><b>One page</b> to rewrite</p>
+  </div>
+  <div class="do">
+    <p class="label">Do this</p>
+    <ol>
+      <li>Replace the shared table on <a href="URL" target="_blank" rel="noopener">/northwind-alternative</a> with Northwind-specific tradeoffs.
+        <ul>
+          <li>Pricing at 10 and 50 seats, with the source for each figure</li>
+          <li>What Northwind does that Acme does not</li>
+        </ul>
+      </li>
+      <li>Add a section "Moving from Northwind": policies, evidence, audit continuity.</li>
+    </ol>
+  </div>
+  <p class="label">Why</p>
+  <ul class="why">
+    <li>Same comparison text as two siblings; only the vendor name changes.</li>
+    <li>Searchers are already evaluating a switch, the closest fit to a demo.</li>
+    <li>Position-one scenario: about 40 to 60 total US visits a month. Hypothetical, not a forecast.</li>
+  </ul>
+  <div class="tw"><table>
+    <thead><tr><th>Query</th><th class="n">Est. US searches a month</th><th>Acme position, US, Sep 18, 2026</th></tr></thead>
+    <tbody>
+      <tr class="pick"><td>northwind alternative</td><td class="n">50</td><td>#9 (page 1)</td></tr>
+      <tr><td>northwind vs acme</td><td class="n">20</td><td>not in the first 20 results</td></tr>
+    </tbody>
+  </table></div>
+</section>
 
 <h2 id="what-else-we-checked">What else we checked</h2>
+<p>Nothing here needs work now. Each row says why.</p>
 <div class="tw"><table>
   <thead><tr><th>Opportunity</th><th>What we found</th><th>Decision</th></tr></thead>
-  <tbody><tr><td>Software buying guide</td><td>390 est. US searches/mo; not in the first 20 results; page explains criteria, compares no vendors</td><td>Runner-up. Larger demand, but a weaker diagnosis and a full rewrite; test the comparison page first.</td></tr></tbody>
+  <tbody><tr><td>Software buying guide</td><td>390 est. US searches a month; not in the first 20 results; page explains criteria, compares no vendors</td><td>Runner-up. Larger demand, but a weaker diagnosis and a full rewrite; test the comparison page first.</td></tr></tbody>
 </table></div>
 ```
 
 ## Guardrails
 
-- Calm, plain tone. No exclamation points, drama words, or filler; no em dashes in prose (the report title convention in `seo-report` is the exception). Severity words only where literally true.
+- Calm, plain tone. No exclamation points, drama words, or filler; no em dashes. Severity words only where literally true.
 - Gloss each term of art in plain English on first use: canonical, meta description, crawler, 301, structured data.
 - Observations are not causes. Similar content plus uneven rankings, a crawler warning, or missing provider rows never prove a penalty, an indexing exclusion, or the reason a page ranks where it does.
 - Retrieval date is not observation date. Say when a ranking was observed, or say unknown.

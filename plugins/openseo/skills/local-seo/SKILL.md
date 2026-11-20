@@ -62,19 +62,20 @@ Always build the profile snapshot table for the whole chain — one `search_loca
 
 ## Output format
 
-`h1`: the business name.
+Title: "Local SEO audit", followed by the location when the business has several ("Local SEO audit: Naperville"), or by the business name when it is not the project's own.
 
 If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Sections in this order:
+Use the report shape in `seo-report`: the verdict, "What to do", the moves, then the data. For a local audit:
 
-1. **Snapshot** — one or two opening sentences, then a table of category, rating, review count, and claimed status. One row per location for a chain.
-2. **The one fix** — one finding. Category and claim problems outrank posting cadence every time.
-3. **Head to head** — a table of signal, this business, the best competitor, and the gap. Cover categories, reviews (count, recency, owner replies), hours and profile completeness, and the listing's website link.
-4. **Maps coverage** — the grid drawn as described in "Drawing the grid" below, its four stat blocks, then what it shows: where visibility drops off, in which direction, and who wins there.
-5. **Q&A and posting** — only when the basics are already competitive.
-6. **What to do next** — an ordered list.
-7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/local-seo` ("OpenSEO Local SEO skill"), then which tools returned what, plus a note reading each missing grid rank against that point's `resultsCount` rather than calling it invisibility.
+1. **Verdict**: where the listing stands against the best competitor, and the one fix.
+2. **The moves**: the one fix first, then at most two more. Category and claim problems outrank posting cadence every time. Q&A and posting become a move only when the basics are already competitive.
+   - **Facts**: the signal for this business beside the best competitor's ("38 reviews", "212 for Rival"), and the grid result ("Top 3 at 4 of 9 points").
+   - **Do this**: the exact setting to change in the Google Business Profile, with the value to set nested under it: the category to pick, the hours to add, the page the website link should point at.
+   - **Why**: what the head-to-head and the grid show.
+3. **Head to head**: a table of signal, this business, the best competitor, and the gap. Cover categories, reviews (count, recency, owner replies), hours and profile completeness, claimed status, and the listing's website link. The signals the moves fix are the `pick` rows. For a chain, add a snapshot table with one row per location.
+4. **Maps coverage**: the grid drawn as described in "Drawing the grid" below, its four stat blocks, then what it shows: where visibility drops off, in which direction, who wins there, and which move answers it.
+5. **How this report was made**: opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/local-seo` ("OpenSEO Local SEO skill"), then which tools returned what, plus a note reading each missing grid rank against that point's `resultsCount` rather than calling it invisibility.
 
 ## Drawing the grid
 

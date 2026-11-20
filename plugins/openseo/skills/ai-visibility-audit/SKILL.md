@@ -87,13 +87,18 @@ For each: the prompts it serves, the evidence (answers, cited pages, engines), t
 
 ## What to return
 
-Deliver through the `seo-report` skill, saving with `skill: "ai-visibility-audit"` and a title like "AI Visibility Audit — Oct 2, 2026". If that skill is unavailable, say so and stop before writing HTML. Sections, in order:
+Deliver through the `seo-report` skill, saving with `skill: "ai-visibility-audit"` and the title "AI visibility audit". If that skill is unavailable, say so and stop before writing HTML. Use its report shape: the verdict, "What to do", the moves, then the data. For this audit:
 
-1. **Where you stand in AI answers**: three bullets. Mention and citation rates with denominators for the strongest and weakest topics (or engines, when only one topic has neutral prompts), the number of branded prompts left out of these rates, the competitor that appears most often when the brand does not, and what is already working.
-2. **Recommendations**: one to three `h3` items in priority order. Each has **Do this** (two to four bullets, starting with a verb and naming the page) and **Why** (the prompts and engines, the cited pages behind the gap, and the main uncertainty), plus a small evidence table: Prompt | Engines naming a competitor, not you | Pages cited instead.
-3. **What AI cites in your market**: one table of the top recurring sources. Source | Type | Answers citing it | Lists you? | Lists competitors.
-4. **What else we checked**: Opportunity | What we found | Decision, one line per shortlist row that did not become a recommendation.
-5. **How this report was made**: the fixed skill link line from `seo-report` (URL `https://openseo.so/docs/skills/ai-visibility-audit`, text "OpenSEO AI Visibility Audit skill"), the run ID, collection date, market, engines and coverage, then a `<details><summary>Evidence and methodology</summary>` block with the prompts, the answers and pages read, any fan-out queries checked, and the `robots.txt` rules found.
+1. **Verdict**: the sentence a founder would repeat, built from the evidence: how often AI answers name the brand, with the denominator, and who they name instead.
+2. **The moves**: one to three in priority order.
+   - **Facts**: the prompts the move serves out of those checked ("6 of 14 prompts"), the engines, and the source cited instead.
+   - **Do this**: two to four steps, starting with a verb and naming the page or the third-party source.
+   - **Why**: the prompts and engines, the cited pages behind the gap, and the main uncertainty.
+   - A small evidence table: Prompt | Engines naming a competitor, not you | Pages cited instead.
+3. **Where you stand in AI answers**: three bullets. Mention and citation rates with denominators for the strongest and weakest topics (or engines, when only one topic has neutral prompts), the number of branded prompts left out of these rates, the competitor that appears most often when the brand does not, and what is already working.
+4. **What AI cites in your market**: one table of the top recurring sources. Source | Type | Answers citing it | Lists you? | Lists competitors. The sources the moves act on are the `pick` rows.
+5. **What else we checked**: Opportunity | What we found | Decision, one line per shortlist row that did not become a move.
+6. **How this report was made**: the fixed skill link line from `seo-report` (URL `https://openseo.so/docs/skills/ai-visibility-audit`, text "OpenSEO AI Visibility Audit skill"), the run ID, collection date, market, engines and coverage, then the closed "Evidence and methodology" block with the prompts, the answers and pages read, any fan-out queries checked, and the `robots.txt` rules found.
 
 In chat, lead with one sentence a founder would repeat, built from the evidence, for example: "When people ask AI for the best invoicing app for freelancers, 3 of 4 engines name FreshBooks and cite two review articles that don't list you." Then the leading recommendation and the report link.
 

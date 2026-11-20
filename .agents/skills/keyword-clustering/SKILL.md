@@ -61,18 +61,23 @@ Deliver through the `seo-report` skill, saving with `skill: "keyword-clustering"
 
 ## Output format
 
-`h1`: the site or keyword set.
+Title: "Keyword clustering" and the keyword set, such as "Keyword clustering: invoicing keywords". A map of the whole site's keywords is just "Keyword clustering".
 
 If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Sections in this order:
+Use the report shape in `seo-report`: the verdict, "What to do", the moves, then the data. For a cluster map:
 
-1. **The map** — one or two opening sentences: how many clusters, how many pages to create, how many to update, and any cannibalization found.
-2. **Clusters** — a table of cluster, primary keyword, intent, target page, and priority. Keep secondary keywords in the per-cluster briefs, not in this table.
-3. **Page briefs** — one finding per cluster: the page type and the searcher's problem, then the page to create or update. List required sections and internal links underneath.
-4. **Cannibalization** — a table of the query, the competing URLs, and which one to keep, only when there is real evidence for it.
-5. **What to do next** — an ordered list, including the tag suggestions and the explicit ask before applying them.
-6. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/keyword-clustering` ("OpenSEO Keyword Clustering skill"), then where the keywords came from, and a note labelling target pages as proposed when no URL data was supplied.
+1. **Verdict**: how many clusters, how many pages to create and how many to update, which comes first, and any cannibalization found.
+2. **The moves**: the three highest-priority pages, each a page brief.
+   - **Facts**: the cluster's estimated monthly demand, how many keywords it holds, and "New page" or the existing URL to update.
+   - **Do this**: the page to create or update, a draft title on the primary keyword, the required sections nested under one step, and the pages to link from nested under another.
+   - **Why**: the searcher's problem, and the SERP evidence that these keywords belong on one page.
+3. **The cluster map**: one table of every cluster: Cluster | Primary keyword | Intent | Target page | Priority. The moves are the `pick` rows. Keep secondary keywords out of this table.
+4. **The other pages**: one `h3` per remaining cluster in priority order, each a short list: the page to create or update, its sections, its secondary keywords.
+5. **Cannibalization**: a table of the query, the competing URLs, and which one to keep, only when there is real evidence for it.
+6. **How this report was made**: opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/keyword-clustering` ("OpenSEO Keyword Clustering skill"), then where the keywords came from, and a note labelling target pages as proposed when no URL data was supplied.
+
+Suggest the tags and ask before applying them in chat after the link. The report does not carry questions.
 
 ## Guardrails
 

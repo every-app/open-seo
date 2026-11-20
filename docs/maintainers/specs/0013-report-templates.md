@@ -23,7 +23,7 @@ Accepted. Shipped in PR #615, on top of reports (`specs/0012-dynamic-reports.md`
 - Reuse across projects is a copy, not a shared row: list the template in one project, save it in the other.
 - A template replaces the section list, audience and tone. It never changes the HTML constraints, so the report still prints and still opens on a phone.
 
-**Discovery.** The project-context digest that every skill reads first, and that SAM sees every turn, gains a "Report templates" section listing name and description, omitted when there are none. The `seo-report` skill carries the opt-in rule. The starter CSS gains an accent variable used by bar fills and finding labels; a template may set that, the byline and the footer, and nothing else in the CSS.
+**Discovery.** The project-context digest that every skill reads first, and that SAM sees every turn, gains a "Report templates" section listing name and description, omitted when there are none. The `seo-report` skill carries the opt-in rule. The starter CSS gains an accent variable used by bar fills, the plan numbers and the "Do this" box; a template may set that, the byline and the footer, and nothing else in the CSS.
 
 Template saves are counted in telemetry. Erasing a user re-attributes the templates they created.
 

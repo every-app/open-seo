@@ -65,18 +65,20 @@ Deliver through the `seo-report` skill, saving with `skill: "competitive-landsca
 
 ## Output format
 
-`h1`: the market or category.
+Title: "Competitive landscape" and the market or category, such as "Competitive landscape: invoicing software".
 
 If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Sections in this order:
+Use the report shape in `seo-report`: the verdict, "What to do", the moves, then the data. For a market read:
 
-1. **The market read** — one or two opening sentences naming the leaders, the most winnable area, and the biggest barrier.
-2. **Who is winning** — a table of domain, type, organic footprint, winning themes, and the gap. Label domain types explicitly.
-3. **Why they win** — one finding per pattern, the Fix pointing at what the user should do instead.
-4. **Gaps and openings** — a table of theme, demand, and who currently owns it, plus a bar chart when a handful of themes carry the demand.
-5. **What to do next** — an ordered list ending in the next workflow to run: competitor analysis, keyword clustering, or a content brief.
-6. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/competitive-landscape` ("OpenSEO Competitive Landscape skill"), then the query set used, and a note calling the read directional when the query set was small.
+1. **Verdict**: who leads, the most winnable area, and the biggest barrier, in one sentence.
+2. **The moves**: one per opening to go after, three at most.
+   - **Facts**: the theme's estimated demand, who owns it now, and where the user stands.
+   - **Do this**: the page or group of pages to build, then the workflow to run next for it: competitor analysis on a named domain, keyword clustering, or a content brief.
+   - **Why**: the pattern behind who wins there, and why the opening is real.
+3. **Who is winning**: a table of domain, type, organic footprint, winning themes, and the gap. Label domain types explicitly.
+4. **Gaps and openings**: a table of theme, demand, and who currently owns it, with the moves as `pick` rows, plus a bar chart when a handful of themes carry the demand.
+5. **How this report was made**: opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/competitive-landscape` ("OpenSEO Competitive Landscape skill"), then the query set used, and a note calling the read directional when the query set was small.
 
 ## Guardrails
 

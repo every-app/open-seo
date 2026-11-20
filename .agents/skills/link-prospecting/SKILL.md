@@ -94,19 +94,20 @@ Use `get_serp_results` in batches for the most relevant patterns. Send at most 1
 
 ## Output format
 
-`h1`: the linkable asset.
+Title: "Link prospecting" and the linkable asset, such as "Link prospecting: invoice template library".
 
 If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Sections in this order:
+Use the report shape in `seo-report`: the verdict, "What to do", the moves, then the data. For link prospecting:
 
-1. **The angle** — one or two opening sentences naming the best outreach angle and the prospect type to work first.
-2. **Prospects** — a table of prospect URL, site, source, suggested angle, contact path, and priority. Keep it under about eight columns; drop the ones that add nothing for this run.
-3. **Why these** — one finding per prospect worth explaining: the evidence that they link to things like this, then the exact ask.
-4. **Outreach drafts** — the message text for each of two or three reusable angles: resource or list inclusion, an article update, and a comparison mention.
-5. **Limitations** — notes: contact paths not found, prospects that are direct competitors or likely paid placements, and which source found each contact detail.
-6. **What to do next** — an ordered list: who to send to first, and in what order.
-7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/link-prospecting` ("OpenSEO Link Prospecting skill"), then which tools returned prospects and which came from the web or the browser.
+1. **Verdict**: the best outreach angle and the prospect type to work first, with how many prospects it covers.
+2. **The moves**: one per outreach angle, in sending order, three at most: resource or list inclusion, an article update, a comparison mention.
+   - **Facts**: how many prospects fit the angle, and how many have a contact path.
+   - **Do this**: who to write to first, each prospect nested with its page and contact path, then the exact ask.
+   - **Why**: the evidence that these pages link to things like this.
+3. **Outreach drafts**: the message text for each angle, under an `h3` naming it. One line above them: personalize the first sentence for each page before sending.
+4. **Prospects**: one table: Prospect page | Site | Angle | Contact path | Priority. The first batch to send are the `pick` rows. A direct competitor or a likely paid placement says so in its Priority cell.
+5. **How this report was made**: opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/link-prospecting` ("OpenSEO Link Prospecting skill"), then which tools returned prospects, which came from the web or the browser, and which source found each contact detail. Contact paths not found go under Not established.
 
 ## Guardrails
 

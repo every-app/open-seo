@@ -62,19 +62,23 @@ Deliver through the `seo-report` skill, saving with `skill: "keyword-research"`.
 
 ## Output format
 
-`h1`: the site or topic.
+Title: "Keyword research" and the topic researched, such as "Keyword research: self-hosted apps". Research across the whole site with no narrower topic is just "Keyword research".
 
 If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Sections in this order:
+Use the report shape in `seo-report`: the verdict, "What to do", the moves, then the data. For keyword research:
 
-1. **The opportunity** — one or two opening sentences naming the best theme and why the site can win it now.
-2. **Target these now** — a table of keyword, intent, volume, KD, CPC, and the page to make. Add a bar chart comparing the volumes of the shortlist.
-3. **Why these** — one finding per keyword that needs justifying: the SERP or metric evidence, then the page to build.
-4. **The longer opportunity list** — a second table, same columns.
-5. **Risks and caveats** — notes: SERP intent that would change the recommendation, missing metrics written as `unknown`, close-variant volumes that are one bucket rather than several.
-6. **What to do next** — an ordered list, including whether to run keyword clustering, write a content brief, or save the chosen keywords.
-7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/keyword-research` ("OpenSEO Keyword Research skill"), then which tools returned what.
+1. **Verdict**: the best theme and why the site can win it now, with its demand.
+2. **The moves**: one per page to create or rework, three at most, ordered by fit and winnability, not volume. A move covers every keyword one page should target, never one keyword.
+   - **Facts**: the page's estimated monthly demand with close variants counted once, the lead keyword's KD (keyword difficulty, 0 to 100), and where the site ranks today if it does.
+   - **Do this**: the page to create or rework (its URL or a proposed slug), a draft title built on the lead keyword, and the secondary keywords nested as the sections to cover.
+   - **Why**: the SERP or metric evidence. Who holds page one, with what kind of page, and why this site can compete.
+   - No table. The page's other keywords are rows in the keyword list.
+3. **The keyword list**: one table of every keyword worth keeping, grouped by the page each belongs to: Keyword | Est. searches a month | KD | Page. The lead keywords are the `pick` rows. Leave CPC out unless it decided something. Open with one line saying how to use it: the marked rows are the plan, the rest are for the same pages or for later. Add a bar chart only when it compares demand between the pages.
+4. **Left out**: only when the reader would expect a term that is missing. One line, then a closed `<details>` holding one table: Keyword | Why not.
+5. **How this report was made**: opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/keyword-research` ("OpenSEO Keyword Research skill"), then which tools returned what. Metrics OpenSEO did not return and close-variant volumes that are one bucket go under Not established.
+
+Ask whether to save the chosen keywords, or to run keyword clustering on the list, in chat after the link. The report does not carry questions.
 
 ## Guardrails
 
