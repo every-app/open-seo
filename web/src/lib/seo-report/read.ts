@@ -11,8 +11,6 @@ export async function readReport(
   token: string,
 ): Promise<StoredReport | null> {
   if (!/^[a-f0-9]{32}$/.test(token)) return null;
-  // Typed here because an RPC answer also carries a disposer, which a server
-  // function can't send to the page.
   const report: StoredReport | null = await desk(env).report(token);
   return report && !isRemoved(report.site) ? report : null;
 }

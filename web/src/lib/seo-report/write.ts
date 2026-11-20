@@ -38,7 +38,7 @@ import { newRun, reportTools, SUBMIT_TOOL, submissionSchema } from "./tools";
 // dollar or time limit ends without a report. One that reaches a tool's limit
 // is told so and finishes with what it has. What it hands in is checked
 // against the expected shape; its links and images are dealt with where the
-// report is shown (report-markdown.tsx).
+// report is made into a PDF (pdf.ts).
 
 const RUN_MS = REPORT_LIMITS.runMinutes * 60_000;
 const MODEL_RETRIES = 5;

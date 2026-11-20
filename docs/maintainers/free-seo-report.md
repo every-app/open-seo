@@ -2,8 +2,9 @@
 
 A visitor enters a website and an email address at `openseo.so/seo-report`.
 The website Worker (`web/`, `open-seo-landing`) writes a "Search opportunity"
-report for that site and emails a link to it, with a link to create an OpenSEO
-account. Partner sites can send the same request from a form of their own.
+report for that site and emails a link that downloads it as a PDF, with a link
+to create an OpenSEO account. A report has no page. Partner sites can send the
+same request from a form of their own.
 
 The code is `web/src/lib/seo-report/`. Shared protections (Turnstile, the
 per-visitor rate limiter, the daily budget) are the free tools' own:
@@ -137,12 +138,22 @@ can only call the tools it is given and no key is ever in front of it.
   same way before it is followed. A `robots.txt` is read once per site, up to
   500 KB. One that answers 429 or a server error, or lists more than 5,000
   rules for this crawler, means the site is left alone.
-- **What is published.** Nobody reads a report before it goes out, and the
-  site it is about shapes what the model writes. So the report page shows no
+- **The PDF.** `pdf.ts` draws the report with pdfmake, from the stored
+  Markdown, each time its link is opened: US Letter, the title, the headline
+  numbers, the body with its tables, page numbers, and the link to create an
+  account. Nothing stores the PDF. It is drawn in the request, which took
+  0.07 to 0.2 seconds in local workerd for the real reports tried, and made
+  files of 52 to 63 KB. The code is a part of the Worker that loads only for
+  a download, so no other request starts it. It added 763 KiB to the Worker's
+  compressed upload (1,286 to 2,049 KiB), most of it the Roboto typeface.
+- **What a report may carry.** Nobody reads a report before it goes out, and
+  the site it is about shapes what the model writes. So the PDF has no
   images, and a link stays a link only when it goes to the report's own site,
-  a site on a results page the report checked, or openseo.so. The filter runs
-  on the parsed Markdown (`report-markdown.tsx`), links are `nofollow ugc`,
-  and the page says it was written automatically.
+  a site on a results page the report checked, or openseo.so. PDF readers
+  make links of written-out addresses by themselves, so any other address
+  loses its `https://` and `www.`. The filter runs on the parsed Markdown
+  (`pdf.ts`), raw HTML is printed as text, and the first page says the report
+  was written automatically.
 - **Why there is no report.** The model may stop for a reason from a fixed
   list: the company has closed, the site has moved, or it doesn't serve the
   United States. The failure email says our sentence for that reason
@@ -154,10 +165,13 @@ can only call the tools it is given and no key is ever in front of it.
   network. Nothing logs an address. Emails are Loops transactional sends with
   `addToAudience: false`, so nobody becomes a contact.
 - **A report's link** is `/seo-report/r/<token>`, where the token is 122
-  random bits, for 90 days. The page is `noindex`, and nothing that records
-  page addresses runs on it: no Plausible, no OpenAnalytics, no Meta Pixel
-  (`routes/__root.tsx`, `routes/js/meta[.]js.ts`). The link is still in the
-  Worker's own invocation logs and in Loops, which sent it.
+  random bits, for 90 days. It answers with the PDF as a download named for
+  the site (`seo-report-example.com.pdf`), marked `noindex` and `no-store`.
+  No page is served at a report's address, so no script that records page
+  addresses ever runs there. The link is still in the Worker's own invocation
+  logs and in Loops, which sent it. A link with no report behind it gets the
+  site's "not found" page. Reports were pages at the same links for their
+  first days, from 2026-11-18: those links now download the PDF too.
 
 ## Limits
 
@@ -328,8 +342,8 @@ pnpm exec wrangler tail open-seo-landing --format json --search seo_report_
 | 1   | `curl https://openseo.so/api/seo-report`                                                             | `{"open":true}`. `false` means a secret is missing; the log names it                                                                                                                |
 | 2   | Ask for a report on a US site of ours at `https://openseo.so/seo-report`                             | The page says to check the inbox. Within two minutes a `seo_report_written` line whose `countedUsd` and `chargedUsd` agree, no `seo_report_cost_mismatch` line, and the ready email |
 | 3   | Ask again at once with the same address and another site                                             | "That address has already asked for a report today." Nothing starts                                                                                                                 |
-| 4   | `curl -sI https://openseo.so/seo-report/r/<token from the email>`                                    | `x-robots-tag: noindex, nofollow`, and no `cache-control: public`                                                                                                                   |
-| 5   | Open the report with the browser's network panel showing                                             | No request to `/js/script.js`, `/api/event`, `analytics.everyapp.team`, `/js/meta.js` or `connect.facebook.net`                                                                     |
+| 4   | `curl -sI https://openseo.so/seo-report/r/<token from the email>`                                    | `content-type: application/pdf`, `content-disposition: attachment`, `x-robots-tag: noindex, nofollow` and `cache-control: private, no-store`                                        |
+| 5   | Open the link from the email in a browser                                                            | A file named `seo-report-<site>.pdf` downloads and opens. No page is shown                                                                                                          |
 | 6   | Ask for a report on a site that isn't for the United States, such as `richersounds.com`              | A `seo_report_failed` line with `side: "site"`, and the failure email with the United States sentence. This is the first real send of the failed template                           |
 | 7   | Submit from SF SEO's form, and from `https://www.openseo.so/seo-report` if `www` doesn't redirect    | Both are taken. `not_human` means that hostname is missing from the Turnstile widget                                                                                                |
 | 8   | `pnpm exec wrangler workflows instances describe seo-report latest`                                  | The "write report" step succeeded once. In the dashboard's Workers observability, that invocation's CPU time is far under 30,000 ms                                                 |
@@ -436,12 +450,14 @@ A production build ignores the variable.
   request to a name goes is Cloudflare's network's doing.
 - Account creation carries the site (`?domain=`) but not the report. The
   report stays at its link.
-- Every view of a report is one read of the one Durable Object: a single
-  indexed lookup, about $0.002 for ten thousand views. A flood of made-up
-  links would queue ahead of new requests without spending anything. A cache
-  wouldn't help, because each made-up link is a new address; a rate-limit
-  rule on `/seo-report/r/*` in Cloudflare would.
+- Every download is one read of the one Durable Object, a single indexed
+  lookup, and then about a tenth of a second of the Worker's CPU to draw the
+  PDF. A made-up link costs only the lookup: a flood of them would queue
+  ahead of new requests without spending anything. A cache wouldn't help,
+  because each made-up link is a new address; a rate-limit rule on
+  `/seo-report/r/*` in Cloudflare would.
+- The PDF's typeface has Latin, Greek and Cyrillic letters. A report holding
+  anything else prints gaps there.
+- A PDF reader may still make a link of a written-out email address.
 - A reservation is lost if the Durable Object is evicted in the moment
   between reserving and starting a run. The day then starts one report fewer.
-- On a report's page the footer's privacy choices link does nothing, because
-  the scripts those choices are about aren't loaded there.

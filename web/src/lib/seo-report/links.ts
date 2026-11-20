@@ -1,5 +1,4 @@
-// Where a report's links may go, and the links the tool itself makes. Shared
-// by the Worker and the report page, so it imports nothing.
+// Where a report's links may go, and the links the tool itself makes.
 
 const OPENSEO = "openseo.so";
 
@@ -17,8 +16,6 @@ export function mayLink(
   hosts: readonly string[],
 ): boolean {
   if (!address) return false;
-  // A link within the report page itself, such as "#method".
-  if (address.startsWith("#")) return true;
   let url: URL;
   try {
     url = new URL(address);
@@ -31,24 +28,13 @@ export function mayLink(
   return within(host, site) || within(host, OPENSEO) || hosts.includes(host);
 }
 
-const REPORT_PATH_PREFIX = "/seo-report/r/";
-export const reportPath = (token: string) => `${REPORT_PATH_PREFIX}${token}`;
-
-/**
- * Whether a page is a written report. Its address is the only way to it, so
- * nothing that records page addresses runs there: no Plausible, no
- * OpenAnalytics, no Meta Pixel.
- */
-export const isReportPath = (pathname: string) =>
-  pathname.startsWith(REPORT_PATH_PREFIX);
-
-/** The same test as a line of browser JavaScript, for the script in the page's head. */
-export const IS_REPORT_PATH_JS = `location.pathname.indexOf(${JSON.stringify(REPORT_PATH_PREFIX)})===0`;
+/** The link in a report's email. It downloads the report as a PDF (routes/_marketing/seo-report_.r.$token.tsx). */
+export const reportPath = (token: string) => `/seo-report/r/${token}`;
 
 /**
  * Where someone is sent to make an OpenSEO account. Onboarding fills the site
  * in from `domain`. `from` says where the link was: the form's site for the
- * email, or the report page.
+ * email, or the report itself.
  */
 export function signupUrl(site: string, from: string) {
   const url = new URL("https://app.openseo.so/sign-up");

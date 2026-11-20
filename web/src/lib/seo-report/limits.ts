@@ -22,7 +22,7 @@ export const REPORT_LIMITS = {
   askersPerSite: 20,
   /** A report this recent is emailed again instead of written again. */
   reuseDays: 30,
-  /** A report's page stops being served after this long. */
+  /** A report's link stops working after this long. */
   keepDays: 90,
   /** Pages of the site one report may read. */
   pages: 12,
