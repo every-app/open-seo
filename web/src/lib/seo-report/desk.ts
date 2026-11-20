@@ -10,6 +10,7 @@ import {
 import { EmailSend, sendReportEmail, type Ending } from "./email";
 import { ReportFailure } from "./failure";
 import { REPORT_LIMITS } from "./limits";
+import { moveSchema } from "./plan";
 import { sha256Hex, utcDay } from "./site";
 
 // Everything the SEO report tool remembers, in one object with one SQLite
@@ -36,8 +37,11 @@ const storedReportSchema = z.object({
   site: z.string(),
   title: z.string().min(1),
   headline: z.string(),
-  takeaways: z.array(z.string()),
-  stats: z.array(z.object({ label: z.string(), value: z.string() })),
+  // A report written before the plan had fields (2026-11-20) has none of
+  // these three: its plan is in its Markdown, and it is drawn from that.
+  standing: z.string().nullable().default(null),
+  customer: z.string().default(""),
+  moves: z.array(moveSchema).default([]),
   markdown: z.string().min(1),
   /** Sites the report may link to besides its own: the ones on the results pages it checked. */
   hosts: z.array(z.string()),

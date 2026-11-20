@@ -21,13 +21,32 @@ import type { StoredReport } from "./desk";
 import { ReportFailure } from "./failure";
 import { REPORT_LIMITS } from "./limits";
 import { reportModel } from "./model";
-import { reportPrompt, reportTitle } from "./prompt";
-import { newRun, reportTools, SUBMIT_TOOL, submissionSchema } from "./tools";
+import {
+  DRAFT_RECEIVED,
+  editPrompt,
+  editRefused,
+  reportPrompt,
+  reportTitle,
+} from "./prompt";
+import {
+  newRun,
+  reportTools,
+  SUBMIT_TOOL,
+  submissionSchema,
+  type Submission,
+} from "./tools";
 
 // Writes one report: a model follows the skill, looking up search data and
 // reading the site's pages, until it hands the report in. It runs inside one
 // Workflow step, in the Worker: the model can only call the tools in
 // tools.ts, so there is nothing to sandbox and no key it could read.
+//
+// What it hands in first is a draft. It is then asked to edit the draft
+// with the clean-copy skill, and what it hands in next is the report. The edit is the same conversation, so the
+// research is still in front of the model while it cuts, and the second
+// hand-in is held to everything the first was. It may change words, and not
+// the plan's data (dataChanged): an edit that does is refused with what
+// differed, and the model may hand in once more.
 //
 // The model's provider can turn a run away part-way, after its search data
 // is paid for. Each model call is retried for about a minute, and a run that
@@ -61,6 +80,23 @@ const fromProvider = (error: unknown) =>
 const chargedSchema = z.object({
   openrouter: z.object({ usage: z.object({ cost: z.number() }) }),
 });
+// And which host answered.
+const hostSchema = z.object({ openrouter: z.object({ provider: z.string() }) });
+
+/**
+ * What an edit changed in the plan's data, in words the model can act on,
+ * or null when it left the data alone: the same moves in the same order,
+ * each with the keyword, searches, difficulty and page it had.
+ */
+function dataChanged(draft: Submission, edited: Submission): string | null {
+  if (draft.moves.length !== edited.moves.length)
+    return `the draft had ${draft.moves.length} moves and the edit has ${edited.moves.length}`;
+  for (const [index, move] of draft.moves.entries())
+    for (const field of ["keyword", "searches", "difficulty", "page"] as const)
+      if (move[field] !== edited.moves[index]?.[field])
+        return `move ${index + 1}'s ${field} was ${JSON.stringify(move[field])} and the edit has ${JSON.stringify(edited.moves[index]?.[field])}`;
+  return null;
+}
 
 type Step = StepResult<ToolSet>;
 const tokens = (steps: Step[]) =>
@@ -155,6 +191,21 @@ export async function writeReport(
     chargedUsd: Number(charged().toFixed(4)),
     modelCalls: steps.length,
     tokens: tokens(steps),
+    // Which hosts answered, and how much the model reasoned in all: a host
+    // that ignores the reasoning effort shows here as zero.
+    providers: [
+      ...new Set(
+        steps.flatMap(
+          (step) =>
+            hostSchema.safeParse(step.providerMetadata).data?.openrouter
+              .provider ?? [],
+        ),
+      ),
+    ],
+    reasoningTokens: steps.reduce(
+      (sum, step) => sum + (step.usage.outputTokenDetails.reasoningTokens ?? 0),
+      0,
+    ),
     // What it did, in order, to tell a thin report from a thorough one.
     calls: steps.flatMap((step) => step.toolCalls.map((call) => call.toolName)),
   });
@@ -209,65 +260,118 @@ export async function writeReport(
 
     // The conversation so far: the prompt, then every finished model call
     // and the tool answers it got.
-    const prompt: ModelMessage = {
-      role: "user",
-      content: reportPrompt(site, new Date().toISOString().slice(0, 10)),
-    };
-    let finished: ModelMessage[] = [];
-    const attempt = (messages: ModelMessage[]) =>
-      generateText({
+    let said: ModelMessage[] = [{ role: "user", content: reportPrompt(site) }];
+    /** Lets the model go on from what has been said until it hands in or reaches a limit. */
+    const attempt = () => {
+      const before = said;
+      return generateText({
         model,
-        messages,
+        messages: before,
         tools,
         stopWhen: [hasToolCall(SUBMIT_TOOL), atLimit],
         onStepFinish: (step) => {
           steps.push(step);
-          finished = step.response.messages;
+          said = [...before, ...step.response.messages];
         },
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         maxRetries: MODEL_RETRIES,
         abortSignal,
       });
-    const result = await attempt([prompt]).catch(async (error: unknown) => {
-      // A call is only made with allowance left, and a failed one uses none,
-      // so the second try starts under every limit and counts toward them.
-      if (!fromProvider(error)) throw error;
-      console.warn(
-        JSON.stringify({ event: "seo_report_resumed", site, ...used() }),
+    };
+    let pickedUp = false;
+    const turn = () =>
+      attempt().catch(async (error: unknown) => {
+        // A call is only made with allowance left, and a failed one uses
+        // none, so the second try starts under every limit and counts
+        // toward them. A run is picked up once.
+        if (pickedUp || !fromProvider(error)) throw error;
+        pickedUp = true;
+        console.warn(
+          JSON.stringify({ event: "seo_report_resumed", site, ...used() }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, RESUME_AFTER_MS));
+        return attempt();
+      });
+    /** What a turn handed in, with the call that carried it, or why it can't be used. */
+    const handedIn = (result: Awaited<ReturnType<typeof attempt>>) => {
+      if (steps.some(unmetered))
+        return fail(
+          FailedSide.Provider,
+          "a model reply didn't say how many tokens it used, so it couldn't be priced",
+        );
+      const call = result.toolCalls.find(
+        (call) => call.toolName === SUBMIT_TOOL,
       );
-      await new Promise((resolve) => setTimeout(resolve, RESUME_AFTER_MS));
-      return attempt([prompt, ...finished]);
-    });
+      if (!call)
+        return fail(
+          FailedSide.Ours,
+          "it reached a limit before the report was handed in",
+        );
+      const submission = submissionSchema.safeParse(call.input);
+      if (!submission.success)
+        return fail(FailedSide.Ours, "what it handed in doesn't fit");
+      const { status, reason, headline, moves, markdown } = submission.data;
+      // A stop must say why from the list, and a report must not: the reason
+      // chooses a sentence in an email, so it is never taken on trust.
+      if ((status === "blocked") !== (reason !== null))
+        return fail(FailedSide.Ours, "its status and its reason disagree");
+      if (reason !== null)
+        return fail(
+          reason === ReportFailure.Failed ? FailedSide.Ours : FailedSide.Site,
+          `the model stopped (${reason}): ${headline}`,
+          reason,
+        );
+      if (!moves.length) return fail(FailedSide.Ours, "the report has no plan");
+      if (!markdown.trim()) return fail(FailedSide.Ours, "the report is empty");
+      return { id: call.toolCallId, submission: submission.data };
+    };
 
-    if (steps.some(unmetered))
-      return fail(
-        FailedSide.Provider,
-        "a model reply didn't say how many tokens it used, so it couldn't be priced",
-      );
-    const handedIn = result.toolCalls.find(
-      (call) => call.toolName === SUBMIT_TOOL,
-    );
-    if (!handedIn)
+    const draft = handedIn(await turn());
+    if (typeof draft === "string") return draft;
+    if (atLimit())
       return fail(
         FailedSide.Ours,
-        "it reached a limit before the report was handed in",
+        "it reached a limit before the report was edited",
       );
-    const submission = submissionSchema.safeParse(handedIn.input);
-    if (!submission.success)
-      return fail(FailedSide.Ours, "what it handed in doesn't fit");
-    const { status, reason, headline, takeaways, stats, markdown } =
-      submission.data;
-    // A stop must say why from the list, and a report must not: the reason
-    // chooses a sentence in an email, so it is never taken on trust.
-    if ((status === "blocked") !== (reason !== null))
-      return fail(FailedSide.Ours, "its status and its reason disagree");
-    if (reason !== null)
-      return fail(
-        reason === ReportFailure.Failed ? FailedSide.Ours : FailedSide.Site,
-        `the model stopped (${reason}): ${headline}`,
-        reason,
-      );
-    if (!markdown.trim()) return fail(FailedSide.Ours, "the report is empty");
+    /** What a hand-in is answered with. */
+    const answer = (id: string, value: string): ModelMessage => ({
+      role: "tool",
+      content: [
+        {
+          type: "tool-result",
+          toolCallId: id,
+          toolName: SUBMIT_TOOL,
+          output: { type: "text", value },
+        },
+      ],
+    });
+    said = [
+      ...said,
+      answer(draft.id, DRAFT_RECEIVED),
+      { role: "user", content: editPrompt() },
+    ];
+    let edited = handedIn(await turn());
+    if (typeof edited === "string") return edited;
+    let changed = dataChanged(draft.submission, edited.submission);
+    if (changed) {
+      // The model's slip, and one it can put right: it is told what
+      // differed and hands in again, once.
+      if (atLimit())
+        return fail(
+          FailedSide.Ours,
+          `the edit changed the plan's data (${changed}) and a limit was reached before it could be put right`,
+        );
+      said = [...said, answer(edited.id, editRefused(changed))];
+      edited = handedIn(await turn());
+      if (typeof edited === "string") return edited;
+      changed = dataChanged(draft.submission, edited.submission);
+      if (changed)
+        return fail(
+          FailedSide.Ours,
+          `the edit changed the plan's data twice: ${changed}`,
+        );
+    }
+    const { headline, standing, customer, moves, markdown } = edited.submission;
     checkCost();
     console.log(
       JSON.stringify({ event: "seo_report_written", site, ...used() }),
@@ -276,8 +380,9 @@ export async function writeReport(
       site,
       title: reportTitle(site),
       headline,
-      takeaways,
-      stats,
+      standing,
+      customer,
+      moves,
       markdown,
       hosts: [...run.hosts],
       writtenAt: new Date().toISOString(),

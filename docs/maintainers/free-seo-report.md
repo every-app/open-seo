@@ -2,7 +2,7 @@
 
 A visitor enters a website and an email address at `openseo.so/seo-report`.
 The website Worker (`web/`, `open-seo-landing`) writes a "Search opportunity"
-report for that site and emails a link that downloads it as a PDF, with a link
+report for that site and emails a link that opens it as a PDF, with a link
 to create an OpenSEO account. A report has no page. Partner sites can send the
 same request from a form of their own.
 
@@ -123,10 +123,38 @@ can only call the tools it is given and no key is ever in front of it.
   long, sends the emails and forgets what is old.
 - `workflow.ts` is one report's run, as a Cloudflare Workflow whose id is the
   run's id. The paid step has no retries and can begin once per run.
-- `write.ts` is the model loop: a model, through OpenRouter, follows the
-  public `customer-keywords` skill until it hands the report in. `tools.ts` is
-  all it can do: five research lookups (`research.ts`, DataForSEO directly),
-  `read_page` (`read-page.ts`) and `submit_report`.
+- `write.ts` is the model loop: a model, through OpenRouter, follows
+  `customer-keywords.md` until it hands the report in, then edits what it
+  handed in and hands it in again. `tools.ts` is all it can do: five
+  research lookups (`research.ts`, DataForSEO directly), `read_page`
+  (`read-page.ts`) and `submit_report`.
+- **What a report is.** `customer-keywords.md` has the research steps of the
+  public `customer-keywords` skill and an Output section of this tool's own.
+  The model hands in a plan as fields (`plan.ts`): a one-sentence verdict, up
+  to three moves, best first, and who it took the customer to be. A move is
+  one page to build or rework: the action, the keyword with its searches and
+  difficulty, who holds page one, the steps that build the page in order,
+  and why it sits where it does. The data behind the plan follows as
+  Markdown: one keyword table, what comes after the plan, and what not to
+  spend on. The plan is fields and not prose so that the number beside a
+  move is the move's own and the first page is drawn the same way every
+  time. A report stored before 2026-11-20 has no such fields: it is read
+  with an empty plan and drawn as its verdict and its Markdown.
+- **Every report is edited before it is sent.** The first hand-in is a
+  draft. The model is told so and asked, in the same conversation, to edit
+  the draft with `clean-copy.md` and hand it in again; the second hand-in is
+  the report. The skill asks of every string whether it should be there at
+  all, before how it is phrased. The edit is a turn of the same conversation
+  and not a second model call with a fresh start, so the research is still
+  in front of the model while it cuts, and the second hand-in is held to
+  the same shape and rules as the first. It may change words and nothing
+  else: a hand-in whose moves differ from the draft's in number, order,
+  keyword, searches, difficulty or page is refused with what differed, and
+  the model hands in once more. A second one that differs fails the report.
+  Numbers inside sentences and the Markdown table are held by the prompt
+  alone. The request to edit is a message of its own: put in the answer to
+  the hand-in, the model took it as data and handed nothing in, and made to
+  call the hand-in tool, it ran to the output cap without finishing.
 - **A site name** is at most 60 characters and 4 labels (`site.ts`). The name
   is shown back in the email and the report's title, to an address the sender
   chose, so it can't be long enough to carry a message. The longest of 4,486
@@ -138,14 +166,23 @@ can only call the tools it is given and no key is ever in front of it.
   same way before it is followed. A `robots.txt` is read once per site, up to
   500 KB. One that answers 429 or a server error, or lists more than 5,000
   rules for this crawler, means the site is left alone.
-- **The PDF.** `pdf.ts` draws the report with pdfmake, from the stored
-  Markdown, each time its link is opened: US Letter, the title, the headline
-  numbers, the body with its tables, page numbers, and the link to create an
-  account. Nothing stores the PDF. It is drawn in the request, which took
-  0.07 to 0.2 seconds in local workerd for the real reports tried, and made
-  files of 52 to 63 KB. The code is a part of the Worker that loads only for
-  a download, so no other request starts it. It added 763 KiB to the Worker's
-  compressed upload (1,286 to 2,049 KiB), most of it the Roboto typeface.
+- **The PDF.** `pdf.ts` draws the report with pdfmake, from the stored plan
+  and Markdown, each time its link is opened: US Letter, the verdict in the
+  largest type, a card for each move with its searches and difficulty beside
+  it and its steps numbered down a line, then the Markdown with its table,
+  page numbers, and the link to create an account. A card, a list item and
+  a paragraph are never split between pages, and the closing box takes the
+  last section with it to a new page.
+  A report is drawn at its normal size first. If its last card falls off
+  the first page, or its last page is mostly blank, it is drawn once more,
+  set tighter, and that one is sent when it fixes either. Ligatures are off,
+  so copied text keeps its "fi" and "fl". Nothing stores the PDF. It is
+  drawn in the request: 0.1 to 0.25 seconds in Node for the real reports
+  tried on 2026-11-20, both drawings included (0.07 to 0.2 seconds in local
+  workerd before the second drawing existed), for files of 34 to 49 KB. The
+  code is a part of the Worker that loads only for a report's link, so no
+  other request starts it. It added 763 KiB to the Worker's compressed
+  upload (1,286 to 2,049 KiB), most of it the Roboto typeface.
 - **What a report may carry.** Nobody reads a report before it goes out, and
   the site it is about shapes what the model writes. So the PDF has no
   images, and a link stays a link only when it goes to the report's own site,
@@ -165,13 +202,14 @@ can only call the tools it is given and no key is ever in front of it.
   network. Nothing logs an address. Emails are Loops transactional sends with
   `addToAudience: false`, so nobody becomes a contact.
 - **A report's link** is `/seo-report/r/<token>`, where the token is 122
-  random bits, for 90 days. It answers with the PDF as a download named for
-  the site (`seo-report-example.com.pdf`), marked `noindex` and `no-store`.
+  random bits, for 90 days. It answers with the PDF, shown in the browser
+  (`Content-Disposition: inline`) and named for the site when saved
+  (`seo-report-example.com.pdf`), marked `noindex` and `no-store`.
   No page is served at a report's address, so no script that records page
   addresses ever runs there. The link is still in the Worker's own invocation
   logs and in Loops, which sent it. A link with no report behind it gets the
   site's "not found" page. Reports were pages at the same links for their
-  first days, from 2026-11-18: those links now download the PDF too.
+  first days, from 2026-11-18: those links now open the PDF too.
 
 ## Limits
 
@@ -218,6 +256,16 @@ nodafi.com), written by `openai/gpt-6.2-sol` at medium effort:
 
 They took 33 to 81 seconds. Each run logs what it used (`seo_report_written`).
 
+The plan-first report (2026-11-20) costs about the same. Seven real reports
+on three sites (everyapp.com, trumaker.com, browserbase.com), run in Node
+with the tool's own code, cost $0.22 to $0.50 together and $0.35 on average,
+in 27 to 148 seconds. The two dearest, $0.46 and $0.50, were the ones that
+read the most pages and made the most research calls.
+
+The edit adds about $0.016 and 4 seconds to a report: one more model call
+that reads the conversation from the cache and writes the report again
+(measured on one real report, trumaker.com, $0.27 in all).
+
 **A report can't cost more than $1.27**, and it reserves $1.50 in the free
 tools' daily budget (`FREE_TOOLS_DAILY_BUDGET_USD`) before it starts.
 
@@ -238,6 +286,16 @@ tools' daily budget (`FREE_TOOLS_DAILY_BUDGET_USD`) before it starts.
   `seo_report_cost_mismatch` is logged when they are far apart, which means a
   price in the table is out of date. A reply that reports no token counts
   ends the run.
+
+**The model's host is pinned** (`model.ts`): OpenAI's own, and no other.
+OpenRouter otherwise picks a host for each request, and not every host does
+the reasoning the request asks for. On 2026-11-20 the same question drew
+about 80 reasoning tokens from OpenAI's host and from Azure's and none from
+Amazon Bedrock's, at the same list price. When OpenAI's host is down, slow or
+turns a request away, the call is retried and the run picked up once, like
+any provider failure, and then ends as `seo_report_failed` with
+`side: "provider"`. Each run's log line names the hosts that answered
+(`providers`) and its `reasoningTokens`.
 
 **The model** is `SEO_REPORT_MODEL` and `SEO_REPORT_MODEL_EFFORT` in
 `web/wrangler.jsonc`: `openai/gpt-6.2-sol` at medium. It must be a model in
@@ -342,8 +400,8 @@ pnpm exec wrangler tail open-seo-landing --format json --search seo_report_
 | 1   | `curl https://openseo.so/api/seo-report`                                                             | `{"open":true}`. `false` means a secret is missing; the log names it                                                                                                                |
 | 2   | Ask for a report on a US site of ours at `https://openseo.so/seo-report`                             | The page says to check the inbox. Within two minutes a `seo_report_written` line whose `countedUsd` and `chargedUsd` agree, no `seo_report_cost_mismatch` line, and the ready email |
 | 3   | Ask again at once with the same address and another site                                             | "That address has already asked for a report today." Nothing starts                                                                                                                 |
-| 4   | `curl -sI https://openseo.so/seo-report/r/<token from the email>`                                    | `content-type: application/pdf`, `content-disposition: attachment`, `x-robots-tag: noindex, nofollow` and `cache-control: private, no-store`                                        |
-| 5   | Open the link from the email in a browser                                                            | A file named `seo-report-<site>.pdf` downloads and opens. No page is shown                                                                                                          |
+| 4   | `curl -sI https://openseo.so/seo-report/r/<token from the email>`                                    | `content-type: application/pdf`, `content-disposition: inline`, `x-robots-tag: noindex, nofollow` and `cache-control: private, no-store`                                            |
+| 5   | Open the link from the email in a browser                                                            | The PDF opens in the tab, and saving it gives a file named `seo-report-<site>.pdf`                                                                                                  |
 | 6   | Ask for a report on a site that isn't for the United States, such as `richersounds.com`              | A `seo_report_failed` line with `side: "site"`, and the failure email with the United States sentence. This is the first real send of the failed template                           |
 | 7   | Submit from SF SEO's form, and from `https://www.openseo.so/seo-report` if `www` doesn't redirect    | Both are taken. `not_human` means that hostname is missing from the Turnstile widget                                                                                                |
 | 8   | `pnpm exec wrangler workflows instances describe seo-report latest`                                  | The "write report" step succeeded once. In the dashboard's Workers observability, that invocation's CPU time is far under 30,000 ms                                                 |
@@ -408,7 +466,7 @@ not been run for this Worker.
 
   | Event                             | Meaning                                                                                                     |
   | --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-  | `seo_report_written`              | A report was written. Seconds, model calls, tokens, both costs, and the tools called.                       |
+  | `seo_report_written`              | A report was written. Seconds, model calls, tokens, both costs, the hosts and the tools called.             |
   | `seo_report_failed`               | No report. `side` is `provider` (the model's provider), `site` or `ours`; `reason` says why.                |
   | `seo_report_resumed`              | The provider dropped a run and it was picked up again.                                                      |
   | `seo_report_cost_mismatch`        | Our count of a run's model cost and OpenRouter's are far apart: check the price table.                      |
@@ -444,15 +502,25 @@ A production build ignores the variable.
   failure email with that reason. Writing for the site's own market is the
   next step: the skill allows it, and it needs a market chosen from a fixed
   list of countries and its own real runs.
+- **The plan is a judgement, and it varies.** Four reports written for one
+  site on 2026-11-20 did not agree on the first move: three led with one
+  keyword, and the fourth led with another and listed the first under "Don't
+  spend on these". A reader who asks twice in 30 days gets the same report
+  again, but nothing makes two writings agree.
+- **The edit is light.** On two real reports it changed 4 and 6 strings
+  of 24 to 29 and removed 1% to 3% of the words: mostly a `why` that
+  repeated the numbers printed beside it. The drafts were already held to
+  word limits. An edit can also fail a report that was fine as a draft, by
+  changing the plan's data twice or by not handing in.
 - Anyone who passes Turnstile can have one email a day sent to an address
   they type. Only a confirm-by-email step would remove that.
 - The page reader checks names, not the addresses they resolve to. Where a
   request to a name goes is Cloudflare's network's doing.
 - Account creation carries the site (`?domain=`) but not the report. The
   report stays at its link.
-- Every download is one read of the one Durable Object, a single indexed
-  lookup, and then about a tenth of a second of the Worker's CPU to draw the
-  PDF. A made-up link costs only the lookup: a flood of them would queue
+- Every opening of a link is one read of the one Durable Object, a single
+  indexed lookup, and then one or two tenths of a second of the Worker's CPU
+  to draw the PDF. A made-up link costs only the lookup: a flood of them would queue
   ahead of new requests without spending anything. A cache wouldn't help,
   because each made-up link is a new address; a rate-limit rule on
   `/seo-report/r/*` in Cloudflare would.

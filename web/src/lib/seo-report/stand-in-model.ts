@@ -17,30 +17,35 @@ export function standInModel(site: string) {
   const submission: Submission = {
     status: site.startsWith("blocked.") ? "blocked" : "done",
     reason: site.startsWith("blocked.") ? ReportFailure.NotUnitedStates : null,
+    headline: `Start with a stand-in page for ${site}: about 1,200 searches a month and an open page one.`,
+    standing: null,
+    customer: "a stand-in, written without reading the site",
+    moves: site.startsWith("blocked.")
+      ? []
+      : [
+          {
+            action: "Publish a stand-in page",
+            page: null,
+            keyword: "stand-in keyword",
+            searches: 1200,
+            difficulty: 20,
+            holders: "Stand-in sites, with pages of no particular kind.",
+            steps: ["Add a stand-in table.", "Work out a stand-in example."],
+            why: "It is the only move a stand-in has.",
+          },
+        ],
     markdown: `# ${reportTitle(site)}
 
-This is a stand-in report. Nothing was measured and nothing was spent.
+## Keywords for each page
 
-## Keyword families
+| Page | Keyword | Searches a month (est.) | Difficulty (est.) |
+| --- | --- | ---: | ---: |
+| 1. Stand-in page | stand-in keyword | 1,200 | 20 |
 
-| Family | Lead keyword | Monthly searches | Page |
-| --- | --- | --- | --- |
-| Stand-in family | stand-in keyword | 1,200 (estimate) | to create |
+## After the plan
 
-## Pages to create or rework
-
-1. **Stand-in page.** See [the home page](https://${site}/) for what exists today.
-
-## Method
-
-Stand-in data, written by the local development server.
+- **another stand-in keyword**, 300 searches a month: see [the home page](https://${site}/) for what exists today.
 `,
-    headline: `A stand-in headline for ${site}: about 1,200 searches a month are within reach.`,
-    takeaways: ["A stand-in finding, written without calling anything."],
-    stats: [
-      { label: "Keyword families", value: "4" },
-      { label: "Monthly searches", value: "1,200" },
-    ],
   };
   return new MockLanguageModelV3({
     doGenerate: {

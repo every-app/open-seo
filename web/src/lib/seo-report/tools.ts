@@ -3,6 +3,7 @@ import { z } from "zod";
 import { normalizeDomain } from "@/lib/free-tools/server";
 import { STOP_REASONS } from "./failure";
 import { REPORT_LIMITS } from "./limits";
+import { MAX_MOVES, moveSchema } from "./plan";
 import { readPage, type RobotsCache } from "./read-page";
 import {
   domainKeywords,
@@ -52,13 +53,26 @@ export const submissionSchema = z.strictObject({
     .describe(
       'Why you stopped, when status is "blocked": closed, moved, not_united_states, or failed when the research tools failed. Null when status is "done".',
     ),
-  headline: z.string().max(400),
-  takeaways: z.array(z.string().max(400)).max(4),
-  stats: z
-    .array(
-      z.strictObject({ label: z.string().max(60), value: z.string().max(60) }),
-    )
-    .max(6),
+  headline: z
+    .string()
+    .max(400)
+    .describe(
+      "The verdict: one sentence a reader could act on alone. When blocked, why.",
+    ),
+  standing: z
+    .string()
+    .max(300)
+    .nullable()
+    .describe(
+      "Where the site is in search today. Null when the lookups had nothing to say.",
+    ),
+  customer: z
+    .string()
+    .max(300)
+    .describe(
+      'Who the plan assumes is searching, finishing "This plan assumes your customer is ...".',
+    ),
+  moves: z.array(moveSchema).max(MAX_MOVES),
   markdown: z.string().max(MAX_REPORT_CHARACTERS),
 });
 export type Submission = z.infer<typeof submissionSchema>;
@@ -126,7 +140,7 @@ export function reportTools(apiKey: string | null, run: Run): ToolSet {
     ),
     // No `execute`: calling it ends the run, and the caller reads its input.
     [SUBMIT_TOOL]: tool({
-      description: "Hand in the finished report and its summary. Call once.",
+      description: "Hand in the report.",
       inputSchema: submissionSchema,
     }),
   };

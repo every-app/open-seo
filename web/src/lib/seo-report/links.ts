@@ -28,7 +28,7 @@ export function mayLink(
   return within(host, site) || within(host, OPENSEO) || hosts.includes(host);
 }
 
-/** The link in a report's email. It downloads the report as a PDF (routes/_marketing/seo-report_.r.$token.tsx). */
+/** The link in a report's email. It opens the report as a PDF (routes/_marketing/seo-report_.r.$token.tsx). */
 export const reportPath = (token: string) => `/seo-report/r/${token}`;
 
 /**

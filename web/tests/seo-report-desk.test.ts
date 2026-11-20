@@ -13,7 +13,9 @@ import {
   SeoReportRefusal as Refusal,
 } from "../src/lib/seo-report/contract";
 import { ReportFailure } from "../src/lib/seo-report/failure";
+import type { StoredReport } from "../src/lib/seo-report/desk";
 import { REPORT_LIMITS } from "../src/lib/seo-report/limits";
+import { reportPdf } from "../src/lib/seo-report/pdf";
 import { deskWorld, report } from "./seo-report-support";
 
 // The desk holds every limit, the line and who is waiting. Each test here is
@@ -263,6 +265,25 @@ describe("a run", () => {
       reportUrl!,
     )?.[1];
     expect(await desk.report(token!)).toMatchObject({ site: "site.example" });
+  });
+
+  it("still opens a report stored before the plan had fields, as one finished page", async () => {
+    const { desk, ask, emails, started } = deskWorld();
+    await ask("site.example");
+    const { standing, customer, moves, ...before } = report("site.example");
+    await desk.finish(started[0]!.id, {
+      ...before,
+      takeaways: ["One finding."],
+      stats: [{ label: "Keyword families", value: "3" }],
+    } as unknown as StoredReport);
+    await desk.alarm();
+    await desk.alarm();
+    const stored = await desk.report(
+      emails[0]!.dataVariables.reportUrl!.split("/").at(-1)!,
+    );
+    expect(stored).toMatchObject({ standing: null, customer: "", moves: [] });
+    const pdf = Buffer.from(await (await reportPdf(stored!)).arrayBuffer());
+    expect(pdf.toString("latin1").match(/\/Type \/Page\b/g)).toHaveLength(1);
   });
 
   it("says why there is no report with our sentence for the reason", async () => {

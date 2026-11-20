@@ -79,3 +79,9 @@ it("keeps links to the site, its search results and OpenSEO", async () => {
 it("makes a PDF of a table whose rows are shorter than its heading", async () => {
   await pdfOf("| a | b | c |\n|---|---|---|\n| only one |\n| two | cells |");
 });
+
+it("keeps the link to create an account after a section too long for one page", async () => {
+  const bullets = Array.from({ length: 150 }, (_, at) => `- finding ${at}`);
+  const { links } = await pdfOf(`## Findings\n\n${bullets.join("\n")}`);
+  expect(links).toEqual(new Set(OURS));
+});

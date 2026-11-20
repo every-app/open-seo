@@ -15,6 +15,8 @@ import { MODEL } from "./seo-report-support";
 
 // What the model can do while it writes a report, and where each limit stops
 // it. The model is scripted here; DataForSEO and the site are fetch stand-ins.
+// A report is handed in twice: a draft, then the draft edited. A script's
+// last reply repeats, so one hand-in stands for a draft the edit left alone.
 
 const env = {
   DATAFORSEO_API_KEY: "dataforseo-key",
@@ -52,7 +54,9 @@ const reply = (
     },
   },
   providerMetadata:
-    usd === null ? undefined : { openrouter: { usage: { cost: usd } } },
+    usd === null
+      ? undefined
+      : { openrouter: { provider: "OpenAI", usage: { cost: usd } } },
   warnings: [],
 });
 const report = {
@@ -60,8 +64,20 @@ const report = {
   reason: null,
   markdown: "# Search opportunity for example.com\n\nA finding.",
   headline: "About 900 searches a month are within reach.",
-  takeaways: ["One finding."],
-  stats: [{ label: "Keyword families", value: "3" }],
+  standing: null,
+  customer: "a founder who wants more customers from search",
+  moves: [
+    {
+      action: "Publish a pricing page",
+      page: null,
+      keyword: "example pricing",
+      searches: 900,
+      difficulty: null,
+      holders: "Rival #1, a comparison.",
+      steps: ["Add a table of plans."],
+      why: "Easiest page one in the plan.",
+    },
+  ],
 };
 const handIn = (input: unknown = report) =>
   reply([{ name: SUBMIT_TOOL, input }]);
@@ -74,13 +90,15 @@ function script(...replies: ReturnType<typeof reply>[]) {
   scripted.model = new MockLanguageModelV3({
     doGenerate: async (options) => {
       asked.push(options.maxOutputTokens);
+      told.push(JSON.stringify(options.prompt.at(-1)));
       return replies[Math.min(turn++, replies.length - 1)]!;
     },
   });
   return () => turn;
 }
-/** The output cap each model call was made with. */
+/** The output cap each model call was made with, and the last thing it was told. */
 const asked: (number | undefined)[] = [];
+const told: string[] = [];
 
 /** Every request the run made to DataForSEO, and every page it asked the site for. */
 const lookups: { path: string; payload: Record<string, unknown> }[] = [];
@@ -90,6 +108,7 @@ const readAPage = { name: "read_page", input: { url: "https://example.com/" } };
 
 beforeEach(() => {
   asked.length = 0;
+  told.length = 0;
   failures = vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "log").mockImplementation(() => {});
   lookups.length = 0;
@@ -171,8 +190,9 @@ it("picks a run the provider dropped back up with the research it had, instead o
   expect(
     lookups.filter(({ path }) => path.includes("keyword_suggestions")),
   ).toHaveLength(1);
-  // The prompt alone; then with the research call and its answer, twice.
-  expect(seen).toEqual([1, 3, 3]);
+  // The prompt alone; then with the research call and its answer, twice;
+  // then with the draft, its receipt and the request to edit it.
+  expect(seen).toEqual([1, 3, 3, 6]);
 });
 
 it("gives a dropped run one more try, then says the provider failed", async () => {
@@ -341,13 +361,13 @@ it("charges a long conversation at the long rates when it looks ahead", async ()
   expect(await writeReport(env, "example.com")).toMatchObject({
     site: "example.com",
   });
-  expect(shorter()).toBe(2);
+  expect(shorter()).toBe(3);
 });
 
 it("caps what every model call may write", async () => {
   script(reply([readAPage]), handIn());
   await writeReport(env, "example.com");
-  expect(asked).toEqual([16_000, 16_000]);
+  expect(asked).toEqual([16_000, 16_000, 16_000]);
 });
 
 it("counts what the model cost from its tokens and stops at a dollar, whether or not OpenRouter says", async () => {
@@ -360,13 +380,13 @@ it("counts what the model cost from its tokens and stops at a dollar, whether or
 });
 
 it("prices tokens read from the cache at their own rate", async () => {
-  // 10,000 at $2.50 a million and 90,000 at $0.10.
+  // 10,000 at $2.50 a million and 90,000 at $0.10, then two hand-ins.
   script(reply([readAPage], 100_000, null, 90_000), handIn());
   await writeReport(env, "example.com");
   const written = JSON.parse(
     String(vi.mocked(console.log).mock.calls.at(-1)?.[0]),
   );
-  expect(written.countedUsd).toBeCloseTo(0.034 + 0.0025, 4);
+  expect(written.countedUsd).toBeCloseTo(0.034 + 2 * 0.0025, 4);
 });
 
 it("goes by OpenRouter's figure when it is the larger, and says when the two are far apart", async () => {
@@ -426,7 +446,8 @@ it("passes on a listed reason for stopping, and nothing else the model says", as
 });
 
 it.each([
-  ["doesn't fit the shape", { ...report, stats: "many" }],
+  ["doesn't fit the shape", { ...report, moves: "many" }],
+  ["has no plan", { ...report, moves: [] }],
   ["carries a field nobody asked for", { ...report, html: "<script>" }],
   ["says it was blocked and not why", { ...report, status: "blocked" }],
   [
@@ -439,4 +460,83 @@ it.each([
   script(handIn(submission));
   expect(await writeReport(env, "example.com")).toBe("failed");
   expect(failures).toHaveBeenCalled();
+});
+
+const move = report.moves[0]!;
+const edited = {
+  ...report,
+  headline: "About 900 searches a month.",
+  moves: [{ ...move, why: "Easiest page one." }],
+};
+
+it("logs which host answered and how much the model reasoned", async () => {
+  script(handIn());
+  await writeReport(env, "example.com");
+  expect(
+    JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0])),
+  ).toMatchObject({ providers: ["OpenAI"], reasoningTokens: 0 });
+});
+
+it("has the model edit its draft with the clean-copy skill, and sends the edit", async () => {
+  const turns = script(handIn(), handIn(edited));
+  expect(await writeReport(env, "example.com")).toMatchObject({
+    headline: edited.headline,
+    moves: edited.moves,
+  });
+  expect(turns()).toBe(2);
+  expect(told[1]).toContain("should this exist");
+});
+
+it("refuses an edit that changes the plan's data, says what differed, and takes the next one", async () => {
+  const turns = script(
+    handIn(),
+    handIn({ ...report, moves: [{ ...move, searches: 9000 }] }),
+    handIn(edited),
+  );
+  expect(await writeReport(env, "example.com")).toMatchObject({
+    headline: edited.headline,
+  });
+  expect(turns()).toBe(3);
+  expect(told[2]).toContain("move 1's searches was 900 and the edit has 9000");
+});
+
+// The same hand-in repeats, so the edit is refused and then fails.
+it.each([
+  ["a keyword", [{ ...move, keyword: "example prices" }]],
+  ["its searches", [{ ...move, searches: 9000 }]],
+  ["its difficulty", [{ ...move, difficulty: 10 }]],
+  ["its page", [{ ...move, page: "https://example.com/pricing" }]],
+  ["how many moves there are", [move, move]],
+])("writes no report when the edit changes %s twice", async (_, moves) => {
+  const turns = script(handIn(), handIn({ ...report, moves }));
+  expect(await writeReport(env, "example.com")).toBe("failed");
+  expect(turns()).toBe(3);
+  expect(reasonLogged()).toMatch(/changed the plan's data twice/);
+});
+
+it("writes no report when the edit swaps two moves twice", async () => {
+  const second = { ...move, keyword: "example plans" };
+  script(
+    handIn({ ...report, moves: [move, second] }),
+    handIn({ ...report, moves: [second, move] }),
+  );
+  expect(await writeReport(env, "example.com")).toBe("failed");
+  expect(reasonLogged()).toMatch(/changed the plan's data twice/);
+});
+
+it("holds the edit to the shape the draft was held to", async () => {
+  script(handIn(), handIn({ ...report, markdown: " " }));
+  expect(await writeReport(env, "example.com")).toBe("failed");
+  expect(reasonLogged()).toMatch(/empty/);
+});
+
+it("ends without a report when the draft uses the last of an allowance", async () => {
+  // Read from the cache, so it is the tokens that run out.
+  const all = REPORT_LIMITS.tokens;
+  const turns = script(
+    reply([{ name: SUBMIT_TOOL, input: report }], all, 0, all),
+  );
+  expect(await writeReport(env, "example.com")).toBe("failed");
+  expect(turns()).toBe(1);
+  expect(reasonLogged()).toMatch(/before the report was edited/);
 });

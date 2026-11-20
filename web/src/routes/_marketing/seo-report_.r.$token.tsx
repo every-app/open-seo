@@ -4,8 +4,9 @@ import { NotFound } from "@/components/not-found";
 import type { SeoReportEnv } from "@/lib/seo-report/config";
 import { readReport } from "@/lib/seo-report/read";
 
-// A written report, reached only by the link in its email. The link
-// downloads the report as a PDF: there is no page to read it on.
+// A written report, reached only by the link in its email. The link opens
+// the report as a PDF in the browser, where it can be read and saved: there
+// is no page to read it on.
 
 export const Route = createFileRoute("/_marketing/seo-report_/r/$token")({
   server: {
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/_marketing/seo-report_/r/$token")({
           headers: {
             "Content-Type": "application/pdf",
             // The site is a checked hostname (site.ts), so it is safe in a file name.
-            "Content-Disposition": `attachment; filename="seo-report-${report.site}.pdf"`,
+            "Content-Disposition": `inline; filename="seo-report-${report.site}.pdf"`,
             "X-Robots-Tag": "noindex, nofollow",
             // The link is the only way to the report, so no cache may keep it.
             "Cache-Control": "private, no-store",

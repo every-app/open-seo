@@ -36,13 +36,13 @@ function open(token: string) {
   return GET({ params: { token }, next: () => NEXT });
 }
 
-it("downloads the report as a PDF named for its site, which nothing may index or keep", async () => {
+it("opens the report as a PDF named for its site, which nothing may index or keep", async () => {
   read.mockResolvedValue(report("example.com"));
   const response = await open("0123456789abcdef0123456789abcdef");
-  if (!(response instanceof Response)) throw new Error("no download");
+  if (!(response instanceof Response)) throw new Error("no PDF");
   expect(Object.fromEntries(response.headers)).toEqual({
     "content-type": "application/pdf",
-    "content-disposition": 'attachment; filename="seo-report-example.com.pdf"',
+    "content-disposition": 'inline; filename="seo-report-example.com.pdf"',
     "x-robots-tag": "noindex, nofollow",
     "cache-control": "private, no-store",
   });
