@@ -231,6 +231,26 @@ describe("search console MCP tools", () => {
     expect(mocks.GscService.getPerformance).not.toHaveBeenCalled();
   });
 
+  it("rejects brandedClassification combined with a query filter", async () => {
+    const { getSearchConsolePerformanceTool } = searchConsoleTools;
+
+    const result = await getSearchConsolePerformanceTool.handler(
+      {
+        projectId: "project_1",
+        dimensions: ["brandedClassification"],
+        filters: [
+          { dimension: "query", operator: "contains", expression: "seo" },
+        ],
+      },
+      toolContext,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      reason: "invalid_request",
+    });
+    expect(mocks.GscService.getPerformance).not.toHaveBeenCalled();
+  });
+
   it("rejects a half-specified explicit date range", async () => {
     const { getSearchConsolePerformanceTool } = searchConsoleTools;
 

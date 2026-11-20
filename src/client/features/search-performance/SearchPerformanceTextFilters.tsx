@@ -11,7 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/client/components/ui/select";
-import type { searchPerformanceInputSchema } from "@/types/schemas/search-performance";
+import type {
+  searchPerformanceInputSchema,
+  SearchPerformanceSearch,
+} from "@/types/schemas/search-performance";
 
 const MATCH_ITEMS = [
   { value: "contains", label: "Contains" },
@@ -22,6 +25,21 @@ export type TextFilters = Pick<
   z.infer<typeof searchPerformanceInputSchema>,
   "pageFilter" | "queryFilter"
 >;
+
+/** The URL update for applied text filters. Google can't combine a query
+ *  filter with the brand split, so a query filter clears the brand. */
+export function textFilterSearch(
+  filters: TextFilters,
+): Partial<SearchPerformanceSearch> {
+  return {
+    page: undefined,
+    pageText: filters.pageFilter?.expression,
+    pageMatch: filters.pageFilter?.operator,
+    queryText: filters.queryFilter?.expression,
+    queryMatch: filters.queryFilter?.operator,
+    ...(filters.queryFilter ? { brand: undefined } : {}),
+  };
+}
 
 export function SearchPerformanceTextFilters({
   value,

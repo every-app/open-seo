@@ -8,6 +8,7 @@ export const GSC_DIMENSIONS = [
   "device",
   "date",
   "searchAppearance",
+  "brandedClassification",
 ] as const;
 export const GSC_FILTER_OPERATORS = [
   "equals",

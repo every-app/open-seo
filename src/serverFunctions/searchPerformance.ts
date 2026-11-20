@@ -6,6 +6,7 @@ import {
 } from "@/server/features/gsc/services/GscService";
 import {
   resolveDateRange,
+  type GscDimension,
   type GscPerformanceFilter,
 } from "@/server/features/gsc/searchAnalytics";
 import {
@@ -18,6 +19,7 @@ import {
   toDimensionRows,
 } from "@/server/features/gsc/searchPerformanceReport";
 import { requireProjectContext } from "@/serverFunctions/middleware";
+import type { GscBrandedClassification } from "@/shared/gsc";
 import {
   type SearchPerformanceType,
   searchPerformanceDetailInputSchema,
@@ -38,37 +40,50 @@ const EXPORT_ROW_LIMIT = 1000;
 const COMPARISON_ROW_LIMIT = 1000;
 const RELATED_ROW_LIMIT = 10;
 
-/** Build GSC filter groups shared by every call. Device, page, and query apply everywhere;
- *  country applies everywhere except the country breakdown itself (so the
- *  dropdown keeps every option visible while one country is selected).
- *  Google rejects a device filter on Discover, so a leftover device in an old
- *  link is dropped there. */
-function buildGscFilters(data: {
-  searchType: SearchPerformanceType;
-  device?: string;
-  country?: string;
-  pageFilter?: { operator: "contains" | "equals"; expression: string };
-  queryFilter?: { operator: "contains" | "equals"; expression: string };
-}): {
-  nonCountryFilters: GscPerformanceFilter[];
-  filters: GscPerformanceFilter[];
-} {
-  const nonCountryFilters: GscPerformanceFilter[] =
-    data.device && data.searchType !== "discover"
-      ? [{ dimension: "device", operator: "equals", expression: data.device }]
-      : [];
-  if (data.pageFilter)
-    nonCountryFilters.push({ dimension: "page", ...data.pageFilter });
-  // Discover and Google News have no query dimension to filter on.
-  if (data.queryFilter && data.searchType === "web")
-    nonCountryFilters.push({ dimension: "query", ...data.queryFilter });
-  const filters: GscPerformanceFilter[] = data.country
-    ? [
-        ...nonCountryFilters,
-        { dimension: "country", operator: "equals", expression: data.country },
-      ]
-    : nonCountryFilters;
-  return { nonCountryFilters, filters };
+/** Build the GSC filters shared by every call. `omit` drops one dimension's
+ *  filter, for the breakdown of that same dimension (so the country dropdown
+ *  keeps every option visible while one country is selected). Google rejects a
+ *  device filter on Discover, so a leftover device in an old link is dropped
+ *  there. */
+function buildGscFilters(
+  data: {
+    searchType: SearchPerformanceType;
+    device?: string;
+    country?: string;
+    brand?: GscBrandedClassification;
+    pageFilter?: { operator: "contains" | "equals"; expression: string };
+    queryFilter?: { operator: "contains" | "equals"; expression: string };
+  },
+  omit?: GscDimension,
+): GscPerformanceFilter[] {
+  const filters: GscPerformanceFilter[] = [];
+  if (data.device && data.searchType !== "discover")
+    filters.push({
+      dimension: "device",
+      operator: "equals",
+      expression: data.device,
+    });
+  if (data.pageFilter) filters.push({ dimension: "page", ...data.pageFilter });
+  // Discover and Google News have no queries to filter or classify. Google
+  // can't combine the brand split with a query filter, so a query filter (a
+  // detail sheet's own query among them) takes its place.
+  if (data.searchType === "web") {
+    if (data.queryFilter)
+      filters.push({ dimension: "query", ...data.queryFilter });
+    else if (data.brand)
+      filters.push({
+        dimension: "brandedClassification",
+        operator: "equals",
+        expression: data.brand,
+      });
+  }
+  if (data.country)
+    filters.push({
+      dimension: "country",
+      operator: "equals",
+      expression: data.country,
+    });
+  return omit ? filters.filter((filter) => filter.dimension !== omit) : filters;
 }
 
 /** Not connected, or a dead/denied grant (token failure or 401/403): the page
@@ -93,51 +108,63 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
     });
     const prev = previousPeriod(startDate, endDate);
     const projectId = context.projectId;
-    const { nonCountryFilters, filters } = buildGscFilters(data);
+    const filters = buildGscFilters(data);
     const type = data.searchType;
 
     try {
-      const [current, previous, queryPages, countries] = await Promise.all([
-        GscService.getPerformance({
-          projectId,
-          startDate,
-          endDate,
-          type,
-          dimensions: ["date"],
-          filters,
-          rowLimit: DAILY_ROW_LIMIT,
-        }),
-        GscService.getPerformance({
-          projectId,
-          startDate: prev.startDate,
-          endDate: prev.endDate,
-          type,
-          dimensions: ["date"],
-          filters,
-          rowLimit: DAILY_ROW_LIMIT,
-        }),
-        // Striking distance needs queries and positions, which only web has.
-        type === "web"
-          ? GscService.getPerformance({
-              projectId,
-              startDate,
-              endDate,
-              type,
-              dimensions: ["query", "page"],
-              filters,
-              rowLimit: STRIKING_DISTANCE_FETCH_LIMIT,
-            })
-          : { rows: [] },
-        GscService.getPerformance({
-          projectId,
-          startDate,
-          endDate,
-          type,
-          dimensions: ["country"],
-          filters: nonCountryFilters,
-          rowLimit: COUNTRY_ROW_LIMIT,
-        }),
-      ]);
+      const [current, previous, queryPages, countries, brands] =
+        await Promise.all([
+          GscService.getPerformance({
+            projectId,
+            startDate,
+            endDate,
+            type,
+            dimensions: ["date"],
+            filters,
+            rowLimit: DAILY_ROW_LIMIT,
+          }),
+          GscService.getPerformance({
+            projectId,
+            startDate: prev.startDate,
+            endDate: prev.endDate,
+            type,
+            dimensions: ["date"],
+            filters,
+            rowLimit: DAILY_ROW_LIMIT,
+          }),
+          // Striking distance needs queries and positions, which only web has.
+          type === "web"
+            ? GscService.getPerformance({
+                projectId,
+                startDate,
+                endDate,
+                type,
+                dimensions: ["query", "page"],
+                filters,
+                rowLimit: STRIKING_DISTANCE_FETCH_LIMIT,
+              })
+            : { rows: [] },
+          GscService.getPerformance({
+            projectId,
+            startDate,
+            endDate,
+            type,
+            dimensions: ["country"],
+            filters: buildGscFilters(data, "country"),
+            rowLimit: COUNTRY_ROW_LIMIT,
+          }),
+          // Google classifies web queries only, and not under a query filter.
+          type === "web" && !data.queryFilter
+            ? GscService.getPerformance({
+                projectId,
+                startDate,
+                endDate,
+                type,
+                dimensions: ["brandedClassification"],
+                filters: buildGscFilters(data, "brandedClassification"),
+              })
+            : null,
+        ]);
 
       return {
         connected: true as const,
@@ -153,6 +180,8 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
         prevTrend: buildDailyTrend(previous.rows, prev.startDate, prev.endDate),
         strikingDistance: buildStrikingDistanceRows(queryPages.rows),
         countries: toDimensionRows(countries.rows),
+        // Google returns no rows for properties it doesn't classify by brand.
+        brandClassified: brands ? brands.rows.length > 0 : null,
       };
     } catch (error) {
       if (isExpectedConnectionFailure(error)) {
@@ -176,7 +205,7 @@ export const getSearchPerformanceTable = createServerFn({ method: "POST" })
       dateRange: data.dateRange,
     });
     const prev = previousPeriod(startDate, endDate);
-    const { filters } = buildGscFilters(data);
+    const filters = buildGscFilters(data);
     const offset = (data.page - 1) * data.pageSize;
     const dimension = {
       projectId: context.projectId,
@@ -245,7 +274,7 @@ export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
     const { startDate, endDate } = resolveDateRange({
       dateRange: data.dateRange,
     });
-    const { filters } = buildGscFilters(data);
+    const filters = buildGscFilters(data);
 
     const result = await GscService.getPerformance({
       projectId: context.projectId,
@@ -275,7 +304,7 @@ export const getSearchPerformanceChanges = createServerFn({ method: "POST" })
       dateRange: data.dateRange,
     });
     const prev = previousPeriod(startDate, endDate);
-    const { filters } = buildGscFilters(data);
+    const filters = buildGscFilters(data);
     const dimension = {
       projectId: context.projectId,
       type: data.searchType,
@@ -320,7 +349,7 @@ export const getSearchPerformanceDetail = createServerFn({ method: "POST" })
     const prev = previousPeriod(startDate, endDate);
     // The row's own key replaces any text filter on its dimension.
     const key = { operator: "equals" as const, expression: data.key };
-    const { filters } = buildGscFilters({
+    const filters = buildGscFilters({
       ...data,
       ...(data.dimension === "page"
         ? { pageFilter: key }

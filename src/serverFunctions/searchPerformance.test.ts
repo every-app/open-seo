@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { z } from "zod";
+import type { GscPerformanceInput } from "@/server/features/gsc/searchAnalytics";
 import {
   exportSearchPerformanceTable,
   getSearchPerformanceDetail,
@@ -7,7 +8,10 @@ import {
   getSearchPerformanceTable,
 } from "./searchPerformance";
 
-const { getPerformance } = vi.hoisted(() => ({ getPerformance: vi.fn() }));
+const { getPerformance } = vi.hoisted(() => ({
+  getPerformance:
+    vi.fn<(input: GscPerformanceInput) => Promise<{ rows: unknown[] }>>(),
+}));
 vi.mock("@/server/features/gsc/services/GscService", () => ({
   GscService: { getPerformance },
   GscNotConnectedError: class extends Error {},
@@ -43,6 +47,8 @@ const data = {
   pageFilter: { operator: "contains" as const, expression: "/collections/" },
   queryFilter: { operator: "equals" as const, expression: "OpenSEO" },
 };
+const sentFilters = (call: number) =>
+  getPerformance.mock.calls[call][0].filters;
 const filters = [
   { dimension: "device", operator: "equals", expression: "MOBILE" },
   { dimension: "page", ...data.pageFilter },
@@ -137,6 +143,42 @@ describe("Search Performance combined filters", () => {
     expect(getPerformance.mock.calls[2][0]).toMatchObject({
       dimensions: ["query"],
     });
+  });
+
+  it("filters by brand, but never alongside a query filter", async () => {
+    const branded = {
+      ...data,
+      queryFilter: undefined,
+      brand: "BRANDED" as const,
+    };
+    const brandFilter = {
+      dimension: "brandedClassification",
+      operator: "equals",
+      expression: "BRANDED",
+    };
+    await getSearchPerformanceReport({ data: branded });
+    // Totals for both periods and striking distance are branded; the split
+    // itself covers both sides.
+    for (const index of [0, 1, 2]) {
+      expect(sentFilters(index)).toContainEqual(brandFilter);
+    }
+    expect(getPerformance.mock.calls[4][0]).toMatchObject({
+      dimensions: ["brandedClassification"],
+      filters: [filters[0], filters[1], filters[3]],
+    });
+
+    const reportCalls = getPerformance.mock.calls.length;
+    await getSearchPerformanceDetail({
+      data: { ...branded, dimension: "query", key: "openseo" },
+    });
+    expect(getPerformance).toHaveBeenCalledTimes(reportCalls + 3);
+    for (
+      let index = reportCalls;
+      index < getPerformance.mock.calls.length;
+      index++
+    ) {
+      expect(sentFilters(index)).not.toContainEqual(brandFilter);
+    }
   });
 
   it("reports the last-page row count instead of a full page for narrow filters", async () => {

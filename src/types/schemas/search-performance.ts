@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GSC_BRANDED_CLASSIFICATIONS } from "@/shared/gsc";
 import {
   optionalSearchPositiveIntParam,
   searchTextParam,
@@ -48,6 +49,9 @@ const searchPerformanceFilterShape = {
   searchType: z.enum(SEARCH_PERFORMANCE_TYPES).default("web"),
   dateRange: z.enum(SEARCH_PERFORMANCE_RANGES).default("last_28_days"),
   device: z.enum(GSC_DEVICES).optional(),
+  // Google's own branded/non-branded split of queries. It can't be combined
+  // with a query filter, so the page sets one or the other.
+  brand: z.enum(GSC_BRANDED_CLASSIFICATIONS).optional(),
   // ISO-3166-1 alpha-3, the code GSC returns in `country` dimension keys.
   country: z
     .string()
@@ -114,6 +118,7 @@ export const searchPerformanceSearchSchema = z.object({
   type: z.enum(SEARCH_PERFORMANCE_TYPES).optional().catch(undefined),
   range: z.enum(SEARCH_PERFORMANCE_RANGES).optional().catch(undefined),
   device: z.enum(GSC_DEVICES).optional().catch(undefined),
+  brand: z.enum(GSC_BRANDED_CLASSIFICATIONS).optional().catch(undefined),
   country: z.string().length(3).optional().catch(undefined),
   pageText: searchTextParam,
   pageMatch: textMatchParam,

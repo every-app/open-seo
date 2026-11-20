@@ -31,7 +31,10 @@ import {
   GscNotConnectedError,
   GscTokenError,
 } from "@/server/lib/gscErrors";
-import { GSC_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/gsc";
+import {
+  GSC_BRANDED_CLASSIFICATIONS,
+  GSC_SELF_HOSTED_SETUP_DOCS_URL,
+} from "@/shared/gsc";
 
 type GscPerfRow = {
   keys?: string[];
@@ -180,7 +183,7 @@ const perfInputSchema = {
     .max(4)
     .optional()
     .describe(
-      "Group rows by these dimensions. Default ['query']. Use ['page'] for top pages, ['query','page'] to map queries to pages / spot cannibalization, ['date'] for a time series.",
+      "Group rows by these dimensions. Default ['query']. Use ['page'] for top pages, ['query','page'] to map queries to pages / spot cannibalization, ['date'] for a time series, ['brandedClassification'] for Google's branded vs non-branded split.",
     ),
   dateRange: z
     .enum(GSC_DATE_RANGES)
@@ -203,7 +206,7 @@ const perfInputSchema = {
     .max(5)
     .optional()
     .describe(
-      "AND-combined filters. To get the queries for one page: [{dimension:'page',operator:'equals',expression:'https://example.com/post'}] with dimensions ['query'].",
+      "AND-combined filters. To get the queries for one page: [{dimension:'page',operator:'equals',expression:'https://example.com/post'}] with dimensions ['query']. For branded or non-branded queries only: {dimension:'brandedClassification',operator:'equals',expression:'BRANDED' or 'NON_BRANDED'}; Google can't combine that with a query filter.",
     ),
   rowLimit: z
     .number()
@@ -250,7 +253,7 @@ export const getSearchConsolePerformanceTool = {
   config: {
     title: "Get Google Search Console performance",
     description:
-      "Get Google Search Console performance for the project's connected property: clicks, impressions, CTR, and average position by query, page, country, device, or date. This is first-party data: use it for what already ranks, near-ranking queries, and pages with real demand. Use minPosition, maxPosition, and minImpressions instead of fetching everything: Google can't filter by position, so they are applied server-side over the top 1000 rows by clicks. ctr is a 0-1 fraction; position is a 1-based average, omitted for type 'discover' or 'googleNews' because Google does not report it there. Dates are Pacific Time, and the last ~3 days may be incomplete. Reads only the project's connected Search Console property. Uses no credits. For a page's index status, use inspect_urls.",
+      "Get Google Search Console performance for the project's connected property: clicks, impressions, CTR, and average position by query, page, country, device, date, or brandedClassification. This is first-party data: use it for what already ranks, near-ranking queries, and pages with real demand. Use minPosition, maxPosition, and minImpressions instead of fetching everything: Google can't filter by position, so they are applied server-side over the top 1000 rows by clicks. ctr is a 0-1 fraction; position is a 1-based average, omitted for type 'discover' or 'googleNews' because Google does not report it there. Dates are Pacific Time, and the last ~3 days may be incomplete. Google's branded classification starts on 2026-02-21 and covers only top-level properties with enough traffic; for other properties it returns no rows. Reads only the project's connected Search Console property. Uses no credits. For a page's index status, use inspect_urls.",
     inputSchema: perfInputSchema,
     outputSchema: searchConsoleSchema,
     annotations: {
@@ -286,6 +289,34 @@ export const getSearchConsolePerformanceTool = {
       return invalidRequest(
         meta,
         "searchAppearance must be the only dimension when used.",
+      );
+    }
+    const brandFilters =
+      args.filters?.filter(
+        (filter) => filter.dimension === "brandedClassification",
+      ) ?? [];
+    if (
+      brandFilters.some(
+        (filter) =>
+          filter.operator !== "equals" ||
+          !GSC_BRANDED_CLASSIFICATIONS.some(
+            (value) => value === filter.expression,
+          ),
+      )
+    ) {
+      return invalidRequest(
+        meta,
+        "Filter brandedClassification with operator 'equals' and expression 'BRANDED' or 'NON_BRANDED'.",
+      );
+    }
+    if (
+      (brandFilters.length > 0 ||
+        args.dimensions?.includes("brandedClassification")) &&
+      args.filters?.some((filter) => filter.dimension === "query")
+    ) {
+      return invalidRequest(
+        meta,
+        "Google can't combine brandedClassification with a query filter in one request. Drop one of them.",
       );
     }
     // A half-specified explicit range would silently fall back to a default window.

@@ -15,3 +15,8 @@ export const GSC_OAUTH_SCOPES = [
 
 export const GSC_SELF_HOSTED_SETUP_DOCS_URL =
   "https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md";
+
+/** Values of the `brandedClassification` dimension, as Google returns them. */
+export const GSC_BRANDED_CLASSIFICATIONS = ["BRANDED", "NON_BRANDED"] as const;
+export type GscBrandedClassification =
+  (typeof GSC_BRANDED_CLASSIFICATIONS)[number];

@@ -5,14 +5,16 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { ArrowLeftRight, SlidersHorizontal } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { QueryError } from "@/client/components/QueryState";
 import { ExportMenu } from "@/client/components/ExportMenu";
 import { PageHeader } from "@/client/components/PageHeader";
-import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
-import { DataTableTabs } from "@/client/components/table/DataTableToolbar";
+import {
+  DataTableFilterToggle,
+  DataTableTabs,
+} from "@/client/components/table/DataTableToolbar";
 import { TabsTrigger } from "@/client/components/ui/tabs";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import { SearchPerformanceDetailSheet } from "@/client/features/search-performance/SearchPerformanceDetailSheet";
@@ -25,8 +27,10 @@ import {
   type DetailSelection,
   type FilterInput,
 } from "@/client/features/search-performance/searchPerformanceQueries";
+import { SearchPerformanceFilterBar } from "@/client/features/search-performance/SearchPerformanceFilters";
 import {
   SearchPerformanceTextFilters,
+  textFilterSearch,
   type TextFilters,
 } from "@/client/features/search-performance/SearchPerformanceTextFilters";
 import {
@@ -59,15 +63,17 @@ function buildFilterInput({
   range = "last_28_days",
   device,
   country,
+  brand,
 }: Pick<
   SearchPerformanceSearch,
-  "type" | "range" | "device" | "country"
+  "type" | "range" | "device" | "country" | "brand"
 >): FilterInput {
   return {
     searchType: type,
     dateRange: range,
     ...(device ? { device } : {}),
     ...(country ? { country } : {}),
+    ...(brand ? { brand } : {}),
   };
 }
 
@@ -86,6 +92,8 @@ export function SearchPerformancePage({
   const isWeb = (type ?? "web") === "web";
   // Google rejects a device filter on Discover, so ignore one left in the URL.
   const device = type === "discover" ? undefined : search.device;
+  // Only web queries are split, and never under a query filter.
+  const brand = isWeb && !search.queryText ? search.brand : undefined;
   const textFilters = useMemo<TextFilters>(
     () => ({
       pageFilter: search.pageText
@@ -114,18 +122,21 @@ export function SearchPerformancePage({
   const [isExporting, setIsExporting] = useState(false);
   // The query or page whose details are open beside the table.
   const [selection, setSelection] = useState<DetailSelection | null>(null);
-  const activeFilterCount =
+  const textFilterCount =
     Number(Boolean(textFilters.pageFilter)) +
-    Number(Boolean(textFilters.queryFilter)) +
+    Number(Boolean(textFilters.queryFilter));
+  const activeFilterCount =
+    textFilterCount +
+    Number(!isWeb) +
     Number(Boolean(country)) +
     Number(Boolean(device)) +
-    Number(range !== undefined && range !== "last_28_days");
+    Number(Boolean(brand));
   const tab = isWeb ? (search.tab ?? "striking") : "pages";
   const page = search.page ?? 1;
   const pageSize = search.size ?? SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE;
 
   const filterInput = {
-    ...buildFilterInput({ type, range, device, country }),
+    ...buildFilterInput({ type, range, device, country, brand }),
     ...textFilters,
   };
 
@@ -162,7 +173,7 @@ export function SearchPerformancePage({
         1,
         SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
         {
-          ...buildFilterInput({ type, range, device, country }),
+          ...buildFilterInput({ type, range, device, country, brand }),
           ...textFilters,
         },
       ),
@@ -175,6 +186,7 @@ export function SearchPerformancePage({
     range,
     device,
     country,
+    brand,
     textFilters,
     queryClient,
   ]);
@@ -208,13 +220,15 @@ export function SearchPerformancePage({
   const resetFilters = () =>
     onSearchChange({
       page: undefined,
+      tab: isWeb ? search.tab : undefined,
+      type: undefined,
       pageText: undefined,
       pageMatch: undefined,
       queryText: undefined,
       queryMatch: undefined,
       country: undefined,
       device: undefined,
-      range: undefined,
+      brand: undefined,
     });
 
   const reportError = (
@@ -226,23 +240,24 @@ export function SearchPerformancePage({
     />
   );
 
+  const filterBar = (defaultOpen: boolean) => (
+    <SearchPerformanceFilterBar
+      search={search}
+      report={report?.connected ? report : undefined}
+      isFetching={reportQuery.isFetching}
+      defaultOpen={defaultOpen}
+      onSearchChange={onSearchChange}
+    />
+  );
   const filtersPanel = (
     <SearchPerformanceTextFilters
       // Remount on URL changes (back/forward) so the draft matches.
       key={JSON.stringify(textFilters)}
       value={textFilters}
       showQuery={isWeb}
-      activeFilterCount={activeFilterCount}
-      onApply={(filters) => {
-        onSearchChange({
-          page: undefined,
-          pageText: filters.pageFilter?.expression,
-          pageMatch: filters.pageFilter?.operator,
-          queryText: filters.queryFilter?.expression,
-          queryMatch: filters.queryFilter?.operator,
-        });
-      }}
-      onReset={resetFilters}
+      activeFilterCount={textFilterCount}
+      onApply={(filters) => onSearchChange(textFilterSearch(filters))}
+      onReset={() => onSearchChange(textFilterSearch({}))}
     />
   );
 
@@ -276,6 +291,7 @@ export function SearchPerformancePage({
           <SearchPerformanceLoadingState />
         ) : !report ? (
           <>
+            {filterBar(true)}
             {filtersPanel}
             {reportError}
           </>
@@ -289,15 +305,13 @@ export function SearchPerformancePage({
           </div>
         ) : (
           <>
+            {filterBar(false)}
             {reportQuery.isError ? reportError : null}
             <SearchPerformanceOverview
               projectId={projectId}
               report={report}
-              search={search}
-              onSearchChange={onSearchChange}
               filterInput={filterInput}
               isWeb={isWeb}
-              isFetching={reportQuery.isFetching}
               isPlaceholderData={reportQuery.isPlaceholderData}
               onSelect={setSelection}
             />
@@ -333,21 +347,11 @@ export function SearchPerformancePage({
                 <TabsTrigger value="pages">Pages</TabsTrigger>
               </DataTableTabs>
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
-                <Button
-                  type="button"
-                  variant={showFilters ? "secondary" : "ghost"}
-                  size="sm"
-                  aria-expanded={showFilters}
-                  aria-controls="search-performance-filters"
-                  onClick={() => setShowFilters((current) => !current)}
-                  title="Toggle table filters"
-                >
-                  <SlidersHorizontal data-icon="inline-start" />
-                  Filters
-                  {activeFilterCount > 0 ? (
-                    <Badge size="sm">{activeFilterCount}</Badge>
-                  ) : null}
-                </Button>
+                <DataTableFilterToggle
+                  open={showFilters}
+                  activeCount={textFilterCount}
+                  onToggle={() => setShowFilters((current) => !current)}
+                />
               </div>
 
               {showFilters ? filtersPanel : null}
