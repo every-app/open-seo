@@ -53,3 +53,5 @@ dist/
 
 # Self-hosting backups from scripts/celld/backup.mjs (contain user data)
 /backups/
+
+work/
