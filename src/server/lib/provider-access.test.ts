@@ -1,3 +1,4 @@
+import { GATEWAY_ERROR_HEADER } from "@every-app/sdk/server";
 import { UnsecuredJWT } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -67,6 +68,51 @@ describe("provider access behind an Every App gateway", () => {
     await expect(getDataforseoFetch()).rejects.toMatchObject({
       code: "DATAFORSEO_AUTH_FAILED",
     });
+  });
+});
+
+describe("treg behind the gateway", () => {
+  it("uses the gateway's treg token when it holds no DataForSEO key", async () => {
+    const sent: string[] = [];
+    // A gateway holding TREG_API_TOKEN and no DATAFORSEO_API_KEY.
+    const binding = {
+      fetch: vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = new Request(input, init);
+        const { pathname } = new URL(request.url);
+        sent.push(`${request.method} ${pathname} ${await request.text()}`);
+        if (pathname === "/api/integrations/treg") {
+          return Response.json({ requested: true, ready: true });
+        }
+        if (pathname.startsWith("/api/integrations/treg/")) {
+          return Response.json({ status_code: 20000 });
+        }
+        return Response.json(
+          { code: "integration_not_configured" },
+          {
+            status: 503,
+            headers: { [GATEWAY_ERROR_HEADER]: "integration_not_configured" },
+          },
+        );
+      }),
+    };
+    Object.assign(workerEnv, {
+      AUTH_MODE: "everyapp",
+      EVERYAPP_APP_ID: "openseo",
+      EVERY_APP_GATEWAY: binding,
+    });
+
+    const dataforseo = await getDataforseoFetch();
+    const response = await dataforseo(
+      "https://api.dataforseo.com/v3/backlinks/summary/live",
+      { method: "POST", body: "[]" },
+    );
+
+    expect(await response.json()).toEqual({ status_code: 20000 });
+    expect(sent).toEqual([
+      "POST /api/integrations/dataforseo/api.dataforseo.com/v3/backlinks/summary/live []",
+      "POST /api/integrations/treg/treg.to/call/dataforseo/backlinks/summary/live []",
+    ]);
+    expect(await hasProviderAccess("dataforseo")).toBe(true);
   });
 });
 

@@ -67,12 +67,15 @@ async function tregRefusalError(response: Response, path: string) {
 }
 
 /**
- * A fetch that takes DataForSEO URLs and serves them through treg, billed to
- * the treg team that owns `apiKey`. treg's own refusals (a bad token, an
+ * A fetch that takes DataForSEO URLs and serves them through treg, sent with
+ * `tregFetch`, which puts a treg token on the call: the deployment's own, or
+ * on an Every App gateway the gateway's. treg's own refusals (a bad token, an
  * empty balance, a path it doesn't serve) come back as OpenSEO errors;
  * DataForSEO's answers pass through unchanged.
  */
-export function createTregDataforseoFetch(apiKey: string): typeof fetch {
+export function createTregDataforseoFetch(
+  tregFetch: typeof fetch,
+): typeof fetch {
   return async (input, init) => {
     const rawUrl =
       typeof input === "string"
@@ -80,9 +83,7 @@ export function createTregDataforseoFetch(apiKey: string): typeof fetch {
         : input instanceof URL
           ? input.href
           : input.url;
-    const headers = new Headers(init?.headers);
-    headers.set("X-Treg-Token", apiKey);
-    const response = await fetch(tregUrlFor(rawUrl), { ...init, headers });
+    const response = await tregFetch(tregUrlFor(rawUrl), init);
     // treg marks its own refusals; without the header the status and body
     // are DataForSEO's (a 402 there is treg's DataForSEO account, not yours).
     // Decide from the status, not the body: a body read here can't be read

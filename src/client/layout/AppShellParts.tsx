@@ -38,8 +38,9 @@ function SeoApiStatusBanners({
             <>
               DataForSEO isn&apos;t set up on your Every App gateway yet. An
               owner or admin sets it with{" "}
-              <code>pnpm everyapp secret set DATAFORSEO_API_KEY</code>. Steps on
-              the {helpLink}.
+              <code>pnpm everyapp secret set DATAFORSEO_API_KEY</code>, or{" "}
+              <code>TREG_API_TOKEN</code> to use treg instead. Steps on the{" "}
+              {helpLink}.
             </>
           ) : (
             <>
@@ -118,11 +119,9 @@ function MissingSeoSetupModal({ onClose }: { onClose: () => void }) {
             <DialogDescription>
               {everyApp ? (
                 <>
-                  Keyword, domain, backlink and rank data comes from DataForSEO
-                  through your Every App gateway. An owner or admin sets it once
-                  for every app with{" "}
-                  <code>pnpm everyapp secret set DATAFORSEO_API_KEY</code>; the
-                  setup guide has the steps.
+                  An owner or admin sets it on your Every App gateway with{" "}
+                  <code>pnpm everyapp secret set DATAFORSEO_API_KEY</code>, or{" "}
+                  <code>TREG_API_TOKEN</code> to use treg instead.
                 </>
               ) : (
                 "Add your DataForSEO API key to start using OpenSEO."

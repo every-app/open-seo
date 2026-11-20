@@ -7,4 +7,4 @@
  * and tool answers render it as is, so no backticks.
  */
 export const DATAFORSEO_NOT_SET_UP_MESSAGE =
-  "DataForSEO isn't set up on your Every App gateway yet. An owner or admin sets it with pnpm everyapp secret set DATAFORSEO_API_KEY.";
+  "DataForSEO isn't set up on your Every App gateway yet. An owner or admin sets it with pnpm everyapp secret set DATAFORSEO_API_KEY, or TREG_API_TOKEN to use treg instead.";
