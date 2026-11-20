@@ -31,7 +31,8 @@ const STEP_BUDGET_MS = 4_000;
 // The largest request body a step sends at once.
 const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_MESSAGES_PER_REQUEST = 500;
-// The app's own table names: SQLite's and D1's internal tables never move.
+// The app's own table names. Internal tables (SQLite's, D1's, and the
+// Docker edition's _litestream_*, which refuse every query) never move.
 const TABLE_NAME_PATTERN = /^(?!sqlite_)[a-z][a-z0-9_]*$/;
 
 /** A refused or failed move, shown in the dialog by its problem. */
@@ -129,11 +130,13 @@ async function hasRunningWork() {
 async function movableTables() {
   const names = (
     await all<{ name: string }>(
-      "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'",
+      "SELECT name FROM sqlite_schema WHERE type = 'table'",
     )
   )
     .map((row) => row.name)
-    .filter((name) => !EXCLUDED_TABLES.has(name));
+    .filter(
+      (name) => TABLE_NAME_PATTERN.test(name) && !EXCLUDED_TABLES.has(name),
+    );
   const parents = new Map<string, string[]>();
   for (const name of names) {
     const keys = await all<{ table: string }>(
@@ -236,16 +239,13 @@ function* byRequestSize<T>(items: T[], maxCount: number) {
 /** Sends a table's rows after `after` (a rowid) until the step's time is up. */
 async function sendRows(code: string, table: string, after: number) {
   const target = await targetFor(code);
+  if (EXCLUDED_TABLES.has(table) || !TABLE_NAME_PATTERN.test(table)) {
+    throw new Error(`Not a movable table: ${table}`);
+  }
   const columns = (
     await all<{ name: string }>("SELECT name FROM pragma_table_info(?)", table)
   ).map((column) => column.name);
-  if (
-    EXCLUDED_TABLES.has(table) ||
-    !TABLE_NAME_PATTERN.test(table) ||
-    columns.length === 0
-  ) {
-    throw new Error(`Not a movable table: ${table}`);
-  }
+  if (columns.length === 0) throw new Error(`Not a movable table: ${table}`);
   const deadline = Date.now() + STEP_BUDGET_MS;
   let cursor = after;
   let sent = 0;
