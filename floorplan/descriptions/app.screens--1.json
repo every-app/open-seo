@@ -1,0 +1,164 @@
+{
+  "files": {
+    "src/router.tsx": {
+      "name": "Router",
+      "description": "Baut den Router, der Adressen den Bildschirmen zuordnet."
+    },
+    "src/routes/__root.tsx": {
+      "name": "Grundgerüst",
+      "description": "Wurzel jeder Seite: Stile, Kopf, Statistik und Fehlerfänger."
+    },
+    "src/routes/_app/ai.tsx": {
+      "name": "Seite KI-Anbindung",
+      "description": "Bildschirm zum Verbinden von Claude, ChatGPT und Co. mit OpenSEO."
+    },
+    "src/routes/_app/billing_.fix-payment.tsx": {
+      "name": "Seite Zahlung beheben",
+      "description": "Bildschirm, den die E-Mail zur fehlgeschlagenen Zahlung verlinkt."
+    },
+    "src/routes/_app/billing.tsx": {
+      "name": "Seite Abrechnung",
+      "description": "Bildschirm mit Tarif, Guthaben, Verbrauch und Rechnungen."
+    },
+    "src/routes/_app/help/dataforseo-api-key.tsx": {
+      "name": "Hilfe DataForSEO-Schlüssel",
+      "description": "Erklärt, wie der DataForSEO-Schlüssel eingerichtet wird."
+    },
+    "src/routes/_app/help/openrouter-api-key.tsx": {
+      "name": "Hilfe OpenRouter-Schlüssel",
+      "description": "Erklärt, wie der OpenRouter-Schlüssel eingerichtet wird."
+    },
+    "src/routes/_app/index.tsx": {
+      "name": "Startseite der App",
+      "description": "Leitet zur Startseite des passenden Projekts weiter."
+    },
+    "src/routes/_app/p/$projectId/ai-visibility.tsx": {
+      "name": "Seite KI-Sichtbarkeit",
+      "description": "Rahmen der Seiten zur KI-Sichtbarkeit."
+    },
+    "src/routes/_app/p/$projectId/ai-visibility/index.tsx": {
+      "name": "Übersicht KI-Sichtbarkeit",
+      "description": "Bildschirm mit den verfolgten Fragen und Ergebnissen."
+    },
+    "src/routes/_app/p/$projectId/ai-visibility/prompts/$promptId.tsx": {
+      "name": "Seite einer Frage",
+      "description": "Bildschirm mit Auswertung einer einzelnen Frage."
+    },
+    "src/routes/_app/p/$projectId/ai-visibility/research.tsx": {
+      "name": "Seite KI-Recherche",
+      "description": "Bildschirm zum Entdecken neuer Fragen."
+    },
+    "src/routes/_app/p/$projectId/audit/index.tsx": {
+      "name": "Seite Prüfung",
+      "description": "Startbildschirm der Website-Prüfung mit Verlauf."
+    },
+    "src/routes/_app/p/$projectId/audit/issues/$resultId.tsx": {
+      "name": "Seite Prüf-Probleme",
+      "description": "Zeigt die Probleme einer einzelnen Prüfung."
+    },
+    "src/routes/_app/p/$projectId/backlinks.tsx": {
+      "name": "Seite Backlinks",
+      "description": "Bildschirm der Backlink-Suche."
+    },
+    "src/routes/_app/p/$projectId/brand-lookup.tsx": {
+      "name": "Seite Markensuche",
+      "description": "Bildschirm der Markensuche."
+    },
+    "src/routes/_app/p/$projectId/context.tsx": {
+      "name": "Seite Projektkontext",
+      "description": "Bildschirm für Marke, Wettbewerber und Schlüsselseiten."
+    },
+    "src/routes/_app/p/$projectId/domain.tsx": {
+      "name": "Seite Domain-Analyse",
+      "description": "Bildschirm der Domain-Analyse."
+    },
+    "src/routes/_app/p/$projectId/index.tsx": {
+      "name": "Startseite Projekt",
+      "description": "Startseite eines Projekts mit Kennzahlen."
+    },
+    "src/routes/_app/p/$projectId/keywords.tsx": {
+      "name": "Seite Begriffs-Recherche",
+      "description": "Bildschirm der Begriffs-Recherche."
+    },
+    "src/routes/_app/p/$projectId/local-seo.tsx": {
+      "name": "Seite lokales Ranking",
+      "description": "Rahmen der Seiten für lokale Rankings."
+    },
+    "src/routes/_app/p/$projectId/local-seo/$trackerId.tsx": {
+      "name": "Seite lokale Verfolgung",
+      "description": "Zeigt eine einzelne lokale Verfolgung."
+    },
+    "src/routes/_app/p/$projectId/local-seo/index.tsx": {
+      "name": "Übersicht lokale Rankings",
+      "description": "Liste der lokalen Ranking-Verfolgungen."
+    },
+    "src/routes/_app/p/$projectId/prompt-explorer.tsx": {
+      "name": "Seite Prompt-Explorer",
+      "description": "Bildschirm des Prompt-Explorers."
+    },
+    "src/routes/_app/p/$projectId/rank-tracking.tsx": {
+      "name": "Seite Rankings",
+      "description": "Rahmen der Ranking-Seiten."
+    },
+    "src/routes/_app/p/$projectId/rank-tracking/$configId.tsx": {
+      "name": "Seite einer Verfolgung",
+      "description": "Zeigt die Rankings einer einzelnen Verfolgung."
+    },
+    "src/routes/_app/p/$projectId/rank-tracking/index.tsx": {
+      "name": "Übersicht Rankings",
+      "description": "Liste der Ranking-Verfolgungen eines Projekts."
+    },
+    "src/routes/_app/p/$projectId/reports/$reportId.tsx": {
+      "name": "Seite Bericht",
+      "description": "Zeigt einen Bericht und lässt ihn teilen."
+    },
+    "src/routes/_app/p/$projectId/reports/index.tsx": {
+      "name": "Berichtsliste",
+      "description": "Liste der Berichte eines Projekts."
+    },
+    "src/routes/_app/p/$projectId/reports/templates.tsx": {
+      "name": "Seite Berichtsvorlagen",
+      "description": "Liste und Bearbeitung der Berichtsvorlagen."
+    },
+    "src/routes/_app/p/$projectId/route.tsx": {
+      "name": "Rahmen Projekt",
+      "description": "Gemeinsamer Rahmen aller Seiten eines Projekts mit Prüfung, ob es existiert."
+    },
+    "src/routes/_app/p/$projectId/sam.tsx": {
+      "name": "Seite Sam",
+      "description": "Bildschirm des Chat-Assistenten."
+    },
+    "src/routes/_app/p/$projectId/saved.tsx": {
+      "name": "Seite Merkliste",
+      "description": "Bildschirm der gespeicherten Suchbegriffe."
+    },
+    "src/routes/_app/p/$projectId/search-performance.tsx": {
+      "name": "Seite Suchleistung",
+      "description": "Bildschirm der Search-Console-Daten."
+    },
+    "src/routes/_app/p/$projectId/settings.tsx": {
+      "name": "Seite Projekteinstellungen",
+      "description": "Rahmen der Projekteinstellungen."
+    },
+    "src/routes/_app/p/$projectId/settings/context.tsx": {
+      "name": "Weiterleitung Kontext",
+      "description": "Leitet die alte Adresse des Projektkontexts zur neuen weiter."
+    },
+    "src/routes/_app/p/$projectId/settings/index.tsx": {
+      "name": "Einstellungen allgemein",
+      "description": "Bildschirm der allgemeinen Projekteinstellungen."
+    },
+    "src/routes/_app/p/$projectId/settings/integrations.tsx": {
+      "name": "Einstellungen Verbindungen",
+      "description": "Bildschirm der Google-Verbindungen des Projekts."
+    },
+    "src/routes/_app/projects.tsx": {
+      "name": "Seite Projekte",
+      "description": "Liste aller Projekte mit Anlegen."
+    },
+    "src/routes/_app/route.tsx": {
+      "name": "Rahmen Einstellungen",
+      "description": "Gemeinsamer Rahmen für Einstellungen."
+    }
+  }
+}

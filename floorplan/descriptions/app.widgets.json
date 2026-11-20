@@ -1,0 +1,40 @@
+{
+  "files": {
+    "src/client/mcp-widgets/main.tsx": {
+      "name": "Start der Widgets",
+      "description": "Startet die kleinen Ansichten, die ein KI-Assistent im Chat anzeigt."
+    },
+    "src/client/mcp-widgets/SearchConsoleConnection.tsx": {
+      "name": "Widget Verbindung",
+      "description": "Zeigt im Widget, ob die Search Console verbunden ist."
+    },
+    "src/client/mcp-widgets/SearchConsoleDateRange.tsx": {
+      "name": "Widget Zeitraum",
+      "description": "Zeitraum-Auswahl im Search-Console-Widget."
+    },
+    "src/client/mcp-widgets/SearchConsoleTable.tsx": {
+      "name": "Widget Tabelle",
+      "description": "Tabelle der Search-Console-Daten im Widget."
+    },
+    "src/client/mcp-widgets/SearchConsoleWidget.tsx": {
+      "name": "Widget Search Console",
+      "description": "Ansicht der Suchleistung für den Chat eines KI-Assistenten."
+    },
+    "src/client/mcp-widgets/SerpWidget.tsx": {
+      "name": "Widget Suchergebnisse",
+      "description": "Ansicht der Google-Ergebnisse für den Chat eines KI-Assistenten."
+    },
+    "src/client/mcp-widgets/useWidgetHost.ts": {
+      "name": "Verbindung zum Chat",
+      "description": "Spricht mit dem Chat-Programm, in dem das Widget läuft."
+    },
+    "src/client/mcp-widgets/widgets.css": {
+      "name": "Stil der Widgets",
+      "description": "Gestaltung der Widgets."
+    },
+    "src/report-widgets/rank-grid.ts": {
+      "name": "Ranking-Raster für Berichte",
+      "description": "Zeichnet das Raster lokaler Rankings in Berichten."
+    }
+  }
+}

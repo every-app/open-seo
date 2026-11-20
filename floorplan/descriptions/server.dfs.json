@@ -1,0 +1,108 @@
+{
+  "files": {
+    "src/server/lib/dataforseo/ai-tracking-billing.ts": {
+      "name": "Guthaben-Reservierung KI-Verfolgung",
+      "description": "Reserviert Guthaben für Abfragen an KI-Modelle, bis die Antworten da sind."
+    },
+    "src/server/lib/dataforseo/ai-tracking.ts": {
+      "name": "KI-Abfragen DataForSEO",
+      "description": "Schickt Fragen an KI-Modelle über DataForSEO und holt die Antworten ab."
+    },
+    "src/server/lib/dataforseo/ai.ts": {
+      "name": "KI-Daten DataForSEO",
+      "description": "Holt Nennungen, Quellen und Antworten von KI-Modellen."
+    },
+    "src/server/lib/dataforseo/appendix.ts": {
+      "name": "Anhang DataForSEO",
+      "description": "Wandelt Google-Weiterleitungsadressen in echte Seiten um."
+    },
+    "src/server/lib/dataforseo/backlinks.ts": {
+      "name": "Backlinks DataForSEO",
+      "description": "Holt Backlink-Daten und liest beide Schreibweisen der Felder."
+    },
+    "src/server/lib/dataforseo/business.ts": {
+      "name": "Firmendaten DataForSEO",
+      "description": "Holt Firmen-Einträge, Fragen und Antworten, Bewertungen und Profile."
+    },
+    "src/server/lib/dataforseo/client.ts": {
+      "name": "Client DataForSEO",
+      "description": "Der Hauptzugang zu DataForSEO: Anfragen senden, Antworten lesen, Kosten melden."
+    },
+    "src/server/lib/dataforseo/core.ts": {
+      "name": "Kern DataForSEO",
+      "description": "Übersetzt Fehler von DataForSEO in verständliche Fehler des Produkts."
+    },
+    "src/server/lib/dataforseo/envelope.ts": {
+      "name": "Antwort-Umschlag",
+      "description": "Beschreibt den Aufbau einer DataForSEO-Antwort samt Kosten."
+    },
+    "src/server/lib/dataforseo/filters.ts": {
+      "name": "Filter DataForSEO",
+      "description": "Bausteine für Filter-Ausdrücke, die alle Abfragearten teilen."
+    },
+    "src/server/lib/dataforseo/google-ads.ts": {
+      "name": "Google Ads Daten",
+      "description": "Holt Suchvolumen aus Google Ads für Länder, die DataForSEO Labs nicht abdeckt."
+    },
+    "src/server/lib/dataforseo/index.ts": {
+      "name": "Sammeldatei DataForSEO",
+      "description": "Reicht alle Bereiche der DataForSEO-Anbindung nach außen weiter."
+    },
+    "src/server/lib/dataforseo/keyword-metrics.ts": {
+      "name": "Kennzahlen Suchbegriffe",
+      "description": "Holt Suchvolumen aus Google Ads und führt es mit Labs-Daten zusammen."
+    },
+    "src/server/lib/dataforseo/labs.ts": {
+      "name": "Labs-Daten",
+      "description": "Holt Begriffsvorschläge, Schwierigkeit und Trend aus DataForSEO Labs."
+    },
+    "src/server/lib/dataforseo/lighthouse.ts": {
+      "name": "Lighthouse DataForSEO",
+      "description": "Holt das Lighthouse-Ergebnis einer Seite."
+    },
+    "src/server/lib/dataforseo/llm-models.ts": {
+      "name": "KI-Modelle wählen",
+      "description": "Wählt aus dem aktuellen Katalog das passende KI-Modell je Anbieter."
+    },
+    "src/server/lib/dataforseo/pricing.ts": {
+      "name": "Preise",
+      "description": "Schätzt die Kosten jeder Abfrageart in Dollar, damit vorab Guthaben reserviert werden kann."
+    },
+    "src/server/lib/dataforseo/request-slots.ts": {
+      "name": "Anfrage-Plätze",
+      "description": "Begrenzt, wie viele DataForSEO-Anfragen gleichzeitig laufen."
+    },
+    "src/server/lib/dataforseo/researchScopeFilters.ts": {
+      "name": "Filter Recherche-Umfang",
+      "description": "Baut Filter für genaue Adresse, Unterordner, Domain oder Subdomains."
+    },
+    "src/server/lib/dataforseo/serp-location-validate.ts": {
+      "name": "Ortsprüfung",
+      "description": "Fragt die DataForSEO-Testumgebung, ob Ort und Sprache gültig sind."
+    },
+    "src/server/lib/dataforseo/serp-locations.ts": {
+      "name": "Orte DataForSEO",
+      "description": "Lädt die vollständige Ortsliste eines Landes."
+    },
+    "src/server/lib/dataforseo/serp.ts": {
+      "name": "Suchergebnisse DataForSEO",
+      "description": "Holt Google-Ergebnisseiten; abgerechnet wird in Seiten zu je zehn Treffern."
+    },
+    "src/server/lib/dataforseo/shared.ts": {
+      "name": "Gemeinsame Werte",
+      "description": "Feste Werte, etwa der Ort für ChatGPT-Daten, die nur für USA und Englisch gelten."
+    },
+    "src/server/lib/dataforseoBacklinksTarget.ts": {
+      "name": "Backlink-Ziel",
+      "description": "Bereitet eine Eingabe als Ziel der Backlink-Suche auf."
+    },
+    "src/server/lib/dataforseoBillingClassification.ts": {
+      "name": "Zahlungsfehler DataForSEO",
+      "description": "Erkennt Fehler wegen leerem Guthaben bei DataForSEO."
+    },
+    "src/server/lib/dataforseoLlmSchemas.ts": {
+      "name": "Schemata KI-Daten",
+      "description": "Beschreibt, wie die KI-Antworten von DataForSEO aussehen müssen."
+    }
+  }
+}

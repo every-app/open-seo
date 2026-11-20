@@ -1,0 +1,88 @@
+{
+  "files": {
+    "src/client/features/auth/AuthPage.tsx": {
+      "name": "Anmeldeseite",
+      "description": "Gemeinsame Seite für Anmelden und Registrieren, mit Eingabefeldern und Weiterleitung."
+    },
+    "src/client/features/auth/passwordSchema.ts": {
+      "name": "Passwortregeln",
+      "description": "Prüft, ob ein Passwort die Anforderungen erfüllt."
+    },
+    "src/client/features/auth/signUpStatus.ts": {
+      "name": "Abfrage Erststart",
+      "description": "Fragt, ob die eigene Installation noch kein Konto hat, damit die Seite das erste Administrator-Konto anbietet."
+    },
+    "src/client/features/auth/TermsUpdateBanner.tsx": {
+      "name": "Banner neue Bedingungen",
+      "description": "Bittet bestehende Nutzer, aktualisierte Nutzungsbedingungen anzunehmen."
+    },
+    "src/client/features/auth/TurnstileWidget.tsx": {
+      "name": "Roboter-Prüfung",
+      "description": "Zeigt die Turnstile-Prüfung, die Roboter bei Anmeldeformularen abhält."
+    },
+    "src/client/features/auth/useGoogleAuth.ts": {
+      "name": "Anmeldung mit Google",
+      "description": "Startet die Anmeldung über ein Google-Konto."
+    },
+    "src/client/features/auth/useHostedAuthRouteGuard.ts": {
+      "name": "Wächter für Online-Anmeldeseiten",
+      "description": "Leitet angemeldete Nutzer von den Anmeldeseiten der Online-Version weiter."
+    },
+    "src/client/features/every-app/everyAppAccountQueries.ts": {
+      "name": "Abfrage EveryApp-Konto",
+      "description": "Holt das Konto des Mitglieds bei EveryApp samt Rückweg zur Plattform."
+    },
+    "src/client/features/help/SecretHelpPage.tsx": {
+      "name": "Hilfeseite für Geheimnisse",
+      "description": "Erklärt Schritt für Schritt, wie ein Passwort oder Schlüssel eingerichtet wird, mit Kopierknopf für Befehle."
+    },
+    "src/client/features/settings/ApiKeySettings.tsx": {
+      "name": "API-Schlüssel",
+      "description": "Erstellt, zeigt und löscht Schlüssel, mit denen Programme OpenSEO nutzen."
+    },
+    "src/client/features/settings/CrawlerAccessSettings.tsx": {
+      "name": "Zugang für Crawler",
+      "description": "Speichert Erkennungsmerkmale für Shopify-Shops, damit der Prüf-Roboter nicht ausgesperrt wird."
+    },
+    "src/client/features/settings/DeleteAccountSettings.tsx": {
+      "name": "Konto löschen",
+      "description": "Lässt Nutzer das Konto mit allen Daten löschen."
+    },
+    "src/client/features/settings/IndexNowSettings.tsx": {
+      "name": "IndexNow",
+      "description": "Meldet Bing und anderen Suchmaschinen, welche Seiten sich geändert haben."
+    },
+    "src/client/features/settings/McpConnectionsSettings.tsx": {
+      "name": "Verbundene Assistenten",
+      "description": "Listet die KI-Assistenten, die mit dem Konto verbunden sind, und trennt sie."
+    },
+    "src/client/features/settings/PrivacySettings.tsx": {
+      "name": "Datenschutz",
+      "description": "Einstellungen zu Statistik und Datenschutz."
+    },
+    "src/client/features/settings/useOrganizations.ts": {
+      "name": "Organisationen laden",
+      "description": "Zeigt Organisations-Namen nur dort, wo jemand mehreren angehört."
+    },
+    "src/client/features/team/InviteTeammateModal.tsx": {
+      "name": "Teammitglied einladen",
+      "description": "Dialog zum Einladen per E-Mail; ohne Mailversand zeigt er den Einladungslink an."
+    },
+    "src/client/features/team/organizationQueries.ts": {
+      "name": "Abfrage Organisation",
+      "description": "Lädt die Organisation und sagt, ob der Nutzer die Abrechnung verwalten darf."
+    },
+    "src/client/features/team/TeamSettings.tsx": {
+      "name": "Team-Einstellungen",
+      "description": "Reiter Organisation: wer Zugriff hat, mit Einladungen und Rollen."
+    },
+    "src/client/features/team/TeamTableRows.tsx": {
+      "name": "Zeilen der Teamtabelle",
+      "description": "Zeilen für Mitglieder und offene Einladungen."
+    },
+    "src/client/features/team/TransferOwnershipModal.tsx": {
+      "name": "Eigentum übertragen",
+      "description": "Dialog zum Übergeben der Organisation an ein anderes Mitglied."
+    }
+  }
+}

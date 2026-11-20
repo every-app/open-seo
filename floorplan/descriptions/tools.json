@@ -1,0 +1,120 @@
+{
+  "files": {
+    "scripts/backlinks-cost-profile.ts": {
+      "name": "Kostenprofil Backlinks",
+      "description": "Misst, was Backlink-Abfragen kosten; Skript zum Auswerten."
+    },
+    "scripts/brand-lookup-cost-profile.ts": {
+      "name": "Kostenprofil Markensuche",
+      "description": "Misst, was Markensuchen kosten; Skript zum Auswerten."
+    },
+    "scripts/celld/backup.mjs": {
+      "name": "Sicherung Container",
+      "description": "Sichert und stellt die Daten des eigenen Servers wieder her."
+    },
+    "scripts/celld/create-legacy-fixture.mjs": {
+      "name": "Testdaten alte Installation",
+      "description": "Erzeugt Testdaten im Format der alten Container-Installation."
+    },
+    "scripts/celld/export-legacy.mjs": {
+      "name": "Export alte Installation",
+      "description": "Liest Daten der alten Container-Installation aus."
+    },
+    "scripts/celld/migrate-legacy.mjs": {
+      "name": "Umzug alte Installation",
+      "description": "Exportiert den alten Stand, importiert ihn und merkt sich, dass es erledigt ist."
+    },
+    "scripts/celld/package.mjs": {
+      "name": "Paket bauen",
+      "description": "Kopiert die Bauergebnisse in den Ordner für den Container, ohne Geheimnisse."
+    },
+    "scripts/celld/runtime/admin.mjs": {
+      "name": "Verwaltung Container",
+      "description": "Legt Nutzer an, setzt Passwörter zurück und übernimmt alte Nutzer."
+    },
+    "scripts/celld/runtime/configure.mjs": {
+      "name": "Einrichtung Container",
+      "description": "Erzeugt beim ersten Start die Geheimnisse und Einstellungen des Servers."
+    },
+    "scripts/celld/runtime/crawl-gateway.mjs": {
+      "name": "Tor für Abrufe",
+      "description": "Leitet Abrufe des Prüf-Roboters weiter und blockiert nicht-öffentliche Adressen."
+    },
+    "scripts/celld/runtime/import.mjs": {
+      "name": "Import im Container",
+      "description": "Spielt die exportierten Daten geprüft in den neuen Server ein."
+    },
+    "scripts/cleanup-default-projects.sql": {
+      "name": "Aufräumen Standardprojekte (SQL)",
+      "description": "Einmalige Hilfe gegen doppelt angelegte Standardprojekte, wenn eine Änderung am Datenbankschema scheitert."
+    },
+    "scripts/cli-auth.ts": {
+      "name": "Anmelde-Einstellung Werkzeuge",
+      "description": "Gibt den Skripten Zugriff auf die Anmelde-Bibliothek."
+    },
+    "scripts/cli-utils.ts": {
+      "name": "Hilfen Skripte",
+      "description": "Liest Argumente, lokale Einstellungen und Pflichtwerte."
+    },
+    "scripts/d1-default-project-cleanup.ts": {
+      "name": "Aufräumen Standardprojekte",
+      "description": "Einmaliges Skript gegen doppelte Standardprojekte, mit Probelauf und Bestätigung."
+    },
+    "scripts/dataforseo-account-usage.ts": {
+      "name": "Verbrauch DataForSEO",
+      "description": "Zeigt Verbrauch und Stand des DataForSEO-Kontos."
+    },
+    "scripts/migrate-d1-to-postgres.ts": {
+      "name": "Umzug D1 nach Postgres",
+      "description": "Einmaliger Umzug aller Daten von der Cloudflare-Datenbank nach Postgres (Stand 2026-06-29)."
+    },
+    "scripts/paying-customer-onboarding-answers.sql": {
+      "name": "Abfrage Antworten Kunden",
+      "description": "Liest Einrichtungsangaben zahlender Kunden aus der Datenbank."
+    },
+    "scripts/publish-release.mjs": {
+      "name": "Version veröffentlichen",
+      "description": "Veröffentlicht eine Version des Projekts."
+    },
+    "scripts/rank-location-repair-support.ts": {
+      "name": "Hilfen Ortskorrektur",
+      "description": "Fragt die Testumgebung, ob ein Ortsname akzeptiert wird."
+    },
+    "scripts/release-notes.mjs": {
+      "name": "Versionshinweise",
+      "description": "Baut aus der Git-Historie Versionshinweise."
+    },
+    "scripts/repair-rank-tracking-locations.ts": {
+      "name": "Orte reparieren",
+      "description": "Schreibt frei getippte Orte der Ranking-Verfolgung in gültige DataForSEO-Namen um, erst als Probelauf."
+    },
+    "scripts/seed-projects.ts": {
+      "name": "Demo-Projekte",
+      "description": "Füllt die lokale Datenbank mit Beispielprojekten, ohne Netz."
+    },
+    "scripts/seed-rank-tracking.ts": {
+      "name": "Demo-Rankings",
+      "description": "Füllt die lokale Datenbank mit künstlichem Ranking-Verlauf, ohne Netz."
+    },
+    "scripts/selfhost-deploy-preflight.mjs": {
+      "name": "Vorprüfung Aufspielen",
+      "description": "Prüft vor dem Aufspielen bei Cloudflare, ob Einstellungen und Anmeldung stimmen."
+    },
+    "scripts/selfhost-preflight.ts": {
+      "name": "Vorprüfung Container",
+      "description": "Prüft beim Start des Containers die Einstellungen."
+    },
+    "scripts/selfhost-scheduler.mjs": {
+      "name": "Zeitplan Selbsthosting",
+      "description": "Ruft regelmäßig die geplanten Aufgaben des eigenen Servers auf."
+    },
+    "scripts/serp-location-match.ts": {
+      "name": "Ortsabgleich",
+      "description": "Ordnet eingegebene Orte denen des Ortsverzeichnisses zu."
+    },
+    "scripts/sync-plugin-skills.mjs": {
+      "name": "Skills abgleichen",
+      "description": "Kopiert die Skills als echte Dateien in das Plugin-Verzeichnis."
+    }
+  }
+}

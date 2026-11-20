@@ -1,0 +1,56 @@
+{
+  "files": {
+    "cloudflare.config.ts": {
+      "name": "Cloudflare-Grundeinstellung",
+      "description": "Ergänzt die Einstellungen beider Server-Teile bei Cloudflare."
+    },
+    "deploy/alchemy/alchemy.access.ts": {
+      "name": "Cloudflare-Zugang",
+      "description": "Regelt den Zugang zu den Cloudflare-Betriebsumgebungen, darunter die Online-Version."
+    },
+    "deploy/alchemy/alchemy.preview-access.run.ts": {
+      "name": "Vorschau-Zugang",
+      "description": "Richtet den geschützten Zugang zur Vorschau ein."
+    },
+    "deploy/alchemy/alchemy.run.ts": {
+      "name": "Cloudflare-Aufbau",
+      "description": "Beschreibt alle Cloudflare-Teile (Server, Datenbank, Speicher, Aufgaben) und spielt sie ein."
+    },
+    "deploy/docker/docker-entrypoint.sh": {
+      "name": "Start Container",
+      "description": "Startskript des Containers: Vorprüfung und Start."
+    },
+    "deploy/standalone/init.sh": {
+      "name": "Einrichtung Container",
+      "description": "Richtet beim ersten Start des Standalone-Containers Datenbank und Ordner ein."
+    },
+    "deploy/standalone/run.sh": {
+      "name": "Start Standalone",
+      "description": "Startet den Standalone-Server."
+    },
+    "everyapp.config.ts": {
+      "name": "EveryApp-Einstellungen",
+      "description": "Beschreibt OpenSEO für die Plattform EveryApp."
+    },
+    "vite-plugin-every-app.ts": {
+      "name": "Plugin EveryApp",
+      "description": "Bau-Plugin für OpenSEO hinter dem EveryApp-Zugang."
+    },
+    "vite-plugin-lean-worker-bundle.ts": {
+      "name": "Plugin schlankes Paket",
+      "description": "Hält das Hauptpaket des Servers klein, indem es selten gebrauchte Teile abtrennt."
+    },
+    "vite-plugin-mcp-widgets.ts": {
+      "name": "Plugin Widgets",
+      "description": "Baut die Widgets als eigenes Paket, damit React nicht in den Server gelangt."
+    },
+    "vite.config.ts": {
+      "name": "Bau-Einstellungen",
+      "description": "Zentrale Einstellungen zum Bauen der App für alle Betriebsarten."
+    },
+    "vite.report-widgets.config.ts": {
+      "name": "Bau der Berichts-Widgets",
+      "description": "Einstellungen zum Bauen der Widgets für geteilte Berichte."
+    }
+  }
+}

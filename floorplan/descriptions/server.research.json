@@ -1,0 +1,156 @@
+{
+  "files": {
+    "src/server/features/ai-search/services/access.ts": {
+      "name": "Zugriff KI-Suche",
+      "description": "Verlangt für teure KI-Suchen den bezahlten Tarif."
+    },
+    "src/server/features/ai-search/services/brandLookup.ts": {
+      "name": "Markensuche Server",
+      "description": "Holt Nennungen, Quellen und Trend einer Marke bei KI-Modellen."
+    },
+    "src/server/features/ai-search/services/brandLookupShaping.ts": {
+      "name": "Aufbereitung Markensuche",
+      "description": "Bringt Ergebnisse der Plattformen in eine einheitliche Form."
+    },
+    "src/server/features/ai-search/services/citedSources.ts": {
+      "name": "Zitierte Quellen",
+      "description": "Ermittelt die am häufigsten zitierten Quellen samt Beispiel-Fragen."
+    },
+    "src/server/features/ai-search/services/promptExplorer.ts": {
+      "name": "Prompt-Explorer Server",
+      "description": "Stellt eine Frage an mehrere KI-Modelle und zieht die zitierten Quellen heraus."
+    },
+    "src/server/features/ai-search/services/shareOfVoice.ts": {
+      "name": "Anteil an Nennungen",
+      "description": "Fasst Wettbewerber zu Vergleichsgruppen zusammen und rechnet ihren Anteil an Nennungen aus."
+    },
+    "src/server/features/backlinks/services/backlinksApiFilters.ts": {
+      "name": "Filter Backlinks",
+      "description": "Baut Sortierung und Filter für Backlink-Abfragen."
+    },
+    "src/server/features/backlinks/services/backlinksOverviewSchema.ts": {
+      "name": "Schemata Backlink-Übersicht",
+      "description": "Beschreibt Form und Prüfung der Backlink-Daten."
+    },
+    "src/server/features/backlinks/services/backlinksRowMappers.ts": {
+      "name": "Zeilen Backlinks",
+      "description": "Macht aus Antworten von DataForSEO Zeilen für Links, Domains und Seiten."
+    },
+    "src/server/features/backlinks/services/BacklinksService.ts": {
+      "name": "Dienst Backlinks",
+      "description": "Liefert Übersicht, Links, verweisende Domains und Top-Seiten."
+    },
+    "src/server/features/backlinks/services/backlinksServiceData.ts": {
+      "name": "Daten Backlinks",
+      "description": "Holt und bereitet die Daten der Backlink-Abfragen auf."
+    },
+    "src/server/features/backlinks/services/backlinksSubfolderOverview.ts": {
+      "name": "Übersicht Unterordner",
+      "description": "Berechnet Summen für einen Unterordner, den die Datenquelle nicht direkt liefert."
+    },
+    "src/server/features/domain/services/domainKeywordFilters.ts": {
+      "name": "Filter Domain-Begriffe",
+      "description": "Baut Sortierung und Filter für die Begriffe einer Domain."
+    },
+    "src/server/features/domain/services/domainKeywordMapper.ts": {
+      "name": "Zuordnung Begriff",
+      "description": "Macht aus einem Eintrag der Datenquelle eine Begriffszeile."
+    },
+    "src/server/features/domain/services/domainKeywordsPage.ts": {
+      "name": "Seite Domain-Begriffe",
+      "description": "Holt eine Seite der Begriffe einer Domain."
+    },
+    "src/server/features/domain/services/domainPagesPage.ts": {
+      "name": "Seite Domain-Seiten",
+      "description": "Holt eine Seite der stärksten Seiten einer Domain."
+    },
+    "src/server/features/domain/services/DomainService.ts": {
+      "name": "Dienst Domain",
+      "description": "Liefert Übersicht, Begriffe, Seiten und Vorschläge einer Domain."
+    },
+    "src/server/features/domain/services/pagination.ts": {
+      "name": "Mehr Seiten",
+      "description": "Sagt, ob es noch weitere Ergebnisseiten gibt."
+    },
+    "src/server/features/indexnow/services/IndexNowService.ts": {
+      "name": "Dienst IndexNow",
+      "description": "Richtet IndexNow ein, prüft Schlüsseldateien und meldet Adressen an Suchmaschinen."
+    },
+    "src/server/features/keywords/repositories/KeywordResearchRepository.ts": {
+      "name": "Speicher Begriffs-Recherche",
+      "description": "Speichert Recherche-Ergebnisse und gespeicherte Begriffe."
+    },
+    "src/server/features/keywords/repositories/SavedKeywordTagsRepository.ts": {
+      "name": "Speicher Tags",
+      "description": "Speichert Tags für gespeicherte Begriffe und ihre Zuordnung."
+    },
+    "src/server/features/keywords/services/KeywordResearchService.ts": {
+      "name": "Dienst Begriffs-Recherche",
+      "description": "Bündelt Recherche und gespeicherte Begriffe."
+    },
+    "src/server/features/keywords/services/KeywordSuggestionService.ts": {
+      "name": "Dienst Vorschläge",
+      "description": "Liefert Vorschläge für weitere Suchen."
+    },
+    "src/server/features/keywords/services/research/helpers.ts": {
+      "name": "Hilfen Recherche",
+      "description": "Vereinheitlicht Begriffe und mischt Treffer zweier Quellen abwechselnd."
+    },
+    "src/server/features/keywords/services/research/index.ts": {
+      "name": "Sammeldatei Recherche",
+      "description": "Reicht die Recherche-Funktionen nach außen weiter."
+    },
+    "src/server/features/keywords/services/research/local-volume.ts": {
+      "name": "Ortsprüfung Recherche",
+      "description": "Lehnt Orte ab, die keine Stadt, kein Landkreis oder keine Region des Landes sind."
+    },
+    "src/server/features/keywords/services/research/refresh-metrics.ts": {
+      "name": "Kennzahlen auffrischen",
+      "description": "Lädt Volumen und Schwierigkeit gespeicherter Begriffe neu."
+    },
+    "src/server/features/keywords/services/research/research-data.ts": {
+      "name": "Recherche-Daten",
+      "description": "Macht aus Google-Ads-Einträgen Begriffszeilen; sie haben Volumen und Preis, aber keine Schwierigkeit."
+    },
+    "src/server/features/keywords/services/research/research.ts": {
+      "name": "Begriffs-Recherche",
+      "description": "Recherchiert Begriffe aus Labs und Google Ads mit Orts- und Absichtsprüfung."
+    },
+    "src/server/features/keywords/services/research/saved-keywords.ts": {
+      "name": "Gespeicherte Begriffe",
+      "description": "Speichert, liest, exportiert und taggt gespeicherte Begriffe."
+    },
+    "src/server/features/keywords/services/research/selection.ts": {
+      "name": "Quellen der Recherche",
+      "description": "Legt fest, woher Begriffe stammen und welche Modi es gibt."
+    },
+    "src/server/features/keywords/services/research/serp.ts": {
+      "name": "Analyse Ergebnisseiten",
+      "description": "Holt die Google-Ergebnisse zu einem Begriff."
+    },
+    "src/server/features/keywords/services/research/serpReads.ts": {
+      "name": "Mehrfach-Abruf Ergebnisse",
+      "description": "Liest jede Anfrage mehrmals und führt die Ergebnisse zusammen, weil ein einzelner Abruf schwanken kann."
+    },
+    "src/server/features/local-seo/repositories/localKeywordQueries.ts": {
+      "name": "Abfragen lokale Begriffe",
+      "description": "Liest und speichert Begriffe einer lokalen Verfolgung."
+    },
+    "src/server/features/local-seo/repositories/LocalSeoRepository.ts": {
+      "name": "Speicher lokales SEO",
+      "description": "Speichert Verfolgungen, Prüfungen und Punkte lokaler Rankings."
+    },
+    "src/server/features/local-seo/services/GoogleMapsService.ts": {
+      "name": "Dienst Google Maps",
+      "description": "Sucht Firmen auf Google Maps und liefert Karten-Kacheln."
+    },
+    "src/server/features/local-seo/services/localSeoCollection.ts": {
+      "name": "Ablauf lokale Prüfung",
+      "description": "Führt die Maps-Suche je Rasterpunkt aus und sammelt die Ergebnisse."
+    },
+    "src/server/features/local-seo/services/LocalSeoService.ts": {
+      "name": "Dienst lokales SEO",
+      "description": "Legt lokale Verfolgungen an und startet, liest und ändert Prüfungen."
+    }
+  }
+}

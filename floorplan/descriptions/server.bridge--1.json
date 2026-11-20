@@ -1,0 +1,164 @@
+{
+  "files": {
+    "src/audit-worker.ts": {
+      "name": "Prüf-Server",
+      "description": "Eigener Server für die Website-Prüfung mit privatem Notizblock."
+    },
+    "src/env.d.ts": {
+      "name": "Typen Umgebung",
+      "description": "Beschreibt die Einstellungen, die dem Server zur Verfügung stehen."
+    },
+    "src/middleware/ensure-user/accessTokenErrors.ts": {
+      "name": "Fehler Zugangs-Token",
+      "description": "Ordnet Fehler beim Prüfen des Cloudflare-Access-Tokens ein."
+    },
+    "src/middleware/ensure-user/cloudflareAccess.ts": {
+      "name": "Zugang Cloudflare Access",
+      "description": "Liest die Nutzer aus dem Cloudflare-Access-Token."
+    },
+    "src/middleware/ensure-user/delegated.ts": {
+      "name": "Gemeinsamer Zugang",
+      "description": "Legt den Nutzer an und liefert den gemeinsamen Arbeitsbereich."
+    },
+    "src/middleware/ensure-user/everyApp.ts": {
+      "name": "Zugang EveryApp",
+      "description": "Erkennt Nutzer, die über das EveryApp-Tor kommen, und prüft ihren Zugriff."
+    },
+    "src/middleware/ensure-user/hosted.ts": {
+      "name": "Zugang Online-Version",
+      "description": "Erkennt angemeldete Nutzer der Online-Version."
+    },
+    "src/middleware/ensure-user/resolve.ts": {
+      "name": "Nutzer erkennen",
+      "description": "Ermittelt den Nutzer einer Anfrage für jede Betriebsart."
+    },
+    "src/middleware/ensure-user/types.ts": {
+      "name": "Typen Nutzerkontext",
+      "description": "Datenformen für Nutzer und Projekt der Anfrage."
+    },
+    "src/middleware/ensureUser.ts": {
+      "name": "Prüfung Nutzer",
+      "description": "Stellt sicher, dass jede Anfrage einen bekannten Nutzer hat."
+    },
+    "src/middleware/errorHandling.ts": {
+      "name": "Fehlerbehandlung",
+      "description": "Fängt Fehler ab und macht daraus verständliche Antworten."
+    },
+    "src/server.ts": {
+      "name": "Server-Einstieg",
+      "description": "Nimmt alle Anfragen an, leitet sie an die richtigen Teile und startet Hintergrundaufgaben."
+    },
+    "src/serverFunctions/account-deletion.ts": {
+      "name": "Anfragen Kontolöschung",
+      "description": "Löschung beantragen und Stand abfragen."
+    },
+    "src/serverFunctions/ahrefs.ts": {
+      "name": "Anfragen Ahrefs",
+      "description": "Holt die Domain-Stärke von Ahrefs für Domains."
+    },
+    "src/serverFunctions/ai-search.ts": {
+      "name": "Anfragen KI-Suche",
+      "description": "Markensuche und Prompt-Explorer."
+    },
+    "src/serverFunctions/ai-visibility.ts": {
+      "name": "Anfragen KI-Sichtbarkeit",
+      "description": "Fragen erzeugen, recherchieren, Einrichtung starten und Fragen verwalten."
+    },
+    "src/serverFunctions/audit.ts": {
+      "name": "Anfragen Prüfung",
+      "description": "Prüfung starten, Stand, Seiten, Probleme, Verlauf und Löschen."
+    },
+    "src/serverFunctions/backlinks.ts": {
+      "name": "Anfragen Backlinks",
+      "description": "Übersicht, Links, verweisende Domains und Top-Seiten."
+    },
+    "src/serverFunctions/billing.ts": {
+      "name": "Anfragen Abrechnung",
+      "description": "Konto, Kasse, Tarifwechsel und Aufladung."
+    },
+    "src/serverFunctions/config.ts": {
+      "name": "Anfrage API-Status",
+      "description": "Meldet, ob ein Datenanbieter-Schlüssel eingerichtet ist."
+    },
+    "src/serverFunctions/crawlerAccess.ts": {
+      "name": "Anfragen Crawler-Zugang",
+      "description": "Listet die Zugangsangaben für Crawler der Organisation."
+    },
+    "src/serverFunctions/dashboard.ts": {
+      "name": "Anfragen Startseite",
+      "description": "Kennzahlen und Einrichtungsstand der Startseite."
+    },
+    "src/serverFunctions/domain.ts": {
+      "name": "Anfragen Domain",
+      "description": "Übersicht, Begriffsvorschläge, Begriffe und Seiten einer Domain."
+    },
+    "src/serverFunctions/everyApp.ts": {
+      "name": "Anfrage EveryApp",
+      "description": "Liefert Person und Tor für das Kontomenü."
+    },
+    "src/serverFunctions/ga4.ts": {
+      "name": "Anfragen Analytics",
+      "description": "Verbindung zu Google Analytics und der Bericht der Startseite."
+    },
+    "src/serverFunctions/google-maps.ts": {
+      "name": "Anfrage Kartenhinweis",
+      "description": "Liefert den Urheberrechts-Hinweis der Karten."
+    },
+    "src/serverFunctions/googleAccounts.ts": {
+      "name": "Anfragen Google-Konten",
+      "description": "Zeigt, was beim Entfernen eines Google-Kontos wegfällt, und entfernt es."
+    },
+    "src/serverFunctions/gsc.ts": {
+      "name": "Anfragen Search Console",
+      "description": "Prüft die Freigabe, listet Websites und holt Daten der Search Console."
+    },
+    "src/serverFunctions/indexnow.ts": {
+      "name": "Anfragen IndexNow",
+      "description": "Richtet IndexNow ein, prüft die Schlüsseldateien und meldet geänderte Adressen."
+    },
+    "src/serverFunctions/keywords.ts": {
+      "name": "Anfragen Suchbegriffe",
+      "description": "Begriffe recherchieren, speichern, lesen, exportieren und mit Tags versehen."
+    },
+    "src/serverFunctions/lighthouse.ts": {
+      "name": "Anfragen Lighthouse",
+      "description": "Liefert und exportiert die Lighthouse-Probleme einer Prüfung."
+    },
+    "src/serverFunctions/local-seo.ts": {
+      "name": "Anfragen lokale Rankings",
+      "description": "Verfolgungen anlegen, Firmen suchen, Begriffe ändern und Prüfungen starten."
+    },
+    "src/serverFunctions/mcp-connections.ts": {
+      "name": "Anfragen Assistenten-Verbindungen",
+      "description": "Listet verbundene Assistenten und trennt sie."
+    },
+    "src/serverFunctions/middleware.ts": {
+      "name": "Prüfung der Anfragen",
+      "description": "Verlangt für jede Anfrage Anmeldung und, wo nötig, ein Projekt."
+    },
+    "src/serverFunctions/onboarding.ts": {
+      "name": "Anfragen Einrichtung",
+      "description": "Liefert Angaben der Einrichtung und ob ein Assistent schon verbunden ist."
+    },
+    "src/serverFunctions/organization.ts": {
+      "name": "Anfragen Organisation",
+      "description": "Liefert aktive Organisation, Rolle und Rechte des Nutzers."
+    },
+    "src/serverFunctions/product-updates.ts": {
+      "name": "Anfrage Neuigkeiten",
+      "description": "Speichert, ob man Produktneuigkeiten per E-Mail will."
+    },
+    "src/serverFunctions/projectContext.ts": {
+      "name": "Anfragen Projektkontext",
+      "description": "Liest und ändert Marke, Wettbewerber und Schlüsselseiten."
+    },
+    "src/serverFunctions/projects.ts": {
+      "name": "Anfragen Projekte",
+      "description": "Projekte anlegen, ändern, archivieren und die Website der Einrichtung speichern."
+    },
+    "src/serverFunctions/projectWebsite.ts": {
+      "name": "Anfragen Website-Analyse",
+      "description": "Analysiert die Website eines Projekts und speichert das Ergebnis."
+    }
+  }
+}

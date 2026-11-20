@@ -1,0 +1,164 @@
+{
+  "files": {
+    "src/shared/account-deletion.ts": {
+      "name": "Fehler Kontolöschung",
+      "description": "Fehlercode für eine Anmeldung, die wegen geplanter Löschung abgelehnt wurde."
+    },
+    "src/shared/ai-prompt-suggestions.ts": {
+      "name": "Vorschläge Fragen",
+      "description": "Themen, mit denen die Verfolgung bei der Einrichtung startet."
+    },
+    "src/shared/ai-visibility-results.ts": {
+      "name": "Auswertung Marken",
+      "description": "Rechnet Nennungs- und Quellen-Raten je Marke aus."
+    },
+    "src/shared/ai-visibility.ts": {
+      "name": "KI-Modelle",
+      "description": "Legt fest, welche KI-Modelle es gibt, wie sie heißen und wie sie abgefragt werden."
+    },
+    "src/shared/audit-fetch-class.ts": {
+      "name": "Abrufarten",
+      "description": "Wie der Abruf einer Seite ausgegangen ist."
+    },
+    "src/shared/audit-issues.ts": {
+      "name": "Prüf-Probleme",
+      "description": "Alle Arten von Problemen mit Schweregrad, Text und Erklärung."
+    },
+    "src/shared/audit-limits.ts": {
+      "name": "Grenzen Prüfung",
+      "description": "Mindest-, Standard- und Höchstzahl der Seiten je Tarif."
+    },
+    "src/shared/audit-rendering.ts": {
+      "name": "Rendern Prüfung",
+      "description": "Zeitlimit und Kosten für das Laden von Seiten mit JavaScript."
+    },
+    "src/shared/billing-credit-features.ts": {
+      "name": "Verbrauchsarten",
+      "description": "Namen der Funktionen, die Guthaben verbrauchen."
+    },
+    "src/shared/billing.ts": {
+      "name": "Abrechnung Festlegungen",
+      "description": "Adressen, Reiter und weitere gemeinsame Festlegungen der Abrechnung."
+    },
+    "src/shared/crawler-access.ts": {
+      "name": "Zugang Crawler",
+      "description": "Konstanten für die Erkennung durch Shopify und die Anleitung dazu."
+    },
+    "src/shared/error-codes.ts": {
+      "name": "Fehlercodes",
+      "description": "Alle Fehlercodes und ob ein Fehler an die Statistik gemeldet wird."
+    },
+    "src/shared/format.ts": {
+      "name": "Zahlenformat",
+      "description": "Schreibt Zahlen mit Tausendertrennung."
+    },
+    "src/shared/ga4.ts": {
+      "name": "Kennungen Analytics",
+      "description": "Feste Namen der Google-Analytics-Freigabe."
+    },
+    "src/shared/gateway-setup-messages.ts": {
+      "name": "Texte Einrichtung Tor",
+      "description": "Meldung, wenn das EveryApp-Tor keinen DataForSEO-Schlüssel hält."
+    },
+    "src/shared/google-link.ts": {
+      "name": "Parameter Google-Fehler",
+      "description": "Name des Parameters, mit dem Google-Rückkehr Fehler meldet."
+    },
+    "src/shared/google-serp-url.ts": {
+      "name": "Google-Ergebnis-Adressen",
+      "description": "Erkennt Google-Weiterleitungen in Ergebnissen und baut die echten Adressen."
+    },
+    "src/shared/gsc.ts": {
+      "name": "Kennungen Search Console",
+      "description": "Feste Namen der Search-Console-Freigabe."
+    },
+    "src/shared/guest-account.ts": {
+      "name": "Gast-Konten",
+      "description": "Erkennt E-Mail-Adressen von Gastkonten."
+    },
+    "src/shared/json.ts": {
+      "name": "JSON-Hilfe",
+      "description": "Wandelt Werte in JSON und zurück."
+    },
+    "src/shared/keyword-locations.ts": {
+      "name": "Länder und Orte",
+      "description": "Die unterstützten Länder für Begriffsdaten mit Anbieter und Ortskennung."
+    },
+    "src/shared/keyword-suggestions.ts": {
+      "name": "Gründe Vorschläge",
+      "description": "Warum eine Suche vorgeschlagen wird."
+    },
+    "src/shared/keyword-wildcard.ts": {
+      "name": "Platzhalter Begriffe",
+      "description": "Erkennt Begriffe mit Sternchen wie „bestes * für Hunde“."
+    },
+    "src/shared/lighthouse.ts": {
+      "name": "Kategorien Lighthouse",
+      "description": "Die Kategorien und Reiter des Lighthouse-Tests."
+    },
+    "src/shared/local-seo.ts": {
+      "name": "Lokales SEO gemeinsam",
+      "description": "Status, Tiefe, Raster und Zoomstufe der lokalen Rankings."
+    },
+    "src/shared/mcp-contracts.ts": {
+      "name": "Verträge Assistenten",
+      "description": "Gemeinsame Beschreibung der Widgets und ihrer Daten für Assistenten."
+    },
+    "src/shared/privacy-choices.ts": {
+      "name": "Datenschutz-Wahl",
+      "description": "Entscheidet nach Land, welche optionalen Auswertungen erst nach Zustimmung laufen."
+    },
+    "src/shared/prompt-explorer-labels.ts": {
+      "name": "Namen Prompt-Explorer",
+      "description": "Beschriftungen für Modell und Land."
+    },
+    "src/shared/prompt-search-countries.ts": {
+      "name": "Länder für Websuche",
+      "description": "Länder, für die KI-Antworten mit Websuche möglich sind (Stand 2026-09-30)."
+    },
+    "src/shared/rank-tracking.ts": {
+      "name": "Ranking-Verfolgung gemeinsam",
+      "description": "Grenzen und Festlegungen der Ranking-Prüfung, etwa Abfragen je Begriff."
+    },
+    "src/shared/report-map.ts": {
+      "name": "Karte Bericht",
+      "description": "Zoomgrenzen und Größe der Karte in Berichten."
+    },
+    "src/shared/report-sandbox.ts": {
+      "name": "Schutz Berichte",
+      "description": "Sandbox und Sicherheitsregeln, in denen Berichts-HTML gezeigt wird."
+    },
+    "src/shared/report-share.ts": {
+      "name": "Freigabe-Schlüssel",
+      "description": "Erzeugt den zufälligen Schlüssel für das Teilen von Berichten."
+    },
+    "src/shared/researchScope.ts": {
+      "name": "Recherche-Umfang",
+      "description": "Prüft Domains und legt fest, ob genaue Adresse, Unterordner, Domain oder Subdomains gemeint sind."
+    },
+    "src/shared/safe-url.ts": {
+      "name": "Sichere Adressen",
+      "description": "Prüft, dass Adressen mit http oder https beginnen, und liest den Hostnamen."
+    },
+    "src/shared/saved-keyword-tags.ts": {
+      "name": "Tags normalisieren",
+      "description": "Vereinheitlicht Tags gespeicherter Begriffe."
+    },
+    "src/shared/selfhost-checks.ts": {
+      "name": "Prüfungen Selbsthosting",
+      "description": "Prüft Geheimnis-Länge, Team-Domain und Form des DataForSEO-Schlüssels."
+    },
+    "src/shared/serp-location-search.ts": {
+      "name": "Ortssuche",
+      "description": "Sucht Orte nach Namen mit Regionskürzeln je Land."
+    },
+    "src/shared/tag-colors.ts": {
+      "name": "Tag-Farben",
+      "description": "Die Farbpalette der Tags."
+    },
+    "src/shared/targetDetection.ts": {
+      "name": "Zielerkennung",
+      "description": "Entscheidet, ob eine Eingabe eine Domain oder ein Suchbegriff ist."
+    }
+  }
+}

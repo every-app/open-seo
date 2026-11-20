@@ -1,0 +1,8 @@
+{
+  "files": {
+    "src/db/telemetry.schema.ts": {
+      "name": "Tabelle Statistik",
+      "description": "Speichert Statistik-Zustände."
+    }
+  }
+}

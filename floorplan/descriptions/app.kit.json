@@ -1,0 +1,144 @@
+{
+  "files": {
+    "src/client/hooks/use-mobile.ts": {
+      "name": "Handy-Erkennung",
+      "description": "Meldet, ob die Bildschirmbreite die eines Handys ist."
+    },
+    "src/client/hooks/useBacklinksSearchHistory.ts": {
+      "name": "Verlauf Backlink-Suchen",
+      "description": "Merkt sich im Browser die letzten Backlink-Suchen."
+    },
+    "src/client/hooks/useBrandLookupSearchHistory.ts": {
+      "name": "Verlauf Markensuchen",
+      "description": "Merkt sich im Browser die letzten Markensuchen."
+    },
+    "src/client/hooks/useCopy.ts": {
+      "name": "Kopieren",
+      "description": "Kopiert Text in die Zwischenablage und zeigt eine Bestätigung."
+    },
+    "src/client/hooks/useDebouncedDraft.ts": {
+      "name": "Entwurf mit Verzögerung",
+      "description": "Hält Eingaben bei Live-Tippen lokal, bis man kurz aufhört."
+    },
+    "src/client/hooks/useDomainSearchHistory.ts": {
+      "name": "Verlauf Domain-Suchen",
+      "description": "Merkt sich im Browser die letzten Domain-Analysen."
+    },
+    "src/client/hooks/useLocalHistoryStore.ts": {
+      "name": "Verlaufsspeicher",
+      "description": "Grundlage für alle Suchverläufe im Browser."
+    },
+    "src/client/hooks/usePromptExplorerSearchHistory.ts": {
+      "name": "Verlauf Prompt-Suche",
+      "description": "Merkt sich im Browser die letzten Suchen im Prompt-Explorer."
+    },
+    "src/client/hooks/useSearchHistory.ts": {
+      "name": "Suchverlauf",
+      "description": "Allgemeiner Suchverlauf im Browser."
+    },
+    "src/client/hooks/useTimestampedSearchHistory.ts": {
+      "name": "Suchverlauf mit Zeit",
+      "description": "Suchverlauf, der den Zeitpunkt jeder Suche mitspeichert."
+    },
+    "src/client/layout/AppBanner.tsx": {
+      "name": "Hinweisleiste",
+      "description": "Schmale Meldungsleiste über dem Inhalt der App."
+    },
+    "src/client/layout/AppShell.tsx": {
+      "name": "Rahmen der App",
+      "description": "Seitenmenü, Kopf und Hinweise um jeden angemeldeten Bildschirm."
+    },
+    "src/client/layout/AppShellParts.tsx": {
+      "name": "Teile des Rahmens",
+      "description": "Banner und Dialoge: Hinweis auf die alte Installation, fehlende SEO-Einrichtung und Daten-Status."
+    },
+    "src/client/lib/active-project.ts": {
+      "name": "Letztes Projekt",
+      "description": "Merkt sich, welches Projekt zuletzt offen war."
+    },
+    "src/client/lib/clipboard.ts": {
+      "name": "Tabelle kopieren",
+      "description": "Kopiert eine Tabelle in die Zwischenablage und öffnet Google Sheets."
+    },
+    "src/client/lib/csv.ts": {
+      "name": "CSV-Erzeugung",
+      "description": "Baut aus Tabellenzeilen eine CSV-Datei."
+    },
+    "src/client/lib/db-timestamp.ts": {
+      "name": "Zeitstempel",
+      "description": "Liest Zeitangaben aus beiden Datenbanken und formatiert sie für Exporte."
+    },
+    "src/client/lib/download.ts": {
+      "name": "Datei herunterladen",
+      "description": "Löst den Download einer erzeugten Datei im Browser aus."
+    },
+    "src/client/lib/error-messages.ts": {
+      "name": "Fehlertexte",
+      "description": "Wandelt Fehler in verständliche Meldungen für Nutzer um."
+    },
+    "src/client/lib/exportRows.ts": {
+      "name": "Export aller Tabellen",
+      "description": "Ein Einstieg für jeden Tabellenexport, mit Prüfung auf leere Tabellen."
+    },
+    "src/client/lib/exportToSheets.ts": {
+      "name": "Export nach Google Sheets",
+      "description": "Kopiert eine Tabelle und öffnet Google Sheets mit Einfüge-Anleitung."
+    },
+    "src/client/lib/filterSearchParams.ts": {
+      "name": "Filter in der Adresse",
+      "description": "Speichert Filterwerte in der Adresszeile und liest sie zurück."
+    },
+    "src/client/lib/forms.ts": {
+      "name": "Formular-Hilfen",
+      "description": "Fehlertexte und Prüfzeitpunkte für Formulare."
+    },
+    "src/client/lib/pageHead.ts": {
+      "name": "Seitentitel",
+      "description": "Setzt den Seitennamen vorn in den Tab-Titel."
+    },
+    "src/client/lib/posthog-sanitize.ts": {
+      "name": "Statistik-Bereinigung",
+      "description": "Entfernt aus Adressen und Ereignissen alles, was nicht für die Statistik freigegeben ist."
+    },
+    "src/client/lib/posthog.ts": {
+      "name": "Statistik im Browser",
+      "description": "Sendet Nutzungsereignisse an PostHog und kennzeichnet Nutzer, stoppt bei Widerspruch."
+    },
+    "src/client/lib/relative-time.ts": {
+      "name": "Relative Zeit",
+      "description": "Macht aus einem Zeitstempel Angaben wie „vor 3 Stunden“."
+    },
+    "src/client/lib/reloadForNewDeploy.ts": {
+      "name": "Neu laden nach Update",
+      "description": "Lädt einen offenen Tab mit alter Version neu, damit er die neue bekommt."
+    },
+    "src/client/lib/support.ts": {
+      "name": "Support-Adresse",
+      "description": "Die E-Mail-Adresse des Supports."
+    },
+    "src/client/lib/theme.ts": {
+      "name": "Farbschema",
+      "description": "Merkt sich, ob hell, dunkel oder automatisch gewählt ist."
+    },
+    "src/client/lib/themeCookie.ts": {
+      "name": "Cookie Farbschema",
+      "description": "Speichert die Farbwahl in einem Cookie, damit sie auch die Webseite kennt."
+    },
+    "src/client/navigation/items.ts": {
+      "name": "Menüpunkte",
+      "description": "Legt das Seitenmenü fest: welche Gruppen und Punkte es je nach Projekt gibt."
+    },
+    "src/client/styles/app.css": {
+      "name": "Grundstil der App",
+      "description": "Farben, Abstände und Grundformen der Oberfläche."
+    },
+    "src/client/tanstack-db/index.ts": {
+      "name": "Datenspeicher Einstieg",
+      "description": "Einstiegspunkt für den lokalen Datenspeicher im Browser."
+    },
+    "src/client/tanstack-db/queryClient.ts": {
+      "name": "Abfrage-Zwischenspeicher",
+      "description": "Der gemeinsame Zwischenspeicher für alle Serverdaten im Browser."
+    }
+  }
+}

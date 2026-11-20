@@ -1,0 +1,28 @@
+{
+  "files": {
+    "src/client/features/ai-mcp/AgentIcons.tsx": {
+      "name": "Symbole der KI-Assistenten",
+      "description": "Logos von Claude, OpenAI, Grok, OpenClaw und Hermes."
+    },
+    "src/client/features/ai-mcp/agentInstalls.ts": {
+      "name": "Ein-Klick-Installation",
+      "description": "Legt fest, welche Assistenten sich mit einem Klick und fertigem Text einrichten lassen."
+    },
+    "src/client/features/ai-mcp/AgentList.tsx": {
+      "name": "Liste der Assistenten",
+      "description": "Zeigt die verfügbaren KI-Assistenten zur Auswahl."
+    },
+    "src/client/features/ai-mcp/AgentSetup.tsx": {
+      "name": "Assistent einrichten",
+      "description": "Letzter Schritt der Einrichtung: verbindet einen KI-Assistenten mit OpenSEO."
+    },
+    "src/client/features/ai-mcp/AgentSetupPanel.tsx": {
+      "name": "Einrichtungsfeld Assistent",
+      "description": "Rahmen mit Beschreibung und Anleitung zum Verbinden eines Assistenten."
+    },
+    "src/client/features/ai-mcp/agentSetupPrompt.ts": {
+      "name": "Einrichtungstext",
+      "description": "Liefert den kopierbaren Text, mit dem ein Assistent sich selbst einrichtet."
+    }
+  }
+}

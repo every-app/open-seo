@@ -1,0 +1,104 @@
+{
+  "files": {
+    "src/client/features/audit/AuditDetail.tsx": {
+      "name": "Prüfung im Detail",
+      "description": "Zeigt eine Website-Prüfung: Fortschritt, Ergebnisse und Fehler."
+    },
+    "src/client/features/audit/launch/AuditHistorySection.tsx": {
+      "name": "Frühere Prüfungen",
+      "description": "Listet frühere Prüfungen einer Website zum erneuten Öffnen."
+    },
+    "src/client/features/audit/launch/LaunchFormCard.tsx": {
+      "name": "Formular Prüfung starten",
+      "description": "Karte, in der man Adresse, Seitenzahl und Optionen für eine Prüfung wählt."
+    },
+    "src/client/features/audit/launch/LaunchView.tsx": {
+      "name": "Startansicht Prüfung",
+      "description": "Setzt Startformular und Verlauf zusammen."
+    },
+    "src/client/features/audit/launch/types.ts": {
+      "name": "Typen und Grenzen Prüfstart",
+      "description": "Mindest- und Höchstzahl der Seiten und die Standardwerte des Formulars."
+    },
+    "src/client/features/audit/launch/useLaunchController.ts": {
+      "name": "Steuerung Prüfstart",
+      "description": "Startet die Prüfung und merkt sich Eingaben und Verlauf."
+    },
+    "src/client/features/audit/results/AuditResultsTableFilterLogic.ts": {
+      "name": "Filterlogik Ergebnistabellen",
+      "description": "Wandelt Filter der Prüfungsergebnisse in Abfragen um."
+    },
+    "src/client/features/audit/results/AuditResultsTableFilters.tsx": {
+      "name": "Filterleisten Ergebnisse",
+      "description": "Filterleisten und Zeilenzähler über den Ergebnistabellen der Prüfung."
+    },
+    "src/client/features/audit/results/export.ts": {
+      "name": "Export Prüfung",
+      "description": "Exportiert Funde, Seiten und Leistungswerte einer Prüfung als Datei."
+    },
+    "src/client/features/audit/results/IssuesView.tsx": {
+      "name": "Gefundene Probleme",
+      "description": "Listet die Fehler einer Prüfung nach Schweregrad, mit Hinweis, wo sie auftreten."
+    },
+    "src/client/features/audit/results/PagesTable.tsx": {
+      "name": "Seitentabelle",
+      "description": "Zeigt alle geprüften Seiten; Filtern und Sortieren geschieht in der Datenbank, weil 10.000 Seiten zu viel für den Browser wären."
+    },
+    "src/client/features/audit/results/RenderingWarnings.tsx": {
+      "name": "Hinweise zu JavaScript",
+      "description": "Warnt, wenn Seiten Inhalte erst per JavaScript laden oder das Rendern misslang."
+    },
+    "src/client/features/audit/results/ResultsTables.tsx": {
+      "name": "Ergebnistabellen Leistung",
+      "description": "Tabelle mit den Geschwindigkeitswerten der geprüften Seiten."
+    },
+    "src/client/features/audit/results/ResultsView.tsx": {
+      "name": "Ergebnisansicht",
+      "description": "Zeigt die Ergebnisse einer fertigen Prüfung in Reitern mit Probleme, Seiten und Leistung."
+    },
+    "src/client/features/audit/results/ShopifyCrawlWarning.tsx": {
+      "name": "Warnung Shopify-Crawl",
+      "description": "Erklärt, wenn ein Shopify-Shop die Prüfung gebremst oder abgelehnt hat."
+    },
+    "src/client/features/audit/results/ShopifyRateLimitAlert.tsx": {
+      "name": "Hinweis Shopify-Limit",
+      "description": "Zeigt, wenn Shopify die Prüfung trotz Erkennungsmerkmal gebremst hat."
+    },
+    "src/client/features/audit/results/types.ts": {
+      "name": "Typen Ergebnisse",
+      "description": "Datenformen für Seiten, Probleme und Geschwindigkeitswerte einer Prüfung."
+    },
+    "src/client/features/audit/shared.tsx": {
+      "name": "Gemeinsame Hilfen Prüfung",
+      "description": "Kleine Hilfen: Adresse und Datum aufbereiten, Status-Schilder und Farbbewertung der Lighthouse-Punkte."
+    },
+    "src/client/features/crawler-access/CrawlerAccessForm.tsx": {
+      "name": "Formular Crawler-Zugang",
+      "description": "Speichert den Zugangsschlüssel für Crawler, falls er auf dem Server eingerichtet ist."
+    },
+    "src/client/features/lighthouse/issues/LighthouseIssueRow.tsx": {
+      "name": "Zeile Lighthouse-Problem",
+      "description": "Zeigt ein einzelnes Problem aus dem Lighthouse-Test."
+    },
+    "src/client/features/lighthouse/issues/LighthouseIssuesParts.tsx": {
+      "name": "Teile der Problemliste",
+      "description": "Kopf, Werkzeugleiste und Liste der Lighthouse-Probleme."
+    },
+    "src/client/features/lighthouse/issues/LighthouseIssuesScreen.tsx": {
+      "name": "Lighthouse-Probleme",
+      "description": "Bildschirm mit den Problemen und Punkten eines Lighthouse-Tests."
+    },
+    "src/client/features/lighthouse/issues/LighthouseIssuesSummary.tsx": {
+      "name": "Zusammenfassung Lighthouse",
+      "description": "Kurzüberblick der Punkte und Messwerte."
+    },
+    "src/client/features/lighthouse/issues/types.ts": {
+      "name": "Typen Lighthouse",
+      "description": "Datenformen für Reiter, Probleme, Punkte und Messwerte."
+    },
+    "src/client/features/lighthouse/issues/utils.tsx": {
+      "name": "Hilfen Lighthouse",
+      "description": "Macht Probleme zu Tabellenzeilen und übersetzt Kategorienamen."
+    }
+  }
+}

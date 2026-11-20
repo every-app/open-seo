@@ -1,0 +1,88 @@
+{
+  "files": {
+    "src/client/features/backlinks/BacklinksFilterPanel.tsx": {
+      "name": "Filterfeld Backlinks",
+      "description": "Filter werden erst auf Knopfdruck angewandt, weil jede Änderung eine kostenpflichtige Abfrage auslöst."
+    },
+    "src/client/features/backlinks/backlinksFilterTypes.ts": {
+      "name": "Typen Backlink-Filter",
+      "description": "Filterwerte für Backlinks, verweisende Domains und Top-Seiten."
+    },
+    "src/client/features/backlinks/BacklinksOverviewPanels.tsx": {
+      "name": "Übersicht Backlinks",
+      "description": "Kopf und Überblick oben in der Ergebniskarte."
+    },
+    "src/client/features/backlinks/BacklinksPage.tsx": {
+      "name": "Backlink-Seite",
+      "description": "Bildschirm: zeigt, wer auf eine Domain oder Seite verlinkt."
+    },
+    "src/client/features/backlinks/BacklinksPageCharts.tsx": {
+      "name": "Diagramme Backlinks",
+      "description": "Verlauf der Backlinks sowie neue und verlorene Links."
+    },
+    "src/client/features/backlinks/BacklinksPageContent.tsx": {
+      "name": "Inhalt Backlink-Seite",
+      "description": "Setzt je nach Zustand Laden, Fehler oder Ergebnisse zusammen."
+    },
+    "src/client/features/backlinks/BacklinksPageSections.tsx": {
+      "name": "Abschnitte Backlink-Ergebnisse",
+      "description": "Ergebniskarte mit Reitern für Links, Domains und Seiten."
+    },
+    "src/client/features/backlinks/BacklinksPageStates.tsx": {
+      "name": "Ladezustand Backlinks",
+      "description": "Platzhalter, solange Backlink-Daten laden."
+    },
+    "src/client/features/backlinks/backlinksPageTypes.ts": {
+      "name": "Typen Backlink-Seite",
+      "description": "Datenformen für Übersicht, Zeilen, Domains und Top-Seiten."
+    },
+    "src/client/features/backlinks/backlinksPageUtils.ts": {
+      "name": "Hilfen Backlink-Seite",
+      "description": "Beschreibungen der Reiter, Zusammenfassung und Formatierung von Zahlen und Daten."
+    },
+    "src/client/features/backlinks/BacklinksSearchCard.tsx": {
+      "name": "Suchkarte Backlinks",
+      "description": "Suchformular für Backlinks mit Umfang der Suche."
+    },
+    "src/client/features/backlinks/BacklinksTable.tsx": {
+      "name": "Backlink-Tabelle",
+      "description": "Tabelle der einzelnen Links."
+    },
+    "src/client/features/backlinks/BacklinksTableColumns.tsx": {
+      "name": "Spalten Backlinks",
+      "description": "Spalten der Backlink-Tabelle."
+    },
+    "src/client/features/backlinks/BacklinksToolbarMenus.tsx": {
+      "name": "Menüs Backlinks",
+      "description": "Menüs für die besten Links und weitere Aktionen."
+    },
+    "src/client/features/backlinks/export.ts": {
+      "name": "Export Backlinks",
+      "description": "Baut die Exporttabelle und den Dateinamen für den aktiven Reiter."
+    },
+    "src/client/features/backlinks/ReferringDomainsTable.tsx": {
+      "name": "Tabelle verweisende Domains",
+      "description": "Zeigt, welche Domains am meisten verlinken."
+    },
+    "src/client/features/backlinks/TopPagesTable.tsx": {
+      "name": "Tabelle Top-Seiten",
+      "description": "Zeigt die Seiten mit den meisten eingehenden Links."
+    },
+    "src/client/features/backlinks/useAhrefsDomainRatings.ts": {
+      "name": "Domain-Stärke abrufen",
+      "description": "Holt für Domains die Stärke-Zahl (DR) von Ahrefs, wenn bekannt."
+    },
+    "src/client/features/backlinks/useBacklinksDomainExpansion.ts": {
+      "name": "Domain aufklappen",
+      "description": "Lädt die vollständige Linkliste einer verweisenden Domain erst bei Bedarf."
+    },
+    "src/client/features/backlinks/useBacklinksFilters.ts": {
+      "name": "Filter Backlinks",
+      "description": "Verwaltet die Backlink-Filter in der Adresse."
+    },
+    "src/client/features/backlinks/useBacklinksPageData.ts": {
+      "name": "Daten Backlink-Seite",
+      "description": "Lädt Übersicht, Tabellen und Verläufe der Backlink-Seite."
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "files": {
+    "src/client/features/ai-search/brandLookupFiltering.ts": {
+      "name": "Filter Markensuche",
+      "description": "Filtert Seiten und Anfragen der Markensuche."
+    },
+    "src/client/features/ai-search/brandLookupFilterTypes.ts": {
+      "name": "Typen Filter Markensuche",
+      "description": "Datenformen der Filter für Seiten und Anfragen."
+    },
+    "src/client/features/ai-search/BrandLookupPage.tsx": {
+      "name": "Markensuche",
+      "description": "Bildschirm: zeigt, wie oft KI-Assistenten eine Marke und ihre Seiten nennen."
+    },
+    "src/client/features/ai-search/components/BrandLookupCitationsCard.tsx": {
+      "name": "Karte Quellen",
+      "description": "Reiter mit den Seiten und Anfragen, aus denen KI-Antworten zitieren."
+    },
+    "src/client/features/ai-search/components/BrandLookupCitationTables.tsx": {
+      "name": "Tabellen Quellen",
+      "description": "Spalten der Tabellen zu meistzitierten Seiten und Anfragen."
+    },
+    "src/client/features/ai-search/components/brandLookupExport.ts": {
+      "name": "Export Markensuche",
+      "description": "Baut die Exportdatei für die Markensuche samt Dateiname."
+    },
+    "src/client/features/ai-search/components/BrandLookupFilterPanel.tsx": {
+      "name": "Filterfeld Markensuche",
+      "description": "Filterfeld für die Quellen der Markensuche."
+    },
+    "src/client/features/ai-search/components/BrandLookupMentionTrendCard.tsx": {
+      "name": "Verlauf der Nennungen",
+      "description": "Diagramm, wie oft die Marke genannt wurde."
+    },
+    "src/client/features/ai-search/components/BrandLookupResults.tsx": {
+      "name": "Ergebnisse Markensuche",
+      "description": "Setzt Kennzahlen, Verlauf und Quellen zusammen."
+    },
+    "src/client/features/ai-search/components/BrandLookupSearchCard.tsx": {
+      "name": "Suchkarte Markensuche",
+      "description": "Suchformular für die Markensuche."
+    },
+    "src/client/features/ai-search/components/BrandLookupShareOfVoice.tsx": {
+      "name": "Anteil an Nennungen",
+      "description": "Rangliste, wie stark Wettbewerber im Vergleich genannt werden."
+    },
+    "src/client/features/ai-search/components/DomainLevelBadge.tsx": {
+      "name": "Marke Domain-Ebene",
+      "description": "Kennzeichnet Zahlen, die für die ganze Domain gelten, damit sie bei einer Einzelseite nicht falsch gelesen werden."
+    },
+    "src/client/features/ai-search/components/MarkdownAnswer.tsx": {
+      "name": "Antwort als Text",
+      "description": "Zeigt die formatierte Antwort eines KI-Assistenten."
+    },
+    "src/client/features/ai-search/components/PromptExplorerForm.tsx": {
+      "name": "Formular Prompt-Explorer",
+      "description": "Formular, um eine Frage an mehrere KI-Modelle zu stellen."
+    },
+    "src/client/features/ai-search/components/PromptExplorerLoadingState.tsx": {
+      "name": "Ladezustand Prompt-Explorer",
+      "description": "Zeigt je gewähltem Modell eine Platzhalter-Karte, solange Antworten laden."
+    },
+    "src/client/features/ai-search/components/PromptExplorerResults.tsx": {
+      "name": "Ergebnisse Prompt-Explorer",
+      "description": "Zeigt je Modell die Antwort samt Quellen."
+    },
+    "src/client/features/ai-search/platformLabels.ts": {
+      "name": "Plattform-Namen",
+      "description": "Kurzname und Farbpunkt je KI-Plattform für Tabellen und Kennzahlen."
+    },
+    "src/client/features/ai-search/PromptExplorerPage.tsx": {
+      "name": "Prompt-Explorer",
+      "description": "Bildschirm: stellt dieselbe Frage mehreren KI-Modellen und vergleicht die Antworten."
+    },
+    "src/client/features/ai-search/promptExplorerQuery.ts": {
+      "name": "Abfrage Prompt-Explorer",
+      "description": "Beschreibt eine Suche des Prompt-Explorers, wie sie Adresse und Reiter halten."
+    },
+    "src/client/features/ai-search/ResearchPageShell.tsx": {
+      "name": "Rahmen Recherche-Seiten",
+      "description": "Gemeinsamer Rahmen von Markensuche und Prompt-Explorer: Kopf, Tarifsperre, Suchformular, Fehler und Ergebnis."
+    },
+    "src/client/features/ai-search/useBrandLookupFilters.ts": {
+      "name": "Filter Markensuche",
+      "description": "Verwaltet die Filter der Markensuche in der Adresse."
+    }
+  }
+}

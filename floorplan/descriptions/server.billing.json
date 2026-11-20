@@ -1,0 +1,116 @@
+{
+  "files": {
+    "src/server/account-deletion/AccountDeletionRepository.ts": {
+      "name": "Speicher Kontolöschung",
+      "description": "Sucht und löscht alle Daten eines Kontos in der Datenbank."
+    },
+    "src/server/account-deletion/AccountDeletionService.ts": {
+      "name": "Dienst Kontolöschung",
+      "description": "Plant und führt die Löschung eines Kontos mit allen Daten durch."
+    },
+    "src/server/account-deletion/signInBlock.ts": {
+      "name": "Sperre bei Löschung",
+      "description": "Verweigert die Anmeldung, solange ein Konto zur Löschung ansteht."
+    },
+    "src/server/account-deletion/storage.ts": {
+      "name": "Löschen Speicher",
+      "description": "Löscht Freigaben und gespeicherte Dateien eines Kontos."
+    },
+    "src/server/account-deletion/vendors.ts": {
+      "name": "Löschen bei Anbietern",
+      "description": "Löscht Kontakte bei Loops und Personen bei PostHog."
+    },
+    "src/server/billing/auto-reload-status.ts": {
+      "name": "Status Auto-Aufladung",
+      "description": "Liest den Zustand der Auto-Aufladung, auch den letzten Fehler."
+    },
+    "src/server/billing/auto-reload.ts": {
+      "name": "Auto-Aufladung",
+      "description": "Schaltet automatisches Nachkaufen von Guthaben ein oder aus und beachtet das Budget."
+    },
+    "src/server/billing/autumn-webhook.ts": {
+      "name": "Benachrichtigungen Abrechnung",
+      "description": "Nimmt Nachrichten des Abrechnungsdienstes entgegen und prüft sie."
+    },
+    "src/server/billing/autumn.ts": {
+      "name": "Abrechnungsdienst Autumn",
+      "description": "Spricht mit Autumn, dem Dienst für Tarife und Guthaben."
+    },
+    "src/server/billing/billing-account.ts": {
+      "name": "Abrechnungskonto",
+      "description": "Liefert Tarif und Guthaben einer Organisation."
+    },
+    "src/server/billing/checkout.ts": {
+      "name": "Bezahllinks",
+      "description": "Erstellt Links zur Kasse für Tarife und Aufladungen und zum Kundenportal."
+    },
+    "src/server/billing/customer-status-model.ts": {
+      "name": "Modell Kundenstatus",
+      "description": "Leitet aus Tarifdaten den Abrechnungsstatus eines Kunden ab."
+    },
+    "src/server/billing/customer-status-sync.ts": {
+      "name": "Abgleich Kundenstatus",
+      "description": "Übernimmt den Status aus Autumn in die Datenbank."
+    },
+    "src/server/billing/invoices.ts": {
+      "name": "Rechnungen",
+      "description": "Listet Rechnungen und speichert, an welche Adressen sie gehen."
+    },
+    "src/server/billing/lifecycle-events.ts": {
+      "name": "Ereignisse im Kundenleben",
+      "description": "Erkennt Änderungen wie Abschluss oder Kündigung durch Vergleich mit dem letzten Stand."
+    },
+    "src/server/billing/loops-contact-properties.ts": {
+      "name": "Eigenschaften Loops",
+      "description": "Legt die Abrechnungs-Eigenschaften fest, die an Loops gehen."
+    },
+    "src/server/billing/loops-sync.ts": {
+      "name": "Abgleich Loops",
+      "description": "Aktualisiert Eigenschaften aller Mitglieder in Loops und löst Ereignisse aus."
+    },
+    "src/server/billing/plan-upgrade.ts": {
+      "name": "Tarif erhöhen",
+      "description": "Berechnet, was ein Tarifwechsel heute kostet und welches Guthaben mitgeht."
+    },
+    "src/server/billing/researchSpend.ts": {
+      "name": "Ausgaben Recherche",
+      "description": "Lässt bezahlte Recherche zu, solange Guthaben da ist, und hält einen Teil zurück."
+    },
+    "src/server/billing/subscription.ts": {
+      "name": "Tarife und Guthaben",
+      "description": "Kern der Abrechnung: Kunde anlegen, Tarif prüfen, Guthaben abbuchen und zurückgeben."
+    },
+    "src/server/billing/svix.ts": {
+      "name": "Prüfung Svix",
+      "description": "Prüft die Echtheit von Nachrichten des Abrechnungsdienstes."
+    },
+    "src/server/billing/usage.ts": {
+      "name": "Verbrauch",
+      "description": "Berechnet den Verbrauch der letzten 30 Tage in Dollar für die Abrechnungsseite."
+    },
+    "src/server/email/loops-client.ts": {
+      "name": "Loops-Anbindung",
+      "description": "Aktualisiert Kontakte und sendet Ereignisse an Loops."
+    },
+    "src/server/email/loops.ts": {
+      "name": "Loops-Kontakte",
+      "description": "Legt Kontakte an und pflegt das Abo für Produktneuigkeiten."
+    },
+    "src/server/email/onboarding-drip.ts": {
+      "name": "Willkommens-Serie",
+      "description": "Hält Meilensteine fest und löst E-Mails aus, etwa wenn das Guthaben aufgebraucht ist."
+    },
+    "src/server/referrals/dub-sale.ts": {
+      "name": "Verkauf an Dub",
+      "description": "Macht aus einer bezahlten Rechnung eine Meldung an Dub für Empfehlungs-Provision."
+    },
+    "src/server/referrals/dub.ts": {
+      "name": "Empfehlungen Dub",
+      "description": "Erfasst Empfehlungen bei der Registrierung und ordnet Nutzer dem Werber zu."
+    },
+    "src/server/referrals/meta.ts": {
+      "name": "Meldung an Meta",
+      "description": "Meldet Schritte vor dem Kauf an Meta für Werbemessung."
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "files": {
+    "src/server/mcp/tools/local-seo-tools.ts": {
+      "name": "Werkzeuge lokales SEO",
+      "description": "Firmenprofil, Bewertungen, Neuigkeiten, Kategorien und lokale Rankings."
+    },
+    "src/server/mcp/tools/pin-rank-tracking-keywords.ts": {
+      "name": "Werkzeug Begriffe anpinnen",
+      "description": "Pinnt Begriffe in der Ranking-Verfolgung an."
+    },
+    "src/server/mcp/tools/project-context.ts": {
+      "name": "Werkzeuge Projektkontext",
+      "description": "Liest und ändert den Projektkontext."
+    },
+    "src/server/mcp/tools/project-website.ts": {
+      "name": "Werkzeuge Website-Analyse",
+      "description": "Analysiert die Website und speichert die Einrichtung."
+    },
+    "src/server/mcp/tools/remove-rank-tracking-keywords.ts": {
+      "name": "Werkzeug Begriffe entfernen",
+      "description": "Entfernt Begriffe aus der Verfolgung."
+    },
+    "src/server/mcp/tools/remove-saved-keywords.ts": {
+      "name": "Werkzeug gespeicherte Begriffe löschen",
+      "description": "Entfernt gespeicherte Begriffe."
+    },
+    "src/server/mcp/tools/report-sharing-tools.ts": {
+      "name": "Werkzeuge Berichte teilen",
+      "description": "Schaltet das Teilen eines Berichts ein und liefert die öffentliche Adresse."
+    },
+    "src/server/mcp/tools/report-template-tools.ts": {
+      "name": "Werkzeuge Berichtsvorlagen",
+      "description": "Vorlagen auflisten, speichern und löschen."
+    },
+    "src/server/mcp/tools/report-tools.ts": {
+      "name": "Werkzeuge Berichte",
+      "description": "Berichte speichern, auflisten, lesen und löschen."
+    },
+    "src/server/mcp/tools/research-keywords.ts": {
+      "name": "Werkzeug Begriffs-Recherche",
+      "description": "Recherchiert Suchbegriffe mit Volumen und Schwierigkeit."
+    },
+    "src/server/mcp/tools/run-rank-tracker.ts": {
+      "name": "Werkzeug Ranking-Lauf",
+      "description": "Startet eine Ranking-Prüfung."
+    },
+    "src/server/mcp/tools/save-keywords.ts": {
+      "name": "Werkzeug Begriffe speichern",
+      "description": "Speichert Begriffe in der Merkliste."
+    },
+    "src/server/mcp/tools/search-console-tools.ts": {
+      "name": "Werkzeuge Search Console",
+      "description": "Liefert Suchleistung und prüft Adressen in der Search Console."
+    },
+    "src/server/mcp/tools/search-serp-locations.ts": {
+      "name": "Werkzeug Orte suchen",
+      "description": "Sucht Orte für Rankings."
+    },
+    "src/server/mcp/tools/site-audit-cleanup-tools.ts": {
+      "name": "Werkzeuge Prüfungen aufräumen",
+      "description": "Listet und löscht Website-Prüfungen."
+    },
+    "src/server/mcp/tools/site-audit-tools.ts": {
+      "name": "Werkzeuge Website-Prüfung",
+      "description": "Startet Prüfungen und liefert Stand, Probleme und Seiten."
+    },
+    "src/server/mcp/tools/submit-indexnow-urls.ts": {
+      "name": "Werkzeug IndexNow",
+      "description": "Meldet geänderte Adressen an Suchmaschinen."
+    },
+    "src/server/mcp/tools/tool-test-support.ts": {
+      "name": "Testhilfe Werkzeuge",
+      "description": "Hilfen für Tests der Werkzeuge."
+    },
+    "src/server/mcp/tools/whoami.ts": {
+      "name": "Werkzeug Wer bin ich",
+      "description": "Zeigt, mit welchem Konto und Projekt der Assistent verbunden ist."
+    },
+    "src/server/mcp/tools/widget-tools.ts": {
+      "name": "Werkzeuge Widgets",
+      "description": "Zeigt Search-Console- und Suchergebnis-Widgets im Chat."
+    },
+    "src/server/mcp/transport.ts": {
+      "name": "Annahme der Anfragen",
+      "description": "Nimmt Anfragen der Assistenten an, prüft die Anmeldung und reicht sie an die Werkzeuge."
+    },
+    "src/server/mcp/ui-capabilities.ts": {
+      "name": "Fähigkeiten der Chat-Oberfläche",
+      "description": "Erkennt, ob ein Chat Widgets anzeigen kann."
+    },
+    "src/server/mcp/urls.ts": {
+      "name": "Adressen Assistenten",
+      "description": "Baut Adressen zur Startseite und zur Registrierung für Gäste."
+    },
+    "src/server/mcp/web-chat.ts": {
+      "name": "Chat-Anwendung",
+      "description": "Erkennt, in welcher Chat-Anwendung ein Assistent läuft."
+    },
+    "src/server/mcp/widget-resource.ts": {
+      "name": "Widget-Ressource",
+      "description": "Meldet die Widget-Seite beim Werkzeug-Server an."
+    },
+    "src/server/mcp/widget-results.ts": {
+      "name": "Widget-Ergebnisse",
+      "description": "Merkt sich und zeigt Ergebnisse für Widgets."
+    }
+  }
+}

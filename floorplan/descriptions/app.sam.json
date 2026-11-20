@@ -1,0 +1,44 @@
+{
+  "files": {
+    "src/client/features/sam/ChatComposer.tsx": {
+      "name": "Chat-Eingabe",
+      "description": "Eingabefeld des Chats mit Senden-Knopf."
+    },
+    "src/client/features/sam/SamBetaGate.tsx": {
+      "name": "Sperre Beta Sam",
+      "description": "Zeigt, bis der Nutzer den Chat-Assistenten Sam einschaltet."
+    },
+    "src/client/features/sam/samBetaOptIn.ts": {
+      "name": "Beta-Zustimmung Sam",
+      "description": "Merkt sich im Browser die Zustimmung zur Beta."
+    },
+    "src/client/features/sam/SamChat.tsx": {
+      "name": "Sam-Chat",
+      "description": "Der Chatbildschirm mit dem aktiven Gespräch in voller Breite."
+    },
+    "src/client/features/sam/SamConversation.tsx": {
+      "name": "Sam-Gespräch",
+      "description": "Zeigt und führt ein Gespräch mit Sam, Nachrichten und Werkzeug-Hinweise."
+    },
+    "src/client/features/sam/samQueries.ts": {
+      "name": "Abfrage Sam-Gespräche",
+      "description": "Lädt die Gespräche eines Projekts und lädt sie neu."
+    },
+    "src/client/features/sam/SamSetupGate.tsx": {
+      "name": "Sperre Sam-Einrichtung",
+      "description": "Zeigt Einrichtungsschritte, wenn Sam noch nicht nutzbar ist."
+    },
+    "src/client/features/sam/SamSidebarPanel.tsx": {
+      "name": "Seitenleiste Sam",
+      "description": "Liste der Gespräche in der Seitenleiste beim Öffnen von Sam."
+    },
+    "src/client/features/sam/useSamAccess.ts": {
+      "name": "Zugang Sam",
+      "description": "Prüft, ob Sam hier verfügbar und freigegeben ist."
+    },
+    "src/client/features/sam/useSamSessions.ts": {
+      "name": "Sam-Gespräche verwalten",
+      "description": "Liste der Gespräche, Öffnen und Neustarten eines Gesprächs."
+    }
+  }
+}

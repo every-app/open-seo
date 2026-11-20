@@ -1,0 +1,56 @@
+{
+  "files": {
+    "src/client/features/onboarding/AnalyticsOnboardingStep.tsx": {
+      "name": "Schritt Statistik und Neuigkeiten",
+      "description": "Fragt, ob Nutzungsstatistik und E-Mails zu Neuerungen erlaubt sind."
+    },
+    "src/client/features/onboarding/OnboardingCard.tsx": {
+      "name": "Karte der Einrichtung",
+      "description": "Gemeinsamer Rahmen eines Einrichtungsschritts."
+    },
+    "src/client/features/onboarding/onboardingModel.ts": {
+      "name": "Reihenfolge der Einrichtung",
+      "description": "Legt die Schritte der Einrichtung fest; Website und Search Console stehen zuerst."
+    },
+    "src/client/features/onboarding/PostSignupOnboarding.tsx": {
+      "name": "Einrichtung nach Anmeldung",
+      "description": "Führt neue Nutzer nach der Registrierung durch die Einrichtung."
+    },
+    "src/client/features/onboarding/SearchConsoleOnboardingStep.tsx": {
+      "name": "Schritt Search Console",
+      "description": "Verbindet in der Einrichtung die Search Console."
+    },
+    "src/client/features/onboarding/useOnboardingRedirect.ts": {
+      "name": "Weiterleitung zur Einrichtung",
+      "description": "Sagt, ob die App sich zeigen darf, oder leitet zur Einrichtung um."
+    },
+    "src/client/features/onboarding/WebsiteOnboardingStep.tsx": {
+      "name": "Schritt Website",
+      "description": "Erster Schritt: Website und Land im ersten Projekt speichern."
+    },
+    "src/client/features/onboarding/WizardFooter.tsx": {
+      "name": "Fuß der Einrichtung",
+      "description": "Zurück- und Weiter-Knöpfe der Einrichtung."
+    },
+    "src/client/features/reports/ReportsList.tsx": {
+      "name": "Liste der Berichte",
+      "description": "Zeigt alle erstellten Berichte."
+    },
+    "src/client/features/reports/ReportTemplateForm.tsx": {
+      "name": "Formular Berichtsvorlage",
+      "description": "Erstellt oder ändert eine Vorlage für Berichte."
+    },
+    "src/client/features/reports/ReportTemplatesList.tsx": {
+      "name": "Liste der Vorlagen",
+      "description": "Zeigt alle Berichtsvorlagen."
+    },
+    "src/client/features/reports/ReportViewer.tsx": {
+      "name": "Berichtsanzeige",
+      "description": "Zeigt einen Bericht; die einzige Stelle, die von KI geschriebenes HTML darstellt."
+    },
+    "src/client/features/reports/shared.tsx": {
+      "name": "Hilfen Berichte",
+      "description": "Gemeinsame Schlüssel und Texte der Berichtsseiten."
+    }
+  }
+}

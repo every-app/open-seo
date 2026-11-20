@@ -1,0 +1,76 @@
+{
+  "files": {
+    "src/client/features/dashboard/cardParts.tsx": {
+      "name": "Bausteine Startseiten-Karten",
+      "description": "Gemeinsame Gestaltung der Karten auf der Startseite."
+    },
+    "src/client/features/dashboard/DashboardAgentCard.tsx": {
+      "name": "Karte KI-Assistent",
+      "description": "Zeigt Nutzern ohne verbundenen Assistenten, wie sie einen einrichten, und gibt anderen Beispielfragen."
+    },
+    "src/client/features/dashboard/DashboardBacklinks.tsx": {
+      "name": "Karte Backlinks",
+      "description": "Zeigt auf der Startseite die neuesten Backlink-Zahlen."
+    },
+    "src/client/features/dashboard/DashboardCards.tsx": {
+      "name": "Karten Search Console und Prüfung",
+      "description": "Zwei Startseiten-Karten: Suchleistung und Zustand der letzten Website-Prüfung."
+    },
+    "src/client/features/dashboard/DashboardDataTable.tsx": {
+      "name": "Startseiten-Tabelle",
+      "description": "Tabelle der Startseiten-Karten mit gemeinsamer Gestaltung."
+    },
+    "src/client/features/dashboard/DashboardKeywords.tsx": {
+      "name": "Karte Suchbegriffe",
+      "description": "Zeigt auf der Startseite die wichtigsten Suchbegriffe."
+    },
+    "src/client/features/dashboard/DashboardKeywordTable.tsx": {
+      "name": "Tabelle Suchbegriffe Startseite",
+      "description": "Tabelle der Suchbegriffe in der Startseiten-Karte."
+    },
+    "src/client/features/dashboard/DashboardLinkActivity.tsx": {
+      "name": "Karte Link-Aktivität",
+      "description": "Zeigt neue und verlorene Links."
+    },
+    "src/client/features/dashboard/DashboardMetrics.tsx": {
+      "name": "Kennzahlen und Verlauf",
+      "description": "Große Zahlen mit Veränderung und Verlaufsdiagramm."
+    },
+    "src/client/features/dashboard/DashboardNewQueries.tsx": {
+      "name": "Karte neue Suchanfragen",
+      "description": "Zeigt Suchanfragen, die neu aufgetaucht sind."
+    },
+    "src/client/features/dashboard/DashboardOnboarding.tsx": {
+      "name": "Einrichtung auf der Startseite",
+      "description": "Führt neue Projekte Schritt für Schritt durch die Einrichtung."
+    },
+    "src/client/features/dashboard/DashboardPage.tsx": {
+      "name": "Startseite",
+      "description": "Hauptbildschirm eines Projekts mit Kennzahlen und Karten."
+    },
+    "src/client/features/dashboard/DashboardSetupAction.tsx": {
+      "name": "Einrichtungs-Aktion",
+      "description": "Aktion hinter einem Einrichtungsschritt: Website, Google, Prüfung oder Rankings."
+    },
+    "src/client/features/dashboard/dashboardSteps.ts": {
+      "name": "Einrichtungsschritte",
+      "description": "Liste der Schritte der Einrichtung und ihr Status."
+    },
+    "src/client/features/dashboard/Ga4Card.tsx": {
+      "name": "Karte Analytics",
+      "description": "Zeigt Besucherzahlen aus Google Analytics."
+    },
+    "src/client/features/dashboard/Ga4ConnectCard.tsx": {
+      "name": "Karte Analytics verbinden",
+      "description": "Bietet an, Google Analytics mit dem Projekt zu verbinden."
+    },
+    "src/client/features/dashboard/siteTabParts.tsx": {
+      "name": "Teile der Seitenreiter",
+      "description": "Kleine Anzeigen: Aktualität, externe Seiten und Info."
+    },
+    "src/client/features/dashboard/WorkspaceMergeBanner.tsx": {
+      "name": "Banner Arbeitsbereiche",
+      "description": "Weist auf selbstgehosteten Installationen auf getrennte Arbeitsbereiche hin, die zusammengeführt werden können."
+    }
+  }
+}

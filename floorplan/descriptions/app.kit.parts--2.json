@@ -1,0 +1,8 @@
+{
+  "files": {
+    "src/client/components/usePrewarmSerpLocations.ts": {
+      "name": "Ortsliste vorwärmen",
+      "description": "Lädt die Ortsliste vorab, damit sie beim ersten Tippen sofort da ist."
+    }
+  }
+}

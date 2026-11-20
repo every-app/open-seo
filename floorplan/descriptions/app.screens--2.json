@@ -1,0 +1,140 @@
+{
+  "files": {
+    "src/routes/_app/settings.tsx": {
+      "name": "Seite Kontoeinstellungen",
+      "description": "Rahmen der Kontoeinstellungen."
+    },
+    "src/routes/_app/settings/index.tsx": {
+      "name": "Kontoeinstellungen allgemein",
+      "description": "Bildschirm mit Konto-Einstellungen."
+    },
+    "src/routes/_app/settings/organization.tsx": {
+      "name": "Einstellungen Organisation",
+      "description": "Bildschirm für Team und Organisation."
+    },
+    "src/routes/_app/support.tsx": {
+      "name": "Seite Support",
+      "description": "Erklärt, wie man Hilfe bekommt."
+    },
+    "src/routes/_auth.sign-in.tsx": {
+      "name": "Seite Anmelden",
+      "description": "Anmeldeformular mit E-Mail, Passwort und Google."
+    },
+    "src/routes/_auth.sign-up.tsx": {
+      "name": "Seite Registrieren",
+      "description": "Registrierformular mit Roboter-Prüfung."
+    },
+    "src/routes/_auth.tsx": {
+      "name": "Rahmen Anmeldeseiten",
+      "description": "Gemeinsamer Rahmen der Anmeldeseiten."
+    },
+    "src/routes/_authenticated.oauth-consent.tsx": {
+      "name": "Seite Zustimmung",
+      "description": "Fragt, ob ein KI-Assistent Zugriff auf das Konto bekommen darf."
+    },
+    "src/routes/_authenticated.onboarding.index.tsx": {
+      "name": "Seite Einrichtung",
+      "description": "Bildschirm der ersten Einrichtung."
+    },
+    "src/routes/_authenticated.subscribe.tsx": {
+      "name": "Seite Abo wählen",
+      "description": "Bildschirm zur Tarifwahl mit Kasse."
+    },
+    "src/routes/_authenticated.tsx": {
+      "name": "Rahmen angemeldet",
+      "description": "Gemeinsamer Rahmen der Seiten, die eine Anmeldung brauchen."
+    },
+    "src/routes/_authenticated.yc.tsx": {
+      "name": "Seite YC-Angebot",
+      "description": "Bezahlseite für das Sonderangebot."
+    },
+    "src/routes/[.well-known]/http-message-signatures-directory.ts": {
+      "name": "Schlüsselverzeichnis",
+      "description": "Veröffentlicht den öffentlichen Schlüssel, mit dem man die Anfragen des Prüf-Roboters als echt erkennt."
+    },
+    "src/routes/[.well-known]/openai-apps-challenge.ts": {
+      "name": "Bestätigung OpenAI",
+      "description": "Antwortet auf die Prüfung, mit der OpenAI den Besitz der Adresse bestätigt."
+    },
+    "src/routes/accept-invitation.$id.tsx": {
+      "name": "Seite Einladung annehmen",
+      "description": "Bildschirm, auf dem man eine Team-Einladung annimmt."
+    },
+    "src/routes/api/auth/$.ts": {
+      "name": "Anmelde-Anfragen",
+      "description": "Nimmt alle Anmelde- und Konto-Anfragen entgegen und reicht sie an die Anmelde-Bibliothek weiter."
+    },
+    "src/routes/api/autumn/$.ts": {
+      "name": "Abrechnungs-Anfragen",
+      "description": "Nimmt Anfragen und Benachrichtigungen des Abrechnungsdienstes entgegen."
+    },
+    "src/routes/api/ga4/oauth/callback.ts": {
+      "name": "Rückkehr Google Analytics",
+      "description": "Adresse, zu der Google nach der Freigabe für Analytics zurückkehrt."
+    },
+    "src/routes/api/gsc/oauth/callback.ts": {
+      "name": "Rückkehr Search Console",
+      "description": "Adresse, zu der Google nach der Freigabe für die Search Console zurückkehrt."
+    },
+    "src/routes/api/health.ts": {
+      "name": "Gesundheitscheck",
+      "description": "Antwortet, ob der Server läuft."
+    },
+    "src/routes/api/local-seo/maps/$projectId/$z/$x/$y.ts": {
+      "name": "Kartenkacheln",
+      "description": "Liefert Karten-Kacheln für die lokale Ranking-Karte."
+    },
+    "src/routes/api/privacy-region.ts": {
+      "name": "Datenschutz-Region",
+      "description": "Sagt, welche Datenschutz-Voreinstellung am Standort des Besuchers gilt."
+    },
+    "src/routes/api/sign-up-status.ts": {
+      "name": "Status Registrierung",
+      "description": "Sagt, ob die Installation noch ein erstes Konto braucht."
+    },
+    "src/routes/auth-error.tsx": {
+      "name": "Seite Anmeldefehler",
+      "description": "Zeigt einen Anmeldefehler mit Erklärung."
+    },
+    "src/routes/connect.tsx": {
+      "name": "Seite Verbinden",
+      "description": "Bildschirm, über den sich Assistenten verbinden."
+    },
+    "src/routes/forgot-password.tsx": {
+      "name": "Seite Passwort vergessen",
+      "description": "Formular für das Zurücksetzen des Passworts."
+    },
+    "src/routes/r/$reportId.ts": {
+      "name": "Geteilter Bericht",
+      "description": "Antwortet auf die Adresse eines Berichts und prüft, ob er geteilt ist."
+    },
+    "src/routes/report-map/$grant/$z/$x/$y.ts": {
+      "name": "Karten-Kacheln Bericht",
+      "description": "Liefert Karten-Kacheln für geteilte Berichte mit Freigabe."
+    },
+    "src/routes/report-map/$grant/copyright.ts": {
+      "name": "Karten-Urheberrecht",
+      "description": "Liefert den Urheberrechts-Hinweis der Karte."
+    },
+    "src/routes/reset-password.tsx": {
+      "name": "Seite Passwort zurücksetzen",
+      "description": "Formular zum Festlegen eines neuen Passworts."
+    },
+    "src/routes/s/$token/index.ts": {
+      "name": "Öffentliche Berichtsseite",
+      "description": "Öffentliche Seite eines geteilten Berichts ohne Anmeldung."
+    },
+    "src/routes/s/$token/og[.]png.ts": {
+      "name": "Vorschaubild Bericht",
+      "description": "Liefert das Vorschaubild eines geteilten Berichts."
+    },
+    "src/routes/s/$token/raw.ts": {
+      "name": "Rohdaten Bericht",
+      "description": "Liefert den Bericht als Datei für Maschinen."
+    },
+    "src/routes/verify-email.tsx": {
+      "name": "Seite E-Mail bestätigen",
+      "description": "Bildschirm zum Bestätigen der E-Mail-Adresse."
+    }
+  }
+}

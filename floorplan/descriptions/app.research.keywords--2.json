@@ -1,0 +1,56 @@
+{
+  "files": {
+    "src/client/features/saved-keywords/SavedKeywordsHeader.tsx": {
+      "name": "Kopf Merkliste",
+      "description": "Titel und Aktionen der gespeicherten Begriffe."
+    },
+    "src/client/features/saved-keywords/SavedKeywordsModals.tsx": {
+      "name": "Dialoge Merkliste",
+      "description": "Dialog und Fehlermeldung zum Löschen gespeicherter Begriffe."
+    },
+    "src/client/features/saved-keywords/SavedKeywordsTable.tsx": {
+      "name": "Tabelle Merkliste",
+      "description": "Tabelle der gespeicherten Begriffe."
+    },
+    "src/client/features/saved-keywords/SavedKeywordsTagFilter.tsx": {
+      "name": "Tag-Filter",
+      "description": "Filtert gespeicherte Begriffe nach Tags."
+    },
+    "src/client/features/saved-keywords/savedKeywordsUtils.ts": {
+      "name": "Hilfen Merkliste",
+      "description": "Seitengrößen, Exportspalten und Zahlenformate."
+    },
+    "src/client/features/saved-keywords/TagChip.tsx": {
+      "name": "Tag-Schild",
+      "description": "Zeigt einen Tag als farbigen Punkt oder Schild."
+    },
+    "src/client/features/saved-keywords/useSavedKeywordsExport.ts": {
+      "name": "Export Merkliste",
+      "description": "Exportiert die gespeicherten Begriffe als Datei."
+    },
+    "src/client/features/saved-keywords/useSavedKeywordsFilters.ts": {
+      "name": "Filter Merkliste laden",
+      "description": "Verwaltet die Filter der Merkliste."
+    },
+    "src/client/features/saved-keywords/useTagManage.ts": {
+      "name": "Tags verwalten",
+      "description": "Legt Tags an, benennt sie um und löscht sie."
+    },
+    "src/client/features/search-tabs/SearchTabStrip.tsx": {
+      "name": "Such-Reiterleiste",
+      "description": "Reiter für mehrere offene Suchen nebeneinander."
+    },
+    "src/client/features/search-tabs/types.ts": {
+      "name": "Typen Such-Reiter",
+      "description": "Datenformen der Reiter für Begriffe, Domains, Backlinks und Prompts."
+    },
+    "src/client/features/search-tabs/useSearchTabNavigation.ts": {
+      "name": "Navigation Such-Reiter",
+      "description": "Wechselt zwischen den Suchen der Reiter."
+    },
+    "src/client/features/search-tabs/useSearchTabs.ts": {
+      "name": "Such-Reiter verwalten",
+      "description": "Hält offene Suchen im Browser fest und schließt bei zu vielen die ältesten."
+    }
+  }
+}

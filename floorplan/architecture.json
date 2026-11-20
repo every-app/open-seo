@@ -1,0 +1,748 @@
+{
+ "$schema": "floorplan/architecture@1",
+ "audience": "everyone",
+ "project": {
+  "name": "OpenSEO",
+  "summary": "Ein SEO-Werkzeug zum Selbsthosten: Es recherchiert Suchbegriffe, verfolgt Rankings, prüft Websites und zeigt, ob KI-Assistenten eine Marke nennen. Die Daten kommen von DataForSEO, und auch KI-Assistenten können es über eine eigene Schnittstelle bedienen. Das Studio nutzt einen Fork (derzeit pausiert). Die Karte zeigt nur die Software selbst, ohne Testdateien, Webseite und Datenbank-Migrationen.",
+  "entrypoints": [
+   "src/server.ts",
+   "src/router.tsx",
+   "src/standalone-server.ts",
+   "src/server/mcp/server.ts"
+  ]
+ },
+ "ignore": [
+  "drizzle/sqlite/**",
+  "drizzle/pg/**",
+  "**/*.gen.ts",
+  "src/worker-configuration.d.ts",
+  "web/**",
+  "tests/**",
+  "**/*.test.{ts,tsx,mjs}",
+  "**/*.spec.{ts,tsx}",
+  "**/*.e2e.test.ts",
+  ".agents/**",
+  "scripts/celld/conformance/**"
+ ],
+ "nodes": [
+  {
+   "id": "app",
+   "label": "Bedienoberfläche",
+   "kind": "ui",
+   "summary": "Die Bildschirme, mit denen man arbeitet: Suchbegriffe recherchieren, Rankings ansehen, Seiten prüfen, Projekte und Konto verwalten.",
+   "paths": [
+    "src/client",
+    "src/routes",
+    "src/router.tsx",
+    "src/report-widgets"
+   ]
+  },
+  {
+   "id": "app.screens",
+   "parent": "app",
+   "label": "Seiten und Adressen",
+   "kind": "feature",
+   "summary": "Legt fest, welche Adresse welchen Bildschirm zeigt, und enthält auch die Adressen, die der Server direkt beantwortet (Gesundheitscheck, Google-Rückkehr, geteilte Berichte).",
+   "paths": [
+    "src/routes",
+    "src/router.tsx"
+   ]
+  },
+  {
+   "id": "app.research",
+   "parent": "app",
+   "label": "Recherche-Bildschirme",
+   "kind": "feature",
+   "summary": "Bildschirme zum Recherchieren: Suchbegriffe, Konkurrenz-Domains, Backlinks und KI-Suche.",
+   "paths": []
+  },
+  {
+   "id": "app.visibility",
+   "parent": "app",
+   "label": "KI-Sichtbarkeit (Oberfläche)",
+   "kind": "feature",
+   "summary": "Zeigt, ob und wie KI-Assistenten eine Marke bei bestimmten Fragen nennen.",
+   "paths": [
+    "src/client/features/ai-visibility"
+   ]
+  },
+  {
+   "id": "app.rank",
+   "parent": "app",
+   "label": "Ranking-Bildschirme",
+   "kind": "feature",
+   "summary": "Zeigt, auf welcher Position eine Seite für Suchbegriffe in Google steht, auch pro Ort.",
+   "paths": [
+    "src/client/features/{rank-tracking,local-seo}"
+   ]
+  },
+  {
+   "id": "app.audit",
+   "parent": "app",
+   "label": "Seitenprüfung (Oberfläche)",
+   "kind": "feature",
+   "summary": "Startet Website-Prüfungen und zeigt Fehler, Geschwindigkeit und Zugriffsrechte für Suchmaschinen und KI-Roboter.",
+   "paths": [
+    "src/client/features/{audit,lighthouse,crawler-access}"
+   ]
+  },
+  {
+   "id": "app.google",
+   "parent": "app",
+   "label": "Google-Daten und Verbindungen",
+   "kind": "feature",
+   "summary": "Zeigt Suchleistung aus der Google Search Console, verbindet Google-Konten und andere Dienste.",
+   "paths": [
+    "src/client/features/{search-performance,gsc,integrations}"
+   ]
+  },
+  {
+   "id": "app.projects",
+   "parent": "app",
+   "label": "Projekte und Berichte",
+   "kind": "feature",
+   "summary": "Projektübersicht, Startseite mit Kennzahlen, Berichte zum Teilen und die erste Einrichtung.",
+   "paths": []
+  },
+  {
+   "id": "app.account",
+   "parent": "app",
+   "label": "Konto und Abrechnung",
+   "kind": "feature",
+   "summary": "Anmeldung, Team, Einstellungen, Guthaben und Rechnungen, Hilfe sowie Verbindung für KI-Assistenten.",
+   "paths": []
+  },
+  {
+   "id": "app.sam",
+   "parent": "app",
+   "label": "Chat-Assistent Sam",
+   "kind": "feature",
+   "summary": "Ein Chat, in dem ein KI-Assistent Fragen zu den SEO-Daten beantwortet.",
+   "paths": [
+    "src/client/features/sam"
+   ]
+  },
+  {
+   "id": "app.kit",
+   "parent": "app",
+   "label": "Gemeinsame Bausteine",
+   "kind": "library",
+   "summary": "Gemeinsame Helfer der Bildschirme: Rahmen mit Menü, Zwischenspeicher für Serverdaten, Fehlertexte und Statistik.",
+   "paths": [
+    "src/client/lib",
+    "src/client/hooks",
+    "src/client/layout",
+    "src/client/styles",
+    "src/client/navigation",
+    "src/client/tanstack-db"
+   ]
+  },
+  {
+   "id": "app.widgets",
+   "parent": "app",
+   "label": "Widgets für KI-Assistenten",
+   "kind": "feature",
+   "summary": "Kleine Ansichten (Suchergebnisse, Search Console), die KI-Assistenten wie ChatGPT im Chat anzeigen.",
+   "paths": [
+    "src/client/mcp-widgets",
+    "src/report-widgets"
+   ]
+  },
+  {
+   "id": "server",
+   "label": "Hauptserver",
+   "kind": "service",
+   "summary": "Der Teil, der die Arbeit hinter den Bildschirmen erledigt: Daten holen, speichern, abrechnen und Aufgaben im Hintergrund starten.",
+   "paths": [
+    "src/server.ts",
+    "src/start.ts",
+    "src/server",
+    "src/serverFunctions",
+    "src/middleware",
+    "src/audit-worker.ts",
+    "src/env.d.ts"
+   ]
+  },
+  {
+   "id": "server.bridge",
+   "parent": "server",
+   "label": "Anfragen der Oberfläche",
+   "kind": "feature",
+   "summary": "Nimmt die Anfragen der Bildschirme an, prüft Anmeldung und Rechte und reicht sie an die Fachlogik weiter.",
+   "paths": [
+    "src/serverFunctions",
+    "src/middleware",
+    "src/server.ts",
+    "src/start.ts",
+    "src/audit-worker.ts",
+    "src/env.d.ts"
+   ]
+  },
+  {
+   "id": "server.research",
+   "parent": "server",
+   "label": "Recherche und Analyse",
+   "kind": "feature",
+   "summary": "Holt Suchbegriff-Daten, Konkurrenz-Analysen, Backlinks, KI-Suchergebnisse und Orts-Rankings und bereitet sie auf.",
+   "paths": [
+    "src/server/features/{keywords,domain,backlinks,ai-search,local-seo,indexnow}"
+   ]
+  },
+  {
+   "id": "server.visibility",
+   "parent": "server",
+   "label": "KI-Sichtbarkeit",
+   "kind": "feature",
+   "summary": "Stellt KI-Assistenten Fragen zur Marke und wertet aus, ob und wie die Marke genannt wird.",
+   "paths": [
+    "src/server/features/ai-visibility"
+   ]
+  },
+  {
+   "id": "server.rank",
+   "parent": "server",
+   "label": "Ranking-Verfolgung",
+   "kind": "feature",
+   "summary": "Prüft regelmäßig die Google-Positionen der Suchbegriffe und speichert den Verlauf.",
+   "paths": [
+    "src/server/features/rank-tracking"
+   ]
+  },
+  {
+   "id": "server.audit",
+   "parent": "server",
+   "label": "Website-Prüfung",
+   "kind": "feature",
+   "summary": "Durchsucht eine Website Seite für Seite und meldet technische SEO-Fehler.",
+   "paths": [
+    "src/server/features/audit",
+    "src/server/lib/audit",
+    "src/server/lib/lighthouse*",
+    "src/server/lib/dataforseoLighthousePayload.ts"
+   ]
+  },
+  {
+   "id": "server.google",
+   "parent": "server",
+   "label": "Google-Verbindungen",
+   "kind": "feature",
+   "summary": "Meldet sich bei Google an und holt Daten aus der Search Console und aus Google Analytics.",
+   "paths": [
+    "src/server/features/{google,gsc,ga4}",
+    "src/server/lib/{gscClient,gscErrors,ga4Client,ga4Errors}.ts"
+   ]
+  },
+  {
+   "id": "server.projects",
+   "parent": "server",
+   "label": "Projekte und Berichte",
+   "kind": "feature",
+   "summary": "Verwaltet Projekte mit ihren Websites, die Startseiten-Zahlen, geteilte Berichte und Hinweise zum Einstieg.",
+   "paths": [
+    "src/server/features/{projects,project-context,dashboard,reports,activation}"
+   ]
+  },
+  {
+   "id": "server.sam",
+   "parent": "server",
+   "label": "Chat-Assistent Sam",
+   "kind": "feature",
+   "summary": "Der Chat-Assistent: führt Gespräche, nutzt die SEO-Werkzeuge und merkt sich den Verlauf.",
+   "paths": [
+    "src/server/features/sam",
+    "src/server/lib/chatAgent.ts"
+   ]
+  },
+  {
+   "id": "server.dfs",
+   "parent": "server",
+   "label": "DataForSEO-Anbindung",
+   "kind": "library",
+   "summary": "Spricht mit DataForSEO, rechnet die Kosten mit und übersetzt die Antworten in eigene Formate.",
+   "paths": [
+    "src/server/lib/dataforseo",
+    "src/server/lib/dataforseo*.ts"
+   ]
+  },
+  {
+   "id": "server.lib",
+   "parent": "server",
+   "label": "Server-Hilfen",
+   "kind": "library",
+   "summary": "Gemeinsame Helfer des Servers: Fehlermeldungen, Einstellungen, Zwischenspeicher, Webseiten laden, Statistik und KI-Zugänge.",
+   "paths": [
+    "src/server/lib",
+    "src/server/everyapp"
+   ]
+  },
+  {
+   "id": "server.mcp",
+   "parent": "server",
+   "label": "Schnittstelle für KI-Assistenten",
+   "kind": "service",
+   "summary": "Lässt KI-Assistenten wie Claude oder ChatGPT die SEO-Werkzeuge direkt benutzen, mit Anmeldung und Rechteprüfung.",
+   "paths": [
+    "src/server/mcp"
+   ]
+  },
+  {
+   "id": "server.billing",
+   "parent": "server",
+   "label": "Abrechnung und Konto",
+   "kind": "feature",
+   "summary": "Guthaben, Abos, Rechnungen, Empfehlungen, Willkommens-E-Mails und das Löschen eines Kontos.",
+   "paths": [
+    "src/server/billing",
+    "src/server/referrals",
+    "src/server/email",
+    "src/server/account-deletion"
+   ]
+  },
+  {
+   "id": "server.auth",
+   "parent": "server",
+   "label": "Anmeldung und Teams",
+   "kind": "feature",
+   "summary": "Anmeldung, Teams und Einladungen, Gastzugänge und Zustimmung zu den Bedingungen.",
+   "paths": [
+    "src/server/auth",
+    "src/lib"
+   ]
+  },
+  {
+   "id": "server.jobs",
+   "parent": "server",
+   "label": "Hintergrundaufgaben",
+   "kind": "worker",
+   "summary": "Lange Aufgaben, die im Hintergrund laufen: Website-Prüfung, Ranking-Abfragen und KI-Sichtbarkeits-Läufe.",
+   "paths": [
+    "src/server/workflows"
+   ]
+  },
+  {
+   "id": "server.standalone",
+   "parent": "server",
+   "label": "Eigener Server (Container)",
+   "kind": "service",
+   "summary": "Die Variante für den eigenen Rechner oder Server: startet alles in einem Prozess mit eigener Datenbank und einfacher Verwaltung.",
+   "paths": [
+    "src/server/standalone",
+    "src/standalone-server.ts"
+   ]
+  },
+  {
+   "id": "data",
+   "label": "Datenablage",
+   "kind": "data",
+   "summary": "Beschreibt, wie alle Daten gespeichert werden: Konten, Projekte, Suchbegriffe, Rankings, Prüfungen, Berichte, Guthaben. Es gibt zwei Ausführungen, für Cloudflare und für Postgres.",
+   "paths": [
+    "src/db",
+    "drizzle/*.ts"
+   ]
+  },
+  {
+   "id": "shared",
+   "label": "Gemeinsame Regeln und Typen",
+   "kind": "library",
+   "summary": "Gemeinsame Festlegungen, die Oberfläche und Server beide brauchen: Formate, Fehlercodes, Länder und Orte, Grenzen der Prüfung.",
+   "paths": []
+  },
+  {
+   "id": "tools",
+   "label": "Werkzeuge und Skripte",
+   "kind": "script",
+   "summary": "Skripte zum Einrichten, Veröffentlichen, Aufräumen und Messen, sowie die Verpackung für den eigenen Server.",
+   "paths": [
+    "scripts"
+   ]
+  },
+  {
+   "id": "build",
+   "label": "Bau und Veröffentlichung",
+   "kind": "infra",
+   "summary": "Einstellungen zum Bauen der App und zum Aufspielen: auf Cloudflare, als fertiger Container für den eigenen Server oder auf EveryApp.",
+   "paths": [
+    "deploy",
+    "vite*.ts",
+    "cloudflare.config.ts",
+    "everyapp.config.ts",
+    "drizzle"
+   ]
+  },
+  {
+   "id": "dataforseo",
+   "label": "DataForSEO",
+   "kind": "external",
+   "summary": "Bezahlter Datendienst für Suchbegriffe, Rankings, Backlinks und Seitenprüfung.",
+   "hosts": [
+    "api.dataforseo.com"
+   ]
+  },
+  {
+   "id": "google",
+   "label": "Google",
+   "kind": "external",
+   "summary": "Anmeldung, Search Console und Analytics.",
+   "hosts": [
+    "www.googleapis.com",
+    "accounts.google.com"
+   ]
+  },
+  {
+   "id": "cloudflare",
+   "label": "Cloudflare",
+   "kind": "external",
+   "summary": "Hier läuft die Online-Version: Server, Datenbank, Speicher und Hintergrundaufgaben.",
+   "packages": [
+    "npm:cloudflare:workers",
+    "npm:wrangler",
+    "npm:alchemy"
+   ]
+  },
+  {
+   "id": "postgres",
+   "label": "Datenbank",
+   "kind": "external",
+   "summary": "Hier liegen alle Daten (Cloudflare D1, SQLite oder Postgres).",
+   "packages": [
+    "npm:drizzle-orm",
+    "npm:postgres",
+    "npm:@libsql/client"
+   ]
+  },
+  {
+   "id": "ai",
+   "label": "KI-Dienste",
+   "kind": "external",
+   "summary": "Sprachmodelle für den Chat-Assistenten und die KI-Sichtbarkeit.",
+   "packages": [
+    "npm:ai",
+    "npm:@openrouter/ai-sdk-provider"
+   ],
+   "hosts": [
+    "openrouter.ai"
+   ]
+  },
+  {
+   "id": "loops",
+   "label": "Loops und Autumn",
+   "kind": "external",
+   "summary": "Versand von E-Mails und Abrechnung.",
+   "hosts": [
+    "app.loops.so"
+   ],
+   "packages": [
+    "npm:autumn-js"
+   ]
+  },
+  {
+   "id": "app.research.keywords",
+   "parent": "app.research",
+   "label": "Suchbegriffe",
+   "kind": "feature",
+   "summary": "Sucht Begriffe mit Suchvolumen und Schwierigkeit, merkt sich Suchen und gespeicherte Begriffe.",
+   "paths": [
+    "src/client/features/{keywords,saved-keywords,search-tabs}"
+   ]
+  },
+  {
+   "id": "app.research.domain",
+   "parent": "app.research",
+   "label": "Konkurrenz-Domains",
+   "kind": "feature",
+   "summary": "Zeigt, für welche Begriffe eine fremde Domain gefunden wird und wie stark sie ist.",
+   "paths": [
+    "src/client/features/domain"
+   ]
+  },
+  {
+   "id": "app.research.backlinks",
+   "parent": "app.research",
+   "label": "Backlinks",
+   "kind": "feature",
+   "summary": "Zeigt, welche anderen Websites auf eine Domain verlinken.",
+   "paths": [
+    "src/client/features/backlinks"
+   ]
+  },
+  {
+   "id": "app.research.ai-search",
+   "parent": "app.research",
+   "label": "KI-Suche",
+   "kind": "feature",
+   "summary": "Zeigt, wonach Menschen KI-Assistenten fragen und was diese antworten.",
+   "paths": [
+    "src/client/features/ai-search"
+   ]
+  },
+  {
+   "id": "app.kit.ui",
+   "parent": "app.kit",
+   "label": "Knöpfe, Dialoge und Formulare",
+   "kind": "library",
+   "summary": "Die Grundbausteine jedes Bildschirms: Knöpfe, Eingabefelder, Dialoge, Karten und Menüs.",
+   "paths": [
+    "src/client/components/ui",
+    "src/client/components/form"
+   ]
+  },
+  {
+   "id": "app.kit.tables",
+   "parent": "app.kit",
+   "label": "Tabellen",
+   "kind": "library",
+   "summary": "Sortierbare, filterbare Tabellen mit Spaltenwahl und Export.",
+   "paths": [
+    "src/client/components/table"
+   ]
+  },
+  {
+   "id": "app.kit.parts",
+   "parent": "app.kit",
+   "label": "Weitere Bildschirmteile",
+   "kind": "library",
+   "summary": "Fertige Teile wie Seitenkopf, Menüleiste, Leere-Zustände, Fehlerkarten, Orts- und Länderauswahl.",
+   "paths": [
+    "src/client/components"
+   ]
+  },
+  {
+   "id": "app.projects.projects",
+   "parent": "app.projects",
+   "label": "Projekte",
+   "kind": "feature",
+   "summary": "Projekte anlegen, wechseln und einrichten.",
+   "paths": [
+    "src/client/features/projects"
+   ]
+  },
+  {
+   "id": "app.projects.dashboard",
+   "parent": "app.projects",
+   "label": "Startseite mit Kennzahlen",
+   "kind": "feature",
+   "summary": "Zeigt auf der Startseite die wichtigsten Zahlen und Hinweise.",
+   "paths": [
+    "src/client/features/dashboard"
+   ]
+  },
+  {
+   "id": "app.projects.onboarding",
+   "parent": "app.projects",
+   "label": "Erste Einrichtung und Berichte",
+   "kind": "feature",
+   "summary": "Führt neue Nutzer durch die Einrichtung und erstellt Berichte zum Teilen.",
+   "paths": [
+    "src/client/features/{onboarding,reports}"
+   ]
+  },
+  {
+   "id": "app.account.billing",
+   "parent": "app.account",
+   "label": "Guthaben und Rechnungen",
+   "kind": "feature",
+   "summary": "Guthaben aufladen, Abo wählen, Rechnungen und Verbrauch ansehen.",
+   "paths": [
+    "src/client/features/billing"
+   ]
+  },
+  {
+   "id": "app.account.settings",
+   "parent": "app.account",
+   "label": "Anmeldung, Team und Einstellungen",
+   "kind": "feature",
+   "summary": "Anmeldeseiten, Team-Einladungen, persönliche Einstellungen und Hilfe.",
+   "paths": [
+    "src/client/features/{auth,settings,team,help,every-app}"
+   ]
+  },
+  {
+   "id": "app.account.mcp",
+   "parent": "app.account",
+   "label": "Zugang für KI-Assistenten",
+   "kind": "feature",
+   "summary": "Hilft, Claude, ChatGPT und andere Assistenten mit OpenSEO zu verbinden.",
+   "paths": [
+    "src/client/features/ai-mcp"
+   ]
+  },
+  {
+   "id": "shared.rules",
+   "parent": "shared",
+   "label": "Gemeinsame Regeln",
+   "kind": "library",
+   "summary": "Festlegungen für beide Seiten: Fehlercodes, Formate, Orte, Grenzen und Teilen von Berichten.",
+   "paths": [
+    "src/shared"
+   ]
+  },
+  {
+   "id": "shared.types",
+   "parent": "shared",
+   "label": "Datenformate",
+   "kind": "library",
+   "summary": "Beschreibt die Form der Daten, die zwischen Oberfläche und Server wandern.",
+   "paths": [
+    "src/types"
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "server.dfs",
+   "to": "dataforseo",
+   "kind": "http",
+   "label": "Daten holen",
+   "description": "Fragt Suchbegriffe, Rankings, Backlinks und Prüfdaten ab und zahlt pro Abfrage."
+  },
+  {
+   "from": "server.google",
+   "to": "google",
+   "kind": "http",
+   "label": "Anmeldung und Daten"
+  },
+  {
+   "from": "server.audit",
+   "to": "server.jobs",
+   "kind": "call",
+   "label": "Prüfung starten",
+   "description": "Eine Website-Prüfung läuft als lange Aufgabe im Hintergrund."
+  },
+  {
+   "from": "server.sam",
+   "to": "ai",
+   "kind": "http",
+   "label": "Fragen an das Sprachmodell"
+  },
+  {
+   "from": "server.billing",
+   "to": "loops",
+   "kind": "http",
+   "label": "Abrechnung und E-Mail"
+  },
+  {
+   "from": "app.screens",
+   "to": "server.bridge",
+   "kind": "rpc",
+   "label": "Anfragen der Bildschirme",
+   "description": "Die Bildschirme rufen Serverfunktionen auf, die als eigene Anfragen laufen."
+  },
+  {
+   "from": "app.screens",
+   "to": "app.kit",
+   "kind": "import",
+   "label": "nutzt Bausteine"
+  }
+ ],
+ "flows": [
+  {
+   "id": "keyword-research",
+   "title": "Suchbegriffe recherchieren",
+   "description": "Was passiert, wenn jemand nach einem Suchbegriff sucht.",
+   "steps": [
+    {
+     "node": "app.research",
+     "note": "Jemand gibt einen Suchbegriff ein und wählt Land und Sprache."
+    },
+    {
+     "node": "server.bridge",
+     "note": "Der Server prüft Anmeldung und Guthaben."
+    },
+    {
+     "node": "server.research",
+     "note": "Die Recherche-Logik holt Begriffe, Suchvolumen und Ranking-Schwierigkeit."
+    },
+    {
+     "node": "server.dfs",
+     "note": "Die Anfrage geht an DataForSEO, die Kosten werden mitgerechnet."
+    },
+    {
+     "node": "dataforseo",
+     "note": "DataForSEO liefert die Zahlen zurück."
+    }
+   ]
+  },
+  {
+   "id": "site-audit",
+   "title": "Website prüfen",
+   "description": "Eine Website wird als Hintergrundaufgabe Seite für Seite durchsucht.",
+   "steps": [
+    {
+     "node": "app.audit",
+     "note": "Jemand startet die Prüfung einer Website."
+    },
+    {
+     "node": "server.audit",
+     "note": "Der Server legt die Prüfung an."
+    },
+    {
+     "node": "server.jobs",
+     "note": "Die Hintergrundaufgabe lädt Seite für Seite und merkt sich die Funde."
+    },
+    {
+     "node": "data",
+     "note": "Die Ergebnisse werden gespeichert und in der Oberfläche angezeigt."
+    }
+   ]
+  },
+  {
+   "id": "ai-agent",
+   "title": "KI-Assistent nutzt das Werkzeug",
+   "steps": [
+    {
+     "node": "server.mcp",
+     "note": "Ein KI-Assistent wie Claude meldet sich an und ruft ein Werkzeug auf."
+    },
+    {
+     "node": "server.research",
+     "note": "Die Werkzeuge nutzen dieselbe Logik wie die Bildschirme."
+    },
+    {
+     "node": "server.dfs",
+     "note": "Die Daten kommen wieder von DataForSEO."
+    },
+    {
+     "node": "app.widgets",
+     "note": "Manche Antworten erscheinen im Chat als kleine Ansicht."
+    }
+   ]
+  }
+ ],
+ "tour": [
+  {
+   "node": "app",
+   "title": "Die Bildschirme",
+   "note": "Hier arbeitet man: Suchbegriffe recherchieren, Rankings und Prüfungen ansehen, Projekte verwalten."
+  },
+  {
+   "node": "server",
+   "title": "Der Hauptserver",
+   "note": "Er holt die Daten, speichert sie und rechnet ab. Die Bildschirme fragen ihn für alles."
+  },
+  {
+   "node": "server.mcp",
+   "title": "Zugang für KI-Assistenten",
+   "note": "Programme wie Claude oder ChatGPT können dieselben Werkzeuge nutzen wie die Bildschirme."
+  },
+  {
+   "node": "server.jobs",
+   "title": "Lange Aufgaben im Hintergrund",
+   "note": "Website-Prüfungen und Ranking-Abfragen laufen im Hintergrund, bis sie fertig sind."
+  },
+  {
+   "node": "dataforseo",
+   "title": "Die Datenquelle",
+   "note": "Die meisten Zahlen stammen von DataForSEO und kosten pro Abfrage."
+  },
+  {
+   "node": "data",
+   "title": "Die Datenablage",
+   "note": "Alles Gespeicherte liegt in einer Datenbank, entweder bei Cloudflare oder in Postgres."
+  },
+  {
+   "node": "build",
+   "title": "Aufspielen",
+   "note": "Es gibt drei Wege: bei Cloudflare, als Container auf dem eigenen Server oder auf EveryApp."
+  }
+ ]
+}

@@ -1,0 +1,108 @@
+{
+  "files": {
+    "src/client/features/gsc/GoogleGlyph.tsx": {
+      "name": "Google-Zeichen",
+      "description": "Das Google-Logo für die Verbindungsflächen der Search Console."
+    },
+    "src/client/features/gsc/GscReEngagementModal.tsx": {
+      "name": "Erinnerung Search Console",
+      "description": "Einmalige Aufforderung an Nutzer, die ohne Search-Console-Schritt fertig wurden."
+    },
+    "src/client/features/integrations/GoogleAccountRemovalDialog.tsx": {
+      "name": "Dialog Google-Konto entfernen",
+      "description": "Fragt nach, bevor ein Google-Konto getrennt wird."
+    },
+    "src/client/features/integrations/GoogleAccounts.tsx": {
+      "name": "Google-Konten",
+      "description": "Listet die Google-Konten unter dem Eigenschaftsfeld mit Status."
+    },
+    "src/client/features/integrations/googleAuthErrorCopy.ts": {
+      "name": "Texte Google-Fehler",
+      "description": "Verständliche Meldungen, wenn die Google-Anmeldung scheitert."
+    },
+    "src/client/features/integrations/GoogleConnectedState.tsx": {
+      "name": "Zustand verbunden",
+      "description": "Zeigt, dass ein Google-Dienst verbunden ist."
+    },
+    "src/client/features/integrations/GoogleConnectionCard.tsx": {
+      "name": "Google-Verbindungskarte",
+      "description": "Verbindet ein Projekt mit Search Console oder Analytics: Konto verknüpfen, Eigenschaft wählen, ändern oder trennen."
+    },
+    "src/client/features/integrations/googleLinkError.ts": {
+      "name": "Google-Verbindungsfehler merken",
+      "description": "Hält fest, wenn das Verknüpfen mit Google scheitert, damit die Seite den Grund zeigt."
+    },
+    "src/client/features/integrations/GoogleLinkErrorAlert.tsx": {
+      "name": "Hinweis Google-Fehler",
+      "description": "Meldung an der Verbindungsstelle nach einem gescheiterten Google-Vorgang."
+    },
+    "src/client/features/integrations/GoogleOAuthSetupWarning.tsx": {
+      "name": "Warnung Google-Einrichtung",
+      "description": "Warnt, wenn Google-Zugang auf dem Server nicht eingerichtet ist."
+    },
+    "src/client/features/integrations/GoogleProductLogos.tsx": {
+      "name": "Google-Produktlogos",
+      "description": "Logos von Search Console und Analytics."
+    },
+    "src/client/features/integrations/GoogleProjectEmptyState.tsx": {
+      "name": "Leerer Zustand Google",
+      "description": "Zeigt, dass ein Projekt noch keine Google-Verbindung hat."
+    },
+    "src/client/features/integrations/GooglePropertyPicker.tsx": {
+      "name": "Eigenschaft wählen",
+      "description": "Lässt aus den Google-Konten die passende Website-Eigenschaft wählen."
+    },
+    "src/client/features/integrations/googleProviders.ts": {
+      "name": "Google-Dienste",
+      "description": "Beschreibt die beiden Google-Dienste in gleicher Form samt Verbindung eines Projekts."
+    },
+    "src/client/features/integrations/GscPropertySetupHelp.tsx": {
+      "name": "Hilfe Search Console",
+      "description": "Erklärt, wie man die Website in der Search Console anlegt, wenn keine vorhanden ist."
+    },
+    "src/client/features/integrations/startGoogleLink.ts": {
+      "name": "Google-Verknüpfung starten",
+      "description": "Startet die Google-Freigabe und merkt, dass sie gerade läuft."
+    },
+    "src/client/features/integrations/useGooglePickerResume.ts": {
+      "name": "Auswahl nach Rückkehr",
+      "description": "Öffnet die Eigenschaftswahl wieder, nachdem man von Google zurückkommt."
+    },
+    "src/client/features/search-performance/SearchPerformanceColumns.tsx": {
+      "name": "Spalten Suchleistung",
+      "description": "Spalten und Formate für Klicks, Anzeigen, Klickrate und Position."
+    },
+    "src/client/features/search-performance/SearchPerformanceDimensionSection.tsx": {
+      "name": "Bereich Abfragen und Seiten",
+      "description": "Tabelle der Suchanfragen oder Seiten mit Laden, Fehler und neu verbinden."
+    },
+    "src/client/features/search-performance/SearchPerformanceLoadingState.tsx": {
+      "name": "Ladezustand Suchleistung",
+      "description": "Platzhalter, solange die Suchleistung lädt."
+    },
+    "src/client/features/search-performance/SearchPerformancePage.tsx": {
+      "name": "Seite Suchleistung",
+      "description": "Hauptbildschirm: Suchleistung aus der Search Console mit Filtern, Reitern und Tabellen."
+    },
+    "src/client/features/search-performance/SearchPerformanceParts.tsx": {
+      "name": "Teile Suchleistung",
+      "description": "Exportiert die vollständigen Daten und Chancen-Listen der Suchleistung."
+    },
+    "src/client/features/search-performance/searchPerformanceQueries.ts": {
+      "name": "Abfragen Suchleistung",
+      "description": "Gemeinsame Abfrage für Tabelle und Vorladen, damit beide dasselbe laden."
+    },
+    "src/client/features/search-performance/SearchPerformanceSelects.tsx": {
+      "name": "Auswahl Suchleistung",
+      "description": "Auswahl für Suchart, Gerät, Land und Zeitraum."
+    },
+    "src/client/features/search-performance/SearchPerformanceTextFilters.tsx": {
+      "name": "Textfilter Suchleistung",
+      "description": "Filter nach Text in Suchanfragen und Seiten."
+    },
+    "src/client/features/search-performance/TrackRankingsMenu.tsx": {
+      "name": "Rankings verfolgen",
+      "description": "Fügt ausgewählte Suchanfragen einer Ranking-Verfolgung des Projekts hinzu."
+    }
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "files": {
+    "src/client/components/AuthErrorCard.tsx": {
+      "name": "Fehlerkarte Anmeldung",
+      "description": "Karte für Anmeldefehler mit Hinweis, wie es weitergeht."
+    },
+    "src/client/components/CardShell.tsx": {
+      "name": "Karte mit Kopfzeile",
+      "description": "Karte mit Titelzeile über dem Inhalt, für Übersicht und Verbindungen."
+    },
+    "src/client/components/ChartAxes.tsx": {
+      "name": "Diagrammachsen",
+      "description": "Gitter und Achsen für die Diagramme."
+    },
+    "src/client/components/chat/ChatMessage.tsx": {
+      "name": "Chat-Nachricht",
+      "description": "Zeigt eine Nachricht im Chat mit Text, Überlegungen und Hinweisen auf genutzte Werkzeuge."
+    },
+    "src/client/components/chat/useStickToBottom.ts": {
+      "name": "Chat unten halten",
+      "description": "Hält den Chatverlauf unten, solange man mitliest, und hört auf, sobald man nach oben scrollt."
+    },
+    "src/client/components/ConfirmDialog.tsx": {
+      "name": "Bestätigungsdialog",
+      "description": "Fragt vor etwas Unumkehrbarem nach, etwa Löschen oder einer Aktion, die Guthaben kostet."
+    },
+    "src/client/components/CopyButton.tsx": {
+      "name": "Kopierknopf",
+      "description": "Knopf, der einen Wert in die Zwischenablage kopiert."
+    },
+    "src/client/components/CountryCombobox.tsx": {
+      "name": "Länderauswahl mit Suche",
+      "description": "Auswahlliste für Länder, in der man tippend sucht."
+    },
+    "src/client/components/CountryFlag.tsx": {
+      "name": "Länderflagge",
+      "description": "Zeigt die runde Flagge eines Landes."
+    },
+    "src/client/components/DefaultCatchBoundary.tsx": {
+      "name": "Fehlerfänger",
+      "description": "Zeigt eine Fehlerseite, wenn auf einem Bildschirm etwas Unerwartetes schiefgeht."
+    },
+    "src/client/components/EmptyState.tsx": {
+      "name": "Leerer Zustand",
+      "description": "Einheitliche Anzeige ohne Inhalt: Symbol, Titel, Text und Knopf."
+    },
+    "src/client/components/ErrorState.tsx": {
+      "name": "Fehleranzeige",
+      "description": "Zeigt eine Fehlermeldung, auf Wunsch mit Knopf zum erneuten Versuch."
+    },
+    "src/client/components/ExpandableList.tsx": {
+      "name": "Aufklappbare Liste",
+      "description": "Zeigt die ersten drei Einträge und blendet den Rest auf Klick ein."
+    },
+    "src/client/components/ExportMenu.tsx": {
+      "name": "Export-Menü",
+      "description": "Der Export-Knopf der Werkzeugleiste mit den Dateiformaten."
+    },
+    "src/client/components/FormActions.tsx": {
+      "name": "Formular-Knöpfe",
+      "description": "Abbrechen und Speichern am Ende eines Formulars."
+    },
+    "src/client/components/FormDialog.tsx": {
+      "name": "Formular-Dialog",
+      "description": "Kleiner Einstellungsdialog mit Titel, beschrifteten Zeilen und Knöpfen rechts."
+    },
+    "src/client/components/GateCard.tsx": {
+      "name": "Sperr-Karte",
+      "description": "Karte, die eine noch nicht nutzbare Funktion ersetzt: Tarif-Hinweis, Beta-Zustimmung oder fehlender Einrichtungsschritt."
+    },
+    "src/client/components/HelpLabel.tsx": {
+      "name": "Beschriftung mit Hilfe",
+      "description": "Beschriftung mit Hilfstext zum Darüberfahren, für Tabellenköpfe und Kennzahlen."
+    },
+    "src/client/components/InlineConfirm.tsx": {
+      "name": "Zweistufiges Löschen",
+      "description": "Statt sofort zu löschen, fragt die Zeile mit „Entfernen“ und „Abbrechen“ nach."
+    },
+    "src/client/components/LocationSelect.tsx": {
+      "name": "Länderwahl",
+      "description": "Auswahl für Länder zum Tippen und Filtern, auch als kompakter Knopf."
+    },
+    "src/client/components/Markdown.tsx": {
+      "name": "Markdown-Anzeige",
+      "description": "Zeigt formatierten Text mit einheitlichem Aussehen an."
+    },
+    "src/client/components/MetricsTable.tsx": {
+      "name": "Kennzahlen-Tabelle",
+      "description": "Zeigt Messwerte in einer Tabelle mit prozentualer Änderung."
+    },
+    "src/client/components/NavTabs.tsx": {
+      "name": "Reiter als Links",
+      "description": "Reihe von Reitern, die jeweils eine eigene Adresse haben."
+    },
+    "src/client/components/NotFound.tsx": {
+      "name": "Seite nicht gefunden",
+      "description": "Zeigt eine Meldung, wenn eine Adresse nicht existiert."
+    },
+    "src/client/components/PageHeader.tsx": {
+      "name": "Seitenkopf",
+      "description": "Titel einer Seite mit Untertitel und Aktionen rechts, plus Abschnittsüberschrift."
+    },
+    "src/client/components/PermissionHint.tsx": {
+      "name": "Hinweis fehlende Berechtigung",
+      "description": "Erklärt, warum eine Karte leer bleibt, wenn eine Berechtigung fehlt."
+    },
+    "src/client/components/PrivacyChoices.tsx": {
+      "name": "Datenschutz-Wahl",
+      "description": "Zeigt und speichert, welche optionalen Auswertungen im Browser erlaubt sind."
+    },
+    "src/client/components/QueryState.tsx": {
+      "name": "Ladezustand",
+      "description": "Zeigt für eine Abfrage Laden, Fehler mit Wiederholen oder den Inhalt."
+    },
+    "src/client/components/RecentSearches.tsx": {
+      "name": "Letzte Suchen",
+      "description": "Liste der letzten Suchen zum erneuten Aufrufen."
+    },
+    "src/client/components/ResearchScopeSelect.tsx": {
+      "name": "Auswahl Recherche-Umfang",
+      "description": "Wählt, ob genau eine Adresse, ein Unterordner, die Domain oder Subdomains untersucht werden."
+    },
+    "src/client/components/RowActionsMenu.tsx": {
+      "name": "Zeilenmenü",
+      "description": "Das Drei-Punkte-Menü am Ende einer Tabellenzeile."
+    },
+    "src/client/components/SafeExternalLink.tsx": {
+      "name": "Sicherer externer Link",
+      "description": "Link, der sicher in neuem Tab zu fremden Seiten führt."
+    },
+    "src/client/components/SearchCard.tsx": {
+      "name": "Suchkarte",
+      "description": "Suchformular am Kopf einer Recherche-Seite mit Feldern, Suchknopf und Fehlerhinweis."
+    },
+    "src/client/components/SegmentedToggle.tsx": {
+      "name": "Umschalter",
+      "description": "Einfache Auswahl aus wenigen Optionen als verbundene Knöpfe."
+    },
+    "src/client/components/SerpLocationCombobox.tsx": {
+      "name": "Ortsauswahl für Rankings",
+      "description": "Sucht Städte, Landkreise und Regionen eines Landes."
+    },
+    "src/client/components/Sidebar.tsx": {
+      "name": "Seitenmenü",
+      "description": "Das linke Menü der App mit Projektwahl, Navigation und Kontomenü."
+    },
+    "src/client/components/SkeletonPresets.tsx": {
+      "name": "Lade-Platzhalter",
+      "description": "Grau hinterlegte Platzhalter für Kennzahlen und Tabellenzeilen, solange Daten laden."
+    },
+    "src/client/components/Spinner.tsx": {
+      "name": "Ladeanzeige",
+      "description": "Drehende Anzeige, auch als Vollbild bei Anmeldung und Kontoprüfung."
+    },
+    "src/client/components/StatusScreen.tsx": {
+      "name": "Vollbild-Zustand",
+      "description": "Zeigt eine ganze Seite für Laden, Weiterleitung, Fehler oder Sperre."
+    },
+    "src/client/components/ThemePreferenceMenuItems.tsx": {
+      "name": "Auswahl Farbschema",
+      "description": "Auswahl System, Hell oder Dunkel für Einstellungen und Kontomenüs."
+    }
+  }
+}

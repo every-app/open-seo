@@ -1,0 +1,44 @@
+{
+  "files": {
+    "src/server/features/rank-tracking/rankTrackingTimestamps.ts": {
+      "name": "Zeitstempel Ranking",
+      "description": "Wandelt Zeitangaben für Ranking-Daten um."
+    },
+    "src/server/features/rank-tracking/repositories/RankTrackingRepository.ts": {
+      "name": "Speicher Ranking-Verfolgung",
+      "description": "Legt Verfolgungen, Begriffe und Läufe an und liest sie."
+    },
+    "src/server/features/rank-tracking/repositories/runQueries.ts": {
+      "name": "Abfragen Läufe",
+      "description": "Legt Läufe an und aktualisiert sie, solange sie offen sind."
+    },
+    "src/server/features/rank-tracking/repositories/snapshotQueries.ts": {
+      "name": "Abfragen Momentaufnahmen",
+      "description": "Liefert beste Positionen, Verläufe und Vergleiche aus den gespeicherten Prüfungen."
+    },
+    "src/server/features/rank-tracking/services/configSchedule.ts": {
+      "name": "Nächste Prüfung",
+      "description": "Rechnet aus, wann die nächste geplante Prüfung fällig ist."
+    },
+    "src/server/features/rank-tracking/services/rankCheckRunGuards.ts": {
+      "name": "Absicherung Läufe",
+      "description": "Beendet hängende Läufe und startet neue ordentlich."
+    },
+    "src/server/features/rank-tracking/services/RankTrackingKeywordService.ts": {
+      "name": "Dienst Begriffe Verfolgung",
+      "description": "Fügt Begriffe zur Verfolgung hinzu, entfernt oder pinnt sie."
+    },
+    "src/server/features/rank-tracking/services/rankTrackingResults.ts": {
+      "name": "Ergebnisse Rankings",
+      "description": "Liefert die neuesten Ergebnisse einer Verfolgung."
+    },
+    "src/server/features/rank-tracking/services/RankTrackingService.ts": {
+      "name": "Dienst Ranking-Verfolgung",
+      "description": "Legt Verfolgungen an, ändert sie, startet Prüfungen und rechnet Kosten."
+    },
+    "src/server/features/rank-tracking/services/scheduledRankChecks.ts": {
+      "name": "Geplante Prüfungen",
+      "description": "Startet auf einem Zeitplan Prüfungen für alle fälligen Verfolgungen."
+    }
+  }
+}

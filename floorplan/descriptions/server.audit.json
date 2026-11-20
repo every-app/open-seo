@@ -1,0 +1,152 @@
+{
+  "files": {
+    "src/server/features/audit/AuditScratchpad.ts": {
+      "name": "Notizblock der Prüfung",
+      "description": "Hält während einer Prüfung die zu besuchenden Adressen und gefundenen Links."
+    },
+    "src/server/features/audit/repositories/auditIssueWrites.ts": {
+      "name": "Probleme speichern",
+      "description": "Schreibt gefundene Probleme in die Datenbank."
+    },
+    "src/server/features/audit/repositories/AuditRepository.ts": {
+      "name": "Prüfungs-Speicher",
+      "description": "Legt Prüfungen an und liest sie wieder."
+    },
+    "src/server/features/audit/repositories/auditResultsQueries.ts": {
+      "name": "Abfragen Prüfergebnisse",
+      "description": "Zählt Probleme und liefert Seiten und Probleme gefiltert aus der Datenbank."
+    },
+    "src/server/features/audit/repositories/auditSummaryQueries.ts": {
+      "name": "Abfragen Zusammenfassung",
+      "description": "Zählt, auf wie vielen Seiten welches Problem auftritt."
+    },
+    "src/server/features/audit/repositories/CrawlerCredentialRepository.ts": {
+      "name": "Speicher Crawler-Zugang",
+      "description": "Speichert die Zugangsangaben für den Prüf-Roboter."
+    },
+    "src/server/features/audit/scratchpad-sql.ts": {
+      "name": "Tabellen des Notizblocks",
+      "description": "Legt die Tabellen für den Notizblock der Prüfung an."
+    },
+    "src/server/features/audit/services/audit-capacity.ts": {
+      "name": "Grenzen Prüfung",
+      "description": "Maximale Seitenzahlen je Tarif, weil der Roboter nicht über Guthaben abgerechnet wird."
+    },
+    "src/server/features/audit/services/auditReconciler.ts": {
+      "name": "Abgleich laufender Prüfungen",
+      "description": "Markiert Prüfungen als fehlgeschlagen, wenn ihre Hintergrundaufgabe beendet ist."
+    },
+    "src/server/features/audit/services/AuditResultsService.ts": {
+      "name": "Dienst Prüfergebnisse",
+      "description": "Liefert Ergebnisse einer Prüfung."
+    },
+    "src/server/features/audit/services/AuditService.ts": {
+      "name": "Dienst Prüfung",
+      "description": "Startet, beendet und löscht Prüfungen und prüft Berechtigungen."
+    },
+    "src/server/features/audit/services/CrawlerCredentialService.ts": {
+      "name": "Dienst Crawler-Zugang",
+      "description": "Speichert den Zugang des Roboters verschlüsselt und gibt ihn bei Prüfungen frei."
+    },
+    "src/server/features/audit/services/firstAuditEmails.ts": {
+      "name": "E-Mail erste Prüfung",
+      "description": "Schickt jedem Nutzer die Ergebnisse der ersten fertigen Prüfung per E-Mail."
+    },
+    "src/server/features/audit/services/shopifySignature.ts": {
+      "name": "Prüfung Shopify-Merkmal",
+      "description": "Prüft, ob der Zugang des Roboters bei Shopify-Shops ausreicht."
+    },
+    "src/server/lib/audit/audit-errors.ts": {
+      "name": "Prüf-Fehler einordnen",
+      "description": "Ordnet Fehler einer Prüfung ein und liefert eine verständliche Meldung."
+    },
+    "src/server/lib/audit/classify-fetch.ts": {
+      "name": "Abruf einordnen",
+      "description": "Ordnet einen Seitenabruf als Erfolg, Fehler oder Sperre ein."
+    },
+    "src/server/lib/audit/crawl-throttle.ts": {
+      "name": "Bremse beim Laden",
+      "description": "Merkt sich Grenzen der Website und wartet, wenn sie den Roboter bremst."
+    },
+    "src/server/lib/audit/crawl-window.ts": {
+      "name": "Zeitfenster Laden",
+      "description": "Begrenzt, wie lange ein Ladeabschnitt laufen darf, auch bei Wiederholung."
+    },
+    "src/server/lib/audit/discovery.ts": {
+      "name": "Seiten finden",
+      "description": "Liest robots.txt und Sitemaps und findet die zu prüfenden Adressen."
+    },
+    "src/server/lib/audit/html-response.ts": {
+      "name": "HTML-Antwort lesen",
+      "description": "Liest nur bis zu einer Größengrenze aus der Antwort einer Seite."
+    },
+    "src/server/lib/audit/ids.ts": {
+      "name": "Feste Kennungen",
+      "description": "Erzeugt gleichbleibende Kennungen für Zeilen der Prüfung."
+    },
+    "src/server/lib/audit/issues/multipage-checks.ts": {
+      "name": "Prüfungen über mehrere Seiten",
+      "description": "Findet Doppelte und Weiterleitungsketten über viele Seiten hinweg."
+    },
+    "src/server/lib/audit/issues/multipage.ts": {
+      "name": "Lauf Mehrseiten-Prüfungen",
+      "description": "Führt die Prüfungen über mehrere Seiten aus."
+    },
+    "src/server/lib/audit/issues/page-reporters.ts": {
+      "name": "Prüfungen je Seite",
+      "description": "Führt die Einzelprüfungen je Seite aus und sammelt die Probleme."
+    },
+    "src/server/lib/audit/lighthouse.ts": {
+      "name": "Lighthouse-Abruf",
+      "description": "Holt den Geschwindigkeitstest einer Seite und meldet, wenn er scheitert."
+    },
+    "src/server/lib/audit/page-analyzer.ts": {
+      "name": "Seitenanalyse",
+      "description": "Liest eine Seite und holt alle SEO-Angaben heraus: Titel, Überschriften, Links, Bilder, Meta-Angaben."
+    },
+    "src/server/lib/audit/progress-kv.ts": {
+      "name": "Fortschrittsspeicher",
+      "description": "Hält den Fortschritt einer Prüfung kurzzeitig vor."
+    },
+    "src/server/lib/audit/rendered-page.ts": {
+      "name": "Gerenderte Seite",
+      "description": "Lädt eine Seite mit ausgeführtem JavaScript über einen Dienst."
+    },
+    "src/server/lib/audit/rendering-billing.ts": {
+      "name": "Abrechnung Rendern",
+      "description": "Reserviert Guthaben für eine Prüfung mit JavaScript, erst Monats- dann Zusatzguthaben."
+    },
+    "src/server/lib/audit/rendering-policy.ts": {
+      "name": "Regel Rendern",
+      "description": "Sagt, ob eine Prüfung mit JavaScript möglich ist."
+    },
+    "src/server/lib/audit/types.ts": {
+      "name": "Typen Prüfung",
+      "description": "Einstellungen, Links und weitere Datenformen der Prüfung."
+    },
+    "src/server/lib/audit/url-policy.ts": {
+      "name": "Adress-Regeln",
+      "description": "Entscheidet, welche Adressen geprüft werden dürfen, auch Shopify-Shops erkennen."
+    },
+    "src/server/lib/audit/url-utils.ts": {
+      "name": "Adress-Hilfen",
+      "description": "Vereinheitlicht Adressen: relative auflösen und Anker entfernen."
+    },
+    "src/server/lib/audit/web-bot-auth.ts": {
+      "name": "Web-Bot-Auth",
+      "description": "Kennzeichnet Anfragen des Roboters und veröffentlicht den Schlüssel, mit dem Websites sie prüfen können."
+    },
+    "src/server/lib/dataforseoLighthousePayload.ts": {
+      "name": "Lighthouse-Antwort DataForSEO",
+      "description": "Liest die Lighthouse-Antwort von DataForSEO in ein eigenes Format."
+    },
+    "src/server/lib/lighthousePayload.ts": {
+      "name": "Lighthouse-Export",
+      "description": "Liest gespeicherte Lighthouse-Daten und baut eine Exportdatei."
+    },
+    "src/server/lib/lighthouseStoredPayload.ts": {
+      "name": "Gespeicherte Lighthouse-Daten",
+      "description": "Beschreibt das gespeicherte Format der Lighthouse-Ergebnisse."
+    }
+  }
+}

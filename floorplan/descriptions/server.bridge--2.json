@@ -1,0 +1,44 @@
+{
+  "files": {
+    "src/serverFunctions/rank-tracking.ts": {
+      "name": "Anfragen Rankings",
+      "description": "Verfolgungen, Ergebnisse, Verläufe und Prüfungen der Rankings."
+    },
+    "src/serverFunctions/reports.ts": {
+      "name": "Anfragen Berichte",
+      "description": "Liste, Anzeige, Teilen und Löschen von Berichten."
+    },
+    "src/serverFunctions/reportTemplates.ts": {
+      "name": "Anfragen Berichtsvorlagen",
+      "description": "Vorlagen auflisten, speichern und löschen."
+    },
+    "src/serverFunctions/sam.ts": {
+      "name": "Anfragen Sam",
+      "description": "Gespräche mit Sam auflisten, anlegen und löschen."
+    },
+    "src/serverFunctions/samAccess.ts": {
+      "name": "Anfrage Sam-Zugang",
+      "description": "Prüft, ob der OpenRouter-Schlüssel für den Chat-Assistenten eingerichtet ist."
+    },
+    "src/serverFunctions/searchPerformance.ts": {
+      "name": "Anfragen Suchleistung",
+      "description": "Liefert Summen, Chancen und Tabellen der Suchleistung im Vergleich zum Vorzeitraum."
+    },
+    "src/serverFunctions/serp-locations.ts": {
+      "name": "Anfragen Orte",
+      "description": "Sucht Orte für Rankings und lädt die Liste vorab."
+    },
+    "src/serverFunctions/terms.ts": {
+      "name": "Anfrage Bedingungen",
+      "description": "Speichert die Zustimmung zu neuen Bedingungen."
+    },
+    "src/serverFunctions/workspace.ts": {
+      "name": "Anfragen Arbeitsbereiche",
+      "description": "Zeigt den Stand und führt alte Arbeitsbereiche zusammen."
+    },
+    "src/start.ts": {
+      "name": "Start des Servers",
+      "description": "Legt die gemeinsamen Prüfungen für alle Serveranfragen fest."
+    }
+  }
+}

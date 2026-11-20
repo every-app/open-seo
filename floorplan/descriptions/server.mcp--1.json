@@ -1,0 +1,164 @@
+{
+  "files": {
+    "src/server/mcp/api-key-auth.ts": {
+      "name": "Zugang per API-Schlüssel",
+      "description": "Lässt Assistenten mit einem API-Schlüssel auf die Werkzeuge zugreifen."
+    },
+    "src/server/mcp/client-label.ts": {
+      "name": "Name des Assistenten",
+      "description": "Bestimmt, wie ein verbundener Assistent heißt."
+    },
+    "src/server/mcp/connections.ts": {
+      "name": "Dienst Verbindungen",
+      "description": "Listet verbundene Assistenten und trennt sie."
+    },
+    "src/server/mcp/context.ts": {
+      "name": "Kontext der Werkzeuge",
+      "description": "Beschreibt, wer ein Werkzeug aufruft und mit welchen Rechten."
+    },
+    "src/server/mcp/formatters.ts": {
+      "name": "Formatierung",
+      "description": "Begrenzt und formatiert die Texte, die Assistenten lesen."
+    },
+    "src/server/mcp/instrumentation.ts": {
+      "name": "Messung der Werkzeuge",
+      "description": "Misst Aufrufe und Fehler der Werkzeuge."
+    },
+    "src/server/mcp/json-schema-memo.ts": {
+      "name": "Schema-Zwischenspeicher",
+      "description": "Rechnet Schemas der Werkzeuge nur einmal um."
+    },
+    "src/server/mcp/oauth-errors.ts": {
+      "name": "Fehler der Anmeldung",
+      "description": "Macht aus Fehlern bei der Anmeldung eines Assistenten verständliche Antworten."
+    },
+    "src/server/mcp/oauth-grant.ts": {
+      "name": "Freigabe erteilen",
+      "description": "Stellt die Freigabe für einen Assistenten aus und liefert die Rückkehr-Adresse."
+    },
+    "src/server/mcp/oauth-guest.ts": {
+      "name": "Gast für Assistenten",
+      "description": "Legt für einen Assistenten ein Gastkonto an und genehmigt es."
+    },
+    "src/server/mcp/oauth-provider.ts": {
+      "name": "Anmelde-Anbieter Assistenten",
+      "description": "Der OAuth-Anbieter: Registrierung, Freigabe und Token für Assistenten."
+    },
+    "src/server/mcp/oauth-registration.ts": {
+      "name": "Registrierung Assistenten",
+      "description": "Bereitet die Registrierung eines Assistenten auf."
+    },
+    "src/server/mcp/output-schemas.ts": {
+      "name": "Ausgabe-Schemas",
+      "description": "Beschreibt, wie die Ausgaben der Werkzeuge aufgebaut sind."
+    },
+    "src/server/mcp/project-auth.ts": {
+      "name": "Projekt-Rechte",
+      "description": "Prüft bei jedem Werkzeug, ob der Nutzer das Projekt benutzen darf."
+    },
+    "src/server/mcp/public-origin.ts": {
+      "name": "Öffentliche Adresse",
+      "description": "Bestimmt die öffentliche Adresse, unter der der Server erreichbar ist."
+    },
+    "src/server/mcp/schemas.ts": {
+      "name": "Gemeinsame Schemas",
+      "description": "Standardort, Projekt-, Orts- und Sprachfelder der Werkzeuge."
+    },
+    "src/server/mcp/server.ts": {
+      "name": "Werkzeug-Server",
+      "description": "Kern der Schnittstelle: meldet alle Werkzeuge an und führt Aufrufe aus."
+    },
+    "src/server/mcp/table.ts": {
+      "name": "Tabellen für Assistenten",
+      "description": "Formatiert Zahlen und Tabellen für die Antworten."
+    },
+    "src/server/mcp/tool-error-message.ts": {
+      "name": "Fehlertext Werkzeug",
+      "description": "Der Fehlertext, den ein Assistent bei einem fehlgeschlagenen Aufruf sieht."
+    },
+    "src/server/mcp/tools/add-rank-tracking-keywords.ts": {
+      "name": "Werkzeug Begriffe hinzufügen",
+      "description": "Fügt Suchbegriffe zur Ranking-Verfolgung hinzu."
+    },
+    "src/server/mcp/tools/ai-visibility-output-schemas.ts": {
+      "name": "Ausgabe-Schemas KI-Sichtbarkeit",
+      "description": "Beschreibt die Ausgaben der Werkzeuge zur KI-Sichtbarkeit."
+    },
+    "src/server/mcp/tools/ai-visibility-tools.ts": {
+      "name": "Werkzeuge KI-Sichtbarkeit",
+      "description": "Fragen erzeugen, recherchieren, Verfolgung einrichten, Läufe starten, Ergebnisse lesen."
+    },
+    "src/server/mcp/tools/create-project.ts": {
+      "name": "Werkzeug Projekt anlegen",
+      "description": "Legt ein Projekt an."
+    },
+    "src/server/mcp/tools/create-rank-tracker.ts": {
+      "name": "Werkzeug Ranking-Verfolgung anlegen",
+      "description": "Legt eine Ranking-Verfolgung an."
+    },
+    "src/server/mcp/tools/dataforseo-research-tools.ts": {
+      "name": "Werkzeuge DataForSEO-Recherche",
+      "description": "Rankings, lokale Firmen, Google-Ergebnisse und Fragen zu Firmenprofilen abrufen."
+    },
+    "src/server/mcp/tools/estimate-rank-tracker-cost.ts": {
+      "name": "Werkzeug Kostenschätzung",
+      "description": "Schätzt, was eine Ranking-Verfolgung kostet."
+    },
+    "src/server/mcp/tools/explore-prompt.ts": {
+      "name": "Werkzeug Prompt-Explorer",
+      "description": "Stellt eine Frage an mehrere KI-Modelle."
+    },
+    "src/server/mcp/tools/get-backlinks-overview.ts": {
+      "name": "Werkzeug Backlink-Übersicht",
+      "description": "Liefert die Backlink-Übersicht einer Domain."
+    },
+    "src/server/mcp/tools/get-backlinks-profile.ts": {
+      "name": "Werkzeug Backlink-Profil",
+      "description": "Liefert Links, verweisende Domains und Top-Seiten."
+    },
+    "src/server/mcp/tools/get-domain-keyword-suggestions.ts": {
+      "name": "Werkzeug Begriffsvorschläge Domain",
+      "description": "Schlägt Begriffe zu einer Domain vor."
+    },
+    "src/server/mcp/tools/get-domain-overview.ts": {
+      "name": "Werkzeug Domain-Übersicht",
+      "description": "Liefert Stärke und Begriffe einer Domain."
+    },
+    "src/server/mcp/tools/get-rank-history.ts": {
+      "name": "Werkzeug Ranking-Verlauf",
+      "description": "Liefert den Verlauf der Positionen."
+    },
+    "src/server/mcp/tools/get-rank-tracker.ts": {
+      "name": "Werkzeug Ranking-Verfolgung lesen",
+      "description": "Liefert Einstellungen und aktuelle Ergebnisse einer Verfolgung."
+    },
+    "src/server/mcp/tools/get-serp-results.ts": {
+      "name": "Werkzeug Suchergebnisse",
+      "description": "Liefert die Google-Ergebnisse zu einem Begriff."
+    },
+    "src/server/mcp/tools/get-suggested-keywords.ts": {
+      "name": "Werkzeug vorgeschlagene Begriffe",
+      "description": "Liefert Begriffsvorschläge."
+    },
+    "src/server/mcp/tools/google-analytics-tools.ts": {
+      "name": "Werkzeuge Google Analytics",
+      "description": "Berichte aus Analytics: Landeseiten, Seitenleistung, Schlüsselereignisse und mehr."
+    },
+    "src/server/mcp/tools/google-connection-tools.ts": {
+      "name": "Werkzeuge Google-Verbindung",
+      "description": "Listet Search-Console-Websites und Analytics-Eigenschaften und wählt sie für ein Projekt."
+    },
+    "src/server/mcp/tools/list-projects.ts": {
+      "name": "Werkzeug Projekte",
+      "description": "Listet die Projekte auf."
+    },
+    "src/server/mcp/tools/list-saved-keywords.ts": {
+      "name": "Werkzeug gespeicherte Begriffe",
+      "description": "Listet gespeicherte Begriffe."
+    },
+    "src/server/mcp/tools/local-seo-shared.ts": {
+      "name": "Hilfen lokale Werkzeuge",
+      "description": "Koordinaten und Umkreis für lokale Abfragen."
+    }
+  }
+}

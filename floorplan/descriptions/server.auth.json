@@ -1,0 +1,116 @@
+{
+  "files": {
+    "src/lib/auth-api-key.ts": {
+      "name": "Präfix API-Schlüssel",
+      "description": "Erkennt an einem Präfix, dass ein Zugangsdaten-Wert ein API-Schlüssel ist."
+    },
+    "src/lib/auth-client.ts": {
+      "name": "Anmelde-Client",
+      "description": "Browser-Seite der Anmeldung: Anmelden, Abmelden mit Weiterleitung."
+    },
+    "src/lib/auth-config.ts": {
+      "name": "Grundeinstellungen Anmeldung",
+      "description": "Gemeinsame Einstellungen der Anmelde-Bibliothek."
+    },
+    "src/lib/auth-mode.ts": {
+      "name": "Anmelde-Betriebsarten",
+      "description": "Legt fest, wie Nutzer erkannt werden: eigene Konten, Cloudflare Access, EveryApp oder ohne Anmeldung."
+    },
+    "src/lib/auth-options.ts": {
+      "name": "Optionen Anmeldung",
+      "description": "Passwortlänge und zusätzliche Nutzerfelder."
+    },
+    "src/lib/auth-redirect.ts": {
+      "name": "Weiterleitung Anmeldung",
+      "description": "Prüft und baut die Adresse, zu der man nach der Anmeldung zurückkehrt."
+    },
+    "src/lib/auth-session.ts": {
+      "name": "Aktive Organisation",
+      "description": "Liest die aktive Organisation aus der Sitzung."
+    },
+    "src/lib/auth-turnstile.ts": {
+      "name": "Roboter-Prüfung Schlüssel",
+      "description": "Liest die Einstellung der Turnstile-Prüfung."
+    },
+    "src/lib/auth.ts": {
+      "name": "Anmelde-Bibliothek",
+      "description": "Richtet die Anmeldung ein: Konten, Teams, Einladungen, API-Schlüssel und Zustimmung für Assistenten."
+    },
+    "src/lib/oauth-resource.ts": {
+      "name": "Zugriffsbereich Assistenten",
+      "description": "Legt den Zugriffsbereich fest, den KI-Assistenten anfordern."
+    },
+    "src/lib/org-permissions.ts": {
+      "name": "Rechte in Organisationen",
+      "description": "Legt Rollen und ihre Rechte fest und prüft sie."
+    },
+    "src/lib/selfhost-preflight.ts": {
+      "name": "Prüfung Selbsthosting",
+      "description": "Prüft vor dem Start, ob alle Einstellungen für die gewählten Funktionen vorhanden sind."
+    },
+    "src/server/auth/default-hosted-organization.ts": {
+      "name": "Standard-Organisation",
+      "description": "Wählt die Organisation, in der ein Nutzer arbeiten soll."
+    },
+    "src/server/auth/delegated-organization.ts": {
+      "name": "Gemeinsamer Arbeitsbereich",
+      "description": "Alle Nutzer mit Cloudflare-Access-Zugang teilen einen Arbeitsbereich."
+    },
+    "src/server/auth/disposable-email.ts": {
+      "name": "Wegwerf-Adressen",
+      "description": "Erkennt E-Mail-Adressen von Wegwerf-Diensten."
+    },
+    "src/server/auth/guest-accounts.ts": {
+      "name": "Gastkonten",
+      "description": "Entscheidet, ob eine Anfrage ein Gastkonto bekommt, und legt es an."
+    },
+    "src/server/auth/guest-cookies.ts": {
+      "name": "Cookies Gäste",
+      "description": "Setzt Cookies für Gäste und erkennt den Assistenten an der Rückkehr-Adresse."
+    },
+    "src/server/auth/invitation-send-limit.ts": {
+      "name": "Limit Einladungen",
+      "description": "Begrenzt, wie viele Einladungen pro Zeit verschickt werden."
+    },
+    "src/server/auth/invited-member.ts": {
+      "name": "Einladung angenommen",
+      "description": "Stellt nach dem Annehmen die nächste Anmeldung auf die neue Organisation."
+    },
+    "src/server/auth/org-gate.ts": {
+      "name": "Rechte-Prüfung Server",
+      "description": "Verlangt eine Rolle für Abrechnung, Projekte oder Verbindungen."
+    },
+    "src/server/auth/org-slug.ts": {
+      "name": "Kurzname Organisation",
+      "description": "Macht aus einem Namen einen Kurznamen für die Adresse."
+    },
+    "src/server/auth/ownership-transfer.ts": {
+      "name": "Eigentum übertragen",
+      "description": "Übergibt die Organisation an ein anderes Mitglied, das neuer Eigentümer wird."
+    },
+    "src/server/auth/product-updates.ts": {
+      "name": "Dienst Neuigkeiten",
+      "description": "Verwaltet das Abo auf Produktneuigkeiten."
+    },
+    "src/server/auth/repositories/AuthRepository.ts": {
+      "name": "Speicher Anmeldung",
+      "description": "Liest und schreibt Nutzer, Organisationen und Mitglieder."
+    },
+    "src/server/auth/repositories/GuestAccountRepository.ts": {
+      "name": "Speicher Gastkonten",
+      "description": "Speichert Gastkonten und ihre Übernahme."
+    },
+    "src/server/auth/sign-up-analytics.ts": {
+      "name": "Statistik Registrierung",
+      "description": "Meldet abgeschlossene Registrierungen und speichert, woher jemand kam."
+    },
+    "src/server/auth/terms-acceptance.ts": {
+      "name": "Zustimmung Bedingungen",
+      "description": "Speichert, wer welche Bedingungen angenommen hat."
+    },
+    "src/server/auth/workspace-merge.ts": {
+      "name": "Arbeitsbereiche zusammenführen",
+      "description": "Führt getrennte Arbeitsbereiche zu einem gemeinsamen zusammen."
+    }
+  }
+}

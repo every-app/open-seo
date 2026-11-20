@@ -1,0 +1,36 @@
+{
+  "files": {
+    "src/server/standalone/admin.ts": {
+      "name": "Verwaltung Betreiber",
+      "description": "Nimmt Verwaltungsaufträge des Betreibers an, etwa Nutzer anlegen."
+    },
+    "src/server/standalone/aes-kw.ts": {
+      "name": "Schlüsselverpackung",
+      "description": "Stellt eine fehlende Verschlüsselungsfunktion für die Laufzeit bereit."
+    },
+    "src/server/standalone/import-schema.ts": {
+      "name": "Schema Import",
+      "description": "Beschreibt die Zeilen, die beim Import erlaubt sind."
+    },
+    "src/server/standalone/import.ts": {
+      "name": "Import alter Daten",
+      "description": "Übernimmt Daten der alten Container-Installation, solange sonst nichts die Datenbank berührt."
+    },
+    "src/server/standalone/operator-auth.ts": {
+      "name": "Betreiber-Schlüssel",
+      "description": "Prüft das Geheimnis, das nur der Betreiber der eigenen Installation kennt."
+    },
+    "src/server/standalone/SamChatAgent.ts": {
+      "name": "Sam im eigenen Server",
+      "description": "Sam-Objekt der eigenen Installation mit zusätzlichem Betreiber-Zugang."
+    },
+    "src/server/standalone/sign-up.ts": {
+      "name": "Registrierung eigener Server",
+      "description": "Schließt die öffentliche Registrierung, sobald das erste Konto existiert."
+    },
+    "src/standalone-server.ts": {
+      "name": "Einstieg eigener Server",
+      "description": "Startet den Server der eigenen Installation."
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "files": {
+    "src/client/features/billing/AnnualPlanDialog.tsx": {
+      "name": "Dialog für Jahrespläne",
+      "description": "Leitet Kunden, die einen Jahresplan wählen, zum Support oder zum Start mit dem Monatsplan, weil der Kauf dafür noch nicht geht."
+    },
+    "src/client/features/billing/AutoReloadNotice.tsx": {
+      "name": "Hinweis zur Auto-Aufladung",
+      "description": "Zeigt die letzte fehlgeschlagene Aufladung oder dass das Budget des Zeitraums aufgebraucht ist, mit Knopf zum Ändern der Karte."
+    },
+    "src/client/features/billing/AutoReloadSettings.tsx": {
+      "name": "Auto-Aufladung einstellen",
+      "description": "Zeigt in der Abrechnung, ob Guthaben automatisch nachgekauft wird, und lässt Betrag und Grenze ändern."
+    },
+    "src/client/features/billing/billingAccountQuery.ts": {
+      "name": "Abfrage Abrechnungskonto",
+      "description": "Lädt Tarif und Guthaben der Organisation und kann das Laden schon vorab starten."
+    },
+    "src/client/features/billing/BillingInvoices.tsx": {
+      "name": "Rechnungen",
+      "description": "Zeigt die neuesten Rechnungen und die E-Mail-Adressen, an die Rechnungen gehen."
+    },
+    "src/client/features/billing/BillingRow.tsx": {
+      "name": "Zeile in der Abrechnung",
+      "description": "Eine Einstellung der Abrechnungskarte: Name, aktueller Wert und rechts der Knopf zum Ändern."
+    },
+    "src/client/features/billing/BillingTabs.tsx": {
+      "name": "Reiter Verbrauch und Rechnungen",
+      "description": "Zeigt Verbrauch und für Eigentümer die Rechnungen in einer Karte mit Reitern."
+    },
+    "src/client/features/billing/BillingUsage.tsx": {
+      "name": "Verbrauch der letzten 30 Tage",
+      "description": "Zeigt den Verbrauch pro Tag, Funktion und Projekt."
+    },
+    "src/client/features/billing/checkout.ts": {
+      "name": "Kasse vorbereiten",
+      "description": "Startet den Bezahllink schon vor dem Klick und schickt den Browser zur Kasse."
+    },
+    "src/client/features/billing/CreditsCard.tsx": {
+      "name": "Guthaben-Karte",
+      "description": "Zeigt, was noch ausgegeben werden kann: Gesamtbetrag, Monatsguthaben gegen das Kontingent und aufgeladenes Guthaben."
+    },
+    "src/client/features/billing/FreePlanBanner.tsx": {
+      "name": "Banner für den Gratis-Tarif",
+      "description": "Weist Nutzer des Gratis-Tarifs darauf hin, was ein bezahlter Tarif bringt."
+    },
+    "src/client/features/billing/HostedBillingContentUtils.ts": {
+      "name": "Beträge in Abrechnungsfeldern",
+      "description": "Liest einen eingetippten Dollar-Betrag und prüft ihn gegen Mindest- und Höchstwert."
+    },
+    "src/client/features/billing/HostedPlanGate.tsx": {
+      "name": "Tarif-Sperre im Browser",
+      "description": "Die eine Stelle, die im Browser entscheidet, ob ein Tarif für eine Funktion reicht."
+    },
+    "src/client/features/billing/InsufficientCreditsError.tsx": {
+      "name": "Fehler Guthaben leer",
+      "description": "Erklärt bei leerem Guthaben, wie man mehr bekommt: Gratis-Tarif aufwerten oder Guthaben kaufen."
+    },
+    "src/client/features/billing/PaidPlanGate.tsx": {
+      "name": "Platzhalter für Bezahl-Funktionen",
+      "description": "Ersetzt eine Funktion, die den bezahlten Tarif braucht, durch einen Hinweis."
+    },
+    "src/client/features/billing/plan-offers.ts": {
+      "name": "Tarif-Angebote",
+      "description": "Legt Texte und Preise der Tarife fest, die auf den Bezahlseiten beworben werden."
+    },
+    "src/client/features/billing/PlanChange.tsx": {
+      "name": "Tarif wechseln",
+      "description": "Öffnet die Tarifauswahl in der Abrechnung und schaltet für zahlende Kunden auf- oder abwärts."
+    },
+    "src/client/features/billing/PlanOfferCard.tsx": {
+      "name": "Tarif-Karte",
+      "description": "Gemeinsame Karte der Bezahlseiten mit Preis, Leistungen und Knopf."
+    },
+    "src/client/features/billing/PlanPageAccountMenu.tsx": {
+      "name": "Kontomenü der Tarifseiten",
+      "description": "Menü mit Konto-Optionen auf den Seiten für Einrichtung und Tarifwahl."
+    },
+    "src/client/features/billing/route-state.ts": {
+      "name": "Zustand der Abo-Seite",
+      "description": "Entscheidet aus der Adresse, was die Abo-Seite gerade zeigt."
+    },
+    "src/client/features/billing/subscribe-tiers.ts": {
+      "name": "Tarifstufen",
+      "description": "Die Stufen der Preisseite mit denselben Texten wie auf der Webseite."
+    },
+    "src/client/features/billing/UpgradePlanDialog.tsx": {
+      "name": "Dialog Tarif erhöhen",
+      "description": "Bestätigt einen Wechsel nach oben mit heutigem Preis, neuem Guthaben und Verlängerungsdatum."
+    },
+    "src/client/features/billing/useBillingUsage.ts": {
+      "name": "Verbrauchsdaten laden",
+      "description": "Holt den Verbrauch der letzten 30 Tage nach Tag und Funktion."
+    },
+    "src/client/features/billing/useCreditBalance.ts": {
+      "name": "Guthaben abrufen",
+      "description": "Liefert Tarif und verbleibendes Guthaben der angemeldeten Organisation in Dollar."
+    }
+  }
+}

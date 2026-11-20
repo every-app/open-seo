@@ -1,0 +1,84 @@
+{
+  "files": {
+    "src/server/everyapp/tools.ts": {
+      "name": "Werkzeuge für EveryApp",
+      "description": "Beantwortet das Werkzeug-Verzeichnis der Plattform EveryApp."
+    },
+    "src/server/lib/domainUtils.ts": {
+      "name": "Domain-Hilfen",
+      "description": "Liest Domains und Adressen aus Eingaben und macht sie einheitlich."
+    },
+    "src/server/lib/errors.ts": {
+      "name": "Fehlerarten",
+      "description": "Die Fehlerarten der App und wie sie für Nutzer ausgegeben werden."
+    },
+    "src/server/lib/featureFlags.ts": {
+      "name": "Funktionsschalter",
+      "description": "Liest, welche Funktionen eingeschaltet sind."
+    },
+    "src/server/lib/gateway-attribution.ts": {
+      "name": "Anfragen vom Tor",
+      "description": "Bedient Anfragen, die das EveryApp-Tor mit geprüfter Nutzerkennung weiterreicht."
+    },
+    "src/server/lib/http-errors.ts": {
+      "name": "Fehler als Antwort",
+      "description": "Macht aus einem Fehler die passende Antwort für direkte Adressen."
+    },
+    "src/server/lib/just-bash-stub.ts": {
+      "name": "Platzhalter Shell",
+      "description": "Ersetzt ein unnötiges Paket im Server durch einen leeren Stand-in."
+    },
+    "src/server/lib/market.ts": {
+      "name": "Märkte",
+      "description": "Verhindert, dass Orte ohne Labs-Daten bei Domain-Analysen benutzt werden."
+    },
+    "src/server/lib/openrouter.ts": {
+      "name": "Zugang OpenRouter",
+      "description": "Entscheidet, wie die Installation an OpenRouter kommt: eigener Schlüssel oder Tor."
+    },
+    "src/server/lib/posthog.ts": {
+      "name": "Statistik Server",
+      "description": "Meldet Serverfehler und Ereignisse an PostHog."
+    },
+    "src/server/lib/provider-access.ts": {
+      "name": "Zugang Datenanbieter",
+      "description": "Liefert den Abruf, der für diese Installation bei DataForSEO angemeldet ist."
+    },
+    "src/server/lib/public-fetch.ts": {
+      "name": "Abruf fremder Adressen",
+      "description": "Lädt Adressen, die Nutzer angeben, mit Schutz."
+    },
+    "src/server/lib/r2-cache.ts": {
+      "name": "Zwischenspeicher R2",
+      "description": "Hält Antworten im Cloudflare-Speicher mit Ablaufzeiten."
+    },
+    "src/server/lib/r2.ts": {
+      "name": "Speicher R2",
+      "description": "Liest, schreibt und löscht Dateien im Cloudflare-Speicher."
+    },
+    "src/server/lib/runtime-env.ts": {
+      "name": "Umgebungswerte",
+      "description": "Liest Einstellungen der Laufzeit, auch Geheimnisse, sicher aus."
+    },
+    "src/server/lib/scrape.ts": {
+      "name": "Seiten laden",
+      "description": "Lädt eine Website mit Größen- und Zeitgrenzen und liest ihren Text."
+    },
+    "src/server/lib/self-host-telemetry.ts": {
+      "name": "Statistik Selbsthosting",
+      "description": "Sendet auf Wunsch einen anonymen Lebenszeichen-Bericht der eigenen Installation."
+    },
+    "src/server/lib/setup-status.ts": {
+      "name": "Einrichtungsstand",
+      "description": "Prüft, welche Einrichtungsschritte der Installation fehlen."
+    },
+    "src/server/lib/startWorkflow.ts": {
+      "name": "Hintergrundaufgabe starten",
+      "description": "Startet eine Hintergrundaufgabe und fängt harmlose Fehler ab."
+    },
+    "src/server/lib/workers-ai-provider-stub.ts": {
+      "name": "Platzhalter Workers AI",
+      "description": "Ersetzt ein ungenutztes KI-Paket durch einen leeren Stand-in."
+    }
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "files": {
+    "src/client/features/local-seo/GoogleMapsTiles.tsx": {
+      "name": "Google-Karten-Kacheln",
+      "description": "Zeigt Google-Maps-Kacheln als Hintergrund für Ortskarten."
+    },
+    "src/client/features/local-seo/local-rank-map.css": {
+      "name": "Stil Ortskarte",
+      "description": "Gestaltung der Karte mit Ranking-Punkten."
+    },
+    "src/client/features/local-seo/LocalKeywordFields.tsx": {
+      "name": "Suchbegriff-Felder lokal",
+      "description": "Eingabe der Suchbegriffe für das lokale Ranking, ohne Leerzeilen und Doppelte."
+    },
+    "src/client/features/local-seo/LocalKeywordMap.tsx": {
+      "name": "Karte der Suchbegriffe",
+      "description": "Zeigt auf einer Karte, wo ein Suchbegriff wie gut gefunden wird."
+    },
+    "src/client/features/local-seo/LocalKeywordsDialog.tsx": {
+      "name": "Dialog lokale Suchbegriffe",
+      "description": "Dialog zum Hinzufügen von Suchbegriffen für lokale Rankings."
+    },
+    "src/client/features/local-seo/LocalKeywordsTable.tsx": {
+      "name": "Tabelle lokale Suchbegriffe",
+      "description": "Tabelle der Suchbegriffe mit ihrer neuesten Prüfung."
+    },
+    "src/client/features/local-seo/LocalListingChoices.tsx": {
+      "name": "Auswahl Firmenprofil",
+      "description": "Zeigt gefundene Google-Maps-Einträge nummeriert zur Wahl des eigenen Standorts."
+    },
+    "src/client/features/local-seo/LocalListingMap.tsx": {
+      "name": "Karte Firmenprofile",
+      "description": "Zeigt gefundene Einträge als nummerierte Pins; Klick wählt einen."
+    },
+    "src/client/features/local-seo/LocalPointResults.tsx": {
+      "name": "Ergebnisse je Punkt",
+      "description": "Zeigt die Treffer an einem Punkt des Rasters."
+    },
+    "src/client/features/local-seo/LocalRankGrid.tsx": {
+      "name": "Ranking-Raster",
+      "description": "Zeichnet das Raster der Messpunkte mit den Positionen."
+    },
+    "src/client/features/local-seo/LocalRankMap.tsx": {
+      "name": "Ranking-Karte",
+      "description": "Karte mit den Positionen eines Suchbegriffs rund um den Standort."
+    },
+    "src/client/features/local-seo/LocalTrackerDetail.tsx": {
+      "name": "Details lokale Verfolgung",
+      "description": "Zeigt eine lokale Ranking-Verfolgung mit Karte, Begriffen und Verlauf."
+    },
+    "src/client/features/local-seo/LocalTrackerDialog.tsx": {
+      "name": "Dialog lokale Verfolgung",
+      "description": "Legt eine lokale Ranking-Verfolgung an oder ändert sie."
+    },
+    "src/client/features/local-seo/LocalTrackerList.tsx": {
+      "name": "Liste lokale Verfolgungen",
+      "description": "Listet alle lokalen Ranking-Verfolgungen eines Projekts."
+    },
+    "src/client/features/rank-tracking/AddKeywordsPanel.tsx": {
+      "name": "Begriffe hinzufügen",
+      "description": "Feld zum Hinzufügen von Suchbegriffen zur Ranking-Verfolgung."
+    },
+    "src/client/features/rank-tracking/CheckConfirmModal.tsx": {
+      "name": "Bestätigung Prüfung",
+      "description": "Fragt vor einer Ranking-Prüfung nach, weil sie Guthaben kostet."
+    },
+    "src/client/features/rank-tracking/FreePlanAlert.tsx": {
+      "name": "Hinweis Gratis-Tarif",
+      "description": "Weist darauf hin, was im Gratis-Tarif bei Rankings gilt."
+    },
+    "src/client/features/rank-tracking/KeywordSuggestionStep.tsx": {
+      "name": "Schritt Vorschläge",
+      "description": "Schlägt Suchbegriffe zum Verfolgen vor."
+    },
+    "src/client/features/rank-tracking/KeywordTrendModal.tsx": {
+      "name": "Verlauf eines Begriffs",
+      "description": "Zeigt den Verlauf der Position eines Suchbegriffs."
+    },
+    "src/client/features/rank-tracking/RankRunAlerts.tsx": {
+      "name": "Hinweise zum Lauf",
+      "description": "Zeigt den Zustand der letzten Prüfung: läuft, veraltet, fehlgeschlagen oder unvollständig."
+    },
+    "src/client/features/rank-tracking/RankTrackingChangesAlert.tsx": {
+      "name": "Hinweis Änderungen",
+      "description": "Meldet Änderungen an der Verfolgung."
+    },
+    "src/client/features/rank-tracking/RankTrackingColumns.tsx": {
+      "name": "Spalten Ranking-Tabelle",
+      "description": "Spalten der Ranking-Tabelle; festgepinnte Begriffe stehen oben."
+    },
+    "src/client/features/rank-tracking/RankTrackingConfigModal.tsx": {
+      "name": "Einstellungen Verfolgung",
+      "description": "Dialog für Domain, Märkte, Geräte und Zeitplan der Verfolgung."
+    },
+    "src/client/features/rank-tracking/RankTrackingDetailHeader.tsx": {
+      "name": "Kopf Domain-Details",
+      "description": "Titel und Aktionen der Ranking-Seite einer Domain."
+    },
+    "src/client/features/rank-tracking/RankTrackingDomainDetail.tsx": {
+      "name": "Details Domain",
+      "description": "Zeigt Positionen, Verlauf und Tabellen einer verfolgten Domain."
+    },
+    "src/client/features/rank-tracking/RankTrackingDomainList.tsx": {
+      "name": "Liste verfolgter Domains",
+      "description": "Listet die verfolgten Domains mit Kennzahlen."
+    },
+    "src/client/features/rank-tracking/RankTrackingFilters.logic.ts": {
+      "name": "Filterlogik Rankings",
+      "description": "Wendet Filter auf Domain-Liste und Begriffe an."
+    },
+    "src/client/features/rank-tracking/RankTrackingFilters.tsx": {
+      "name": "Filter Rankings",
+      "description": "Filterfeld und Leiste für Rankings."
+    },
+    "src/client/features/rank-tracking/RankTrackingHistoryMatrix.tsx": {
+      "name": "Verlaufsmatrix",
+      "description": "Zeile je Begriff, Spalte je Prüfung: Position und Änderung pro Datum."
+    },
+    "src/client/features/rank-tracking/RankTrackingOverview.tsx": {
+      "name": "Übersicht Rankings",
+      "description": "Überblick über alle Rankings des Projekts."
+    },
+    "src/client/features/rank-tracking/RankTrackingTable.tsx": {
+      "name": "Ranking-Tabelle",
+      "description": "Tabelle der Begriffe mit Position, Änderung, Volumen und Kosten."
+    },
+    "src/client/features/rank-tracking/RankTrackingTableParts.tsx": {
+      "name": "Teile der Ranking-Tabelle",
+      "description": "Zellen für Funktionen der Suchseite, Gerät, Adresse, Volumen und Klickpreis."
+    },
+    "src/client/features/rank-tracking/RankTrackingTableToolbar.tsx": {
+      "name": "Werkzeugleiste Rankings",
+      "description": "Suche, Filter und Aktionen über der Ranking-Tabelle."
+    },
+    "src/client/features/rank-tracking/RankTrackingTrendChart.tsx": {
+      "name": "Verlaufsdiagramm Rankings",
+      "description": "Liniendiagramm mit umgekehrter Achse: Platz 1 steht oben."
+    },
+    "src/client/features/rank-tracking/ScheduledChecksPausedAlert.tsx": {
+      "name": "Hinweis pausierte Prüfungen",
+      "description": "Zeigt, dass geplante Prüfungen wegen einer Störung beim Datenanbieter pausiert sind."
+    },
+    "src/client/features/rank-tracking/ScheduleField.tsx": {
+      "name": "Feld Zeitplan",
+      "description": "Wählt, wie oft und wann Rankings geprüft werden."
+    },
+    "src/client/features/rank-tracking/scheduleTime.ts": {
+      "name": "Zeitplan-Zeiten",
+      "description": "Wandelt Wochentag und Uhrzeit des Nutzers um."
+    },
+    "src/client/features/rank-tracking/SearchTargetingField.tsx": {
+      "name": "Feld Suchziel",
+      "description": "Legt Land, Ort und Gerät der Ranking-Abfrage fest."
+    },
+    "src/client/features/rank-tracking/ToolbarMenus.tsx": {
+      "name": "Menüs der Werkzeugleiste",
+      "description": "Menü „Mehr“ mit weiteren Aktionen."
+    },
+    "src/client/features/rank-tracking/useMetricsRefresh.ts": {
+      "name": "Werte aktualisieren",
+      "description": "Lädt die Kennzahlen der Begriffe neu."
+    }
+  }
+}

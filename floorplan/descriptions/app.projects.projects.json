@@ -1,0 +1,88 @@
+{
+  "files": {
+    "src/client/features/projects/CreateProjectModal.tsx": {
+      "name": "Projekt anlegen",
+      "description": "Dialog zum Anlegen eines Projekts mit Website und Markt."
+    },
+    "src/client/features/projects/initialAuditToast.ts": {
+      "name": "Hinweis erste Prüfung",
+      "description": "Meldet, ob das Speichern der Website die erste Prüfung gestartet hat."
+    },
+    "src/client/features/projects/project-context/BrandNameSection.tsx": {
+      "name": "Markenname",
+      "description": "Eingabe des Markennamens im Projektkontext."
+    },
+    "src/client/features/projects/project-context/CompetitorsSection.tsx": {
+      "name": "Wettbewerber",
+      "description": "Liste der Wettbewerber des Projekts."
+    },
+    "src/client/features/projects/project-context/EditableListSection.tsx": {
+      "name": "Bearbeitbare Liste",
+      "description": "Gemeinsames Hinzufügen, Ändern und Entfernen für beide Kontext-Listen."
+    },
+    "src/client/features/projects/project-context/KeyPagesSection.tsx": {
+      "name": "Wichtige Seiten",
+      "description": "Liste der wichtigsten Seiten der Website im Kontext."
+    },
+    "src/client/features/projects/project-context/ProjectContextPage.tsx": {
+      "name": "Projektkontext-Seite",
+      "description": "Bildschirm, in dem Marke, Wettbewerber und Schlüsselseiten gepflegt werden."
+    },
+    "src/client/features/projects/project-context/shared.tsx": {
+      "name": "Hilfen Projektkontext",
+      "description": "Datenformen und Speichern jeder Änderung im Projektkontext."
+    },
+    "src/client/features/projects/ProjectGeneralSettings.tsx": {
+      "name": "Allgemeine Projekteinstellungen",
+      "description": "Name, Website und Markt eines Projekts ändern."
+    },
+    "src/client/features/projects/ProjectMarketFields.tsx": {
+      "name": "Felder Markt",
+      "description": "Land und Sprache, die ein Markt umfasst."
+    },
+    "src/client/features/projects/ProjectPageHeader.tsx": {
+      "name": "Projekt-Seitenkopf",
+      "description": "Kopfzeile der Projektseiten."
+    },
+    "src/client/features/projects/projectQueries.ts": {
+      "name": "Abfrage Projekte",
+      "description": "Lädt die aktiven Projekte der Organisation."
+    },
+    "src/client/features/projects/ProjectSwitcher.tsx": {
+      "name": "Projektwechsler",
+      "description": "Menü, mit dem man zwischen Projekten wechselt oder eines anlegt."
+    },
+    "src/client/features/projects/ProjectWebsiteGate.tsx": {
+      "name": "Sperre ohne Website",
+      "description": "Zeigt Einrichtung, solange ein Projekt noch keine Website hat."
+    },
+    "src/client/features/projects/ProjectWebsiteSetup.tsx": {
+      "name": "Website einrichten",
+      "description": "Lässt eine Website für ein Projekt eintragen und startet die Auswertung."
+    },
+    "src/client/features/projects/SettingsTabs.tsx": {
+      "name": "Reiter Einstellungen",
+      "description": "Reiter der Projekteinstellungen."
+    },
+    "src/client/features/projects/types.ts": {
+      "name": "Typen Projekt",
+      "description": "Datenformen für Projekt und Markt (Land und Sprache)."
+    },
+    "src/client/features/projects/useProjectMarket.ts": {
+      "name": "Markt des Projekts",
+      "description": "Liefert den Standardmarkt eines Projekts."
+    },
+    "src/client/features/projects/WebsiteCompetitorRow.tsx": {
+      "name": "Zeile Wettbewerber",
+      "description": "Eine Wettbewerber-Zeile im Einrichtungsablauf."
+    },
+    "src/client/features/projects/WebsiteResearchProgress.tsx": {
+      "name": "Fortschritt Website-Analyse",
+      "description": "Zeigt, welche Schritte die Analyse einer neuen Website gerade durchläuft."
+    },
+    "src/client/features/projects/WebsiteSetupReview.tsx": {
+      "name": "Prüfung der Einrichtung",
+      "description": "Zeigt das Ergebnis der Website-Analyse zum Prüfen und Übernehmen."
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "files": {
+    "src/client/features/rank-tracking/useRankCheckTrigger.ts": {
+      "name": "Prüfung auslösen",
+      "description": "Startet eine Ranking-Prüfung."
+    },
+    "src/client/features/rank-tracking/useRankRunPolling.ts": {
+      "name": "Lauf beobachten",
+      "description": "Fragt regelmäßig den Stand der Prüfung ab und lädt Ergebnisse neu, sobald sie fertig ist."
+    },
+    "src/client/features/rank-tracking/useSaveConfigMutations.ts": {
+      "name": "Verfolgung speichern",
+      "description": "Speichert Änderungen der Einstellungen einer Verfolgung."
+    },
+    "src/client/features/rank-tracking/useSetKeywordPinned.ts": {
+      "name": "Begriff anpinnen",
+      "description": "Pinnt einen Begriff oben an oder löst ihn, mit sofortiger Anzeige."
+    }
+  }
+}

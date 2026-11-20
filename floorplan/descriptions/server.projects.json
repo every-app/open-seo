@@ -1,0 +1,112 @@
+{
+  "files": {
+    "src/server/features/activation/mcpActivation.ts": {
+      "name": "Aktivierung Assistenten",
+      "description": "Hält fest, wann ein Assistent verbunden wurde und Werkzeuge nutzt, für die Startseite."
+    },
+    "src/server/features/activation/repositories/ActivationRepository.ts": {
+      "name": "Speicher Aktivierung",
+      "description": "Speichert Meilensteine der Aktivierung."
+    },
+    "src/server/features/activation/researchActivation.ts": {
+      "name": "Aktivierung Recherche",
+      "description": "Hakt den Recherche-Schritt der Einrichtung ab."
+    },
+    "src/server/features/dashboard/repositories/DataRefreshClaimRepository.ts": {
+      "name": "Speicher Daten-Aktualisierung",
+      "description": "Merkt, welche Daten gerade neu geladen werden."
+    },
+    "src/server/features/dashboard/services/DashboardCacheService.ts": {
+      "name": "Zwischenspeicher Startseite",
+      "description": "Hält Zahlen der Startseite kurz vor."
+    },
+    "src/server/features/dashboard/services/DashboardFirstAuditService.ts": {
+      "name": "Erste Prüfung Startseite",
+      "description": "Startet die erste Website-Prüfung für die Startseite."
+    },
+    "src/server/features/dashboard/services/DashboardService.ts": {
+      "name": "Dienst Startseite",
+      "description": "Liefert Einrichtungsstand und Prüfzusammenfassung der Startseite."
+    },
+    "src/server/features/dashboard/services/DashboardSiteService.ts": {
+      "name": "Dienst Website-Zahlen",
+      "description": "Berechnet Suchleistung, neue Begriffe und Backlink-Zahlen für die Startseite."
+    },
+    "src/server/features/project-context/repositories/ProjectContextRepository.ts": {
+      "name": "Speicher Projektkontext",
+      "description": "Speichert Marke, Wettbewerber und Schlüsselseiten."
+    },
+    "src/server/features/project-context/services/contextUpdateOps.ts": {
+      "name": "Änderungen Kontext",
+      "description": "Wendet Änderungen am Kontext nacheinander an und prüft sie gegen den laufenden Stand."
+    },
+    "src/server/features/project-context/services/ProjectContextService.ts": {
+      "name": "Dienst Projektkontext",
+      "description": "Liest den Kontext und wendet Änderungen an."
+    },
+    "src/server/features/projects/repositories/ProjectRepository.ts": {
+      "name": "Speicher Projekte",
+      "description": "Legt Projekte an und liest sie."
+    },
+    "src/server/features/projects/repositories/ProjectWebsiteRepository.ts": {
+      "name": "Speicher Website-Einrichtung",
+      "description": "Speichert das Ergebnis der Website-Einrichtung."
+    },
+    "src/server/features/projects/services/deleteProject.ts": {
+      "name": "Projekt endgültig löschen",
+      "description": "Löscht ein archiviertes Projekt samt Daten."
+    },
+    "src/server/features/projects/services/projects.ts": {
+      "name": "Projektliste",
+      "description": "Liefert die Projekte einer Organisation und stellt sicher, dass eines existiert."
+    },
+    "src/server/features/projects/services/ProjectService.ts": {
+      "name": "Dienst Projekte",
+      "description": "Bündelt die Projekt-Funktionen."
+    },
+    "src/server/features/projects/services/ProjectWebsiteService.ts": {
+      "name": "Dienst Website-Einrichtung",
+      "description": "Führt Analyse und Speichern der Website-Einrichtung zusammen."
+    },
+    "src/server/features/projects/services/websiteResearch.ts": {
+      "name": "Website-Recherche",
+      "description": "Recherchiert mit KI die Marke, Wettbewerber und Themen einer Website."
+    },
+    "src/server/features/projects/services/websiteResearchSuggestions.ts": {
+      "name": "Bereinigung Vorschläge",
+      "description": "Entfernt wiederholte Themen und nicht verifizierte Wettbewerber."
+    },
+    "src/server/features/reports/reportMapGrant.ts": {
+      "name": "Karten-Freigabe Bericht",
+      "description": "Erzeugt und prüft Freigaben, mit denen geteilte Berichte Karten laden dürfen."
+    },
+    "src/server/features/reports/reportSocialImage.tsx": {
+      "name": "Vorschaubild Bericht",
+      "description": "Zeichnet das Vorschaubild geteilter Berichte."
+    },
+    "src/server/features/reports/repositories/ReportRepository.ts": {
+      "name": "Speicher Berichte",
+      "description": "Legt Berichte an und liest sie."
+    },
+    "src/server/features/reports/repositories/ReportTemplateRepository.ts": {
+      "name": "Speicher Berichtsvorlagen",
+      "description": "Legt Berichtsvorlagen an und liest sie."
+    },
+    "src/server/features/reports/services/ReportService.ts": {
+      "name": "Dienst Berichte",
+      "description": "Erstellt, teilt und löscht Berichte mit Größenlimit."
+    },
+    "src/server/features/reports/services/ReportTemplateService.ts": {
+      "name": "Dienst Berichtsvorlagen",
+      "description": "Verwaltet Vorlagen für Berichte."
+    },
+    "src/server/features/reports/shareAccess.ts": {
+      "name": "Teilen erlaubt",
+      "description": "Sagt, ob diese Installation das Teilen von Berichten kann."
+    },
+    "src/server/features/reports/sharePage.tsx": {
+      "name": "Öffentliche Berichtsseite",
+      "description": "Baut die öffentliche Seite eines geteilten Berichts."
+    }
+  }
+}

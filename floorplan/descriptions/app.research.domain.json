@@ -1,0 +1,88 @@
+{
+  "files": {
+    "src/client/features/domain/components/DomainFilterPanel.tsx": {
+      "name": "Filterfeld Domain",
+      "description": "Filterfeld für die Tabellen der Domain-Analyse."
+    },
+    "src/client/features/domain/components/DomainKeywordsTable.tsx": {
+      "name": "Tabelle Domain-Begriffe",
+      "description": "Zeigt, für welche Suchbegriffe eine Domain gefunden wird."
+    },
+    "src/client/features/domain/components/DomainOverviewLoadingState.tsx": {
+      "name": "Ladezustand Domain",
+      "description": "Platzhalter, solange die Domain-Analyse lädt."
+    },
+    "src/client/features/domain/components/DomainPageLink.tsx": {
+      "name": "Seitenlink Domain",
+      "description": "Vor- und Zurück als echte Links, damit Seiten in neuem Tab öffnen."
+    },
+    "src/client/features/domain/components/DomainPagesTable.tsx": {
+      "name": "Tabelle Domain-Seiten",
+      "description": "Zeigt die stärksten Seiten einer Domain."
+    },
+    "src/client/features/domain/components/DomainSearchCard.tsx": {
+      "name": "Suchkarte Domain",
+      "description": "Suchformular der Domain-Analyse."
+    },
+    "src/client/features/domain/components/DomainTableToolbar.tsx": {
+      "name": "Werkzeugleiste Domain-Tabelle",
+      "description": "Werkzeuge, Kostenwarnung und Filter über einer Domain-Tabelle."
+    },
+    "src/client/features/domain/components/KeywordsTab.tsx": {
+      "name": "Reiter Begriffe",
+      "description": "Reiter mit den Suchbegriffen einer Domain."
+    },
+    "src/client/features/domain/components/PagesTab.tsx": {
+      "name": "Reiter Seiten",
+      "description": "Reiter mit den Seiten einer Domain."
+    },
+    "src/client/features/domain/domainActions.ts": {
+      "name": "Aktionen Domain",
+      "description": "Speichert ausgewählte Suchbegriffe aus der Domain-Analyse."
+    },
+    "src/client/features/domain/domainFilterUtils.ts": {
+      "name": "Filter-Hilfen Domain",
+      "description": "Felder und Zählung der Filter für Begriffe und Seiten."
+    },
+    "src/client/features/domain/DomainOverviewPage.tsx": {
+      "name": "Domain-Analyse",
+      "description": "Bildschirm: zeigt Stärke, Begriffe und Seiten einer fremden Domain."
+    },
+    "src/client/features/domain/domainRouteState.ts": {
+      "name": "Zustand der Adresse Domain",
+      "description": "Liest aus der Adresse, was die Domain-Analyse gerade zeigt."
+    },
+    "src/client/features/domain/domainSearchValidation.ts": {
+      "name": "Prüfung Domain-Eingabe",
+      "description": "Prüft die Eingabe der Domain-Suche auf Fehler."
+    },
+    "src/client/features/domain/hooks/useDomainKeywordsQuery.ts": {
+      "name": "Abfrage Domain-Begriffe",
+      "description": "Lädt die Suchbegriffe einer Domain."
+    },
+    "src/client/features/domain/hooks/useDomainOverviewQuery.ts": {
+      "name": "Abfrage Domain-Übersicht",
+      "description": "Lädt die Übersicht einer Domain."
+    },
+    "src/client/features/domain/hooks/useDomainPagesQuery.ts": {
+      "name": "Abfrage Domain-Seiten",
+      "description": "Lädt die Seiten einer Domain."
+    },
+    "src/client/features/domain/mutations.ts": {
+      "name": "Begriffe speichern",
+      "description": "Speichert Begriffe aus der Domain-Analyse in die Merkliste."
+    },
+    "src/client/features/domain/types.ts": {
+      "name": "Typen Domain",
+      "description": "Datenformen für Begriffe, Seiten und Filter."
+    },
+    "src/client/features/domain/useDomainFilterPreferences.ts": {
+      "name": "Filter merken",
+      "description": "Merkt sich pro Nutzer die Filter für Begriffe und Seiten."
+    },
+    "src/client/features/domain/utils.ts": {
+      "name": "Sortier-Hilfen",
+      "description": "Übersetzt Sortierwünsche in Sortierungen und Adressparameter."
+    }
+  }
+}

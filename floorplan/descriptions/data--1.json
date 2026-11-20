@@ -1,0 +1,164 @@
+{
+  "files": {
+    "drizzle/pg.config.ts": {
+      "name": "Postgres-Einstellung",
+      "description": "Einstellungen für Datenbank-Änderungen in Postgres."
+    },
+    "drizzle/remote-d1.config.ts": {
+      "name": "D1-Einstellung",
+      "description": "Einstellungen für Änderungen an der Cloudflare-Datenbank im Netz."
+    },
+    "drizzle/sqlite.config.ts": {
+      "name": "SQLite-Einstellung",
+      "description": "Einstellungen für Änderungen an der lokalen Datenbank."
+    },
+    "src/db/ai-visibility.schema.ts": {
+      "name": "Tabellen KI-Sichtbarkeit",
+      "description": "Beschreibt Verfolgungen, Fragen, Läufe und Ergebnisse der KI-Sichtbarkeit."
+    },
+    "src/db/app.schema.ts": {
+      "name": "Tabellen App",
+      "description": "Beschreibt Nutzerangaben, Anmeldequellen, Projekte, Suchbegriffe, Rankings und weiteres der App."
+    },
+    "src/db/audit.schema.ts": {
+      "name": "Tabellen Prüfung",
+      "description": "Beschreibt Prüfungen, Seiten und Probleme."
+    },
+    "src/db/better-auth-schema.ts": {
+      "name": "Tabellen Anmeldung",
+      "description": "Beschreibt Nutzer, Sitzungen, Teams, Einladungen und API-Schlüssel."
+    },
+    "src/db/billing.schema.ts": {
+      "name": "Tabelle Abrechnungsstatus",
+      "description": "Beschreibt den gespeicherten Abrechnungsstatus eines Kunden."
+    },
+    "src/db/d1/client.ts": {
+      "name": "Datenbank D1",
+      "description": "Verbindung zur Cloudflare-Datenbank."
+    },
+    "src/db/d1/schema.ts": {
+      "name": "Schema D1",
+      "description": "Sammelt alle Tabellen für die Cloudflare-Datenbank."
+    },
+    "src/db/dashboard.schema.ts": {
+      "name": "Tabelle Daten-Aktualisierung",
+      "description": "Merkt, welche Daten gerade aktualisiert werden."
+    },
+    "src/db/ga4.schema.ts": {
+      "name": "Tabelle Analytics",
+      "description": "Speichert die gewählte Google-Analytics-Eigenschaft je Projekt."
+    },
+    "src/db/gsc.schema.ts": {
+      "name": "Tabelle Search Console",
+      "description": "Speichert die verbundene Search-Console-Eigenschaft je Projekt."
+    },
+    "src/db/index.ts": {
+      "name": "Datenbank-Zugriff",
+      "description": "Liefert je nach Installation die passende Datenbank."
+    },
+    "src/db/isUniqueViolation.ts": {
+      "name": "Doppelter Eintrag",
+      "description": "Erkennt, wenn ein Eintrag schon existiert."
+    },
+    "src/db/local-seo.schema.ts": {
+      "name": "Tabellen lokale Rankings",
+      "description": "Beschreibt Verfolgungen, Begriffe, Prüfungen, Raster und Firmeneinträge."
+    },
+    "src/db/pg/ai-visibility.schema.ts": {
+      "name": "Tabellen KI-Sichtbarkeit Postgres",
+      "description": "Postgres-Fassung der Tabellen zur KI-Sichtbarkeit."
+    },
+    "src/db/pg/app.schema.ts": {
+      "name": "Tabellen App Postgres",
+      "description": "Postgres-Fassung der App-Tabellen."
+    },
+    "src/db/pg/audit.schema.ts": {
+      "name": "Tabellen Prüfung Postgres",
+      "description": "Postgres-Fassung der Prüf-Tabellen."
+    },
+    "src/db/pg/better-auth-schema.ts": {
+      "name": "Tabellen Anmeldung Postgres",
+      "description": "Postgres-Fassung der Anmelde-Tabellen."
+    },
+    "src/db/pg/billing.schema.ts": {
+      "name": "Tabelle Abrechnung Postgres",
+      "description": "Postgres-Fassung des Abrechnungsstatus."
+    },
+    "src/db/pg/client.ts": {
+      "name": "Postgres-Verbindung",
+      "description": "Öffnet Postgres-Verbindungen pro Anfrage."
+    },
+    "src/db/pg/dashboard.schema.ts": {
+      "name": "Tabelle Aktualisierung Postgres",
+      "description": "Postgres-Fassung der Daten-Aktualisierung."
+    },
+    "src/db/pg/ga4.schema.ts": {
+      "name": "Tabelle Analytics Postgres",
+      "description": "Postgres-Fassung der Analytics-Verbindung."
+    },
+    "src/db/pg/gsc.schema.ts": {
+      "name": "Tabelle Search Console Postgres",
+      "description": "Postgres-Fassung der Search-Console-Verbindung."
+    },
+    "src/db/pg/local-seo.schema.ts": {
+      "name": "Tabellen lokale Rankings Postgres",
+      "description": "Postgres-Fassung der Tabellen für lokale Rankings."
+    },
+    "src/db/pg/project-context.schema.ts": {
+      "name": "Tabellen Projektkontext Postgres",
+      "description": "Speichert Marke, Wettbewerber und Schlüsselseiten eines Projekts."
+    },
+    "src/db/pg/report-templates.schema.ts": {
+      "name": "Tabelle Vorlagen Postgres",
+      "description": "Postgres-Fassung der Berichtsvorlagen."
+    },
+    "src/db/pg/reports.schema.ts": {
+      "name": "Tabelle Berichte Postgres",
+      "description": "Postgres-Fassung der Berichte."
+    },
+    "src/db/pg/retry.ts": {
+      "name": "Wiederholung Postgres",
+      "description": "Wiederholt Postgres-Abfragen bei kurzen Verbindungsfehlern."
+    },
+    "src/db/pg/sam.schema.ts": {
+      "name": "Tabelle Sam Postgres",
+      "description": "Postgres-Fassung der Gespräche mit Sam."
+    },
+    "src/db/pg/schema.ts": {
+      "name": "Schema Postgres",
+      "description": "Sammelt alle Tabellen für Postgres."
+    },
+    "src/db/pg/telemetry.schema.ts": {
+      "name": "Tabelle Statistik Postgres",
+      "description": "Postgres-Fassung der Statistik-Zustände."
+    },
+    "src/db/project-context.schema.ts": {
+      "name": "Tabellen Projektkontext",
+      "description": "Speichert Marke, Wettbewerber und Schlüsselseiten eines Projekts."
+    },
+    "src/db/provider.ts": {
+      "name": "Datenbank-Auswahl",
+      "description": "Entscheidet, ob Cloudflare-Datenbank oder Postgres genutzt wird."
+    },
+    "src/db/report-templates.schema.ts": {
+      "name": "Tabelle Berichtsvorlagen",
+      "description": "Speichert Vorlagen für Berichte."
+    },
+    "src/db/reports.schema.ts": {
+      "name": "Tabelle Berichte",
+      "description": "Speichert erstellte Berichte samt HTML mit Größenlimit."
+    },
+    "src/db/runBatch.ts": {
+      "name": "Stapel-Schreiben",
+      "description": "Schreibt viele Zeilen in Teilen, weil die Datenbank Parameter pro Befehl begrenzt."
+    },
+    "src/db/sam.schema.ts": {
+      "name": "Tabelle Sam",
+      "description": "Speichert die Gespräche mit Sam."
+    },
+    "src/db/schema.ts": {
+      "name": "Schema der App",
+      "description": "Sammelt alle Tabellen der App."
+    }
+  }
+}

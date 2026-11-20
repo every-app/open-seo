@@ -1,0 +1,144 @@
+{
+  "files": {
+    "src/client/components/form/formContext.ts": {
+      "name": "Formular-Kontext",
+      "description": "Gemeinsamer Zustand der Formulare."
+    },
+    "src/client/components/form/useAppForm.tsx": {
+      "name": "Formular-Baukasten",
+      "description": "Fertige Formularfelder mit Prüfung und Fehleranzeige für alle Formulare."
+    },
+    "src/client/components/ui/accordion.tsx": {
+      "name": "Ziehharmonika",
+      "description": "Baustein zum Auf- und Zuklappen von Abschnitten."
+    },
+    "src/client/components/ui/alert-dialog.tsx": {
+      "name": "Warn-Dialog",
+      "description": "Dialog, der vor einer riskanten Aktion Bestätigung verlangt."
+    },
+    "src/client/components/ui/alert.tsx": {
+      "name": "Hinweisbox",
+      "description": "Farbige Box für Hinweise und Warnungen."
+    },
+    "src/client/components/ui/badge.tsx": {
+      "name": "Schild",
+      "description": "Kleines farbiges Schild für Status und Kategorien."
+    },
+    "src/client/components/ui/button.tsx": {
+      "name": "Knopf",
+      "description": "Der Standardknopf in verschiedenen Stilen und Größen."
+    },
+    "src/client/components/ui/card.tsx": {
+      "name": "Karte",
+      "description": "Rahmen mit Kopf, Inhalt und Fuß."
+    },
+    "src/client/components/ui/chart.tsx": {
+      "name": "Diagramm-Rahmen",
+      "description": "Gemeinsamer Rahmen mit Farben, Legende und Hinweisfeld für Diagramme."
+    },
+    "src/client/components/ui/checkbox.tsx": {
+      "name": "Ankreuzfeld",
+      "description": "Kästchen zum An- und Abwählen."
+    },
+    "src/client/components/ui/collapsible.tsx": {
+      "name": "Einklappbereich",
+      "description": "Bereich, der sich auf Klick öffnet und schließt."
+    },
+    "src/client/components/ui/combobox.tsx": {
+      "name": "Auswahl mit Suche",
+      "description": "Eingabefeld mit Liste, die beim Tippen filtert."
+    },
+    "src/client/components/ui/dialog.tsx": {
+      "name": "Dialogfenster",
+      "description": "Fenster über der Seite mit Titel, Inhalt und Knöpfen."
+    },
+    "src/client/components/ui/dropdown-menu.tsx": {
+      "name": "Aufklappmenü",
+      "description": "Menü mit Einträgen, Gruppen und Untermenüs."
+    },
+    "src/client/components/ui/empty.tsx": {
+      "name": "Leerer Bereich",
+      "description": "Bausteine für Anzeigen ohne Inhalt."
+    },
+    "src/client/components/ui/field.tsx": {
+      "name": "Formularfeld",
+      "description": "Beschriftung, Eingabe, Hilfetext und Fehlermeldung als Gruppe."
+    },
+    "src/client/components/ui/input-group.tsx": {
+      "name": "Eingabegruppe",
+      "description": "Eingabefeld mit Symbolen, Knöpfen oder Text davor und danach."
+    },
+    "src/client/components/ui/input.tsx": {
+      "name": "Eingabefeld",
+      "description": "Einzeiliges Textfeld."
+    },
+    "src/client/components/ui/label.tsx": {
+      "name": "Beschriftung",
+      "description": "Beschriftung für Formularfelder."
+    },
+    "src/client/components/ui/popover.tsx": {
+      "name": "Einblendfenster",
+      "description": "Kleines Fenster, das neben einem Element erscheint."
+    },
+    "src/client/components/ui/progress.tsx": {
+      "name": "Fortschrittsbalken",
+      "description": "Balken, der einen Fortschritt zeigt."
+    },
+    "src/client/components/ui/radio-group.tsx": {
+      "name": "Optionsgruppe",
+      "description": "Auswahl genau einer von mehreren Optionen."
+    },
+    "src/client/components/ui/select.tsx": {
+      "name": "Auswahlliste",
+      "description": "Klappliste zur Wahl eines Eintrags."
+    },
+    "src/client/components/ui/separator.tsx": {
+      "name": "Trennlinie",
+      "description": "Dünne Linie zwischen Bereichen."
+    },
+    "src/client/components/ui/sheet.tsx": {
+      "name": "Seitenfenster",
+      "description": "Fenster, das vom Rand hereingleitet."
+    },
+    "src/client/components/ui/sidebar.tsx": {
+      "name": "Seitenleiste",
+      "description": "Baustein für die Seitenleiste der App mit Gruppen, Einträgen und Einklappen."
+    },
+    "src/client/components/ui/skeleton.tsx": {
+      "name": "Platzhalter-Fläche",
+      "description": "Graue Fläche als Platzhalter während des Ladens."
+    },
+    "src/client/components/ui/spinner.tsx": {
+      "name": "Drehanzeige",
+      "description": "Kleines Ladesymbol."
+    },
+    "src/client/components/ui/switch.tsx": {
+      "name": "Schalter",
+      "description": "An-/Aus-Schalter."
+    },
+    "src/client/components/ui/table.tsx": {
+      "name": "Tabelle",
+      "description": "Grundbausteine einer Tabelle: Kopf, Zeilen und Zellen."
+    },
+    "src/client/components/ui/tabs.tsx": {
+      "name": "Reiter",
+      "description": "Reiterleiste und Inhalte."
+    },
+    "src/client/components/ui/textarea.tsx": {
+      "name": "Mehrzeiliges Textfeld",
+      "description": "Textfeld für längere Eingaben."
+    },
+    "src/client/components/ui/toggle-group.tsx": {
+      "name": "Schaltergruppe",
+      "description": "Gruppe von Knöpfen, von denen einer oder mehrere aktiv sind."
+    },
+    "src/client/components/ui/toggle.tsx": {
+      "name": "Schaltknopf",
+      "description": "Knopf, der an- oder ausgeschaltet bleibt."
+    },
+    "src/client/components/ui/tooltip.tsx": {
+      "name": "Hinweisfeld",
+      "description": "Kurzer Text, der beim Darüberfahren erscheint."
+    }
+  }
+}

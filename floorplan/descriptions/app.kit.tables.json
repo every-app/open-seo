@@ -1,0 +1,44 @@
+{
+  "files": {
+    "src/client/components/table/DataTable.tsx": {
+      "name": "Datentabelle",
+      "description": "Grundlage aller Tabellen: Rahmen, Zeilenauswahl und Spalten."
+    },
+    "src/client/components/table/DataTableToolbar.tsx": {
+      "name": "Werkzeugleiste Tabelle",
+      "description": "Reiter und Filter am Kopf einer Tabelle."
+    },
+    "src/client/components/table/ExportToSheetsModal.tsx": {
+      "name": "Dialog Export nach Sheets",
+      "description": "Erklärt, wie die kopierte Tabelle in Google Sheets eingefügt wird."
+    },
+    "src/client/components/table/nullSafeSort.ts": {
+      "name": "Sortierung mit Leerwerten",
+      "description": "Sortiert Zahlen und Texte so, dass leere Werte ans Ende kommen."
+    },
+    "src/client/components/table/ScoreBadge.tsx": {
+      "name": "Schwierigkeits-Schild",
+      "description": "Zeigt die Schwierigkeit eines Suchbegriffs (0 bis 100) als farbiges Schild."
+    },
+    "src/client/components/table/SortableHeader.tsx": {
+      "name": "Sortierbarer Spaltenkopf",
+      "description": "Spaltenkopf, auf den man klickt, um zu sortieren."
+    },
+    "src/client/components/table/TableBulkActionBar.tsx": {
+      "name": "Leiste für Sammelaktionen",
+      "description": "Aktionen für mehrere ausgewählte Tabellenzeilen auf einmal, auch Export."
+    },
+    "src/client/components/table/TablePagination.tsx": {
+      "name": "Seitenwechsel Tabelle",
+      "description": "Blättern, Seitengröße und Anzeige der Treffer unter Tabellen."
+    },
+    "src/client/components/table/tableSelection.ts": {
+      "name": "Mehrfachauswahl",
+      "description": "Wählt mit gedrückter Umschalttaste einen Bereich von Zeilen aus."
+    },
+    "src/client/components/table/url.tsx": {
+      "name": "Adress-Zelle",
+      "description": "Zeigt Webadressen gekürzt an und verlinkt sie sicher."
+    }
+  }
+}

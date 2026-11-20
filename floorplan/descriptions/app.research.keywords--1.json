@@ -1,0 +1,164 @@
+{
+  "files": {
+    "src/client/features/keywords/components/DisplayPrimitives.tsx": {
+      "name": "Anzeige-Bausteine Begriffe",
+      "description": "Sortierfelder und Flächendiagramm für Suchtrends."
+    },
+    "src/client/features/keywords/components/index.ts": {
+      "name": "Sammeldatei Begriffs-Bausteine",
+      "description": "Reicht die Bausteine der Begriffs-Anzeige weiter."
+    },
+    "src/client/features/keywords/components/IntentBadge.tsx": {
+      "name": "Absichts-Schild",
+      "description": "Zeigt die Suchabsicht eines Begriffs (etwa Informieren oder Kaufen) als Schild."
+    },
+    "src/client/features/keywords/components/KeywordUi.tsx": {
+      "name": "Karte Begriffs-Übersicht",
+      "description": "Zeigt Kennzahlen und Suchtrend des gewählten Begriffs."
+    },
+    "src/client/features/keywords/components/SerpAnalysisCard.tsx": {
+      "name": "Karte Ergebnisseiten",
+      "description": "Zeigt, welche Seiten bei Google zu einem Begriff oben stehen."
+    },
+    "src/client/features/keywords/groupSharedVolumeRows.ts": {
+      "name": "Gruppierte Begriffe",
+      "description": "Fasst Begriffe mit gleichem Suchvolumen unter einem Elternbegriff zusammen."
+    },
+    "src/client/features/keywords/hooks/useKeywordControlsForm.ts": {
+      "name": "Formular Begriffs-Suche",
+      "description": "Verwaltet Eingaben des Suchformulars."
+    },
+    "src/client/features/keywords/hooks/useKeywordFiltering.ts": {
+      "name": "Filtern der Begriffe",
+      "description": "Wendet Filter und Sortierung auf die Treffer an."
+    },
+    "src/client/features/keywords/hooks/useKeywordResearchData.ts": {
+      "name": "Daten Begriffs-Recherche",
+      "description": "Lädt Ergebnisse der Begriffs-Recherche und merkt sie sich zwischen."
+    },
+    "src/client/features/keywords/hooks/useKeywordSerpAnalysis.ts": {
+      "name": "Analyse Ergebnisseiten",
+      "description": "Lädt die Google-Ergebnisse zu einem gewählten Begriff."
+    },
+    "src/client/features/keywords/hooks/useLocalKeywordFilters.ts": {
+      "name": "Filter lokal",
+      "description": "Filtert Begriffe im Browser nach Werten."
+    },
+    "src/client/features/keywords/hooks/usePreferredKeywordGrouping.ts": {
+      "name": "Gewählte Gruppierung",
+      "description": "Merkt pro Projekt, ob Begriffe gruppiert werden."
+    },
+    "src/client/features/keywords/hooks/usePreferredKeywordLocation.ts": {
+      "name": "Bevorzugter Ort",
+      "description": "Wählt den Ort für die Recherche: Nutzerwahl, sonst Projekt-Markt."
+    },
+    "src/client/features/keywords/keywordResearchTypes.ts": {
+      "name": "Typen Begriffs-Recherche",
+      "description": "Grenzen, Ergebnisanzahl, Quelle und Filterwerte."
+    },
+    "src/client/features/keywords/keywordSearchParams.ts": {
+      "name": "Adressparameter Begriffe",
+      "description": "Liest und bereinigt die Suchparameter, auch alte Formen."
+    },
+    "src/client/features/keywords/locations.ts": {
+      "name": "Orte Begriffe",
+      "description": "Reicht die gemeinsamen Ortslisten weiter."
+    },
+    "src/client/features/keywords/page/KeywordAreaField.tsx": {
+      "name": "Feld Gebiet",
+      "description": "Optionale Stadt, Landkreis oder Region innerhalb des gewählten Landes."
+    },
+    "src/client/features/keywords/page/KeywordResearchEmptyState.tsx": {
+      "name": "Leerer Zustand Recherche",
+      "description": "Zeigt vor der Suche frühere Suchen und Vorschläge, nach der Suche „keine Treffer“."
+    },
+    "src/client/features/keywords/page/keywordResearchFilters.tsx": {
+      "name": "Filterfelder Begriffe",
+      "description": "Auswahl der Absicht, Textfelder und Zahlenbereiche."
+    },
+    "src/client/features/keywords/page/KeywordResearchLoadingState.tsx": {
+      "name": "Ladezustand Begriffs-Recherche",
+      "description": "Platzhalter in der Form der Ergebnisse."
+    },
+    "src/client/features/keywords/page/KeywordResearchPage.tsx": {
+      "name": "Begriffs-Recherche",
+      "description": "Hauptbildschirm: Suchbegriffe mit Suchvolumen, Schwierigkeit und Trend finden."
+    },
+    "src/client/features/keywords/page/KeywordResearchPagination.tsx": {
+      "name": "Blättern Begriffe",
+      "description": "Seitengrößen und Bereich beim Blättern durch Begriffe."
+    },
+    "src/client/features/keywords/page/KeywordResearchResults.tsx": {
+      "name": "Ergebnisse Begriffs-Recherche",
+      "description": "Tabelle, Übersicht und Ergebnisseiten; auf kleinen Bildschirmen je ein Teil hinter Reitern."
+    },
+    "src/client/features/keywords/page/KeywordResearchSearchBar.tsx": {
+      "name": "Suchleiste Begriffe",
+      "description": "Suchzeile mit Begriff, Land, Ort und Optionen."
+    },
+    "src/client/features/keywords/page/KeywordResearchTable.tsx": {
+      "name": "Tabelle Begriffe",
+      "description": "Tabelle der gefundenen Begriffe."
+    },
+    "src/client/features/keywords/page/KeywordSearchOptions.tsx": {
+      "name": "Such-Optionen",
+      "description": "Einstellungen, die die meisten auf Standard lassen."
+    },
+    "src/client/features/keywords/page/KeywordSuggestions.tsx": {
+      "name": "Vorschläge",
+      "description": "Kurze Suchen zum Weitermachen unter den letzten Suchen."
+    },
+    "src/client/features/keywords/page/types.ts": {
+      "name": "Typen Seitenzustand",
+      "description": "Zustand der Begriffs-Recherche."
+    },
+    "src/client/features/keywords/state/keywordControllerActions.ts": {
+      "name": "Aktionen Begriffs-Steuerung",
+      "description": "Liest eingegebene Begriffe, baut Such-Schlüssel und Export-Köpfe."
+    },
+    "src/client/features/keywords/state/keywordControllerInternals.ts": {
+      "name": "Innenleben Begriffs-Steuerung",
+      "description": "Gemeinsame Zustände: Ort, Oberfläche, Adressparameter und Speichern."
+    },
+    "src/client/features/keywords/state/useKeywordOverviewState.ts": {
+      "name": "Zustand Begriffs-Übersicht",
+      "description": "Verwaltet, welcher Begriff in der Übersicht gewählt ist."
+    },
+    "src/client/features/keywords/state/useKeywordResearchController.ts": {
+      "name": "Steuerung Begriffs-Recherche",
+      "description": "Das Gehirn der Recherche-Seite: Suchen, Sortieren, Speichern und Adresse."
+    },
+    "src/client/features/keywords/utils.ts": {
+      "name": "Hilfen Begriffe",
+      "description": "Monatsnamen, letzte zwölf Monate eines Trends und Zahlenformate."
+    },
+    "src/client/features/saved-keywords/ImportKeywordsDialog.tsx": {
+      "name": "Begriffe importieren",
+      "description": "Knopf und Dialog, um Suchbegriffe in die Merkliste einzufügen."
+    },
+    "src/client/features/saved-keywords/ManageTagRow.tsx": {
+      "name": "Zeile Tag verwalten",
+      "description": "Eine Zeile beim Verwalten von Tags."
+    },
+    "src/client/features/saved-keywords/SavedKeywordsBulkActionBar.tsx": {
+      "name": "Leiste Sammelaktionen Merkliste",
+      "description": "Aktionen für ausgewählte Begriffe der Merkliste."
+    },
+    "src/client/features/saved-keywords/SavedKeywordsBulkTagsModal.tsx": {
+      "name": "Dialog Tags zuweisen",
+      "description": "Vergibt oder entfernt Tags für mehrere Begriffe."
+    },
+    "src/client/features/saved-keywords/SavedKeywordsFilterPanel.tsx": {
+      "name": "Filterfeld Merkliste",
+      "description": "Filterfeld der gespeicherten Begriffe."
+    },
+    "src/client/features/saved-keywords/SavedKeywordsFilters.tsx": {
+      "name": "Filterzeile Merkliste",
+      "description": "Filterleiste über der Merkliste."
+    },
+    "src/client/features/saved-keywords/savedKeywordsFilterTypes.ts": {
+      "name": "Typen Filter Merkliste",
+      "description": "Filterwerte und Umwandlung in eine Abfrage."
+    }
+  }
+}

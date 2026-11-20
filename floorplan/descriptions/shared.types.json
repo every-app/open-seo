@@ -1,0 +1,108 @@
+{
+  "files": {
+    "src/types/keywords.ts": {
+      "name": "Typen Begriffe",
+      "description": "Datenformen für Begriffe, Trends, gespeicherte Begriffe und Tags."
+    },
+    "src/types/schemas/ai-search.ts": {
+      "name": "Schemata KI-Suche",
+      "description": "Beschreibt Eingaben und Ergebnisse von Markensuche und Prompt-Explorer."
+    },
+    "src/types/schemas/ai-visibility.ts": {
+      "name": "Schemata KI-Sichtbarkeit",
+      "description": "Beschreibt Eingaben der KI-Sichtbarkeit: Modelle, Verfolgung, Kosten."
+    },
+    "src/types/schemas/aiPromptResearch.ts": {
+      "name": "Schema Fragen-Recherche",
+      "description": "Eingaben der Fragen-Recherche."
+    },
+    "src/types/schemas/aiPromptSuggestions.ts": {
+      "name": "Schemata Fragen-Vorschläge",
+      "description": "Beschreibt Themen und Fragen, die ein KI-Modell liefern soll."
+    },
+    "src/types/schemas/audit.ts": {
+      "name": "Schemata Prüfung",
+      "description": "Eingaben der Prüfung: starten, Stand, Seiten, Probleme."
+    },
+    "src/types/schemas/backlinks.ts": {
+      "name": "Schemata Backlinks",
+      "description": "Eingaben und Umfang der Backlink-Suche."
+    },
+    "src/types/schemas/crawlerAccess.ts": {
+      "name": "Schemata Crawler-Zugang",
+      "description": "Eingaben zum Speichern und Löschen des Crawler-Zugangs."
+    },
+    "src/types/schemas/dashboard.ts": {
+      "name": "Schemata Startseite",
+      "description": "Eingaben und Schritte der Startseite."
+    },
+    "src/types/schemas/domain.ts": {
+      "name": "Schemata Domain",
+      "description": "Liest Domains aus Eingaben und beschreibt die Domain-Abfragen."
+    },
+    "src/types/schemas/google-maps.ts": {
+      "name": "Schema Google Maps",
+      "description": "Beschreibt den sichtbaren Kartenausschnitt."
+    },
+    "src/types/schemas/indexnow.ts": {
+      "name": "Schemata IndexNow",
+      "description": "Eingaben für IndexNow, bis zu 10.000 Adressen je Anfrage."
+    },
+    "src/types/schemas/keywords.ts": {
+      "name": "Schemata Begriffe",
+      "description": "Eingaben für Recherche, Speichern, Entfernen und Tags."
+    },
+    "src/types/schemas/lighthouse.ts": {
+      "name": "Schemata Lighthouse",
+      "description": "Eingaben für Lighthouse-Probleme und Export."
+    },
+    "src/types/schemas/local-seo-search.ts": {
+      "name": "Schema Suche lokal",
+      "description": "Suchparameter der lokalen Rankings."
+    },
+    "src/types/schemas/local-seo.ts": {
+      "name": "Schemata lokales SEO",
+      "description": "Eingaben für Firmen, Verfolgungen, Prüfungen und Suchen."
+    },
+    "src/types/schemas/projectContext.ts": {
+      "name": "Schemata Projektkontext",
+      "description": "Abschnitte, Längen und Eingaben des Projektkontexts."
+    },
+    "src/types/schemas/projects.ts": {
+      "name": "Schemata Projekte",
+      "description": "Eingaben zum Anlegen, Ändern und Archivieren von Projekten."
+    },
+    "src/types/schemas/projectWebsite.ts": {
+      "name": "Schemata Website-Analyse",
+      "description": "Grenzen und Meldung der Website-Analyse."
+    },
+    "src/types/schemas/rank-tracking-search.ts": {
+      "name": "Suchparameter Rankings",
+      "description": "Parameter der Ranking-Seite, etwa Vergleichszeitraum."
+    },
+    "src/types/schemas/rank-tracking.ts": {
+      "name": "Typen Rankings",
+      "description": "Datenformen der Rankings: Einstellungen, Zeilen und Ergebnisse."
+    },
+    "src/types/schemas/report-templates.ts": {
+      "name": "Schema Berichtsvorlagen",
+      "description": "Grenze für Vorlagen je Projekt."
+    },
+    "src/types/schemas/reports.ts": {
+      "name": "Schema Berichte",
+      "description": "Größengrenze und Eingaben für Berichte."
+    },
+    "src/types/schemas/schedule-time.ts": {
+      "name": "Schema Zeitpläne",
+      "description": "Zeitzone und Uhrzeit für geplante Prüfungen."
+    },
+    "src/types/schemas/search-performance.ts": {
+      "name": "Schema Suchleistung",
+      "description": "Zeiträume und Auswahl der Suchleistungs-Seite."
+    },
+    "src/types/vite-env.d.ts": {
+      "name": "Typen Bauumgebung",
+      "description": "Beschreibt zusätzliche Typen für den Bau der App."
+    }
+  }
+}

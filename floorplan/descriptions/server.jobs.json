@@ -1,0 +1,64 @@
+{
+  "files": {
+    "src/server/workflows/AiVisibilityWorkflow.ts": {
+      "name": "Lauf KI-Sichtbarkeit",
+      "description": "Hintergrundaufgabe: sammelt die Antworten der KI-Modelle auf die verfolgten Fragen."
+    },
+    "src/server/workflows/auditStepConfigs.ts": {
+      "name": "Einstellungen Prüfschritte",
+      "description": "Zeitlimits und Wiederholungen der Schritte einer Prüfung."
+    },
+    "src/server/workflows/LocalRankWorkflow.ts": {
+      "name": "Lauf lokales Ranking",
+      "description": "Hintergrundaufgabe: prüft lokale Rankings Punkt für Punkt."
+    },
+    "src/server/workflows/pgStep.ts": {
+      "name": "Schritt mit Postgres",
+      "description": "Führt einen Schritt mit eigener Postgres-Verbindung aus."
+    },
+    "src/server/workflows/rankCheckGotoUrls.ts": {
+      "name": "Adressen auflösen",
+      "description": "Ersetzt Google-Weiterleitungsadressen eines Laufs durch die echten Seiten."
+    },
+    "src/server/workflows/rankCheckPaths.ts": {
+      "name": "Pfade Ranking-Prüfung",
+      "description": "Verteilt Begriffe auf Abfragen und macht aus Ergebnissen Einträge für die Datenbank."
+    },
+    "src/server/workflows/rankCheckRetries.ts": {
+      "name": "Wiederholung Ranking-Prüfung",
+      "description": "Liest fehlende Ergebnisse erneut aus, bis ein Zeitfenster abläuft."
+    },
+    "src/server/workflows/RankCheckWorkflow.ts": {
+      "name": "Lauf Ranking-Prüfung",
+      "description": "Hintergrundaufgabe: prüft für alle Begriffe die Google-Positionen und speichert sie."
+    },
+    "src/server/workflows/site-audit-workflow-helpers.ts": {
+      "name": "Hilfen Prüf-Aufgabe",
+      "description": "Lädt eine Seite für die Prüfung und überspringt sie, wenn die Website bremst."
+    },
+    "src/server/workflows/siteAuditStart.ts": {
+      "name": "Start der Prüfung",
+      "description": "Erster Schritt: Weiterleitungen der Startadresse klären."
+    },
+    "src/server/workflows/SiteAuditWorkflow.ts": {
+      "name": "Lauf Website-Prüfung",
+      "description": "Hintergrundaufgabe: führt die Phasen einer Website-Prüfung nacheinander aus."
+    },
+    "src/server/workflows/siteAuditWorkflowCrawl.ts": {
+      "name": "Phase Seiten laden",
+      "description": "Lädt die Seiten einer Prüfung in Abschnitten und prüft sie."
+    },
+    "src/server/workflows/siteAuditWorkflowPersist.ts": {
+      "name": "Phase Speichern",
+      "description": "Speichert geladene Seiten und Probleme in der Datenbank, Links im Notizblock."
+    },
+    "src/server/workflows/siteAuditWorkflowPhases.ts": {
+      "name": "Phasen der Prüfung",
+      "description": "Führt Finden, Laden, Prüfen und Geschwindigkeitstest nacheinander aus."
+    },
+    "src/server/workflows/yieldingStep.ts": {
+      "name": "Schritt mit Atempause",
+      "description": "Lässt die Container-Ausführung Schritte in einem Zug durchlaufen."
+    }
+  }
+}

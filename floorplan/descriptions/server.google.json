@@ -1,0 +1,116 @@
+{
+  "files": {
+    "src/server/features/ga4/repositories/Ga4ConnectionRepository.ts": {
+      "name": "Speicher Analytics-Verbindung",
+      "description": "Liest und schreibt die Analytics-Verbindung eines Projekts."
+    },
+    "src/server/features/ga4/services/ga4-test-fixtures.ts": {
+      "name": "Testdaten Analytics",
+      "description": "Beispieldaten für Tests der Analytics-Dienste."
+    },
+    "src/server/features/ga4/services/Ga4Dates.ts": {
+      "name": "Datumshilfen Analytics",
+      "description": "Rechnet Analytics-Tage in der Zeitzone der Eigenschaft."
+    },
+    "src/server/features/ga4/services/Ga4MeasurementHealthService.ts": {
+      "name": "Messzustand Analytics",
+      "description": "Prüft, ob Analytics richtig misst."
+    },
+    "src/server/features/ga4/services/Ga4OrganicOverviewService.ts": {
+      "name": "Übersicht organische Besuche",
+      "description": "Fasst die Besuche aus der Suche zusammen."
+    },
+    "src/server/features/ga4/services/Ga4ReportDefinitions.ts": {
+      "name": "Berichtsdefinitionen Analytics",
+      "description": "Legt fest, welche Berichte es gibt und wie sie abgefragt werden."
+    },
+    "src/server/features/ga4/services/Ga4ReportEnhancements.ts": {
+      "name": "Berichts-Erweiterungen Analytics",
+      "description": "Vergleich mit dem Vorzeitraum und vollständige Berichte."
+    },
+    "src/server/features/ga4/services/Ga4ReportingService.ts": {
+      "name": "Berichtsdienst Analytics",
+      "description": "Holt Berichte aus Google Analytics und ordnet Fehler ein."
+    },
+    "src/server/features/ga4/services/Ga4ReportNormalization.ts": {
+      "name": "Normalisierung Analytics",
+      "description": "Bringt Antworten von Analytics in ein einheitliches Format."
+    },
+    "src/server/features/ga4/services/Ga4Service.ts": {
+      "name": "Dienst Analytics",
+      "description": "Verwaltet Verbindung, Eigenschaften und Auswahl für Analytics."
+    },
+    "src/server/features/ga4/services/SearchOpportunityService.ts": {
+      "name": "Suchchancen",
+      "description": "Findet Suchanfragen, die knapp außerhalb der ersten Seite stehen."
+    },
+    "src/server/features/google/gatewayGoogle.ts": {
+      "name": "Google über EveryApp",
+      "description": "Nutzt Google über das EveryApp-Tor, das die Freigabe hält."
+    },
+    "src/server/features/google/googleAccess.ts": {
+      "name": "Google-Zugriffsart",
+      "description": "Sagt, ob Google über eigene Anmeldung oder das Tor läuft."
+    },
+    "src/server/features/google/GoogleAccountRepository.ts": {
+      "name": "Speicher Google-Konten",
+      "description": "Speichert Google-Konten, Freigaben und Verknüpfungen."
+    },
+    "src/server/features/google/GoogleAccountService.ts": {
+      "name": "Dienst Google-Konten",
+      "description": "Verwaltet Google-Konten eines Nutzers und ihre Entfernung."
+    },
+    "src/server/features/google/googleDataRetention.ts": {
+      "name": "Aufräumen Google-Daten",
+      "description": "Löscht täglich Google-Freigaben, die kein Projekt mehr braucht."
+    },
+    "src/server/features/google/googleIdToken.ts": {
+      "name": "Google-Konto-Kennung",
+      "description": "Liest die Kontokennung aus dem Anmelde-Token."
+    },
+    "src/server/features/google/googleOAuth.ts": {
+      "name": "Google-Anmeldung",
+      "description": "Führt die Google-Freigabe durch: Adresse bauen, Antwort prüfen, Zugangs-Token holen."
+    },
+    "src/server/features/google/googleOAuthState.ts": {
+      "name": "Zustand Google-Anmeldung",
+      "description": "Erzeugt und speichert die Prüfwerte, die den Rücksprung von Google absichern."
+    },
+    "src/server/features/google/oauth-config.ts": {
+      "name": "Einstellungen Google",
+      "description": "Liefert die Zugangsdaten für Google, hinter dem Tor aber keine eigenen."
+    },
+    "src/server/features/gsc/repositories/GscConnectionRepository.ts": {
+      "name": "Speicher Search-Console-Verbindung",
+      "description": "Liest und schreibt die Search-Console-Verbindung eines Projekts."
+    },
+    "src/server/features/gsc/searchAnalytics.ts": {
+      "name": "Suchanalyse Search Console",
+      "description": "Legt Dimensionen und Filter der Search-Console-Abfragen fest."
+    },
+    "src/server/features/gsc/searchPerformanceReport.ts": {
+      "name": "Bericht Suchleistung",
+      "description": "Rechnet Summen, Zeilen und beste Chancen der Suchleistung aus."
+    },
+    "src/server/features/gsc/services/GscService.ts": {
+      "name": "Dienst Search Console",
+      "description": "Holt Websites und Suchdaten und ordnet erwartbare Freigabefehler ein."
+    },
+    "src/server/lib/ga4Client.ts": {
+      "name": "Client Analytics",
+      "description": "Spricht mit Google Analytics: Konten, Eigenschaften und Berichte, nur lesend."
+    },
+    "src/server/lib/ga4Errors.ts": {
+      "name": "Fehler Analytics",
+      "description": "Fehlerarten bei Analytics: Zugang, Daten, Format."
+    },
+    "src/server/lib/gscClient.ts": {
+      "name": "Client Search Console",
+      "description": "Spricht mit der Search Console: Websites und Suchdaten."
+    },
+    "src/server/lib/gscErrors.ts": {
+      "name": "Fehler Search Console",
+      "description": "Fehlerarten bei der Search Console."
+    }
+  }
+}

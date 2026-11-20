@@ -1,0 +1,8 @@
+{
+  "files": {
+    "src/shared/terms.ts": {
+      "name": "Version Bedingungen",
+      "description": "Die aktuelle Fassung der Bedingungen und ab wann sie gilt."
+    }
+  }
+}

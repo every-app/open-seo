@@ -1,0 +1,36 @@
+{
+  "files": {
+    "src/server/features/sam/SamChatAgent.ts": {
+      "name": "Chat-Agent Sam",
+      "description": "Der Chat-Assistent der App als dauerhaftes Objekt; führt Gespräche und ruft Werkzeuge auf."
+    },
+    "src/server/features/sam/samChatTools.ts": {
+      "name": "Werkzeuge von Sam",
+      "description": "Baut aus den Assistenten-Werkzeugen die Werkzeuge, die Sam nutzen kann."
+    },
+    "src/server/features/sam/SamSessionRepository.ts": {
+      "name": "Speicher Sam-Gespräche",
+      "description": "Speichert die Gespräche mit Sam."
+    },
+    "src/server/features/sam/samSkills.ts": {
+      "name": "Fähigkeiten von Sam",
+      "description": "Baut die Wissensquelle aus den Skills."
+    },
+    "src/server/features/sam/samSystemPrompt.ts": {
+      "name": "Anweisung für Sam",
+      "description": "Der Grundtext, der Sam Rolle und Haltung gibt."
+    },
+    "src/server/features/sam/samToolOutput.ts": {
+      "name": "Begrenzte Werkzeug-Ausgabe",
+      "description": "Kürzt zu lange Ausgaben, bevor Sam sie liest."
+    },
+    "src/server/features/sam/samTurnTelemetry.ts": {
+      "name": "Messung der Sam-Gespräche",
+      "description": "Sammelt je Gesprächsrunde Kennzahlen für die Statistik."
+    },
+    "src/server/lib/chatAgent.ts": {
+      "name": "Kosten Chat",
+      "description": "Liest die Kosten des Chat-Modells; bei fehlender Angabe wird nicht abgerechnet."
+    }
+  }
+}

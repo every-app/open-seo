@@ -1,0 +1,160 @@
+{
+  "files": {
+    "src/client/features/ai-visibility/AiResearchSetupGate.tsx": {
+      "name": "Sperre KI-Recherche",
+      "description": "Zeigt Einrichtungsschritte, bevor die KI-Sichtbarkeit genutzt werden kann."
+    },
+    "src/client/features/ai-visibility/AnswerContent.tsx": {
+      "name": "Antwort-Inhalt",
+      "description": "Zeigt die Antwort der gewählten KI neben ihren Quellen."
+    },
+    "src/client/features/ai-visibility/CitationsTab.tsx": {
+      "name": "Reiter Quellen",
+      "description": "Zeigt, welche Seiten KI-Antworten als Quelle nennen."
+    },
+    "src/client/features/ai-visibility/CompetitorsTab.tsx": {
+      "name": "Reiter Wettbewerber",
+      "description": "Zeigt, welche Wettbewerber neben der Marke genannt werden."
+    },
+    "src/client/features/ai-visibility/DomainFavicon.tsx": {
+      "name": "Favicon",
+      "description": "Zeigt das Symbol einer Website, geladen aus Googles öffentlichem Dienst."
+    },
+    "src/client/features/ai-visibility/EngineFilter.tsx": {
+      "name": "Filter KI-Modelle",
+      "description": "Filter nach KI-Modell."
+    },
+    "src/client/features/ai-visibility/EngineIcon.tsx": {
+      "name": "Symbol KI-Modell",
+      "description": "Zeichen eines KI-Modells."
+    },
+    "src/client/features/ai-visibility/EngineLabel.tsx": {
+      "name": "Name KI-Modell",
+      "description": "Zeigt den Namen eines KI-Modells."
+    },
+    "src/client/features/ai-visibility/OpenRouterKeyGate.tsx": {
+      "name": "Sperre OpenRouter-Schlüssel",
+      "description": "Verlangt einen OpenRouter-Schlüssel, weil die Einrichtung die Marke damit recherchiert."
+    },
+    "src/client/features/ai-visibility/PromptActions.tsx": {
+      "name": "Menü Frage",
+      "description": "Drei-Punkte-Menü einer Frage in der Tabelle der verfolgten Fragen."
+    },
+    "src/client/features/ai-visibility/PromptAnalysis.tsx": {
+      "name": "Auswertung Frage",
+      "description": "Zeigt, wie KI-Modelle eine Frage beantworten und wo die Marke vorkommt."
+    },
+    "src/client/features/ai-visibility/PromptAnswers.tsx": {
+      "name": "Antworten einer Frage",
+      "description": "Zeigt die gesammelten Antworten der KI-Modelle auf eine Frage."
+    },
+    "src/client/features/ai-visibility/PromptDateRange.tsx": {
+      "name": "Zeitraum Frage",
+      "description": "Wählt den Zeitraum, für den Ergebnisse einer Frage gezeigt werden."
+    },
+    "src/client/features/ai-visibility/PromptExecutions.tsx": {
+      "name": "Läufe einer Frage",
+      "description": "Listet die einzelnen Abfragen einer Frage mit Ergebnis."
+    },
+    "src/client/features/ai-visibility/PromptHistoryPage.tsx": {
+      "name": "Seite Verlauf Frage",
+      "description": "Bildschirm mit dem Verlauf einer einzelnen Frage."
+    },
+    "src/client/features/ai-visibility/PromptInventory.tsx": {
+      "name": "Fragen-Bestand",
+      "description": "Tabelle aller verfolgten Fragen mit Ergebnis je Modell und Filter für Markenbezug."
+    },
+    "src/client/features/ai-visibility/PromptList.tsx": {
+      "name": "Liste der Fragen",
+      "description": "Zeigt die verfolgten Fragen als Liste."
+    },
+    "src/client/features/ai-visibility/PromptResearchKeyword.tsx": {
+      "name": "Recherche nach Suchbegriff",
+      "description": "Findet Fragen zu einem Suchbegriff, die man verfolgen könnte."
+    },
+    "src/client/features/ai-visibility/PromptResearchPage.tsx": {
+      "name": "Seite Fragen-Recherche",
+      "description": "Bildschirm: neue Fragen zu einem Thema entdecken."
+    },
+    "src/client/features/ai-visibility/PromptResearchTable.tsx": {
+      "name": "Tabelle Fragen-Recherche",
+      "description": "Tabelle der gefundenen Fragen; schon verfolgte lassen sich nicht auswählen."
+    },
+    "src/client/features/ai-visibility/PromptResultCells.tsx": {
+      "name": "Ergebnis-Zellen Fragen",
+      "description": "Zellen, die je Modell zeigen, ob die Marke genannt wurde, und welche Wettbewerber."
+    },
+    "src/client/features/ai-visibility/PromptSummary.tsx": {
+      "name": "Zusammenfassung Frage",
+      "description": "Kurzüberblick der Ergebnisse einer Frage."
+    },
+    "src/client/features/ai-visibility/PromptTrackingPage.tsx": {
+      "name": "Seite Fragen-Verfolgung",
+      "description": "Hauptbildschirm der KI-Sichtbarkeit: verfolgte Fragen, Verlauf und Einstellungen."
+    },
+    "src/client/features/ai-visibility/PromptTrackingTabs.tsx": {
+      "name": "Reiter Verfolgung",
+      "description": "Reiterleiste über der Tabelle der Verfolgung."
+    },
+    "src/client/features/ai-visibility/RenameTopicDialog.tsx": {
+      "name": "Thema umbenennen",
+      "description": "Dialog zum Umbenennen eines Themas, wodurch dessen Fragen mitwandern."
+    },
+    "src/client/features/ai-visibility/RunStatusLine.tsx": {
+      "name": "Zeile Laufstand",
+      "description": "Zeigt den Fortschritt eines Laufs oder wann die Ergebnisse zuletzt aktualisiert wurden."
+    },
+    "src/client/features/ai-visibility/shared.tsx": {
+      "name": "Gemeinsame Hilfen KI-Sichtbarkeit",
+      "description": "Abfrage-Schlüssel und Standardwerte der Seiten zur KI-Sichtbarkeit."
+    },
+    "src/client/features/ai-visibility/SuggestedCompetitors.tsx": {
+      "name": "Vorgeschlagene Wettbewerber",
+      "description": "Zeigt die am häufigsten zitierten fremden Domains und lässt sie als Wettbewerber übernehmen."
+    },
+    "src/client/features/ai-visibility/TopicField.tsx": {
+      "name": "Feld Thema",
+      "description": "Wählt ein gespeichertes Thema oder legt ein neues an."
+    },
+    "src/client/features/ai-visibility/TrackerEditor.tsx": {
+      "name": "Editor Verfolgung",
+      "description": "Legt die Verfolgung der KI-Sichtbarkeit an oder ändert sie."
+    },
+    "src/client/features/ai-visibility/TrackerPatchReview.tsx": {
+      "name": "Prüfung Änderungsvorschlag",
+      "description": "Zeigt vorgeschlagene Änderungen an Fragen zur Prüfung und Bearbeitung."
+    },
+    "src/client/features/ai-visibility/TrackerPromptFields.tsx": {
+      "name": "Felder Fragen",
+      "description": "Felder zum Eingeben und Bearbeiten der Fragen."
+    },
+    "src/client/features/ai-visibility/TrackerSetupReview.tsx": {
+      "name": "Prüfung Einrichtung",
+      "description": "Zeigt das Ergebnis der Markenrecherche zum Prüfen und Übernehmen."
+    },
+    "src/client/features/ai-visibility/TrackerTrackingFields.tsx": {
+      "name": "Felder Verfolgung",
+      "description": "Felder für Modelle, Länder und Zeitplan der Verfolgung."
+    },
+    "src/client/features/ai-visibility/TrackingCostReview.tsx": {
+      "name": "Kostenvorschau",
+      "description": "Zeigt den Preis eines Laufs vor dem Start, schon vorab berechnet."
+    },
+    "src/client/features/ai-visibility/TrackingScheduleSummary.tsx": {
+      "name": "Zusammenfassung Zeitplan",
+      "description": "Zeigt den Zeitplan der Verfolgung in den Einstellungen."
+    },
+    "src/client/features/ai-visibility/useTrackerSetupSave.ts": {
+      "name": "Einrichtung speichern",
+      "description": "Speichert die Einrichtung der Verfolgung."
+    },
+    "src/client/features/ai-visibility/VisibilityTrend.tsx": {
+      "name": "Verlauf Sichtbarkeit",
+      "description": "Panel mit dem Verlauf der Sichtbarkeit, aufgebaut wie die Ranking-Übersicht."
+    },
+    "src/client/features/ai-visibility/VisibilityTrendChart.tsx": {
+      "name": "Diagramm Sichtbarkeit",
+      "description": "Ein Punkt je Kalendertag, aus dem letzten Lauf des gewählten Zeitraums."
+    }
+  }
+}

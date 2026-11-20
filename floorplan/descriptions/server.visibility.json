@@ -1,0 +1,128 @@
+{
+  "files": {
+    "src/server/features/ai-visibility/aiVisibilityTestDb.ts": {
+      "name": "Test-Datenbank KI-Sichtbarkeit",
+      "description": "Baut eine Testdatenbank mit allen Änderungen für die Tests der KI-Sichtbarkeit."
+    },
+    "src/server/features/ai-visibility/providers/dataforseoEvidence.ts": {
+      "name": "Belege DataForSEO",
+      "description": "Macht aus KI-Antworten von DataForSEO einheitliche Antworten mit Quellen."
+    },
+    "src/server/features/ai-visibility/repositories/aiVisibilityConfigurationRepository.ts": {
+      "name": "Speicher Konfiguration",
+      "description": "Liest und speichert Verfolgung, Fragen, Läufe und Beobachtungen."
+    },
+    "src/server/features/ai-visibility/repositories/AiVisibilityRepository.ts": {
+      "name": "Speicher KI-Sichtbarkeit",
+      "description": "Legt Läufe und Antworten an und liest sie."
+    },
+    "src/server/features/ai-visibility/repositories/aiVisibilityRetentionRepository.ts": {
+      "name": "Aufräumen Verlauf",
+      "description": "Löscht Läufe, die älter als 13 Monate sind, samt Antworten."
+    },
+    "src/server/features/ai-visibility/repositories/aiVisibilityTrendRepository.ts": {
+      "name": "Speicher Verlauf",
+      "description": "Liest die fertigen Läufe für den Verlauf der Sichtbarkeit."
+    },
+    "src/server/features/ai-visibility/services/aiPromptResearch.ts": {
+      "name": "Recherche Fragen",
+      "description": "Recherchiert mögliche Fragen, zuerst zu den Begriffen der Website-Einrichtung."
+    },
+    "src/server/features/ai-visibility/services/aiPromptSuggestions.ts": {
+      "name": "Vorschläge Fragen",
+      "description": "Lässt eine KI Fragen zu einem Thema vorschlagen."
+    },
+    "src/server/features/ai-visibility/services/aiResearchKeywords.ts": {
+      "name": "Einrichtung Recherche",
+      "description": "Startet die bezahlte Einrichtung einmal und liest ihren Stand."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityBilling.ts": {
+      "name": "Abrechnung KI-Läufe",
+      "description": "Hält Guthaben für abgeschickte Fragen zurück und rechnet am Ende ab."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityCollection.ts": {
+      "name": "Sammeln der Antworten",
+      "description": "Teilt einen Lauf in Pakete, schickt sie ab und holt die Antworten ein."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityConfiguration.ts": {
+      "name": "Konfiguration KI-Sichtbarkeit",
+      "description": "Liest Modelle, aktive Fragen, Themen und Umfang der Verfolgung."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityCost.ts": {
+      "name": "Kosten KI-Läufe",
+      "description": "Berechnet, was ein Lauf kostet: Guthaben bei der Online-Version."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityErrors.ts": {
+      "name": "Fehler KI-Sichtbarkeit",
+      "description": "Fehlerarten und verständliche Texte für fehlgeschlagene Antworten."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityExport.ts": {
+      "name": "Export KI-Daten",
+      "description": "Erstellt Exportdateien der KI-Daten mit Link, der auch außerhalb der App funktioniert."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityMarket.ts": {
+      "name": "Markt KI-Sichtbarkeit",
+      "description": "Prüft Land und Sprache der Verfolgung gegen die gewählten Modelle."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityMatching.ts": {
+      "name": "Markenerkennung",
+      "description": "Findet in Antworten die Marke, Namen und eigene Domain."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityMutation.ts": {
+      "name": "Änderungen Verfolgung",
+      "description": "Wendet Änderungen auf die gespeicherte oder eine neue Verfolgung an."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityResults.ts": {
+      "name": "Ergebnisse KI-Sichtbarkeit",
+      "description": "Liest Läufe und Ergebnisse für die App, begrenzt je Abruf."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityRetention.ts": {
+      "name": "Aufräumen Exporte",
+      "description": "Räumt abgelaufene Exporte Stück für Stück auf."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityRunOutcome.ts": {
+      "name": "Lauf abschließen",
+      "description": "Markiert nie eingetroffene Antworten als fehlgeschlagen und schließt den Lauf ab."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityRuns.ts": {
+      "name": "Läufe verwalten",
+      "description": "Beendet fehlgeschlagene Läufe und gleicht aktive mit ihrer Hintergrundaufgabe ab."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilitySchedule.ts": {
+      "name": "Zeitplan KI-Sichtbarkeit",
+      "description": "Schaltet die Verfolgung ein, ändert den Zeitplan oder pausiert sie."
+    },
+    "src/server/features/ai-visibility/services/AiVisibilityService.ts": {
+      "name": "Dienst KI-Sichtbarkeit",
+      "description": "Bündelt die Funktionen der KI-Sichtbarkeit."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilitySetup.ts": {
+      "name": "Verfolgung speichern",
+      "description": "Legt die Verfolgung an oder ändert sie."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityState.ts": {
+      "name": "Zustand Verfolgung",
+      "description": "Liefert die Verfolgung eines Projekts."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityStorage.ts": {
+      "name": "Speicher Exporte",
+      "description": "Löscht KI-Exporte eines Projekts und prüft, ob sie abgelaufen sind."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityTestFixtures.ts": {
+      "name": "Testdaten KI-Sichtbarkeit",
+      "description": "Beispielkunde und Beispiel-Verfolgung für Tests."
+    },
+    "src/server/features/ai-visibility/services/aiVisibilityTrend.ts": {
+      "name": "Trend KI-Sichtbarkeit",
+      "description": "Vergleicht die letzten Tage mit den Tagen davor auf neutralen Fragen."
+    },
+    "src/server/features/ai-visibility/services/scheduledAiVisibility.ts": {
+      "name": "Geplante KI-Prüfungen",
+      "description": "Startet Prüfungen für alle fälligen Verfolgungen."
+    },
+    "src/server/features/ai-visibility/services/websiteTrackingSetup.ts": {
+      "name": "Wochen-Verfolgung vorbereiten",
+      "description": "Richtet aus den ersten drei Themen der Website-Einrichtung eine wöchentliche Verfolgung ein."
+    }
+  }
+}
