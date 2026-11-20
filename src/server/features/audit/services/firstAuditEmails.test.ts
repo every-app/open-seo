@@ -3,8 +3,8 @@ import type { sendLoopsEvent } from "@/server/email/loops-client";
 import { sendFirstAuditEmails } from "./firstAuditEmails";
 
 const mocks = vi.hoisted(() => ({
-  getAuditsCompletedSince: vi.fn(),
-  hasCompletedAuditBefore: vi.fn(),
+  getAuditsFinishedSince: vi.fn(),
+  hasFinishedAuditBefore: vi.fn(),
   getIssueTypePageCountsForAudit: vi.fn(),
   countPagesByFetchClass: vi.fn(),
   sendLoopsEvent: vi.fn<typeof sendLoopsEvent>(),
@@ -18,8 +18,8 @@ vi.mock("cloudflare:workers", () => ({
   waitUntil: vi.fn(),
 }));
 vi.mock("@/server/features/audit/repositories/auditSummaryQueries", () => ({
-  getAuditsCompletedSince: mocks.getAuditsCompletedSince,
-  hasCompletedAuditBefore: mocks.hasCompletedAuditBefore,
+  getAuditsFinishedSince: mocks.getAuditsFinishedSince,
+  hasFinishedAuditBefore: mocks.hasFinishedAuditBefore,
   getIssueTypePageCountsForAudit: mocks.getIssueTypePageCountsForAudit,
 }));
 vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
@@ -30,7 +30,7 @@ vi.mock("@/server/email/loops-client", () => ({
 }));
 
 beforeEach(() => {
-  mocks.getAuditsCompletedSince.mockResolvedValue([
+  mocks.getAuditsFinishedSince.mockResolvedValue([
     {
       id: "audit-1",
       projectId: "project-1",
@@ -41,8 +41,8 @@ beforeEach(() => {
       email: "person@example.com",
     },
   ]);
-  mocks.hasCompletedAuditBefore.mockResolvedValue(false);
-  mocks.countPagesByFetchClass.mockResolvedValue(0);
+  mocks.hasFinishedAuditBefore.mockResolvedValue(false);
+  mocks.countPagesByFetchClass.mockResolvedValue({ blocked: 0 });
   mocks.getIssueTypePageCountsForAudit.mockResolvedValue([
     { issueType: "missing-meta-description", severity: "warning", pages: 9 },
     { issueType: "broken-internal-link", severity: "critical", pages: 2 },
@@ -79,7 +79,7 @@ it("emails a user the summary of their first completed audit", async () => {
 });
 
 it("sends the blocked-crawler email when most pages were blocked", async () => {
-  mocks.countPagesByFetchClass.mockResolvedValue(30);
+  mocks.countPagesByFetchClass.mockResolvedValue({ blocked: 30 });
 
   await sendFirstAuditEmails();
 
@@ -89,7 +89,7 @@ it("sends the blocked-crawler email when most pages were blocked", async () => {
 });
 
 it("does not email users who completed an audit before", async () => {
-  mocks.hasCompletedAuditBefore.mockResolvedValue(true);
+  mocks.hasFinishedAuditBefore.mockResolvedValue(true);
 
   await sendFirstAuditEmails();
 

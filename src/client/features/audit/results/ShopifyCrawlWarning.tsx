@@ -1,5 +1,5 @@
-import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useIsMutating, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   CrawlerAccessForm,
@@ -14,10 +14,9 @@ import {
   AlertTitle,
 } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
-import { ShopifyRateLimitAlert } from "@/client/features/audit/results/ShopifyRateLimitAlert";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
+import { useRerunAudit } from "@/client/features/audit/results/useRerunAudit";
 import { extractHostname } from "@/client/features/audit/shared";
-import { startAudit } from "@/serverFunctions/audit";
 import { listCrawlerCredentials } from "@/serverFunctions/crawlerAccess";
 import {
   SHOPIFY_CRAWLER_ACCESS_DOC_URL,
@@ -25,28 +24,24 @@ import {
 } from "@/shared/crawler-access";
 
 /**
- * Shown instead of the generic crawl warnings when a Shopify storefront
- * throttled or refused the crawl. Shopify's own fix is a crawler-access
- * signature the merchant creates in admin, so the report asks for it first.
+ * Shown instead of the generic bot-protection warning when a Shopify
+ * storefront blocked the crawl without rate limiting it (429s get
+ * ShopifyRateLimitAlert). Shopify's own fix is a crawler-access signature the
+ * merchant creates in admin, so the report asks for it first.
  *
  * The setup steps only show while the domain has no usable signature. Once
- * one is saved they collapse to a single line with the re-run button. An
- * unrendered crawl Shopify still rate limited with the signature asks for
- * rendering instead. Where CRAWLER_ACCESS_SECRET is optional (Every App and
- * self-hosts), the warning says to set it first when it isn't: a signature
- * created too early only runs down its expiry.
+ * one is saved they collapse to a single line with the re-run button. Where
+ * CRAWLER_ACCESS_SECRET is optional (Every App and self-hosts), the warning
+ * says to set it first when it isn't: a signature created too early only runs
+ * down its expiry.
  */
 export function ShopifyCrawlWarning({
   projectId,
   audit,
-  throttled,
 }: {
   projectId: string;
   audit: AuditResultsData["audit"];
-  /** Shopify answered with 429s, not only refusals. */
-  throttled: boolean;
 }) {
-  const navigate = useNavigate();
   const host = extractHostname(audit.startUrl);
   const usedCredentialId = audit.config.crawlerCredentialId;
 
@@ -85,25 +80,10 @@ export function ShopifyCrawlWarning({
   const isSaving =
     useIsMutating({ mutationKey: saveCrawlerCredentialMutationKey }) > 0;
 
-  const rerunMutation = useMutation({
-    mutationFn: () =>
-      startAudit({
-        data: {
-          projectId,
-          startUrl: audit.startUrl,
-          maxPages: audit.config.maxPages,
-          lighthouseStrategy: audit.config.lighthouseStrategy,
-          renderJavaScript: audit.config.renderJavaScript,
-          excludePaths: audit.config.excludePaths,
-        },
-      }),
-    onSuccess: (result) => {
-      void navigate({
-        to: "/p/$projectId/audit",
-        params: { projectId },
-        search: { auditId: result.auditId, tab: "issues" },
-      });
-    },
+  const rerunMutation = useRerunAudit({
+    projectId,
+    audit,
+    renderJavaScript: audit.config.renderJavaScript === true,
   });
 
   const rerunButton = (
@@ -124,14 +104,6 @@ export function ShopifyCrawlWarning({
 
   if (liveCredential) {
     const signedAndStillLimited = liveCredential.id === usedCredentialId;
-    if (signedAndStillLimited && throttled && !audit.config.renderJavaScript) {
-      return (
-        <ShopifyRateLimitAlert
-          projectId={projectId}
-          startUrl={audit.startUrl}
-        />
-      );
-    }
     return (
       <Alert variant={signedAndStillLimited ? "warning" : "success"}>
         {signedAndStillLimited ? <ShieldAlert /> : <ShieldCheck />}

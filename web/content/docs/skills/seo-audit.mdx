@@ -43,11 +43,15 @@ One report on your project's Reports page. It opens with a one-sentence verdict 
 
 ## Auditing a Shopify store
 
-Shopify rate-limits crawlers it hasn't authorized, so an audit of a Shopify
-storefront can come back short: some pages return 429, and the crawl may stop
-before it reaches every URL. The report says so when this happens.
+Shopify often refuses the crawler with 429 (Too Many Requests), so an audit of
+a Shopify storefront can come back short, or with no pages at all. The report
+says so when this happens, and your agent is told to run the audit again with
+Render JavaScript on, which loads pages in a browser and usually gets through.
+In the app, the audit report has a button for it.
 
-If you own the store, you can authorize OpenSEO in about a minute:
+A crawler-access signature doesn't stop these refusals. When Shopify blocks
+the crawler outright instead, the report asks for one. If you own the store,
+you can create it in about a minute:
 
 1. In Shopify admin, go to **Online Store → Preferences → Crawler access** and
    click **Create signature**.

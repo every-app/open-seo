@@ -1,6 +1,7 @@
-import { and, countDistinct, eq, gte, lt } from "drizzle-orm";
+import { and, countDistinct, eq, gte, inArray, lt } from "drizzle-orm";
 import { db } from "@/db";
 import { auditIssues, audits, user } from "@/db/schema";
+import { AuditStatus } from "@/shared/audit-status";
 
 /**
  * Distinct-page counts per issue type for one audit — link-level issues
@@ -20,8 +21,11 @@ export async function getIssueTypePageCountsForAudit(auditId: string) {
     .groupBy(auditIssues.issueType, auditIssues.severity);
 }
 
+// An audit that ran to its end: with results, or refused by the site.
+const FINISHED_STATUSES = [AuditStatus.Completed, AuditStatus.Refused];
+
 // completedAt is ISO text in both dialects, so string comparison orders it.
-export async function getAuditsCompletedSince(since: string) {
+export async function getAuditsFinishedSince(since: string) {
   return db
     .select({
       id: audits.id,
@@ -34,17 +38,22 @@ export async function getAuditsCompletedSince(since: string) {
     })
     .from(audits)
     .innerJoin(user, eq(user.id, audits.startedByUserId))
-    .where(and(eq(audits.status, "completed"), gte(audits.completedAt, since)));
+    .where(
+      and(
+        inArray(audits.status, FINISHED_STATUSES),
+        gte(audits.completedAt, since),
+      ),
+    );
 }
 
-export async function hasCompletedAuditBefore(userId: string, before: string) {
+export async function hasFinishedAuditBefore(userId: string, before: string) {
   const rows = await db
     .select({ id: audits.id })
     .from(audits)
     .where(
       and(
         eq(audits.startedByUserId, userId),
-        eq(audits.status, "completed"),
+        inArray(audits.status, FINISHED_STATUSES),
         lt(audits.completedAt, before),
       ),
     )

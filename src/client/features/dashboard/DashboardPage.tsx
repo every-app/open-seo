@@ -1,3 +1,4 @@
+import { AuditStatus } from "@/shared/audit-status";
 import { Link } from "@tanstack/react-router";
 import { Link2, Settings } from "lucide-react";
 import { EmptyState } from "@/client/components/EmptyState";
@@ -56,7 +57,7 @@ export function DashboardPage({
     queryKey: ["dashboardOverview", projectId],
     queryFn: () => getDashboardOverview({ data: { projectId } }),
     refetchInterval: (query) =>
-      query.state.data?.audit?.status === "running" ? 3000 : false,
+      query.state.data?.audit?.status === AuditStatus.Running ? 3000 : false,
   });
 
   const activation = activationQuery.data;

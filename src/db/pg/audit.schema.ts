@@ -8,6 +8,7 @@ import {
   text,
 } from "drizzle-orm/pg-core";
 import { PAGE_FETCH_CLASSES } from "@/shared/audit-fetch-class";
+import { AuditStatus } from "@/shared/audit-status";
 import { projects } from "./app.schema";
 
 // Timestamps are stored as *text* (same column shape as the SQLite schema); see
@@ -31,10 +32,15 @@ export const audits = pgTable(
     startedByUserId: text("started_by_user_id").notNull(),
     startUrl: text("start_url").notNull(),
     status: text("status", {
-      enum: ["running", "completed", "failed"],
+      enum: [
+        AuditStatus.Running,
+        AuditStatus.Completed,
+        AuditStatus.Refused,
+        AuditStatus.Failed,
+      ],
     })
       .notNull()
-      .default("running"),
+      .default(AuditStatus.Running),
     workflowInstanceId: text("workflow_instance_id"),
     // JSON config: { maxPages, lighthouseStrategy }
     config: text("config").notNull().default("{}"),

@@ -10,11 +10,14 @@ import {
   listAuditLighthouseResults,
   listAuditPages,
 } from "@/server/features/audit/repositories/auditResultsQueries";
+import { isAuditRenderingAllowed } from "@/server/lib/audit/rendering-policy";
+import { parseAuditConfig } from "@/server/lib/audit/types";
 import { AppError } from "@/server/lib/errors";
 import { readStoredLighthousePayload } from "@/server/lib/lighthousePayload";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { runAfterResponse } from "@/server/lib/background";
 import { getJsonFromR2 } from "@/server/lib/r2";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   AUDIT_ISSUE_TYPES,
   CRAWL_STOP_ISSUE_TYPES,
@@ -37,7 +40,15 @@ import {
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
-import { renderingEstimateText } from "@/shared/audit-rendering";
+import {
+  renderingCostText,
+  renderingEstimateText,
+} from "@/shared/audit-rendering";
+import {
+  AuditRefusalReason,
+  auditRefusalReason,
+  AuditStatus,
+} from "@/shared/audit-status";
 import {
   excludePathsSchema,
   MAX_EXCLUDE_PATHS,
@@ -74,6 +85,49 @@ function auditPath(projectId: string, auditId: string) {
   return `/p/${projectId}/audit?auditId=${auditId}`;
 }
 
+type AuditRow = Awaited<ReturnType<typeof resolveAudit>>;
+
+/**
+ * What to tell an agent about an audit the site refused before the crawler
+ * read a page: what refused it and the one thing that gets through. On
+ * Shopify that is rendering, so the reply carries the exact call to make.
+ */
+async function describeRefusedAudit(audit: AuditRow) {
+  const config = parseAuditConfig(audit.config);
+  const reason = auditRefusalReason(
+    await AuditRepository.countPagesByFetchClass(audit.id),
+  );
+  const header = `Audit ${audit.id} (${audit.startUrl}): refused.`;
+  if (reason === AuditRefusalReason.BotProtection) {
+    return `${header} The site's bot protection blocked the crawler before it read a page, so there are no results. ${AUDIT_ISSUE_TYPES["blocked-page"].howToFix}`;
+  }
+  if (config?.sitePlatform !== "shopify") {
+    return `${header} The site rate limited the crawler (429 Too Many Requests) before it read a page, so there are no results. ${AUDIT_ISSUE_TYPES["rate-limited-page"].howToFix}`;
+  }
+  if (config.renderJavaScript) {
+    return `${header} Shopify refused the crawler (429 Too Many Requests) and rendering could not read the pages either, so there are no results. No setting fixes this; a later run may get through.`;
+  }
+  const refused = `${header} Shopify refused the crawler (429 Too Many Requests) before it read a page, so there are no results.`;
+  if (!(await isAuditRenderingAllowed())) {
+    return `${refused} A later run may get through.`;
+  }
+  const rerunArgs = [
+    `projectId "${audit.projectId}"`,
+    `url "${audit.startUrl}"`,
+    `maxPages ${config.maxPages}`,
+    "renderJavaScript true",
+    config.excludePaths?.length
+      ? `excludePaths ${JSON.stringify(config.excludePaths)}`
+      : null,
+    config.lighthouseStrategy === "none" ? null : "runLighthouse true",
+  ].filter((arg) => arg !== null);
+  // Only hosted plans pay for rendering, so only they are told a price.
+  const cost = (await isHostedServerAuthMode())
+    ? ` ${renderingCostText(config.maxPages)}`
+    : "";
+  return `${refused} Waiting or a crawler-access signature does not change this. Start it again with renderJavaScript: true, which loads pages in a browser: run_site_audit with ${rerunArgs.join(", ")}.${cost}`;
+}
+
 // ─── run_site_audit ──────────────────────────────────────────────────────────
 
 const runInputSchema = {
@@ -92,7 +146,7 @@ const runInputSchema = {
     .boolean()
     .optional()
     .describe(
-      `Render JavaScript before auditing, for sites whose content or links load client-side or whose bot protection blocks the plain crawler. Slower. On hosted plans, for 100 pages: ${renderingEstimateText(100)} Hosted plans hold that amount until the audit ends; an account that cannot cover it is refused. A hosted rendered crawl stops after ${RENDERED_CRAWL_TIME_LIMIT_HOURS} hours. Default false.`,
+      `Render JavaScript before auditing, for sites whose content or links load client-side or whose bot protection blocks the plain crawler, or a Shopify store that refuses the plain crawler. Slower. On hosted plans, for 100 pages: ${renderingEstimateText(100)} Hosted plans hold that amount until the audit ends; an account that cannot cover it is refused. A hosted rendered crawl stops after ${RENDERED_CRAWL_TIME_LIMIT_HOURS} hours. Default false.`,
     ),
   excludePaths: excludePathsSchema
     .optional()
@@ -114,7 +168,7 @@ export const runSiteAuditTool = {
   config: {
     title: "Run site audit",
     description:
-      "Start a site audit: crawls the site (robots.txt-aware, same-origin) and checks every page for SEO issues such as broken links, duplicate or missing titles and descriptions, redirect chains, orphan pages, canonical problems, and thin content. Optionally runs Lighthouse on a sample of pages. Pass excludePaths to leave sections of the site out. If the site rate limits the crawler it slows down and retries; pages it still cannot read are flagged as blocked or rate-limited rather than misreported. The audit runs in the background: poll get_audit_status, then read the findings with get_audit_issues.",
+      "Start a site audit: crawls the site (robots.txt-aware, same-origin) and checks every page for SEO issues such as broken links, duplicate or missing titles and descriptions, redirect chains, orphan pages, canonical problems, and thin content. Optionally runs Lighthouse on a sample of pages. Pass excludePaths to leave sections of the site out. If the site rate limits the crawler it slows down and retries; pages it still cannot read are flagged as blocked or rate-limited. Shopify stores often refuse the plain crawler on every request: get_audit_status says so when it happens, and running again with renderJavaScript: true gets through. The audit runs in the background: poll get_audit_status, then read the findings with get_audit_issues.",
     inputSchema: runInputSchema,
     outputSchema: z
       .object({
@@ -234,7 +288,7 @@ export const getAuditStatusTool = {
   config: {
     title: "Get site audit status",
     description:
-      "Check the progress of a site audit: phase, pages crawled, and Lighthouse progress. Omit auditId for the most recent audit. An audit whose run has died is marked failed. Uses no credits. When the audit has finished, read it with get_audit_issues and get_audit_pages.",
+      "Check the progress of a site audit: phase, pages crawled, and Lighthouse progress. Omit auditId for the most recent audit. An audit whose run has died is marked failed; one the site turned away before any page was read is marked refused, with what to do about it. Uses no credits. When the audit has finished, read it with get_audit_issues and get_audit_pages.",
     inputSchema: statusInputSchema,
     outputSchema: z
       .object({
@@ -254,6 +308,21 @@ export const getAuditStatusTool = {
     const auditId = args.auditId ?? (await resolveAudit(args.projectId)).id;
     const status = await AuditService.getStatus(auditId, args.projectId);
 
+    const meta = buildProjectMeta(
+      context,
+      args.projectId,
+      auditPath(args.projectId, status.id),
+    );
+    if (status.status === AuditStatus.Refused) {
+      return mcpResponse({
+        text: await describeRefusedAudit(
+          await resolveAudit(args.projectId, status.id),
+        ),
+        meta,
+        structuredContent: { status: { ...status, crawlStop: null } },
+      });
+    }
+
     const lighthouseNote =
       status.lighthouseTotal > 0
         ? `, lighthouse ${status.lighthouseCompleted + status.lighthouseFailed}/${status.lighthouseTotal}`
@@ -261,7 +330,7 @@ export const getAuditStatusTool = {
     // A completed audit can still have stopped with URLs left unvisited. Say
     // so here, or "completed" reads as "the whole site".
     const crawlStop =
-      status.status === "completed"
+      status.status === AuditStatus.Completed
         ? (await getAuditIssueGroups(status.id)).find((group) =>
             CRAWL_STOP_ISSUE_TYPES.some((type) => type === group.issueType),
           )?.issueType
@@ -276,18 +345,14 @@ export const getAuditStatusTool = {
         ? ` Excluded paths: ${status.excludePaths.join(", ")}.`
         : "";
     const nextStep =
-      status.status === "completed"
+      status.status === AuditStatus.Completed
         ? ` Call get_audit_issues for the issue report${status.lighthouseTotal > 0 ? " and get_audit_lighthouse for the Lighthouse results" : ""}.`
-        : status.status === "failed" && status.pagesCrawled > 0
+        : status.status === AuditStatus.Failed && status.pagesCrawled > 0
           ? ` The audit stopped early but kept results for the ${status.pagesCrawled} pages it crawled — call get_audit_issues for the partial issue report.`
           : "";
     return mcpResponse({
       text: `Audit ${status.id} (${status.startUrl}): ${status.status}${status.errorCode ? ` (${status.errorCode})` : ""} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${excludeNote}${partialNote}${nextStep}`,
-      meta: buildProjectMeta(
-        context,
-        args.projectId,
-        auditPath(args.projectId, status.id),
-      ),
+      meta,
       structuredContent: {
         status: { ...status, crawlStop: crawlStop ?? null },
       },
@@ -444,7 +509,12 @@ export const getAuditIssuesTool = {
       const shown = samples.get(entry.issueType) ?? [];
       const remaining = entry.count - shown.length;
       if (remaining > 0) sampled = true;
-      const howToFix = getIssueDescriptor(entry.issueType)?.howToFix;
+      // A refused audit's lead paragraph already says what to do; the
+      // issue's general fix would repeat it or contradict it.
+      const howToFix =
+        audit.status === AuditStatus.Refused
+          ? null
+          : getIssueDescriptor(entry.issueType)?.howToFix;
       return [
         `[${entry.severity}] ${entry.title} (${entry.issueType}): ${entry.count} affected page${entry.count === 1 ? "" : "s"}`,
         howToFix ? `  Fix: ${howToFix}` : null,
@@ -467,13 +537,17 @@ export const getAuditIssuesTool = {
       total === 0
         ? args.severity || args.issueType
           ? `No issues found for audit ${audit.id} matching the given filters.`
-          : audit.status === "running"
+          : audit.status === AuditStatus.Running
             ? `Audit ${audit.id} is still running; issues are recorded when it finishes. Poll get_audit_status.`
-            : audit.status === "failed" && audit.pagesCrawled === 0
+            : audit.status === AuditStatus.Failed && audit.pagesCrawled === 0
               ? `Audit ${audit.id} failed before crawling any pages, so it has no results. get_audit_status shows the error; call run_site_audit to try again.`
               : `Audit ${audit.id} found no issues across ${audit.pagesCrawled} crawled page${audit.pagesCrawled === 1 ? "" : "s"}.`
         : [
-            `Audit ${audit.id} (${audit.startUrl}): ${total} issues across ${summary.length} issue type${summary.length === 1 ? "" : "s"}.`,
+            // A refused audit's one issue is the refusal itself; lead with
+            // what happened and the fix instead of an issue count.
+            audit.status === AuditStatus.Refused
+              ? await describeRefusedAudit(audit)
+              : `Audit ${audit.id} (${audit.startUrl}): ${total} issues across ${summary.length} issue type${summary.length === 1 ? "" : "s"}.`,
             ...sections,
             sampled
               ? `Up to ${ISSUE_SAMPLE_SIZE} affected URLs are listed per issue type — open the audit in the dashboard for the full list.`
@@ -821,7 +895,7 @@ export const getAuditLighthouseTool = {
         .map(toLighthouseResult);
       return mcpResponse({
         text: [
-          `Audit ${audit.id} (${audit.startUrl}): ${results.length} Lighthouse result${results.length === 1 ? "" : "s"}. Scores are 0–100.${audit.status === "running" ? " The audit is still running, so more results may follow." : ""}`,
+          `Audit ${audit.id} (${audit.startUrl}): ${results.length} Lighthouse result${results.length === 1 ? "" : "s"}. Scores are 0–100.${audit.status === AuditStatus.Running ? " The audit is still running, so more results may follow." : ""}`,
           formatMcpTable(results, LIGHTHOUSE_COLUMNS),
           "Pass url to list the issues Lighthouse found on a page.",
         ].join("\n"),

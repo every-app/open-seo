@@ -90,6 +90,17 @@ The Shopify-specific parts:
 - Every 429 logs `site_audit:rate_limited` with the URL, Retry-After, response
   time, `cf-cache-status`, whether a merchant signature was sent, and the
   body's first characters.
+- An audit that read no page because the site refused every one ends
+  `refused`, not `completed` (`auditRefusalReason` in
+  `src/shared/audit-status.ts`). A crawl refused part way stays `completed`
+  with its stop issue. Audits that finished before this status existed keep
+  `completed`: restating them means reading every audit's page rows.
+- For a Shopify audit with pages refused by 429, the report and the MCP audit
+  tools say to run it again with Render JavaScript, and no longer ask for a
+  crawler-access signature. In the 30 days to 2026-11-20 signed and unsigned
+  plain audits ended at one page equally often (49% and 45%), a later plain
+  run got through 43% of the time whatever the wait, and a rendered rerun got
+  through 97% of the time.
 
 ## Ruled out
 

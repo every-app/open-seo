@@ -1,3 +1,4 @@
+import type { AuditStatus } from "@/shared/audit-status";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { sort } from "remeda";
 import { safeHostname } from "@/shared/safe-url";
@@ -34,7 +35,7 @@ export type DashboardActivation = {
 
 export type DashboardAuditSummary = {
   id: string;
-  status: "running" | "completed" | "failed";
+  status: AuditStatus;
   pagesCrawled: number;
   // The crawl's page limit; small sites finish below it.
   pagesTotal: number;

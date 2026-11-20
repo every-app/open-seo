@@ -10,6 +10,7 @@
  *     zombie rows die even if nobody ever reopens the page, and the instance
  *     error is copied into the row before Workflows retention deletes it.
  */
+import { AuditStatus } from "@/shared/audit-status";
 import { env } from "cloudflare:workers";
 import { and, eq, lt } from "drizzle-orm";
 import { db } from "@/db";
@@ -113,7 +114,7 @@ export async function reconcileStaleAudits() {
         organizationId: project.organizationId,
         properties: {
           project_id: audit.projectId,
-          status: "failed",
+          status: AuditStatus.Failed,
           reconciled_by: "watchdog",
           error_code: errorInfo.errorCode,
           pages_crawled: audit.pagesCrawled,
@@ -145,7 +146,7 @@ async function getStaleRunningAudits(cutoff: Date, limit: number) {
   // starve real zombies.
   return db.query.audits.findMany({
     where: and(
-      eq(audits.status, "running"),
+      eq(audits.status, AuditStatus.Running),
       lt(audits.startedAt, startedBefore),
     ),
     orderBy: audits.startedAt,

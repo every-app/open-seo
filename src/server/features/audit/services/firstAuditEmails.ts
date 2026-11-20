@@ -2,9 +2,9 @@ import { sort } from "remeda";
 import { sendLoopsEvent } from "@/server/email/loops-client";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import {
-  getAuditsCompletedSince,
+  getAuditsFinishedSince,
   getIssueTypePageCountsForAudit,
-  hasCompletedAuditBefore,
+  hasFinishedAuditBefore,
 } from "@/server/features/audit/repositories/auditSummaryQueries";
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import {
@@ -27,19 +27,17 @@ export async function sendFirstAuditEmails() {
   if (!apiKey || !baseUrl) return;
 
   const since = new Date(Date.now() - FIRST_AUDIT_LOOKBACK_MS).toISOString();
-  for (const audit of await getAuditsCompletedSince(since)) {
+  for (const audit of await getAuditsFinishedSince(since)) {
     try {
       if (
         !audit.completedAt ||
-        (await hasCompletedAuditBefore(audit.userId, audit.completedAt))
+        (await hasFinishedAuditBefore(audit.userId, audit.completedAt))
       ) {
         continue;
       }
 
-      const blockedPages = await AuditRepository.countPagesByFetchClass(
-        audit.id,
-        "blocked",
-      );
+      const { blocked: blockedPages } =
+        await AuditRepository.countPagesByFetchClass(audit.id);
       const issues = sort(
         (await getIssueTypePageCountsForAudit(audit.id)).map((row) => ({
           ...row,

@@ -1,3 +1,4 @@
+import { AuditStatus } from "@/shared/audit-status";
 import {
   aliasedTable,
   and,
@@ -180,7 +181,10 @@ async function buildInventory(userId: string, organizationIds: string[]) {
         .where(
           and(
             inArray(audits.projectId, projectIds),
-            or(gt(audits.startedAt, auditCutoff), eq(audits.status, "running")),
+            or(
+              gt(audits.startedAt, auditCutoff),
+              eq(audits.status, AuditStatus.Running),
+            ),
           ),
         ),
     )
@@ -252,7 +256,7 @@ async function buildInventory(userId: string, organizationIds: string[]) {
         .where(
           and(
             inArray(audits.projectId, projectIds),
-            eq(audits.status, "running"),
+            eq(audits.status, AuditStatus.Running),
           ),
         ),
     )

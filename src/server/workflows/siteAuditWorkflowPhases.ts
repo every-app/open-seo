@@ -22,6 +22,7 @@ import type { DetectedIssue } from "@/server/lib/audit/issues/page-reporters";
 import type { AuditConfig } from "@/server/lib/audit/types";
 import type { CrawlerAccess } from "@/shared/crawler-access";
 import type { RenderUsage } from "@/shared/audit-rendering";
+import { auditRefusalReason, AuditStatus } from "@/shared/audit-status";
 import { captureServerEvent } from "@/server/lib/posthog";
 import {
   runCrawlPhase,
@@ -397,15 +398,14 @@ async function finalizeAudit(args: {
   });
 
   await pgStep(step, "finalize", DB_STEP, async () => {
-    const blockedPages = await AuditRepository.countPagesByFetchClass(
-      auditId,
-      "blocked",
-    );
-    const rateLimitedPages = await AuditRepository.countPagesByFetchClass(
-      auditId,
-      "rate_limited",
-    );
+    const pages = await AuditRepository.countPagesByFetchClass(auditId);
+    // A site that turned the crawler away before it read a page leaves
+    // nothing to report on, which "completed" would hide.
+    const status = auditRefusalReason(pages)
+      ? AuditStatus.Refused
+      : AuditStatus.Completed;
     await AuditRepository.completeAudit(auditId, workflowInstanceId, {
+      status,
       pagesCrawled: crawl.pagesCrawled,
       pagesTotal: crawl.pagesCrawled,
     });
@@ -415,12 +415,12 @@ async function finalizeAudit(args: {
       organizationId: billingCustomer.organizationId,
       properties: {
         project_id: projectId,
-        status: "completed",
+        status,
         pages_crawled: crawl.pagesCrawled,
         pages_total: crawl.pagesCrawled,
         crawl_completed: crawl.completed,
-        pages_blocked: blockedPages,
-        pages_rate_limited: rateLimitedPages,
+        pages_blocked: pages.blocked,
+        pages_rate_limited: pages.rate_limited,
         run_lighthouse: config.lighthouseStrategy !== "none",
       },
     });

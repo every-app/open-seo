@@ -39,7 +39,7 @@ vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
     updateAuditProgress: updateAuditProgressMock,
     hasPagesForAudit: vi.fn().mockResolvedValue(true),
     insertIssues: vi.fn(),
-    countPagesByFetchClass: vi.fn().mockResolvedValue(0),
+    countPagesByFetchClass: vi.fn(),
     completeAudit: vi.fn(),
   },
 }));
@@ -70,6 +70,7 @@ import { AuditRepository } from "@/server/features/audit/repositories/AuditRepos
 import { getAuditScratchpad } from "@/server/features/audit/AuditScratchpad";
 import { runCrawlPhase } from "@/server/workflows/siteAuditWorkflowCrawl";
 import { runMultipageChecks } from "@/server/lib/audit/issues/multipage";
+import { AuditStatus } from "@/shared/audit-status";
 
 const PHASE_PARAMS = {
   auditId: "audit-1",
@@ -206,51 +207,90 @@ describe("runLighthousePhase", () => {
   });
 });
 
-describe("app-shell crawl coverage", () => {
+/** Runs every phase with discovery and the crawl mocked out. */
+async function runPhasesAfterCrawl(hasUnreadShells: boolean) {
+  vi.mocked(runCrawlPhase).mockResolvedValue({
+    pagesCrawled: 2,
+    completed: true,
+  });
+  vi.mocked(runMultipageChecks).mockResolvedValue({
+    issues: [],
+    hasUnreadShells,
+  });
+  const finalize = vi
+    .fn()
+    .mockResolvedValue({ brokenLinks: [], orphanPages: [] });
+  // Only these two scratchpad methods are reached after mocked discovery/crawl.
+  // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
+  vi.mocked(getAuditScratchpad).mockReturnValue({
+    runFinalizeChecks: finalize,
+    destroy: vi.fn(),
+  } as unknown as ReturnType<typeof getAuditScratchpad>);
+  pgStepMock.mockImplementation(
+    async (
+      _step: unknown,
+      name: string,
+      _config: unknown,
+      callback: () => Promise<unknown>,
+    ) => {
+      if (name === "discover-urls-v2")
+        return { robotsText: "", seededCount: 2 };
+      return callback();
+    },
+  );
+  // pgStep is mocked, so no WorkflowStep implementation is needed.
+  // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
+  await runAuditPhases({} as never, {
+    ...PHASE_PARAMS,
+    config: { maxPages: 50, lighthouseStrategy: "none" },
+    renderUsage: { cloudflareAttempts: 0, contextCredits: 0 },
+  });
+  return finalize;
+}
+
+describe("after the crawl", () => {
+  beforeEach(() => {
+    vi.mocked(AuditRepository.countPagesByFetchClass).mockResolvedValue({
+      ok: 2,
+      blocked: 0,
+      rate_limited: 0,
+      error: 0,
+    });
+  });
+
   it.each([false, true])(
     "allows orphan checks only without unread app shells (shells=%s)",
     async (hasShells) => {
-      vi.mocked(AuditRepository.hasPagesForAudit).mockResolvedValue(true);
-      vi.mocked(runCrawlPhase).mockResolvedValue({
-        pagesCrawled: 2,
-        completed: true,
-      });
-      vi.mocked(runMultipageChecks).mockResolvedValue({
-        issues: [],
-        hasUnreadShells: hasShells,
-      });
-      const finalize = vi
-        .fn()
-        .mockResolvedValue({ brokenLinks: [], orphanPages: [] });
-      // Only these two scratchpad methods are reached after mocked discovery/crawl.
-      // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
-      vi.mocked(getAuditScratchpad).mockReturnValue({
-        runFinalizeChecks: finalize,
-        destroy: vi.fn(),
-      } as unknown as ReturnType<typeof getAuditScratchpad>);
-      pgStepMock.mockImplementation(
-        async (
-          _step: unknown,
-          name: string,
-          _config: unknown,
-          callback: () => Promise<unknown>,
-        ) => {
-          if (name === "discover-urls-v2")
-            return { robotsText: "", seededCount: 2 };
-          return callback();
-        },
-      );
-      // pgStep is mocked, so no WorkflowStep implementation is needed.
-      // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
-      await runAuditPhases({} as never, {
-        ...PHASE_PARAMS,
-        config: { maxPages: 50, lighthouseStrategy: "none" },
-        renderUsage: { cloudflareAttempts: 0, contextCredits: 0 },
-      });
+      const finalize = await runPhasesAfterCrawl(hasShells);
+
       expect(finalize).toHaveBeenCalledWith({
         startUrl: "https://example.com/",
         crawlCompleted: !hasShells,
       });
+    },
+  );
+
+  // The status is what every reader keys on: a refused audit has no results,
+  // while a crawl refused part way still has the pages it read.
+  it.each([
+    { ok: 0, rate_limited: 1, blocked: 0, status: AuditStatus.Refused },
+    { ok: 0, rate_limited: 0, blocked: 2, status: AuditStatus.Refused },
+    { ok: 40, rate_limited: 3, blocked: 0, status: AuditStatus.Completed },
+  ])(
+    "ends $status with $ok pages read, $rate_limited rate limited, $blocked blocked",
+    async ({ status, ...pages }) => {
+      vi.mocked(AuditRepository.countPagesByFetchClass).mockResolvedValue({
+        ...pages,
+        error: 0,
+      });
+
+      await runPhasesAfterCrawl(false);
+
+      expect(AuditRepository.completeAudit).toHaveBeenCalledWith(
+        "audit-1",
+        "workflow-1",
+        expect.objectContaining({ status }),
+      );
     },
   );
 });

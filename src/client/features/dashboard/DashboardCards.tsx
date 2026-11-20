@@ -49,6 +49,7 @@ import {
   TableRow,
 } from "@/client/components/ui/table";
 import type { DashboardAuditSummary } from "@/server/features/dashboard/services/DashboardService";
+import { AuditStatus } from "@/shared/audit-status";
 
 // Plain string-keyed view of the registry: issue types from the DB are not
 // statically guaranteed to be registry keys.
@@ -233,7 +234,7 @@ export function AuditHealthCard({
       </CardShell>
     );
 
-  if (audit.status === "running") {
+  if (audit.status === AuditStatus.Running) {
     const isLighthouse = audit.currentPhase === "lighthouse";
     const isFinalizing = audit.currentPhase === "finalizing";
     const checked = isLighthouse
@@ -293,7 +294,7 @@ export function AuditHealthCard({
       title="Site health"
       icon={siteHealthIcon}
       titleInfo={
-        audit.status === "completed" ? (
+        audit.status === AuditStatus.Completed ? (
           <span className={cardMetaClass}>
             {audit.pagesCrawled} pages checked · {formatDay(audit.startedAt)}
           </span>
@@ -310,13 +311,19 @@ export function AuditHealthCard({
         </Link>
       }
     >
-      {audit.status === "failed" && (
+      {audit.status === AuditStatus.Failed && (
         <p className="mb-4 text-sm text-destructive">
           The latest scan didn’t finish. Review the results or try again.
         </p>
       )}
+      {audit.status === AuditStatus.Refused && (
+        <p className="mb-4 text-sm text-destructive">
+          Your site refused our crawler, so the latest scan couldn’t reach any
+          pages.
+        </p>
+      )}
       {audit.topIssues.length === 0 ? (
-        audit.status === "completed" ? (
+        audit.status === AuditStatus.Completed ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Check className="size-4 text-success" />
             No issues found — your site looks healthy.

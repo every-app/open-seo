@@ -29,7 +29,6 @@ import {
 } from "@/serverFunctions/audit";
 import { ResultsView } from "@/client/features/audit/results/ResultsView";
 import {
-  BotProtectionAdvice,
   extractHostname,
   extractPathname,
   formatStartedAt,
@@ -37,6 +36,7 @@ import {
   StatusBadge,
 } from "@/client/features/audit/shared";
 import { SUPPORT_EMAIL } from "@/client/lib/support";
+import { AuditStatus } from "@/shared/audit-status";
 
 export function AuditDetail({
   projectId,
@@ -56,13 +56,13 @@ export function AuditDetail({
     queryFn: () => getAuditStatus({ data: { projectId, auditId } }),
     refetchInterval: (query) => {
       const data = query.state.data;
-      return data?.status === "running" ? 3000 : false;
+      return data?.status === AuditStatus.Running ? 3000 : false;
     },
   });
 
-  const isComplete = statusQuery.data?.status === "completed";
-  const isFailed = statusQuery.data?.status === "failed";
-  const isRunning = statusQuery.data?.status === "running";
+  const isFailed = statusQuery.data?.status === AuditStatus.Failed;
+  const isRunning = statusQuery.data?.status === AuditStatus.Running;
+  const isFinished = statusQuery.data !== undefined && !isRunning;
 
   // Failed audits keep whatever pages were crawled before the failure
   // (persistence is per-batch), so fetch results for them too and show the
@@ -70,7 +70,7 @@ export function AuditDetail({
   const resultsQuery = useQuery({
     queryKey: ["audit-results", projectId, auditId],
     queryFn: () => getAuditSummary({ data: { projectId, auditId } }),
-    enabled: isComplete || isFailed,
+    enabled: isFinished,
   });
 
   // isPending (not isLoading) also covers a fetch paused while offline, so
@@ -101,19 +101,6 @@ export function AuditDetail({
   // banner and the zero-page banner, so the zero-page banner doesn't flash.
   const failedWithoutResults =
     isFailed && resultsQuery.isSuccess && !failedWithResults;
-  const results = resultsQuery.data;
-  // A completed crawl that reached one page or none was blocked by the site,
-  // unless that page is an app shell or was rate limited, which the results
-  // explain instead. A failed audit stopped on our side, so it gets the error
-  // code instead.
-  const siteBlocked =
-    isComplete &&
-    status.pagesCrawled <= 1 &&
-    results !== undefined &&
-    !results.issueGroups.some(
-      (group) => group.issueType === "javascript-rendering-suspected",
-    ) &&
-    results.fetchClassCounts.rate_limited === 0;
 
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
@@ -160,21 +147,6 @@ export function AuditDetail({
           </Alert>
         )}
 
-        {siteBlocked && results && (
-          <Alert variant="warning">
-            <AlertCircle />
-            <AlertTitle>
-              This site's bot protection blocked our crawler.
-            </AlertTitle>
-            <AlertDescription>
-              <BotProtectionAdvice
-                projectId={projectId}
-                rendered={results.audit.config.renderJavaScript === true}
-              />
-            </AlertDescription>
-          </Alert>
-        )}
-
         {failedWithResults && (
           <Alert variant="warning">
             <AlertCircle />
@@ -191,19 +163,18 @@ export function AuditDetail({
           </Alert>
         )}
 
-        {(isComplete || isFailed) && (
+        {isFinished && (
           <QueryState
             query={resultsQuery}
             errorFallback="Failed to load the audit results"
           >
             {(data) =>
-              (isComplete || failedWithResults) && (
+              (!isFailed || failedWithResults) && (
                 <ResultsView
                   projectId={projectId}
                   data={data}
                   tab={tab}
                   onTabChange={onTabChange}
-                  siteBlocked={siteBlocked}
                 />
               )
             }

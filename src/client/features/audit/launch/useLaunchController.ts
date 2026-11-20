@@ -1,3 +1,4 @@
+import { AuditStatus } from "@/shared/audit-status";
 import { useRef, useState } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -77,7 +78,7 @@ export function useLaunchController({
     queryFn: () => getAuditHistory({ data: { projectId } }),
     // Keep in-progress rows live so status and page counts don't need a reload.
     refetchInterval: (query) =>
-      query.state.data?.some((audit) => audit.status === "running")
+      query.state.data?.some((audit) => audit.status === AuditStatus.Running)
         ? 5000
         : false,
   });

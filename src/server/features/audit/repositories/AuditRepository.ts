@@ -4,6 +4,7 @@
  * audit_pages, audit_issues, and stored Lighthouse results. Link edges live
  * in the per-audit scratchpad Durable Object, not here.
  */
+import { AuditStatus } from "@/shared/audit-status";
 import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -40,7 +41,7 @@ async function createAudit(data: {
     startUrl: data.startUrl,
     workflowInstanceId: data.workflowInstanceId,
     config: JSON.stringify(data.config),
-    status: "running",
+    status: AuditStatus.Running,
     pagesTotal: data.pagesTotal,
     lighthouseTotal: data.lighthouseTotal,
     currentPhase: "discovery",
@@ -86,6 +87,7 @@ async function completeAudit(
   auditId: string,
   workflowInstanceId: string,
   data: {
+    status: AuditStatus.Completed | AuditStatus.Refused;
     pagesCrawled: number;
     pagesTotal: number;
   },
@@ -95,16 +97,15 @@ async function completeAudit(
   await db
     .update(audits)
     .set({
-      status: "completed",
       completedAt: new Date().toISOString(),
-      currentPhase: "completed",
+      currentPhase: data.status,
       ...data,
     })
     .where(
       and(
         eq(audits.id, auditId),
         eq(audits.workflowInstanceId, workflowInstanceId),
-        eq(audits.status, "running"),
+        eq(audits.status, AuditStatus.Running),
       ),
     );
 }
@@ -124,7 +125,7 @@ async function failAudit(
   await db
     .update(audits)
     .set({
-      status: "failed",
+      status: AuditStatus.Failed,
       completedAt: new Date().toISOString(),
       currentPhase: "failed",
       ...(errorInfo && {
@@ -137,7 +138,7 @@ async function failAudit(
       and(
         eq(audits.id, auditId),
         eq(audits.workflowInstanceId, workflowInstanceId),
-        eq(audits.status, "running"),
+        eq(audits.status, AuditStatus.Running),
       ),
     );
 }
@@ -284,20 +285,18 @@ async function getPagesForAudit(auditId: string) {
     .where(eq(auditPages.auditId, auditId));
 }
 
+/** How many of an audit's pages ended in each fetch outcome. */
 async function countPagesByFetchClass(
   auditId: string,
-  fetchClass: PageFetchClass,
-): Promise<number> {
+): Promise<Record<PageFetchClass, number>> {
   const rows = await db
-    .select({ pages: count() })
+    .select({ fetchClass: auditPages.fetchClass, pages: count() })
     .from(auditPages)
-    .where(
-      and(
-        eq(auditPages.auditId, auditId),
-        eq(auditPages.fetchClass, fetchClass),
-      ),
-    );
-  return rows[0]?.pages ?? 0;
+    .where(eq(auditPages.auditId, auditId))
+    .groupBy(auditPages.fetchClass);
+  const counts = { ok: 0, blocked: 0, rate_limited: 0, error: 0 };
+  for (const row of rows) counts[row.fetchClass] = row.pages;
+  return counts;
 }
 
 async function hasPagesForAudit(auditId: string): Promise<boolean> {
@@ -338,7 +337,8 @@ async function getAuditUsageForOrganization(organizationId: string) {
       (total, row) => total + row.pagesTotal + row.lighthouseTotal,
       0,
     ),
-    runningCount: rows.filter((row) => row.status === "running").length,
+    runningCount: rows.filter((row) => row.status === AuditStatus.Running)
+      .length,
   };
 }
 

@@ -1,3 +1,4 @@
+import { AuditStatus } from "@/shared/audit-status";
 import {
   getAiVisibilityTrackerTool,
   generateAiVisibilityPromptsTool,
@@ -210,7 +211,7 @@ const auditIsRunning = (result: unknown): boolean => {
     typeof status === "object" &&
     status !== null &&
     "status" in status &&
-    status.status === "running"
+    status.status === AuditStatus.Running
   );
 };
 

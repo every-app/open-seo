@@ -1,3 +1,4 @@
+import { AuditStatus } from "@/shared/audit-status";
 import { markOnboardingMilestone } from "@/server/email/onboarding-drip";
 import {
   auditRenderingUnavailableMessage,
@@ -187,7 +188,7 @@ async function getStatus(auditId: string, projectId: string) {
   // Self-heal audits whose workflow died without reaching the mark-failed
   // step (instance terminated/errored, instance expired from retention, ...).
   // Without this they stay "running" forever and hold capacity.
-  if (audit.status === "running") {
+  if (audit.status === AuditStatus.Running) {
     const reconciled = await reconcileRunningAudit(audit);
     if (reconciled) {
       audit =
@@ -247,7 +248,7 @@ async function remove(auditId: string, projectId: string) {
     throw new AppError("NOT_FOUND");
   }
 
-  if (audit.status === "running") {
+  if (audit.status === AuditStatus.Running) {
     if (!audit.workflowInstanceId) {
       throw new AppError(
         "CONFLICT",

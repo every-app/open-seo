@@ -4,6 +4,7 @@
  * Each step is durable - if a step fails, it retries without redoing
  * completed steps.
  */
+import { AuditStatus } from "@/shared/audit-status";
 import {
   WorkflowEntrypoint,
   type WorkflowEvent,
@@ -137,7 +138,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
         );
         // A completed audit (e.g. cleanup failed after finalize) stays
         // completed, so it gets no failure telemetry either.
-        if (runningAudit?.status !== "running") return;
+        if (runningAudit?.status !== AuditStatus.Running) return;
         await AuditRepository.failAudit(auditId, event.instanceId, {
           ...errorInfo,
           failedPhase: runningAudit?.currentPhase ?? null,
@@ -167,7 +168,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
           organizationId: billingCustomer.organizationId,
           properties: {
             project_id: projectId,
-            status: "failed",
+            status: AuditStatus.Failed,
             error_code: errorInfo.errorCode,
             failed_phase: runningAudit?.currentPhase,
             pages_crawled: runningAudit?.pagesCrawled,
