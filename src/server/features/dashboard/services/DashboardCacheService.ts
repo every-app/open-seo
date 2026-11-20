@@ -63,7 +63,9 @@ async function readThrough<T>(input: {
     const value = input.schema.parse(await input.load());
     const result = { value, fetchedAt: new Date().toISOString() };
     if (input.shouldCache?.(value) ?? true)
-      await setCached(key, result, 90 * 86400);
+      await setCached(key, result, 90 * 86400).catch((error) => {
+        console.error("dashboard.cache-write failed:", error);
+      });
     await DataRefreshClaimRepository.finish(key, token, 0);
     return { ...result, stale: false, refreshError: null };
   } catch (error) {

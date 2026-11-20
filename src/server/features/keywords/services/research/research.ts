@@ -387,7 +387,10 @@ export async function research(
               creditFeature,
             );
 
-  await setCached(cacheKey, result, CACHE_TTL.researchResult);
+  // The research is already paid for, so a failed cache write must not fail it.
+  await setCached(cacheKey, result, CACHE_TTL.researchResult).catch((error) => {
+    console.error("keywords.research.cache-write failed:", error);
+  });
   // Keyword metrics are stored per country, so local rows are not persisted.
   if (!effectiveInput.locationName)
     void persistRows(effectiveInput, result.rows);

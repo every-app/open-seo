@@ -8,7 +8,7 @@ import {
 } from "@/server/lib/dataforseo";
 import { serpSnapshotItemSchema } from "@/server/lib/dataforseo/serp";
 import { AppError } from "@/server/lib/errors";
-import { getCached, setCached } from "@/server/lib/r2-cache";
+import { getCachedStrict, setCached } from "@/server/lib/r2-cache";
 
 // Polling stops 40 s into the call so it answers inside the 60 s many MCP
 // clients wait. Reads usually all finish within about 20 s.
@@ -195,7 +195,9 @@ export async function readMergedSerps(
   const deadline = Date.now() + READ_COLLECT_MS;
   const receipts = await Promise.all(
     requests.map(async ({ receiptKey }) => {
-      const receipt = readReceiptSchema.safeParse(await getCached(receiptKey));
+      const receipt = readReceiptSchema.safeParse(
+        await getCachedStrict(receiptKey),
+      );
       return receipt.success ? receipt.data : null;
     }),
   );

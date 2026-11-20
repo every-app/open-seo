@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { sortBy } from "remeda";
+import { describeError } from "@/server/lib/errors";
 
 /**
  * Cache TTL constants in seconds.
@@ -34,19 +35,35 @@ export async function buildCacheKey(
 }
 
 /**
- * Get a cached JSON value from R2. Returns null on miss or expiry.
+ * Get a cached JSON value from R2. Returns null on miss or expiry, and when R2
+ * is failing, so the caller fetches live instead of failing the user's action.
  * Callers should validate the shape with Zod before trusting it — schema
  * drift between writes and reads is otherwise silent.
  */
 export async function getCached(key: string): Promise<unknown> {
+  try {
+    return await getCachedStrict(key);
+  } catch (error) {
+    console.error(`r2-cache.read failed (${key}): ${describeError(error)}`);
+    return null;
+  }
+}
+
+/**
+ * getCached for entries whose miss would buy paid work again (read receipts)
+ * or tell the caller something false (a saved result "expired"): an R2
+ * failure throws instead of reading as a miss.
+ */
+export async function getCachedStrict(key: string): Promise<unknown> {
   const obj = await env.R2.get(`${CACHE_PREFIX}${key}`);
   if (!obj) return null;
 
   const expiresAt = obj.customMetadata?.expiresAt;
   if (expiresAt && Date.parse(expiresAt) < Date.now()) return null;
 
+  const body = await obj.text();
   try {
-    return JSON.parse(await obj.text());
+    return JSON.parse(body);
   } catch {
     return null;
   }

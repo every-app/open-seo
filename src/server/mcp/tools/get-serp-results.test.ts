@@ -15,6 +15,7 @@ vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/lib/r2-cache", async (importOriginal) => ({
   ...(await importOriginal<typeof r2CacheModule>()),
   getCached: async (key: string) => mocks.cache.get(key) ?? null,
+  getCachedStrict: async (key: string) => mocks.cache.get(key) ?? null,
   setCached: async (key: string, value: unknown) => {
     mocks.cache.set(key, value);
   },

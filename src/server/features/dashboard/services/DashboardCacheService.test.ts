@@ -19,6 +19,7 @@ const state = await vi.hoisted(async () => {
     client,
     db: drizzle(client),
     cache: new Map<string, unknown>(),
+    cacheWritesFail: false,
     startAudit: vi.fn(),
     latestAudit: vi.fn(),
   };
@@ -40,12 +41,14 @@ vi.mock("@/server/lib/r2-cache", async (importOriginal) => ({
   ...(await importOriginal<typeof R2Cache>()),
   getCached: async (key: string) => state.cache.get(key) ?? null,
   setCached: async (key: string, data: unknown) => {
+    if (state.cacheWritesFail) throw new Error("put: R2 unavailable (10043)");
     state.cache.set(key, data);
   },
 }));
 
 beforeEach(async () => {
   state.cache.clear();
+  state.cacheWritesFail = false;
   state.latestAudit.mockResolvedValue(null);
   state.startAudit.mockResolvedValue({ auditId: "audit" });
   await state.client.executeMultiple("DELETE FROM data_refresh_claims;");
@@ -133,6 +136,16 @@ it("keeps stale results and backs off after a failed paid refresh", async () => 
   load.mockRejectedValue(new Error("provider unavailable"));
   const stale = await DashboardCacheService.readThrough(input(load));
   expect(stale).toMatchObject({ value: ["saved"], stale: true });
+  await DashboardCacheService.readThrough(input(load));
+  expect(load).toHaveBeenCalledTimes(2);
+});
+
+it("returns loaded data when the cache save fails, without backing off", async () => {
+  state.cacheWritesFail = true;
+  const load = vi.fn(async () => ["fresh"]);
+  expect((await DashboardCacheService.readThrough(input(load))).value).toEqual([
+    "fresh",
+  ]);
   await DashboardCacheService.readThrough(input(load));
   expect(load).toHaveBeenCalledTimes(2);
 });

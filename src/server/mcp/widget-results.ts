@@ -2,7 +2,11 @@ import type { CallToolResult } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { DashboardCacheService } from "@/server/features/dashboard/services/DashboardCacheService";
 import { AppError } from "@/server/lib/errors";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import {
+  buildCacheKey,
+  getCachedStrict,
+  setCached,
+} from "@/server/lib/r2-cache";
 import type { ToolAuthContext } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import {
@@ -84,7 +88,7 @@ export async function displayWidgetResult(
   auth: ResultAuth,
 ): Promise<CallToolResult> {
   const key = await resultKey(tool, args.projectId, args.resultId, auth);
-  const snapshot = widgetSnapshotSchema.safeParse(await getCached(key));
+  const snapshot = widgetSnapshotSchema.safeParse(await getCachedStrict(key));
   if (!snapshot.success) {
     throw new AppError(
       "NOT_FOUND",

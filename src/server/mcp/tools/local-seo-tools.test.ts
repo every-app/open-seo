@@ -40,6 +40,7 @@ vi.mock("@/server/lib/r2-cache", () => ({
   buildCacheKey: async (prefix: string, params: Record<string, unknown>) =>
     `${prefix}:${JSON.stringify(params)}`,
   getCached: mocks.getCached,
+  getCachedStrict: mocks.getCached,
   setCached: mocks.setCached,
 }));
 

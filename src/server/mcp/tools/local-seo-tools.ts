@@ -15,7 +15,12 @@ import {
   type LocalSerpTaskOutcome,
 } from "@/server/lib/dataforseo";
 import { AppError } from "@/server/lib/errors";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import {
+  buildCacheKey,
+  getCached,
+  getCachedStrict,
+  setCached,
+} from "@/server/lib/r2-cache";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import {
@@ -675,7 +680,11 @@ export const listBusinessCategoriesTool = {
       if (!all) {
         // Free at DataForSEO, so this skips the metered client — see index.ts.
         all = (await fetchBusinessListingsCategories()).data;
-        await setCached(cacheKey, all, BUSINESS_CATEGORIES_TTL_SECONDS);
+        await setCached(cacheKey, all, BUSINESS_CATEGORIES_TTL_SECONDS).catch(
+          (error) => {
+            console.error("local-seo.categories.cache-write failed:", error);
+          },
+        );
       }
 
       const query = args.query?.toLowerCase();
@@ -992,7 +1001,7 @@ export const getLocalRankGridTool = {
       languageCode,
     });
     const receipt = rankGridReceiptSchema.safeParse(
-      await getCached(receiptKey),
+      await getCachedStrict(receiptKey),
     );
     let taskIds: Array<string | null>;
     if (receipt.success) {
