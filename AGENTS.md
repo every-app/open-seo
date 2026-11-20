@@ -67,9 +67,3 @@ Do not mine an entire session for papercuts or start a broad cleanup unless the 
 Reviewer context lives in `docs/maintainers/review-guidelines.md`: the hard invariants (tenant scoping, dual-dialect persistence, billing seams, SSRF handling) and the false-positive controls that keep reviewers from flagging intentional behavior. After a merge-ready or other code review verifies a finding, add to that file only when the finding exposes a recurring or high-risk repository invariant that existing context and automated checks do not capture. Do not promote one-off bugs or preferences into permanent review rules.
 
 Changes to `AGENTS.md`, `.claude/CLAUDE.md`, `.agents/skills/**`, `.github/**`, and `docs/maintainers/review-guidelines.md` alter the review control plane and must receive explicit maintainer review. CODEOWNERS requests that review; where repository settings allow, enable GitHub's requirement for code-owner approval.
-
-## Floorplan
-
-Die Karte des Projekts liegt in `floorplan/` (`floorplan/index.html` im Browser öffnen; Fragen an die Karte:
-`node floorplan/serve.mjs`). Nach Änderungen an Code, Dateien oder Struktur mit dem Skill `floorplan` aktualisieren und
-mit committen; `floorplan/.cache/` bleibt draußen.

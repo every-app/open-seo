@@ -11,3 +11,9 @@ Stand: 2026-11-20 · Status: **pausiert** (läuft derzeit nicht)
 - Fertig: eigener Commit auf `chore/ignore-backups-compose-dataforseo-env` – Backups beim Selbsthosten ignoriert,
   DataForSEO-Key wird an die Laufzeit durchgereicht (Key nur aus dem Tresor).
 - Offen: eigenen Branch mit `upstream/main` abgleichen, bevor es wieder genutzt wird.
+
+## Floorplan
+
+Die Karte des Projekts liegt in `floorplan/` (`floorplan/index.html` im Browser öffnen; Fragen an die Karte:
+`node floorplan/serve.mjs`). Nach Änderungen an Code, Dateien oder Struktur mit dem Skill `floorplan` aktualisieren und
+mit committen; `floorplan/.cache/` bleibt draußen.
