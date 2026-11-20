@@ -15,6 +15,7 @@ const DISPOSABLE_EMAIL_DOMAINS = new Set<string>([
   "burnermail.io",
   "dispostable.com",
   "emailondeck.com",
+  "euploading.com",
   "fakeinbox.com",
   "getairmail.com",
   "getnada.com",
