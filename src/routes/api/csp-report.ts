@@ -10,7 +10,11 @@ export const Route = createFileRoute("/api/csp-report")({
     handlers: {
       POST: ({ request }) =>
         isHostedAuthMode(env.AUTH_MODE)
-          ? handleCspReport(request, env.CSP_REPORT_RATE_LIMIT)
+          ? handleCspReport(
+              request,
+              env.CSP_REPORT_RATE_LIMIT,
+              env.POSTHOG_HOST,
+            )
           : new Response("Not found", { status: 404 }),
     },
   },

@@ -11,6 +11,8 @@ export const ENFORCED_CSP =
 // Served by src/routes/api/csp-report.ts.
 const CSP_REPORT_PATH = "/api/csp-report";
 
+const TURNSTILE = "https://challenges.cloudflare.com";
+
 /** Where posthog-js sends events and loads its lazy bundles from. */
 function posthogSources(posthogHost: string | undefined) {
   if (!posthogHost || !URL.canParse(posthogHost)) return [];
@@ -29,12 +31,15 @@ function posthogSources(posthogHost: string | undefined) {
  * CSP_REPORT_PATH. It is the enforced policy plus everything a page may load:
  * - scripts: the app's own files, the inline scripts carrying this response's
  *   nonce, Turnstile, and PostHog's lazy bundles. No 'unsafe-inline'.
+ *   'report-sample' allows nothing: it puts the first 40 characters of a
+ *   refused inline script or eval in the report.
  * - styles: inline is allowed, because React, charts, toasts and the map all
  *   write style attributes and <style> tags.
  * - images: the app's own, plus Google's favicon service (which redirects to
  *   gstatic.com) for the domains in AI visibility.
  * - connections: the app (the SAM chat socket is named because older Safari
- *   does not count wss: as 'self') and PostHog.
+ *   does not count wss: as 'self'), PostHog, and Turnstile, whose script
+ *   reports back to its own host.
  * - frames: saved reports (same origin) and the Turnstile challenge.
  */
 export function reportOnlyCsp(options: {
@@ -43,15 +48,14 @@ export function reportOnlyCsp(options: {
   posthogHost: string | undefined;
 }) {
   const posthog = posthogSources(options.posthogHost).join(" ");
-  const turnstile = "https://challenges.cloudflare.com";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${options.nonce}' ${turnstile} ${posthog}`,
+    `script-src 'self' 'nonce-${options.nonce}' 'report-sample' ${TURNSTILE} ${posthog}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://www.google.com https://*.gstatic.com",
     "font-src 'self' data:",
-    `connect-src 'self' wss://${options.host} ${posthog}`,
-    `frame-src 'self' ${turnstile}`,
+    `connect-src 'self' wss://${options.host} ${posthog} ${TURNSTILE}`,
+    `frame-src 'self' ${TURNSTILE}`,
     "worker-src 'self' blob:",
     "form-action 'self'",
     ENFORCED_CSP,
@@ -71,6 +75,7 @@ const reportSchema = z.object({
     "document-uri": z.string().optional(),
     "source-file": z.string().optional(),
     "line-number": z.number().optional(),
+    "script-sample": z.string().optional(),
   }),
 });
 
@@ -107,6 +112,46 @@ function isFromExtension(report: CspReport) {
   );
 }
 
+function originOf(uri: string | undefined) {
+  if (!uri || !URL.canParse(uri)) return undefined;
+  const { origin } = new URL(uri);
+  return origin === "null" ? undefined : origin;
+}
+
+/**
+ * Whether the app itself caused a violation, as far as one report can tell:
+ * - "yes": the blocked resource is on the app's own origin or on one the app
+ *   runs scripts from (Turnstile, PostHog), so the app uses it and this
+ *   directive doesn't list it. Or one of the app's bundles, or a script from
+ *   one of those origins, made the request.
+ * - "maybe": an inline script, an eval, or a data: or blob: URL. A report
+ *   doesn't say who wrote those; `sample` is how the script starts.
+ * - "no": a resource on an origin the app runs nothing from, which an
+ *   extension's stylesheet or an injected tag asked for.
+ */
+function causedByApp(
+  report: CspReport,
+  directive: string,
+  appOrigin: string,
+  posthogHost: string | undefined,
+) {
+  // Here the blocked URL is the app's own page: another site framed it.
+  if (directive === "frame-ancestors") return "no";
+  const scriptOrigins = [TURNSTILE, ...posthogSources(posthogHost)];
+  const blocked = originOf(report["blocked-uri"]);
+  if (blocked && [appOrigin, ...scriptOrigins].includes(blocked)) return "yes";
+  const source = report["source-file"];
+  const byAppScript =
+    source?.startsWith(`${appOrigin}/assets/`) ||
+    scriptOrigins.some((origin) => origin === originOf(source));
+  // Fonts, images and styles load when the page is laid out, and the report
+  // names whichever script made that happen, not one that asked for them.
+  if (byAppScript && !/^(font|img|media|style)-src/.test(directive)) {
+    return "yes";
+  }
+  return blocked ? "no" : "maybe";
+}
+
 /**
  * Takes a browser's report of something the report-only policy would have
  * blocked and writes one `[csp-report]` line to the Worker's logs. Anyone can
@@ -116,6 +161,7 @@ function isFromExtension(report: CspReport) {
 export async function handleCspReport(
   request: Request,
   limiter: RateLimit | undefined,
+  posthogHost: string | undefined,
 ): Promise<Response> {
   const length = Number(request.headers.get("content-length"));
   if (!(length > 0 && length <= MAX_REPORT_BYTES)) {
@@ -130,16 +176,26 @@ export async function handleCspReport(
 
   const report = parsed.data["csp-report"];
   if (!isFromExtension(report)) {
+    // Older browsers send the whole directive, sources and all.
+    const directive =
+      (report["effective-directive"] ?? report["violated-directive"])?.split(
+        " ",
+      )[0] ?? "";
     console.warn(
       "[csp-report]",
       JSON.stringify({
-        directive: (
-          report["effective-directive"] ?? report["violated-directive"]
-        )?.slice(0, 100),
+        ours: causedByApp(
+          report,
+          directive,
+          new URL(request.url).origin,
+          posthogHost,
+        ),
+        directive: directive.slice(0, 100),
         blocked: withoutQuery(report["blocked-uri"]),
         page: withoutQuery(report["document-uri"]),
         source: withoutQuery(report["source-file"]),
         line: report["line-number"],
+        sample: report["script-sample"]?.slice(0, 40),
       }),
     );
   }
