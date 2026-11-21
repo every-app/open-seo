@@ -113,6 +113,7 @@
     "cloudflare": "^5.2.0",
     "cn": "^0.3.0",
     "country-flag-icons": "^1.6.20",
+    "disposable-email-domains-js": "2.3.0",
     "drizzle-orm": "^0.45.2",
     "fast-xml-parser": "^5.4.1",
     "htmlparser2": "^10.1.0",

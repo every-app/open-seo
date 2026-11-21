@@ -97,6 +97,9 @@ importers:
       country-flag-icons:
         specifier: ^1.6.20
         version: 1.6.20
+      disposable-email-domains-js:
+        specifier: 2.3.0
+        version: 2.3.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1)
@@ -4620,6 +4623,9 @@ packages:
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
     engines: {node: '>=0.3.1'}
+
+  disposable-email-domains-js@2.3.0:
+    resolution: {integrity: sha512-7/4mk+SmSiKou8vQmagIpIxdiQxrsmaS4HYCH1LcWY02x//6tz4R0CpoNcH2rZ58bccF4hA/PD6gcXhg1YWinw==}
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -11248,6 +11254,8 @@ snapshots:
   diff3@0.0.3: {}
 
   diff@8.0.4: {}
+
+  disposable-email-domains-js@2.3.0: {}
 
   dom-serializer@2.0.0:
     dependencies:

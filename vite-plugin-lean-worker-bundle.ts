@@ -65,6 +65,14 @@ const EAGER_DENYLIST: Array<{
   },
   {
     requiresCodeSplitting: true,
+    // Thousands of domain names that only sign-up reads.
+    pattern: /node_modules\/disposable-email-domains-js\//,
+    expected:
+      "lazy-loaded behind the dynamic import in " +
+      "src/server/auth/disposable-email.ts",
+  },
+  {
+    requiresCodeSplitting: true,
     // Pre-existing boundary from the site-audit engine, guarded here too.
     pattern: /node_modules\/cheerio\//,
     expected:

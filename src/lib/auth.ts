@@ -9,7 +9,7 @@ import {
 import { captcha } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { isDisposableEmailDomain } from "@/server/auth/disposable-email";
+import { assertSignUpEmailAccepted } from "@/server/auth/disposable-email";
 import * as d1Schema from "@/db/d1/schema";
 import { d1Db } from "@/db/d1/client";
 import { pgDb } from "@/db/pg/client";
@@ -404,11 +404,7 @@ function createAuth() {
             if (!isHostedAuthMode(env.AUTH_MODE)) {
               return { data: user };
             }
-            if (isDisposableEmailDomain(user.email)) {
-              throw new APIError("BAD_REQUEST", {
-                message: "Please sign up with a non-disposable email address.",
-              });
-            }
+            await assertSignUpEmailAccepted(user.email, ctx?.path);
             assertChatGptSignUpEmailVerified(user, ctx?.path);
             // Start new accounts with the analytics choice that applies to
             // this browser, so server-side analytics doesn't run for a

@@ -1,5 +1,6 @@
 import { ACCOUNT_DELETION_SCHEDULED_ERROR } from "@/shared/account-deletion";
 import { CHATGPT_EMAIL_NOT_VERIFIED_CODE } from "@/shared/chatgpt-sign-in";
+import { SIGN_UP_EMAIL_REFUSED_CODE } from "@/shared/sign-up-email";
 
 /**
  * Plain-language copy for OAuth failures, shared by the connect-surface
@@ -40,6 +41,11 @@ export function googleAuthErrorCopy(
         title: "Verify your email with ChatGPT first",
         description:
           "OpenAI hasn't verified the email on your ChatGPT account, so we can't create an OpenSEO account from it. Verify it in ChatGPT, or sign up with Google or email.",
+      };
+    case SIGN_UP_EMAIL_REFUSED_CODE:
+      return {
+        title: "We can't accept that email address",
+        description: "Sign up with a different one.",
       };
     case "state_mismatch":
       return {
