@@ -82,12 +82,36 @@ function withoutQuery(value: string | undefined) {
   return (url.origin === "null" ? url.protocol : url.origin) + url.pathname;
 }
 
+type CspReport = z.infer<typeof reportSchema>["csp-report"];
+
+/**
+ * Whether a browser extension caused the violation, which says nothing about
+ * the app. Three signs, each from a field the page cannot fake to look like
+ * its own code:
+ * - an extension URL as the blocked resource or the script at fault. Chrome
+ *   and Firefox send its scheme alone ("chrome-extension"); Safari sends the
+ *   whole URL.
+ * - "sandbox eval code", Firefox's name for a script an extension runs in the
+ *   page.
+ * - a document at about:blank or about:srcdoc. Extensions draw their panels
+ *   in such frames, which inherit this policy; the app renders none.
+ */
+function isFromExtension(report: CspReport) {
+  const source = report["source-file"];
+  return (
+    [report["blocked-uri"], source].some(
+      (uri) => uri && /^[a-z-]*extension(:|$)/.test(uri),
+    ) ||
+    source === "sandbox eval code" ||
+    /^about(:|$)/.test(report["document-uri"] ?? "")
+  );
+}
+
 /**
  * Takes a browser's report of something the report-only policy would have
  * blocked and writes one `[csp-report]` line to the Worker's logs. Anyone can
  * post here, so a report is size capped, counted per IP, and logged only as
- * the few fields below. Violations caused by a browser extension say nothing
- * about the app and are dropped.
+ * the few fields below. Violations a browser extension caused are dropped.
  */
 export async function handleCspReport(
   request: Request,
@@ -105,10 +129,7 @@ export async function handleCspReport(
   if (!parsed.success) return new Response(null, { status: 400 });
 
   const report = parsed.data["csp-report"];
-  const fromExtension = [report["blocked-uri"], report["source-file"]].some(
-    (uri) => uri && /^[a-z-]*extension:/.test(uri),
-  );
-  if (!fromExtension) {
+  if (!isFromExtension(report)) {
     console.warn(
       "[csp-report]",
       JSON.stringify({

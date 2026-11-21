@@ -9,7 +9,8 @@ import { renderSharePage } from "@/server/features/reports/sharePage";
 export const Route = createFileRoute("/s/$token/")({
   server: {
     handlers: {
-      GET: ({ params, request }) => renderSharePage(params.token, request),
+      GET: ({ params, request, context }) =>
+        renderSharePage(params.token, request, context.cspNonce),
     },
   },
 });

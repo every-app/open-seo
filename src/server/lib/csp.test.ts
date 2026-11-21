@@ -47,12 +47,27 @@ it("logs a report without the query strings its URLs carried", async () => {
   );
 });
 
-it("drops a violation a browser extension caused", async () => {
+it.each([
+  ["an extension script", { "source-file": "chrome-extension" }],
+  [
+    "an extension script, as Safari names it",
+    { "source-file": "safari-web-extension://abcdef/content.js" },
+  ],
+  ["an extension resource", { "blocked-uri": "moz-extension" }],
+  [
+    "a script Firefox runs for an extension",
+    { "source-file": "sandbox eval code" },
+  ],
+  [
+    "a frame an extension drew",
+    {
+      "document-uri": "about",
+      "blocked-uri": "https://fonts.gstatic.com/s/figtree/v9/x.woff2",
+    },
+  ],
+])("drops a violation caused by %s", async (_case, fields) => {
   const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-  await handleCspReport(
-    report({ "source-file": "chrome-extension://abcdef/content.js" }),
-    undefined,
-  );
+  await handleCspReport(report(fields), undefined);
   expect(warn).not.toHaveBeenCalled();
 });
 

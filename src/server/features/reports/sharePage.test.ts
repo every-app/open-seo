@@ -16,6 +16,7 @@ vi.mock("@/server/features/reports/repositories/ReportRepository", () => ({
 }));
 
 const TOKEN = "a".repeat(32);
+const NONCE = "test-nonce";
 const request = () => new Request(`https://app.example.com/s/${TOKEN}`);
 
 // Only what the page reads off the row. The title and summary carry the
@@ -35,7 +36,7 @@ beforeEach(() => {
 
 describe("renderSharePage", () => {
   it("puts the framed document, the escaped title and the preview tags in the first response", async () => {
-    const response = await renderSharePage(TOKEN, request());
+    const response = await renderSharePage(TOKEN, request(), NONCE);
     const html = await response.text();
 
     expect(response.status).toBe(200);
@@ -66,6 +67,8 @@ describe("renderSharePage", () => {
     expect($('meta[name="twitter:image:alt"]').attr("content")).toBe(
       `${SHARED_REPORT.title} - OpenSEO`,
     );
+    // The Share button's script is inline, so the policy only runs it by nonce.
+    expect($("script").attr("nonce")).toBe(NONCE);
     // No app bundle: the reader has never signed in and needs none of it.
     expect(html).not.toContain("/assets/");
   });
@@ -78,7 +81,7 @@ describe("renderSharePage", () => {
       archived: true,
     });
 
-    const response = await renderSharePage(TOKEN, request());
+    const response = await renderSharePage(TOKEN, request(), NONCE);
     const html = await response.text();
 
     expect(response.status).toBe(404);
@@ -110,7 +113,7 @@ describe("renderSharePage", () => {
   ])("answers not shared for %s", async (_case, token, arrange) => {
     arrange();
 
-    const response = await renderSharePage(token, request());
+    const response = await renderSharePage(token, request(), NONCE);
 
     expect(response.status).toBe(404);
     const html = await response.text();
