@@ -121,7 +121,7 @@ async function getOpportunities(
   if (!gscConnection) throw new GscNotConnectedError(input.projectId);
 
   const now = opts.now ?? new Date();
-  const dates = resolveCombinedDates(
+  const requestedDates = resolveCombinedDates(
     input,
     ga4Connection.propertyTimeZone,
     now,
@@ -129,18 +129,19 @@ async function getOpportunities(
   const gsc = await GscService.getPerformance({
     projectId: input.projectId,
     dimensions: ["page"],
-    startDate: dates.startDate,
-    endDate: dates.endDate,
+    startDate: requestedDates.startDate,
+    endDate: requestedDates.endDate,
     rowLimit: 1_000,
     startRow: 0,
     type: "web",
     dataState: "final",
   });
+  const { startDate, endDate } = gsc.request;
   const ga4 = await Ga4ReportingService.runReport({
     projectId: input.projectId,
     kind: "landing_pages",
-    startDate: dates.startDate,
-    endDate: dates.endDate,
+    startDate,
+    endDate,
     limit: 1_000,
     offset: 0,
     channel: "organic_search",
@@ -255,7 +256,7 @@ async function getOpportunities(
       googleAnalyticsPropertyDisplayName: ga4.source.propertyDisplayName,
     },
     request: {
-      dateRange: dates,
+      dateRange: { startDate, endDate },
       limit,
       searchConsoleTimeZone: "America/Los_Angeles",
       googleAnalyticsTimeZone: ga4.request.propertyTimeZone,

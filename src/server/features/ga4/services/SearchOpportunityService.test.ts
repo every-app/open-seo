@@ -54,6 +54,8 @@ const ga4Result = makeGa4ReportResult({
   totalRowCount: 2,
 });
 
+const dateRange = { startDate: "2026-07-07", endDate: "2026-08-03" };
+
 describe("SearchOpportunityService", () => {
   beforeEach(() => {
     mocks.getGa4Connection.mockResolvedValue({
@@ -68,7 +70,7 @@ describe("SearchOpportunityService", () => {
   it("normalizes URLs, scores joined candidates, and leaves unmatched pages unscored", async () => {
     mocks.getPerformance.mockResolvedValue({
       siteUrl: "https://example.com/",
-      request: {},
+      request: dateRange,
       rows: [
         {
           keys: ["https://EXAMPLE.com/High-Value/?ref=gsc"],
@@ -145,7 +147,7 @@ describe("SearchOpportunityService", () => {
   it("uses engagement rate when all joined rows have zero key events", async () => {
     mocks.getPerformance.mockResolvedValue({
       siteUrl: "https://example.com/",
-      request: {},
+      request: dateRange,
       rows: [
         {
           keys: ["https://example.com/other"],
@@ -174,7 +176,7 @@ describe("SearchOpportunityService", () => {
   it("does not join GA4 rows without a landing page to the homepage", async () => {
     mocks.getPerformance.mockResolvedValue({
       siteUrl: "https://example.com/",
-      request: {},
+      request: dateRange,
       rows: [
         {
           keys: ["https://example.com/"],
@@ -201,7 +203,7 @@ describe("SearchOpportunityService", () => {
   it("flags a window where GA4 has no organic landing pages at all", async () => {
     mocks.getPerformance.mockResolvedValue({
       siteUrl: "https://example.com/",
-      request: {},
+      request: dateRange,
       rows: [
         {
           keys: ["https://example.com/other"],
@@ -227,7 +229,7 @@ describe("SearchOpportunityService", () => {
     });
     mocks.getPerformance.mockResolvedValue({
       siteUrl: "https://example.com/",
-      request: {},
+      request: { startDate: "2026-07-06", endDate: "2026-08-02" },
       rows: [],
     });
 
