@@ -129,8 +129,17 @@ try {
       columns,
       rows: rows.map((row) => columns.map((column) => row[column])),
     });
-    if (Buffer.byteLength(serialized) > 8 * 1024 * 1024)
-      throw new Error("Export batch exceeds 8 MiB; reduce batch size");
+    if (Buffer.byteLength(serialized) > 8 * 1024 * 1024) {
+      if (rows.length === 1) {
+        throw new Error(
+          `A row in ${descriptor.table} exceeds the 8 MiB export chunk limit`,
+        );
+      }
+      const middle = Math.floor(rows.length / 2);
+      await saveRows(collection, descriptor, columns, rows.slice(0, middle));
+      await saveRows(collection, descriptor, columns, rows.slice(middle));
+      return;
+    }
     const filename = `rows-${manifest.tables.length + manifest.sam.length}.json`;
     await writeFile(join(output, filename), serialized, { mode: 0o600 });
     collection.push({
