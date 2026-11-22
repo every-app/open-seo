@@ -29,14 +29,20 @@ import { parseDbTimestamp } from "@/client/lib/db-timestamp";
 export function RankTrackingHistoryMatrix({
   cells,
   keywords,
+  pageResetKey,
   onClearFilters,
 }: {
   cells: RankPositionMatrixCell[];
   keywords: { trackingKeywordId: string; keyword: string }[];
+  /** Changes when the filters do, which returns the matrix to its first page. */
+  pageResetKey: string;
   onClearFilters: () => void;
 }) {
   const { runs, cellByKeyword } = useMemo(() => buildMatrix(cells), [cells]);
-  const [page, setPage] = useState(1);
+  // The page belongs to one set of filters. Under another, the matrix shows
+  // its first page.
+  const [paging, setPaging] = useState({ page: 1, key: pageResetKey });
+  const page = paging.key === pageResetKey ? paging.page : 1;
 
   // The History view is only offered once the matrix has loaded at least two
   // runs, so only filters can leave this empty.
@@ -111,7 +117,7 @@ export function RankTrackingHistoryMatrix({
           page={page}
           pageSize={PAGE_SIZE}
           totalCount={keywords.length}
-          onPageChange={setPage}
+          onPageChange={(next) => setPaging({ page: next, key: pageResetKey })}
         />
       ) : null}
     </TableCard>
