@@ -17,7 +17,7 @@ services:
     # community images were delisted from Docker Hub and Quay in September
     # 2026; RustFS passes `celld diagnose` (conditional create and overwrite),
     # which Garage does not.
-    image: rustfs/rustfs:1.0.3@sha256:9ca9559533b537d10482fe923288b676ad08f92a7069d9a17327fbae3cab688b
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     environment:
       RUSTFS_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY}
