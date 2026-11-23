@@ -7,7 +7,11 @@ import { serpSchema, type serpItemSchema } from "@/shared/mcp-contracts";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { resolveMarket } from "@/shared/keyword-locations";
 import { assertLocalResearchLocation } from "@/server/features/keywords/services/research/local-volume";
-import { readMergedSerps } from "@/server/features/keywords/services/research/serpReads";
+import {
+  readMergedSerps,
+  type MergedSerpItem,
+} from "@/server/features/keywords/services/research/serpReads";
+import { parseDataforseoAnswer } from "@/server/features/ai-visibility/providers/dataforseoEvidence";
 import { toolErrorMessage } from "@/server/mcp/tool-error-message";
 import {
   formatMcpTable,
@@ -27,6 +31,65 @@ const SERP_READING_NOTE =
   "Sites the reads agree on come first, so read the top rows as who ranks. `rank` is only a row's place in this list; quote `best position` as a site's position.";
 
 type SerpItem = z.infer<typeof serpItemSchema>;
+
+const nestedItemsSchema = z.object({ items: z.array(z.unknown()).nullish() });
+const questionSchema = z.object({ title: z.string().min(1) });
+
+/**
+ * People also ask, related searches and the AI Overview keep their text in
+ * nested fields that the trimmed row would drop, leaving an empty row.
+ */
+function featureText(item: MergedSerpItem) {
+  if (item.type === "ai_overview") {
+    const answer = parseDataforseoAnswer(
+      { items: [item] },
+      "google_ai_overview",
+    );
+    if (!answer) return {};
+    return {
+      ...(answer.answerMarkdown && { text: answer.answerMarkdown }),
+      ...(answer.citations.length > 0 && {
+        references: answer.citations.map(({ url, domain, title }) => ({
+          url,
+          domain,
+          title,
+        })),
+      }),
+    };
+  }
+  const nested = nestedItemsSchema.safeParse(item).data?.items ?? [];
+  if (item.type === "people_also_ask") {
+    const questions = nested.flatMap((element) => {
+      const parsed = questionSchema.safeParse(element);
+      return parsed.success ? [parsed.data.title] : [];
+    });
+    return questions.length > 0 ? { questions } : {};
+  }
+  if (item.type === "related_searches") {
+    const relatedSearches = nested.filter(
+      (entry): entry is string => typeof entry === "string" && entry !== "",
+    );
+    return relatedSearches.length > 0 ? { relatedSearches } : {};
+  }
+  return {};
+}
+
+/** The table has no room for nested lists, so they follow it as lines. */
+function featureLines(items: SerpItem[]): string[] {
+  return items.flatMap((item) => [
+    ...(item.questions
+      ? [`People also ask: ${item.questions.join(" | ")}`]
+      : []),
+    ...(item.relatedSearches
+      ? [`Related searches: ${item.relatedSearches.join(" | ")}`]
+      : []),
+    ...(item.references
+      ? [
+          `AI Overview cites: ${item.references.map((ref) => ref.url).join(" | ")}`,
+        ]
+      : []),
+  ]);
+}
 
 // `type` is load-bearing: the advanced SERP is a mixed list, so without it a
 // featured_snippet or people_also_ask row (which has no domain/title/url) reads
@@ -100,7 +163,7 @@ export const getSerpResultsTool = {
   config: {
     title: "Get Google SERP results",
     description:
-      "Get live Google organic search results for 1-10 keywords. Use it to see who ranks for a query, verify competitors, compare SERPs across keywords, or gather source URLs before content planning. Google serves automated readers pages that vary, so each keyword is read 3 times and merged into one row per site; expect 10-30 seconds. Quote bestPosition as a site's position: `rank` only numbers the merged rows, and a site with seenIn 1 is weak evidence. `url` can be a google.com/goto redirect that a plain fetch won't follow; `domain` is the reliable field, and finalUrls returns the page URLs for a job that can wait a few minutes. Costs ~5 credits per keyword at the default depth 10, and each additional 10 of depth adds ~3.5. Repeating the same call within 12 hours returns the same reads at no charge, so if a response is lost or a keyword is still running, wait a minute and repeat it. Per-keyword errors don't fail the batch. For a site's position over time, use get_rank_tracker or get_search_console_performance.",
+      "Get live Google organic search results for 1-10 keywords. Use it to see who ranks for a query, verify competitors, compare SERPs across keywords, or gather source URLs before content planning. Google serves automated readers pages that vary, so each keyword is read 3 times and merged into one row per site; expect 10-30 seconds. Quote bestPosition as a site's position: `rank` only numbers the merged rows, and a site with seenIn 1 is weak evidence. `url` can be a google.com/goto redirect that a plain fetch won't follow; `domain` is the reliable field, and finalUrls returns the page URLs for a job that can wait a few minutes. SERP feature rows carry their text: People also ask questions, related searches, and the AI Overview answer with the pages it cites. Costs ~5 credits per keyword at the default depth 10, and each additional 10 of depth adds ~3.5. Repeating the same call within 12 hours returns the same reads at no charge, so if a response is lost or a keyword is still running, wait a minute and repeat it. Per-keyword errors don't fail the batch. For a site's position over time, use get_rank_tracker or get_search_console_performance.",
     inputSchema,
     outputSchema: serpSchema,
     annotations: {
@@ -196,6 +259,7 @@ export const getSerpResultsTool = {
             url: item.url ?? null,
             domain: item.domain ?? null,
             description: item.description ?? null,
+            ...featureText(item),
           };
         }),
         ...lookup.scope,
@@ -215,7 +279,11 @@ export const getSerpResultsTool = {
           if (r.items.length === 0) {
             return `"${r.keyword}" (0 results)`;
           }
-          return `"${r.keyword}" (${r.items.length} results):\n${formatMcpTable(r.items, SERP_ITEM_COLUMNS, budget)}`;
+          return [
+            `"${r.keyword}" (${r.items.length} results):`,
+            formatMcpTable(r.items, SERP_ITEM_COLUMNS, budget),
+            ...featureLines(r.items),
+          ].join("\n");
         })
         .join("\n\n") +
       `\n\n${okCount} of ${results.length} queries succeeded.` +
