@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   fetchBusinessListingsCategories: vi.fn(),
   fetchLocalSerpTaskResult: vi.fn(),
   getProjectForOrganization: vi.fn(),
+  getDistanceUnit: vi.fn(),
   localTaskPost:
     vi.fn<
       (input: {
@@ -50,6 +51,10 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
+vi.mock("@/server/auth/repositories/AuthRepository", () => ({
+  AuthRepository: { getDistanceUnit: mocks.getDistanceUnit },
+}));
+
 const toolContext = makeToolContext();
 
 beforeEach(() => {
@@ -60,6 +65,7 @@ beforeEach(() => {
   });
   mocks.getCached.mockResolvedValue(null);
   mocks.setCached.mockResolvedValue(undefined);
+  mocks.getDistanceUnit.mockResolvedValue(null);
 });
 
 describe("get_business_profile", () => {
@@ -333,6 +339,22 @@ describe("get_local_rank_grid", () => {
     expect(out).toContain(
       "Matched business: Acme Cafe (cid 123, place_id p1).",
     );
+  });
+
+  it("writes distances in miles for a US project when the user has no saved unit", async () => {
+    const result = await getLocalRankGridTool.handler(gridArgs, toolContext);
+
+    expect(result.structuredContent).toMatchObject({ distanceUnit: "mi" });
+    expect(textContent(result)).toContain("1.2 mi between points");
+  });
+
+  it("writes distances in the user's saved unit over the project's market", async () => {
+    mocks.getDistanceUnit.mockResolvedValue("km");
+
+    const result = await getLocalRankGridTool.handler(gridArgs, toolContext);
+
+    expect(result.structuredContent).toMatchObject({ distanceUnit: "km" });
+    expect(textContent(result)).toContain("2 km between points");
   });
 
   it("records each point's result count and top business so nulls are interpretable", async () => {

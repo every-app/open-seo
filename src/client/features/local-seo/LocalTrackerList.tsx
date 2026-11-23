@@ -9,6 +9,7 @@ import {
   listLocalTrackers,
 } from "@/serverFunctions/local-seo";
 import { localAreaLabel } from "@/shared/local-seo";
+import { useDistanceUnit } from "./useDistanceUnit";
 import {
   Card,
   CardAction,
@@ -31,6 +32,7 @@ export function LocalTrackerList({
   onAdd: () => void;
 }) {
   const queryClient = useQueryClient();
+  const unit = useDistanceUnit();
   const [deleteTarget, setDeleteTarget] = useState<Tracker | null>(null);
   const query = useQuery({
     queryKey: ["localSeo", projectId, "trackers"],
@@ -109,7 +111,7 @@ export function LocalTrackerList({
                       {tracker.address}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {localAreaLabel(tracker)} · Mobile
+                      {localAreaLabel(tracker, unit)} · Mobile
                     </p>
                   </div>
                   <Button

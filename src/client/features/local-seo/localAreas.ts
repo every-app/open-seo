@@ -1,26 +1,23 @@
 import { entries } from "remeda";
+import { type DistanceUnit, formatDistance } from "@/shared/distance-unit";
 
 // Grid size and spacing as the area a customer would recognize. The width is
 // (gridSize - 1) × spacing, and each point is one paid search per keyword.
 export const LOCAL_AREAS = {
-  neighborhood: {
-    label: "Neighborhood · 2 km wide · 9 points",
-    gridSize: 3,
-    spacingKm: 1,
-  },
-  town: { label: "Town · 4 km wide · 9 points", gridSize: 3, spacingKm: 2 },
-  city: { label: "City · 8 km wide · 25 points", gridSize: 5, spacingKm: 2 },
-  metro: {
-    label: "Metro area · 20 km wide · 25 points",
-    gridSize: 5,
-    spacingKm: 5,
-  },
+  neighborhood: { name: "Neighborhood", gridSize: 3, spacingKm: 1 },
+  town: { name: "Town", gridSize: 3, spacingKm: 2 },
+  city: { name: "City", gridSize: 5, spacingKm: 2 },
+  metro: { name: "Metro area", gridSize: 5, spacingKm: 5 },
 } as const;
 export type LocalArea = keyof typeof LOCAL_AREAS;
 
-export const LOCAL_AREA_ITEMS = entries(LOCAL_AREAS).map(
-  ([value, { label }]) => ({ value, label }),
-);
+/** Picker items, e.g. "Town · 4 km wide · 9 points". */
+export function localAreaItems(unit: DistanceUnit) {
+  return entries(LOCAL_AREAS).map(([value, area]) => ({
+    value,
+    label: `${area.name} · ${formatDistance((area.gridSize - 1) * area.spacingKm, unit)} wide · ${area.gridSize * area.gridSize} points`,
+  }));
+}
 
 /** The area a tracker's grid matches, or null for a grid saved before areas
  *  replaced free-form grid settings. */

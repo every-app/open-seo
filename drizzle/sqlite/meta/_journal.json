@@ -519,6 +519,13 @@
       "when": 1795118529545,
       "tag": "0073_every_app_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "6",
+      "when": 1795459053258,
+      "tag": "0074_user_distance_unit",
+      "breakpoints": true
     }
   ]
 }

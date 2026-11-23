@@ -365,6 +365,13 @@
       "when": 1795118530276,
       "tag": "0051_every_app_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795459053945,
+      "tag": "0052_user_distance_unit",
+      "breakpoints": true
     }
   ]
 }

@@ -7,11 +7,12 @@ import { updateLocalArea } from "@/serverFunctions/local-seo";
 import { LocalCenterField } from "./LocalCenterField";
 import type { LocalCenter } from "./LocalCenterMap";
 import {
-  LOCAL_AREA_ITEMS,
   LOCAL_AREAS,
+  localAreaItems,
   localAreaOf,
   type LocalArea,
 } from "./localAreas";
+import { useDistanceUnit } from "./useDistanceUnit";
 
 export function LocalAreaDialog({
   projectId,
@@ -29,6 +30,7 @@ export function LocalAreaDialog({
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
+  const unit = useDistanceUnit();
   const current = {
     area: localAreaOf(tracker),
     center: { latitude: tracker.latitude, longitude: tracker.longitude },
@@ -91,7 +93,7 @@ export function LocalAreaDialog({
               <field.SelectField
                 label="Area to check"
                 description="New checks search this area. Earlier results are kept."
-                items={LOCAL_AREA_ITEMS}
+                items={localAreaItems(unit)}
               />
             )}
           </form.AppField>

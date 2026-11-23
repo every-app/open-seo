@@ -1,3 +1,4 @@
+import { DistanceUnit } from "@/shared/distance-unit";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -32,6 +33,11 @@ export const user = pgTable("user", {
   // sign-in (validated against a live membership first). Not a FK: an org
   // delete must not fail because a user's last-active pointer references it.
   lastActiveOrganizationId: text("last_active_organization_id"),
+  // Miles or km for Local SEO distances. Null until the user picks one in
+  // Settings; until then the visitor's country decides.
+  distanceUnit: text("distance_unit", {
+    enum: [DistanceUnit.Mi, DistanceUnit.Km],
+  }),
 });
 
 export const session = pgTable(

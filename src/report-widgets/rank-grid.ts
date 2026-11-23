@@ -1,6 +1,7 @@
 import L from "leaflet";
 import leafletCss from "leaflet/dist/leaflet.css?inline";
 import googleMapsLogo from "../client/features/local-seo/google-maps-logo.svg";
+import { DistanceUnit, formatDistance } from "../shared/distance-unit";
 import {
   readMapGrant,
   REPORT_MAP_HEIGHT,
@@ -40,6 +41,8 @@ type GridKeyword = { keyword: string; points: GridPoint[] };
 
 type RankGridConfig = {
   spacingKm?: number;
+  // Reports saved before units were configurable carry none and read km.
+  distanceUnit: DistanceUnit;
   keywords: GridKeyword[];
 };
 
@@ -144,6 +147,8 @@ function parseConfig(raw: string): RankGridConfig | null {
   }
   return {
     spacingKm: isFiniteNumber(cfg.spacingKm) ? cfg.spacingKm : undefined,
+    distanceUnit:
+      cfg.distanceUnit === DistanceUnit.Mi ? DistanceUnit.Mi : DistanceUnit.Km,
     keywords,
   };
 }
@@ -384,7 +389,7 @@ function render(figure: HTMLElement, cfg: RankGridConfig, grant: string) {
     "span",
     undefined,
     cfg.spacingKm
-      ? `${cfg.spacingKm} km between points · ring marks the storefront`
+      ? `${formatDistance(cfg.spacingKm, cfg.distanceUnit)} between points · ring marks the storefront`
       : "ring marks the storefront",
   );
   legend.appendChild(hint);

@@ -54,7 +54,8 @@ beforeAll(async () => {
       created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
       analytics_opted_out INTEGER, terms_accepted_version TEXT,
       terms_accepted_at INTEGER, product_updates_opt_in INTEGER,
-      product_updates_changed_at INTEGER, last_active_organization_id TEXT
+      product_updates_changed_at INTEGER, last_active_organization_id TEXT,
+      distance_unit TEXT
     );
     CREATE TABLE organization (id TEXT PRIMARY KEY, name TEXT NOT NULL);
     CREATE TABLE member (

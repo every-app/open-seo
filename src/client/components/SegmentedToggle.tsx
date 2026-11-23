@@ -16,16 +16,19 @@ export function SegmentedToggle<T extends string>({
   value,
   onChange,
   showLabels = false,
+  disabled = false,
 }: {
   items: SegmentedToggleItem<T>[];
   value: T;
   onChange: (value: T) => void;
   showLabels?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <ToggleGroup
       size="sm"
       spacing={0.5}
+      disabled={disabled}
       value={[value]}
       onValueChange={(next) => {
         // A press on the active item empties the group. Keep one item on.

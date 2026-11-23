@@ -25,7 +25,8 @@ import { Field, FieldError, FieldLabel } from "@/client/components/ui/field";
 import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { getIsoCountryCode } from "@/shared/keyword-locations";
 import { LocalListingChoices, type Listing } from "./LocalListingChoices";
-import { LOCAL_AREA_ITEMS, LOCAL_AREAS, type LocalArea } from "./localAreas";
+import { LOCAL_AREAS, localAreaItems, type LocalArea } from "./localAreas";
+import { useDistanceUnit } from "./useDistanceUnit";
 import { LocalCenterField } from "./LocalCenterField";
 
 const ListingMap = lazy(() => import("./LocalListingMap"));
@@ -208,6 +209,7 @@ function TrackerSettings({
 }) {
   const { business, suggestedKeywords } = listing;
   const queryClient = useQueryClient();
+  const unit = useDistanceUnit();
   const create = useMutation({
     mutationFn: (input: Parameters<typeof createLocalTracker>[0]["data"]) =>
       createLocalTracker({ data: input }),
@@ -280,7 +282,7 @@ function TrackerSettings({
               <field.SelectField
                 label="Area to check"
                 description="We search Google Maps from points spread across this area."
-                items={LOCAL_AREA_ITEMS}
+                items={localAreaItems(unit)}
               />
             )}
           </form.AppField>

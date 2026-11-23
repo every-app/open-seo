@@ -95,17 +95,17 @@ Local rank trackers (SE Ranking, Local Falcon, BrightLocal) all draw the same pi
 | over 15–20 | `#A31515` | white  |
 | not found | `#A3ADB8` | white   |
 
-**The SVG.** North up, west left, one circle per grid point on a 120-unit pitch with radius 22, so a 3x3 uses `viewBox="0 0 360 400"` and a 5x5 `viewBox="0 0 600 640"`. Set `width` to 360 for a 3x3 and 480 for a 5x5 so the drawing does not stretch to the column; the template already caps it at 100% on a phone. Print the value inside each circle (bold, 15px, centered with `text-anchor="middle"` and `dominant-baseline="central"`). Give the storefront circle a second ring: the same circle again with `fill="none"`, a 2px dark stroke, radius 27. Add an "N" label above the top row and the spacing under the bottom row ("2 km between points"). Then a `figcaption` that lists every value as text in reading order, because a chart never carries a number that is not also written out. First row of a 3x3, for the agent to repeat:
+**The SVG.** North up, west left, one circle per grid point on a 120-unit pitch with radius 22, so a 3x3 uses `viewBox="0 0 360 400"` and a 5x5 `viewBox="0 0 600 640"`. Set `width` to 360 for a 3x3 and 480 for a 5x5 so the drawing does not stretch to the column; the template already caps it at 100% on a phone. Print the value inside each circle (bold, 15px, centered with `text-anchor="middle"` and `dominant-baseline="central"`). Give the storefront circle a second ring: the same circle again with `fill="none"`, a 2px dark stroke, radius 27. Add an "N" label above the top row and the spacing under the bottom row, in the unit `get_local_rank_grid` returns as `distanceUnit` ("1.2 mi between points" or "2 km between points"). Then a `figcaption` that lists every value as text in reading order, because a chart never carries a number that is not also written out. First row of a 3x3, for the agent to repeat:
 
 ```html
-<svg viewBox="0 0 360 400" width="360" role="img" aria-label="Rank grid, 3 by 3, 2 km spacing">
+<svg viewBox="0 0 360 400" width="360" role="img" aria-label="Rank grid, 3 by 3, 1.2 mi spacing">
 <text x="180" y="18" text-anchor="middle" font-size="12" fill="#8f8f8f">N</text>
 <circle cx="60" cy="80" r="22" fill="#3F9D4E"/><text x="60" y="80" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="700" fill="#fff">3.0</text>
 <circle cx="180" cy="80" r="22" fill="#8BC34A"/><text x="180" y="80" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="700" fill="#fff">3.5</text>
 <circle cx="300" cy="80" r="22" fill="#8BC34A"/><text x="300" y="80" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="700" fill="#fff">3.5</text>
 <!-- rows 2 and 3 at cy 200 and 320; the storefront (cx 180, cy 200) also gets: -->
 <circle cx="180" cy="200" r="27" fill="none" stroke="#0a0a0a" stroke-width="2"/>
-<text x="180" y="372" text-anchor="middle" font-size="12" fill="#8f8f8f">2 km between points</text>
+<text x="180" y="372" text-anchor="middle" font-size="12" fill="#8f8f8f">1.2 mi between points</text>
 </svg>
 ```
 
@@ -118,19 +118,19 @@ The `figcaption` lists every value in reading order: "Average position across 2 
 3. Avg. position per keyword: one row per keyword with its mean and how many of its points were top 3.
 4. Who ranks #1 most often: count each point's `topResult` across all keywords and list businesses by share.
 
-**Reading it.** Say where visibility drops off by compass direction and by distance ("2 km south, around 75th St" when the user has given you a landmark; otherwise the direction alone), and name who wins there from `topResult`. Proximity to a rival's storefront explains most drop-offs; say so when the rival's coordinate confirms it.
+**Reading it.** Say where visibility drops off by compass direction and by distance in `distanceUnit` ("1.2 mi south, around 75th St" when the user has given you a landmark; otherwise the direction alone), and name who wins there from `topResult`. Proximity to a rival's storefront explains most drop-offs; say so when the rival's coordinate confirms it.
 
 **The figure.** Always wrap the drawing in a widget figure. The viewer renders it as a live Google Map fitted to the grid, with a keyword filter and a popup per point, and hides the SVG while the map is showing:
 
 ```html
 <figure data-widget="rank-grid">
-<script type="application/json">{"spacingKm":1,"keywords":[{"keyword":"italian restaurant","points":[{"row":0,"col":0,"lat":41.7918,"lng":-88.1714,"rank":3,"top":"La Sorella di Francesca"}]}]}</script>
+<script type="application/json">{"spacingKm":2,"distanceUnit":"mi","keywords":[{"keyword":"italian restaurant","points":[{"row":0,"col":0,"lat":41.7918,"lng":-88.1714,"rank":3,"top":"La Sorella di Francesca"}]}]}</script>
 <svg …the drawing above…</svg>
 <figcaption>…</figcaption>
 </figure>
 ```
 
-Every point the tool returned goes in `points`: its `row` and `col`, `latitude` as `lat`, `longitude` as `lng`, `rank` (`null` when the business was not found there) and `topResult.title` as `top`. Leave out a point whose search failed (`error: true`); the viewer shows that keyword as "search failed" there. One entry in `keywords` per grid you ran, all with the same center and spacing. The block is data: no comments, no trailing commas, nothing computed.
+`spacingKm` is the km spacing you passed to `get_local_rank_grid` (2 when you left it out). Set `distanceUnit` to the tool's `distanceUnit` (`"mi"` or `"km"`) so the map's spacing label matches the drawing. Every point the tool returned goes in `points`: its `row` and `col`, `latitude` as `lat`, `longitude` as `lng`, `rank` (`null` when the business was not found there) and `topResult.title` as `top`. Leave out a point whose search failed (`error: true`); the viewer shows that keyword as "search failed" there. One entry in `keywords` per grid you ran, all with the same center and spacing. The block is data: no comments, no trailing commas, nothing computed.
 
 ## Guardrails
 

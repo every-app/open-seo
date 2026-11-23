@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `distance_unit` text;

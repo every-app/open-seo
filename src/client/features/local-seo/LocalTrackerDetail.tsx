@@ -18,6 +18,7 @@ import { LocalAreaDialog } from "./LocalAreaDialog";
 import { LocalKeywordMap } from "./LocalKeywordMap";
 import { LocalKeywordsDialog } from "./LocalKeywordsDialog";
 import { LocalKeywordsTable, latestKeywordScan } from "./LocalKeywordsTable";
+import { useDistanceUnit } from "./useDistanceUnit";
 import type { LocalSeoSearch } from "@/types/schemas/local-seo-search";
 
 type TrackerData = Awaited<ReturnType<typeof getLocalTracker>>;
@@ -77,6 +78,7 @@ function TrackerContent({
 }) {
   const { tracker, keywords, checks, scans, estimate } = data;
   const queryClient = useQueryClient();
+  const unit = useDistanceUnit();
   const [confirm, setConfirm] = useState<string | null>(null);
   const [managingKeywords, setManagingKeywords] = useState(false);
   const [changingArea, setChangingArea] = useState(false);
@@ -126,7 +128,7 @@ function TrackerContent({
             <h2 className="text-lg font-semibold">{tracker.title}</h2>
             <p className="text-xs text-muted-foreground">{tracker.address}</p>
             <p className="text-xs text-muted-foreground">
-              {localAreaLabel(tracker)} · Mobile
+              {localAreaLabel(tracker, unit)} · Mobile
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

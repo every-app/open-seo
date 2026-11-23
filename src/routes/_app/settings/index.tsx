@@ -4,6 +4,7 @@ import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
 import { SectionHeader } from "@/client/components/PageHeader";
 import { Button } from "@/client/components/ui/button";
 import { ThemePreferenceRadio } from "@/client/components/ThemePreferenceMenuItems";
+import { DistanceUnitSetting } from "@/client/features/settings/DistanceUnitSetting";
 import { everyAppAccountQueryOptions } from "@/client/features/every-app/everyAppAccountQueries";
 import { ImportFromSelfHosted } from "@/client/features/every-app/ImportFromSelfHosted";
 import { MoveToEveryAppSettings } from "@/client/features/every-app/MoveToEveryAppSettings";
@@ -34,6 +35,7 @@ function PersonalSettings() {
           <span className="text-sm">Theme</span>
           <ThemePreferenceRadio />
         </div>
+        <DistanceUnitSetting />
       </section>
 
       {isEveryAppClientAuthMode() ? <EveryAppSettings /> : null}
