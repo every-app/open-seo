@@ -29,6 +29,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # A `pnpm` field in package.json makes pnpm 10 silently ignore every
+      # override in pnpm-workspace.yaml, including the security pins (#608).
+      - name: Keep pnpm settings in pnpm-workspace.yaml
+        run: |
+          node -e 'if (require("./package.json").pnpm) { console.error("Move the pnpm settings in package.json into pnpm-workspace.yaml: while package.json has a pnpm field, pnpm ignores the overrides in pnpm-workspace.yaml."); process.exit(1) }'
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

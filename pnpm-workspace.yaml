@@ -72,6 +72,8 @@ minimumReleaseAgeExclude:
 # To prune once a parent catches up: delete the line, run `pnpm install`, and
 # keep it deleted if `pnpm audit` stays clean.
 overrides:
+  # Keep every Worker on one zod copy; two copies crowd the isolate heap (#1051).
+  "zod@4": "4.6.7"
   # GHSA-4x5r-pxfx-6jf8 — waiting on @tanstack/devtools-vite
   "@babel/core": "^7.29.6"
   # September 2026 recursion/CPU DoS fixes plus earlier advisories — just-bash/shadcn
@@ -98,12 +100,12 @@ overrides:
   shell-quote: "^1.8.4"
   # GHSA-v3rj-xjv7-4jmq — waiting on knip
   smol-toml: "^1.7.1"
-  # September 2026 TLS/cache/DoS fixes plus earlier advisories — cheerio/miniflare
-  undici: "^7.29.1"
+  # September 2026 TLS/cache/DoS fixes plus earlier advisories — cheerio/miniflare (undici 8 is fine)
+  "undici@7": "^7.29.1"
   # GHSA-67mh-4wv8-2f99 — update drizzle-kit's legacy loader instead of ignoring it.
   "@esbuild-kit/core-utils>esbuild": "^0.25.12"
-  # GHSA-rgj7-g3m4-5g8c — Miniflare 4 pins 0.34.5; 0.35.4 fixes bundled libheif.
-  "miniflare>sharp": "0.35.4"
+  # GHSA-rgj7-g3m4-5g8c — Miniflare 4 pins 0.34.5; 0.35.4+ fixes bundled libheif.
+  "miniflare>sharp": "^0.35.5"
   # September 2026 advisories: keep these fixes within each supported major.
   "@ai-sdk/provider-utils@4": "^4.0.33"
   "@hono/node-server@1": "^1.19.15"
