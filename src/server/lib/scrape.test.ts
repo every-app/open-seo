@@ -53,10 +53,14 @@ describe("readPages SSRF guard", () => {
 describe("readSite", () => {
   // Unlisted URLs (sitemaps, DoH lookups) 404; a missing route value throws
   // like a failed TLS handshake.
-  function stubSite(routes: Record<string, string | null>) {
+  function stubSite(
+    routes: Record<string, string | null>,
+    onFetch?: (url: string) => void,
+  ) {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
+        onFetch?.(url);
         if (!(url in routes)) return new Response(null, { status: 404 });
         const target = routes[url];
         if (target === null) throw new TypeError("fetch failed");
@@ -109,7 +113,9 @@ describe("readSite", () => {
       "https://example.com/sitemap.xml":
         "<sitemapindex><sitemap><loc>https://example.com/posts.xml</loc></sitemap></sitemapindex>",
       "https://example.com/posts.xml":
-        "<urlset><url><loc>https://example.com/about</loc></url></urlset>",
+        '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+        "<url><loc>https://example.com/about</loc></url></urlset>",
     });
 
     const result = await discoverSiteUrls("example.com", 5);
@@ -123,7 +129,8 @@ describe("readSite", () => {
   it("keeps page URLs from a direct sitemap", async () => {
     stubSite({
       "https://example.com/sitemap.xml":
-        "<urlset><url><loc>https://example.com/about</loc></url></urlset>",
+        '<sm:urlset xmlns:sm="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+        "<sm:url><sm:loc>https://example.com/about</sm:loc></sm:url></sm:urlset>",
     });
 
     const result = await discoverSiteUrls("example.com", 5);
@@ -165,6 +172,49 @@ describe("readSite", () => {
       "https://example.com/4.xml",
       expect.anything(),
     );
+  });
+
+  it("keeps discovered pages when the sitemap time budget expires", async () => {
+    let now = 0;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    try {
+      stubSite(
+        {
+          "https://example.com/sitemap.xml":
+            "<sitemapindex>" +
+            [1, 2, 3]
+              .map(
+                (number) =>
+                  `<sitemap><loc>https://example.com/${number}.xml</loc></sitemap>`,
+              )
+              .join("") +
+            "</sitemapindex>",
+          ...Object.fromEntries(
+            [1, 2, 3].map((number) => [
+              `https://example.com/${number}.xml`,
+              `<urlset><url><loc>https://example.com/page-${number}</loc></url></urlset>`,
+            ]),
+          ),
+        },
+        (url) => {
+          if (/\/[12]\.xml$/.test(url)) now += 11_000;
+        },
+      );
+
+      const result = await discoverSiteUrls("example.com", 10);
+
+      expect(result.urls).toEqual([
+        "https://example.com/",
+        "https://example.com/page-1",
+        "https://example.com/page-2",
+      ]);
+      expect(fetch).not.toHaveBeenCalledWith(
+        "https://example.com/3.xml",
+        expect.anything(),
+      );
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("does not fetch cross-origin child sitemaps or redirects", async () => {

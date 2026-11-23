@@ -19,9 +19,11 @@ const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 3;
 const MAX_RESPONSE_BYTES = 2_000_000;
 const MAX_CHILD_SITEMAPS = 3;
+const SITEMAP_DISCOVERY_BUDGET_MS = 20_000;
 const USER_AGENT = "OpenSEO-Onboarding/1.0 (+https://openseo.so)";
 const sitemapParser = new XMLParser({
   isArray: (name) => name === "sitemap" || name === "url",
+  removeNSPrefix: true,
 });
 
 type ScrapedPage = {
@@ -69,17 +71,21 @@ export async function readBoundedText(
 async function fetchText(
   url: string,
   contextUsage?: RenderUsage,
-  requiredOrigin?: string,
+  sitemap?: { origin: string; deadline: number },
 ): Promise<string | null> {
   let current = url;
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const remaining = sitemap
+        ? sitemap.deadline - Date.now()
+        : FETCH_TIMEOUT_MS;
+      if (remaining <= 0) return null;
       const response = await publicFetch(current, {
         headers: { "user-agent": USER_AGENT, accept: "text/html,*/*" },
         // Manual redirects so we can re-validate each hop against the SSRF guard;
         // redirect:"follow" would let a 30x to an internal host bypass it.
         redirect: "manual",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        signal: AbortSignal.timeout(Math.min(FETCH_TIMEOUT_MS, remaining)),
       });
       if (response.ok) return await readBoundedText(response);
       const location = response.headers.get("location");
@@ -93,7 +99,7 @@ async function fetchText(
       // follows redirects itself and would reach the blocked host.
       try {
         const target = new URL(location, current);
-        if (requiredOrigin && target.origin !== requiredOrigin) return null;
+        if (sitemap && target.origin !== sitemap.origin) return null;
         current = await normalizeAndValidateStartUrl(target.toString());
       } catch {
         return null;
@@ -256,18 +262,22 @@ export async function discoverSiteUrls(
     return { urls: [], blocked: true };
   }
   const origin = new URL(rootUrl).origin;
+  const sitemap = {
+    origin,
+    deadline: Date.now() + SITEMAP_DISCOVERY_BUDGET_MS,
+  };
 
   const sitemapUrl = `${origin}/sitemap.xml`;
-  const sitemap = await fetchText(sitemapUrl, undefined, origin);
-  const parsed = sitemap
-    ? parseSitemapUrls(sitemap, sitemapUrl, origin)
+  const rootSitemap = await fetchText(sitemapUrl, undefined, sitemap);
+  const parsed = rootSitemap
+    ? parseSitemapUrls(rootSitemap, sitemapUrl, origin)
     : { pages: [], children: [] };
   const urls = new Set([rootUrl, ...parsed.pages]);
   for (const child of parsed.children.slice(0, MAX_CHILD_SITEMAPS)) {
-    if (urls.size >= limit) break;
+    if (urls.size >= limit || Date.now() >= sitemap.deadline) break;
     try {
       const validated = await normalizeAndValidateStartUrl(child);
-      const xml = await fetchText(validated, undefined, origin);
+      const xml = await fetchText(validated, undefined, sitemap);
       if (!xml) continue;
       for (const page of parseSitemapUrls(xml, validated, origin).pages) {
         urls.add(page);
