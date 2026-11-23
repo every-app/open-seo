@@ -341,6 +341,7 @@ export function RankTrackingDomainDetail({
                 trackingKeywordId: r.trackingKeywordId,
                 keyword: r.keyword,
               }))}
+              pageResetKey={JSON.stringify(filters)}
               onClearFilters={() => setFilters(EMPTY_FILTERS)}
             />
           ) : (
