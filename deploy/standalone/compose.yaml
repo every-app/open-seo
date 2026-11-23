@@ -82,7 +82,9 @@ services:
       init: { condition: service_completed_successfully }
     restart: unless-stopped
   web:
-    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    # Stay on a stable (even-numbered) nginx line. Old stable lines stop being
+    # rebuilt and collect unpatched CVEs; Dependabot refreshes the digest.
+    image: nginx:1.30-alpine@sha256:caf4e1e032a20f9c3c5e28fc7f25ffd768ad8677b4975c54193075997b3a97e3
     ports: ["127.0.0.1:${PORT:-3001}:80"]
     # Written by init from deploy/standalone/nginx.conf in the image. nocopy
     # keeps nginx's own default.conf (root-owned) out of the shared volume.

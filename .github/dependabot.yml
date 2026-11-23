@@ -1,0 +1,19 @@
+# Keeps pinned container images current. A pinned digest never picks up
+# security rebuilds of its tag, so these need a bot to refresh them.
+version: 2
+updates:
+  - package-ecosystem: docker-compose
+    directory: /deploy/standalone
+    schedule:
+      interval: weekly
+    # Match pnpm's minimumReleaseAge: let a release settle for 8 days first.
+    cooldown:
+      default-days: 8
+  - package-ecosystem: docker
+    directories:
+      - /deploy/standalone
+      - /deploy/docker
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 8
