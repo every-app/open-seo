@@ -6,6 +6,7 @@
 // same interface later.
 
 import { publicFetch } from "@/server/lib/public-fetch";
+import { XMLParser } from "fast-xml-parser";
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { RenderedPageService } from "@/server/lib/audit/rendered-page";
 import { getContextFetch } from "@/server/lib/provider-access";
@@ -17,7 +18,13 @@ const FETCH_TIMEOUT_MS = 10_000;
 // Covers chains like https://apex -> http://www -> https://www.
 const MAX_REDIRECTS = 3;
 const MAX_RESPONSE_BYTES = 2_000_000;
+const MAX_CHILD_SITEMAPS = 3;
+const SITEMAP_DISCOVERY_BUDGET_MS = 20_000;
 const USER_AGENT = "OpenSEO-Onboarding/1.0 (+https://openseo.so)";
+const sitemapParser = new XMLParser({
+  isArray: (name) => name === "sitemap" || name === "url",
+  removeNSPrefix: true,
+});
 
 type ScrapedPage = {
   url: string;
@@ -64,21 +71,26 @@ export async function readBoundedText(
 async function fetchText(
   url: string,
   contextUsage?: RenderUsage,
+  sitemap?: { origin: string; deadline: number },
 ): Promise<string | null> {
   let current = url;
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const remaining = sitemap
+        ? sitemap.deadline - Date.now()
+        : FETCH_TIMEOUT_MS;
+      if (remaining <= 0) return null;
       const response = await publicFetch(current, {
         headers: { "user-agent": USER_AGENT, accept: "text/html,*/*" },
         // Manual redirects so we can re-validate each hop against the SSRF guard;
         // redirect:"follow" would let a 30x to an internal host bypass it.
         redirect: "manual",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        signal: AbortSignal.timeout(Math.min(FETCH_TIMEOUT_MS, remaining)),
       });
       if (response.ok) return await readBoundedText(response);
       const location = response.headers.get("location");
+      await response.body?.cancel();
       if (response.status < 300 || response.status >= 400 || !location) {
-        await response.body?.cancel();
         if (response.status === 404 || response.status === 410) return null;
         break;
       }
@@ -86,9 +98,9 @@ async function fetchText(
       // A blocked or invalid destination is not sent to Context either: it
       // follows redirects itself and would reach the blocked host.
       try {
-        current = await normalizeAndValidateStartUrl(
-          new URL(location, current).toString(),
-        );
+        const target = new URL(location, current);
+        if (sitemap && target.origin !== sitemap.origin) return null;
+        current = await normalizeAndValidateStartUrl(target.toString());
       } catch {
         return null;
       }
@@ -111,28 +123,48 @@ async function fetchText(
   }
 }
 
-/**
- * Pulls page URLs from a sitemap body. Resolves relative/protocol-relative
- * <loc> entries against the origin and keeps same-origin HTML pages only. Nested
- * sitemap files (a sitemap index) are skipped rather than fetched as pages —
- * good enough for v1; we fall back to the homepage if nothing usable is found.
- */
-function parseSitemapUrls(xml: string, origin: string): string[] {
+function recordValue(value: unknown, key: string): unknown {
+  return value && typeof value === "object" && key in value
+    ? Reflect.get(value, key)
+    : undefined;
+}
+
+function sitemapLocations(
+  entries: unknown,
+  sitemapUrl: string,
+  origin: string,
+) {
   const urls: string[] = [];
-  const regex = /<loc>\s*([^<\s]+)\s*<\/loc>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(xml)) !== null) {
-    let resolved: string;
+  for (const entry of Array.isArray(entries) ? entries : [entries]) {
+    const loc = recordValue(entry, "loc");
+    if (typeof loc !== "string") continue;
     try {
-      resolved = new URL(match[1], origin).toString();
+      const url = new URL(loc, sitemapUrl);
+      if (url.origin === origin) urls.push(url.toString());
     } catch {
-      continue;
-    }
-    if (resolved.startsWith(origin) && !resolved.endsWith(".xml")) {
-      urls.push(resolved);
+      // Ignore malformed entries. The homepage remains available.
     }
   }
   return urls;
+}
+
+function parseSitemapUrls(xml: string, sitemapUrl: string, origin: string) {
+  let parsed: unknown;
+  try {
+    parsed = sitemapParser.parse(xml);
+  } catch {
+    return { pages: [], children: [] };
+  }
+  const index = recordValue(parsed, "sitemapindex");
+  const urlset = recordValue(parsed, "urlset");
+  return {
+    pages: sitemapLocations(recordValue(urlset, "url"), sitemapUrl, origin),
+    children: sitemapLocations(
+      recordValue(index, "sitemap"),
+      sitemapUrl,
+      origin,
+    ),
+  };
 }
 
 function extractTitle(html: string): string | null {
@@ -230,11 +262,32 @@ export async function discoverSiteUrls(
     return { urls: [], blocked: true };
   }
   const origin = new URL(rootUrl).origin;
+  const sitemap = {
+    origin,
+    deadline: Date.now() + SITEMAP_DISCOVERY_BUDGET_MS,
+  };
 
-  const sitemap = await fetchText(`${origin}/sitemap.xml`);
-  const discovered = sitemap ? parseSitemapUrls(sitemap, origin) : [];
-  const urls = [rootUrl, ...discovered.filter((url) => url !== rootUrl)];
-  return { urls: urls.slice(0, limit), blocked: false };
+  const sitemapUrl = `${origin}/sitemap.xml`;
+  const rootSitemap = await fetchText(sitemapUrl, undefined, sitemap);
+  const parsed = rootSitemap
+    ? parseSitemapUrls(rootSitemap, sitemapUrl, origin)
+    : { pages: [], children: [] };
+  const urls = new Set([rootUrl, ...parsed.pages]);
+  for (const child of parsed.children.slice(0, MAX_CHILD_SITEMAPS)) {
+    if (urls.size >= limit || Date.now() >= sitemap.deadline) break;
+    try {
+      const validated = await normalizeAndValidateStartUrl(child);
+      const xml = await fetchText(validated, undefined, sitemap);
+      if (!xml) continue;
+      for (const page of parseSitemapUrls(xml, validated, origin).pages) {
+        urls.add(page);
+        if (urls.size >= limit) break;
+      }
+    } catch {
+      // A blocked child sitemap does not hide pages from other children.
+    }
+  }
+  return { urls: [...urls].slice(0, limit), blocked: false };
 }
 
 /**
