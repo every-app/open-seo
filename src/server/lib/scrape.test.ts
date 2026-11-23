@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readPages, readSite } from "@/server/lib/scrape";
+import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 
 vi.mock("@/server/lib/runtime-env", () => ({
   getOptionalEnvValue: async (name: string) =>
@@ -102,6 +102,96 @@ describe("readSite", () => {
     const result = await readSite("93.184.216.34");
 
     expect(result.blocked).toBe(true);
+  });
+
+  it("discovers pages from a sitemap index", async () => {
+    stubSite({
+      "https://example.com/sitemap.xml":
+        "<sitemapindex><sitemap><loc>https://example.com/posts.xml</loc></sitemap></sitemapindex>",
+      "https://example.com/posts.xml":
+        "<urlset><url><loc>https://example.com/about</loc></url></urlset>",
+    });
+
+    const result = await discoverSiteUrls("example.com", 5);
+
+    expect(result.urls).toEqual([
+      "https://example.com/",
+      "https://example.com/about",
+    ]);
+  });
+
+  it("keeps page URLs from a direct sitemap", async () => {
+    stubSite({
+      "https://example.com/sitemap.xml":
+        "<urlset><url><loc>https://example.com/about</loc></url></urlset>",
+    });
+
+    const result = await discoverSiteUrls("example.com", 5);
+
+    expect(result.urls).toEqual([
+      "https://example.com/",
+      "https://example.com/about",
+    ]);
+  });
+
+  it("reads at most three child sitemaps", async () => {
+    stubSite({
+      "https://example.com/sitemap.xml":
+        "<sitemapindex>" +
+        [1, 2, 3, 4]
+          .map(
+            (number) =>
+              `<sitemap><loc>https://example.com/${number}.xml</loc></sitemap>`,
+          )
+          .join("") +
+        "</sitemapindex>",
+      ...Object.fromEntries(
+        [1, 2, 3, 4].map((number) => [
+          `https://example.com/${number}.xml`,
+          `<urlset><url><loc>https://example.com/page-${number}</loc></url></urlset>`,
+        ]),
+      ),
+    });
+
+    const result = await discoverSiteUrls("example.com", 10);
+
+    expect(result.urls).toEqual([
+      "https://example.com/",
+      "https://example.com/page-1",
+      "https://example.com/page-2",
+      "https://example.com/page-3",
+    ]);
+    expect(fetch).not.toHaveBeenCalledWith(
+      "https://example.com/4.xml",
+      expect.anything(),
+    );
+  });
+
+  it("does not fetch cross-origin child sitemaps or redirects", async () => {
+    stubSite({
+      "https://example.com/sitemap.xml":
+        "<sitemapindex>" +
+        "<sitemap><loc>https://example.com.evil/child.xml</loc></sitemap>" +
+        "<sitemap><loc>https://example.com/redirect.xml</loc></sitemap>" +
+        "</sitemapindex>",
+      "https://example.com/redirect.xml": "https://other.example/child.xml",
+      "https://example.com.evil/child.xml":
+        "<urlset><url><loc>https://example.com.evil/page</loc></url></urlset>",
+      "https://other.example/child.xml":
+        "<urlset><url><loc>https://other.example/page</loc></url></urlset>",
+    });
+
+    const result = await discoverSiteUrls("example.com", 5);
+
+    expect(result.urls).toEqual(["https://example.com/"]);
+    expect(fetch).not.toHaveBeenCalledWith(
+      "https://example.com.evil/child.xml",
+      expect.anything(),
+    );
+    expect(fetch).not.toHaveBeenCalledWith(
+      "https://other.example/child.xml",
+      expect.anything(),
+    );
   });
 });
 
