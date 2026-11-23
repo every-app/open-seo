@@ -419,7 +419,8 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.backlinks,
     eyebrow: "Backlinks",
     navDescription: "Check links and referring domains.",
-    title: "Backlink checker for understanding a domain's link profile",
+    title:
+      "Backlink analysis tool for referring domains, anchors, spam and lost links",
     description:
       "Analyze backlinks, referring domains, and linked pages without separating link research from the rest of your SEO workspace.",
     seoDescription:
@@ -435,19 +436,19 @@ export const featurePages = {
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/d97206ed-bd64-447c-2b9e-1b9f07c5ec00/public",
     workflows: [
       {
-        title: "Check a domain's backlinks",
+        title: "Look up any domain, folder or page",
         description:
-          "Look up backlinks and referring-domain signals for your site, competitors, or pages you are evaluating.",
+          "Enter a domain, a subdomain, a folder or a single page. The overview shows backlinks, referring domains, domain rank and spam score, and for a whole domain, a year of monthly link growth.",
       },
       {
-        title: "Compare link quality",
+        title: "Judge the links",
         description:
-          "Use backlink rows, referring-domain rows, rank, spam, broken, lost, and nofollow signals to inspect link quality.",
+          "Sort by rank, spam score or first seen. Hide spam, lost, broken or nofollow links, and switch between the strongest link per domain and every individual link.",
       },
       {
-        title: "Filter and export link data",
+        title: "Export the list",
         description:
-          "Export and filter backlink, referring-domain, and top-page data for your own outreach, competitor research, or cleanup review.",
+          "Send backlinks, referring domains or top linked pages to CSV or Google Sheets for outreach, competitor research or a cleanup review.",
       },
     ],
     metrics: [
@@ -467,6 +468,55 @@ export const featurePages = {
       "Self-host or adapt backlink reporting for your team's workflow.",
       "MCP support lets an AI agent pull backlink context during SEO research.",
     ],
+    headings: {
+      workflows: "Pull a profile, judge the links, export the list",
+      metrics: "What every backlink lookup tells you",
+      useCases: "When to run backlink analysis",
+      differentiators: "Why analyze links next to your keyword data",
+      related: "Where link research goes next",
+      faq: "Backlink analysis questions",
+    },
+    toolCallout: {
+      title: "Check any domain's links before you open the full report",
+      description: "Two free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free backlink checker",
+          description:
+            "Summary metrics and the top 15 backlinks for any domain, one per referring domain, strongest first.",
+          href: "/backlink-checker",
+        },
+        {
+          title: "Free spam score checker",
+          description:
+            "A domain's backlink spam score and the 10 spammiest domains linking to it.",
+          href: "/spam-score-checker",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Count referring domains, not backlinks",
+        body: "openseo.so has 9,499 backlinks from 495 referring domains. One of those domains links from 3,243 of its pages, which makes 3,754 links: 40% of the total, and more than the next nine domains combined. Counted as backlinks, that one site looks like most of the profile. Counted as referring domains, it is one of 495. Start with the referring domains tab, then expand a domain to see its individual links.",
+      },
+      {
+        title: "Analyze a competitor's backlinks in four steps",
+        body: "Enter the competitor's domain and open referring domains. Sort by first seen to see who linked to them recently. Spam is hidden by default, so add the lost and broken filters and read what's left: those are the sites that link in your space. Export the list for outreach, or hand it to your AI agent with the link prospecting skill.",
+      },
+      {
+        title: "Backlink analysis from your AI agent",
+        body: "Connect OpenSEO to Claude, Cursor or ChatGPT over MCP and the agent can pull a backlink overview or the full link list mid-conversation, with the same filters as the app. The link prospecting skill turns that into a short list: sites with a real reason to link to your page, and an outreach angle for each.",
+      },
+    ],
+    contextImage: {
+      src: "/features/backlink-checker/openseo-backlinks-links-vs-referring-domains.png",
+      alt: "Two stacked bars for openseo.so. Backlinks: 9,499, of which the top referring domain supplies 3,754, the next nine domains 2,782 and all others 2,963. Referring domains: 495, where the same top domain is a single sliver.",
+      caption:
+        "The same profile counted two ways. One domain supplies 40% of the links and counts once.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     guides: {
       title: "The Link Building Strategy Library",
       description:
@@ -496,12 +546,6 @@ export const featurePages = {
         href: "/library/link-building",
       },
     },
-    featuredLink: {
-      title: "Free backlink checker",
-      description:
-        "Check any domain's backlink summary and top 15 backlinks. No signup required.",
-      href: "/backlink-checker",
-    },
     related: [
       {
         label: "Link Prospecting",
@@ -525,15 +569,31 @@ export const featurePages = {
         answer:
           "Backlinks tell you whether a page ranks on content or on authority. Check them before targeting a keyword to judge whether you can realistically outrank the incumbents, and check a competitor's profile to find sites that might link to you too.",
       },
+      {
+        question: "Does OpenSEO hide spam backlinks?",
+        answer:
+          "Yes, by default. Links with a spam score of 40 or higher, out of 100, drop out of the backlinks list. Turn the filter off to see them.",
+      },
+      {
+        question: "How far back does backlink history go?",
+        answer:
+          "A domain lookup shows monthly backlink and referring-domain counts for the last 12 months, with new and lost links per month. A single page or a folder shows current counts without the trend.",
+      },
+      {
+        question: "Is there a free backlink checker?",
+        answer:
+          "Yes. The free backlink checker shows summary metrics and the top 15 backlinks for any domain without signup. The full report pages through every link with filters and export, and each new lookup uses credits. Looking up the same target again within 6 hours reuses the result at no cost.",
+      },
     ],
   },
   domainOverview: {
     slug: FEATURE_PAGE_SLUGS.domainOverview,
     eyebrow: "Domain Overview",
     navDescription: "Analyze competitor visibility.",
-    title: "Domain overview: traffic, keywords, and pages for any domain",
+    title:
+      "Domain analysis tool: traffic, keywords and top pages for any website",
     description:
-      "Get a domain overview of any website: estimated organic traffic, ranking keywords, and top organic pages, with one click into backlink and keyword research.",
+      "Get a domain overview of any website: estimated organic traffic, ranking keywords, and top organic pages, with filters, export and saved keywords in the same place.",
     primaryKeyword: "domain overview",
     secondaryKeywords: [
       "domain analysis tool",
@@ -547,17 +607,17 @@ export const featurePages = {
       {
         title: "Analyze a domain",
         description:
-          "Start with a domain and get an overview of estimated organic traffic, organic keyword count, top ranking keywords, and top organic pages.",
+          "Enter a domain, a folder or a single page and pick a country. The overview shows estimated organic traffic and how many keywords the site ranks for, then lists its keywords and its top pages.",
       },
       {
         title: "Find competitor keywords",
         description:
-          "Inspect keywords a competitor already ranks for and identify topics worth building or defending.",
+          "Filter the keyword list by traffic, volume, CPC, difficulty or position, include or exclude words, and save the ones worth building or defending.",
       },
       {
-        title: "Move into deeper research",
+        title: "Take the list further",
         description:
-          "Use domain insights to open keyword research, backlink analysis, or rank tracking without starting over.",
+          "Export the keywords or pages to CSV, Excel or Google Sheets, or save keywords to your list for content planning and rank tracking.",
       },
     ],
     metrics: [
@@ -577,12 +637,62 @@ export const featurePages = {
       "Built around ranking keywords, estimated traffic, and top pages for practical competitor research.",
       "Open-source and self-hostable for teams that want control over their SEO stack.",
     ],
-    featuredLink: {
-      title: "Free website traffic checker",
-      description:
-        "Estimate any domain's organic traffic, keywords, and top pages. No signup required.",
-      href: "/website-traffic-checker",
+    headings: {
+      workflows: "Read a domain, find its keywords, go deeper",
+      metrics: "Four numbers in every overview",
+      useCases: "When to pull a domain overview",
+      differentiators: "Why do competitor research here",
+      related: "Where domain research goes next",
+      faq: "Domain overview questions",
     },
+    toolCallout: {
+      title: "Size up any domain before you sign up",
+      description: "Three free tools from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free website traffic checker",
+          description:
+            "Estimated organic traffic, keyword count, and the top 5 keywords and pages for any domain. Compare two domains side by side.",
+          href: "/website-traffic-checker",
+        },
+        {
+          title: "Free competitor analysis",
+          description:
+            "A competitor's top 20 keywords and top 10 pages, plus up to 20 keywords they rank for that you don't.",
+          href: "/competitor-analysis",
+        },
+        {
+          title: "Free domain age checker",
+          description:
+            "Registration date, expiry date and registrar for up to 10 domains at once.",
+          href: "/domain-age-checker",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "How much to trust a traffic estimate",
+        body: "Estimated traffic is a model, not a count. It combines each keyword's search volume with an expected click rate for the position, and the data provider revises both. openseo.so is a live example. In October the model put it at 4,556 visits a month. Five weeks later it said 303. The site ranked 8th for \"linkback checker\" both times, and that one keyword's estimate fell from 1,783 visits to less than one. Read the keywords behind a total before you quote it, and compare domains on the same day.",
+      },
+      {
+        title:
+          "Check a domain before you buy it, link to it or partner with it",
+        body: "Three questions settle most of it. How old is it? The domain age checker shows when it was registered and who the registrar is. Is its link profile clean? The spam score checker lists the spammiest domains linking to it. Does it earn real search traffic, and from what? The overview shows estimated traffic, the keywords behind it and the pages that rank. A domain that is old, clean and ranks for its own topic is a safer bet than one with a big traffic number built on a single keyword.",
+      },
+      {
+        title: "Competitor research from your AI agent",
+        body: "Connect OpenSEO to Claude, Cursor or ChatGPT over MCP and the agent can pull a domain's traffic estimate and the keywords it ranks for, filtered by position, volume or brand terms. The competitor analysis skill gives it an order of work: keywords, pages, backlinks and content themes, ending in what to learn from and where your site has a better angle.",
+      },
+    ],
+    contextImage: {
+      src: "/features/domain-overview/openseo-domain-overview-traffic-estimate-two-dates.png",
+      alt: "Two bar charts for openseo.so in the US. Whole-site estimated organic traffic fell from 4,556 visits a month on 6 October 2026 to 303 on 16 November. The estimate for linkback checker, ranked 8th both times, fell from 1,783 to 0.2.",
+      caption:
+        "Same site, same position, two estimates five weeks apart. The ranking held; the estimate didn't.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       {
         label: "Competitor Analysis",
@@ -600,7 +710,7 @@ export const featurePages = {
       {
         question: "How does this compare to Semrush Domain Overview?",
         answer:
-          "OpenSEO covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. OpenSEO is open source, so you can self-host it, and the managed app is $10/month and includes usage credits.",
+          "OpenSEO covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. OpenSEO is open source, so you can self-host it, and the managed app starts at $10/month with usage credits included.",
       },
       {
         question: "Can OpenSEO help with competitor keyword analysis?",
@@ -611,6 +721,16 @@ export const featurePages = {
         question: "Is Domain Overview the same as a traffic checker?",
         answer:
           "Not quite. It includes an estimated-traffic metric, but the value is seeing which keywords and pages produce that traffic, which a plain traffic checker doesn't show.",
+      },
+      {
+        question: "Can I analyze a folder or a single page?",
+        answer:
+          "Yes. Choose a domain, a domain with its subdomains, a folder or one page. The keyword and page lists follow that choice. The traffic and keyword totals at the top always cover the whole domain.",
+      },
+      {
+        question: "Does OpenSEO show domain authority?",
+        answer:
+          "Not under that name. Domain Authority is Moz's score. The backlinks report shows a domain rank next to referring domains and spam score, so you can see what the number is built from.",
       },
     ],
     guides: {
@@ -829,7 +949,8 @@ export const featurePages = {
     slug: FEATURE_PAGE_SLUGS.savedKeywords,
     eyebrow: "Saved Keywords",
     navDescription: "Organize SEO opportunities.",
-    title: "Saved keywords for turning SEO research into a plan",
+    title:
+      "Keyword list manager: save, tag and export the keywords worth acting on",
     description:
       "Keep useful keyword ideas organized so they can inform content planning, rank tracking decisions, and AI-agent workflows.",
     seoDescription:
@@ -847,17 +968,17 @@ export const featurePages = {
       {
         title: "Save promising keywords",
         description:
-          "Collect useful ideas from keyword research instead of losing them after each search.",
+          "Save ideas from keyword research, a competitor's domain overview or your Search Console queries, or paste in a list of your own.",
       },
       {
         title: "Organize by topic",
         description:
-          "Tag keywords by page, campaign, content cluster, or priority so planning stays readable.",
+          "Tag keywords by page, campaign, content cluster, or priority, then filter the list by tag, volume, CPC, difficulty or the words a keyword contains.",
       },
       {
         title: "Reuse saved keywords across workflows",
         description:
-          "Use saved keywords and tags as a planning reference for rank tracking, content planning, or MCP-powered research.",
+          "Export the list to CSV or Google Sheets, or let an AI agent read and update it over MCP.",
       },
     ],
     metrics: [
@@ -874,8 +995,50 @@ export const featurePages = {
     differentiators: [
       "Saved keywords bridge research, tracking, and AI workflows.",
       "Saved keywords preserve available metrics like volume, CPC, difficulty, intent, and tags.",
-      "The workflow stays simple enough for repeated planning sessions.",
+      "Saving, tagging and exporting use no credits.",
     ],
+    headings: {
+      workflows: "Save it, tag it, use it again",
+      useCases: "When the list earns its keep",
+      differentiators: "Why keep the list next to the research",
+      related: "Where saved keywords go next",
+      faq: "Saved keyword questions",
+    },
+    toolCallout: {
+      title: "Build the first draft of the list for free",
+      description: "A free tool from OpenSEO. No signup required.",
+      links: [
+        {
+          title: "Free keyword generator",
+          description:
+            "Type a topic and get up to 20 keyword ideas with search volume and difficulty: the first candidates for your list.",
+          href: "/keyword-generator",
+        },
+      ],
+    },
+    contextSections: [
+      {
+        title: "Tag by the page you'll build, not the intent label",
+        body: 'The keyword research page\'s example search for "keyword research" returned 300 ideas, and 45 of them contain the word "keyword". Tagged by the page each one belongs on, they make four pages and one pile to drop. 19 belong on a tool page, with 4,600 searches a month between them. Nine fit a how-to guide, five a definition page and two an examples page. The other ten use "keywords" in the academic sense, like "keywords in research". The intent column called 16 of the 19 tool-page keywords informational, including "free keyword research tool". Read the keyword, then tag it.',
+      },
+      {
+        title: "Bring in a list you already have",
+        body: "Paste up to 2,000 keywords at a time, one per line, or a CSV with keywords in the first column. Add a tag as you import, and choose whether to fetch volume, difficulty and CPC now. Fetching the numbers uses credits. Saving, tagging and exporting don't. Keywords are saved for the project's country and language, so the numbers match the market you're planning for.",
+      },
+      {
+        title: "Hand the list to a writer, a developer or an AI agent",
+        body: "Select keywords and export them to CSV or Google Sheets for a writer's brief or a client sheet. Your AI assistant can work with the same list over MCP: save keywords with their metrics and tags, read the list back filtered by tag, retag a group into page clusters, and remove what you no longer need. The list stays one source of truth whether a person or an agent did the research.",
+      },
+    ],
+    contextImage: {
+      src: "/features/saved-keywords/openseo-saved-keywords-tagged-by-page.png",
+      alt: "Bar chart of 45 keyword ideas containing the word keyword, tagged by page: tool page 19 keywords and 4,600 monthly searches, how-to guide 9 and 930, definition guide 5 and 530, examples 2 and 220, other meanings 10 and 560. 16 of the 19 tool-page keywords carry an informational intent label.",
+      caption:
+        "One search, tagged by the page each keyword belongs on. The intent label alone would have hidden the tool page.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "Keyword Research", href: "/features/keyword-research" },
       { label: "Rank Tracking", href: "/features/rank-tracking" },
@@ -897,13 +1060,29 @@ export const featurePages = {
         answer:
           "Research fills the list, tags group it into pages and campaigns, and the shortlist feeds rank tracking. Saved keywords are the bridge between finding an opportunity and acting on it.",
       },
+      {
+        question: "Can I export saved keywords?",
+        answer:
+          "Yes. Select keywords in the list and export them to CSV or Google Sheets, or copy them.",
+      },
+      {
+        question: "Can I import a keyword list?",
+        answer:
+          "Yes. Paste up to 2,000 keywords at a time, or a CSV with keywords in the first column, and add a tag on the way in. Fetching volume, difficulty and CPC for them is optional and uses credits.",
+      },
+      {
+        question: "Can an AI assistant add keywords to my list?",
+        answer:
+          "Yes. Through the OpenSEO MCP server, an assistant can save up to 100 keywords at a time with their metrics and tags, read the list back, and remove keywords you no longer need. Saving uses no credits.",
+      },
     ],
   },
   aiBrandVisibility: {
     slug: FEATURE_PAGE_SLUGS.aiBrandVisibility,
     eyebrow: "AI Visibility",
     navDescription: "Research prompts and track mentions and citations.",
-    title: "Track your brand in AI answers",
+    title:
+      "AI visibility tool: track your brand in ChatGPT, Gemini and Google AI answers",
     description:
       "Research prompts, then track brand mentions, cited pages, and competitor appearances in ChatGPT, Gemini, and Google AI Overviews.",
     seoDescription:
@@ -921,17 +1100,17 @@ export const featurePages = {
       {
         title: "Research prompts",
         description:
-          "Find the questions people ask about a keyword, see what ChatGPT answers and cites, and choose questions to track.",
+          "Enter a keyword to find the questions people ask about it, with ChatGPT's answer and the sources it cites for each. Pick the questions worth tracking.",
       },
       {
         title: "Track answers over time",
         description:
-          "Preview cost, then run a check or schedule daily, weekly, or monthly collection in your selected market.",
+          "Save up to 100 questions under topics, choose engines and a market, check the cost estimate, then run a check or schedule daily, weekly, or monthly collection.",
       },
       {
         title: "Review competitors and citations",
         description:
-          "Use your saved project competitors and captured answers to see which brands and pages appear.",
+          "See which answers mention your brand, which cite your site, which competitors from your project appear instead, and which pages the answers are built on.",
       },
     ],
     metrics: [
@@ -950,6 +1129,36 @@ export const featurePages = {
       "The workflow focuses on concrete sources and mentions, not vague AI hype.",
       "OpenSEO helps teams connect AI mention and citation research to concrete SEO planning.",
     ],
+    headings: {
+      workflows: "Find the questions, track the answers, read the sources",
+      useCases: "When to check AI visibility",
+      differentiators: "Why track AI answers next to your SEO data",
+      related: "Where AI visibility research goes next",
+      faq: "AI visibility questions",
+    },
+    contextSections: [
+      {
+        title: "What tracking costs",
+        body: "Each check pays for one answer per question per engine. A scheduled answer from ChatGPT, Gemini, AI Overviews or AI Mode costs $0.002, so 50 questions on ChatGPT and Gemini, checked weekly, comes to $0.80 a month. Run now collects live answers from those four engines at $0.006 each. Perplexity costs $0.052 an answer and Claude $0.231, scheduled or not. The app shows the estimate before you start a check or a schedule, and reviewing or exporting saved results is free.",
+      },
+      {
+        title: "Six AI engines, one tracker",
+        body: "A tracker checks ChatGPT and Gemini by default. Add Google AI Overviews, Google AI Mode, Claude or Perplexity when you need them. ChatGPT and Gemini answers are collected from their consumer sites, the way a customer sees them. Claude and Perplexity have no consumer-site collection, so every check asks their model API at live API pricing. Each tracker holds up to 100 questions in up to 30 topics, and editing a question's wording starts a new question, so earlier answers keep the wording they were collected for.",
+      },
+      {
+        title: "When your brand counts as mentioned or cited",
+        body: "Your brand counts as mentioned when its name or domain appears in an answer, and as cited when the answer links to your site. The name comes from the brand name in your project context, or from the project name when that's blank. Competitors come from the same project context, so the tracker and your other research agree on who you compete with. A check that failed is not evidence your brand was absent.",
+      },
+    ],
+    contextImage: {
+      src: "/features/ai-brand-visibility/openseo-ai-visibility-tracking-monthly-cost.png",
+      alt: "Grid of monthly costs to track 50 prompts. ChatGPT, Gemini, AI Overviews or AI Mode: $0.10 monthly, $0.40 weekly, $3.00 daily. Perplexity: $2.60, $10.40, $78.00. Claude: $11.55, $46.20, $346.50.",
+      caption:
+        "Monthly cost of 50 tracked prompts on one engine, by schedule. Orange cells fit inside the Base plan's $10 of usage.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "AI Visibility Guide", href: "/docs/ai-visibility" },
       { label: "Prompt Explorer", href: "/features/ai-search-prompts" },
@@ -972,13 +1181,29 @@ export const featurePages = {
         answer:
           "No. It should sit beside keyword, domain, backlink, and audit data so teams can understand both search rankings and answer coverage.",
       },
+      {
+        question: "Which AI engines can OpenSEO track?",
+        answer:
+          "ChatGPT, Gemini, Google AI Overviews, Google AI Mode, Claude and Perplexity. ChatGPT and Gemini are selected by default.",
+      },
+      {
+        question: "How much does AI visibility tracking cost?",
+        answer:
+          "A scheduled answer from ChatGPT, Gemini, AI Overviews or AI Mode costs $0.002, so 50 questions on two engines checked weekly is about $0.80 a month. Claude and Perplexity cost more because they're asked through their model APIs. Prompt research costs about $0.25 per keyword.",
+      },
+      {
+        question: "Do I need a paid plan?",
+        answer:
+          "Tracking only needs credits. Prompt Research and Prompt Explorer need a paid plan on hosted OpenSEO.",
+      },
     ],
   },
   aiSearchPrompts: {
     slug: FEATURE_PAGE_SLUGS.aiSearchPrompts,
     eyebrow: "Prompt Explorer",
     navDescription: "Compare answers across supported models.",
-    title: "AI search prompt explorer for visibility research",
+    title:
+      "AI search prompt explorer: one prompt across ChatGPT, Claude, Gemini and Perplexity",
     description:
       "Start with ChatGPT, or add Claude, Gemini, and Perplexity to compare API model answers and available citations.",
     seoDescription:
@@ -996,12 +1221,12 @@ export const featurePages = {
       {
         title: "Test category prompts",
         description:
-          "Compare answers to the questions your customers might ask AI tools.",
+          "Ask the questions your customers ask AI tools, up to 500 characters each, in one model or all four at once.",
       },
       {
         title: "Inspect web-backed answers",
         description:
-          "When web search is enabled, inspect the pages and domains cited by model responses.",
+          "With web search on, see the pages and domains each answer cites and the searches the model ran before it answered.",
       },
       {
         title: "Check brand mentions",
@@ -1025,6 +1250,36 @@ export const featurePages = {
       "OpenSEO treats AI search as a research layer, not a replacement for SEO fundamentals.",
       "OpenSEO MCP lets your agent explore prompts and work with saved AI visibility results.",
     ],
+    headings: {
+      workflows: "Run a prompt, read the sources, check your brand",
+      useCases: "When to run prompt research",
+      differentiators: "Why prompt research belongs next to SEO",
+      related: "Where prompt research goes next",
+      faq: "Prompt Explorer questions",
+    },
+    contextSections: [
+      {
+        title: "Same question, four shortlists",
+        body: 'We asked all four models "What is the best affordable SEO tool for a small business owner?" with web search on. ChatGPT, Claude and Perplexity all picked Mangools. Gemini listed SE Ranking first. Every model named Google Search Console, Semrush and Ahrefs, and none named OpenSEO. Their sources barely overlapped: 34 citations across the four answers, and only three sites cited by more than one model. ChatGPT\'s four searches all asked for official pricing pages. One run per model is a snapshot, so run a prompt more than once before you act on it.',
+      },
+      {
+        title: "Four models, one prompt, side by side",
+        body: "Prompt Explorer sends one prompt to ChatGPT, Claude, Gemini and Perplexity and lays the answers side by side. Web search is on by default, and you can pick the country it searches from (Gemini doesn't take one). Each answer comes back with the pages it cited, the searches the model ran, and whether your highlighted brand appears. Answers are saved for seven days, so running the same prompt with the same settings in the same project that week costs nothing.",
+      },
+      {
+        title: "Explorer, research or tracking",
+        body: "Use Prompt Explorer for a one-off look at how models answer a question. These are API answers, and they can differ from what a customer sees on ChatGPT's own site. Use Prompt Research to find which questions to ask, and Prompt Tracking to collect consumer-site answers on a schedule and watch them change. Your AI agent can run the same comparison over MCP; it asks ChatGPT unless you name other models.",
+      },
+    ],
+    contextImage: {
+      src: "/features/ai-search-prompts/openseo-prompt-explorer-four-model-shortlists.png",
+      alt: "Dot matrix of the tools ChatGPT, Claude, Gemini and Perplexity named for one prompt about affordable SEO tools for a small business. Mangools is the top pick for ChatGPT, Claude and Perplexity; Gemini lists SE Ranking first. Google Search Console, Semrush and Ahrefs appear in all four answers. OpenSEO appears in none.",
+      caption:
+        "One prompt, four models, four different shortlists. OpenSEO wasn't named by any of them.",
+      width: 1600,
+      height: 900,
+    },
+    structuredData: true,
     related: [
       { label: "AI Visibility", href: "/features/ai-brand-visibility" },
       { label: "Keyword Research", href: "/features/keyword-research" },
@@ -1045,6 +1300,21 @@ export const featurePages = {
         question: "Can this help with answer engine optimization?",
         answer:
           "Yes. Prompt Explorer is a starting point for mapping prompt responses and returned citations back to source pages and possible SEO follow-up work.",
+      },
+      {
+        question: "Which AI models does Prompt Explorer support?",
+        answer:
+          "ChatGPT, Claude, Gemini and Perplexity. Run a prompt on one model or compare all four, with web search and a search country when you want cited sources.",
+      },
+      {
+        question: "Do AI answers change between runs?",
+        answer:
+          "Yes. The same prompt can return a different answer or different sources on the next run. Run important prompts more than once before you draw a conclusion.",
+      },
+      {
+        question: "How much does Prompt Explorer cost?",
+        answer:
+          "It needs a paid plan on hosted OpenSEO, and each new answer uses credits for the model usage. Answers are saved for seven days, so asking the same prompt with the same settings in the same project that week is free.",
       },
     ],
   },
