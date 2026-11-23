@@ -2,7 +2,7 @@
 # Wrangler, Miniflare, package manager, or node_modules.
 # The output is the same on every platform, so compile on the build host. Vite
 # has hung for hours when run under arm64 emulation.
-FROM --platform=$BUILDPLATFORM node:22-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS build
+FROM --platform=$BUILDPLATFORM node:26-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS build
 WORKDIR /build
 RUN corepack enable && corepack prepare pnpm@10.30.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -15,7 +15,7 @@ COPY . .
 ENV VITE_SHOW_DEVTOOLS=false AUTH_MODE=password
 RUN pnpm build:standalone
 
-FROM node:22-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS runtime
+FROM node:26-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS runtime
 ARG TARGETARCH
 ARG CELLD_VERSION=0.5.1
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && \
