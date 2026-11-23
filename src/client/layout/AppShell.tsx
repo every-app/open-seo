@@ -141,7 +141,7 @@ export function AuthenticatedAppLayout({
 
 function MobileTopBar() {
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1.5 md:hidden">
+    <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 pt-[calc(--spacing(1.5)+env(safe-area-inset-top,0px))] pb-1.5 md:hidden [@media(display-mode:standalone)]:pt-[calc(--spacing(4.5)+env(safe-area-inset-top,0px))]">
       <SidebarTrigger aria-label="Toggle sidebar" />
       <Link to="/" className="ml-1 font-semibold text-foreground">
         OpenSEO
