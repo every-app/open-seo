@@ -173,6 +173,7 @@ async function getSuggestedKeywords(
     locationCode: input.locationCode,
     languageCode: input.languageCode,
     limit: 100,
+    itemTypes: ["organic"],
     orderBy: ["ranked_serp_element.serp_item.etv,desc"],
     filters:
       scopeFilter.clauses.length > 0
