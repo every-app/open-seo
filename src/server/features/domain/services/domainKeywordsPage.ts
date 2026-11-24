@@ -91,6 +91,7 @@ export async function getKeywordsPage(
     locationCode: input.locationCode,
     languageCode: input.languageCode,
     limit: input.pageSize,
+    itemTypes: ["organic"],
     offset,
     orderBy,
     filters: filters.length > 0 ? filters : undefined,

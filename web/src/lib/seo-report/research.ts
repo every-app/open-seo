@@ -121,6 +121,7 @@ export async function domainKeywords(lookup: Lookup, domain: string) {
       target: domain,
       ...MARKET,
       limit: DOMAIN_KEYWORDS,
+      item_types: ["organic"],
       order_by: ["ranked_serp_element.serp_item.etv,desc"],
     },
   );
