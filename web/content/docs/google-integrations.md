@@ -41,7 +41,7 @@ For a walkthrough of adding and verifying a site in Search Console, see [How to 
 Open **GSC Insights** in the project sidebar, under My Site.
 
 - **Date range:** last 7 days, 28 days (the default) or 3 months. Search Console data runs about 3 days behind, so ranges end 3 days ago.
-- **Search type:** Web search, Discover or Google News. Discover and Google News show pages only; Google reports no queries or positions for them.
+- **Search type:** Web search, Web multimodal, Discover or Google News. Web multimodal shows pages and average position for Google Lens searches, Circle to Search on Android, image uploads in Google Search, and Chrome’s right-click “Search this image”. Discover and Google News show pages only; Google reports no queries or positions for them.
 - **Device and country:** narrow everything on the page to one device or country.
 - **Chart:** clicks, impressions, click-through rate and average position, each compared with the period before. Click a metric to show or hide its line. With one metric on, the chart adds the period before as a dashed line.
 - **Biggest changes:** the five queries and the five pages that gained the most clicks since the period before, and the five that lost the most, with how their position moved.
@@ -62,7 +62,7 @@ The **Google Analytics** card on the project dashboard shows organic search over
 
 With [OpenSEO MCP](/docs/mcp) connected, your agent can read both, with no credits:
 
-- **Search Console:** performance by query, page, country, device or date, for web, image, video, news and Discover search, up to 16 months back. It can also check whether specific URLs are indexed, up to 10 at a time.
+- **Search Console:** performance by query, page, country, device or date, for web, web multimodal, image, video, news and Discover search, up to 16 months back. It can also check whether specific URLs are indexed, up to 10 at a time. For web multimodal, specify a non-query grouping such as page and omit query filters and final-only data.
 - **Analytics:** organic overview, landing pages, page performance, key events, traffic acquisition, ecommerce, site search, audience and measurement health.
 - **Both together:** pages ranking 4th to 20th in Search Console, with what their visitors did in Analytics.
 

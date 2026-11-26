@@ -18,6 +18,7 @@ export const GSC_FILTER_OPERATORS = [
 ] as const;
 export const GSC_SEARCH_TYPES = [
   "web",
+  "webMultimodal",
   "image",
   "video",
   "news",

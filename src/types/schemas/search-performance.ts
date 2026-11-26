@@ -14,10 +14,11 @@ export const SEARCH_PERFORMANCE_RANGES = [
   "last_3_months",
 ] as const;
 
-/** Search Console reports the page offers. Discover and Google News have no
- *  query dimension and no position, so those views show pages only. */
+/** Search Console reports the page offers. Web multimodal, Discover and
+ *  Google News show pages only. Web and Web multimodal report position. */
 export const SEARCH_PERFORMANCE_TYPES = [
   "web",
+  "webMultimodal",
   "discover",
   "googleNews",
 ] as const;

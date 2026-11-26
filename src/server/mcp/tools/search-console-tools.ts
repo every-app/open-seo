@@ -253,7 +253,7 @@ export const getSearchConsolePerformanceTool = {
   config: {
     title: "Get Google Search Console performance",
     description:
-      "Get Google Search Console performance for the project's connected property: clicks, impressions, CTR, and average position by query, page, country, device, date, or brandedClassification. This is first-party data: use it for what already ranks, near-ranking queries, and pages with real demand. Use minPosition, maxPosition, and minImpressions instead of fetching everything: Google can't filter by position, so they are applied server-side over the top 1000 rows by clicks. ctr is a 0-1 fraction; position is a 1-based average, omitted for type 'discover' or 'googleNews' because Google does not report it there. Dates are Pacific Time, and the last ~3 days may be incomplete. Google's branded classification starts on 2026-02-21 and covers only top-level properties with enough traffic; for other properties it returns no rows. Reads only the project's connected Search Console property. Uses no credits. For a page's index status, use inspect_urls.",
+      "Get Google Search Console performance for the project's connected property: clicks, impressions, CTR, and average position by query, page, country, device, date, or brandedClassification. Use type 'webMultimodal' for the multimodal search type in Search Console, covering Google Lens searches, Circle to Search on Android, image uploads in Google Search, and Chrome's right-click 'Search this image'. Specify a dimension such as 'page' for webMultimodal. Google rejects query grouping (including the default), query filters, and dataState 'final' for this type. This is first-party data: use it for what already ranks, near-ranking queries, and pages with real demand. Use minPosition, maxPosition, and minImpressions instead of fetching everything: Google can't filter by position, so they are applied server-side over the top 1000 rows by clicks. ctr is a 0-1 fraction; position is a 1-based average, omitted for type 'discover' or 'googleNews' because Google does not report it there. Dates are Pacific Time, and the last ~3 days may be incomplete. Google's branded classification starts on 2026-02-21 and covers only top-level properties with enough traffic; for other properties it returns no rows. Reads only the project's connected Search Console property. Uses no credits. For a page's index status, use inspect_urls.",
     inputSchema: perfInputSchema,
     outputSchema: searchConsoleSchema,
     annotations: {
@@ -279,6 +279,27 @@ export const getSearchConsolePerformanceTool = {
       args.projectId,
       `/p/${args.projectId}/search-performance`,
     );
+
+    if (args.type === "webMultimodal") {
+      if (!args.dimensions?.length || args.dimensions.includes("query")) {
+        return invalidRequest(
+          meta,
+          "webMultimodal cannot group by 'query', the default dimension. Pass dimensions without 'query', for example ['page'].",
+        );
+      }
+      if (args.filters?.some((filter) => filter.dimension === "query")) {
+        return invalidRequest(
+          meta,
+          "webMultimodal cannot filter by 'query'. Remove the 'query' filter.",
+        );
+      }
+      if (args.dataState === "final") {
+        return invalidRequest(
+          meta,
+          "webMultimodal does not support dataState 'final'. Omit dataState to use the default.",
+        );
+      }
+    }
 
     // GSC rejects searchAppearance combined with any other dimension.
     if (
