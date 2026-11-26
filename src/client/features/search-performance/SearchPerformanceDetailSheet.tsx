@@ -41,11 +41,13 @@ function DetailBody({
   selection,
   filterInput,
   isWeb,
+  showPosition,
 }: {
   projectId: string;
   selection: DetailSelection;
   filterInput: FilterInput;
   isWeb: boolean;
+  showPosition: boolean;
 }) {
   const detailQuery = useQuery(
     detailQueryOptions(projectId, selection, filterInput),
@@ -67,13 +69,16 @@ function DetailBody({
         !detail.connected ? null : (
           <div className="flex flex-col gap-8">
             <SearchPerformanceChart
+              key={showPosition ? "with-position" : "without-position"}
               totals={detail.totals}
               prevTotals={detail.prevTotals}
               trend={detail.trend}
               prevTrend={detail.prevTrend}
-              showPosition={isWeb}
+              showPosition={showPosition}
               initialMetrics={
-                isWeb ? ["clicks", "position"] : ["clicks", "impressions"]
+                showPosition
+                  ? ["clicks", "position"]
+                  : ["clicks", "impressions"]
               }
               chartClassName="h-48"
             />
@@ -171,6 +176,7 @@ export function SearchPerformanceDetailSheet({
   selection,
   filterInput,
   isWeb,
+  showPosition,
   periodLabel,
   onClose,
 }: {
@@ -178,6 +184,7 @@ export function SearchPerformanceDetailSheet({
   selection: DetailSelection | null;
   filterInput: FilterInput;
   isWeb: boolean;
+  showPosition: boolean;
   /** The selected date range, for example "Last 28 days". */
   periodLabel: string;
   onClose: () => void;
@@ -226,6 +233,7 @@ export function SearchPerformanceDetailSheet({
                 selection={selection}
                 filterInput={filterInput}
                 isWeb={isWeb}
+                showPosition={showPosition}
               />
             </div>
             {selection.dimension === "query" ? (

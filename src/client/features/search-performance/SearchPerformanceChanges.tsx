@@ -148,12 +148,14 @@ export function BiggestChangesCard({
   projectId,
   filterInput,
   isWeb,
+  showPosition,
   comparedWith,
   onSelect,
 }: {
   projectId: string;
   filterInput: FilterInput;
   isWeb: boolean;
+  showPosition: boolean;
   /** The previous period's dates, for the hover title. */
   comparedWith: string;
   onSelect: (selection: DetailSelection) => void;
@@ -220,7 +222,7 @@ export function BiggestChangesCard({
                 rows={changes.gained}
                 keyLabel={keyLabel}
                 emptyText={`No ${noun} gained clicks.`}
-                showPosition={isWeb}
+                showPosition={showPosition}
                 onSelect={(key) => onSelect({ dimension, key })}
               />
               <ChangeTable
@@ -231,7 +233,7 @@ export function BiggestChangesCard({
                 rows={changes.lost}
                 keyLabel={keyLabel}
                 emptyText={`No ${noun} lost clicks.`}
-                showPosition={isWeb}
+                showPosition={showPosition}
                 onSelect={(key) => onSelect({ dimension, key })}
               />
             </div>

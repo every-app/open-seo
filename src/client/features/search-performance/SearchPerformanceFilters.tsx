@@ -30,6 +30,7 @@ const ALL = "ALL";
 
 const TYPE_LABELS: Record<SearchPerformanceType, string> = {
   web: "Web search",
+  webMultimodal: "Web multimodal",
   discover: "Discover",
   googleNews: "Google News",
 };

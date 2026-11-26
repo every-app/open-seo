@@ -34,6 +34,7 @@ const gscRow = (position: number, impressions = 100) => ({
   position,
 });
 
+// oxlint-disable-next-line eslint/max-lines-per-function -- keep the Search Console cases under the same setup.
 describe("search console MCP tools", () => {
   beforeEach(() => {
     mocks.getProjectForOrganization.mockResolvedValue({
@@ -376,5 +377,70 @@ describe("search console MCP tools", () => {
       reason: "gsc_oauth_not_configured",
     });
     expect(mocks.GscService.inspectUrls).not.toHaveBeenCalled();
+  });
+
+  describe("webMultimodal Search Console performance", () => {
+    const tool = searchConsoleTools.getSearchConsolePerformanceTool;
+    const input = {
+      projectId: "project_1",
+      type: "webMultimodal",
+      dimensions: ["page"],
+    } satisfies Parameters<typeof tool.handler>[0];
+
+    it.each<[string, Partial<Parameters<typeof tool.handler>[0]>, string]>([
+      [
+        "explicit query grouping",
+        { dimensions: ["page", "query"] },
+        "Pass dimensions without 'query'",
+      ],
+      [
+        "default query grouping",
+        { dimensions: undefined },
+        "Pass dimensions without 'query'",
+      ],
+      [
+        "a query filter",
+        {
+          filters: [
+            { dimension: "query", operator: "contains", expression: "seo" },
+          ],
+        },
+        "Remove the 'query' filter",
+      ],
+      ["final data", { dataState: "final" }, "Omit dataState"],
+    ])("rejects %s before calling GSC", async (_name, overrides, guidance) => {
+      const result = await tool.handler(
+        { ...input, ...overrides },
+        toolContext,
+      );
+      expect(mocks.GscService.getPerformance).not.toHaveBeenCalled();
+      expect(result.structuredContent).toMatchObject({
+        reason: "invalid_request",
+      });
+      expect(textContent(result)).toContain(guidance);
+    });
+
+    it("reads performance by page and returns position", async () => {
+      mocks.GscService.getPerformance.mockResolvedValueOnce({
+        siteUrl: "https://example.com/",
+        request: {
+          dimensions: ["page"],
+          startDate: "2026-04-27",
+          endDate: "2026-05-25",
+        },
+        rows: [{ ...gscRow(7.5), keys: ["https://example.com/"] }],
+      });
+      const result = await tool.handler(input, toolContext);
+      expect(mocks.GscService.getPerformance).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "webMultimodal",
+          dimensions: ["page"],
+        }),
+      );
+      expect(result.structuredContent).toMatchObject({
+        ok: true,
+        rows: [{ position: 7.5 }],
+      });
+    });
   });
 });

@@ -132,7 +132,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
             filters,
             rowLimit: DAILY_ROW_LIMIT,
           }),
-          // Striking distance needs queries and positions, which only web has.
+          // Striking distance needs queries, available only in the Web report.
           type === "web"
             ? GscService.getPerformance({
                 projectId,

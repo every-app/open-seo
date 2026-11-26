@@ -16,14 +16,16 @@ export function SearchPerformanceOverview({
   report,
   filterInput,
   isWeb,
+  showPosition,
   isPlaceholderData,
   onSelect,
 }: {
   projectId: string;
   report: Report;
   filterInput: FilterInput;
-  /** Discover and Google News report pages only, with no position. */
   isWeb: boolean;
+  /** Discover and Google News report pages only, with no position. */
+  showPosition: boolean;
   /** The previous filters' report is still on screen while the next loads. */
   isPlaceholderData: boolean;
   onSelect: (selection: DetailSelection) => void;
@@ -37,12 +39,12 @@ export function SearchPerformanceOverview({
         <CardContent>
           <SearchPerformanceChart
             // A search type without position drops that metric.
-            key={isWeb ? "web" : "pages"}
+            key={showPosition ? "with-position" : "without-position"}
             totals={report.totals}
             prevTotals={report.prevTotals}
             trend={report.trend}
             prevTrend={report.prevTrend}
-            showPosition={isWeb}
+            showPosition={showPosition}
           />
         </CardContent>
       </Card>
@@ -50,6 +52,7 @@ export function SearchPerformanceOverview({
         projectId={projectId}
         filterInput={filterInput}
         isWeb={isWeb}
+        showPosition={showPosition}
         comparedWith={`Compared with ${report.range.prevStartDate} to ${report.range.prevEndDate}`}
         onSelect={onSelect}
       />

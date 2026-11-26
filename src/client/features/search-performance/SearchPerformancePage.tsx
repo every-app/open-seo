@@ -90,6 +90,7 @@ export function SearchPerformancePage({
   const { type, range, country } = search;
   // Discover and Google News report pages only, with no queries or position.
   const isWeb = (type ?? "web") === "web";
+  const hasPosition = isWeb || type === "webMultimodal";
   // Google rejects a device filter on Discover, so ignore one left in the URL.
   const device = type === "discover" ? undefined : search.device;
   // Only web queries are split, and never under a query filter.
@@ -208,7 +209,7 @@ export function SearchPerformancePage({
         data.rows,
         report.range,
         target,
-        isWeb,
+        hasPosition,
       );
     } catch (error) {
       toast.error(getStandardErrorMessage(error, "Export failed"));
@@ -312,6 +313,7 @@ export function SearchPerformancePage({
               report={report}
               filterInput={filterInput}
               isWeb={isWeb}
+              showPosition={hasPosition}
               isPlaceholderData={reportQuery.isPlaceholderData}
               onSelect={setSelection}
             />
@@ -379,7 +381,7 @@ export function SearchPerformancePage({
                   projectId={projectId}
                   tableQuery={tableQuery}
                   keyLabel={tab === "queries" ? "Query" : "Page"}
-                  showPosition={isWeb}
+                  showPosition={hasPosition}
                   page={page}
                   pageSize={pageSize}
                   onPageChange={(nextPage) =>
@@ -399,9 +401,12 @@ export function SearchPerformancePage({
             </div>
             <SearchPerformanceDetailSheet
               projectId={projectId}
-              selection={selection}
+              selection={
+                isWeb || selection?.dimension === "page" ? selection : null
+              }
               filterInput={filterInput}
               isWeb={isWeb}
+              showPosition={hasPosition}
               periodLabel={DATE_RANGE_LABELS[range ?? "last_28_days"]}
               onClose={() => setSelection(null)}
             />
