@@ -1,0 +1,8 @@
+{
+  "files": {
+    "pruefen.sh": {
+      "name": "Prüfbefehl",
+      "description": "Startet die Testsuite des Forks mit pnpm: 285 Dateien, 1973 Tests. Mit npm statt pnpm entsteht ein anderer Abhängigkeitsbaum, dann schlagen 13 Dateien scheinbar fehl."
+    }
+  }
+}
